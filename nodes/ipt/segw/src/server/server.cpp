@@ -7,51 +7,37 @@
 
 
 #include "server.h"
+#include "session.h"
 #include "../cache.h"
-#include "connection.h"
 
-#include <cyng/object.h>
+//#include <cyng/object.h>
 
 namespace node
 {
-	server::server(cyng::async::mux& mux
-		, cyng::logging::log_ptr logger
-		, cache& cfg
-		, storage& db
-		, std::string account
-		, std::string pwd
-		, bool accept_all)
-	: mux_(mux)
-		, logger_(logger)
-		, cache_(cfg)
-		, storage_(db)
-		, account_(account)
-		, pwd_(pwd)
-		, accept_all_(accept_all)
-		, acceptor_(mux.get_io_service())
-#if (BOOST_VERSION < 106600)
-		, socket_(io_ctx_)
-#endif
-	{}
-
-	void server::run(std::string const& address, std::string const& service)
+	namespace sml
 	{
-		//
-		// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-		//
-		try {
-			boost::asio::ip::tcp::resolver resolver(mux_.get_io_service());
-#if (BOOST_VERSION >= 106600)
-			boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(address, service).begin();
-#else
-			boost::asio::ip::tcp::resolver::query query(address, service);
-			boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
-#endif
-			acceptor_.open(endpoint.protocol());
-			acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-			acceptor_.bind(endpoint);
-			acceptor_.listen();
 
+		server::server(cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
+			, cache& cfg
+			, storage& db
+			, std::string account
+			, std::string pwd
+			, bool accept_all
+			, boost::asio::ip::tcp::endpoint ep)
+		: mux_(mux)
+			, logger_(logger)
+			, cache_(cfg)
+			, storage_(db)
+			, account_(account)
+			, pwd_(pwd)
+			, accept_all_(accept_all)
+			, acceptor_(mux.get_io_service(), ep)
+			, session_counter_{ 0 }
+		{}
+
+		void server::run()
+		{
 			do_accept();
 
 			//
@@ -59,83 +45,77 @@ namespace node
 			//
 			cache_.set_status_word(sml::STATUS_BIT_SERVICE_IF_AVAILABLE, true);
 		}
-		catch (std::exception const& ex) {
 
-			CYNG_LOG_FATAL(logger_, ex.what());
-			cache_.set_status_word(sml::STATUS_BIT_SERVICE_IF_AVAILABLE, false);
+		void server::do_accept()
+		{
+			acceptor_.async_accept(
+				[this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
 
+					if (!ec)
+					{
+						CYNG_LOG_TRACE(logger_, "start SML session at " << socket.remote_endpoint());
+
+						//
+						//	There is no connection manager or list of open connections. 
+						//	Connections are managed by there own and are controlled
+						//	by a maintenance task.
+						//
+						auto sp = std::shared_ptr<session>(new session(std::move(socket)
+							, mux_
+							, logger_
+							, cache_
+							, storage_
+							, account_
+							, pwd_
+							, accept_all_
+						), [this](session* s) {
+
+							//
+							//	update session counter
+							//
+							--session_counter_;
+							CYNG_LOG_TRACE(logger_, "SML session count " << session_counter_);
+
+							//
+							//	remove from VM controller
+							//
+							//vm_.async_run(cyng::generate_invoke("vm.remove", tag));
+
+							//
+							//	remove session
+							//
+							delete s;
+						});
+
+						if (sp) {
+
+							//
+							//	start session
+							//
+							sp->start();
+
+							//
+							//	update session counter
+							//
+							++session_counter_;
+						}
+
+						do_accept();
+					}
+
+				});
 		}
-	}
 
-	void server::do_accept()
-	{
-#if (BOOST_VERSION >= 106600)
-		acceptor_.async_accept(
-			[this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
-			// Check whether the server was stopped by a signal before this
-			// completion handler had a chance to run.
-			if (!acceptor_.is_open())
-			{
-				return;
-			}
-
-			if (!ec)
-			{
-				CYNG_LOG_TRACE(logger_, "accept " << socket.remote_endpoint());
-
-				//
-				//	There is no connection manager or list of open connections. 
-				//	Connections are managed by there own and are controlled
-				//	by a maintenance task.
-				//
-				std::make_shared<connection>(std::move(socket)
-					, mux_
-					, logger_
-					, cache_
-					, storage_
-					, account_
-					, pwd_
-					, accept_all_)->start();
-
-				do_accept();
-			}
-
-		});
-#else
-		acceptor_.async_accept(socket_, [=](boost::system::error_code const& ec) {
-			// Check whether the server was stopped by a signal before this
-			// completion handler had a chance to run.
-			if (acceptor_.is_open() && !ec) {
-
-				CYNG_LOG_TRACE(logger_, "accept " << socket_.remote_endpoint());
-				//
-				//	There is no connection manager or list of open connections. 
-				//	Connections are managed by there own and are controlled
-				//	by a maintenance task.
-				//
-				//std::make_shared<connection>(std::move(socket), mux_, logger_, db_)->start();
-				do_accept();
-			}
-
-			else {
-				//on_error(ec);
-				//	shutdown server
-			}
-
-		});
-#endif
+		void server::close()
+		{
+			// The server is stopped by cancelling all outstanding asynchronous
+			// operations. Once all operations have finished the io_context::run()
+			// call will exit.
+			acceptor_.cancel();
+			acceptor_.close();
+		}
 
 	}
-
-	void server::close()
-	{
-		// The server is stopped by cancelling all outstanding asynchronous
-		// operations. Once all operations have finished the io_context::run()
-		// call will exit.
-		acceptor_.close();
-	}
-
-
 }
 
 

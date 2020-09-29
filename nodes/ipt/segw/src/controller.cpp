@@ -11,6 +11,7 @@
 #include "bridge.h"
 #include "lmn.h"
 #include "server/server.h"
+#include "nms/server.h"
 #include "tasks/network.h"
 #include "tasks/connect.h"
 #include <NODE_project_info.h>
@@ -134,12 +135,22 @@ namespace node
 					cyng::param_factory("pool-size", 1)		//	no pooling for SQLite
 				))
 
-				//	on this address the gateway acts as a server
+				//	on this address the gateway acts as a SML server
 				//	configuration interface
 				, cyng::param_factory("server", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
 					cyng::param_factory("service", "7259"),
 					cyng::param_factory("discover", "5798"),	//	UDP
+					cyng::param_factory("account", "operator"),
+					cyng::param_factory("pwd", "operator"),
+					cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
+				))
+
+				//	on this address the gateway acts as a JSON server
+				//	NMS configuration interface
+				, cyng::param_factory("nms", cyng::tuple_factory(
+					cyng::param_factory("address", "0.0.0.0"),
+					cyng::param_factory("service", "7261"),
 					cyng::param_factory("account", "operator"),
 					cyng::param_factory("pwd", "operator"),
 					cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
@@ -403,25 +414,31 @@ namespace node
 		if (res_ret.second) {
 
 			//
-			//	create server
+			//	SML server runtime configuration
 			//
-			server srv(mux
+
+			//
+			//	create SML server
+			// 
+			sml::server srv(mux
 				, logger
 				, cm
 				, store
 				, account
 				, pwd
-				, accept_all);
+				, accept_all
+				, get_sml_ep(cm));
+
+			srv.run();
 
 			//
+			//	create JSON/NMS server
 			//	server runtime configuration
 			//
-			auto const address = cm.get_cfg<std::string>("server:address", "");
-			auto const service = cm.get_cfg<std::string>("server:service", "");
-
-			CYNG_LOG_INFO(logger, "listener address: " << address);
-			CYNG_LOG_INFO(logger, "listener service: " << service);
-			srv.run(address, service);
+			nms::server nms(mux.get_io_service()
+				, logger
+				, get_nms_ep(cm));
+			nms.run();
 
 			//
 			//	data I/O manager (serial and wireless data)
@@ -811,6 +828,24 @@ namespace node
 				<< std::endl;
 		}
 		return EXIT_FAILURE;
+	}
+
+	boost::asio::ip::tcp::endpoint controller::get_sml_ep(cache& cfg) const
+	{
+		auto const sml_address = cfg.get_cfg<std::string>("server:address", "");
+		auto const sml_service = cfg.get_cfg<std::string>("server:service", "");
+		auto const sml_host = cyng::make_address(sml_address);
+		const auto sml_port = static_cast<unsigned short>(std::stoi(sml_service));
+		return { sml_host, sml_port };
+	}
+
+	boost::asio::ip::tcp::endpoint controller::get_nms_ep(cache& cfg) const
+	{
+		auto const nms_address = cfg.get_cfg<std::string>("nms:address", "");
+		auto const nms_service = cfg.get_cfg<std::string>("nms:service", "");
+		auto const nms_host = cyng::make_address(nms_address);
+		const auto nms_port = static_cast<unsigned short>(std::stoi(nms_service));
+		return { nms_host, nms_port };
 	}
 
 	std::pair<std::size_t, bool> join_network(cyng::async::mux& mux

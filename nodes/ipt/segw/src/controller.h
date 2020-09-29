@@ -12,6 +12,7 @@
 
 namespace node
 {
+	class cache;
 	class controller : public ctl
 	{
 	public:
@@ -37,6 +38,10 @@ namespace node
 		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag);
 		virtual cyng::vector_t create_config(std::fstream&, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const;
 		virtual int prepare_config_db(cyng::param_map_t&&, cyng::object);
+
+	private:
+		boost::asio::ip::tcp::endpoint get_sml_ep(cache&) const;
+		boost::asio::ip::tcp::endpoint get_nms_ep(cache&) const;
 
 	};
 }

@@ -98,14 +98,14 @@ namespace node
 			cfg_wmbus wmbus(cache_);
 			cfg_rs485 rs485(cache_);
 
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_ROOT_HARDWARE_PORT, wmbus.port_idx) }, make_value(wmbus.get_port()));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_NAME, wmbus.port_idx) }, make_value(wmbus.get_port()));
 			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_DATABITS, wmbus.port_idx) }, make_value(wmbus.get_databits().value()));
 			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_PARITY, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_parity())));
 			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_FLOW_CONTROL, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_flow_control())));
 			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_STOPBITS, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_stopbits())));
 			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_SPEED, wmbus.port_idx) }, make_value(wmbus.get_baud_rate().value()));
 
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_ROOT_HARDWARE_PORT, rs485.port_idx) }, make_value(rs485.get_port()));
+			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_NAME, rs485.port_idx) }, make_value(rs485.get_port()));
 			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_DATABITS, rs485.port_idx) }, make_value(rs485.get_databits().value()));
 			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_PARITY, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_parity())));
 			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_FLOW_CONTROL, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_flow_control())));

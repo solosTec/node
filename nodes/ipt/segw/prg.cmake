@@ -98,12 +98,19 @@ set (node_ipt_segw_server
 
 	src/server/server.h
 	src/server/server.cpp	
-	src/server/connection.h
-	src/server/connection.cpp	
 	src/server/session.h
 	src/server/session.cpp	
 
 )
+
+set (node_ipt_nms_server
+
+	src/nms/server.h
+	src/nms/server.cpp	
+	src/nms/session.h
+	src/nms/session.cpp	
+)
+
 
 set (node_ipt_segw_msg
 
@@ -163,6 +170,7 @@ source_group("tasks" FILES ${node_ipt_segw_tasks})
 source_group("service" FILES ${node_ipt_segw_service})
 source_group("shared" FILES ${node_ipt_segw_shared})
 source_group("server" FILES ${node_ipt_segw_server})
+source_group("nms" FILES ${node_ipt_nms_server})
 source_group("messaging" FILES ${node_ipt_segw_msg})
 
 
@@ -174,6 +182,7 @@ set (node_ipt_segw
   ${node_ipt_segw_service}
   ${node_ipt_segw_shared}
   ${node_ipt_segw_server}
+  ${node_ipt_nms_server}
   ${node_ipt_segw_msg}
 )
 
