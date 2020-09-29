@@ -10,8 +10,6 @@
 #include "session.h"
 #include "../cache.h"
 
-//#include <cyng/object.h>
-
 namespace node
 {
 	namespace sml
@@ -34,7 +32,9 @@ namespace node
 			, accept_all_(accept_all)
 			, acceptor_(mux.get_io_service(), ep)
 			, session_counter_{ 0 }
-		{}
+		{
+			CYNG_LOG_INFO(logger_, "configured SML local endpoint " << ep);
+		}
 
 		void server::run()
 		{

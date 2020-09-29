@@ -7,6 +7,7 @@
 
 #include "server.h"
 #include "session.h"
+#include "../cache.h"
 #include <smf/cluster/generator.h>
 
 #include <cyng/vm/controller.h>
@@ -19,16 +20,22 @@ namespace node
 	{
 		server::server(cyng::io_service_t& ios
 			, cyng::logging::log_ptr logger
-			//, cyng::controller& vm
+			, cache& cfg
+			, storage& db
+			, std::string account
+			, std::string pwd
+			, bool accept_all
 			, boost::asio::ip::tcp::endpoint ep)
-			: acceptor_(ios, ep)
-			, logger_(logger)
-			//, vm_(vm)
+		: logger_(logger)
+			, cache_(cfg)
+			, storage_(db)
+			, account_(account)
+			, pwd_(pwd)
+			, accept_all_(accept_all)
+			, acceptor_(ios, ep)
 			, session_counter_{ 0 }
-			, uuid_gen_{}
 		{
-			CYNG_LOG_INFO(logger_, "configured local endpoint " << ep);
-
+			CYNG_LOG_INFO(logger_, "configured NSM local endpoint " << ep);
 		}
 
 		void server::run()
@@ -51,8 +58,7 @@ namespace node
 					{
 						CYNG_LOG_TRACE(logger_, "start NMS session at " << socket.remote_endpoint());
 
-						auto const tag = uuid_gen_();
-						auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_), [this, tag](session* s) {
+						auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_), [this](session* s) {
 
 							//
 							//	update session counter

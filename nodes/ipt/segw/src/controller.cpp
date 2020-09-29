@@ -352,7 +352,7 @@ namespace node
 		//	setup cache manager
 		//	and initialize _Cfg table
 		//
-		cache cm(config_db, tag);
+		cache cmgr(config_db, tag);
 
 		//
 		//	setup storage manager
@@ -386,19 +386,19 @@ namespace node
 		//
 		//	setup bridge
 		//
-		bridge& br = bridge::get_instance(logger, mux, cm, store);
+		bridge& br = bridge::get_instance(logger, mux, cmgr, store);
 
 		//
 		//	read login credentials
 		//
-		auto const account = cm.get_cfg<std::string>("server:account", "");
-		auto const pwd = cm.get_cfg<std::string>("server:pwd", "");
+		auto const account = cmgr.get_cfg<std::string>("server:account", "");
+		auto const pwd = cmgr.get_cfg<std::string>("server:pwd", "");
 
 		//
 		//	"accept-all-ids" will never change during the session lifetime.
 		//	Changes require a reboot.
 		//
-		auto const accept_all = cm.get_cfg("server:accept-all-ids", false);
+		auto const accept_all = cmgr.get_cfg("server:accept-all-ids", false);
 
 		//
 		//	connect to ipt master
@@ -422,12 +422,12 @@ namespace node
 			// 
 			sml::server srv(mux
 				, logger
-				, cm
+				, cmgr
 				, store
 				, account
 				, pwd
 				, accept_all
-				, get_sml_ep(cm));
+				, get_sml_ep(cmgr));
 
 			srv.run();
 
@@ -437,13 +437,18 @@ namespace node
 			//
 			nms::server nms(mux.get_io_service()
 				, logger
-				, get_nms_ep(cm));
+				, cmgr
+				, store
+				, account
+				, pwd
+				, accept_all
+				, get_nms_ep(cmgr));
 			nms.run();
 
 			//
 			//	data I/O manager (serial and wireless data)
 			//
-			lmn io(mux, logger, cm, uidgen_());
+			lmn io(mux, logger, cmgr, uidgen_());
 			io.start();	//	open serial and wireless communication ports
 
 			//
@@ -833,7 +838,7 @@ namespace node
 	boost::asio::ip::tcp::endpoint controller::get_sml_ep(cache& cfg) const
 	{
 		auto const sml_address = cfg.get_cfg<std::string>("server:address", "");
-		auto const sml_service = cfg.get_cfg<std::string>("server:service", "");
+		auto const sml_service = cfg.get_cfg<std::string>("server:service", "7259");
 		auto const sml_host = cyng::make_address(sml_address);
 		const auto sml_port = static_cast<unsigned short>(std::stoi(sml_service));
 		return { sml_host, sml_port };
@@ -842,7 +847,7 @@ namespace node
 	boost::asio::ip::tcp::endpoint controller::get_nms_ep(cache& cfg) const
 	{
 		auto const nms_address = cfg.get_cfg<std::string>("nms:address", "");
-		auto const nms_service = cfg.get_cfg<std::string>("nms:service", "");
+		auto const nms_service = cfg.get_cfg<std::string>("nms:service", "7261");
 		auto const nms_host = cyng::make_address(nms_address);
 		const auto nms_port = static_cast<unsigned short>(std::stoi(nms_service));
 		return { nms_host, nms_port };

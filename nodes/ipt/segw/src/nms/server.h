@@ -12,10 +12,10 @@
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller_fwd.h>
 
-#include <boost/uuid/uuid_generators.hpp>
-
 namespace node
 {
+	class cache;
+	class storage;
 	namespace nms
 	{
 		class server
@@ -23,7 +23,11 @@ namespace node
 		public:
 			server(cyng::io_service_t&
 				, cyng::logging::log_ptr
-				//, cyng::controller&
+				, cache& cfg
+				, storage& db
+				, std::string account
+				, std::string pwd
+				, bool accept_all
 				, boost::asio::ip::tcp::endpoint ep);
 
 		public:
@@ -34,11 +38,28 @@ namespace node
 			void do_accept();
 
 		private:
-			boost::asio::ip::tcp::acceptor acceptor_;
 			cyng::logging::log_ptr logger_;
-			//cyng::controller& vm_;
+
+			/**
+			 * configuration cache
+			 */
+			cache& cache_;
+
+			/**
+			 * SQL database
+			 */
+			storage& storage_;
+
+			/**
+			 * credentials
+			 */
+			std::string const account_;
+			std::string const pwd_;
+
+			bool const accept_all_;
+
+			boost::asio::ip::tcp::acceptor acceptor_;
 			std::uint64_t session_counter_;
-			boost::uuids::random_generator uuid_gen_;
 		};
 	}
 }
