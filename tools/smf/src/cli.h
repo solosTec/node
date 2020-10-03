@@ -12,6 +12,7 @@
 #include "plugins/convert.h"
 #include "plugins/tracking.h"
 #include "plugins/cleanup-v4.h"
+#include "plugins/send.h"
 #include <cyng/compatibility/io_service.h>
 
 namespace node
@@ -21,6 +22,8 @@ namespace node
 		friend class convert;
 		friend class tracking;
 		friend class cleanup;
+		friend class send;
+
 	public:
 		cli(cyng::io_service_t&, boost::uuids::uuid, std::ostream&, std::istream&);
 		virtual ~cli();
@@ -36,6 +39,7 @@ namespace node
 		convert		plugin_convert_;
 		tracking	plugin_tracking_;
 		cleanup		plugin_cleanup_;
+		send		plugin_send_;
 	};
 }
 

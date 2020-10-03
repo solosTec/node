@@ -27,8 +27,7 @@ namespace node
 		, status_(status::INITIAL)
 		, data_()
 		, af_(cyng::filesystem::current_path() / "project-tracking.csv")
-	{
-		
+	{		
 		cli_.vm_.register_function("tracking", 1, std::bind(&tracking::cmd, this, std::placeholders::_1));
 	}
 
@@ -93,14 +92,14 @@ namespace node
 		}
 		else if (boost::algorithm::equals(cmd, "help")) {
 			std::cout 
-				<< "help\t\tprint this page" << std::endl
+				<< "help\tprint this page" << std::endl
 				<< "init\t\tinitialize tracking file" << std::endl
 				<< "list\t\tlist all entries" << std::endl
 				<< "status\t\tshow status" << std::endl
 				<< "ammed\t\tchange current or last entry" << std::endl
-				<< "load [file]\t\tload the specified file" << std::endl
+				<< "load [file]\tload the specified file" << std::endl
 				<< "flush\t\tsave current state to file" << std::endl
-				<< "start [comment]\t\tstart a new entry" << std::endl
+				<< "start [comment]\tstart a new entry" << std::endl
 				<< "stop\t\tstop running item" << std::endl
 				;
 		}

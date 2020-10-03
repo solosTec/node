@@ -45,6 +45,8 @@ set (tool_smf_plugin
 	src/plugins/tracking.cpp
 	src/plugins/cleanup-v4.h
 	src/plugins/cleanup-v4.cpp
+	src/plugins/send.h
+	src/plugins/send.cpp
 )
 
 source_group("shared" FILES ${tool_smf_shared})

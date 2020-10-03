@@ -25,6 +25,8 @@
 #include <numeric>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace node
 {
@@ -51,9 +53,10 @@ namespace node
 					<< "ip\t\tlist network configuration" << std::endl
 					<< "ls\t\tlist file system" << std::endl
 					<< "pwd [N]\t\tgenerate a password of length N" << std::endl
+					<< "uuid\t\tgenerate a UUIDv4" << std::endl
 					<< "convert\t\toffers some file conversions" << std::endl
 					<< "tracking\tkeep a track of your time" << std::endl
-					<< "cleanup\tanalyse log files to find inactive devices" << std::endl
+					<< "cleanup\t\tanalyse log files to find inactive devices" << std::endl
 					;
 			}
 			else {
@@ -159,6 +162,14 @@ namespace node
 					<< pwd(cyng::numeric_cast<std::uint32_t>(frame.at(0), 8))
 					;
 			}
+		});
+
+		vm_.register_function("uuid", 0, [this](cyng::context& ctx) {
+			//auto const frame = ctx.get_frame();
+			static boost::uuids::random_generator gen;	//	UUID generator
+			out_
+				<< gen()
+				;
 		});
 
 		vm_.register_function("run", 1, [this](cyng::context& ctx) {

@@ -21,6 +21,7 @@ namespace node
 		, plugin_convert_(this)
 		, plugin_tracking_(this)
 		, plugin_cleanup_(this)
+		, plugin_send_(this)
 	{
 	}
 
