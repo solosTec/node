@@ -13,6 +13,7 @@
 #include "plugins/tracking.h"
 #include "plugins/cleanup-v4.h"
 #include "plugins/send.h"
+#include "plugins/join.h"
 #include <cyng/compatibility/io_service.h>
 
 namespace node
@@ -23,9 +24,15 @@ namespace node
 		friend class tracking;
 		friend class cleanup;
 		friend class send;
+		friend class join;
 
 	public:
-		cli(cyng::io_service_t&, boost::uuids::uuid, std::ostream&, std::istream&);
+		cli(cyng::async::mux&
+			, cyng::logging::log_ptr logger
+			, boost::uuids::uuid
+			, cluster_config_t const& cfg
+			, std::ostream&
+			, std::istream&);
 		virtual ~cli();
 
 		int run();
@@ -40,6 +47,7 @@ namespace node
 		tracking	plugin_tracking_;
 		cleanup		plugin_cleanup_;
 		send		plugin_send_;
+		join		plugin_join_;
 	};
 }
 

@@ -31,6 +31,8 @@ namespace node
 		void flush(std::string);
 		void stop();
 		void status();
+		void report_monthly();
+		void report_daily();
 
 		std::string get_filename(std::size_t, cyng::vector_t const&);
 
@@ -47,6 +49,10 @@ namespace node
 
 	std::string get_parameter(std::size_t, cyng::vector_t const&, std::string);
 	cyng::tuple_t create_record(std::string);
+	/**
+	 * @return path with extension ".csv" if missing
+	 */
+	cyng::filesystem::path get_path(std::string);
 }
 
 #endif	

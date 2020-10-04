@@ -14,6 +14,11 @@
 namespace node
 {
 	class cli;
+	/**
+	 * cleanup is an attempt to automate all steps necessarey to find unused
+	 * e350 devices from the log files and to generate a script remove this
+	 * devices.
+	 */
 	class cleanup
 	{
 	public:

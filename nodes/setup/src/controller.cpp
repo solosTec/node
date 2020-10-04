@@ -35,7 +35,7 @@ namespace node
 		, boost::uuids::uuid cluster_tag
 		, cyng::store::db&
 		, std::size_t
-		, cyng::vector_t const&);
+		, cyng::vector_t&&);
 
 	std::size_t connect_data_store(cyng::async::mux&, cyng::logging::log_ptr, cyng::store::db&, std::string, cyng::tuple_t);
 
@@ -174,13 +174,12 @@ namespace node
 		//
 		//	connect to cluster
 		//
-		cyng::vector_t tmp;
 		join_cluster(mux
 			, logger
 			, tag
 			, cache_
 			, storage_task
-			, cyng::value_cast(cfg.get("cluster"), tmp));
+			, cyng::to_vector(cfg.get("cluster")));
 
 		//
 		//	wait for system signals
@@ -194,7 +193,7 @@ namespace node
 		, boost::uuids::uuid cluster_tag
 		, cyng::store::db& cache
 		, std::size_t tsk
-		, cyng::vector_t const& cfg)
+		, cyng::vector_t&& cfg)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg.size());
 

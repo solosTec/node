@@ -47,6 +47,8 @@ set (tool_smf_plugin
 	src/plugins/cleanup-v4.cpp
 	src/plugins/send.h
 	src/plugins/send.cpp
+	src/plugins/join.h
+	src/plugins/join.cpp
 )
 
 source_group("shared" FILES ${tool_smf_shared})

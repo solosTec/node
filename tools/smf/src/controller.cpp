@@ -14,6 +14,7 @@
 #include <cyng/dom/reader.h>
 #include <cyng/dom/tree_walker.h>
 #include <cyng/value_cast.hpp>
+#include <cyng/set_cast.h>
 #include <cyng/async/mux.h>
 
 #include <boost/uuid/uuid_io.hpp>
@@ -33,6 +34,8 @@ namespace node
 
 	cyng::vector_t controller::create_config(std::fstream& fout, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
 	{	
+		cyng::crypto::rnd_num<int> rng(10, 60);
+
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
@@ -48,12 +51,21 @@ namespace node
 					cyng::param_factory("auto-save", 120)	//	seconds
 				))
 
-				, cyng::param_factory("cluster", cyng::tuple_factory(
+				, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
+					cyng::param_factory("host", "127.0.0.1"),
+					cyng::param_factory("service", "7701"),
 					cyng::param_factory("account", "root"),
 					cyng::param_factory("pwd", NODE_PWD),
 					cyng::param_factory("salt", NODE_SALT),
-					cyng::param_factory("monitor", 57)	//	seconds
-				))
+					cyng::param_factory("monitor", rng())	//	seconds
+				)}))
+
+				//, cyng::param_factory("cluster", cyng::tuple_factory(
+				//	cyng::param_factory("account", "root"),
+				//	cyng::param_factory("pwd", NODE_PWD),
+				//	cyng::param_factory("salt", NODE_SALT),
+				//	cyng::param_factory("monitor", 57)	//	seconds
+				//))
 			)
 		});
 	}
@@ -64,13 +76,12 @@ namespace node
 		auto const country_code = cyng::value_cast<std::string>(cfg.get("country-code"), "CH");
 		auto const language_code = cyng::value_cast<std::string>(cfg.get("language-code"), "EN");
 
-		cli term(mux.get_io_service(), tag, std::cout, std::cin);
+		auto const vec = cyng::to_vector(cfg.get("cluster"));
+
+		cli term(mux, logger, tag, load_cluster_cfg(vec), std::cout, std::cin);
 		term.run();
 		
 		bool const shutdown{ true };
-		//while (!shutdown) {
-
-		//}
 		return shutdown;
 	}		
 }

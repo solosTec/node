@@ -57,6 +57,7 @@ namespace node
 					<< "convert\t\toffers some file conversions" << std::endl
 					<< "tracking\tkeep a track of your time" << std::endl
 					<< "cleanup\t\tanalyse log files to find inactive devices" << std::endl
+					<< "join\t\tjoin cluster and monitor data" << std::endl
 					;
 			}
 			else {

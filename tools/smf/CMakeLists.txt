@@ -13,6 +13,7 @@ target_link_libraries(smf
 	smf_info 
 	smf_protocol_sml 
 	smf_protocol_mbus 
+	smf_cluster
 	${CYNG_LIBRARIES} 
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_LIBRARIES};pthread;readline>"

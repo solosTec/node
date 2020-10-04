@@ -11,18 +11,26 @@
 #include <cyng/util/split.h>
 #include <cyng/vm/generator.h>
 #include <cyng/io/serializer.h>
+#include <cyng/vm/domain/log_domain.h>
 
 #include <boost/algorithm/string.hpp>
 
 namespace node
 {
-	cli::cli(cyng::io_service_t& ios, boost::uuids::uuid tag, std::ostream& out, std::istream& in)
-		: console(ios, tag, out, in)
+	cli::cli(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid tag
+		, cluster_config_t const& cfg
+		, std::ostream& out
+		, std::istream& in)
+	: console(mux.get_io_service(), tag, out, in)
 		, plugin_convert_(this)
 		, plugin_tracking_(this)
 		, plugin_cleanup_(this)
 		, plugin_send_(this)
+		, plugin_join_(this, mux, logger, tag, cfg)
 	{
+		cyng::register_logger(logger, vm_);
 	}
 
 	cli::~cli()
