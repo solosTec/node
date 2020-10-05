@@ -11,6 +11,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/rnd.h>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/sys/process.h>
 
 #include <boost/predef.h>	//	requires Boost 1.55
 #if BOOST_OS_LINUX
@@ -57,7 +58,7 @@ namespace node
 					<< "convert\t\toffers some file conversions" << std::endl
 					<< "tracking\tkeep a track of your time" << std::endl
 					<< "cleanup\t\tanalyse log files to find inactive devices" << std::endl
-					<< "join\t\tjoin cluster and monitor data" << std::endl
+					<< "cluster\t\tjoin cluster and monitor data" << std::endl
 					;
 			}
 			else {
@@ -166,12 +167,19 @@ namespace node
 		});
 
 		vm_.register_function("uuid", 0, [this](cyng::context& ctx) {
-			//auto const frame = ctx.get_frame();
 			static boost::uuids::random_generator gen;	//	UUID generator
 			out_
 				<< gen()
+				<< std::endl
 				;
 		});
+
+		vm_.register_function("pid", 0, [this](cyng::context& ctx) {
+			out_
+				<< cyng::sys::get_process_id()
+				<< std::endl
+				;
+			});
 
 		vm_.register_function("run", 1, [this](cyng::context& ctx) {
 			auto const frame = ctx.get_frame();
@@ -448,19 +456,6 @@ namespace node
 
 		return true;
 	}
-
-	//bool console::cmd_echo(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
-	//{
-	//	for (; pos != end; ++pos)
-	//	{
-	//		out_
-	//			<< cyng::io::to_str(*pos)
-	//			<< ' '
-	//			;
-	//	}
-	//	out_ << std::endl;
-	//	return true;
-	//}
 
 	bool console::cmd_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end)
 	{

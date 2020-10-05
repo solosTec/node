@@ -900,9 +900,10 @@ namespace node
 			//
 			auto const svec = cyng::split(gpio_vector, " ");
 			for (auto const& s : svec) {
+				auto const p = cyng::filesystem::make_path(gpio_path) / ("gpio" + s);
 				auto const tid = cyng::async::start_task_detached<gpio>(mux_
 					, logger_
-					, cyng::filesystem::path(gpio_path) / ("/gpio" + s));
+					, p);
 
 				//
 				//	store task id in cache DB

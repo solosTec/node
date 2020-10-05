@@ -40,6 +40,7 @@ namespace node
 
 	protected:
 		virtual bool parse(std::string const&);
+		virtual void shutdown();
 		void call(std::string, std::vector<std::string> const&);
 
 	private:

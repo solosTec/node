@@ -51,8 +51,14 @@ set (tool_smf_plugin
 	src/plugins/join.cpp
 )
 
+set (tool_smf_tasks
+
+	src/plugins/tasks/cluster.h
+	src/plugins/tasks/cluster.cpp
+)
 source_group("shared" FILES ${tool_smf_shared})
 source_group("plugin" FILES ${tool_smf_plugin})
+source_group("tasks" FILES ${tool_smf_tasks})
 
 # define the main program
 set (tool_smf
@@ -60,5 +66,6 @@ set (tool_smf
   ${tool_smf_h}
   ${tool_smf_shared}
   ${tool_smf_plugin}
+  ${tool_smf_tasks}
 )
 

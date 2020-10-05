@@ -24,7 +24,8 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< ">");
+			<< "> "
+			<< path.generic_string());
 
 		//
 		//	turn LED off

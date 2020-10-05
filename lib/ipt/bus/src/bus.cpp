@@ -1090,6 +1090,8 @@ namespace node
 				CYNG_LOG_INFO(logger_, vm_.tag() 
 					<< " send scrambled login request: " 
 					<< rec.account_
+					<< ':'
+					<< rec.pwd_
 					<< '@'
 					<< rec.host_
 					<< ':'
@@ -1102,6 +1104,8 @@ namespace node
 				CYNG_LOG_INFO(logger_, vm_.tag()
 					<< " send public login request: "
 					<< rec.account_
+					<< ':'
+					<< rec.pwd_
 					<< '@'
 					<< rec.host_
 					<< ':'

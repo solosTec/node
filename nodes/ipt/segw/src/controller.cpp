@@ -143,6 +143,7 @@ namespace node
 					cyng::param_factory("discover", "5798"),	//	UDP
 					cyng::param_factory("account", "operator"),
 					cyng::param_factory("pwd", "operator"),
+					cyng::param_factory("enabled", true),
 					cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
 				))
 
@@ -153,6 +154,14 @@ namespace node
 					cyng::param_factory("service", "7261"),
 					cyng::param_factory("account", "operator"),
 					cyng::param_factory("pwd", "operator"),
+					cyng::param_factory("enabled", 
+#ifdef _DEBUG
+						true
+#else
+						false
+#endif
+					),
+
 					cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
 				))
 
@@ -389,7 +398,7 @@ namespace node
 		bridge& br = bridge::get_instance(logger, mux, cmgr, store);
 
 		//
-		//	read login credentials
+		//	read SML login credentials
 		//
 		auto const account = cmgr.get_cfg<std::string>("server:account", "");
 		auto const pwd = cmgr.get_cfg<std::string>("server:pwd", "");
@@ -429,7 +438,13 @@ namespace node
 				, accept_all
 				, get_sml_ep(cmgr));
 
-			srv.run();
+			if (cmgr.get_cfg("server:enabled", true)) {
+				CYNG_LOG_INFO(logger, "start SML server");
+				srv.run();
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "SML server is not enabled");
+			}
 
 			//
 			//	create JSON/NMS server
@@ -443,7 +458,14 @@ namespace node
 				, pwd
 				, accept_all
 				, get_nms_ep(cmgr));
-			nms.run();
+
+			if (cmgr.get_cfg("nms:enabled", false)) {
+				CYNG_LOG_INFO(logger, "start NMS server");
+				nms.run();
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "NMS server is not enabled");
+			}
 
 			//
 			//	data I/O manager (serial and wireless data)
@@ -457,9 +479,15 @@ namespace node
 			bool const shutdown = wait(logger);
 
 			//
-			//	close acceptor
+			//	close NMS server acceptor
 			//
-			CYNG_LOG_INFO(logger, "close acceptor");
+			CYNG_LOG_INFO(logger, "close NMS acceptor");
+			nms.close();
+
+			//
+			//	close SML server acceptor
+			//
+			CYNG_LOG_INFO(logger, "close SML acceptor");
 			srv.close();
 		
 			return shutdown;

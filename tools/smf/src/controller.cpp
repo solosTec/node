@@ -60,12 +60,6 @@ namespace node
 					cyng::param_factory("monitor", rng())	//	seconds
 				)}))
 
-				//, cyng::param_factory("cluster", cyng::tuple_factory(
-				//	cyng::param_factory("account", "root"),
-				//	cyng::param_factory("pwd", NODE_PWD),
-				//	cyng::param_factory("salt", NODE_SALT),
-				//	cyng::param_factory("monitor", 57)	//	seconds
-				//))
 			)
 		});
 	}

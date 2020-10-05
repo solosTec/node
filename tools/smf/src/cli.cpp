@@ -126,4 +126,9 @@ namespace node
 			;
 	}
 
+	void cli::shutdown()
+	{
+		plugin_join_.stop();
+	}
+
 }
