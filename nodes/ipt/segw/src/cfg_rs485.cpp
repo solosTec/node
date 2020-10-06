@@ -66,4 +66,20 @@ namespace node
 	{
 		return boost::asio::serial_port_base::character_size(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), 8u));
 	}
+
+	cfg_rs485::protocol cfg_rs485::get_protocol() const
+	{
+		auto const p = cache_.get_cfg(build_cfg_key({ "rs485", "protocol" }), "raw");
+		if (boost::algorithm::equals(p, "mbus")) {
+			return protocol::MBUS;
+		}
+		else if (boost::algorithm::equals(p, "iec")) {
+			return protocol::IEC;
+		}
+		else if (boost::algorithm::equals(p, "sml")) {
+			return protocol::SML;
+		}
+		return protocol::RAW;
+	}
+
 }

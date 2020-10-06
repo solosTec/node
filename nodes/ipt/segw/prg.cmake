@@ -88,6 +88,8 @@ set (node_ipt_segw_tasks
 	src/tasks/limiter.cpp
 	src/tasks/rs485.h
 	src/tasks/rs485.cpp
+	src/tasks/iec.h
+	src/tasks/iec.cpp
 	src/tasks/clock.h
 	src/tasks/clock.cpp
 	src/tasks/broker.h

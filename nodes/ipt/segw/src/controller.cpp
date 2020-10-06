@@ -251,6 +251,7 @@ namespace node
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 2400),		//	initial
+					cyng::param_factory("protocol", "raw"),		//	raw, mbus, iec, sml
 
 					cyng::param_factory("collector-login", true),		//	send login
 					cyng::param_factory("broker", cyng::vector_factory({
@@ -267,25 +268,42 @@ namespace node
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
 					//	IEC 62056-21
 					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str(), true),	//	active
+					cyng::param_factory(sml::OBIS_IF_1107_ACTIVE.to_str() + "-desc", "ACTIVE"),	//	active
 					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str(), 60),	//	loop timeout in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_LOOP_TIME.to_str() + "-desc", "LOOP_TIME"),	//	loop timeout in seconds
 					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str(), 3),	//	retries
+					cyng::param_factory(sml::OBIS_IF_1107_RETRIES.to_str() + "-desc", "RETRIES"),	//	retries
 					cyng::param_factory(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str(), 200),	//	min. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MIN_TIMEOUT.to_str() + "-desc", "MIN_TIMEOUT"),	//	min. timeout (milliseconds)
 					cyng::param_factory(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str(), 5000),	//	max. timeout (milliseconds)
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_TIMEOUT.to_str() + "-desc", "MAX_TIMEOUT"),	//	max. timeout (milliseconds)
 					cyng::param_factory(sml::OBIS_IF_1107_MAX_DATA_RATE.to_str(), 10240),	//	max. databytes
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_DATA_RATE.to_str() + "-desc", "MAX_DATA_RATE"),	//	max. databytes
 					cyng::param_factory(sml::OBIS_IF_1107_RS485.to_str(), true),	//	 true = RS485, false = RS232
+					cyng::param_factory(sml::OBIS_IF_1107_RS485.to_str() + "-desc", "RS485"),	//	 true = RS485, false = RS232
 					cyng::param_factory(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str(), 2),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
+					cyng::param_factory(sml::OBIS_IF_1107_PROTOCOL_MODE.to_str() + "-desc", "PROTOCOL_MODE"),	//	protocol mode 0 == A, 1 == B, 2 == C (A...E)
 					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str(), true),	//	auto activation
+					cyng::param_factory(sml::OBIS_IF_1107_AUTO_ACTIVATION.to_str() + "-desc", "AUTO_ACTIVATION"),	//	auto activation
 					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str(), 900),	//	900 sec = 15 min
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_GRID.to_str() + "-desc", "TIME_GRID"),	//	900 sec = 15 min
 					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str(), 14400),	//	14400 sec = 4 h
-					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str(), 9)	//	max. variation in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str() + "-desc", "TIME_SYNC"),	//	14400 sec = 4 h
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str(), 9),	//	max. variation in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-desc", "MAX_VARIATION")	//	max. variation in seconds
 
 				))
 				, cyng::param_factory("mbus", cyng::tuple_factory(
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_RO_INTERVAL.to_str(), 3600),	//	readout interval in seconds
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_RO_INTERVAL.to_str() + "-desc", "MBUS_RO_INTERVAL"),	//	readout interval in seconds
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_INTERVAL.to_str(), 0),	//	search interval in seconds
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_INTERVAL.to_str() + "-desc", "MBUS_SEARCH_INTERVAL"),	//	search interval in seconds
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_DEVICE.to_str(), true),	//	search device now and by restart
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_DEVICE.to_str() + "-desc", "MBUS_SEARCH_DEVICE"),	//	search device now and by restart
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_AUTO_ACTICATE.to_str(), false),	//	automatic activation of meters 
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_AUTO_ACTICATE.to_str() + "-desc", "MBUS_SEARCH_DEVICE"),	//	automatic activation of meters 
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_BITRATE.to_str(), 82),	//	used baud rates(bitmap)
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_BITRATE.to_str() + "-desc", "MBUS_BITRATE"),	//	used baud rates(bitmap)
 					cyng::param_factory("generate-profile", true)
 				))
 				, cyng::param_factory("ipt", cyng::vector_factory({
@@ -640,7 +658,7 @@ namespace node
 				auto const sub = cyng::split(vec.at(0), ":");
 
 				if (boost::algorithm::equals(vec.back(), "bool")) {
-					if (node::set_value(cyng::to_param_map(tpl), vec, boost::algorithm::equals(value, "true"))) {
+					if (node::set_value(cyng::to_param_map(tpl), sub, boost::algorithm::equals(value, "true"))) {
 						return EXIT_SUCCESS;
 					}
 					std::cout << "failed (" << value << ":bool)" << std::endl;

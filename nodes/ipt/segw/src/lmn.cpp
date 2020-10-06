@@ -18,6 +18,7 @@
 #include "tasks/parser_wmbus.h"
 #include "tasks/parser_CP210x.h"
 #include "tasks/rs485.h"
+#include "tasks/iec.h"
 #include "tasks/broker.h"
 #include "tasks/lmn_status.h"
 
@@ -346,10 +347,24 @@ namespace node
 			, status_receiver			//	receive status change
 			, cyng::make_buffer({}));	//	no initialization data
 
-		return (r.second)
-			? start_rs485_mgr(r.first, cfg.get_monitor() + std::chrono::seconds(2))
-			: r
-			;
+		if (r.second) {
+
+			switch (cfg.get_protocol()) {
+			case cfg_rs485::protocol::MBUS:
+				CYNG_LOG_INFO(logger_, cfg.get_port() << " is managed as wired M-Bus");
+				return start_rs485_mgr(r.first, cfg.get_monitor() + std::chrono::seconds(2));
+			case cfg_rs485::protocol::IEC:
+				CYNG_LOG_WARNING(logger_, "IEC protocol not supported on " << cfg.get_port());
+				return start_iec_mgr(r.first, cfg.get_monitor() + std::chrono::seconds(2));
+			case cfg_rs485::protocol::SML:
+				CYNG_LOG_WARNING(logger_, "SML protocol not supported on " << cfg.get_port());
+				break;
+			default:
+				CYNG_LOG_INFO(logger_, cfg.get_port() << " is unmanaged (raw)");
+				break;
+			}
+		}
+		return r;
 	}
 
 	std::pair<std::size_t, bool> lmn::start_rs485_mgr(std::size_t tsk, std::chrono::seconds delay)
@@ -362,6 +377,18 @@ namespace node
 			, cache_
 			, tsk);
 	}
+
+	std::pair<std::size_t, bool> lmn::start_iec_mgr(std::size_t tsk, std::chrono::seconds delay)
+	{
+		serial_port_ = tsk;
+		return cyng::async::start_task_delayed<iec>(mux_
+			, delay
+			, logger_
+			, vm_
+			, cache_
+			, tsk);
+	}
+
 
 	void lmn::wmbus_push_frame(cyng::context& ctx)
 	{

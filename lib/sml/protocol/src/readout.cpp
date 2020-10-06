@@ -783,7 +783,6 @@ namespace node
 			}
 			else if (code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x01).second	//	IP-T user name redundancy 1
 				|| code.is_matching(0x81, 0x49, 0x63, 0x3C, 0x02).second	//	IP-T user name redundancy 2
-				|| code.is_matching_5(OBIS_HARDWARE_PORT_NAME).second	//	HARDWARE_PORT_NAME
 				|| code.is_matching_5(OBIS_BROKER_SERVER).second	//	BROKER_SERVER
 				|| code.is_matching_5(OBIS_BROKER_USER).second	//	BROKER_USER
 				|| code.is_matching_5(OBIS_BROKER_PWD).second	//	BROKER_PWD

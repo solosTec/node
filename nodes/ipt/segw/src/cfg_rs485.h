@@ -24,10 +24,20 @@ namespace node
 	class cfg_rs485
 	{
 	public:
+		enum class protocol
+		{
+			RAW,
+			IEC,
+			MBUS,
+			SML
+		};
+
+	public:
 		cfg_rs485(cache&);
 
 		/**
-		 * @return "rs485:port"
+		 * NN = 2
+		 * @return "ROOT_HARDWARE_PORT:9100000001NN"
 		 */
 		std::string get_port() const;
 
@@ -37,29 +47,39 @@ namespace node
 		std::chrono::seconds get_monitor() const;
 
 		/**
-		 * @return "rs485:speed"
+		 * NN = 2
+		 * @return "ROOT_HARDWARE_PORT:9100000006NN"
 		 */
 		boost::asio::serial_port_base::baud_rate get_baud_rate() const;
 
 		/**
-		 * @return "rs485:parity"
+		 * NN = 2
+		 * @return "ROOT_HARDWARE_PORT:9100000003NN"
 		 */
 		boost::asio::serial_port_base::parity get_parity() const;
 
 		/**
-		 * @return "rs485:flow_control"
+		 * NN = 2
+		 * @return "ROOT_HARDWARE_PORT:9100000004NN"
 		 */
 		boost::asio::serial_port_base::flow_control get_flow_control() const;
 
 		/**
-		 * @return "rs485:stopbits"
+		 * NN = 2
+		 * @return "ROOT_HARDWARE_PORT:9100000005NN"
 		 */
 		boost::asio::serial_port_base::stop_bits get_stopbits() const;
 
 		/**
-		 * @return "rs485:databits"
+		 * NN = 2
+		 * @return "ROOT_HARDWARE_PORT:9100000002NN"
 		 */
 		boost::asio::serial_port_base::character_size get_databits() const;
+
+		/**
+		 * @return "rs485:protocol"
+		 */
+		protocol get_protocol() const;
 
 		static constexpr std::uint8_t port_idx = 2;
 

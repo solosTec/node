@@ -56,9 +56,14 @@ namespace node
 		std::pair<std::size_t, bool> start_lmn_port_wired(std::size_t);	//	status task
 
 		/**
-		 * Start RS485 interface manager
+		 * Start RS485 wired M-Bus interface manager
 		 */
 		std::pair<std::size_t, bool> start_rs485_mgr(std::size_t, std::chrono::seconds);
+
+		/**
+		 * Start RS485 IEC interface manager
+		 */
+		std::pair<std::size_t, bool> start_iec_mgr(std::size_t, std::chrono::seconds);
 
 		/**
 		 * Starts the wireless M-Bus receiver. This could be the wireless mBus parse

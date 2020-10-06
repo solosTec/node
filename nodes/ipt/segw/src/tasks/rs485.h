@@ -19,7 +19,8 @@ namespace node
 {
 	class cache;
 	/**
-	 * manage RS 485 interface as wired mbus protocol
+	 * Manage RS 485 interface as wired mbus protocol.
+	 * Allow to initialize a wired M-Bus, search for devices, etc
 	 */
 	class rs485
 	{
