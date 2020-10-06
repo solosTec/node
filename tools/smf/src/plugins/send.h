@@ -27,7 +27,7 @@ namespace node
 
 	private:
 		void cmd(cyng::context& ctx);
-
+		void transmit(std::string filename, std::string host, std::string port);
 	private:
 		cli& cli_;
 		//const filesystem::path inp_;

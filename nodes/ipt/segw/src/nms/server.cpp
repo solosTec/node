@@ -40,6 +40,7 @@ namespace node
 
 		void server::run()
 		{
+			CYNG_LOG_INFO(logger_, "start NMS server: " << acceptor_.local_endpoint());
 			do_accept();
 		}
 
@@ -54,6 +55,8 @@ namespace node
 			acceptor_.async_accept(
 				[this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket)
 				{
+
+
 					if (!ec)
 					{
 						CYNG_LOG_TRACE(logger_, "start NMS session at " << socket.remote_endpoint());

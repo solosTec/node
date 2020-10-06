@@ -38,6 +38,7 @@ namespace node
 
 		void server::run()
 		{
+			CYNG_LOG_INFO(logger_, "start SML server: " << acceptor_.local_endpoint());
 			do_accept();
 
 			//

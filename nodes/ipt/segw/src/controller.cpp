@@ -439,7 +439,6 @@ namespace node
 				, get_sml_ep(cmgr));
 
 			if (cmgr.get_cfg("server:enabled", true)) {
-				CYNG_LOG_INFO(logger, "start SML server");
 				srv.run();
 			}
 			else {
@@ -460,7 +459,6 @@ namespace node
 				, get_nms_ep(cmgr));
 
 			if (cmgr.get_cfg("nms:enabled", false)) {
-				CYNG_LOG_INFO(logger, "start NMS server");
 				nms.run();
 			}
 			else {

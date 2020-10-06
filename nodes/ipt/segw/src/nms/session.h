@@ -9,7 +9,7 @@
 #define NODE_SEGW_NMS_SESSION_H
 
 #include <NODE_project_info.h>
-//#include <smf/iec/parser.h>
+#include <cyng/json/json_inc_parser.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -38,7 +38,6 @@ namespace node
 		private:
 			void do_read();
 			void process_data(cyng::buffer_t&&);
-			void process_login(cyng::buffer_t&&);
 
 		private:
 			boost::asio::ip::tcp::socket socket_;
@@ -67,9 +66,9 @@ namespace node
 			std::uint64_t rx_, sx_;
 
 			/**
-			 * IEC parser
+			 * JSON parser
 			 */
-			//iec::parser parser_;
+			cyng::json::parser parser_;
 
 		};
 	}

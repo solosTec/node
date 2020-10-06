@@ -1227,8 +1227,7 @@ namespace node
 				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("server"));
 				for (auto const& obj : tpl) {
 
-					cyng::param_t param;
-					param = cyng::value_cast(obj, param);
+					auto const param = cyng::to_param(obj);
 
 					if (boost::algorithm::equals(param.first, "address")) {
 						init_config_record(s, "server:address", param.second);
@@ -1244,6 +1243,38 @@ namespace node
 					}
 					else if (boost::algorithm::equals(param.first, "pwd")) {
 						init_config_record(s, "server:pwd", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "enabled")) {
+						init_config_record(s, "server:enabled", param.second);
+					}
+				}
+			}
+
+			//
+			//	transfer server configuration
+			//	"nms"
+			//
+			{
+				//	get a tuple/list of params
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("nms"));
+				for (auto const& obj : tpl) {
+
+					auto const param = cyng::to_param(obj);
+
+					if (boost::algorithm::equals(param.first, "address")) {
+						init_config_record(s, "nms:address", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "service")) {
+						init_config_record(s, "nms:service", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "account")) {
+						init_config_record(s, "nms:account", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "pwd")) {
+						init_config_record(s, "nms:pwd", param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "enabled")) {
+						init_config_record(s, "nms:enabled", param.second);
 					}
 				}
 			}
