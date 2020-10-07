@@ -42,7 +42,7 @@ namespace node
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 			, cyng::param_factory("log-level", "INFO")
-			, cyng::param_factory("tag", uidgen_())
+			, cyng::param_factory("tag", get_random_tag())
 			, cyng::param_factory("generated", std::chrono::system_clock::now())
 			, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 
@@ -74,13 +74,13 @@ namespace node
 					cyng::param_factory("service", "9000"),
  					cyng::param_factory("account", "emitter-9000"),
  					cyng::param_factory("pwd", "to-define"),
-					cyng::param_factory("tag", uidgen_())),
+					cyng::param_factory("tag", get_random_tag())),
 				cyng::tuple_factory(
 					cyng::param_factory("address", "localhost"),
 					cyng::param_factory("service", "9001"),
  					cyng::param_factory("account", "emitter-9001"),
  					cyng::param_factory("pwd", "to-define"),
-					cyng::param_factory("tag", uidgen_()))
+					cyng::param_factory("tag", get_random_tag()))
 				}))
 			)
 		});
