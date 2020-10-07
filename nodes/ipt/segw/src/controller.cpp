@@ -103,7 +103,7 @@ namespace node
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
 				, cyng::param_factory("log-level", "INFO")
-				, cyng::param_factory("tag", uidgen_())
+				, cyng::param_factory("tag", get_random_tag())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("time-offset", r.second ? r.first : std::chrono::system_clock::now())
 				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
@@ -470,7 +470,6 @@ namespace node
 			nms::server nms(mux.get_io_service()
 				, logger
 				, cmgr
-				, store
 				, account
 				, pwd
 				, accept_all
@@ -486,7 +485,7 @@ namespace node
 			//
 			//	data I/O manager (serial and wireless data)
 			//
-			lmn io(mux, logger, cmgr, uidgen_());
+			lmn io(mux, logger, cmgr, get_random_tag());
 			io.start();	//	open serial and wireless communication ports
 
 			//
@@ -748,7 +747,7 @@ namespace node
 					, cred.at(1)	//	pwd
 					, address.at(0)		//	host
 					, address.at(1)		//	service
-					, uidgen_());		//	tag
+					, get_random_tag());		//	tag
 
 
 				std::this_thread::sleep_for(std::chrono::seconds(30));

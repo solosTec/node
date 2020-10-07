@@ -21,7 +21,9 @@
 #endif
 
 #include <cyng/compatibility/file_system.hpp>
+
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/nil_generator.hpp>
 
 namespace node
 {
@@ -297,6 +299,38 @@ namespace node
 	}
 
 #endif
+
+	boost::uuids::uuid ctl::get_random_tag() const
+	{
+		try {
+			return uidgen_();
+		}
+		catch (std::exception const& ex) {
+			boost::ignore_unused(ex);
+		}
+
+		//
+		//	use other mechanism
+		//
+		boost::uuids::uuid u;
+		int pos = 0;
+		auto const start = std::chrono::system_clock::now();
+		for (boost::uuids::uuid::iterator it = u.begin(), end = u.end(); it != end; ++it, ++pos) {
+
+			unsigned long random_value{ 0 };
+			std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now() - start;
+			if (pos == sizeof(unsigned long)) {
+				random_value = elapsed_seconds.count() * 4294967296.0;
+				pos = 0;
+			}
+
+			// static_cast gets rid of warnings of converting unsigned long to boost::uint8_t
+			*it = static_cast<boost::uuids::uuid::value_type>((random_value >> (pos * 8)) & 0xFF);
+		}
+
+		boost::uuids::detail::set_uuid_random_vv(u);
+		return u;
+	}
 
 	bool wait(cyng::logging::log_ptr logger)
 	{

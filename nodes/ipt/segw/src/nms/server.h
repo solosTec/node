@@ -15,7 +15,6 @@
 namespace node
 {
 	class cache;
-	class storage;
 	namespace nms
 	{
 		class server
@@ -24,7 +23,6 @@ namespace node
 			server(cyng::io_service_t&
 				, cyng::logging::log_ptr
 				, cache& cfg
-				, storage& db
 				, std::string account
 				, std::string pwd
 				, bool accept_all
@@ -44,11 +42,6 @@ namespace node
 			 * configuration cache
 			 */
 			cache& cache_;
-
-			/**
-			 * SQL database
-			 */
-			storage& storage_;
 
 			/**
 			 * credentials

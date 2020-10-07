@@ -12,22 +12,35 @@
 #include <cyng/json/json_inc_parser.h>
 
 #include <cyng/log.h>
-#include <cyng/async/mux.h>
-#include <cyng/vm/controller_fwd.h>
+#include <cyng/intrinsics/buffer.h>
 
 namespace node
 {
+	class cache;
 	namespace nms
 	{
+		/**
+		 * Purpose of this class is to read the incoming
+		 * JSON and execute the specified commands.
+		 */
+		class reader 
+		{
+
+		public:
+			reader(cache&);
+
+		private:
+			cache& cache_;
+		};
+
 		class session : public std::enable_shared_from_this<session>
 		{
 			using read_buffer_t = std::array<char, NODE::PREFERRED_BUFFER_SIZE>;
 
 		public:
 			session(boost::asio::ip::tcp::socket socket
-				, cyng::logging::log_ptr);
-				//, cyng::controller&
-				//, cyng::controller&);
+				, cyng::logging::log_ptr
+				, cache&);
 			virtual ~session();
 
 			session(session const&) = delete;
@@ -42,8 +55,8 @@ namespace node
 		private:
 			boost::asio::ip::tcp::socket socket_;
 			cyng::logging::log_ptr logger_;
-			//cyng::controller& cluster_;	//!< cluster bus VM
-			//cyng::controller& vm_;	//!< session VM
+
+			reader reader_;
 
 			/**
 			 * Buffer for incoming data.

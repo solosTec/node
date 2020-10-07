@@ -98,6 +98,11 @@ namespace node
 		 */
 		virtual int prepare_config_db(cyng::param_map_t&&, cyng::object);
 
+		/**
+		 * generate a random UUID
+		 */
+		boost::uuids::uuid get_random_tag() const;
+
 
 	private:
 		bool pre_start(cyng::async::mux&, cyng::logging::log_ptr, cyng::object const&);
@@ -108,7 +113,9 @@ namespace node
 		unsigned int const pool_size_;
 		std::string const json_path_;
 		std::string const node_name_;
-		mutable boost::uuids::random_generator uidgen_;
+
+	private:
+		mutable boost::uuids::random_generator_mt19937 uidgen_;
 	};
 
 #if BOOST_OS_WINDOWS

@@ -21,14 +21,12 @@ namespace node
 		server::server(cyng::io_service_t& ios
 			, cyng::logging::log_ptr logger
 			, cache& cfg
-			, storage& db
 			, std::string account
 			, std::string pwd
 			, bool accept_all
 			, boost::asio::ip::tcp::endpoint ep)
 		: logger_(logger)
 			, cache_(cfg)
-			, storage_(db)
 			, account_(account)
 			, pwd_(pwd)
 			, accept_all_(accept_all)
@@ -61,7 +59,7 @@ namespace node
 					{
 						CYNG_LOG_TRACE(logger_, "start NMS session at " << socket.remote_endpoint());
 
-						auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_), [this](session* s) {
+						auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_, cache_), [this](session* s) {
 
 							//
 							//	update session counter

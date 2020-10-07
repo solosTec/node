@@ -6,6 +6,7 @@
  */
 
 #include "session.h"
+#include "../cache.h"
 #include <smf/cluster/generator.h>
 #include <smf/sml/srv_id_io.h>
 
@@ -23,9 +24,11 @@ namespace node
 	namespace nms
 	{
 		session::session(boost::asio::ip::tcp::socket socket
-			, cyng::logging::log_ptr logger)
+			, cyng::logging::log_ptr logger
+			, cache& cfg)
 		: socket_(std::move(socket))
 			, logger_(logger)
+			, reader_(cfg)
 			, buffer_()
 			, authorized_(false)
 			, data_()
@@ -116,6 +119,10 @@ namespace node
 
 
 		}
+
+		reader::reader(cache& cfg)
+			: cache_(cfg)
+		{}
 
 	}
 }
