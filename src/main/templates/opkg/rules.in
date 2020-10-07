@@ -3,7 +3,7 @@
 INSTALLDIR := /tmp/@OECP_NAME@
 
 build: build-stamp
-	make segw -j4 -C @PROJECT_BINARY_DIR@
+	@CMAKE_MAKE_PROGRAM@ segw -j4 -C @PROJECT_BINARY_DIR@
 
 build-stamp:
 	touch build-stamp
