@@ -27,9 +27,11 @@ namespace node
 		{
 
 		public:
-			reader(cache&);
+			reader(cyng::logging::log_ptr logger, cache&);
+			void run(cyng::param_map_t&&);
 
 		private:
+			cyng::logging::log_ptr logger_;
 			cache& cache_;
 		};
 

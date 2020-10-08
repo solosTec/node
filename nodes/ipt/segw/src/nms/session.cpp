@@ -18,6 +18,7 @@
 #include <cyng/util/split.h>
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
+#include <cyng/set_cast.h>
 
 namespace node
 {
@@ -28,7 +29,7 @@ namespace node
 			, cache& cfg)
 		: socket_(std::move(socket))
 			, logger_(logger)
-			, reader_(cfg)
+			, reader_(logger, cfg)
 			, buffer_()
 			, authorized_(false)
 			, data_()
@@ -36,6 +37,9 @@ namespace node
 			, sx_(0)
 			, parser_([&](cyng::vector_t&& data) {
 				CYNG_LOG_TRACE(logger_, cyng::io::to_str(data));
+				for (auto const& obj : data) {
+					reader_.run(cyng::to_param_map(obj));
+				}
 			})
 		{
 			CYNG_LOG_INFO(logger_, "new session ["
@@ -120,9 +124,15 @@ namespace node
 
 		}
 
-		reader::reader(cache& cfg)
-			: cache_(cfg)
+		reader::reader(cyng::logging::log_ptr logger, cache& cfg)
+			: logger_(logger)
+			, cache_(cfg)
 		{}
+
+		void reader::run(cyng::param_map_t&& pm)
+		{
+			CYNG_LOG_DEBUG(logger_, "NMS request: " << cyng::io::to_type(pm));
+		}
 
 	}
 }
