@@ -5,15 +5,15 @@
  *
  */
 
-#ifndef NODE_DASH_TASK_CLUSTER_H
-#define NODE_DASH_TASK_CLUSTER_H
+#ifndef NODE_DASHS_TASK_CLUSTER_H
+#define NODE_DASHS_TASK_CLUSTER_H
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
-#include "../../../shared/src/dispatcher.h"
-#include "../../../shared/src/sync_db.h"
-#include "../../../shared/src/forwarder.h"
-#include "../../../shared/src/form_data.h"
+#include <dispatcher.h>
+#include <sync_db.h>
+#include <forwarder.h>
+#include <form_data.h>
 #include <smf/https/srv/server.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -37,6 +37,7 @@ namespace node
 	public:
 		cluster(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
+			, boost::uuids::uuid cluster_tag
 			, boost::asio::ssl::context& ctx
 			, cluster_config_t const& cfg_cls
 			, boost::asio::ip::tcp::endpoint
@@ -45,7 +46,8 @@ namespace node
 			, std::string const& doc_root
 			, std::string const& nickname
 			, auth_dirs const& ad
-			, std::set<boost::asio::ip::address> const&
+			, std::string const& oui
+			, std::set<boost::asio::ip::address> const& blocklist
 			, std::map<std::string, std::string> const& redirects);
 		cyng::continuation run();
 		void stop(bool shutdown);

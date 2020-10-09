@@ -56,7 +56,7 @@ namespace node
 					<< "pwd [N]\t\tgenerate a password of length N" << std::endl
 					<< "uuid\t\tgenerate a UUIDv4" << std::endl
 					<< "pid\t\tprint process ID" << std::endl
-					<< "convert\t\toffers some file conversions" << std::endl
+					<< "csv\t\toffers some file conversions" << std::endl
 					<< "tracking\tkeep a track of your time" << std::endl
 					<< "cleanup\t\tanalyse log files to find inactive devices" << std::endl
 					<< "cluster\t\tjoin cluster and monitor data" << std::endl

@@ -19,6 +19,7 @@
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
 #include <cyng/set_cast.h>
+#include <cyng/dom/reader.h>
 
 namespace node
 {
@@ -40,6 +41,7 @@ namespace node
 				for (auto const& obj : data) {
 					reader_.run(cyng::to_param_map(obj));
 				}
+
 			})
 		{
 			CYNG_LOG_INFO(logger_, "new session ["
@@ -132,6 +134,39 @@ namespace node
 		void reader::run(cyng::param_map_t&& pm)
 		{
 			CYNG_LOG_DEBUG(logger_, "NMS request: " << cyng::io::to_type(pm));
+
+			//
+			//	read request and execute commands
+			//
+			auto const dom = cyng::make_reader(pm);
+			auto const cmd = cyng::value_cast<std::string>(dom.get("command"), "");
+			if (boost::algorithm::equals(cmd, "delete")) {
+
+			}
+			else if (boost::algorithm::equals(cmd, "insert")) {
+
+			}
+			else if (boost::algorithm::equals(cmd, "merge")) {
+
+			}
+			else if (boost::algorithm::equals(cmd, "query")) {
+
+			}
+			else if (boost::algorithm::equals(cmd, "update")) {
+
+			}
+			else if (boost::algorithm::equals(cmd, "reboot")) {
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "unknown NMS command: " << cmd);
+
+			}
+
+			//
+			//	send response
+			//
+
 		}
 
 	}

@@ -116,6 +116,12 @@ namespace node
 		 */
 		cyng::buffer_t to_gateway_srv_id(cyng::mac48);
 
+		/**
+		 * server ID expected (starting with 0x05)
+		 */
+		cyng::mac48 to_mac48(cyng::buffer_t const&);
+		cyng::mac48 to_mac48(std::string const&);
+
 	}	//	sml
 }	//	node
 

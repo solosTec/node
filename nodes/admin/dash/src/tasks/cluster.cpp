@@ -6,8 +6,10 @@
  */
 
 #include "cluster.h"
-#include "system.h"
-#include "../../../shared/src/tables.h"
+#include <tasks/system.h>
+#include <tasks/oui.h>
+
+#include <tables.h>
 #include <smf/cluster/generator.h>
 
 #include <cyng/async/task/task_builder.hpp>
@@ -45,6 +47,7 @@ namespace node
 		, auth_dirs const& ad
 #endif
 		, std::set<boost::asio::ip::address> const& blocklist
+		, std::string const& oui_file
 		, std::map<std::string, std::string> const& redirects_specific
 		, std::map<std::string, std::string> const& redirects_generic
 		, bool https_rewrite)
@@ -86,6 +89,11 @@ namespace node
 		//	init cache
 		//
 		create_cache(logger_, cache_);
+
+		//
+		//	load oui
+		//
+		cyng::async::start_task_detached<oui>(base_.mux_, logger_, cache_, oui_file, cluster_tag);
 
 		//
 		//	handle form data

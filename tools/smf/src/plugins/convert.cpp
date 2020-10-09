@@ -18,21 +18,65 @@
 #include <cyng/util/split.h>
 #include <cyng/parser/chrono_parser.h>
 #include <cyng/parser/buffer_parser.h>
+#include <cyng/set_cast.h>
 
 #include <boost/algorithm/string.hpp>
 
 namespace node
 {
-	convert::convert(cli* cp)
+	convert::convert(cli* cp, std::string const& oui)
 		: cli_(*cp)
+		, oui_(oui)
 	{
-		cli_.vm_.register_function("convert", 1, std::bind(&convert::csv_abl, this, std::placeholders::_1));
+		cli_.vm_.register_function("csv", 1, std::bind(&convert::cmd, this, std::placeholders::_1));
 	}
 
 	convert::~convert()
 	{}
 
-	void convert::csv_abl(cyng::context& ctx)
+	void convert::cmd(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		if (frame.empty()) {
+			std::cout
+				<< "syntax:"
+				<< std::endl
+				<< "<file> send filename host port"
+				<< std::endl;
+
+		}
+		else {
+			auto const cmd = cyng::value_cast<std::string>(frame.at(0), "abl");
+			if (boost::algorithm::equals(cmd, "abl")) {
+
+				auto const filename = cyng::value_cast<std::string>(frame.at(1), "D:\\installations\\EBS\\incident-sep-2019\\SK-26-0500153B018EEB-01A815155368030102.csv");
+				csv_abl(filename);
+
+			}
+			else if (boost::algorithm::equals(cmd, "oui")) {
+
+				auto const filename = cyng::value_cast<std::string>(frame.at(1), oui_.string());
+				csv_oui(filename);
+
+			}
+			else if (boost::algorithm::equals(cmd, "help")) {
+				help();
+			}
+		}
+	}
+
+	void convert::help()
+	{
+		std::cout
+			<< "csv [abl|oui] "
+			<< std::endl
+			<< "\t> abl <file-name[.csv]>"
+			<< std::endl
+			<< "\t> oui <file-name[.csv]>"
+			<< std::endl;
+	}
+
+	void convert::csv_abl(cyng::filesystem::path p)
 	{
 
 		//, cyng::param_factory("SML:ABL", cyng::tuple_factory(
@@ -44,11 +88,6 @@ namespace node
 		//	cyng::param_factory("line-ending", "DOS")	//	DOS/UNIX
 		//))
 
-		auto const frame = ctx.get_frame();
-		//out_ <<
-		//	"CONVERT " << cyng::io::to_str(frame) << std::endl;
-
-		cyng::filesystem::path const p(cyng::value_cast<std::string>(frame.at(0), "D:\\installations\\EBS\\incident-sep-2019\\SK-26-0500153B018EEB-01A815155368030102.csv"));
 		if (cyng::filesystem::exists(p)) {
 
 			if (cyng::filesystem::is_directory(p)) {
@@ -240,6 +279,93 @@ namespace node
 
 		}
 	}
+	
+	void convert::csv_oui(cyng::filesystem::path p)
+	{
+		//	Registry,Assignment,Organization Name,Organization Address
+
+		cyng::filesystem::path out = p;
+		out.replace_extension(".h");
+		std::ofstream fs(out, std::ofstream::out | std::ofstream::trunc);
+		if (fs.is_open()) {
+
+			fs
+				<< "#ifndef NODE_OUI_H"
+				<< std::endl
+				<< "#define NODE_OUI_H"
+				<< std::endl
+				<< "#include <map>"
+				<< std::endl
+				<< "#include <string>"
+				<< std::endl
+				<< "namespace node {"
+				<< std::endl
+				<< "\tstd::map<std::string, char const*> const oui = {"
+				<< std::endl
+				<< std::endl
+				;
+
+			std::size_t counter{ 0 };
+			cyng::csv::read_file(p.string(), [this, &fs, &counter](cyng::tuple_t&& tpl)->void {
+
+				if (tpl.size() == 4) {
+
+					//
+					//	skip first entry
+					//
+					if (counter != 0) {
+
+						auto pos = tpl.begin();
+						std::advance(pos, 1);
+
+						fs
+							<< "\t\t{ \""
+							<< cyng::io::to_str(*pos)
+							<< "\", \""
+							;
+						std::advance(pos, 1);
+						fs
+							<< cyng::io::to_str(*pos)
+							<< "\" },"
+							<< std::endl
+							;
+					}
+
+					++counter;
+				}
+				else {
+					cli_.out_
+						<< "***warning: invalid record: "
+						<< cyng::io::to_str(tpl)
+						<< std::endl
+						;
+				}
+
+			});
+
+			fs
+				<< "\t};"
+				<< std::endl
+				<< "\t// "
+				<< counter
+				<< " entries"
+				<< std::endl
+				<< "}"
+				<< std::endl
+				<< "#endif // NODE_OUI_H"
+				<< std::endl
+				;
+
+		}
+		else {
+			cli_.out_
+				<< "***error: cannot open "
+				<< p
+				<< std::endl
+				;
+		}
+	}
+
 	std::map<sml::obis, std::size_t> analyse_csv_header(cyng::tuple_t tpl)
 	{
 		std::map<sml::obis, std::size_t> result;
@@ -276,5 +402,6 @@ namespace node
 		}
 		return std::chrono::system_clock::now();
 	}
+
 
 }

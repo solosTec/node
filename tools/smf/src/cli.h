@@ -30,6 +30,9 @@ namespace node
 		cli(cyng::async::mux&
 			, cyng::logging::log_ptr logger
 			, boost::uuids::uuid
+			, std::string const& country_code
+			, std::string const& language_code
+			, std::string const& oui
 			, cluster_config_t const& cfg
 			, std::ostream&
 			, std::istream&);

@@ -29,8 +29,9 @@ namespace node
 	//
 	//	forward declaration(s):
 	//
-	void join_cluster(cyng::logging::log_ptr
-		, cyng::async::mux&
+	void join_cluster(cyng::async::mux& 
+		, cyng::logging::log_ptr
+		, boost::uuids::uuid cluster_tag
 		, boost::asio::ssl::context& ctx
 		, cyng::vector_t
 		, cyng::tuple_t);
@@ -68,6 +69,7 @@ namespace node
 				, cyng::param_factory("tag", get_random_tag())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+				, cyng::param_factory("oui", (cwd / "oui.csv").string())
 
 				, cyng::param_factory("server", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
@@ -163,8 +165,9 @@ namespace node
 		//
 		//	connect to cluster
 		//
-		join_cluster(logger
-			, mux
+		join_cluster(mux
+			, logger
+			, tag
 			, ctx
 			, cyng::to_vector(cfg.get("cluster"))
 			, cyng::to_tuple(cfg.get("server")));
@@ -176,8 +179,9 @@ namespace node
 	}
 
 
-	void join_cluster(cyng::logging::log_ptr logger
-		, cyng::async::mux& mux
+	void join_cluster(cyng::async::mux& mux
+		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid cluster_tag
 		, boost::asio::ssl::context& ctx
 		, cyng::vector_t cfg_cls
 		, cyng::tuple_t cfg_srv)
@@ -200,10 +204,10 @@ namespace node
 
 		cyng::error_code ec;
 		if (cyng::filesystem::exists(doc_root, ec)) {
-			CYNG_LOG_INFO(logger, "document root: " << doc_root);
+			CYNG_LOG_INFO(logger, "document root: [" << doc_root << "]");
 		}
 		else {
-			CYNG_LOG_FATAL(logger, "document root does not exists " << doc_root);
+			CYNG_LOG_FATAL(logger, "document root does not exists: [" << doc_root << "]");
 		}
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
@@ -213,6 +217,14 @@ namespace node
 		}
 		else {
 			CYNG_LOG_INFO(logger, "max-upload-size: " << cyng::bytes_to_str(max_upload_size));
+		}
+
+		auto const oui = cyng::value_cast<std::string>(dom.get("oui"), "oui.csv");
+		if (cyng::filesystem::exists(oui, ec)) {
+			CYNG_LOG_INFO(logger, "oui db: [" << oui << "]");
+		}
+		else {
+			CYNG_LOG_ERROR(logger, "oui db does not exists: [" << oui << "]");
 		}
 
 		//
@@ -270,6 +282,7 @@ namespace node
 			cyng::async::start_task_delayed<cluster>(mux
 				, std::chrono::seconds(1)
 				, logger
+				, cluster_tag
 				, ctx
 				, load_cluster_cfg(cfg_cls)
 				, boost::asio::ip::tcp::endpoint{ host, port }
@@ -278,6 +291,7 @@ namespace node
 				, doc_root
 				, nickname
 				, ad
+				, oui
 				, blocklist
 				, redirects);
 		}

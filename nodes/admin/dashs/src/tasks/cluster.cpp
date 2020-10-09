@@ -6,7 +6,8 @@
  */
 
 #include "cluster.h"
-#include "system.h"
+#include <tasks/system.h>
+#include <tasks/oui.h>
 
 #include <smf/cluster/generator.h>
 
@@ -34,6 +35,7 @@ namespace node
 {
 	cluster::cluster(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
+		, boost::uuids::uuid cluster_tag
 		, boost::asio::ssl::context& ctx
 		, cluster_config_t const& cfg_cls
 		, boost::asio::ip::tcp::endpoint ep
@@ -42,11 +44,12 @@ namespace node
 		, std::string const& doc_root
 		, std::string const& nickname
 		, auth_dirs const& ad
+		, std::string const& oui_file
 		, std::set<boost::asio::ip::address> const& blocklist
 		, std::map<std::string, std::string> const& redirects)
 	: base_(*btp)
 		, uidgen_()
-		, bus_(bus_factory(btp->mux_, logger, uidgen_(), btp->get_id()))
+		, bus_(bus_factory(btp->mux_, logger, cluster_tag, btp->get_id()))
 		, logger_(logger)
 		, config_(cfg_cls)
 		, cache_()
@@ -78,6 +81,11 @@ namespace node
 		//	init cache
 		//
 		create_cache(logger_, cache_);
+
+		//
+		//	load oui
+		//
+		cyng::async::start_task_detached<oui>(base_.mux_, logger_, cache_, oui_file, cluster_tag);
 
 		//
 		//	handle form data

@@ -12,6 +12,7 @@
 
 #include <cyng/table/meta.hpp>
 #include <cyng/io/serializer.h>
+#include <cyng/io/io_chrono.hpp>
 #include <cyng/tuple_cast.hpp>
 
 #include <boost/algorithm/string.hpp>
@@ -19,7 +20,8 @@
 
 namespace node 
 {
-	void create_cache(cyng::logging::log_ptr logger, cyng::store::db& db)
+	void create_cache(cyng::logging::log_ptr logger
+		, cyng::store::db& db)
 	{
 		CYNG_LOG_TRACE(logger, "create "
 			<< tables::list_.size()
@@ -182,6 +184,23 @@ namespace node
 		}
 
 		//
+		//	OUI contains the registered organisation names for MACs
+		//
+		if (!db.create_table(cyng::table::make_meta_table<1, 1>("_OUI",
+			{ "oui"		//	same key as in TMeter table
+			, "org"		//	[ip address] incoming/outgoing IP connection
+			},
+			{ cyng::TC_BUFFER	//	oui
+			, cyng::TC_STRING	//	organisation
+			},
+			{ 3
+			, 128	//	organisation
+			})))
+		{
+			CYNG_LOG_FATAL(logger, "cannot create table _OUI");
+		}
+
+		//
 		//	all tables created
 		//
 		CYNG_LOG_INFO(logger, db.size() << " tables created");
@@ -329,8 +348,9 @@ namespace node
 		}
 	}
 
-	db_sync::db_sync(cyng::logging::log_ptr logger, cyng::store::db& db)
-		: logger_(logger)
+	db_sync::db_sync(cyng::logging::log_ptr logger
+		, cyng::store::db& db)
+	: logger_(logger)
 		, db_(db)
 	{}
 
@@ -1065,42 +1085,51 @@ namespace node
 		, cyng::table::data_type& data)
 	{
 		bool rc{ false };
+
+		//
+		//	Additional values for TGateway
+		//
+		db.access([&](const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+
 			//
-			//	Additional values for TGateway
+			//	Gateway and Device table share the same table key
+			//	look for a session of this device
 			//
-			db.access([&](const cyng::store::table* tbl_dev, const cyng::store::table* tbl_ses) {
+			auto dev_rec = tbl_dev->lookup(key);
+			auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
 
-				//
-				//	Gateway and Device table share the same table key
-				//	look for a session of this device
-				//
-				auto dev_rec = tbl_dev->lookup(key);
-				auto ses_rec = tbl_ses->find_first(cyng::param_t("device", key.at(0)));
-
-				//
-				//	set device name
-				//	set model
-				//	set firmware
-				//	set online state
-				//
-				if (!dev_rec.empty())
-				{
-					data.push_back(dev_rec["name"]);
-					data.push_back(dev_rec["descr"]);
-					data.push_back(dev_rec["id"]);
-					data.push_back(dev_rec["vFirmware"]);
-					if (ses_rec.empty()) {
-						data.push_back(cyng::make_object(0));
-					}
-					else {
-						const auto peer = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
-						data.push_back(cyng::make_object(peer.is_nil() ? 1 : 2));
-					}
-
-					rc = true;
+			//
+			//	set device name
+			//	set model
+			//	set firmware
+			//	set online state
+			//
+			if (!dev_rec.empty())
+			{
+				data.push_back(dev_rec["name"]);
+				data.push_back(dev_rec["descr"]);
+				data.push_back(dev_rec["id"]);
+				data.push_back(dev_rec["vFirmware"]);
+				if (ses_rec.empty()) {
+					data.push_back(cyng::make_object(0));
 				}
-			}	, cyng::store::read_access("TDevice")
-				, cyng::store::read_access("_Session"));
+				else {
+					const auto peer = cyng::value_cast(ses_rec["rtag"], boost::uuids::nil_uuid());
+					data.push_back(cyng::make_object(peer.is_nil() ? 1 : 2));
+				}
+
+				rc = true;
+			}
+
+		}	, cyng::store::read_access("TDevice")
+			, cyng::store::read_access("_Session"));
+
+		//
+		//	lookup mac manufacturer (0500153B02517E)
+		//
+		//auto const srv = cyng::value_cast<std::string>(data.at(0), "");
+		//auto const m = sml::to_mac48(srv);
+		//std::string org = lookup_org(m);
 
 		return rc;
 	}

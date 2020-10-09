@@ -175,7 +175,7 @@ namespace node
 					, vec.at(1)
 					, "plain" //	login scheme
 					, cyng::param_map_factory("tp-layer", "TCP/IP")
-					("data-layer", "EN13757-4 wM-Bus")
+					("data-layer", "wM-Bus:EN13757-4")
 					("security", "public")
 					("time", std::chrono::system_clock::now())
 					("local-ep", socket_.remote_endpoint())

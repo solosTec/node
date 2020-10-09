@@ -551,9 +551,6 @@ namespace node
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
 				bus_->vm_.async_run(client_req_open_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")
 					, cyng::value_cast<std::string>(frame.at(3), "")
@@ -561,7 +558,7 @@ namespace node
 					, cyng::value_cast<std::string>(frame.at(5), "")
 					, cyng::value_cast<std::string>(frame.at(6), "")
 					, cyng::value_cast<std::uint16_t>(frame.at(7), 30)
-					, bag));
+					, cyng::param_map_factory("seq", frame.at(1))));
 			}
 			else
 			{
@@ -592,10 +589,6 @@ namespace node
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
-				cyng::param_map_t bag, options;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-
 				auto const tpl = cyng::tuple_cast<
 					boost::uuids::uuid,		//	[0] tag
 					sequence_type,			//	[1] ipt seq
@@ -608,16 +601,14 @@ namespace node
 					std::uint32_t			//	[8] target count
 				>(frame);
 
-				//auto res = cyng::value_cast<response_type>(frame.at(2), tp_res_open_push_channel_policy::UNREACHABLE);
-
 				bus_->vm_.async_run(node::client_res_open_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, 0u //	sequence
 					, tp_res_open_push_channel_policy::is_success(std::get<2>(tpl))
 					, std::get<3>(tpl)	//	channel
 					, std::get<4>(tpl)	//	source
 					, std::get<8>(tpl)	//	count
-					, options
-					, bag));
+					, cyng::param_map_factory()
+					, cyng::param_map_factory("seq", frame.at(1))));
 			}
 			else
 			{
@@ -643,13 +634,10 @@ namespace node
 			if (bus_->is_online())
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
-
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
+	
 				bus_->vm_.async_run(client_req_close_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::uint32_t>(frame.at(2), 0)
-					, bag));
+					, cyng::param_map_factory("seq", frame.at(1))));
 			}
 			else
 			{				
@@ -684,10 +672,6 @@ namespace node
 
 		void session::client_req_transmit_data_forward(cyng::context& ctx)
 		{
-			//	[client.req.transmit.data.forward,
-			//	[95a4ccf9-1171-4ff0-ad64-d06cb74da24e,8,
-			//	%(("tp-layer":ipt)),
-			//	1B1B1B1B01010101768106313830313330323133...0000001B1B1B1B1A0353AD]]
 			//
 			//	* peer
 			//	* cluster sequence
@@ -818,13 +802,10 @@ namespace node
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
 				bus_->vm_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, "TDevice.vFirmware"
 					, frame.at(2)
-					, bag));
+					, cyng::param_map_factory("seq", frame.at(1))));
 			}
 			else
 			{
@@ -849,13 +830,10 @@ namespace node
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
 				bus_->vm_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, "TDevice.id"
 					, frame.at(2)
-					, bag));
+					, cyng::param_map_factory("seq", frame.at(1))));
 			}
 			else
 			{
@@ -974,13 +952,10 @@ namespace node
 			{
 				ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
 				bus_->vm_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, "device.time"
 					, frame.at(2)
-					, bag));
+					, cyng::param_map_factory("seq", frame.at(1))));
 			}
 			else
 			{
@@ -1015,7 +990,6 @@ namespace node
 		{
 			BOOST_ASSERT(ctx.tag() == vm_.tag());
 
-			//	[068544fb-9513-4cbe-9007-c9dd9892aff6,d03ff1a5-838a-4d71-91a1-fc8880b157a6,17,true,OK,%(("tp-layer":ipt))]
 			//
 			//	* [client tag] - removed
 			//	* peer
@@ -1041,8 +1015,6 @@ namespace node
 
 		void session::client_res_open_push_channel(cyng::context& ctx)
 		{
-			//	[85058f73-a243-42a7-908c-85b3a3f29f62,01027bb4-8964-4577-938f-785f50016ebb,4,false,0,0,("channel-status": ),("packet-size":0),("response-code": ),("window-size": ),("seq"),("tp-layer":ipt)]
-			//	[bf91ae46-b6bb-493f-938a-b82789244198,4d8268fb-b21b-40fc-b3df-a85d114e4198,25,false,474ba8c4,a1e24bba,00000000,%(("channel-status":0),("packet-size":ffff),("response-code":2),("window-size":1)),%(("seq":4),("tp-layer":ipt))]
 			//
 			//	* [session tag] - removed
 			//	* peer
@@ -1093,7 +1065,6 @@ namespace node
 		}
 		void session::client_res_close_push_channel(cyng::context& ctx)
 		{
-			//	[ba2298ad-50d3-44ec-ba2f-ce35451b677d,11495a42-9fd3-4ab2-9f70-3ac6b16f4158,232,true,8c006d5f,%(("seq":4b),("tp-layer":ipt))]
 			//
 			//	* [session tag] - removed
 			//	* peer
@@ -1146,15 +1117,11 @@ namespace node
 			{
 				CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
-				auto bag = cyng::param_map_factory("tp-layer", "ipt")
-					("seq", frame.at(1))
-					("pSize", frame.at(3))
-					("wSize", frame.at(4))
-					.operator cyng::param_map_t();
-
 				bus_->vm_.async_run(client_req_register_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	target name
-					, bag));
+					, cyng::param_map_factory("seq", frame.at(1))
+					("pSize", frame.at(3))
+					("wSize", frame.at(4))));
 			}
 			else
 			{
@@ -1180,13 +1147,9 @@ namespace node
 			{
 				CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
-				auto bag = cyng::param_map_factory("tp-layer", "ipt")
-					("seq", frame.at(1))
-					.operator cyng::param_map_t();
-
 				bus_->vm_.async_run(client_req_deregister_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	target name
-					, bag));
+					, cyng::param_map_factory("seq", frame.at(1))));
 			}
 			else
 			{
@@ -1206,7 +1169,6 @@ namespace node
 
 		void session::client_res_deregister_push_target(cyng::context& ctx)
 		{
-			//	[255eaa0f-c0d6-4c6e-a1c4-576592ca371c,5,true,power@solostec,%(("response-code":1)),%(("seq":2),("tp-layer":ipt))]]
 			//
 			//	* remote peer
 			//	* cluster bus sequence
@@ -1234,7 +1196,6 @@ namespace node
 
 		void session::client_res_register_push_target(cyng::context& ctx)
 		{
-			//	[377de26e-1190-4d12-b87e-374b5a163d66,2bd281df-ba1b-43f6-9c79-f8c55f730c04,3,false,0,("response-code":2),("pSize":65535),("seq":2),("tp-layer":ipt),("wSize":1)]
 			//
 			//	* [session tag] - removed
 			//	* remote peer
@@ -1270,7 +1231,10 @@ namespace node
 
 				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	number
-					, cyng::param_map_factory("tp-layer", "ipt")("origin-tag", ctx.tag())("seq", frame.at(1))("start", std::chrono::system_clock::now())));
+					, cyng::param_map_factory("tp-layer", "ipt")
+					("origin-tag", ctx.tag())
+					("seq", frame.at(1))
+					("start", std::chrono::system_clock::now())));
 			}
             else
 			{
@@ -1288,9 +1252,6 @@ namespace node
 		void session::client_req_open_connection_forward(cyng::context& ctx)
 		{
 			//	
-			//	[205757ab-a4a2-4eec-813f-bcda41e5f6bb,9,LSMTest4,
-			//	%(("device-name":LSMTest4),("local-connect":true),("local-peer":0fb8ab36-de83-4bfc-a111-acd29370599c),("origin-tag":ecd2457f-dc36-4d87-b8f8-6b104f64aaeb),("remote-peer":0fb8ab36-de83-4bfc-a111-acd29370599c),("remote-tag":34263f4e-95fe-4fd3-a869-7bbb080ad7a9)),
-			//	%(("seq":1),("tp-layer":ipt))]]
 			//
 			//	* peer
 			//	* cluster bus sequence
@@ -1342,10 +1303,6 @@ namespace node
 			auto const frame = ctx.get_frame();
 			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
-			//	[	86e6f4a5-fb44-49cd-ac25-96677e9f2e8a,8,c439ade5-f75f-4a28-a69b-aa9e5827a1f9,false,
-			//		%(("local-connect":true),("local-peer":9462fd76-02e8-4494-ac3c-ee96e0011604)),
-			//		%(("origin-tag":c439ade5-f75f-4a28-a69b-aa9e5827a1f9),("seq":1),("start":2018-09-24 12:41:32.61626400),("tp-layer":ipt))
-			//	]
 			//
 			//	* [uuid] peer (cluster bus)
 			//	* [u64] cluster bus sequence
@@ -1406,11 +1363,6 @@ namespace node
 
 		void session::client_res_open_connection_forward(cyng::context& ctx)
 		{
-			//	[2fcae30a-04c0-4881-9e15-d090cef7bd6b
-			//	,1
-			//	,true
-			//	,%(("device-name":receiver-0000),("local-connect":true),("local-peer":21ee7236-7273-45ba-8bd0-e37c74f2afd7),("origin-tag":c5be645d-f604-40dd-a953-42cd40b590b1),("remote-peer":21ee7236-7273-45ba-8bd0-e37c74f2afd7),("remote-tag":2de96e3f-1c7c-4481-ab27-872e79d4e551))
-			//	,%(("origin-tag":c5be645d-f604-40dd-a953-42cd40b590b1),("seq":1),("start":2018-09-24 17:09:41.30037200),("tp-layer":ipt))]
 			//
 			//	* peer
 			//	* cluster sequence
@@ -1430,8 +1382,6 @@ namespace node
 
 		void session::client_res_transfer_pushdata(cyng::context& ctx)
 		{
-			//	[708758da-ab11-43dd-bc32-cbbb0e1b4b36,1274e763-c365-4898-a544-3641c3b47534,17,474ba8c4,a1e24bba,2,
-			//	%(("block":0),("seq":d8),("status":c1),("tp-layer":ipt))]
 			//
 			//	* [session tag] - removed
 			//	* peer
@@ -1443,7 +1393,6 @@ namespace node
 			auto const frame = ctx.get_frame();
 
 			auto const tpl = cyng::tuple_cast<
-				//boost::uuids::uuid,		//	[0] tag
 				boost::uuids::uuid,		//	[1] peer
 				std::uint64_t,			//	[2] cluster sequence
 				std::uint32_t,			//	[3] source
@@ -1512,10 +1461,6 @@ namespace node
 
 		void session::client_req_transfer_pushdata_forward(cyng::context& ctx)
 		{
-			//	[284afa0f-d192-47c6-870c-e65a54e276b2,eb11e1fd-de09-4de3-aa4c-e3ad4e2269e3,12,b9d09511,3895afe1,e7e1faee,
-			//	%(("block":0),("seq":47),("status":c1),("tp-layer":ipt)),
-			//	1B1B1B1B01010101760636383337316200620072...97E010163A4DC00]
-
 			//
 			//	* [session tag] - removed
 			//	* peer
@@ -1580,7 +1525,6 @@ namespace node
 
 		void session::client_res_open_connection(cyng::context& ctx)
 		{
-			//	[client.res.open.connection,[767e4b41-3df2-402e-9cbc-d20de610000a,efeb7b5d-aec7-4e91-8a1b-c88f8fd4e01d,2,false,%(("device-name":LSMTest1),("response-code":0)),%(("seq":1),("tp-layer":ipt))]]
 			//
 			//	* [session tag] - removed
 			//	* remote peer
@@ -1729,17 +1673,13 @@ namespace node
 				//
 				//ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.transfer.pushdata", frame));
 
-				auto bag = cyng::param_map_factory("tp-layer", "ipt")
-					("seq", frame.at(1))
-					("status", frame.at(4))
-					("block", frame.at(5))
-					.operator cyng::param_map_t();
-
 				bus_->vm_.async_run(client_req_transfer_pushdata(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::uint32_t>(frame.at(2), 0)
 					, cyng::value_cast<std::uint32_t>(frame.at(3), 0)
 					, frame.at(6)
-					, bag));
+					, cyng::param_map_factory("seq", frame.at(1))
+					("status", frame.at(4))
+					("block", frame.at(5))));
 			}
 			else
 			{

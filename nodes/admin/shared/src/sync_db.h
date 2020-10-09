@@ -16,11 +16,13 @@ namespace node
 {
 	void create_cache(cyng::logging::log_ptr, cyng::store::db&);
 	void clear_cache(cyng::store::db&, boost::uuids::uuid);
+	//void load_oui(cyng::logging::log_ptr, cyng::store::db&, std::string const&, boost::uuids::uuid);
 
 	class db_sync
 	{
 	public:
-		db_sync(cyng::logging::log_ptr, cyng::store::db&);
+		db_sync(cyng::logging::log_ptr
+			, cyng::store::db&);
 
 		/**
 		 * register provided functions

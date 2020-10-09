@@ -547,11 +547,12 @@ namespace node
 					, evt.pwd_	//	pwd
 					, "plain" //	login scheme
 					, cyng::param_map_factory
-						("tp-layer", "ipt")
-						("security", "public")
-						("time", std::chrono::system_clock::now())
-						("local-ep", evt.lep_)
-						("remote-ep", evt.rep_)));
+					("tp-layer", "IP-T:43863-4")
+					("data-layer", "SML")
+					("security", "public")
+					("time", std::chrono::system_clock::now())
+					("local-ep", evt.lep_)
+					("remote-ep", evt.rep_)));
 
 			}
 			else {
@@ -603,11 +604,12 @@ namespace node
 					, evt.pwd_	//	pwd
 					, "plain" //	login scheme
 					, cyng::param_map_factory
-						("tp-layer", "ipt")
-						("security", "scrambled")
-						("time", std::chrono::system_clock::now())
-						("local-ep", evt.lep_)
-						("remote-ep", evt.rep_)
+					("tp-layer", "IP-T:43863-4")
+					("data-layer", "SML")
+					("security", "scrambled")
+					("time", std::chrono::system_clock::now())
+					("local-ep", evt.lep_)
+					("remote-ep", evt.rep_)
 					));
 
 			}

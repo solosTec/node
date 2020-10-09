@@ -20,11 +20,14 @@ namespace node
 	cli::cli(cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
+		, std::string const& country_code
+		, std::string const& language_code
+		, std::string const& oui
 		, cluster_config_t const& cfg
 		, std::ostream& out
 		, std::istream& in)
 	: console(mux.get_io_service(), tag, out, in)
-		, plugin_convert_(this)
+		, plugin_convert_(this, oui)
 		, plugin_tracking_(this)
 		, plugin_cleanup_(this)
 		, plugin_send_(this)

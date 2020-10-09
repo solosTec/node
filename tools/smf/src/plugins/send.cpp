@@ -46,11 +46,7 @@ namespace node
 				transmit(filename, host, port);
 			}
 			else if (boost::algorithm::equals(cmd, "help")) {
-				std::cout
-					<< "file send filename host port"
-					<< std::endl
-					<< "\t> file send demo.txt demo.net 7564"
-					<< std::endl;
+				help();
 			}
 		}
 	}
@@ -122,6 +118,15 @@ namespace node
 		else {
 			std::cerr << "unknown file size [" << filename << "]: " << ec.message() << std::endl;
 		}
+	}
+
+	void send::help()
+	{
+		std::cout
+			<< "file send filename host port"
+			<< std::endl
+			<< "\t> file send demo.txt demo.net 7564"
+			<< std::endl;
 	}
 
 }

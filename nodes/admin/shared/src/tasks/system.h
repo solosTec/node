@@ -10,7 +10,6 @@
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
-//#include <smf/http/srv/server.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -39,8 +38,6 @@ namespace node
 		 * dummy
 		 */
 		cyng::continuation process();
-
-	private:
 
 	private:
 		cyng::async::base_task& base_;

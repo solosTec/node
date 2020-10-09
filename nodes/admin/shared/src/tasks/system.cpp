@@ -7,7 +7,6 @@
 
 #include "system.h"
 
-#include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/set_cast.h>
@@ -52,7 +51,7 @@ namespace node
 		//
 		//	measure CPU load every 4 seconds
 		//
-		base_.suspend(std::chrono::seconds(4));
+		base_.suspend(std::chrono::seconds(2));
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

@@ -1,33 +1,34 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Sylko Olzscher
+ * Copyright (c) 2020 Sylko Olzscher
  *
  */
 
-#ifndef NODE_DASH_TASK_SYSTEM_H
-#define NODE_DASH_TASK_SYSTEM_H
+#ifndef NODE_DASH_TASK_OUI_H
+#define NODE_DASH_TASK_OUI_H
 
-#include <smf/cluster/bus.h>
-#include <smf/cluster/config.h>
+//#include <smf/cluster/bus.h>
+//#include <smf/cluster/config.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
-#include <cyng/async/policy.h>
+//#include <cyng/async/policy.h>
 #include <cyng/store/db.h>
-#include <boost/uuid/random_generator.hpp>
+//#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
-	class system
+	class oui
 	{
 	public:
 		using msg_0 = std::tuple<>;
 		using signatures_t = std::tuple<msg_0>;
 
 	public:
-		system(cyng::async::base_task* bt
+		oui(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
 			, cyng::store::db&
+			, std::string file_name
 			, boost::uuids::uuid);
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -40,6 +41,8 @@ namespace node
 		cyng::continuation process();
 
 	private:
+		void load();
+		void log_progress(std::size_t counter, std::chrono::system_clock::time_point now);
 
 	private:
 		cyng::async::base_task& base_;
@@ -50,7 +53,8 @@ namespace node
 		 */
 		cyng::store::db& cache_;
 
-		const boost::uuids::uuid tag_;
+		std::string const file_name_;
+		boost::uuids::uuid const tag_;
 
 	};
 	

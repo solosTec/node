@@ -3,7 +3,7 @@ include (prg.cmake)
 add_executable(dash ${node_dash})
 target_include_directories(dash
 	PRIVATE
-		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
+		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR};${CMAKE_CURRENT_SOURCE_DIR}/shared/src>"
 		${CYNG_INCLUDE_DIRS}
 		${CRYPT_INCLUDE_DIR}
 		${BOOST_INCLUDE_DIR}
@@ -12,6 +12,7 @@ target_include_directories(dash
 target_link_libraries(dash 
 	smf_info 
 	smf_cluster
+	smf_protocol_sml
 	smf_http_srv
 	${SMF_CRYPTO_LIBRARY}
 	${CYNG_LIBRARIES} 
@@ -28,7 +29,7 @@ target_link_libraries(dash
 add_executable(dashs ${node_dashs})
 target_include_directories(dashs
 	PRIVATE
-		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
+		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR};${CMAKE_CURRENT_SOURCE_DIR}/shared/src>"
 		${CYNG_INCLUDE_DIRS}
 		${OPENSSL_INCLUDE_DIR}
 		${CRYPT_INCLUDE_DIR}
@@ -38,6 +39,7 @@ target_include_directories(dashs
 target_link_libraries(dashs 
 	smf_info 
 	smf_cluster
+	smf_protocol_sml
 	smf_https_srv
 	${SMF_CRYPTO_LIBRARY}
 	${CYNG_LIBRARIES} 
@@ -48,3 +50,6 @@ target_link_libraries(dashs
 	"$<$<PLATFORM_ID:Windows>:odbc32.lib>"
 )
 
+configure_file (
+	"${CMAKE_CURRENT_SOURCE_DIR}/shared/assets/oui.csv"
+	"${CMAKE_CURRENT_BINARY_DIR}/oui.csv")

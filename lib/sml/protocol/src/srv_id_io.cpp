@@ -11,6 +11,7 @@
 #include <smf/sml/parser/srv_id_parser.h>
 
 #include <cyng/io/io_buffer.h>
+#include <cyng/parser/buffer_parser.h>
 
 #include <iomanip>
 #include <sstream>
@@ -382,6 +383,26 @@ namespace node
 			buffer.insert(buffer.begin(), 0x05);
 			return buffer;
 		}
+
+		cyng::mac48 to_mac48(cyng::buffer_t const& buf)
+		{
+			return ((buf.size() == 7) && (buf.front() == 0x05))
+				? cyng::mac48(buf.at(5), buf.at(4), buf.at(3), buf.at(2), buf.at(1), buf.at(0))
+				: cyng::mac48()
+				;
+		}
+
+		cyng::mac48 to_mac48(std::string const& str)
+		{
+			if ((str.size() == 14) && (str.at(0) == '0') && (str.at(1) == '5')) {
+				auto const r = cyng::parse_hex_string_safe(str);
+				if (r.second) {
+					return to_mac48(r.first);
+				}
+			}
+			return cyng::mac48();
+		}
+
 
 	}
 }

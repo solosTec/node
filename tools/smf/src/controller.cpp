@@ -45,6 +45,7 @@ namespace node
 				, cyng::param_factory("intercative", true)
 				, cyng::param_factory("country-code", "CH")
 				, cyng::param_factory("language-code", "EN")
+				, cyng::param_factory("oui", (cwd / "oui.csv").string())
 
 				, cyng::param_factory("tracking", cyng::tuple_factory(
 					cyng::param_factory("path", (cwd / "project-tracking.csv").string()),
@@ -69,10 +70,17 @@ namespace node
 		auto const intercative = cyng::value_cast(cfg.get("intercative"), true);
 		auto const country_code = cyng::value_cast<std::string>(cfg.get("country-code"), "CH");
 		auto const language_code = cyng::value_cast<std::string>(cfg.get("language-code"), "EN");
+		auto const oui = cyng::value_cast<std::string>(cfg.get("oui"), "oui.csv");
 
 		auto const vec = cyng::to_vector(cfg.get("cluster"));
 
-		cli term(mux, logger, tag, load_cluster_cfg(vec), std::cout, std::cin);
+		cli term(mux
+			, logger
+			, tag
+			, country_code
+			, language_code
+			, oui
+			, load_cluster_cfg(vec), std::cout, std::cin);
 		term.run();
 		
 		bool const shutdown{ true };

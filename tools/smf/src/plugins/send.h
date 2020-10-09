@@ -11,8 +11,6 @@
 #include <cyng/vm/context.h>
 #include <cstdint>
 #include <cyng/compatibility/file_system.hpp>
-//#include <boost/asio.hpp>
-//#include <vector>
 
 namespace node
 {
@@ -28,11 +26,10 @@ namespace node
 	private:
 		void cmd(cyng::context& ctx);
 		void transmit(std::string filename, std::string host, std::string port);
+		void help();
+
 	private:
 		cli& cli_;
-		//const filesystem::path inp_;
-		//const int verbose_;
-		//std::vector<char> buffer_;
 	};
 }
 

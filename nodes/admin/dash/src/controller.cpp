@@ -63,6 +63,7 @@ namespace node
 				, cyng::param_factory("tag", uidgen())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+				, cyng::param_factory("oui", (cwd / "oui.csv").string())
 
 				, cyng::param_factory("server", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
@@ -177,10 +178,10 @@ namespace node
 
 		cyng::error_code ec;
 		if (cyng::filesystem::exists(doc_root, ec)) {
-			CYNG_LOG_INFO(logger, "document root: " << doc_root);
+			CYNG_LOG_INFO(logger, "document root: [" << doc_root << "]");
 		}
 		else {
-			CYNG_LOG_FATAL(logger, "document root does not exists " << doc_root);
+			CYNG_LOG_FATAL(logger, "document root does not exists: [" << doc_root << "]");
 		}
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
@@ -190,6 +191,14 @@ namespace node
 		}
 		else {
 			CYNG_LOG_INFO(logger, "max-upload-size: " << cyng::bytes_to_str(max_upload_size));
+		}
+
+		auto const oui = cyng::value_cast<std::string>(dom.get("oui"), "oui.csv");
+		if (cyng::filesystem::exists(oui, ec)) {
+			CYNG_LOG_INFO(logger, "oui db: [" << oui << "]");
+		}
+		else {
+			CYNG_LOG_ERROR(logger, "oui db does not exists: [" << oui << "]");
 		}
 
 #ifdef NODE_SSL_INSTALLED
@@ -261,6 +270,7 @@ namespace node
 			, ad
 #endif
 			, blocklist
+			, oui
 			, redirects_specific
 			, redirects_generic
 			, https_rewrite);

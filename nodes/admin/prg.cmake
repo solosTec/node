@@ -17,8 +17,6 @@ set (node_dash_h
 set (node_dash_tasks
 	dash/src/tasks/cluster.h
 	dash/src/tasks/cluster.cpp
-	dash/src/tasks/system.h
-	dash/src/tasks/system.cpp
 )
 
 set (node_admin_shared
@@ -34,6 +32,7 @@ set (node_admin_shared
 	shared/src/tables.h
 	shared/src/tables.cpp
 
+
 	${CMAKE_BINARY_DIR}/${PROJECT_NAME}_project_info.h
 
 	${CMAKE_SOURCE_DIR}/nodes/print_build_info.h
@@ -43,12 +42,20 @@ set (node_admin_shared
 
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
 
+	shared/src/tasks/system.h
+	shared/src/tasks/system.cpp
+	shared/src/tasks/oui.h
+	shared/src/tasks/oui.cpp
+
 )
 
 set (node_schemes
 
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/db_schemes.h
 	${CMAKE_SOURCE_DIR}/nodes/shared/db/db_schemes.cpp
+
+#	shared/src/oui.h
+
 )
 	
 if(WIN32)
@@ -64,6 +71,7 @@ if(WIN32)
 		${CMAKE_BINARY_DIR}/dash.rc 
 		${CMAKE_SOURCE_DIR}/src/main/resources/logo.ico
 		templates/dash.exe.manifest
+		${CMAKE_CURRENT_SOURCE_DIR}/shared/assets/oui.csv
 	)
 
 else()
@@ -72,6 +80,11 @@ else()
 		templates/dash.service.in
 		templates/dash.linux.cgf.in
 	)
+
+ 	set (node_dash_res
+		${CMAKE_CURRENT_SOURCE_DIR}/shared/assets/oui.csv
+	)
+
 
 endif()
 
@@ -122,8 +135,6 @@ set (node_dashs_h
 set (node_dashs_tasks
 	dashs/src/tasks/cluster.h
 	dashs/src/tasks/cluster.cpp
-	dashs/src/tasks/system.h
-	dashs/src/tasks/system.cpp
 )
 
 set (node_dashs_schemes
