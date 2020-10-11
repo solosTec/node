@@ -321,7 +321,7 @@ namespace node
 
 			//
 			//	data mirror - list of OBIS codes
-			//	81 81 C7 8A 23 FF - DATA_COLLECTOR_OBIS
+			//	81 81 C7 8A 23 FF - DATA_COLLECTOR_REGISTER
 			//	select hex(serverID), nr, reg, gen, hex(code), active from TDataMirror;
 			//
 			cyng::table::make_meta_table_gen<3, 2>("TDataMirror",
@@ -554,7 +554,7 @@ namespace node
 							insert_priv(stmt, 1u, srv_id, sml::OBIS_FTP_UPDATE, 7u);
 
 #ifdef _DEBUG
-							insert_priv(stmt, 1u, cyng::make_buffer({ 0x01, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e }), sml::OBIS_DATA_COLLECTOR_OBIS, 7u);
+							insert_priv(stmt, 1u, cyng::make_buffer({ 0x01, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e }), sml::OBIS_DATA_COLLECTOR_REGISTER, 7u);
 #endif
 							stmt->close();
 						}

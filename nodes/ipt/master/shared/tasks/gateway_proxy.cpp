@@ -355,6 +355,25 @@ namespace node
 						, transform_broker_hw_params(logger_, params)));
 
 				}
+				else if (sml::OBIS_ROOT_DATA_COLLECTOR == root) {
+
+					CYNG_LOG_DEBUG(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> ROOT_DATA_COLLECTOR: "
+						<< cyng::io::to_type(params));
+
+					bus_->vm_.async_run(bus_res_com_sml(pos->second.get_tag_ident()
+						, pos->second.get_tag_source()
+						, pos->second.get_sequence()
+						, pos->second.get_key_gw()
+						, pos->second.get_tag_origin()
+						, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
+						, srv_str
+						, transform_to_str_vector(path, false)	//	vector of string
+						, transform_data_collector_params(logger_, params)));
+				}
 				else {
 
 					CYNG_LOG_TRACE(logger_, "task #"
@@ -760,6 +779,25 @@ namespace node
 					, transform_to_str_vector(pd.get_path(), false)	//	vector of string
 					, transform_broker_hw_params(logger_, config_cache_.get_section(pd.get_path()))));
 
+			}
+			else if (sml::OBIS_ROOT_DATA_COLLECTOR == root) {
+
+				CYNG_LOG_DEBUG(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> ROOT_DATA_COLLECTOR: "
+					<< cyng::io::to_type(params));
+
+				bus_->vm_.async_run(bus_res_com_sml(tag
+					, source
+					, seq
+					, gw
+					, origin
+					, sml::messages::name(sml::message_e::GET_PROC_PARAMETER_RESPONSE)
+					, sml::from_server_id(srv_id)
+					, transform_to_str_vector(pd.get_path(), false)	//	vector of string
+					, transform_data_collector_params(logger_, config_cache_.get_section(pd.get_path()))));
 			}
 			else {
 				bus_->vm_.async_run(bus_res_com_sml(tag
@@ -2363,6 +2401,40 @@ namespace node
 
 		return result;
 	}
+
+	cyng::param_map_t transform_data_collector_params(cyng::logging::log_ptr logger, cyng::param_map_t const& collectors)
+	{
+		//	8181C78620[NN]
+		//	->	8181C78621FF
+		//	->	8181C78622FF
+		//	->	8181C78781FF
+		//	->	8181C78A23FF
+		//		-> list of registers (OBIS code 8181C78A23[NN])
+		//	->	8181C78A83FF
+
+		cyng::param_map_t result;
+
+		for (auto const& collector : collectors) {
+			auto const pm = cyng::to_param_map(collector.second);
+			cyng::param_map_t params;
+			for (auto const& entry : pm) {
+				if (boost::algorithm::equals(entry.first, sml::OBIS_DATA_COLLECTOR_REGISTER.to_str())) {
+					auto const regs = cyng::to_param_map(entry.second);
+					cyng::vector_t vec;
+					for (auto const& reg : regs) {
+						vec.push_back(reg.second);
+					}
+					params[entry.first] = cyng::make_object(vec);
+				}
+				else {
+					params[entry.first] = entry.second;
+				}
+			}
+			result[collector.first] = cyng::make_object(params);
+		}
+		return result;
+	}
+
 }
 
 #include <cyng/async/task/task.hpp>

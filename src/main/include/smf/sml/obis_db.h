@@ -107,7 +107,7 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 21, FF, PUSH_SERVICE_IPT); //	SML data response without request - typical IP - T push
 		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 22, FF, PUSH_SERVICE_SML); //	SML data response without request - target is SML client address
 		//OBIS_CODE_DEFINITION(81, 81, C7, 8A, 23, FF, PUSH_SERVICE_KNX); //	target is KNX ID
-		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 23, FF, DATA_COLLECTOR_OBIS); //	OBIS list (data mirror)
+		OBIS_CODE_DEFINITION(81, 81, C7, 8A, 23, FF, DATA_COLLECTOR_REGISTER); //	OBIS list (data mirror)
 
 
 		//

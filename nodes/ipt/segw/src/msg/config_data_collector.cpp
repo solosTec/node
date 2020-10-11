@@ -411,7 +411,7 @@ namespace node
 			//
 			//	data mirror / registers
 			//
-			auto const obj = lookup(params, OBIS_DATA_COLLECTOR_OBIS);
+			auto const obj = lookup(params, OBIS_DATA_COLLECTOR_REGISTER);
 			auto const regs = cyng::to_param_map(obj);
 			for (auto const& p : regs) {
 				obis const code(to_obis(p.first));
@@ -438,7 +438,7 @@ namespace node
 				else if (boost::algorithm::equals(param.first, OBIS_DATA_REGISTER_PERIOD.to_str())) {
 					tbl_dc->modify(key, cyng::param_t("regPeriod", param.second), source);
 				}
-				else if (boost::algorithm::equals(param.first, OBIS_DATA_COLLECTOR_OBIS.to_str())) {
+				else if (boost::algorithm::equals(param.first, OBIS_DATA_COLLECTOR_REGISTER.to_str())) {
 
 					//
 					//	update register entries / data mirror

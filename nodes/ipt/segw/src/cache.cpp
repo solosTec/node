@@ -520,7 +520,7 @@ namespace node
 
 			//
 			//	data mirror / register - list of OBIS codes
-			//	81 81 C7 8A 23 FF - DATA_COLLECTOR_OBIS
+			//	81 81 C7 8A 23 FF - DATA_COLLECTOR_REGISTER
 			//
 			cyng::table::make_meta_table<3, 2>("_DataMirror",
 			{ "serverID"	//	server/meter/sensor ID
