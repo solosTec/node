@@ -12,6 +12,7 @@
 #include "config_access.h"
 #include "config_iec.h"
 #include "config_broker.h"
+#include "config_customer_if.h"
 #include "../cache.h"
 #include "../segw.h"
 
@@ -37,7 +38,8 @@ namespace node
 			, config_security& security
 			, config_access& access
 			, config_iec& iec
-			, config_broker& broker)
+			, config_broker& broker
+			, config_customer_if& customer)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
@@ -48,6 +50,7 @@ namespace node
 			, config_access_(access)
 			, config_iec_(iec)
 			, config_broker_(broker)
+			, config_customer_if_(customer)
 		{}
 
 		void set_proc_parameter::generate_response(obis_path_t const& path
@@ -106,6 +109,9 @@ namespace node
 					break;
 				case CODE_ROOT_BROKER:
 					config_broker_.set_proc_params(path, srv_id, param.second);
+					break;
+				case CODE_ROOT_CUSTOM_INTERFACE:	//	81 02 00 07 00 FF
+					config_customer_if_.set_params(path, srv_id, param.second);
 					break;
 				default:
 					CYNG_LOG_ERROR(logger_, "sml.set.proc.parameter.request - unknown OBIS path "

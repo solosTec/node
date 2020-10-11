@@ -36,6 +36,7 @@ namespace node
 		class config_access;
 		class config_iec;
 		class config_broker;
+		class config_customer_if;
 		class get_proc_parameter
 		{
 		public:
@@ -49,7 +50,8 @@ namespace node
 				, config_security&
 				, config_access&
 				, config_iec&
-				, config_broker&);
+				, config_broker&
+				, config_customer_if&);
 
 			void generate_response(obis_path_t path
 				, std::string trx
@@ -62,9 +64,6 @@ namespace node
 			void code_root_device_ident(std::string trx, cyng::buffer_t srv_id);
 			void code_root_device_time(std::string trx, cyng::buffer_t srv_id);
 			void code_root_ntp(std::string trx, cyng::buffer_t srv_id);
-			//void code_root_access_rights(std::string trx, cyng::buffer_t srv_id);
-			void code_root_custom_interface(std::string trx, cyng::buffer_t srv_id);
-			void code_root_custom_param(std::string trx, cyng::buffer_t srv_id);
 			void code_root_wan(std::string trx, cyng::buffer_t srv_id);
 			void code_root_gsm(std::string trx, cyng::buffer_t srv_id);
 			void code_root_gprs_param(std::string trx, cyng::buffer_t srv_id);
@@ -110,6 +109,7 @@ namespace node
 			config_access& config_access_;
 			config_iec& config_iec_;
 			config_broker& config_broker_;
+			config_customer_if& config_customer_if_;
 		};
 	}	//	sml
 }

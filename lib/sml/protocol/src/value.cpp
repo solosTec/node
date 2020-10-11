@@ -110,15 +110,22 @@ namespace node
 			cyng::tuple_t factory_policy<boost::asio::ip::address>::create(boost::asio::ip::address v)
 			{
 				if (v.is_v4()) {
-					const auto ia = v.to_v4().to_uint();
-					return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::swap_num(ia));
+					return factory_policy<boost::asio::ip::address_v4>::create(v.to_v4());
 				}
 				else if (v.is_v6()) {
-					//	serialize IPv6 addresses as buffer with 16 bytes
-					const auto ia = v.to_v6().to_bytes();
-					return factory_policy<cyng::buffer_t>::create(cyng::buffer_t(ia.begin(), ia.end()));
+					return  factory_policy<boost::asio::ip::address_v6>::create(v.to_v6());
 				}
 				return cyng::tuple_t();
+			}
+			cyng::tuple_t factory_policy<boost::asio::ip::address_v4>::create(boost::asio::ip::address_v4 v)
+			{
+				const auto ia = v.to_uint();
+				return cyng::tuple_factory(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::swap_num(ia));
+			}
+			cyng::tuple_t factory_policy<boost::asio::ip::address_v6>::create(boost::asio::ip::address_v6 v)
+			{
+				const auto ia = v.to_bytes();
+				return factory_policy<cyng::buffer_t>::create(cyng::buffer_t(ia.begin(), ia.end()));
 			}
 
 			cyng::tuple_t factory_policy<cyng::crypto::aes_128_key>::create(cyng::crypto::aes_128_key v)

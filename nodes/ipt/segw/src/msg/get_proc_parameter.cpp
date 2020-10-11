@@ -13,6 +13,7 @@
 #include "config_access.h"
 #include "config_iec.h"
 #include "config_broker.h"
+#include "config_customer_if.h"
 #include "../segw.h"
 #include "../cache.h"
 #include "../storage.h"
@@ -54,7 +55,8 @@ namespace node
 			, config_security& security
 			, config_access& access
 			, config_iec& iec
-			, config_broker& broker)
+			, config_broker& broker
+			, config_customer_if& customer)
 		: logger_(logger)
 			, sml_gen_(sml_gen)
 			, cache_(cfg)
@@ -66,6 +68,7 @@ namespace node
 			, config_access_(access)
 			, config_iec_(iec)
 			, config_broker_(broker)
+			, config_customer_if_(customer)
 		{}
 
 		void get_proc_parameter::generate_response(obis_path_t path
@@ -93,10 +96,10 @@ namespace node
 				config_access_.get_proc_params(trx, srv_id, path);
 				break;
 			case CODE_ROOT_CUSTOM_INTERFACE:	//	81 02 00 07 00 FF
-				code_root_custom_interface(trx, srv_id);
+				config_customer_if_.get_proc_params(trx, srv_id);
 				break;
 			case CODE_ROOT_CUSTOM_PARAM:	//	0x8102000710FF
-				code_root_custom_param(trx, srv_id);
+				config_customer_if_.get_ip_address(trx, srv_id);
 				break;
 			case CODE_ROOT_WAN:	//	0x8104000610FF
 				code_root_wan(trx, srv_id);
@@ -253,28 +256,6 @@ namespace node
 			}
 
 			sml_gen_.append(std::move(msg));
-		}
-
-		//void get_proc_parameter::code_root_access_rights(std::string trx, cyng::buffer_t srv_id)
-		//{
-		//	//
-		//	//	ToDo: implement
-		//	//
-		//	CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_ACCESS_RIGHTS not implemented yet");
-
-		//	sml_gen_.empty(trx, srv_id, OBIS_ROOT_ACCESS_RIGHTS);
-		//}
-
-		void get_proc_parameter::code_root_custom_interface(std::string trx, cyng::buffer_t srv_id)
-		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_CUSTOM_INTERFACE not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_ROOT_CUSTOM_INTERFACE);
-		}
-
-		void get_proc_parameter::code_root_custom_param(std::string trx, cyng::buffer_t srv_id)
-		{
-			CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_CODE_ROOT_CUSTOM_PARAM not implemented yet");
-			sml_gen_.empty(trx, srv_id, OBIS_ROOT_CUSTOM_PARAM);
 		}
 
 		void get_proc_parameter::code_root_wan(std::string trx, cyng::buffer_t srv_id)

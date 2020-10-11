@@ -33,6 +33,7 @@ namespace node
 		class config_iec;
 		class res_generator;
 		class config_broker;
+		class config_customer_if;
 		class set_proc_parameter
 		{
 		public:
@@ -45,7 +46,8 @@ namespace node
 				, config_security&
 				, config_access&
 				, config_iec&
-				, config_broker&);
+				, config_broker&
+				, config_customer_if&);
 
 			void generate_response(obis_path_t const&
 				, std::string trx
@@ -87,6 +89,7 @@ namespace node
 			config_access& config_access_;
 			config_iec& config_iec_;
 			config_broker& config_broker_;
+			config_customer_if& config_customer_if_;
 		};
 	}	//	sml
 }

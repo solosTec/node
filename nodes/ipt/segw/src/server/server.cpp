@@ -93,12 +93,13 @@ namespace node
 							//
 							//	start session
 							//
-							sp->start();
+							sp->start(cache_);
 
 							//
 							//	update session counter
 							//
 							++session_counter_;
+
 						}
 
 						do_accept();

@@ -50,6 +50,7 @@ namespace node
 		, config_access_(logger, sml_gen_, cfg)
 		, config_iec_(logger, sml_gen_, cfg)
 		, config_broker_(logger, sml_gen_, cfg)
+		, config_customer_if_(logger, sml_gen_, cfg)
 		, get_proc_parameter_(logger
 			, sml_gen_
 			, cfg
@@ -60,7 +61,8 @@ namespace node
 			, config_security_
 			, config_access_
 			, config_iec_
-			, config_broker_)
+			, config_broker_
+			, config_customer_if_)
 		, set_proc_parameter_(logger
 			, sml_gen_
 			, cfg
@@ -70,7 +72,8 @@ namespace node
 			, config_security_
 			, config_access_
 			, config_iec_
-			, config_broker_)
+			, config_broker_
+			, config_customer_if_)
 		, get_profile_list_(logger, sml_gen_, cfg, db)
 		, get_list_(logger, sml_gen_, cfg, db)
 		, attention_(logger, sml_gen_, cfg)
@@ -98,7 +101,6 @@ namespace node
 		vm.register_function("sml.get.list.request", 7, std::bind(&router::sml_get_list_request, this, std::placeholders::_1));
 
 		attention_.register_this(vm);
-
 	}
 
 	router::~router()
@@ -142,18 +144,19 @@ namespace node
 		//
 		cyng::buffer_t buf = sml_gen_.boxing();
 
-#ifdef _DEBUG
+#ifdef __DEBUG
 		cyng::io::cpp_dump cd;
 		std::stringstream ss;
 		cd(ss, buf.begin(), buf.end(), "var");
 		CYNG_LOG_TRACE(logger_, "response:\n" << ss.str());
 #endif
 
-#ifdef SMF_IO_DEBUG
+#ifdef _DEBUG
+//#ifdef SMF_IO_DEBUG
 		cyng::io::hex_dump hd;
 		std::stringstream ss;
 		hd(ss, buf.begin(), buf.end());
-		CYNG_LOG_TRACE(logger_, "response:\n" << ss.str());
+		CYNG_LOG_TRACE(logger_, "response:\n" <<  ss.str());
 #endif
 
 		//

@@ -10,8 +10,10 @@
 
 #include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis.h>
+
 #include <cyng/intrinsics/sets.h>
 #include <cyng/factory/set_factory.h>
+
 #include <type_traits>
 
 namespace node
@@ -177,6 +179,17 @@ namespace node
 			{
 				static cyng::tuple_t create(boost::asio::ip::address v);
 			};
+			template<>
+			struct factory_policy<boost::asio::ip::address_v4>
+			{
+				static cyng::tuple_t create(boost::asio::ip::address_v4 v);
+			};
+			template<>
+			struct factory_policy<boost::asio::ip::address_v6>
+			{
+				static cyng::tuple_t create(boost::asio::ip::address_v6 v);
+			};
+
 
 			template<>
 			struct factory_policy<cyng::crypto::aes_128_key>

@@ -39,7 +39,7 @@ namespace node
 			session(session const&) = delete;
 			session& operator=(session const&) = delete;
 
-			void start();
+			void start(cache& cfg);
 
 		private:
 			void do_read();

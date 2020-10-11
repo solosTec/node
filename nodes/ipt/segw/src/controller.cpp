@@ -10,6 +10,8 @@
 #include "cache.h"
 #include "bridge.h"
 #include "lmn.h"
+#include "segw.h"
+
 #include "server/server.h"
 #include "nms/server.h"
 #include "tasks/network.h"
@@ -229,7 +231,7 @@ namespace node
 						cyng::tuple_factory(
 							cyng::param_factory("address", "segw.ch"),
 							cyng::param_factory("port", 12001),
-							cyng::param_factory("account", gen_user(6)),
+							cyng::param_factory("account", "wmbus-" + gen_user(6)),
 							cyng::param_factory("pwd", gen_user(8)))
 					})
 					)
@@ -259,7 +261,7 @@ namespace node
 						cyng::tuple_factory(
 							cyng::param_factory("address", "segw.ch"),
 							cyng::param_factory("port", 12002),
-							cyng::param_factory("account", gen_user(6)),
+							cyng::param_factory("account", "rs485-" + gen_user(6)),
 							cyng::param_factory("pwd", gen_user(8)))
 						})
 					)
@@ -443,6 +445,8 @@ namespace node
 			//
 			//	SML server runtime configuration
 			//
+			cmgr.set_cfg(build_cfg_key({ sml::OBIS_ROOT_CUSTOM_PARAM }, "ep.remote"), boost::asio::ip::tcp::endpoint());
+			cmgr.set_cfg(build_cfg_key({ sml::OBIS_ROOT_CUSTOM_PARAM }, "ep.local"), boost::asio::ip::tcp::endpoint());
 
 			//
 			//	create SML server

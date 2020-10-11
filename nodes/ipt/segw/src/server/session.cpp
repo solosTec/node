@@ -7,6 +7,8 @@
 
 #include "session.h"
 #include "../cache.h"
+#include "../segw.h"
+
 #include <smf/shared/db_cfg.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/status.h>
@@ -94,8 +96,15 @@ namespace node
 			}
 		}
 
-		void session::start()
+		void session::start(cache& cfg)
 		{
+			//
+			//	store IP address of custom interface
+			//	ROOT_CUSTOM_PARAM - 81 02 00 07 10 FF
+			//
+			cfg.set_cfg(build_cfg_key({ sml::OBIS_ROOT_CUSTOM_PARAM }, "ep.remote"), socket_.remote_endpoint());
+			cfg.set_cfg(build_cfg_key({ sml::OBIS_ROOT_CUSTOM_PARAM }, "ep.local"), socket_.local_endpoint());
+
 			do_read();
 		}
 

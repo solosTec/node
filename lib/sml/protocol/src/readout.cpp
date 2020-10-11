@@ -773,8 +773,8 @@ namespace node
 			if (code.is_matching(0x81, 0x49, 0x17, 0x07, 0x00).second) {
 				return cyng::make_object(ip_address_to_str(obj));
 			}
-			else if (code.is_matching_5(OBIS_TARGET_PORT_ADDRESS).second	//	TARGET_PORT_ADDRESS
-				|| code.is_matching_5(OBIS_SOURCE_PORT_ADDRESS).second) {	//	SOURCE_PORT_ADDRESS
+			else if (code.is_matching_5(OBIS_TARGET_PORT).second	//	TARGET_PORT
+				|| code.is_matching_5(OBIS_SOURCE_PORT).second) {	//	SOURCE_PORT
 				return cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 0u));
 			}
 			else if (OBIS_W_MBUS_MODE_S == code

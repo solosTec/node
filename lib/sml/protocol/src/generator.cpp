@@ -168,7 +168,7 @@ namespace node
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_TARGET_PORT_ADDRESS, idx) }
+				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_TARGET_PORT, idx) }
 				, port);
 		}
 
@@ -177,7 +177,7 @@ namespace node
 			, std::uint16_t port)
 		{
 			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_SOURCE_PORT_ADDRESS, idx) }
+				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_SOURCE_PORT, idx) }
 				, port);
 		}
 

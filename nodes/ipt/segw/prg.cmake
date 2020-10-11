@@ -140,6 +140,8 @@ set (node_ipt_segw_msg
 	src/msg/config_iec.cpp
 	src/msg/config_broker.h
 	src/msg/config_broker.cpp
+	src/msg/config_customer_if.h
+	src/msg/config_customer_if.cpp
 )
 
 if(WIN32)

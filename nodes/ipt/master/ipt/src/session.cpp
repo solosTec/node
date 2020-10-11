@@ -25,8 +25,9 @@
 #include <cyng/dom/reader.h>
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/factory/set_factory.h>
-#ifdef SMF_IO_LOG
+#if defined(SMF_IO_LOG) || defined(_DEBUG)
 #include <cyng/io/hex_dump.hpp>
+#include <cyng/buffer_cast.h>
 #include <boost/uuid/uuid_io.hpp>
 #endif
 #include <boost/uuid/nil_generator.hpp>
@@ -663,6 +664,19 @@ namespace node
 
 			const boost::uuids::uuid tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 			BOOST_ASSERT(tag == ctx.tag());
+
+#ifdef _DEBUG
+			std::stringstream ss;
+			cyng::io::hex_dump hd;
+			auto const buffer = cyng::to_buffer(frame.at(1));
+			hd(ss, buffer.begin(), buffer.end());
+
+			CYNG_LOG_TRACE(logger_, "transmit " 
+				<< buffer.size()
+				<< " bytes:\n"
+				<< ss.str());
+
+#endif
 
 			//
 			//	data destination depends on connection state

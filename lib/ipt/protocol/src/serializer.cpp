@@ -56,7 +56,6 @@ namespace node
 				const cyng::vector_t frame = ctx.get_frame();
 				for (auto obj : frame)
 				{
-					//cyng::io::serialize_plain(std::cerr, obj);
 					cyng::io::serialize_binary(ostream_, obj);
 				}
 

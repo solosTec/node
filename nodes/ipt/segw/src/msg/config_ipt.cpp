@@ -51,8 +51,8 @@ namespace node
 					node::sml::append_get_proc_response(msg, {
 						node::sml::OBIS_ROOT_IPT_PARAM,
 						node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
-						node::sml::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, nr)
-						}, node::sml::make_value(rec.host_));
+						node::sml::make_obis(node::sml::OBIS_TARGET_IP_ADDRESS, nr)
+						}, node::sml::make_value(rec.host_));	//	ip address of IP-T master 
 
 					//
 					//	target port
@@ -61,7 +61,7 @@ namespace node
 					node::sml::append_get_proc_response(msg, {
 						node::sml::OBIS_ROOT_IPT_PARAM,
 						node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
-						node::sml::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, nr)
+						node::sml::make_obis(node::sml::OBIS_TARGET_PORT, nr)
 						}, node::sml::make_value(port));
 
 					//
@@ -71,7 +71,7 @@ namespace node
 					node::sml::append_get_proc_response(msg, {
 						node::sml::OBIS_ROOT_IPT_PARAM,
 						node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
-						node::sml::make_obis(0x81, 0x49, 0x19, 0x07, 0x00, nr)
+						node::sml::make_obis(node::sml::OBIS_SOURCE_PORT, nr)
 						}, node::sml::make_value(0u));
 
 					//
@@ -80,7 +80,7 @@ namespace node
 					node::sml::append_get_proc_response(msg, {
 						node::sml::OBIS_ROOT_IPT_PARAM,
 						node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
-						node::sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, nr)
+						node::sml::make_obis(node::sml::OBIS_IPT_ACCOUNT, nr)
 						}, node::sml::make_value(rec.account_));
 
 					//
@@ -89,17 +89,17 @@ namespace node
 					node::sml::append_get_proc_response(msg, {
 						node::sml::OBIS_ROOT_IPT_PARAM,
 						node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
-						node::sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, nr)
+						node::sml::make_obis(node::sml::OBIS_IPT_PASSWORD, nr)
 						}, node::sml::make_value(rec.pwd_));
 
 					//
 					//	scrambled
 					//
-					node::sml::append_get_proc_response(msg, {
-						node::sml::OBIS_ROOT_IPT_PARAM,
-						node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
-						node::sml::make_obis(0x81, 0x49, 0x63, 0x3C, 0x03, nr)
-						}, node::sml::make_value(rec.scrambled_));
+					//node::sml::append_get_proc_response(msg, {
+					//	node::sml::OBIS_ROOT_IPT_PARAM,
+					//	node::sml::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, nr),
+					//	node::sml::make_obis(node::sml::OBIS_IPT_SCRAMBLED, nr)
+					//	}, node::sml::make_value(rec.scrambled_));
 
 					//
 					//	update index

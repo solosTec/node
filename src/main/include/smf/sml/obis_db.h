@@ -168,9 +168,10 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 00, FF, ROOT_CUSTOM_INTERFACE);	//	see: 7.3.1.3 Datenstruktur zum Lesen / Setzen der Parameter für die Kundenschnittstelle
 
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 01, FF, CUSTOM_IF_IP_REF);	//	[u8] 0 == manual, 1 == DHCP
+		OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 00, CUSTOM_IF_IP_ADDRESS);	//	[IPv4/IPv6] current IP address (customer interface)
 		OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 01, CUSTOM_IF_IP_ADDRESS_1);	//	[IPv4/IPv6] first manual set IP address
 		OBIS_CODE_DEFINITION(81, 02, 17, 07, 01, 01, CUSTOM_IF_IP_MASK_1);	//	[IPv4/IPv6] 
-		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, FF, CUSTOM_IF_DHCP);	//	[bool] use a DHSCP server
+		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, FF, CUSTOM_IF_DHCP);	//	[bool] if true use a DHCP server
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 01, CUSTOM_IF_DHCP_LOCAL_IP_MASK);	//	[IPv4/IPv6] 
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 02, CUSTOM_IF_DHCP_DEFAULT_GW);	//	[IPv4/IPv6] 
 		OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 03, CUSTOM_IF_DHCP_DNS);	//	[IPv4/IPv6] 
@@ -203,11 +204,12 @@ namespace node
 
 		//	ip-t status
 		OBIS_CODE_DEFINITION(81, 49, 17, 07, 00, 00, TARGET_IP_ADDRESS);	//	[ip] ip address of IP-T master 
-		OBIS_CODE_DEFINITION(81, 49, 19, 07, 00, 00, SOURCE_PORT_ADDRESS);	//	[u16] target port of IP-T master 
-		OBIS_CODE_DEFINITION(81, 49, 1A, 07, 00, 00, TARGET_PORT_ADDRESS);	//	[u16] source port of IP-T master 
+		OBIS_CODE_DEFINITION(81, 49, 19, 07, 00, 00, SOURCE_PORT);	//	[u16] target port of IP-T master 
+		OBIS_CODE_DEFINITION(81, 49, 1A, 07, 00, 00, TARGET_PORT);	//	[u16] source port of IP-T master 
 
-		OBIS_CODE_DEFINITION(81, 49, 63, 3C, 01, FF, IPT_ACCOUNT);	//	[s]
-		OBIS_CODE_DEFINITION(81, 49, 63, 3C, 02, FF, IPT_PASSWORD);	//	[s]
+		OBIS_CODE_DEFINITION(81, 49, 63, 3C, 01, 00, IPT_ACCOUNT);	//	[s]
+		OBIS_CODE_DEFINITION(81, 49, 63, 3C, 02, 00, IPT_PASSWORD);	//	[s]
+		OBIS_CODE_DEFINITION(81, 49, 63, 3C, 03, 00, IPT_SCRAMBLED);	//	[bool] not standard!
 
 		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 01, PEER_OBISLOG);	//	peer address: OBISLOG
 		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 02, PEER_SCM);	//	peer address: SCM (power)
