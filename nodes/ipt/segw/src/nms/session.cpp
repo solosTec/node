@@ -20,6 +20,8 @@
 #include <cyng/table/body.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/dom/reader.h>
+#include <cyng/json.h>
+
 
 namespace node
 {
@@ -37,9 +39,15 @@ namespace node
 			, rx_(0)
 			, sx_(0)
 			, parser_([&](cyng::vector_t&& data) {
-				CYNG_LOG_TRACE(logger_, cyng::io::to_str(data));
+				//CYNG_LOG_TRACE(logger_, cyng::io::to_str(data));
 				for (auto const& obj : data) {
-					reader_.run(cyng::to_param_map(obj));
+
+					//
+					//	execute commands
+					//	send response
+					//
+					this->send_response(reader_.run(cyng::to_param_map(obj)));
+
 				}
 
 			})
@@ -126,12 +134,23 @@ namespace node
 
 		}
 
+		void session::send_response(cyng::param_map_t&& res)
+		{
+			auto const str = cyng::json::to_string(res);
+			CYNG_LOG_DEBUG(logger_, "response: "
+				<< str);
+
+			boost::system::error_code ec;
+			boost::asio::write(socket_, boost::asio::buffer(str.data(), str.size()), ec);
+		}
+
+
 		reader::reader(cyng::logging::log_ptr logger, cache& cfg)
 			: logger_(logger)
 			, cache_(cfg)
 		{}
 
-		void reader::run(cyng::param_map_t&& pm)
+		cyng::param_map_t reader::run(cyng::param_map_t&& pm)
 		{
 			CYNG_LOG_DEBUG(logger_, "NMS request: " << cyng::io::to_type(pm));
 
@@ -140,32 +159,61 @@ namespace node
 			//
 			auto const dom = cyng::make_reader(pm);
 			auto const cmd = cyng::value_cast<std::string>(dom.get("command"), "");
-			if (boost::algorithm::equals(cmd, "delete")) {
+			auto const ports = cyng::to_param_map(dom.get("serial-port"));
+			auto const meter = cyng::to_param_map(dom.get("meter"));
 
+			CYNG_LOG_INFO(logger_, "NMS command: " 
+				<< cmd 
+				<< " with " 
+				<< ports.size() 
+				<< " port(s)");
+
+			if (boost::algorithm::equals(cmd, "delete")) {
+				pm["ec"] = cyng::make_object("not implemented yet");
 			}
 			else if (boost::algorithm::equals(cmd, "insert")) {
-
+				pm["ec"] = cyng::make_object("not implemented yet");
 			}
 			else if (boost::algorithm::equals(cmd, "merge")) {
-
+				cmd_merge(pm, ports, meter);
+				pm["ec"] = cyng::make_object("OK");
 			}
 			else if (boost::algorithm::equals(cmd, "query")) {
-
+				pm["ec"] = cyng::make_object("not implemented yet");
 			}
 			else if (boost::algorithm::equals(cmd, "update")) {
-
+				pm["ec"] = cyng::make_object("not implemented yet");
 			}
 			else if (boost::algorithm::equals(cmd, "reboot")) {
-
+				cmd_reboot();
+				pm["ec"] = cyng::make_object("not implemented yet");
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "unknown NMS command: " << cmd);
-
+				pm["ec"] = cyng::make_object("unknown NMS command: " + cmd);
 			}
 
 			//
 			//	send response
 			//
+			return pm;
+		}
+
+		void reader::cmd_merge(cyng::param_map_t& pm, cyng::param_map_t const& ports, cyng::param_map_t const& meter)
+		{
+			for (auto const& port : ports) {
+				CYNG_LOG_TRACE(logger_, "merge port: " << port.first);
+
+			}
+
+			for (auto const& section : meter) {
+				CYNG_LOG_TRACE(logger_, "merge meter section: " << section.first);
+			}
+
+		}
+
+		void reader::cmd_reboot()
+		{
 
 		}
 

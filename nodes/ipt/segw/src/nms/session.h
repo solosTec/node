@@ -28,7 +28,11 @@ namespace node
 
 		public:
 			reader(cyng::logging::log_ptr logger, cache&);
-			void run(cyng::param_map_t&&);
+			cyng::param_map_t run(cyng::param_map_t&&);
+
+		private:
+			void cmd_merge(cyng::param_map_t& pm, cyng::param_map_t const&, cyng::param_map_t const&);
+			void cmd_reboot();
 
 		private:
 			cyng::logging::log_ptr logger_;
@@ -53,6 +57,7 @@ namespace node
 		private:
 			void do_read();
 			void process_data(cyng::buffer_t&&);
+			void send_response(cyng::param_map_t&&);
 
 		private:
 			boost::asio::ip::tcp::socket socket_;
