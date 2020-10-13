@@ -80,6 +80,7 @@ namespace node
 		 * @return "rs485:protocol"
 		 */
 		protocol get_protocol() const;
+		std::string get_protocol_by_name() const;
 
 		/**
 		 * @return "rs485:enabled"

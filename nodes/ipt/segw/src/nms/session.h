@@ -33,6 +33,7 @@ namespace node
 		private:
 			void cmd_merge(cyng::param_map_t& pm, cyng::param_map_t const&, cyng::param_map_t const&);
 			void cmd_reboot();
+			cyng::param_map_t cmd_query();
 
 		private:
 			cyng::logging::log_ptr logger_;

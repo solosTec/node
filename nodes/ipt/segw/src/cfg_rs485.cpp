@@ -69,7 +69,7 @@ namespace node
 
 	cfg_rs485::protocol cfg_rs485::get_protocol() const
 	{
-		auto const p = cache_.get_cfg(build_cfg_key({ "rs485", "protocol" }), "raw");
+		auto const p = get_protocol_by_name();
 		if (boost::algorithm::equals(p, "mbus")) {
 			return protocol::MBUS;
 		}
@@ -80,6 +80,11 @@ namespace node
 			return protocol::SML;
 		}
 		return protocol::RAW;
+	}
+
+	std::string cfg_rs485::get_protocol_by_name() const
+	{
+		return cache_.get_cfg(build_cfg_key({ "rs485", "protocol" }), "raw");
 	}
 
 	bool cfg_rs485::is_enabled() const

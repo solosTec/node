@@ -7,8 +7,14 @@
 
 #include "session.h"
 #include "../cache.h"
+#include "../cfg_rs485.h"
+#include "../cfg_wmbus.h"
+
 #include <smf/cluster/generator.h>
 #include <smf/sml/srv_id_io.h>
+#include <smf/serial/parity.h>
+#include <smf/serial/stopbits.h>
+#include <smf/serial/flow_control.h>
 
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/io_buffer.h>
@@ -186,7 +192,7 @@ namespace node
 				pm["ec"] = cyng::make_object("OK");
 			}
 			else if (boost::algorithm::equals(cmd, "query")) {
-				pm["ec"] = cyng::make_object("not implemented yet");
+				return cmd_query();
 			}
 			else if (boost::algorithm::equals(cmd, "update")) {
 				pm["ec"] = cyng::make_object("not implemented yet");
@@ -216,6 +222,54 @@ namespace node
 			for (auto const& section : meter) {
 				CYNG_LOG_TRACE(logger_, "merge meter section: " << section.first);
 			}
+
+		}
+
+		cyng::param_map_t reader::cmd_query()
+		{
+			//
+			//	serial ports
+			//
+			cfg_rs485 const rs485(cache_);
+			cfg_wmbus const wmbus(cache_);
+
+			return cyng::param_map_factory
+				("command", "query")
+				("ec", "OK")
+				("serial-port", cyng::tuple_factory(
+					cyng::set_factory(rs485.get_port(), cyng::param_map_factory
+						("enabled", rs485.is_enabled())
+						("parity", serial::to_str(rs485.get_parity()))
+						("databits", rs485.get_databits().value())
+						("flow-control", serial::to_str(rs485.get_flow_control()))
+						("stopbits", serial::to_str(rs485.get_stopbits()))
+						("baudrate", rs485.get_baud_rate().value())
+						("protocol", rs485.get_protocol_by_name())
+						("broker", cyng::vector_factory())
+						()),
+					cyng::set_factory(wmbus.get_port(), cyng::param_map_factory
+						("enabled", wmbus.is_enabled())
+						("parity", serial::to_str(wmbus.get_parity()))
+						("databits", wmbus.get_databits().value())
+						("flow-control", serial::to_str(wmbus.get_flow_control()))
+						("stopbits", serial::to_str(wmbus.get_stopbits()))
+						("baudrate", wmbus.get_baud_rate().value())
+						("broker", cyng::vector_factory())
+						())
+				))
+				("meter", cyng::param_map_factory
+					("blocklist", cyng::param_map_factory
+						("enabled", false)
+						("list", cyng::vector_factory())
+						("mode", "drop")
+						())
+					("loop", cyng::param_map_factory
+						("timeout", 60)
+						("request", "/?!")
+						())
+					("max-readout-frequency", 5)
+					())
+				;
 
 		}
 
