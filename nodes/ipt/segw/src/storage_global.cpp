@@ -1067,7 +1067,7 @@ namespace node
 					}
 					else if (boost::algorithm::equals(param.first, "databits")) {
 						//	unsigned int
-						auto const val = cyng::numeric_cast<std::uint8_t>(param.second, 8u);
+						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 8u);
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), cyng::make_object(val));
 					}
 					else if (boost::algorithm::equals(param.first, "parity")) {

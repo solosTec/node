@@ -23,8 +23,8 @@ namespace node
 					<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config.host_, config.service_)
 					<< ":SEND-LOGIN-REQUEST"			//	label
 					<< cyng::code::JNE					//	jump if no error
-					<< cyng::generate_invoke_unwinded("bus.reconfigure", cyng::code::LERR, config.monitor_)
-					<< cyng::generate_invoke_unwinded("log.msg.error", cyng::code::LERR)	// load error register
+					<< cyng::generate_invoke_unwinded("bus.reconfigure", config.monitor_)
+					<< cyng::generate_invoke_unwinded("log.msg.error", "resolve address failed: ", config.host_, ':', config.service_)	// load error register
 					<< ":STOP"							//	label
 					<< cyng::code::JA					//	jump always
 					<< cyng::label(":SEND-LOGIN-REQUEST")
@@ -48,8 +48,8 @@ namespace node
 					<< cyng::generate_invoke_unwinded("ip.tcp.socket.resolve", config.host_, config.service_)
 					<< ":SEND-LOGIN-REQUEST"			//	label
 					<< cyng::code::JNE					//	jump if no error
-					<< cyng::generate_invoke_unwinded("bus.reconfigure", cyng::code::LERR)
-					<< cyng::generate_invoke_unwinded("log.msg.error", cyng::code::LERR)	// load error register
+					<< cyng::generate_invoke_unwinded("bus.reconfigure", config.monitor_)
+					<< cyng::generate_invoke_unwinded("log.msg.error", "resolve address failed: ", config.host_, ':', config.service_)	// load error register
 					<< ":STOP"							//	label
 					<< cyng::code::JA					//	jump always
 					<< cyng::label(":SEND-LOGIN-REQUEST")

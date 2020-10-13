@@ -51,7 +51,7 @@ namespace node
 
 	boost::asio::serial_port_base::baud_rate cfg_wmbus::get_baud_rate() const
 	{
-		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), 
+		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }),
 #if BOOST_OS_WINDOWS
 			57600u
 #else
