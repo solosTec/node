@@ -164,60 +164,88 @@ int main(int argc, char **argv)
 		//
 		//	establish controller
 		//
+#ifdef _DEBUG
+		std::cout
+			<< "establish controller with config_index: "
+			<< config_index
+			<< ", pool_size: "
+			<< pool_size
+			<< ", json_path: "
+			<< json_path
+			<< std::endl;
+#endif
 		node::controller ctrl(config_index, pool_size, json_path, "ipt:segw");
+#ifdef _DEBUG
+		std::cout
+			<< "controller is ready"
+			<< std::endl;
+#endif
 
-		if (vm["default"].as< bool >())
-		{
-			//	write default configuration
-			return ctrl.ctl::create_config();	//	base class method is hidden
+		try {
+			if (vm["default"].as< bool >())
+			{
+				//	write default configuration
+#ifdef _DEBUG
+				std::cout
+					<< "create deafult configuration"
+					<< std::endl;
+#endif
+				return ctrl.ctl::create_config();	//	base class method is hidden
+			}
+
+			if (vm["init"].as< bool >())
+			{
+				//	initialize database
+				return ctrl.init_config_db("DB");
+			}
+
+			if (vm["show"].as< bool >())
+			{
+				//	show JSON configuration
+				return ctrl.ctl::print_config(std::cout);
+			}
+
+			if (vm["list"].as< bool >())
+			{
+				//	show database configuration
+				return ctrl.list_config(std::cout);
+			}
+
+			if (vm["transfer"].as< bool >())
+			{
+				//	transfer JSON configuration into database
+				return ctrl.transfer_config();
+			}
+
+			if (vm["clear"].as< bool >())
+			{
+				//	clear configuration from database
+				return ctrl.clear_config();
+			}
+
+
+			auto const dump = vm["dump"].as< std::uint32_t >();
+			if (dump != 0) {
+				//	dump profile data
+				return ctrl.dump_profile(dump);
+			}
+
+			if (vm.count("set-value"))
+			{
+				return ctrl.set_value(value);
+			}
+
+			if (vm.count("connect"))
+			{
+				return ctrl.dry_connect(connect);
+			}
 		}
+		catch (std::exception const& ex) {
+			std::cerr
+				<< "***error: "
+				<< ex.what()
+				<< std::endl;
 
-		if (vm["init"].as< bool >())
-		{
-			//	initialize database
- 			return ctrl.init_config_db("DB");
-		}
-
-		if (vm["show"].as< bool >())
-		{
-			//	show JSON configuration
- 			return ctrl.ctl::print_config(std::cout);
-		}
-
-		if (vm["list"].as< bool >())
-		{
-			//	show database configuration
-			return ctrl.list_config(std::cout);
-		}
-
-		if (vm["transfer"].as< bool >())
-		{
-			//	transfer JSON configuration into database
-			return ctrl.transfer_config();
-		}
-
-		if (vm["clear"].as< bool >())
-		{
-			//	clear configuration from database
-			return ctrl.clear_config();
-		}
-		
-
-		auto const dump = vm["dump"].as< std::uint32_t >();
-		if (dump != 0) {
-			//	dump profile data
-			return ctrl.dump_profile(dump);
-		}
-
-		if (vm.count("set-value"))
-		{
-			//auto const kv = vm["set-value"].as< std::string >();
-			return ctrl.set_value(value);
-		}
-
-		if (vm.count("connect"))
-		{
- 			return ctrl.dry_connect(connect);
 		}
 		
 #if BOOST_OS_WINDOWS

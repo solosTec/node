@@ -137,11 +137,18 @@ namespace node
 		void session::send_response(cyng::param_map_t&& res)
 		{
 			auto const str = cyng::json::to_string(res);
-			CYNG_LOG_DEBUG(logger_, "response: "
-				<< str);
 
 			boost::system::error_code ec;
 			boost::asio::write(socket_, boost::asio::buffer(str.data(), str.size()), ec);
+
+			if (!ec) {
+				CYNG_LOG_DEBUG(logger_, "send response: "
+					<< str);
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "sending response failed: "
+					<< ec.message());
+			}
 		}
 
 

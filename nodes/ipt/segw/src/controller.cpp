@@ -104,7 +104,13 @@ namespace node
 
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
-				, cyng::param_factory("log-level", "INFO")
+				, cyng::param_factory("log-level", 
+#ifdef _DEBUG
+					"TRACE"
+#else
+					"INFO"
+#endif
+				)
 				, cyng::param_factory("tag", get_random_tag())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("time-offset", r.second ? r.first : std::chrono::system_clock::now())
@@ -834,50 +840,59 @@ namespace node
 
 	int controller::clear_config() const
 	{
-		//
-		//	read configuration file
-		//
-		auto const r = read_config_section(json_path_, config_index_);
-		if (r.second) {
-
+		try {
 			//
-			//	get a DOM reader
+			//	read configuration file
 			//
-			auto const dom = cyng::make_reader(r.first);
+			auto const r = read_config_section(json_path_, config_index_);
+			if (r.second) {
 
-			//
-			//	get database configuration and connect
-			//
-			cyng::tuple_t tpl;
-			tpl = cyng::value_cast(dom.get("DB"), tpl);
-			auto db_cfg = cyng::to_param_map(tpl);
+				//
+				//	get a DOM reader
+				//
+				auto const dom = cyng::make_reader(r.first);
 
-			std::cout
-				<< "clear configuration "
-				<< json_path_
-				<< " with index ["
-				<< config_index_
-				<< "] from database "
-				<< cyng::io::to_str(db_cfg)
-				<< std::endl;
+				//
+				//	get database configuration and connect
+				//
+				auto const tpl = cyng::to_tuple(dom.get("DB"));
+				auto db_cfg = cyng::to_param_map(tpl);
 
-			auto const count = clear_config_from_storage(cyng::to_param_map(tpl), dom);
-			std::cout
-				<< count
-				<< " row(s) removed from table TCfg"
-				<< std::endl;
+				std::cout
+					<< "clear configuration "
+					<< json_path_
+					<< " with index ["
+					<< config_index_
+					<< "] from database "
+					<< cyng::io::to_str(db_cfg)
+					<< std::endl;
 
-			return EXIT_SUCCESS;
+				auto const count = clear_config_from_storage(cyng::to_param_map(tpl), dom);
+				std::cout
+					<< count
+					<< " row(s) removed from table TCfg"
+					<< std::endl;
+
+				return EXIT_SUCCESS;
+			}
+			else
+			{
+				std::cout
+					<< "configuration file ["
+					<< json_path_
+					<< "] not found"
+					<< config_index_
+					<< "] is out of range"
+					<< std::endl;
+			}
 		}
-		else
-		{
-			std::cout
-				<< "configuration file ["
-				<< json_path_
-				<< "] not found"
-				<< config_index_
-				<< "] is out of range"
+		catch (std::exception const& ex) {
+
+			std::cerr
+				<< "***error: "
+				<< ex.what()
 				<< std::endl;
+
 		}
 		return EXIT_FAILURE;
 	}
