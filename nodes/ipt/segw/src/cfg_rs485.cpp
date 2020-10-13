@@ -82,4 +82,10 @@ namespace node
 		return protocol::RAW;
 	}
 
+	bool cfg_rs485::is_enabled() const
+	{
+		return cache_.get_cfg("rs485.enabled", false);
+	}
+
+
 }

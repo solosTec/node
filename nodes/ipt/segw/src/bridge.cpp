@@ -9,6 +9,9 @@
 #include "cache.h"
 #include "storage.h"
 #include "segw.h"
+#include "cfg_rs485.h"
+#include "cfg_wmbus.h"
+
 #include "tasks/gpio.h"
 #include "tasks/obislog.h"
 #include "tasks/clock.h"
@@ -222,37 +225,39 @@ namespace node
 		//
 		auto const ports = cyng::sys::get_ports();
 
-		if (cache_.get_cfg("rs485.enabled", false)) {
-			auto const port = cache_.get_cfg("rs485.port", "COM");
+		cfg_rs485 rs485(cache_);
+		if (rs485.is_enabled()) {
+			auto const port = rs485.get_port();
 			if (std::none_of(ports.begin(), ports.end(), [port](std::string const& p) {
 				return boost::algorithm::equals(port, p);
 				})) {
 
-				CYNG_LOG_ERROR(logger_, "port "
+				CYNG_LOG_ERROR(logger_, "rs485 port "
 					<< port
 					<< " is not available");
 
 			}
 			else {
-				CYNG_LOG_TRACE(logger_, "port "
+				CYNG_LOG_TRACE(logger_, "rs485 port "
 					<< port
 					<< " is available");
 			}
 		}
 
-		if (cache_.get_cfg("8106190700FF:enabled", false)) {
-			auto const port = cache_.get_cfg("8106190700FF:port", "COM");
+		cfg_wmbus wmbus(cache_);
+		if (wmbus.is_enabled()) {
+			auto const port = wmbus.get_port();
 			if (std::none_of(ports.begin(), ports.end(), [port](std::string const& p) {
 				return boost::algorithm::equals(port, p);
 				})) {
 
-				CYNG_LOG_ERROR(logger_, "port "
+				CYNG_LOG_ERROR(logger_, "wireless M-Bus port "
 					<< port
 					<< " is not available");
 
 			}
 			else {
-				CYNG_LOG_TRACE(logger_, "port "
+				CYNG_LOG_TRACE(logger_, "wireless M-Bus port "
 					<< port
 					<< " is available");
 			}

@@ -424,8 +424,11 @@ namespace node
 
 		void network::reconfigure(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			CYNG_LOG_WARNING(logger_, "bus.reconfigure " << cyng::io::to_str(frame));
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_WARNING(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+			for (auto const& obj : frame) {
+				CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(obj));
+			}
 			reconfigure_impl();
 		}
 

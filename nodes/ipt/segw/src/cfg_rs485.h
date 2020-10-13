@@ -81,6 +81,11 @@ namespace node
 		 */
 		protocol get_protocol() const;
 
+		/**
+		 * @return "rs485:enabled"
+		 */
+		bool is_enabled() const;
+
 		static constexpr std::uint8_t port_idx = 2;
 
 	private:

@@ -1018,12 +1018,7 @@ namespace node
 					cyng::param_t param;
 					param = cyng::value_cast(obj, param);
 
-					if (boost::algorithm::equals(param.first, "databits")) {
-						//	u8
-						auto const val = cyng::numeric_cast<std::uint8_t>(param.second, 8u);
-						init_config_record(s, build_cfg_key({ "rs485", param.first }), cyng::make_object(val));
-					}
-					else if (boost::algorithm::equals(param.first, "monitor")) {
+					if (boost::algorithm::equals(param.first, "monitor")) {
 						//	int
 						auto const val = cyng::numeric_cast(param.second, 30);
 						init_config_record(s, build_cfg_key({ "rs485", param.first }), cyng::make_seconds(val));
@@ -1066,11 +1061,13 @@ namespace node
 							sml::OBIS_BROKER_LOGIN }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ 
+							sml::OBIS_ROOT_HARDWARE_PORT, 
+							sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "databits")) {
 						//	unsigned int
-						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 8u);
+						auto const val = cyng::numeric_cast<std::uint8_t>(param.second, 8u);
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), cyng::make_object(val));
 					}
 					else if (boost::algorithm::equals(param.first, "parity")) {
