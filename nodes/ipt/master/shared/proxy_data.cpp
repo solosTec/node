@@ -326,8 +326,8 @@ namespace node
 		switch (pd.get_msg_code()) {
 		case sml::message_e::GET_PROC_PARAMETER_REQUEST:
 			return finalize_get_proc_parameter_request(std::move(pd));
-		//case sml::message_e::SET_PROC_PARAMETER_REQUEST:
-		//	return finalize_set_proc_parameter_request(std::move(pd));
+		case sml::message_e::SET_PROC_PARAMETER_REQUEST:
+			return pd;
 		default:
 			break;
 		}

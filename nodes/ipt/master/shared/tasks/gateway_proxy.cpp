@@ -1322,6 +1322,11 @@ namespace node
 			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
 			break;
 
+		case sml::CODE_ROOT_HARDWARE_PORT:
+			execute_cmd_set_proc_param_hw_port(sml_gen, data, params.container());
+			push_trx(sml_gen.get_proc_parameter(data.get_srv(), data.get_path()), data);
+			break;
+
 		default:
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
@@ -1783,6 +1788,68 @@ namespace node
 		}
 
 	}
+
+	void gateway_proxy::execute_cmd_set_proc_param_hw_port(sml::req_generator& sml_gen
+		, proxy_data const& data
+		, cyng::tuple_t const& tpl)
+	{
+		//	//section 9100000000FF ==> 
+		//	//	{
+		//	//		("COM3":{
+		//	//			("databits":8), 
+		//	//			("parity":none), 
+		//	//			("flowcontrol":none), 
+		//	//			("stopbits":two), 
+		//	//			("baudrate":57600)
+		//	//			}
+		//	//		)
+		//	//	}
+		//	for (auto const& obj : pd.get_params()) {
+		//		auto const param = cyng::to_param(obj);
+		//	}
+
+		std::uint8_t idx{ 0 };
+		for (auto const& obj : tpl) {
+			auto const port = cyng::to_param(obj);
+
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set hw port "
+				<< port.first);
+
+			auto const params = cyng::to_tuple(port.second);
+			for (auto const& param : params) {
+
+				auto const p = cyng::to_param(param);
+
+				CYNG_LOG_DEBUG(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> set hw port "
+					<< port.first
+					<< " - "
+					<< p.first
+					<< ": "
+					<< cyng::io::to_type(p.second));
+
+				//HARDWARE_PORT_NAME
+				//HARDWARE_PORT_DATABITS
+				//HARDWARE_PORT_PARITY
+				//HARDWARE_PORT_FLOW_CONTROL
+				//HARDWARE_PORT_STOPBITS
+				//HARDWARE_PORT_SPEED
+
+				//push_trx(sml_gen.set_proc_parameter(data.get_srv()
+				//	, { sml::OBIS_ ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, idx) }
+				//, user), data);
+
+			}
+		}
+	}
+
 
 
 	bool gateway_proxy::execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen

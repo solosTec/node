@@ -147,6 +147,11 @@ namespace node
 			boost::system::error_code ec;
 			boost::asio::write(socket_, boost::asio::buffer(str.data(), str.size()), ec);
 
+//#ifdef _DEBUG
+//			std::stringstream ss;
+//			cyng::json::pretty_print(ss, cyng::make_object(res));
+//			CYNG_LOG_DEBUG(logger_, "send response: " << ec << ss.str());
+//#else
 			if (!ec) {
 				CYNG_LOG_DEBUG(logger_, "send response: "
 					<< str);
@@ -155,6 +160,8 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "sending response failed: "
 					<< ec.message());
 			}
+//#endif
+
 		}
 
 
@@ -189,7 +196,7 @@ namespace node
 			}
 			else if (boost::algorithm::equals(cmd, "merge")) {
 				cmd_merge(pm, ports, meter);
-				pm["ec"] = cyng::make_object("OK");
+				pm["ec"] = cyng::make_object("ok");
 			}
 			else if (boost::algorithm::equals(cmd, "query")) {
 				return cmd_query();
@@ -235,7 +242,7 @@ namespace node
 
 			return cyng::param_map_factory
 				("command", "query")
-				("ec", "OK")
+				("ec", "ok")
 				("serial-port", cyng::tuple_factory(
 					cyng::set_factory(rs485.get_port(), cyng::param_map_factory
 						("enabled", rs485.is_enabled())

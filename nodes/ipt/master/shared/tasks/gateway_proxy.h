@@ -291,6 +291,10 @@ namespace node
 			, proxy_data const&
 			, cyng::vector_t&& params);
 
+		void execute_cmd_set_proc_param_hw_port(sml::req_generator& sml_gen
+			, proxy_data const&
+			, cyng::tuple_t const& vec);
+
 		/**
 		 * Store proxy data in transaction/output map
 		 */
