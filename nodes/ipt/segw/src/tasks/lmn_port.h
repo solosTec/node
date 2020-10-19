@@ -26,7 +26,18 @@ namespace node
 		//	[1] add/remove receiver
 		using msg_1 = std::tuple<std::size_t, bool>;
 
-		using signatures_t = std::tuple<msg_0, msg_1>;
+		//	[2] modify options int
+		//	HARDWARE_PORT_DATABITS
+		//	HARDWARE_PORT_PARITY
+		using msg_2 = std::tuple<cyng::buffer_t, std::uint32_t>;
+
+		//	[3] modify options string
+		//	HARDWARE_PORT_FLOW_CONTROL
+		//	HARDWARE_PORT_STOPBITS
+		//	HARDWARE_PORT_SPEED
+		using msg_3 = std::tuple<cyng::buffer_t, std::string>;
+
+		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3>;
 
 	public:
 		lmn_port(cyng::async::base_task* bt
@@ -56,10 +67,20 @@ namespace node
 		 */
 		cyng::continuation process(std::size_t, bool);
 
+		//	@brief slot [2] modify options int
+		//	HARDWARE_PORT_DATABITS
+		//	HARDWARE_PORT_SPEED
+		cyng::continuation process(cyng::buffer_t, std::uint32_t);
+
+		//	@brief slot [3] modify options string
+		//	HARDWARE_PORT_FLOW_CONTROL
+		//	HARDWARE_PORT_STOPBITS
+		//	HARDWARE_PORT_PARITY
+		cyng::continuation process(cyng::buffer_t, std::string);
+
 	private:
 		void do_read();
 		void set_all_options();
-		void init();
 
 	private:
 		cyng::async::base_task& base_;
@@ -79,11 +100,16 @@ namespace node
 		 */
 		std::chrono::seconds const monitor_;
 		std::string const name_;
+
+		//
+		//	initial values
+		//
 		boost::asio::serial_port_base::character_size databits_;
 		boost::asio::serial_port_base::parity parity_;
 		boost::asio::serial_port_base::flow_control flow_control_;
 		boost::asio::serial_port_base::stop_bits stopbits_;
 		boost::asio::serial_port_base::baud_rate baud_rate_;
+
 		cyng::async::task_list_t receiver_data_;
 		std::size_t const receiver_status_;
 		cyng::buffer_t init_;

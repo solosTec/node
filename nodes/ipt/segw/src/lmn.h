@@ -12,6 +12,7 @@
 
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller.h>
+#include <cyng/table/table_fwd.h>
 
 #include <boost/uuid/uuid.hpp>
 
@@ -86,6 +87,19 @@ namespace node
 		void mbus_frame_ctrl(cyng::context& ctx);
 		void mbus_frame_long(cyng::context& ctx);
 
+		void sig_ins_cfg(cyng::store::table const*
+			, cyng::table::key_type const&
+			, cyng::table::data_type const&
+			, std::uint64_t
+			, boost::uuids::uuid);
+		void sig_del_cfg(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
+		void sig_clr_cfg(cyng::store::table const*, boost::uuids::uuid);
+		void sig_mod_cfg(cyng::store::table const*
+			, cyng::table::key_type const&
+			, cyng::attr_t const&
+			, std::uint64_t
+			, boost::uuids::uuid);
+
 	private:
 		cyng::logging::log_ptr logger_;
 		cyng::async::mux& mux_;
@@ -94,8 +108,8 @@ namespace node
 		decoder_wireless_mbus decoder_wmbus_;
 
 		std::size_t serial_mgr_;
-		std::size_t serial_port_;	//	wired LMN task (rs485)
-		std::size_t radio_port_;	//	wireless LMN task (M-Bus)
+		std::size_t radio_port_;	//	[1] wireless LMN task (M-Bus)
+		std::size_t serial_port_;	//	[2] wired LMN task (rs485)
 
 		/**
 		 * distribute incoming data to receiver (optionally parsed)

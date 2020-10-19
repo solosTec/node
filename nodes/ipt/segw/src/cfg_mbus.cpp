@@ -11,6 +11,8 @@
 #include <smf/sml/obis_db.h>
 
 #include <cyng/value_cast.hpp>
+#include <cyng/numeric_cast.hpp>
+
 #include <boost/core/ignore_unused.hpp>
 
 namespace node

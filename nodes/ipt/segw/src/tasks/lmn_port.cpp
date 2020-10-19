@@ -9,6 +9,7 @@
 #include <smf/serial/parity.h>
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/io/hex_dump.hpp>
 #include <cyng/factory/set_factory.h>
@@ -344,6 +345,133 @@ namespace node
 		}
 
 		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	[2] modify options int
+	//	HARDWARE_PORT_DATABITS
+	//	HARDWARE_PORT_SPEED
+	cyng::continuation lmn_port::process(cyng::buffer_t buf, std::uint32_t val)
+	{
+		auto const code = sml::obis(buf);
+		boost::system::error_code ec;
+
+		switch (code.to_uint64()) {
+		case sml::CODE_HARDWARE_PORT_DATABITS:
+			port_.set_option(boost::asio::serial_port_base::character_size(val), ec);
+			if (!ec) {
+				port_.get_option(databits_, ec);
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> set stopbits "
+					<< +databits_.value());
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> set databits to "
+					<< val
+					<< " failed: "
+					<< ec.message());
+			}
+			break;
+		case sml::CODE_HARDWARE_PORT_SPEED:
+			port_.set_option(boost::asio::serial_port_base::baud_rate(val), ec);
+			if (!ec) {
+				port_.get_option(baud_rate_, ec);
+				CYNG_LOG_INFO(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> set baud rate "
+					<< baud_rate_.value());
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> set baud rate to "
+					<< val
+					<< " failed: "
+					<< ec.message());
+
+			}
+			break;
+		default:
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< name_
+				<< " - unknown option "
+				<< val);
+			break;
+		}
+
+		//
+		//	continue task
+		//
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	//	[3] modify options string
+	//	HARDWARE_PORT_FLOW_CONTROL
+	//	HARDWARE_PORT_STOPBITS
+	//	HARDWARE_PORT_PARITY
+	cyng::continuation lmn_port::process(cyng::buffer_t buf, std::string val)
+	{
+		auto const code = sml::obis(buf);
+		switch (code.to_uint64()) {
+		case sml::CODE_HARDWARE_PORT_FLOW_CONTROL:
+			port_.set_option(serial::to_flow_control(val));
+			port_.get_option(flow_control_);
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set flow control "
+				<< serial::to_str(flow_control_));
+			break;
+		case sml::CODE_HARDWARE_PORT_STOPBITS:
+			port_.set_option(serial::to_stopbits(val));
+			port_.get_option(stopbits_);
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set stopbits "
+				<< serial::to_str(stopbits_));
+			break;
+		case sml::CODE_HARDWARE_PORT_PARITY:
+			port_.set_option(serial::to_parity(val));
+			port_.get_option(parity_);
+			CYNG_LOG_INFO(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> set parity "
+				<< serial::to_str(parity_));
+			break;
+		default:
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< name_
+				<< " - unknown option "
+				<< val);
+			break;
+		}
+
 		//
 		//	continue task
 		//

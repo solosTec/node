@@ -9,6 +9,7 @@
 #include "../cache.h"
 #include "../cfg_rs485.h"
 #include "../cfg_wmbus.h"
+#include "../cfg_broker.h"
 
 #include <smf/cluster/generator.h>
 #include <smf/sml/srv_id_io.h>
@@ -25,8 +26,8 @@
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
 #include <cyng/set_cast.h>
-#include <cyng/dom/reader.h>
 #include <cyng/json.h>
+#include <cyng/dom/algorithm.h>
 
 
 namespace node
@@ -179,14 +180,9 @@ namespace node
 			//
 			auto const dom = cyng::make_reader(pm);
 			auto const cmd = cyng::value_cast<std::string>(dom.get("command"), "");
-			auto const ports = cyng::to_param_map(dom.get("serial-port"));
-			auto const meter = cyng::to_param_map(dom.get("meter"));
 
-			CYNG_LOG_INFO(logger_, "NMS command: " 
-				<< cmd 
-				<< " with " 
-				<< ports.size() 
-				<< " port(s)");
+			CYNG_LOG_INFO(logger_, "NMS command: "
+				<< cmd);
 
 			if (boost::algorithm::equals(cmd, "delete")) {
 				pm["ec"] = cyng::make_object("not implemented yet");
@@ -195,8 +191,7 @@ namespace node
 				pm["ec"] = cyng::make_object("not implemented yet");
 			}
 			else if (boost::algorithm::equals(cmd, "merge")) {
-				cmd_merge(pm, ports, meter);
-				pm["ec"] = cyng::make_object("ok");
+				return cmd_merge(dom);
 			}
 			else if (boost::algorithm::equals(cmd, "query")) {
 				return cmd_query();
@@ -219,17 +214,113 @@ namespace node
 			return pm;
 		}
 
-		void reader::cmd_merge(cyng::param_map_t& pm, cyng::param_map_t const& ports, cyng::param_map_t const& meter)
+		cyng::param_map_t reader::cmd_merge(cyng::param_map_reader const& dom)
 		{
-			for (auto const& port : ports) {
-				CYNG_LOG_TRACE(logger_, "merge port: " << port.first);
+			auto const ports = cyng::to_param_map(dom.get("serial-port"));
+			auto const meter = cyng::to_param_map(dom.get("meter"));
 
+			cfg_rs485 rs485(cache_);
+			cfg_wmbus wmbus(cache_);
+			cfg_broker const broker(cache_);
+
+			cyng::param_map_t pm = cyng::param_map_factory
+				("command", "merge")
+				("ec", "ok")
+				("version", "0.1")
+				("serial-port", cyng::param_map_factory()())
+				("meter", cyng::param_map_factory()())
+				
+				;
+
+
+			for (auto const& port : ports) {
+
+				auto const port_id = broker.get_port_id(port.first);
+				if (port_id != 0) {
+
+					CYNG_LOG_TRACE(logger_, "merge port: " << port.first);
+
+					auto const port_map = cyng::to_param_map(dom["serial-port"].get(port.first));
+					for (auto const& param : port_map) {
+						CYNG_LOG_TRACE(logger_, "merge port: "
+							<< port.first
+							<< " - "
+							<< param.first
+							<< ": "
+							<< cyng::io::to_type(param.second));
+
+						if (boost::algorithm::equals(param.first, "baudrate")) {
+							//  merge port: /dev/ttyAPP0 - baudrate: "2400"
+							if (port_id == cfg_rs485::port_idx) {	
+								rs485.set_baud_rate(param.second);
+							}
+							else {
+								wmbus.set_baud_rate(param.second);
+							}
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+						}
+						else if (boost::algorithm::equals(param.first, "broker")) {
+							//  merge port: /dev/ttyAPP0 - broker: [%(("account":"C4vvQP"),("address":"segw.ch"),("port":12001i64),("pwd":"9BLPJfNc"))]
+						}
+						else if (boost::algorithm::equals(param.first, "collector-login")) {
+							//  merge port: /dev/ttyAPP0 - collector-login: true
+
+						}
+						else if (boost::algorithm::equals(param.first, "databits")) {
+							//  merge port: /dev/ttyAPP0 - databits: 8i64
+
+						}
+						else if (boost::algorithm::equals(param.first, "enabled")) {
+							//  merge port: /dev/ttyAPP0 - enabled: true
+
+						}
+						else if (boost::algorithm::equals(param.first, "flow-control")) {
+							//  merge port: /dev/ttyAPP0 - flow-control: "none"
+
+						}
+						else if (boost::algorithm::equals(param.first, "listener")) {
+							//  merge port: /dev/ttyAPP0 - listener: %(("address":"0.0.0.0"),("port":7000i64),("timeout":30i64))
+
+						}
+						else if (boost::algorithm::equals(param.first, "parity")) {
+							//  merge port: /dev/ttyAPP0 - parity: "even"
+
+						}
+						else if (boost::algorithm::equals(param.first, "protocol")) {
+							//  merge port: /dev/ttyAPP0 - protocol: "SML"
+
+						}
+						else if (boost::algorithm::equals(param.first, "stopbits")) {
+							//  merge port: /dev/ttyAPP0 - stopbits: "one"
+
+						}
+						else {
+							CYNG_LOG_WARNING(logger_, "merge port: "
+								<< port.first
+								<< " unknown attribute: "
+								<< param.first
+								<< ": "
+								<< cyng::io::to_type(param.second));
+
+							//pm["serial-port"][port.first][param.first] = cyng::make_object("error");
+
+						}
+					}
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, port.first << " is an undefined port");
+
+				}
 			}
 
 			for (auto const& section : meter) {
 				CYNG_LOG_TRACE(logger_, "merge meter section: " << section.first);
+				//  merge meter section: blocklist
+				//  merge meter section: loop
+				//  merge meter section: max-readout-frequency
 			}
 
+			return pm;
 		}
 
 		cyng::param_map_t reader::cmd_query()

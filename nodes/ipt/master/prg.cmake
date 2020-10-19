@@ -32,6 +32,8 @@ set (node_ipt_master_shared
 	shared/proxy_data.cpp
 	shared/config_cache.h
 	shared/config_cache.cpp
+	shared/transformer.h
+	shared/transformer.cpp
 )
 
 set (node_shared

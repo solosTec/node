@@ -307,6 +307,10 @@ namespace node
 		return "";
 	}
 
+	//
+	//	+-------------------------------------------------------------+
+	//
+
 	cyng::buffer_t mbus_initialize_slave(std::uint8_t address)
 	{
 		auto cmd = cyng::make_buffer({ 0x10, 0x40, address, 0x0, 0x16 });

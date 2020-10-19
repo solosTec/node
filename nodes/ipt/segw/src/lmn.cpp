@@ -53,8 +53,8 @@ namespace node
 		, decoder_wmbus_(logger, cfg, vm_)
 
 		, serial_mgr_(cyng::async::NO_TASK)
-		, serial_port_(cyng::async::NO_TASK)
 		, radio_port_(cyng::async::NO_TASK)
+		, serial_port_(cyng::async::NO_TASK)
 
 		, radio_distributor_(cyng::async::NO_TASK)
 	{
@@ -82,6 +82,16 @@ namespace node
 		vm_.register_function("mbus.short.frame", 5, std::bind(&lmn::mbus_frame_short, this, std::placeholders::_1));
 		vm_.register_function("mbus.ctrl.frame", 6, std::bind(&lmn::mbus_frame_ctrl, this, std::placeholders::_1));
 		vm_.register_function("mbus.long.frame", 7, std::bind(&lmn::mbus_frame_long, this, std::placeholders::_1));
+
+		//
+		//	define listener for configuration changes
+		//
+		auto l = cache_.get_db().get_listener("_Cfg"
+			, std::bind(&lmn::sig_ins_cfg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&lmn::sig_del_cfg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&lmn::sig_clr_cfg, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&lmn::sig_mod_cfg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+		boost::ignore_unused(l);
 
 	}
 
@@ -314,7 +324,7 @@ namespace node
 		CYNG_LOG_INFO(logger_, "LMN wireless is running on port: " << cfg.get_port());
 
 		return cyng::async::start_task_delayed<lmn_port>(mux_
-			, cfg.get_monitor()	//	use monitor as delay timer
+			, cfg.get_delay(std::chrono::seconds(5))	//	use monitor as delay timer
 			, logger_
 			, cfg.get_monitor()
 			, cfg.get_port()			//	port
@@ -330,8 +340,6 @@ namespace node
 	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t status_receiver)
 	{
 		cfg_rs485 cfg(cache_);
-
-		CYNG_LOG_INFO(logger_, "LMN wired port: " << cfg.get_port());
 
 		auto const parity = cfg.get_parity();
 		auto const r = cyng::async::start_task_delayed<lmn_port>(mux_
@@ -349,6 +357,11 @@ namespace node
 
 		if (r.second) {
 
+			CYNG_LOG_INFO(logger_, "LMN wired port #" 
+				<< r.first
+				<< " :"
+				<< cfg.get_port());
+
 			switch (cfg.get_protocol()) {
 			case cfg_rs485::protocol::MBUS:
 				CYNG_LOG_INFO(logger_, cfg.get_port() << " is managed as wired M-Bus");
@@ -363,6 +376,10 @@ namespace node
 				CYNG_LOG_INFO(logger_, cfg.get_port() << " is unmanaged (raw)");
 				break;
 			}
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "cannot start wired LMN port:"
+				<< cfg.get_port());
 		}
 		return r;
 	}
@@ -672,6 +689,84 @@ namespace node
 
 	}
 
+	void lmn::sig_ins_cfg(cyng::store::table const* tbl
+		, cyng::table::key_type const&
+		, cyng::table::data_type const&
+		, std::uint64_t
+		, boost::uuids::uuid)
+	{
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "TCfg"));
+	}
 
+	void lmn::sig_del_cfg(cyng::store::table const* tbl, cyng::table::key_type const&, boost::uuids::uuid)
+	{
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "TCfg"));
+	}
+
+	void lmn::sig_clr_cfg(cyng::store::table const* tbl, boost::uuids::uuid)
+	{
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "TCfg"));
+	}
+
+	void lmn::sig_mod_cfg(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, cyng::attr_t const& attr
+		, std::uint64_t gen
+		, boost::uuids::uuid source)
+	{
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
+		BOOST_ASSERT(key.size() == 1);
+
+		auto const name = cyng::value_cast<std::string>(key.at(0), "");
+#ifdef _DEBUG
+		if (boost::algorithm::starts_with(name, "9100000000FF")) {
+			CYNG_LOG_INFO(logger_, "LMN " << name << ": " << cyng::io::to_type(attr.second));
+		}
+#endif
+		if (boost::algorithm::equals(name, "9100000000FF:910000000201")) {
+			//std::uint8_t const port_idx{ 1 };	//	wireless
+			//	HARDWARE_PORT_DATABITS
+			mux_.post(radio_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_DATABITS.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000202")) {
+			//std::uint8_t const port_idx{ 2 };	//	RS 485
+			//	HARDWARE_PORT_DATABITS
+			mux_.post(serial_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_DATABITS.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000301")) {
+			//	HARDWARE_PORT_PARITY
+			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_PARITY.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000302")) {
+			//	HARDWARE_PORT_PARITY
+			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_PARITY.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000401")) {
+			//	HARDWARE_PORT_FLOW_CONTROL
+			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000402")) {
+			//	HARDWARE_PORT_FLOW_CONTROL
+			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000501")) {
+			//	HARDWARE_PORT_STOPBITS
+			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_STOPBITS.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000502")) {
+			//	HARDWARE_PORT_STOPBITS
+			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_STOPBITS.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000601")) {
+			//	HARDWARE_PORT_SPEED
+			CYNG_LOG_INFO(logger_, "LMN HARDWARE_PORT_SPEED [1]" << name << ": " << cyng::io::to_type(attr.second));
+			mux_.post(radio_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_SPEED.to_buffer(), attr.second));
+		}
+		else if (boost::algorithm::equals(name, "9100000000FF:910000000602")) {
+			//	HARDWARE_PORT_SPEED
+			CYNG_LOG_INFO(logger_, "LMN HARDWARE_PORT_SPEED [2]" << name << ": " << cyng::io::to_type(attr.second));
+			mux_.post(serial_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_SPEED.to_buffer(), attr.second));
+		}
+	}
 }
 

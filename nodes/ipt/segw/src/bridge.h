@@ -104,6 +104,19 @@ namespace node
 		void start_task_gpio();
 		void start_task_readout();
 
+		void sig_ins_cfg(cyng::store::table const*
+			, cyng::table::key_type const&
+			, cyng::table::data_type const&
+			, std::uint64_t
+			, boost::uuids::uuid);
+		void sig_del_cfg(cyng::store::table const*, cyng::table::key_type const&, boost::uuids::uuid);
+		void sig_clr_cfg(cyng::store::table const*, boost::uuids::uuid);
+		void sig_mod_cfg(cyng::store::table const*
+			, cyng::table::key_type const&
+			, cyng::attr_t const&
+			, std::uint64_t
+			, boost::uuids::uuid);
+
 	private:
 		/**
 		 * global logger

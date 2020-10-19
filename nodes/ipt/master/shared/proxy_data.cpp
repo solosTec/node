@@ -10,6 +10,7 @@
 #include <smf/sml/parser/srv_id_parser.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
+#include <smf/sml/protocol/generator.h>
 
 #include <cyng/vector_cast.hpp>
 #include <cyng/set_cast.h>
@@ -318,6 +319,53 @@ namespace node
 					, pd.is_job());
 			}
 		}
+		//else if (sml::OBIS_ROOT_IPT_PARAM == root) {
+		//	auto const idx = cyng::numeric_cast<std::uint8_t>(reader.get("index"), 0u);
+		//	auto const tpl = cyng::to_tuple(reader.get("ipt"));
+
+		//	for (auto const& val : tpl) {
+		//		//	host
+		//		//	port
+		//		//	user
+		//		//	pwd
+		//		auto const param = cyng::to_param(val);
+
+		//		if (boost::algorithm::equals(param.first, "host")) {
+
+		//			auto address = cyng::value_cast<std::string>(param.second, "localhost");
+		//			auto const tree_path = sml::obis_path_t{ sml::OBIS_ROOT_IPT_PARAM, sml::make_obis(sml::OBIS_ROOT_IPT_PARAM, idx), sml::make_obis(sml::OBIS_TARGET_IP_ADDRESS, idx) };
+		//			
+		//			auto const tpl = sml::set_proc_parameter_request(cyng::make_object(pd.get_srv())
+		//				, pd.get_user()
+		//				, pd.get_pwd()
+		//				, tree_path
+		//				, parameter_tree(tree_path.back(), sml::make_value(address)));
+		//			//push_trx(sml_gen.set_proc_parameter_ipt_host(data.get_srv()
+		//			//	, idx
+		//			//	, address), data);
+		//		}
+		//		else if (boost::algorithm::equals(param.first, "port")) {
+		//			auto port = cyng::numeric_cast<std::uint16_t>(param.second, 26862u);
+		//			//push_trx(sml_gen.set_proc_parameter_ipt_port_local(data.get_srv()
+		//			//	, idx
+		//			//	, port), data);
+		//		}
+		//		else if (boost::algorithm::equals(param.first, "user")) {
+		//			auto str = cyng::value_cast<std::string>(param.second, "");
+		//			//push_trx(sml_gen.set_proc_parameter_ipt_user(data.get_srv()
+		//			//	, idx
+		//			//	, str), data);
+		//		}
+		//		else if (boost::algorithm::equals(param.first, "pwd")) {
+		//			auto str = cyng::value_cast<std::string>(param.second, "");
+		//			//push_trx(sml_gen.set_proc_parameter_ipt_pwd(data.get_srv()
+		//			//	, idx
+		//			//	, str), data);
+		//		}
+
+		//	}
+
+		//}
 		return pd;
 	}
 
@@ -327,7 +375,7 @@ namespace node
 		case sml::message_e::GET_PROC_PARAMETER_REQUEST:
 			return finalize_get_proc_parameter_request(std::move(pd));
 		case sml::message_e::SET_PROC_PARAMETER_REQUEST:
-			return pd;
+			return finalize_set_proc_parameter_request(std::move(pd));
 		default:
 			break;
 		}

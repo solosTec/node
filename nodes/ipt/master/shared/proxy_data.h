@@ -127,6 +127,9 @@ namespace node
 	cyng::object read_server_id(cyng::object obj);
 	cyng::object parse_server_id(cyng::object obj);
 
+	//proxy_data finalize_get_proc_parameter_request(proxy_data&& pd);
+	//proxy_data finalize_set_proc_parameter_request(proxy_data&& pd)
+
 	/**
 	 * preprocessing and cleanup of proxy data
 	 */

@@ -15,6 +15,7 @@
 #include <smf/sml/intrinsics/obis_factory.hpp>
 
 #include <cyng/value_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 #include <boost/predef.h>
@@ -49,6 +50,15 @@ namespace node
 		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "monitor"), std::chrono::seconds(30));
 	}
 
+	std::chrono::seconds cfg_wmbus::get_delay(std::chrono::seconds cap) const
+	{
+		auto const monitor = get_monitor();
+		return (monitor > cap)
+			? cap
+			: monitor
+			;
+	}
+
 	boost::asio::serial_port_base::baud_rate cfg_wmbus::get_baud_rate() const
 	{
 		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }),
@@ -59,6 +69,13 @@ namespace node
 #endif
 		));
 	}
+
+	bool cfg_wmbus::set_baud_rate(cyng::object obj)
+	{
+		auto const val = cyng::numeric_cast<std::uint32_t>(obj, 8u);
+		return cache_.set_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), val);
+	}
+
 
 	boost::asio::serial_port_base::parity cfg_wmbus::get_parity() const
 	{

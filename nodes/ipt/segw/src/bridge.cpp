@@ -474,19 +474,7 @@ namespace node
 		//
 		//	insert into SQL database
 		//
-		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
-
-			BOOST_ASSERT(key.size() == 1);
-			BOOST_ASSERT(body.size() == 1);
-
-			//
-			//	store values as string
-			//
-			auto val = cyng::io::to_str(body.at(0));
-			storage_.insert("TCfg", key, cyng::table::data_generator(val, val, body.at(0).get_class().tag()), gen);
-
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
+		if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
 
 #ifdef _DEBUG
 			//CYNG_LOG_TRACE(logger_, "Insert into table TDeviceMBUS key: "
@@ -586,6 +574,26 @@ namespace node
 		}
 	}
 
+	void bridge::sig_ins_cfg(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, cyng::table::data_type const& body
+		, std::uint64_t gen
+		, boost::uuids::uuid source)
+	{
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
+		BOOST_ASSERT(tbl->meta().check_key(key));
+		BOOST_ASSERT(tbl->meta().check_body(body));
+		BOOST_ASSERT(key.size() == 1);
+		BOOST_ASSERT(body.size() == 1);
+
+		//
+		//	store values as string
+		//
+		auto val = cyng::io::to_str(body.at(0));
+		storage_.insert("TCfg", key, cyng::table::data_generator(val, val, body.at(0).get_class().tag()), gen);
+	}
+
+
 	void bridge::sig_del(cyng::store::table const* tbl
 		, cyng::table::key_type const& key
 		, boost::uuids::uuid source)
@@ -593,15 +601,7 @@ namespace node
 		//
 		//	delete from SQL database
 		//
-		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
-
-			if (!storage_.remove("TCfg", key)) {
-
-				CYNG_LOG_ERROR(logger_, "delete from TCfg failed: "
-					<< cyng::io::to_str(key));
-			}
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DataCollector")) {
+		if (boost::algorithm::equals(tbl->meta().get_name(), "_DataCollector")) {
 
 			if (!storage_.remove("TDataCollector", key)) {
 
@@ -638,11 +638,33 @@ namespace node
 		}
 	}
 
+	void bridge::sig_del_cfg(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, boost::uuids::uuid source)
+	{
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
+		if (!storage_.remove("TCfg", key)) {
+
+			CYNG_LOG_ERROR(logger_, "delete from TCfg failed: "
+				<< cyng::io::to_str(key));
+		}
+	}
+
 	void bridge::sig_clr(cyng::store::table const*, boost::uuids::uuid)
 	{
 		//
 		//	ToDo: clear SQL table
 		//
+
+
+	}
+
+	void bridge::sig_clr_cfg(cyng::store::table const* tbl, boost::uuids::uuid)
+	{
+		//
+		//	ToDo: clear SQL table
+		//
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
 
 
 	}
@@ -656,48 +678,8 @@ namespace node
 		//
 		//	Get the name of the column to be modified.
 		//
-		//auto const name = tbl->meta().get_name(attr.first);
 
-		if (boost::algorithm::equals(tbl->meta().get_name(), "_Cfg")) {
-
-			auto const name = cyng::value_cast<std::string>(key.at(0), "");
-			if (boost::algorithm::equals(name, "status.word")) {
-
-				//LOG_CODE_24 = 0x02100008,	//	Ethernet - Link an KundenSchnittstelle aktiviert
-				//EVT_SOURCE_39 = 0x818100000011,	//	USERIF(Interne MUC - SW - Funktion)
-
-				//
-				//	write into "op.log"
-				//
-				std::uint64_t sw = cyng::value_cast(attr.second, sml::status::get_initial_value());
-				storage_.generate_op_log(sw
-					, 0x800008	//	evt
-					, sml::OBIS_PEER_USERIF	//	source
-					, cyng::make_buffer({ 0x81, 0x81, 0x00, 0x00, 0x00, 0x11 })	//	server ID
-					, ""	//	target
-					, 0		//	nr
-					, "");	//	description
-			}
-			else if (boost::algorithm::equals(name, sml::OBIS_SERVER_ID.to_str())) {
-
-				//
-				//	update server ID in cache
-				//
-				auto mac = cyng::value_cast(attr.second, cyng::generate_random_mac48());
-				cache_.server_id_ = sml::to_gateway_srv_id(mac);
-			}
-
-
-			//
-			//	Update "TCfg"
-			//
-			storage_.update("TCfg"
-				, key
-				, "val"
-				, attr.second
-				, gen);
-		}
-		else if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
+		if (boost::algorithm::equals(tbl->meta().get_name(), "_DeviceMBUS")) {
 
 #ifdef _DEBUG
 			CYNG_LOG_TRACE(logger_, "Update TDeviceMBUS key: "
@@ -776,6 +758,52 @@ namespace node
 		}
 	}
 
+	void bridge::sig_mod_cfg(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, cyng::attr_t const& attr
+		, std::uint64_t gen
+		, boost::uuids::uuid tag)
+	{
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
+
+		auto const name = cyng::value_cast<std::string>(key.at(0), "");
+		if (boost::algorithm::equals(name, "status.word")) {
+
+			//LOG_CODE_24 = 0x02100008,	//	Ethernet - Link an KundenSchnittstelle aktiviert
+			//EVT_SOURCE_39 = 0x818100000011,	//	USERIF(Interne MUC - SW - Funktion)
+
+			//
+			//	write into "op.log"
+			//
+			std::uint64_t sw = cyng::value_cast(attr.second, sml::status::get_initial_value());
+			storage_.generate_op_log(sw
+				, 0x800008	//	evt
+				, sml::OBIS_PEER_USERIF	//	source
+				, cyng::make_buffer({ 0x81, 0x81, 0x00, 0x00, 0x00, 0x11 })	//	server ID
+				, ""	//	target
+				, 0		//	nr
+				, "");	//	description
+		}
+		else if (boost::algorithm::equals(name, sml::OBIS_SERVER_ID.to_str())) {
+
+			//
+			//	update server ID in cache
+			//
+			auto mac = cyng::value_cast(attr.second, cyng::generate_random_mac48());
+			cache_.server_id_ = sml::to_gateway_srv_id(mac);
+		}
+
+
+		//
+		//	Update "TCfg"
+		//
+		storage_.update("TCfg"
+			, key
+			, "val"
+			, attr.second
+			, gen);
+	}
+
 	void bridge::sig_trx(cyng::store::trx_type trx)
 	{
 		switch(trx) {
@@ -798,10 +826,10 @@ namespace node
 	void bridge::connect_to_cache()
 	{
 		auto l = cache_.db_.get_listener("_Cfg"
-			, std::bind(&bridge::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
-			, std::bind(&bridge::sig_del, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-			, std::bind(&bridge::sig_clr, this, std::placeholders::_1, std::placeholders::_2)
-			, std::bind(&bridge::sig_mod, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+			, std::bind(&bridge::sig_ins_cfg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5)
+			, std::bind(&bridge::sig_del_cfg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			, std::bind(&bridge::sig_clr_cfg, this, std::placeholders::_1, std::placeholders::_2)
+			, std::bind(&bridge::sig_mod_cfg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 		boost::ignore_unused(l);
 
 		l = cache_.db_.get_listener("_DeviceMBUS"

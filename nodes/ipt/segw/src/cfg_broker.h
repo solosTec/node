@@ -39,7 +39,7 @@ namespace node
 			explicit broker(std::string, std::string, std::string, std::uint16_t);
 			broker() = delete;
 			broker(broker const&) = default;
-			broker(broker&&) = default;
+			broker(broker&&) noexcept = default;
 
 			std::string const& get_account() const;
 			std::string const& get_pwd() const;
@@ -54,6 +54,7 @@ namespace node
 		};
 
 		using broker_list_t = std::vector<broker>;
+
 	public:
 		cfg_broker(cache&);
 
@@ -72,6 +73,12 @@ namespace node
 		  * /dev/ttyAPP0 and /dev/ttyAPP1 on linux systems
 		  */
 		 std::string get_port_name(cfg_broker::source s) const;
+
+		 /**
+		  * @return index of specified hardware port [1..2]. If port not exists
+		  * returns 0.
+		  */
+		 std::uint8_t get_port_id(std::string const& port_name) const;
 
 	private:
 		broker_list_t get_broker(std::uint8_t) const;

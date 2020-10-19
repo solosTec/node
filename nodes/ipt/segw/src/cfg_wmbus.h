@@ -8,9 +8,12 @@
 #ifndef NODE_WMBUS_SEGW_CONFIG_H
 #define NODE_WMBUS_SEGW_CONFIG_H
 
+#include <cyng/object.h>
+
 #include <string>
 #include <chrono>
 #include <cstdint>
+
 #include <boost/asio/serial_port_base.hpp>
 
 namespace node
@@ -43,9 +46,15 @@ namespace node
 		std::chrono::seconds get_monitor() const;
 
 		/**
+		 * @return "8106190700FF:monitor" capped 
+		 */
+		std::chrono::seconds get_delay(std::chrono::seconds cap) const;
+
+		/**
 		 * @return "8106190700FF:speed"
 		 */
 		boost::asio::serial_port_base::baud_rate get_baud_rate() const;
+		bool set_baud_rate(cyng::object obj);
 
 		/**
 		 * @return "8106190700FF:parity"

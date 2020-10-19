@@ -8,9 +8,12 @@
 #ifndef NODE_RS485_SEGW_CONFIG_H
 #define NODE_RS485_SEGW_CONFIG_H
 
+#include <cyng/object.h>
+
 #include <string>
 #include <chrono>
 #include <cstdint>
+
 #include <boost/asio/serial_port_base.hpp>
 
 namespace node
@@ -51,6 +54,7 @@ namespace node
 		 * @return "ROOT_HARDWARE_PORT:9100000006NN"
 		 */
 		boost::asio::serial_port_base::baud_rate get_baud_rate() const;
+		bool set_baud_rate(cyng::object);
 
 		/**
 		 * NN = 2

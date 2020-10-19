@@ -929,21 +929,21 @@ namespace node
 							sml::OBIS_BROKER_LOGIN }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "databits")) {
 						//	unsigned int
 						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 8u);
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, port_idx) }), cyng::make_object(val));
 					}
 					else if (boost::algorithm::equals(param.first, "parity")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x03, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "flow-control")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x04, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "stopbits")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x05, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "speed")) {
 						//	unsigned int
@@ -954,7 +954,7 @@ namespace node
 							115200u
 #endif
 							);
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, port_idx) }), cyng::make_object(val));
 					}
 					else {
 
@@ -1068,21 +1068,21 @@ namespace node
 					else if (boost::algorithm::equals(param.first, "databits")) {
 						//	unsigned int
 						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 8u);
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, port_idx) }), cyng::make_object(val));
 					}
 					else if (boost::algorithm::equals(param.first, "parity")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x03, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "flow-control")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x04, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "stopbits")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x05, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "speed")) {
 						//	unsigned int
 						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 2400u);
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, port_idx) }), cyng::make_object(val));
 					}
 					else {
 						init_config_record(s, build_cfg_key({ "rs485", param.first }), param.second);

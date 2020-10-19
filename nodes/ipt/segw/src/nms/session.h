@@ -13,6 +13,7 @@
 
 #include <cyng/log.h>
 #include <cyng/intrinsics/buffer.h>
+#include <cyng/dom/reader.h>
 
 namespace node
 {
@@ -31,7 +32,7 @@ namespace node
 			cyng::param_map_t run(cyng::param_map_t&&);
 
 		private:
-			void cmd_merge(cyng::param_map_t& pm, cyng::param_map_t const&, cyng::param_map_t const&);
+			cyng::param_map_t cmd_merge(cyng::param_map_reader const& dom);
 			void cmd_reboot();
 			cyng::param_map_t cmd_query();
 

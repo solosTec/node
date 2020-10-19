@@ -40,7 +40,7 @@ namespace node
 			void get_proc_params_port(std::string trx, cyng::buffer_t srv_id) const;
 
 			void set_proc_params(obis_path_t const& path, cyng::buffer_t srv_id, cyng::object);
-
+			void set_proc_params_port(obis_path_t const& path, cyng::buffer_t srv_id, cyng::object) const;
 
 		private:
 			cyng::logging::log_ptr logger_;

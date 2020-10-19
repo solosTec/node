@@ -122,27 +122,60 @@ namespace node
 		{
 			CYNG_LOG_DEBUG(logger_, to_hex(path, ':') << " = " << cyng::io::to_type(obj));
 
-			if (path.back().is_matching(0x90, 0x00, 0x00, 0x00, 0x01).second) {
-				//	login
+			if (path.back().is_matching_5(OBIS_BROKER_LOGIN).second) {
+				//	BROKER_LOGIN
 				cache_.set_cfg(build_cfg_key(path), obj);
 			}
-			else if (path.back().is_matching(0x90, 0x00, 0x00, 0x00, 0x03).second) {
-				//	address/host
+			else if (path.back().is_matching_5(OBIS_BROKER_SERVER).second) {
+				//	BROKER_SERVER
 				cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(obj));
 			}
-			if (path.back().is_matching(0x90, 0x00, 0x00, 0x00, 0x04).second) {
-				//	IP port
+			if (path.back().is_matching_5(OBIS_BROKER_SERVICE).second) {
+				//	BROKER_SERVICE (IP port)
 				cache_.set_cfg(build_cfg_key(path), cyng::numeric_cast<std::uint16_t>(obj, 12001u));
 			}
-			else if (path.back().is_matching(0x90, 0x00, 0x00, 0x00, 0x05).second) {
-				//	account
+			else if (path.back().is_matching_5(OBIS_BROKER_USER).second) {
+				//	BROKER_USER
 				cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(obj));
 			}
-			else if (path.back().is_matching(0x90, 0x00, 0x00, 0x00, 0x06).second) {
-				//	pwd
+			else if (path.back().is_matching_5(OBIS_BROKER_PWD).second) {
+				//	BROKER_PWD
 				cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(obj));
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "unknown broker value: " << to_hex(path, ':') << " = " << cyng::io::to_type(obj));
 			}
 
+		}
+
+		void config_broker::set_proc_params_port(obis_path_t const& path, cyng::buffer_t srv_id, cyng::object obj) const
+		{
+			if (path.back().is_matching_5(OBIS_HARDWARE_PORT_DATABITS).second) {
+				//	HARDWARE_PORT_DATABITS
+				auto const val = cyng::numeric_cast<std::uint32_t>(obj, 8u);
+				cache_.set_cfg<std::uint32_t>(build_cfg_key(path), val);
+			}
+			else if (path.back().is_matching_5(OBIS_HARDWARE_PORT_PARITY).second) {
+				//	HARDWARE_PORT_PARITY
+				cache_.set_cfg(build_cfg_key(path), obj);
+			}
+			else if (path.back().is_matching_5(OBIS_HARDWARE_PORT_FLOW_CONTROL).second) {
+				//	HARDWARE_PORT_FLOW_CONTROL
+				cache_.set_cfg(build_cfg_key(path), obj);
+			}
+			else if (path.back().is_matching_5(OBIS_HARDWARE_PORT_STOPBITS).second) {
+				//	HARDWARE_PORT_STOPBITS
+				cache_.set_cfg(build_cfg_key(path), obj);
+			}
+			else if (path.back().is_matching_5(OBIS_HARDWARE_PORT_SPEED).second) {
+				//	HARDWARE_PORT_SPEED
+				auto const val = cyng::numeric_cast<std::uint32_t>(obj, 8u);
+				cache_.set_cfg<std::uint32_t>(build_cfg_key(path), val);
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "unknown hardware port value: " << to_hex(path, ':') << " = " << cyng::io::to_type(obj));
+
+			}
 		}
 
 	}	//	sml

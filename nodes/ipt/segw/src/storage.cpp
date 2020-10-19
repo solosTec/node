@@ -229,7 +229,13 @@ namespace node
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
 
-			stmt->push(obj, 0);
+			//
+			//	repackaging as string
+			//	see also init_config_record()
+			//
+			auto const val = cyng::make_object(cyng::io::to_str(obj));
+			stmt->push(val, 0);
+
 			for (auto idx = 0; idx < key.size(); ++idx) {
 				stmt->push(key.at(idx), cmd.get_meta()->get_width(idx));
 			}

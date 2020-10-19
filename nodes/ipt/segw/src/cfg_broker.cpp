@@ -8,6 +8,9 @@
 #include "cfg_broker.h"
 #include "segw.h"
 #include "cache.h"
+#include "cfg_rs485.h"
+#include "cfg_wmbus.h"
+
 #include <smf/sml/obis_db.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
 
@@ -105,6 +108,21 @@ namespace node
 		}
 		return "";
 	}
+
+	std::uint8_t cfg_broker::get_port_id(std::string const& port_name) const
+	{
+		cfg_rs485 const rs485(cache_);
+		cfg_wmbus const wmbus(cache_);
+
+		if (boost::algorithm::equals(port_name, rs485.get_port())) {
+			return cfg_rs485::port_idx;
+		}
+		else if (boost::algorithm::equals(port_name, wmbus.get_port())) {
+			return cfg_wmbus::port_idx;
+		}
+		return 0u;
+	}
+
 
 	std::string cfg_broker::get_port_name(std::string path) const
 	{
