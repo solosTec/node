@@ -73,6 +73,7 @@ namespace node
 		 * @return "ROOT_HARDWARE_PORT:9100000005NN"
 		 */
 		boost::asio::serial_port_base::stop_bits get_stopbits() const;
+		bool set_databits(cyng::object obj) const;
 
 		/**
 		 * NN = 2

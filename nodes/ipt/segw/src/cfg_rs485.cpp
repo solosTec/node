@@ -46,13 +46,13 @@ namespace node
 
 	boost::asio::serial_port_base::baud_rate cfg_rs485::get_baud_rate() const
 	{
-		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), 2400u));
+		return boost::asio::serial_port_base::baud_rate(cache_.get_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, port_idx) }), 2400u));
 	}
 
 	bool cfg_rs485::set_baud_rate(cyng::object obj)
 	{
 		auto const val = cyng::numeric_cast<std::uint32_t>(obj, 8u);
-		return cache_.set_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x06, port_idx) }), val);
+		return cache_.set_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, port_idx) }), val);
 	}
 
 	boost::asio::serial_port_base::parity cfg_rs485::get_parity() const
@@ -72,7 +72,13 @@ namespace node
 
 	boost::asio::serial_port_base::character_size cfg_rs485::get_databits() const
 	{
-		return boost::asio::serial_port_base::character_size(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x02, port_idx) }), 8u));
+		return boost::asio::serial_port_base::character_size(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, port_idx) }), 8u));
+	}
+
+	bool cfg_rs485::set_databits(cyng::object obj) const
+	{
+		auto const val = cyng::numeric_cast<std::uint32_t>(obj, 8u);
+		return cache_.set_cfg<std::uint32_t>(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, port_idx) }), val);
 	}
 
 	cfg_rs485::protocol cfg_rs485::get_protocol() const

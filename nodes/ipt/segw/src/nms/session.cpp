@@ -261,38 +261,45 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "broker")) {
 							//  merge port: /dev/ttyAPP0 - broker: [%(("account":"C4vvQP"),("address":"segw.ch"),("port":12001i64),("pwd":"9BLPJfNc"))]
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "collector-login")) {
 							//  merge port: /dev/ttyAPP0 - collector-login: true
-
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "databits")) {
 							//  merge port: /dev/ttyAPP0 - databits: 8i64
-
+							if (port_id == cfg_rs485::port_idx) {
+								rs485.set_databits(param.second);
+							}
+							else {
+								wmbus.set_databits(param.second);
+							}
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
 						else if (boost::algorithm::equals(param.first, "enabled")) {
 							//  merge port: /dev/ttyAPP0 - enabled: true
-
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "flow-control")) {
 							//  merge port: /dev/ttyAPP0 - flow-control: "none"
-
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "listener")) {
 							//  merge port: /dev/ttyAPP0 - listener: %(("address":"0.0.0.0"),("port":7000i64),("timeout":30i64))
-
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "parity")) {
 							//  merge port: /dev/ttyAPP0 - parity: "even"
-
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("coming-soon"));
 						}
 						else if (boost::algorithm::equals(param.first, "protocol")) {
 							//  merge port: /dev/ttyAPP0 - protocol: "SML"
-
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "stopbits")) {
 							//  merge port: /dev/ttyAPP0 - stopbits: "one"
-
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("coming-soon"));
 						}
 						else {
 							CYNG_LOG_WARNING(logger_, "merge port: "

@@ -75,6 +75,7 @@ namespace node
 		 * @return "8106190700FF:databits"
 		 */
 		boost::asio::serial_port_base::character_size get_databits() const;
+		bool set_databits(cyng::object obj) const;
 
 		/**
 		 * @return HCI: W_MBUS_PROTOCOL:HCI.......................: CP210x (CP210x:s)
