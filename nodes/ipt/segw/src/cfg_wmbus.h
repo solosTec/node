@@ -33,6 +33,7 @@ namespace node
 		 * @return "8106190700FF:enabled"
 		 */
 		bool is_enabled() const;
+		bool set_enabled(cyng::object obj) const;
 
 		/**
 		 * Name of the serial port.
@@ -60,16 +61,19 @@ namespace node
 		 * @return "8106190700FF:parity"
 		 */
 		boost::asio::serial_port_base::parity get_parity() const;
+		bool set_parity(cyng::object) const;
 
 		/**
 		 * @return "8106190700FF:flow-control"
 		 */
 		boost::asio::serial_port_base::flow_control get_flow_control() const;
+		bool set_flow_control(cyng::object obj) const;
 
 		/**
 		 * @return "8106190700FF:stopbits"
 		 */
 		boost::asio::serial_port_base::stop_bits get_stopbits() const;
+		bool set_stopbits(cyng::object obj) const;
 
 		/**
 		 * @return "8106190700FF:databits"

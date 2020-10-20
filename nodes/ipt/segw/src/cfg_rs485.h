@@ -61,25 +61,28 @@ namespace node
 		 * @return "ROOT_HARDWARE_PORT:9100000003NN"
 		 */
 		boost::asio::serial_port_base::parity get_parity() const;
+		bool set_parity(cyng::object) const;
 
 		/**
 		 * NN = 2
 		 * @return "ROOT_HARDWARE_PORT:9100000004NN"
 		 */
 		boost::asio::serial_port_base::flow_control get_flow_control() const;
+		bool set_flow_control(cyng::object obj) const;
 
 		/**
 		 * NN = 2
 		 * @return "ROOT_HARDWARE_PORT:9100000005NN"
 		 */
 		boost::asio::serial_port_base::stop_bits get_stopbits() const;
-		bool set_databits(cyng::object obj) const;
+		bool set_stopbits(cyng::object obj) const;
 
 		/**
 		 * NN = 2
 		 * @return "ROOT_HARDWARE_PORT:9100000002NN"
 		 */
 		boost::asio::serial_port_base::character_size get_databits() const;
+		bool set_databits(cyng::object obj) const;
 
 		/**
 		 * @return "rs485:protocol"
@@ -91,6 +94,7 @@ namespace node
 		 * @return "rs485:enabled"
 		 */
 		bool is_enabled() const;
+		bool set_enabled(cyng::object obj) const;
 
 		static constexpr std::uint8_t port_idx = 2;
 

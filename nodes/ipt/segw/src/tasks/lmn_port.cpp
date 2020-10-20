@@ -263,7 +263,7 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> set options failes "
+				<< "> set options failed "
 				<< ex.what());
 		}
 	}

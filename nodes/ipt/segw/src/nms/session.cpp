@@ -28,6 +28,7 @@
 #include <cyng/set_cast.h>
 #include <cyng/json.h>
 #include <cyng/dom/algorithm.h>
+#include <cyng/parser/version_parser.h>
 
 
 namespace node
@@ -180,9 +181,20 @@ namespace node
 			//
 			auto const dom = cyng::make_reader(pm);
 			auto const cmd = cyng::value_cast<std::string>(dom.get("command"), "");
+			auto const rv = cyng::parse_version(cyng::value_cast<std::string>(dom.get("version"), ""));
 
-			CYNG_LOG_INFO(logger_, "NMS command: "
+			CYNG_LOG_INFO(logger_, "NMS "
+				<< rv.first
+				<< " command: "
 				<< cmd);
+
+			//
+			//	check version
+			//
+			if (!rv.second || rv.first != cyng::version(0.1)) {
+				pm["ec"] = cyng::make_object("wrong version");
+				return pm;
+			}
 
 			if (boost::algorithm::equals(cmd, "delete")) {
 				pm["ec"] = cyng::make_object("not implemented yet");
@@ -218,6 +230,7 @@ namespace node
 		{
 			auto const ports = cyng::to_param_map(dom.get("serial-port"));
 			auto const meter = cyng::to_param_map(dom.get("meter"));
+			auto const version = cyng::to_param_map(dom.get("version"));
 
 			cfg_rs485 rs485(cache_);
 			cfg_wmbus wmbus(cache_);
@@ -279,11 +292,23 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "enabled")) {
 							//  merge port: /dev/ttyAPP0 - enabled: true
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
+							if (port_id == cfg_rs485::port_idx) {
+								rs485.set_enabled(param.second);
+							}
+							else {
+								wmbus.set_enabled(param.second);
+							}
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
 						else if (boost::algorithm::equals(param.first, "flow-control")) {
 							//  merge port: /dev/ttyAPP0 - flow-control: "none"
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
+							if (port_id == cfg_rs485::port_idx) {
+								rs485.set_flow_control(param.second);
+							}
+							else {
+								wmbus.set_flow_control(param.second);
+							}
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
 						else if (boost::algorithm::equals(param.first, "listener")) {
 							//  merge port: /dev/ttyAPP0 - listener: %(("address":"0.0.0.0"),("port":7000i64),("timeout":30i64))
@@ -291,7 +316,13 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "parity")) {
 							//  merge port: /dev/ttyAPP0 - parity: "even"
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("coming-soon"));
+							if (port_id == cfg_rs485::port_idx) {
+								rs485.set_parity(param.second);
+							}
+							else {
+								wmbus.set_parity(param.second);
+							}
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
 						else if (boost::algorithm::equals(param.first, "protocol")) {
 							//  merge port: /dev/ttyAPP0 - protocol: "SML"
@@ -299,7 +330,13 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "stopbits")) {
 							//  merge port: /dev/ttyAPP0 - stopbits: "one"
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("coming-soon"));
+							if (port_id == cfg_rs485::port_idx) {
+								rs485.set_stopbits(param.second);
+							}
+							else {
+								wmbus.set_stopbits(param.second);
+							}
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
 						else {
 							CYNG_LOG_WARNING(logger_, "merge port: "
@@ -309,14 +346,13 @@ namespace node
 								<< ": "
 								<< cyng::io::to_type(param.second));
 
-							//pm["serial-port"][port.first][param.first] = cyng::make_object("error");
-
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: unknown attribute"));
 						}
 					}
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, port.first << " is an undefined port");
-
+					cyng::merge(pm, { "serial-port", port.first }, cyng::make_object("error: unknown hardrware port"));
 				}
 			}
 
@@ -340,6 +376,7 @@ namespace node
 
 			return cyng::param_map_factory
 				("command", "query")
+				("version", "0.1")
 				("ec", "ok")
 				("serial-port", cyng::tuple_factory(
 					cyng::set_factory(rs485.get_port(), cyng::param_map_factory

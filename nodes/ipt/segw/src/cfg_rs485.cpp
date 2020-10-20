@@ -30,7 +30,7 @@ namespace node
 
 	std::string cfg_rs485::get_port() const
 	{
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), 
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, port_idx) }),
 #if BOOST_OS_WINDOWS
 			std::string("COM1")
 #else
@@ -57,17 +57,35 @@ namespace node
 
 	boost::asio::serial_port_base::parity cfg_rs485::get_parity() const
 	{
-		return serial::to_parity(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x03, port_idx) }), "none"));
+		return serial::to_parity(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, port_idx) }), "none"));
+	}
+
+	bool cfg_rs485::set_parity(cyng::object obj) const
+	{
+		auto const parity = cyng::value_cast<std::string>(obj, "none");
+		return cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, port_idx) }), parity);
 	}
 
 	boost::asio::serial_port_base::flow_control cfg_rs485::get_flow_control() const
 	{
-		return serial::to_flow_control(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x04, port_idx) }), "none"));
+		return serial::to_flow_control(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, port_idx) }), "none"));
+	}
+
+	bool cfg_rs485::set_flow_control(cyng::object obj) const
+	{
+		auto const val = cyng::value_cast<std::string>(obj, "none");
+		return cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, port_idx) }), val);
 	}
 
 	boost::asio::serial_port_base::stop_bits cfg_rs485::get_stopbits() const
 	{
-		return serial::to_stopbits(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x05, port_idx) }), "one"));
+		return serial::to_stopbits(cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, port_idx) }), "one"));
+	}
+
+	bool cfg_rs485::set_stopbits(cyng::object obj) const
+	{
+		auto const val = cyng::value_cast<std::string>(obj, "one");
+		return cache_.set_cfg(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, port_idx) }), val);
 	}
 
 	boost::asio::serial_port_base::character_size cfg_rs485::get_databits() const
@@ -106,5 +124,10 @@ namespace node
 		return cache_.get_cfg("rs485.enabled", false);
 	}
 
+	bool cfg_rs485::set_enabled(cyng::object obj) const
+	{
+		auto const val = cyng::value_cast(obj, true);
+		return cache_.set_cfg("rs485.enabled", val);
+	}
 
 }
