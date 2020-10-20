@@ -89,6 +89,7 @@ namespace node
 		 */
 		protocol get_protocol() const;
 		std::string get_protocol_by_name() const;
+		bool set_protocol(cyng::object obj) const;
 
 		/**
 		 * @return "rs485:enabled"

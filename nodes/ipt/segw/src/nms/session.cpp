@@ -26,6 +26,7 @@
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
 #include <cyng/set_cast.h>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/json.h>
 #include <cyng/dom/algorithm.h>
 #include <cyng/parser/version_parser.h>
@@ -191,7 +192,7 @@ namespace node
 			//
 			//	check version
 			//
-			if (!rv.second || rv.first != cyng::version(0.1)) {
+			if (!rv.second || rv.first != cyng::version(0,1)) {
 				pm["ec"] = cyng::make_object("wrong version");
 				return pm;
 			}
@@ -234,7 +235,7 @@ namespace node
 
 			cfg_rs485 rs485(cache_);
 			cfg_wmbus wmbus(cache_);
-			cfg_broker const broker(cache_);
+			cfg_broker broker(cache_);
 
 			cyng::param_map_t pm = cyng::param_map_factory
 				("command", "merge")
@@ -252,6 +253,7 @@ namespace node
 				if (port_id != 0) {
 
 					CYNG_LOG_TRACE(logger_, "merge port: " << port.first);
+					cyng::merge(pm, { "serial-port", port.first, "index" }, cyng::make_object(port_id));
 
 					auto const port_map = cyng::to_param_map(dom["serial-port"].get(port.first));
 					for (auto const& param : port_map) {
@@ -274,11 +276,45 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "broker")) {
 							//  merge port: /dev/ttyAPP0 - broker: [%(("account":"C4vvQP"),("address":"segw.ch"),("port":12001i64),("pwd":"9BLPJfNc"))]
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
+							auto const vec = cyng::to_vector(param.second);
+							std::uint8_t idx{ 1 };
+							for (auto const& obj : vec) {
+								auto const sender = cyng::to_param_map(obj);
+								for (auto const& p : sender) {
+									CYNG_LOG_TRACE(logger_, "broker: " << p.first << ": " << cyng::io::to_type(p.second));
+									if (boost::algorithm::equals(p.first, "address")) {
+										auto const address = cyng::value_cast<std::string>(p.second, "");
+										broker.set_address(port.first, idx, address);
+									}
+									else if (boost::algorithm::equals(p.first, "port")) {
+										auto const service = cyng::numeric_cast<std::uint16_t>(p.second, 12000u);
+										broker.set_port(port.first, idx, service);
+									}
+									else if (boost::algorithm::equals(p.first, "account")) {
+										auto const user = cyng::value_cast<std::string>(p.second, "");
+										broker.set_account(port.first, idx, user);
+									}
+									else if (boost::algorithm::equals(p.first, "pwd")) {
+										auto const pwd = cyng::value_cast<std::string>(p.second, "");
+										broker.set_pwd(port.first, idx, pwd);
+									}
+									else {
+										CYNG_LOG_WARNING(logger_, "merge port: "
+											<< port.first
+											<< " unknown attribute: "
+											<< p.first
+											<< ": "
+											<< cyng::io::to_type(p.second));
+									}
+								}
+								++idx;
+							}
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implemented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "collector-login")) {
 							//  merge port: /dev/ttyAPP0 - collector-login: true
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
+							broker.set_login_required(port.first, cyng::value_cast(param.second, false));
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
 						else if (boost::algorithm::equals(param.first, "databits")) {
 							//  merge port: /dev/ttyAPP0 - databits: 8i64
@@ -312,7 +348,7 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "listener")) {
 							//  merge port: /dev/ttyAPP0 - listener: %(("address":"0.0.0.0"),("port":7000i64),("timeout":30i64))
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
+							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implemented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "parity")) {
 							//  merge port: /dev/ttyAPP0 - parity: "even"
@@ -326,7 +362,13 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "protocol")) {
 							//  merge port: /dev/ttyAPP0 - protocol: "SML"
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implmented-yet"));
+							if (port_id == cfg_rs485::port_idx) {
+								rs485.set_protocol(param.second);
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+							}
+							else {
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: not available"));
+							}
 						}
 						else if (boost::algorithm::equals(param.first, "stopbits")) {
 							//  merge port: /dev/ttyAPP0 - stopbits: "one"
@@ -352,7 +394,7 @@ namespace node
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, port.first << " is an undefined port");
-					cyng::merge(pm, { "serial-port", port.first }, cyng::make_object("error: unknown hardrware port"));
+					cyng::merge(pm, { "serial-port", port.first }, cyng::make_object("error: unknown hardware port"));
 				}
 			}
 

@@ -28,6 +28,7 @@ namespace node
 		 * pre-configured data sources
 		 */
 		enum class source : std::uint8_t {
+			OTHER = 0,
 			WIRELESS_LMN = 1,	//	IF_wMBUS
 			WIRED_LMN = 2,		//	rs485
 			ETHERNET,
@@ -63,11 +64,27 @@ namespace node
 		 * @return number of defined broker nodes
 		 */
 		 std::vector<broker> get_broker(source s) const;
+		 void set_broker(source s, std::uint8_t idx, broker const&);
+		 void set_broker(std::string const& port_name, std::uint8_t idx, broker const&);
+
+		 bool set_address(source s, std::uint8_t idx, std::string const&);
+		 bool set_address(std::string const& port_name, std::uint8_t idx, std::string const&);
+
+		 bool set_port(source s, std::uint8_t idx, std::uint16_t);
+		 bool set_port(std::string const& port_name, std::uint8_t idx, std::uint16_t);
+
+		 bool set_account(source s, std::uint8_t idx, std::string const&);
+		 bool set_account(std::string const& port_name, std::uint8_t idx, std::string const&);
+
+		 bool set_pwd(source s, std::uint8_t idx, std::string const&);
+		 bool set_pwd(std::string const& port_name, std::uint8_t idx, std::string const&);
 
 		 /**
 		  * Reference to "broker-login" configuration
 		  */
 		 bool is_login_required(cfg_broker::source s) const;
+		 bool set_login_required(cfg_broker::source s, bool) const;
+		 bool set_login_required(std::string const& port_name, bool) const;
 
 		 /**
 		  * /dev/ttyAPP0 and /dev/ttyAPP1 on linux systems
@@ -79,6 +96,7 @@ namespace node
 		  * returns 0.
 		  */
 		 std::uint8_t get_port_id(std::string const& port_name) const;
+		 cfg_broker::source get_port_source(std::string const& port_name) const;
 
 	private:
 		broker_list_t get_broker(std::uint8_t) const;

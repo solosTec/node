@@ -41,6 +41,75 @@ namespace node
 		return std::vector<cfg_broker::broker>();
 	}
 
+	void cfg_broker::set_broker(source s, std::uint8_t idx, broker const& data)
+	{
+		set_address(s, idx, data.get_address());
+		set_port(s, idx, data.get_port());
+		set_account(s, idx, data.get_account());
+		set_pwd(s, idx, data.get_pwd());
+	}
+
+	void cfg_broker::set_broker(std::string const& port_name, std::uint8_t idx, broker const& data)
+	{
+		set_broker(get_port_source(port_name), idx, data);
+	}
+
+	bool cfg_broker::set_address(source s, std::uint8_t idx, std::string const& address)
+	{
+		auto const port_idx = static_cast<std::uint8_t>(s);
+		return cache_.set_cfg(build_cfg_key({
+				sml::OBIS_ROOT_BROKER,
+				sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+				sml::make_obis(sml::OBIS_BROKER_SERVER, idx) }), address);
+	}
+
+	bool cfg_broker::set_address(std::string const& port_name, std::uint8_t idx, std::string const& address)
+	{
+		return set_address(get_port_source(port_name), idx, address);
+	}
+
+	bool cfg_broker::set_port(source s, std::uint8_t idx, std::uint16_t port)
+	{
+		auto const port_idx = static_cast<std::uint8_t>(s);
+		return cache_.set_cfg(build_cfg_key({
+				sml::OBIS_ROOT_BROKER,
+				sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+				sml::make_obis(sml::OBIS_BROKER_SERVICE, idx) }), port);
+	}
+
+	bool cfg_broker::set_account(source s, std::uint8_t idx, std::string const& user)
+	{
+		auto const port_idx = static_cast<std::uint8_t>(s);
+		return cache_.set_cfg(build_cfg_key({
+				sml::OBIS_ROOT_BROKER,
+				sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+				sml::make_obis(sml::OBIS_BROKER_USER, idx) }), user);
+	}
+
+	bool cfg_broker::set_account(std::string const& port_name, std::uint8_t idx, std::string const& user)
+	{
+		return set_account(get_port_source(port_name), idx, user);
+	}
+
+	bool cfg_broker::set_pwd(source s, std::uint8_t idx, std::string const& pwd)
+	{
+		auto const port_idx = static_cast<std::uint8_t>(s);
+		return cache_.set_cfg(build_cfg_key({
+				sml::OBIS_ROOT_BROKER,
+				sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+				sml::make_obis(sml::OBIS_BROKER_PWD, idx) }), pwd);
+	}
+
+	bool cfg_broker::set_pwd(std::string const& port_name, std::uint8_t idx, std::string const& pwd)
+	{
+		return set_pwd(get_port_source(port_name), idx, pwd);
+	}
+
+	bool cfg_broker::set_port(std::string const& port_name, std::uint8_t idx, std::uint16_t port)
+	{
+		return set_port(get_port_source(port_name), idx, port);
+	}
+
 	cfg_broker::broker_list_t cfg_broker::get_broker(std::uint8_t port_idx) const
 	{
 		std::vector<cfg_broker::broker> r;
@@ -97,6 +166,20 @@ namespace node
 		return cache_.get_cfg(path, true);
 	}
 
+	bool cfg_broker::set_login_required(cfg_broker::source s, bool b) const
+	{
+		auto const idx = static_cast<std::uint8_t>(s);
+		return cache_.set_cfg(build_cfg_key({
+				sml::OBIS_ROOT_BROKER,
+				sml::make_obis(sml::OBIS_ROOT_BROKER, static_cast<std::uint8_t>(idx)),
+				sml::OBIS_BROKER_LOGIN }), b);
+	}
+
+	bool cfg_broker::set_login_required(std::string const& port_name, bool b) const
+	{
+		return set_login_required(get_port_source(port_name), b);
+	}
+
 	std::string cfg_broker::get_port_name(cfg_broker::source s) const
 	{
 		switch (s) {
@@ -111,18 +194,22 @@ namespace node
 
 	std::uint8_t cfg_broker::get_port_id(std::string const& port_name) const
 	{
+		return static_cast<std::uint8_t>(get_port_source(port_name));
+	}
+
+	cfg_broker::source cfg_broker::get_port_source(std::string const& port_name) const
+	{
 		cfg_rs485 const rs485(cache_);
 		cfg_wmbus const wmbus(cache_);
 
 		if (boost::algorithm::equals(port_name, rs485.get_port())) {
-			return cfg_rs485::port_idx;
+			return source::WIRED_LMN;
 		}
 		else if (boost::algorithm::equals(port_name, wmbus.get_port())) {
-			return cfg_wmbus::port_idx;
+			return source::WIRELESS_LMN;
 		}
-		return 0u;
+		return source::OTHER;
 	}
-
 
 	std::string cfg_broker::get_port_name(std::string path) const
 	{
