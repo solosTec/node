@@ -917,15 +917,15 @@ namespace node
 		//gpio-path|1|/sys/class/gpio|/sys/class/gpio|15
 		//gpio-vector|1|46 47 50 53|46 47 50 53|15
 
-		auto const gpio_enabled = cache_.get_cfg("gpio-enabled", 
+		auto const gpio_enabled = cache_.get_cfg(build_cfg_key({ "gpio", "enabled" }),
 #if defined(__ARMEL__)
 			true
 #else
 			false
 #endif
 		);
-		auto const gpio_path = cache_.get_cfg<std::string>("gpio-path", "/sys/class/gpio");
-		auto const gpio_vector = cache_.get_cfg<std::string>("gpio-vector", "46 47 50 53");
+		auto const gpio_path = cache_.get_cfg<std::string>(build_cfg_key({ "gpio", "path" }), "/sys/class/gpio");
+		auto const gpio_vector = cache_.get_cfg<std::string>(build_cfg_key({ "gpio", "vector" }), "46 47 50 53");
 
 		if (gpio_enabled) {
 			//

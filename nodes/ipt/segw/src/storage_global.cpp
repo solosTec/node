@@ -928,6 +928,12 @@ namespace node
 							sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx), 
 							sml::OBIS_BROKER_LOGIN }), param.second);
 					}
+					else if (boost::algorithm::equals(param.first, "broker-enabled")) {
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_BROKER,
+							sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx) },
+							"enabled"), param.second);
+					}
 					else if (boost::algorithm::equals(param.first, "port")) {
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, port_idx) }), param.second);
 					}
@@ -1060,6 +1066,12 @@ namespace node
 							sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx), 
 							sml::OBIS_BROKER_LOGIN }), param.second);
 					}
+					else if (boost::algorithm::equals(param.first, "broker-enabled")) {
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_BROKER,
+							sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx) },
+							"enabled" ), param.second);
+					}
 					else if (boost::algorithm::equals(param.first, "port")) {
 						init_config_record(s, build_cfg_key({ 
 							sml::OBIS_ROOT_HARDWARE_PORT, 
@@ -1180,39 +1192,39 @@ namespace node
 			}
 
 			{
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("gpio"));
+				for (auto const& obj : tpl) {
+					cyng::param_t param;
+					param = cyng::value_cast(obj, param);
 
-				//
-				//	map all available GPIO paths
-				//
-				init_config_record(s, "gpio-path", dom.get("gpio-path"));
+					if (boost::algorithm::equals(param.first, "list")) {
+						auto const gpio_list = cyng::vector_cast<int>(dom["gpio"].get("list"), 0);
+						if (gpio_list.size() != 4) {
+							std::cerr
+								<< "***warning: invalid count of gpios: "
+								<< gpio_list.size()
+								<< std::endl;
+						}
+						std::stringstream ss;
+						bool initialized{ false };
+						for (auto const gpio : gpio_list) {
+							if (initialized) {
+								ss << ' ';
+							}
+							else {
+								initialized = true;
+							}
+							ss
+								<< gpio
+								;
+						}
+						init_config_record(s, build_cfg_key({ "gpio", "vector" }), cyng::make_object(ss.str()));
 
-				auto const gpio_list = cyng::vector_cast<int>(dom.get("gpio-list"), 0);
-				if (gpio_list.size() != 4) {
-					std::cerr 
-						<< "***warning: invalid count of gpios: " 
-						<< gpio_list.size()
-						<< std::endl;
-				}
-				std::stringstream ss;
-				bool initialized{ false };
-				for (auto const gpio : gpio_list) {
-					if (initialized) {
-						ss << ' ';
 					}
 					else {
-						initialized = true;
+						init_config_record(s, build_cfg_key({ "gpio", param.first }), param.second);
 					}
-					ss
-						<< gpio
-						;
 				}
-				init_config_record(s, "gpio-vector", cyng::make_object(ss.str()));
-
-				//
-				//	set GPIO enabled flag
-				//
-				init_config_record(s, "gpio-enabled", dom.get("gpio-enabled"));
-				
 			}
 
 			//

@@ -92,6 +92,8 @@ namespace node
 		bool set_protocol(cyng::object obj) const;
 
 		/**
+		 * Control to start the LMN port task or not.
+		 * 
 		 * @return "rs485:enabled"
 		 */
 		bool is_enabled() const;

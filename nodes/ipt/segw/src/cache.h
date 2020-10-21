@@ -110,6 +110,11 @@ namespace node
 			return merge_cfg(name, cyng::make_object(val));
 		}
 
+		template <typename T >
+		bool set_cfg(std::initializer_list<std::string> slist, T val) {
+			return merge_cfg(build_cfg_key(slist), cyng::make_object(val));
+		}
+
 		/**
 		 * set/insert a configuration value
 		 */

@@ -230,7 +230,7 @@ namespace node
 		cyng::param_map_t reader::cmd_merge(cyng::param_map_reader const& dom)
 		{
 			auto const ports = cyng::to_param_map(dom.get("serial-port"));
-			auto const meter = cyng::to_param_map(dom.get("meter"));
+			//auto const meter = cyng::to_param_map(dom.get("meter"));
 			auto const version = cyng::to_param_map(dom.get("version"));
 
 			cfg_rs485 rs485(cache_);
@@ -266,7 +266,7 @@ namespace node
 
 						if (boost::algorithm::equals(param.first, "baudrate")) {
 							//  merge port: /dev/ttyAPP0 - baudrate: "2400"
-							if (port_id == cfg_rs485::port_idx) {	
+							if (port_id == cfg_rs485::port_idx) {
 								rs485.set_baud_rate(param.second);
 							}
 							else {
@@ -329,10 +329,12 @@ namespace node
 						else if (boost::algorithm::equals(param.first, "enabled")) {
 							//  merge port: /dev/ttyAPP0 - enabled: true
 							if (port_id == cfg_rs485::port_idx) {
-								rs485.set_enabled(param.second);
+								//	RS 485
+								broker.set_enabled(cfg_broker::source::WIRED_LMN, param.second);
 							}
 							else {
-								wmbus.set_enabled(param.second);
+								//	wireless M-Bus
+								broker.set_enabled(cfg_broker::source::WIRELESS_LMN, param.second);
 							}
 							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
@@ -380,6 +382,49 @@ namespace node
 							}
 							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
+						else if (boost::algorithm::equals(param.first, "loop"))	{
+							//
+							//	supported only by RS485
+							//
+							if (port_id == cfg_rs485::port_idx) {
+								//
+								//	ToDo
+								//
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ToDo"));
+							}
+							else {
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: not supported by wirless M-Bus"));
+							}
+						}
+						else if (boost::algorithm::equals(param.first, "max-readout-frequency")) {
+							//
+							//	supported only by RS485
+							//
+							if (port_id == cfg_rs485::port_idx) {
+								//
+								//	ToDo
+								//
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ToDo"));
+
+							}
+							else {
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: not supported by wirless M-Bus"));
+							}
+						}
+						else if (boost::algorithm::equals(param.first, "blocklist")) {
+							//
+							//	supported only by wireless M-Bus
+							//
+							if (port_id == cfg_rs485::port_idx) {
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: not supported by RS485"));
+							}
+							else {
+								//
+								//	ToDo
+								//
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ToDo"));
+							}
+						}
 						else {
 							CYNG_LOG_WARNING(logger_, "merge port: "
 								<< port.first
@@ -398,12 +443,12 @@ namespace node
 				}
 			}
 
-			for (auto const& section : meter) {
-				CYNG_LOG_TRACE(logger_, "merge meter section: " << section.first);
-				//  merge meter section: blocklist
-				//  merge meter section: loop
-				//  merge meter section: max-readout-frequency
-			}
+			//for (auto const& section : meter) {
+			//	CYNG_LOG_TRACE(logger_, "merge meter section: " << section.first);
+			//	//  merge meter section: blocklist
+			//	//  merge meter section: loop
+			//	//  merge meter section: max-readout-frequency
+			//}
 
 			return pm;
 		}
@@ -415,6 +460,7 @@ namespace node
 			//
 			cfg_rs485 const rs485(cache_);
 			cfg_wmbus const wmbus(cache_);
+			cfg_broker const broker(cache_);
 
 			return cyng::param_map_factory
 				("command", "query")
@@ -423,38 +469,37 @@ namespace node
 				("serial-port", cyng::tuple_factory(
 					cyng::set_factory(rs485.get_port(), cyng::param_map_factory
 						("enabled", rs485.is_enabled())
+						("index", rs485.port_idx)
 						("parity", serial::to_str(rs485.get_parity()))
 						("databits", rs485.get_databits().value())
 						("flow-control", serial::to_str(rs485.get_flow_control()))
 						("stopbits", serial::to_str(rs485.get_stopbits()))
 						("baudrate", rs485.get_baud_rate().value())
 						("protocol", rs485.get_protocol_by_name())
-						("broker", cyng::vector_factory())
+						("broker", broker.get_broker_vector(cfg_broker::source::WIRED_LMN))
+						("max-readout-frequency", 5)
+						("loop", cyng::param_map_factory
+							("timeout", 60)
+							("request", "/?!")
+							())
 						()),
 					cyng::set_factory(wmbus.get_port(), cyng::param_map_factory
 						("enabled", wmbus.is_enabled())
+						("index", wmbus.port_idx)
 						("parity", serial::to_str(wmbus.get_parity()))
 						("databits", wmbus.get_databits().value())
 						("flow-control", serial::to_str(wmbus.get_flow_control()))
 						("stopbits", serial::to_str(wmbus.get_stopbits()))
 						("baudrate", wmbus.get_baud_rate().value())
-						("broker", cyng::vector_factory())
+						("broker", broker.get_broker_vector(cfg_broker::source::WIRELESS_LMN))
+						("blocklist", cyng::param_map_factory
+							("enabled", false)
+							("list", cyng::vector_factory({ "00684279" }))
+							("mode", "drop")
+							())
 						())
 				))
-				("meter", cyng::param_map_factory
-					("blocklist", cyng::param_map_factory
-						("enabled", false)
-						("list", cyng::vector_factory())
-						("mode", "drop")
-						())
-					("loop", cyng::param_map_factory
-						("timeout", 60)
-						("request", "/?!")
-						())
-					("max-readout-frequency", 5)
-					())
 				;
-
 		}
 
 		void reader::cmd_reboot()

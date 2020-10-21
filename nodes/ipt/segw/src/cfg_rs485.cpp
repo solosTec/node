@@ -122,18 +122,18 @@ namespace node
 	bool cfg_rs485::set_protocol(cyng::object obj) const
 	{
 		auto const val = cyng::value_cast<std::string>(obj, "raw");
-		return cache_.set_cfg({ "rs485", "protocol" }, val);
+		return cache_.set_cfg(build_cfg_key({ "rs485", "protocol" }), val);
 	}
 
 	bool cfg_rs485::is_enabled() const
 	{
-		return cache_.get_cfg("rs485.enabled", false);
+		return cache_.get_cfg(build_cfg_key({"rs485", "enabled"}), false);
 	}
 
 	bool cfg_rs485::set_enabled(cyng::object obj) const
 	{
 		auto const val = cyng::value_cast(obj, true);
-		return cache_.set_cfg("rs485.enabled", val);
+		return cache_.set_cfg(build_cfg_key({ "rs485", "enabled" }), val);
 	}
 
 }

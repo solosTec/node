@@ -696,17 +696,17 @@ namespace node
 		, std::uint64_t
 		, boost::uuids::uuid)
 	{
-		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "TCfg"));
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
 	}
 
 	void lmn::sig_del_cfg(cyng::store::table const* tbl, cyng::table::key_type const&, boost::uuids::uuid)
 	{
-		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "TCfg"));
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
 	}
 
 	void lmn::sig_clr_cfg(cyng::store::table const* tbl, boost::uuids::uuid)
 	{
-		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "TCfg"));
+		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
 	}
 
 	void lmn::sig_mod_cfg(cyng::store::table const* tbl
@@ -756,29 +756,28 @@ namespace node
 		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, 2) }))) {
 			mux_.post(serial_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_SPEED.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, "rs485.enabled")) {
+		else if (boost::algorithm::equals(name, build_cfg_key({sml::OBIS_ROOT_BROKER, sml::make_obis(sml::OBIS_ROOT_BROKER, 1) }, "enabled"))) {
 			auto const enable = cyng::value_cast(attr.second, true);
 			if (enable) {
-				CYNG_LOG_INFO(logger_, "start hardware port [1]");
-				start_lmn_port_wired(0);
+				CYNG_LOG_INFO(logger_, "start broker for wireless M-Bus");
+			//	cfg_wmbus const wmbus(cache_);
+			//	radio_port_ = start_wireless_sender(wmbus, 0);
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "stop hardware port [1]");
-				mux_.stop(serial_port_);
-				serial_port_ = cyng::async::NO_TASK;
+				CYNG_LOG_WARNING(logger_, "stop broker wireless M-Bus");
+				mux_.stop("node::broker");
+				//	mux_.stop(radio_port_);
 			}
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_IF_wMBUS }, "enabled"))) {
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_BROKER, sml::make_obis(sml::OBIS_ROOT_BROKER, 2) }, "enabled"))) {
 			auto const enable = cyng::value_cast(attr.second, true);
 			if (enable) {
-				CYNG_LOG_INFO(logger_, "start hardware port [2]");
-				cfg_wmbus const wmbus(cache_);
-				radio_port_ = start_wireless_sender(wmbus, 0);
+				CYNG_LOG_INFO(logger_, "start broker on RS 485");
+				//	start_lmn_port_wired(0);
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "stop hardware port [2]");
-				mux_.stop(radio_port_);
-				radio_port_ = cyng::async::NO_TASK;
+				CYNG_LOG_WARNING(logger_, "stop broker on RS 485");
+				mux_.stop("node::broker");
 			}
 		}
 	}

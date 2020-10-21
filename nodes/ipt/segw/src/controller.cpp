@@ -84,6 +84,14 @@ namespace node
 		{
 			macs.push_back(cyng::generate_random_mac48());
 		}
+
+		//
+		//	get local link addresses
+		//
+		std::vector<boost::asio::ip::address> local_links;
+		std::transform(std::begin(macs), std::end(macs), std::back_inserter(local_links), [](cyng::mac48 const& mac)->boost::asio::ip::address {
+			return mac.to_link_local();
+			});
 		
 		//
 		//	get build data/time
@@ -115,16 +123,22 @@ namespace node
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("time-offset", r.second ? r.first : std::chrono::system_clock::now())
 				, cyng::param_factory("log-pushdata", false)	//	log file for each channel
-#if BOOST_OS_WINDOWS
-				, cyng::param_factory("gpio-enabled", false)
-#else
-				, cyng::param_factory("gpio-enabled", true)
-#endif
-				, cyng::param_factory("gpio-path", "/sys/class/gpio")	//	accept only the specified MAC id
-				, cyng::param_factory("gpio-list", cyng::vector_factory({46, 47, 50, 53}))
 				, cyng::param_factory(sml::OBIS_OBISLOG_INTERVAL.to_str(), 15)	//	cycle time in minutes OBISLOG_INTERVAL
-				, cyng::param_factory("readout-interval", 121)	//	cycle time in seconds
+				, cyng::param_factory("readout-interval", 121)	//	cycle time in seconds - ToDo: move to correct section
 				, cyng::param_factory(sml::OBIS_STORAGE_TIME_SHIFT.to_str(), 0)	//	shifting storage time in seconds (affects all meters)
+
+				, cyng::param_factory("gpio", cyng::param_map_factory
+							("enabled", 
+#if defined(__ARMEL__)
+								true
+#else
+								false
+#endif
+							)
+							("path", "/sys/class/gpio")
+							("list", cyng::vector_factory({46, 47, 50, 53}))
+						()
+				)
 
 				, cyng::param_factory("SSL", cyng::tuple_factory(
 					cyng::param_factory("cert", "client.crt"),
@@ -180,7 +194,13 @@ namespace node
 					cyng::param_factory("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
 					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF - OBIS_DEVICE_CLASS) "2D 2D 2D"
 					//	configure server ID (MAC address)
-					cyng::param_factory("mac", macs.at(0))	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_SERVER_ID)
+#if defined(NODE_CROSS_COMPILE)
+					cyng::param_factory("mac", macs.back()),	//	hopefully this is eth2
+#else
+					cyng::param_factory("mac", macs.front()),	//	take first available MAC to build a server id (05 xx xx ..., 81 81 C7 82 04 FF - OBIS_SERVER_ID)
+#endif
+					cyng::param_factory("nics", macs),
+					cyng::param_factory("local-links", local_links)
 				))
 
 				//	wireless M-Bus adapter
@@ -225,23 +245,30 @@ namespace node
 #endif
 
 					cyng::param_factory(sml::OBIS_W_MBUS_PROTOCOL.to_str(), static_cast<std::uint8_t>(mbus::MODE_S)),	//	0 = T-Mode, 1 = S-Mode, 2 = S/T Automatic
+					cyng::param_factory(sml::OBIS_W_MBUS_PROTOCOL.to_str() + "-desc", "T, S, or T/S Mode"),	//	active
 					cyng::param_factory(sml::OBIS_W_MBUS_MODE_S.to_str(), 30),	//	seconds
+					cyng::param_factory(sml::OBIS_W_MBUS_MODE_S.to_str() + "-desc", "W_MBUS_MODE_S (seconds)"),
 					cyng::param_factory(sml::OBIS_W_MBUS_MODE_T.to_str(), 20),	//	seconds
+					cyng::param_factory(sml::OBIS_W_MBUS_MODE_T.to_str() + "-desc", "OBIS_W_MBUS_MODE_T (seconds)"),
 					cyng::param_factory(sml::OBIS_W_MBUS_REBOOT.to_str(), 86400),	//	0 = no reboot (seconds)
+					cyng::param_factory(sml::OBIS_W_MBUS_REBOOT.to_str() + "-desc", "W_MBUS_REBOOT (seconds)"),	
 					cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str(), static_cast<std::uint8_t>(mbus::STRONG)),	//	low, basic, average, strong (unused)
+					cyng::param_factory(sml::OBIS_W_MBUS_POWER.to_str() + "-desc", "W_MBUS_POWER"),
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
+					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str() + "-desc", "W_MBUS_INSTALL_MODE"),
 
 					cyng::param_factory("collector-login", true),		//	send login
+					cyng::param_factory("broker-enabled", true),		//	startup brokers
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
-						cyng::tuple_factory(
-							cyng::param_factory("address", "segw.ch"),
-							cyng::param_factory("port", 12001),
-							cyng::param_factory("account", "wmbus-" + gen_user(6)),
-							cyng::param_factory("pwd", gen_user(8)))
+						cyng::param_map_factory
+							("address", "segw.ch")
+							("port", 12001)
+							("account", "wmbus-" + gen_user(6))
+							("pwd", gen_user(8))
+						()
 					})
-					)
-				))
+				)))
 
 				, cyng::param_factory("wired-LMN", cyng::tuple_factory(
 					cyng::param_factory("monitor", rnd_monitor()),	//	seconds
@@ -262,16 +289,17 @@ namespace node
 					cyng::param_factory("protocol", "raw"),		//	raw, mbus, iec, sml
 
 					cyng::param_factory("collector-login", true),		//	send login
+					cyng::param_factory("broker-enabled", true),		//	startup brokers
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
-						cyng::tuple_factory(
-							cyng::param_factory("address", "segw.ch"),
-							cyng::param_factory("port", 12002),
-							cyng::param_factory("account", "rs485-" + gen_user(6)),
-							cyng::param_factory("pwd", gen_user(8)))
-						})
-					)
-				))
+						cyng::param_map_factory
+							("address", "segw.ch")
+							("port", 12002)
+							("account", "rs485-" + gen_user(6))
+							("pwd", gen_user(8))
+						()
+					})
+				)))
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
 					//	IEC 62056-21
@@ -298,7 +326,8 @@ namespace node
 					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str(), 14400),	//	14400 sec = 4 h
 					cyng::param_factory(sml::OBIS_IF_1107_TIME_SYNC.to_str() + "-desc", "TIME_SYNC"),	//	14400 sec = 4 h
 					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str(), 9),	//	max. variation in seconds
-					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-desc", "MAX_VARIATION")	//	max. variation in seconds
+					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-desc", "MAX_VARIATION"),	//	max. variation in seconds
+					cyng::param_factory("request", "/?!")	//	generic IEC request
 
 				))
 				, cyng::param_factory("mbus", cyng::tuple_factory(

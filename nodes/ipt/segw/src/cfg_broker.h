@@ -8,9 +8,12 @@
 #ifndef NODE_BROKER_SEGW_CONFIG_H
 #define NODE_BROKER_SEGW_CONFIG_H
 
+#include <cyng/intrinsics/sets.h>
+
 #include <string>
 #include <chrono>
 #include <cstdint>
+
 #include <boost/asio/serial_port_base.hpp>
 
 namespace node
@@ -64,6 +67,12 @@ namespace node
 		 * @return number of defined broker nodes
 		 */
 		 std::vector<broker> get_broker(source s) const;
+
+		 /**
+		  * @return a vector aof all brokers
+		  */
+		 cyng::vector_t get_broker_vector(source s) const;
+
 		 void set_broker(source s, std::uint8_t idx, broker const&);
 		 void set_broker(std::string const& port_name, std::uint8_t idx, broker const&);
 
@@ -98,6 +107,16 @@ namespace node
 		 std::uint8_t get_port_id(std::string const& port_name) const;
 		 cfg_broker::source get_port_source(std::string const& port_name) const;
 
+		 /**
+		  * Control to start the broker tasks or not.
+		  *
+		  * @return <PORT>:broker-enabled
+		  */
+		 bool is_enabled(cfg_broker::source s) const;
+		 bool is_enabled(std::string const& port_name) const;
+		 bool set_enabled(cfg_broker::source s, cyng::object obj) const;
+		 bool set_enabled(std::string const& port_name, cyng::object obj) const;
+
 	private:
 		broker_list_t get_broker(std::uint8_t) const;
 
@@ -107,5 +126,11 @@ namespace node
 	private:
 		cache& cache_;
 	};
+
+	/**
+	 * convert into a parameter map
+	 */
+	cyng::param_map_t to_param_map(cfg_broker::broker const&);
+
 }
 #endif

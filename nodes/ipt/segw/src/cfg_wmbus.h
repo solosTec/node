@@ -29,8 +29,9 @@ namespace node
 		cfg_wmbus(cache&);
 
 		/**
-		 * OBIS_IF_wMBUS:enabled"
-		 * @return "8106190700FF:enabled"
+		 * Control to start the LMN port task or not.
+		 * 
+		 * @return "8106190700FF:enabled" == OBIS_IF_wMBUS:enabled
 		 */
 		bool is_enabled() const;
 		bool set_enabled(cyng::object obj) const;

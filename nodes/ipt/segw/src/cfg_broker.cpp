@@ -41,6 +41,16 @@ namespace node
 		return std::vector<cfg_broker::broker>();
 	}
 
+	cyng::vector_t cfg_broker::get_broker_vector(cfg_broker::source s) const
+	{
+		cyng::vector_t vec;
+		auto const brokers = get_broker(s);
+		std::transform(std::begin(brokers), std::end(brokers), std::back_inserter(vec), [](cfg_broker::broker const& target) {
+			return cyng::make_object(to_param_map(target));
+			});
+		return vec;
+	}
+
 	void cfg_broker::set_broker(source s, std::uint8_t idx, broker const& data)
 	{
 		set_address(s, idx, data.get_address());
@@ -216,6 +226,36 @@ namespace node
 		return cache_.get_cfg(path, "");
 	}
 
+	bool cfg_broker::is_enabled(cfg_broker::source s) const
+	{
+		auto const idx = static_cast<std::uint8_t>(s);
+		return cache_.get_cfg(build_cfg_key({
+				sml::OBIS_ROOT_BROKER,
+				sml::make_obis(sml::OBIS_ROOT_BROKER, static_cast<std::uint8_t>(idx)) }, "enabled"), true);
+	}
+
+	bool cfg_broker::is_enabled(std::string const& port_name) const
+	{
+		return is_enabled(get_port_source(port_name));
+	}
+
+	bool cfg_broker::set_enabled(cfg_broker::source s, cyng::object obj) const
+	{
+		//
+		//	
+		//
+		auto const idx = static_cast<std::uint8_t>(s);
+		auto const val = cyng::value_cast(obj, true);	//	guarantee a boolean value
+		return cache_.set_cfg(build_cfg_key({
+				sml::OBIS_ROOT_BROKER,
+				sml::make_obis(sml::OBIS_ROOT_BROKER, static_cast<std::uint8_t>(idx)) }, "enabled"), val);
+	}
+
+	bool cfg_broker::set_enabled(std::string const& port_name, cyng::object obj) const
+	{
+		return set_enabled(get_port_source(port_name), obj);
+	}
+
 
 	cfg_broker::broker::broker(std::string account, std::string pwd, std::string address, std::uint16_t port)
 		: account_(account)
@@ -242,6 +282,16 @@ namespace node
 	std::uint16_t cfg_broker::broker::get_port() const
 	{
 		return port_;
+	}
+
+	cyng::param_map_t to_param_map(cfg_broker::broker const& target)
+	{
+		return cyng::param_map_factory
+			("address", target.get_address())
+			("port", target.get_port())
+			("account", target.get_account())
+			("pwd", target.get_pwd())
+			;
 	}
 
 }
