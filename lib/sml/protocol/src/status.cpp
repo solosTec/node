@@ -5,6 +5,7 @@
  *
  */
 
+#include <NODE_project_info.h>
 #include <smf/sml/status.h>
 #include <cyng/factory/set_factory.h>
 
@@ -169,8 +170,10 @@ namespace node
 				(sml::STATUS_BIT_EXT_IF_AVAILABLE, word.is_ext_if_available())
 				(sml::STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE, word.is_wireless_mbus_available())
 				(sml::STATUS_BIT_PLC_AVAILABLE, word.is_plc_available())
+#if NODE_ADDRESS_MODEL == 64
 				//	doesn't fit into size_t on 32 bit system
 				(sml::STATUS_BIT_NO_TIMEBASE, word.is_timebase_uncertain())
+#endif
 				;
 		}
 
