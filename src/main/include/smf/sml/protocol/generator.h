@@ -168,7 +168,7 @@ namespace node
 			}
 
 			/**
-			 * Generate an ampty set proc parameter request.
+			 * Generate an empty set proc parameter request.
 			 *
 			 * @return transaction ID
 			 */
