@@ -190,7 +190,7 @@ namespace node
 			auto const word = cache_.get_status_word();
 			CYNG_LOG_DEBUG(logger_, "status word: " << word);
 
-			//auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CLASS_OP_LOG_STATUS_WORD);
+			//auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_CLASS_OP_LOG_STATUS_WORD);
 
 			//append_get_proc_response(msg, {
 			//	OBIS_CLASS_OP_LOG_STATUS_WORD,
@@ -244,7 +244,7 @@ namespace node
 			const bool ntp_active = true;
 			const std::uint16_t ntp_tz = 3600;
 
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_NTP);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_NTP);
 
 			append_get_proc_response(msg, { OBIS_ROOT_NTP, OBIS_CODE_NTP_PORT }, make_value(ntp_port));
 			append_get_proc_response(msg, { OBIS_ROOT_NTP, OBIS_CODE_NTP_ACTIVE }, make_value(ntp_active));
@@ -349,7 +349,7 @@ namespace node
 			//CYNG_LOG_WARNING(logger_, "sml.get.proc.parameter.request - OBIS_ROOT_LAN_DSL not implemented yet");
 
 			//	81 48 0D 06 00 FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_LAN_DSL);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_LAN_DSL);
 
 			//	81 48 17 07 00 00
 			auto rep = cache_.get_cfg<boost::asio::ip::tcp::endpoint>("remote.ep", boost::asio::ip::tcp::endpoint());
@@ -445,7 +445,7 @@ namespace node
 		void get_proc_parameter::code_if_lan_dsl(std::string trx, cyng::buffer_t srv_id)
 		{
 			//	81 48 17 07 00 FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_IF_LAN_DSL);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_IF_LAN_DSL);
 
 			//
 			//	81 48 00 00 00 00 - computer name 
@@ -488,7 +488,7 @@ namespace node
 		void get_proc_parameter::code_root_active_devices(std::string trx, cyng::buffer_t srv_id)
 		{
 			//	81 81 11 06 FF FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_ACTIVE_DEVICES);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_ACTIVE_DEVICES);
 
 			//append_get_proc_response(msg, { OBIS_CODE_ROOT_NTP, OBIS_CODE_NTP_PORT }, make_value(ntp_port));
 
@@ -570,7 +570,7 @@ namespace node
 		void get_proc_parameter::code_root_visible_devices(std::string trx, cyng::buffer_t srv_id)
 		{
 			//	81 81 10 06 FF FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_VISIBLE_DEVICES);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_VISIBLE_DEVICES);
 
 			std::uint8_t
 				quant{ 1 }, //	outer loop counter (0x01 - 0xFA)
@@ -656,7 +656,7 @@ namespace node
 
 		void get_proc_parameter::storage_time_shift(std::string trx, cyng::buffer_t srv_id)
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_STORAGE_TIME_SHIFT);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_STORAGE_TIME_SHIFT);
 
 			auto sts = cache_.get_cfg<std::int32_t>(sml::OBIS_STORAGE_TIME_SHIFT.to_str(), 0);
 			append_get_proc_response(msg, {
@@ -672,7 +672,7 @@ namespace node
 
 		void get_proc_parameter::list_services(std::string trx, cyng::buffer_t srv_id)
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_LIST_SERVICES);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_LIST_SERVICES);
 
 #if BOOST_OS_WINDOWS
 			scm::mgr m(false);	//	no admin required
@@ -721,7 +721,7 @@ namespace node
 		void get_proc_parameter::code_if_edl(std::string trx, cyng::buffer_t srv_id)
 		{
 			//sml_gen_.empty(trx, srv_id, OBIS_IF_EDL);
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_IF_EDL);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_IF_EDL);
 
 			//
 			//	protocol (always 1)
@@ -747,7 +747,7 @@ namespace node
 
 		void get_proc_parameter::class_mbus(std::string trx, cyng::buffer_t srv_id)
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_CLASS_MBUS);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_CLASS_MBUS);
 
 			//
 			//	readout interval 

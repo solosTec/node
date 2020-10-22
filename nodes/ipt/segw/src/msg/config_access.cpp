@@ -41,7 +41,7 @@ namespace node
 			BOOST_ASSERT(path.front() == OBIS_ROOT_ACCESS_RIGHTS);
 
 			//	81 81 81 60 FF FF
-			cyng::tuple_t msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, path);
+			cyng::tuple_t msg = sml_gen_.empty_get_proc_param(trx, srv_id, path);
 
 			if (path.size() == 1) {
 

@@ -387,41 +387,41 @@ configure_file (
 # iec_62056
 configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056.windows.cgf.in"
-    "${PROJECT_BINARY_DIR}/config/iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+    "${PROJECT_BINARY_DIR}/config/broker-iec_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056_create_service.cmd.in"
-    "${PROJECT_BINARY_DIR}/config/iec_62056_create_service.cmd")
+    "${PROJECT_BINARY_DIR}/config/broker_iec_create_service.cmd")
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056_delete_service.cmd.in"
-    "${PROJECT_BINARY_DIR}/config/iec_62056_delete_service.cmd")
+    "${PROJECT_BINARY_DIR}/config/broker_iec_delete_service.cmd")
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056_restart_service.cmd.in"
-    "${PROJECT_BINARY_DIR}/config/iec_62056_restart_service.cmd")
+    "${PROJECT_BINARY_DIR}/config/broker_iec_restart_service.cmd")
 
 configure_file (
 	"${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056.rc.in"
-	"${PROJECT_BINARY_DIR}/iec_62056.rc")
+	"${PROJECT_BINARY_DIR}/broker_iec.rc")
 
 # mbus_radio
 configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio.windows.cgf.in"
-    "${PROJECT_BINARY_DIR}/config/mbus_radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+    "${PROJECT_BINARY_DIR}/config/broker-mbus-radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio_create_service.cmd.in"
-    "${PROJECT_BINARY_DIR}/config/mbus_radio_create_service.cmd")
+    "${PROJECT_BINARY_DIR}/config/broker_mbus_radio_create_service.cmd")
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio_delete_service.cmd.in"
-    "${PROJECT_BINARY_DIR}/config/mbus_radio_delete_service.cmd")
+    "${PROJECT_BINARY_DIR}/config/broker_mbus_radio_delete_service.cmd")
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio_restart_service.cmd.in"
-    "${PROJECT_BINARY_DIR}/config/mbus_radio_restart_service.cmd")
+    "${PROJECT_BINARY_DIR}/config/broker_mbus_radio_restart_service.cmd")
 
 configure_file (
 	"${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio.rc.in"
-	"${PROJECT_BINARY_DIR}/mbus_radio.rc")
+	"${PROJECT_BINARY_DIR}/broker_mbus_radio.rc")

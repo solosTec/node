@@ -5,7 +5,7 @@
 #
 [service]
 enabled = false
-name = node_lora_v${${PROJECT_NAME}_VERSION_MAJOR}
+name = smf_lora_v${${PROJECT_NAME}_VERSION_MAJOR}
 
 [setup]
 json = $ENV{ProgramData}\solosTec\SMF\lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json

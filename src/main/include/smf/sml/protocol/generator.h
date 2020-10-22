@@ -167,6 +167,12 @@ namespace node
 				return trx;
 			}
 
+			/**
+			 * Generate an ampty set proc parameter request.
+			 *
+			 * @return transaction ID
+			 */
+			std::pair<cyng::tuple_t, std::string> empty_set_proc_param(cyng::buffer_t server_id, obis root);
 
 			/**
 			 * Restart system - 81 81 C7 83 82 01
@@ -231,6 +237,7 @@ namespace node
 			 */
 			std::string set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
 				, std::uint8_t);
+
 
 			/**
 			 * Simple root query - BODY_GET_PROC_PARAMETER_REQUEST (0x500)
@@ -308,11 +315,11 @@ namespace node
 			 *
 			 * @return message tuple
 			 */
-			cyng::tuple_t empty_get_proc_param_response(std::string trx
+			cyng::tuple_t empty_get_proc_param(std::string trx
 				, cyng::buffer_t server_id
 				, obis);
 
-			cyng::tuple_t empty_get_proc_param_response(std::string trx
+			cyng::tuple_t empty_get_proc_param(std::string trx
 				, cyng::buffer_t server_id
 				, obis_path_t);
 

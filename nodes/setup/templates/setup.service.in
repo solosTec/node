@@ -1,7 +1,7 @@
 [Unit]
 Description=setup server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
 Wants=node-master.service
-After=network.target node-master.service
+After=network.target smf-master.service
 
 [Service]
 Type=simple

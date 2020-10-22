@@ -10,7 +10,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/www/templates/http.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-http.service")
+		"${PROJECT_BINARY_DIR}/config/smf-http.service")
 
 # https
 configure_file (
@@ -19,7 +19,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/www/templates/https.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-https.service")
+		"${PROJECT_BINARY_DIR}/config/smf-https.service")
 
 # dash
 configure_file (
@@ -28,7 +28,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/admin/templates/dash.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-dash.service")
+		"${PROJECT_BINARY_DIR}/config/smf-dash.service")
 
 # dashs
 configure_file (
@@ -37,7 +37,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/admin/templates/dashs.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-dashs.service")
+		"${PROJECT_BINARY_DIR}/config/smf-dashs.service")
 
 # e355
 configure_file (
@@ -46,7 +46,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/e350/templates/e350.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-e350.service")
+		"${PROJECT_BINARY_DIR}/config/smf-e350.service")
 
 # ipt collector 
 configure_file (
@@ -55,7 +55,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/ipt/collector/templates/collector.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-collector.service")
+		"${PROJECT_BINARY_DIR}/config/smf-collector.service")
 
 # ipt emitter 
 configure_file (
@@ -64,7 +64,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/ipt/emitter/templates/emitter.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-emitter.service")
+		"${PROJECT_BINARY_DIR}/config/smf-emitter.service")
 	  
 # ipt segw
 if (${${PROJECT_NAME}_CROSS_COMPILE})
@@ -82,7 +82,7 @@ else()
 			
 	configure_file (
 			"${PROJECT_SOURCE_DIR}/nodes/ipt/segw/templates/segw.service.in"
-			"${PROJECT_BINARY_DIR}/config/node-segw.service")
+			"${PROJECT_BINARY_DIR}/config/smf-segw.service")
 			
 endif()
 	  
@@ -94,7 +94,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipt.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-ipt.service")
+		"${PROJECT_BINARY_DIR}/config/smf-ipt.service")
 
 # ipts master
 configure_file (
@@ -103,7 +103,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/ipt/master/templates/ipts.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-ipts.service")
+		"${PROJECT_BINARY_DIR}/config/smf-ipts.service")
 
 # ipt store
 configure_file (
@@ -112,7 +112,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/ipt/store/templates/store.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-store.service")
+		"${PROJECT_BINARY_DIR}/config/smf-store.service")
 
 # lora
 configure_file (
@@ -121,7 +121,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/lora/templates/lora.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-lora.service")
+		"${PROJECT_BINARY_DIR}/config/smf-lora.service")
 	  
 # master
 configure_file (
@@ -130,7 +130,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/master/templates/master.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-master.service")
+		"${PROJECT_BINARY_DIR}/config/smf-master.service")
 
 # modem
 configure_file (
@@ -139,7 +139,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/modem/templates/modem.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-modem.service")
+		"${PROJECT_BINARY_DIR}/config/smf-modem.service")
 
 # mqtt
 configure_file (
@@ -148,7 +148,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/mqtt/templates/mqtt.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-mqtt.service")
+		"${PROJECT_BINARY_DIR}/config/smf-mqtt.service")
 
 
 # setup
@@ -158,7 +158,7 @@ configure_file (
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/setup/templates/setup.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-setup.service")
+		"${PROJECT_BINARY_DIR}/config/smf-setup.service")
 	  
 # csv
 configure_file (
@@ -169,20 +169,20 @@ configure_file (
     "${PROJECT_SOURCE_DIR}/nodes/tasks/csv/templates/csv.service.in"
     "${PROJECT_BINARY_DIR}/config/task-csv.service")
 
-# iec_62056
+# IEC 62056
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056.linux.cgf.in"
-		"${PROJECT_BINARY_DIR}/config/iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		"${PROJECT_BINARY_DIR}/config/broker-iec_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/broker/iec-62056/templates/iec_62056.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-iec_62056.service")
+		"${PROJECT_BINARY_DIR}/config/smf-broker-iec.service")
 
-#  EN13757 mBus
+#  EN13757 M-Bus
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio.linux.cgf.in"
-		"${PROJECT_BINARY_DIR}/config/mbus_radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		"${PROJECT_BINARY_DIR}/config/broker-mbus-radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 	  
 configure_file (
 		"${PROJECT_SOURCE_DIR}/nodes/broker/mbus-radio/templates/mbus_radio.service.in"
-		"${PROJECT_BINARY_DIR}/config/node-mbus_radio.service")
+		"${PROJECT_BINARY_DIR}/config/smf-broker-mbus-radio.service")

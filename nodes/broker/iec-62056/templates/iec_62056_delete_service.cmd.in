@@ -5,8 +5,8 @@ REM delete IEC 62056 service
 REM	created : ${${PROJECT_NAME}_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo delete service node_iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo delete service smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop nnode_iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc delete node_iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc delete smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

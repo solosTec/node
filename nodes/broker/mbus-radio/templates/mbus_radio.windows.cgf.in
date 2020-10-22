@@ -5,9 +5,9 @@
 #
 [service]
 enabled = false
-name = node_mbus_radio_v${${PROJECT_NAME}_VERSION_MAJOR}
+name = smf_broker_mbus_radio_v${${PROJECT_NAME}_VERSION_MAJOR}
 
 [setup]
-json = $ENV{ProgramData}\solosTec\SMF\mbus_radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+json = $ENV{ProgramData}\solosTec\SMF\broker-mbus-radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
 pool-size = ${${PROJECT_NAME}_POOL_SIZE}
 

@@ -29,7 +29,7 @@ namespace node
 		void config_sensor_params::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			//	81 81 C7 86 00 FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_SENSOR_PARAMS);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_SENSOR_PARAMS);
 
 			//
 			//	81 81 C7 86 00 FF

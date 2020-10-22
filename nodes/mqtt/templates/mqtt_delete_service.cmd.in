@@ -5,8 +5,8 @@ REM delete mqtt service
 REM	created : ${${PROJECT_NAME}_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo delete service node_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo delete service smf_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop node_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc delete node_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop smf_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc delete smf_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

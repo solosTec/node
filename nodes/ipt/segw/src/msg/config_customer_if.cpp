@@ -30,7 +30,7 @@ namespace node
 		void config_customer_if::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			//	00 80 80 01 00 FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_CUSTOM_INTERFACE);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_CUSTOM_INTERFACE);
 
 			//	example
 			//81 02 00 07 00 FF                Not set
@@ -143,7 +143,7 @@ namespace node
 
 		void config_customer_if::get_ip_address(std::string trx, cyng::buffer_t srv_id) const
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_CUSTOM_PARAM);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_CUSTOM_PARAM);
 
 			auto const rep = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_CUSTOM_PARAM }, "ep.remote"), boost::asio::ip::tcp::endpoint());
 

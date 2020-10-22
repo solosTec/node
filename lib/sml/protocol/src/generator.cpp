@@ -134,6 +134,27 @@ namespace node
 			return trx;
 		}
 
+		std::pair<cyng::tuple_t, std::string> req_generator::empty_set_proc_param(cyng::buffer_t server_id, obis root)
+		{
+			++trx_;
+			auto const trx = *trx_;
+			return std::make_pair(message(cyng::make_object(trx)
+				, group_no_++	//	group
+				, 0 //	abort code
+				, message_e::SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
+
+				//
+				//	generate process parameter request
+				//
+				, set_proc_parameter_request(cyng::make_object(server_id)
+					, name_
+					, pwd_
+					, root
+					, child_list_tree(root, {}))
+				), trx);
+		}
+
+
 		std::size_t req_generator::set_proc_parameter_restart(cyng::buffer_t const& server_id)
 		{
 			++trx_;
@@ -359,10 +380,10 @@ namespace node
 
 		std::size_t res_generator::empty(std::string trx, cyng::buffer_t server_id, obis root)
 		{
-			return append(empty_get_proc_param_response(trx, server_id, root));
+			return append(empty_get_proc_param(trx, server_id, root));
 		}
 
-		cyng::tuple_t res_generator::empty_get_proc_param_response(std::string trx
+		cyng::tuple_t res_generator::empty_get_proc_param(std::string trx
 			, cyng::buffer_t server_id
 			, obis root)
 		{
@@ -379,7 +400,7 @@ namespace node
 					, child_list_tree(root, {})));
 		}
 
-		cyng::tuple_t res_generator::empty_get_proc_param_response(std::string trx
+		cyng::tuple_t res_generator::empty_get_proc_param(std::string trx
 			, cyng::buffer_t server_id
 			, obis_path_t path)
 		{

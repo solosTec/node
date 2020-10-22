@@ -5,7 +5,7 @@
 #
 [service]
 enabled = false
-name = node_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
+name = smf_mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}
 
 [setup]
 json = $ENV{ProgramData}\solosTec\SMF\mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json

@@ -32,7 +32,7 @@ namespace node
 		void config_ipt::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			//	81 81 11 06 FF FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, node::sml::OBIS_ROOT_IPT_PARAM);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, node::sml::OBIS_ROOT_IPT_PARAM);
 
 			std::uint8_t nr{ 1 };
 

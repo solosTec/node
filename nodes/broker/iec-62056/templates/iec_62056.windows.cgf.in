@@ -5,9 +5,9 @@
 #
 [service]
 enabled = false
-name = node_iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}
+name = smf_broker_iec"_v${${PROJECT_NAME}_VERSION_MAJOR}
 
 [setup]
-json = $ENV{ProgramData}\solosTec\SMF\iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+json = $ENV{ProgramData}\solosTec\SMF\broker-iec_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
 pool-size = ${${PROJECT_NAME}_POOL_SIZE}
 

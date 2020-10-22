@@ -31,7 +31,7 @@ namespace node
 
 		void config_iec::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_IF_1107);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_IF_1107);
 
 			//
 			//	81 81 C7 93 01 FF - if true 1107 interface active otherwise SML interface active

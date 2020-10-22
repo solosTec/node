@@ -39,7 +39,7 @@ namespace node
 
 		void config_broker::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_BROKER);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_BROKER);
 
 			//CYNG_LOG_DEBUG(logger_, cyng::io::to_type(msg));
 
@@ -93,7 +93,7 @@ namespace node
 
 		void config_broker::get_proc_params_port(std::string trx, cyng::buffer_t srv_id) const
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_HARDWARE_PORT);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_HARDWARE_PORT);
 
 			cfg_wmbus wmbus(cache_);
 			cfg_rs485 rs485(cache_);

@@ -43,7 +43,7 @@ namespace node
 		void config_data_collector::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			//	81 81 C7 86 20 FF
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_DATA_COLLECTOR);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_DATA_COLLECTOR);
 
 			cache_.read_tables("_DataCollector", "_DataMirror", [&](cyng::store::table const* tbl_dc, cyng::store::table const* tbl_reg) {
 
@@ -109,7 +109,7 @@ namespace node
 
 		void config_data_collector::get_push_operations(std::string trx, cyng::buffer_t srv_id) const
 		{
-			auto msg = sml_gen_.empty_get_proc_param_response(trx, srv_id, OBIS_ROOT_PUSH_OPERATIONS);
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_PUSH_OPERATIONS);
 
 			//
 			//	81 81 C7 8A 01 FF - service push

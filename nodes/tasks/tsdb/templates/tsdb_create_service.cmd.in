@@ -5,14 +5,14 @@ REM install tsdb service
 REM	created : ${${PROJECT_NAME}_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo create service node_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo create service smf_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create node_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\tsdb.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\tsdb_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF tsdb server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description node_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR} "tsdb Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
-sv failure node_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+sc create smf_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\tsdb.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\tsdb_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF tsdb server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description smf_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR} "tsdb Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sv failure smf_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
 REM Add a dependency to SMF master service.
 REM Modify or remove this dependency if SMF master is running on a different node.
 REM
-sc config node_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR} depend= node_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc config smf_tsdb_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

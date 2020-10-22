@@ -5,8 +5,8 @@ REM restart dash service
 REM	created : ${${PROJECT_NAME}_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo restart service node_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo restart service smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop node_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc start node_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc start smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

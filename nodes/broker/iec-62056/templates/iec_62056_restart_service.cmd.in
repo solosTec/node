@@ -5,8 +5,8 @@ REM restart IEC 62056 service
 REM	created : ${${PROJECT_NAME}_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo restart service node_iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo restart service smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop node_iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc start node_iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc start smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

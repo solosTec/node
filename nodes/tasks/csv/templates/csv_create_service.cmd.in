@@ -5,14 +5,14 @@ REM install csv service
 REM	created : ${${PROJECT_NAME}_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo create service node_csv_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo create service smf_csv_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create node_csv_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\csv.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF csv server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description node_csv_v${${PROJECT_NAME}_VERSION_MAJOR} "csv Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
-sv failure node_csv_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+sc create smf_csv_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\csv.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\csv_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF csv server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description smf_csv_v${${PROJECT_NAME}_VERSION_MAJOR} "csv Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sv failure smf_csv_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
 REM Add a dependency to SMF master service.
 REM Modify or remove this dependency if SMF master is running on a different node.
 REM
-sc config node_csv_v${${PROJECT_NAME}_VERSION_MAJOR} depend= node_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc config smf_csv_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on
