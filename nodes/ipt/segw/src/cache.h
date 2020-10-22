@@ -8,6 +8,7 @@
 #ifndef NODE_IPT_SEGW_CACHE_H
 #define NODE_IPT_SEGW_CACHE_H
 
+#include "segw.h"
 #include <smf/sml/status.h>
 #include <smf/ipt/config.h>
 
