@@ -154,7 +154,6 @@ namespace node
 				), trx);
 		}
 
-
 		std::size_t req_generator::set_proc_parameter_restart(cyng::buffer_t const& server_id)
 		{
 			++trx_;

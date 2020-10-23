@@ -7,7 +7,7 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service node_iec_62056_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\broker_iec.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF IEC 62056-21 server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc create smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\broker_iec.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\broker-iec_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF IEC 62056-21 server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
 sc description smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR} "IEC 62056-21 Broker v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
 sc failure smf_broker_iec_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
