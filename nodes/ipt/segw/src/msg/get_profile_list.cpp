@@ -40,7 +40,7 @@ namespace node
 		{
 		}
 
-		void get_profile_list::generate_response(obis code
+		messages_t get_profile_list::generate_response(obis code
 			, std::string trx
 			, cyng::buffer_t client_id
 			, cyng::buffer_t srv_id
@@ -63,8 +63,7 @@ namespace node
 			case 0x8181C78616FF:	//	PROFILE_1_MONTH
 			case 0x8181C78617FF:	//	PROFILE_1_YEAR
 			case 0x8181C78618FF:	//	PROFILE_INITIAL
-				get_profile(code, trx, client_id, srv_id, start, end);
-				break;
+				return get_profile(code, trx, client_id, srv_id, start, end);
 
 			default:
 				CYNG_LOG_ERROR(logger_, "sml.get.profile.list.request - unknown OBIS code "
@@ -73,9 +72,11 @@ namespace node
 					<< cyng::io::to_hex(code.to_buffer()));
 				break;
 			}
+
+			return messages_t{};
 		}
 
-		void get_profile_list::class_op_log(std::string trx
+		messages_t get_profile_list::class_op_log(std::string trx
 			, cyng::buffer_t client_id
 			, cyng::buffer_t srv_id
 			, std::chrono::system_clock::time_point start
@@ -85,6 +86,8 @@ namespace node
 				<< cyng::to_str(start)
 				<< " to "
 				<< cyng::to_str(end));
+
+			messages_t msgs;
 
 			//
 			//	send operation logs - 81 81 C7 89 E1 FF 
@@ -96,7 +99,7 @@ namespace node
 				auto server = cyng::value_cast(rec["serverId"], tmp);
 				auto idx = cyng::value_cast<std::uint64_t>(rec["ROWID"], 0u);
 
-				sml_gen_.get_profile_op_log(trx
+				msgs.push_back(sml_gen_.get_profile_op_log(trx
 					, client_id
 					, cyng::value_cast(rec["actTime"], std::chrono::system_clock::now()) //	act_time
 					, cyng::value_cast<std::uint32_t>(rec["regPeriod"], 900u) //	reg_period
@@ -109,20 +112,24 @@ namespace node
 					, cyng::value_cast<std::string>(rec["target"], "")
 					, cyng::value_cast<std::uint8_t>(rec["pushNr"], 1u)
 					, cyng::value_cast<std::string>(rec["details"], "")
-				);
+				));
 
 				return true;	//	continue
 			});
+
+			return msgs;
 		}
 
 #ifdef _DEBUG
-		void get_profile_list::profile_15_minute(std::string trx
+		messages_t get_profile_list::profile_15_minute(std::string trx
 			, cyng::buffer_t client_id
 			, cyng::buffer_t srv_id
 			, std::chrono::system_clock::time_point start
 			, std::chrono::system_clock::time_point end)
 		{
 			CYNG_LOG_WARNING(logger_, "OBIS_PROFILE_15_MINUTE not implemented yet");
+
+			messages_t msgs;
 
 			auto rndi = cyng::crypto::make_rnd(-10, +10);
 			auto val = rndi();
@@ -161,15 +168,17 @@ namespace node
 					, OBIS_PROFILE_15_MINUTE
 					, period_entry(OBIS_CODE(81, 06, 2B, 07, 00, 00), 255, 0, cyng::make_object(-53)));
 
-				//
-				//	append to message queue
-				//
-				sml_gen_.append(std::move(msg));
+				msgs.push_back(msg);
 			}
+
+			//
+			//	append to message queue
+			//
+			return msgs;
 		}
 #endif
 
-		void get_profile_list::get_profile(obis profile
+		messages_t get_profile_list::get_profile(obis profile
 			, std::string trx
 			, cyng::buffer_t client_id
 			, cyng::buffer_t srv_id
@@ -177,7 +186,9 @@ namespace node
 			, std::chrono::system_clock::time_point end)
 		{
 			std::uint64_t idx_prev{ 0u };
-			cyng::tuple_t msg;
+			//cyng::tuple_t msg;
+
+			messages_t msgs;
 
 			storage_.loop_profile(profile, start, end, [&](cyng::buffer_t srv_id
 				, std::uint64_t idx
@@ -189,16 +200,16 @@ namespace node
 				, std::uint8_t unit
 				, cyng::object&& obj)->bool {
 
-					if (idx_prev != idx) {
+					//if (idx_prev != idx) {
 
-						if (idx_prev != 0u) {
-							//
-							//	append to message queue
-							//
-							sml_gen_.append(std::move(msg));
-						}
+						//if (idx_prev != 0u) {
+						//	//
+						//	//	append to message queue
+						//	//
+						//	sml_gen_.append(std::move(msg));
+						//}
 
-						msg = sml_gen_.empty_get_profile_list(trx
+						auto msg = sml_gen_.empty_get_profile_list(trx
 							, srv_id
 							, profile
 							, act_time	// act_time
@@ -206,12 +217,14 @@ namespace node
 							, std::chrono::system_clock::now()	// val_time
 							, 0u);	//	status
 
-						idx_prev = idx;
-					}
+						//idx_prev = idx;
+					//}
 
 					append_period_entry(msg
 						, profile
 						, period_entry(code, unit, scaler, obj));
+
+					msgs.push_back(msg);
 
 					CYNG_LOG_TRACE(logger_, sml::from_server_id(srv_id)
 						<< ", "
@@ -233,7 +246,8 @@ namespace node
 			//
 			//	append to message queue
 			//
-			if (!msg.empty())	sml_gen_.append(std::move(msg));
+			//if (!msg.empty())	sml_gen_.append(std::move(msg));
+			return msgs;
 
 		}
 	}	//	sml

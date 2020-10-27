@@ -1239,16 +1239,16 @@ namespace node
 					auto const param = cyng::to_param(obj);
 
 					if (boost::algorithm::equals(param.first, "address")) {
-						init_config_record(s, "server:address", param.second);
+						init_config_record(s, build_cfg_key({ "server", "address" }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "service")) {
-						init_config_record(s, "server:service", param.second);
+						init_config_record(s, build_cfg_key({ "server", "service" }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "discover")) {
-						init_config_record(s, "server:discover", param.second);
+						init_config_record(s, build_cfg_key({ "server", "discover" }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "account")) {
-						init_config_record(s, "server:account", param.second);
+						init_config_record(s, build_cfg_key({ "server", "account" }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "pwd")) {
 						init_config_record(s, "server:pwd", param.second);
@@ -1271,19 +1271,24 @@ namespace node
 					auto const param = cyng::to_param(obj);
 
 					if (boost::algorithm::equals(param.first, "address")) {
-						init_config_record(s, "nms:address", param.second);
+						auto const address = boost::asio::ip::make_address(cyng::value_cast<std::string>(param.second, "0.0.0.0"));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ADDRESS }), cyng::make_object(address));
 					}
-					else if (boost::algorithm::equals(param.first, "service")) {
-						init_config_record(s, "nms:service", param.second);
+					else if (boost::algorithm::equals(param.first, "port")) {
+						auto const port = cyng::numeric_cast<std::int16_t>(param.second, 7261u);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }), cyng::make_object(port));
 					}
 					else if (boost::algorithm::equals(param.first, "account")) {
-						init_config_record(s, "nms:account", param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_USER }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "pwd")) {
-						init_config_record(s, "nms:pwd", param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PWD }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "enabled")) {
-						init_config_record(s, "nms:enabled", param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ENABLED }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "script-path")) {
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS }, "script-path"), param.second);
 					}
 				}
 			}

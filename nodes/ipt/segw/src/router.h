@@ -115,6 +115,10 @@ namespace node
 		sml::get_list get_list_;
 		sml::attention attention_;
 
+		/**
+		 * collection of all messages to serialize
+		 */
+		sml::messages_t	messages_;
 	};
 
 

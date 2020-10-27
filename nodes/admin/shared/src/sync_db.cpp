@@ -933,6 +933,9 @@ namespace node
 		, boost::uuids::uuid origin)
 	{
 		if (boost::algorithm::equals(table, "_Session")) {
+
+			BOOST_ASSERT(key.size() == 1);
+
 			if (boost::algorithm::equals(param.first, "rtag")) {
 
 				const auto rtag = cyng::value_cast(param.second, boost::uuids::nil_uuid());
@@ -943,21 +946,17 @@ namespace node
 				db.access([&](cyng::store::table* tbl_gw, cyng::store::table* tbl_meter, const cyng::store::table* tbl_ses) {
 
 					//
-					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
-					//	Gateway and Device table share the same table key
+					//	Gateway and Device table share the same table key.
+					//	If the remote key (rtag) is the same as the session tag, then there is an internal connection 
+					//	established (e.g. with a task).
 					//
 					auto rec = tbl_ses->lookup(key);
+					auto const tag = cyng::value_cast(key.at(0), boost::uuids::nil_uuid());	//	session tag
 					std::uint32_t const online_state = (rec.empty())
 						? 0
-						: (rtag.is_nil() ? 1 : 2)
+						: (rtag.is_nil() ? 1 
+							: ((rtag == tag) ? 3 : 2))
 						;
-					//if (rec.empty()) {
-					//	//	set online state
-					//	tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
-					//}
-					//else {
-					//	tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", rtag.is_nil() ? 1 : 2), origin);
-					//}
 					tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", online_state), origin);
 
 					//

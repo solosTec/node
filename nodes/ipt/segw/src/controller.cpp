@@ -147,7 +147,7 @@ namespace node
 
 				, cyng::param_factory("DB", cyng::tuple_factory(
 					cyng::param_factory("type", "SQLite"),
-#if defined(NODE_CROSS_COMPILE) && defined(BOOST_OS_LINUX)
+#if defined(NODE_CROSS_COMPILE) && BOOST_OS_LINUX
 					cyng::param_factory("file-name", "/usr/local/etc/smf/segw.database"),
 #else
 					cyng::param_factory("file-name", (cwd / "segw.database").string()),
@@ -173,7 +173,7 @@ namespace node
 				//	NMS configuration interface
 				, cyng::param_factory("nms", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
-					cyng::param_factory("service", "7261"),
+					cyng::param_factory("port", 7261),
 					cyng::param_factory("account", "operator"),
 					cyng::param_factory("pwd", "operator"),
 					cyng::param_factory("enabled", 
@@ -184,7 +184,13 @@ namespace node
 #endif
 					),
 
-					cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
+					cyng::param_factory("script-path", 
+#if BOOST_OS_LINUX
+						tmp / "update-script.sh"
+#else
+						tmp / "update-script.cmd"
+#endif
+					)
 				))
 
 				//	hardware
@@ -345,7 +351,7 @@ namespace node
 				))
 				, cyng::param_factory("ipt", cyng::vector_factory({
 					cyng::tuple_factory(
-#if defined(NODE_CROSS_COMPILE) && defined(BOOST_OS_LINUX)
+#if defined(NODE_CROSS_COMPILE) && BOOST_OS_LINUX
 						cyng::param_factory("host", "segw.ch"),
 						cyng::param_factory("account", host),
 						cyng::param_factory("service", "26862"),
@@ -359,7 +365,7 @@ namespace node
 						cyng::param_factory("scrambled", true),
 						cyng::param_factory("monitor", rnd_monitor())),	//	seconds
 					cyng::tuple_factory(
-#if defined(NODE_CROSS_COMPILE) && defined(BOOST_OS_LINUX)
+#if defined(NODE_CROSS_COMPILE) && BOOST_OS_LINUX
 						cyng::param_factory("host", "192.168.1.100"),
 						cyng::param_factory("account", host),
 						cyng::param_factory("service", "26862"),
@@ -511,7 +517,6 @@ namespace node
 				, cmgr
 				, account
 				, pwd
-				, accept_all
 				, get_nms_ep(cmgr));
 
 			if (cmgr.get_cfg("nms:enabled", false)) {

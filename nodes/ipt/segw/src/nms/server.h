@@ -25,7 +25,6 @@ namespace node
 				, cache& cfg
 				, std::string account
 				, std::string pwd
-				, bool accept_all
 				, boost::asio::ip::tcp::endpoint ep);
 
 		public:
@@ -48,8 +47,6 @@ namespace node
 			 */
 			std::string const account_;
 			std::string const pwd_;
-
-			bool const accept_all_;
 
 			boost::asio::ip::tcp::acceptor acceptor_;
 			std::uint64_t session_counter_;

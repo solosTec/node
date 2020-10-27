@@ -23,13 +23,11 @@ namespace node
 			, cache& cfg
 			, std::string account
 			, std::string pwd
-			, bool accept_all
 			, boost::asio::ip::tcp::endpoint ep)
 		: logger_(logger)
 			, cache_(cfg)
 			, account_(account)
 			, pwd_(pwd)
-			, accept_all_(accept_all)
 			, acceptor_(ios, ep)
 			, session_counter_{ 0 }
 		{
@@ -66,11 +64,6 @@ namespace node
 							//
 							--session_counter_;
 							CYNG_LOG_TRACE(logger_, "NMS session count " << session_counter_);
-
-							//
-							//	remove from VM controller
-							//
-							//vm_.async_run(cyng::generate_invoke("vm.remove", tag));
 
 							//
 							//	remove session

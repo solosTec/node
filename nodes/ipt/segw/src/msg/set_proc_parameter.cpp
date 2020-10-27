@@ -108,10 +108,10 @@ namespace node
 					reboot(trx, srv_id);
 					break;
 				case CODE_ROOT_BROKER:
-					config_broker_.set_proc_params(path, srv_id, param.second);
+					config_broker_.set_proc_params(path, srv_id, param);
 					break;
 				case CODE_ROOT_HARDWARE_PORT:
-					config_broker_.set_proc_params_port(path, srv_id, param.second);
+					config_broker_.set_proc_params_port(path, srv_id, param);
 					break;
 				case CODE_ROOT_CUSTOM_INTERFACE:	//	81 02 00 07 00 FF
 					config_customer_if_.set_params(path, srv_id, param.second);

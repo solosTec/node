@@ -942,8 +942,9 @@ namespace node
 
 			res.set(boost::beast::http::field::server, NODE::version_string);
 			res.set(boost::beast::http::field::content_description, "File Transfer");
-			res.set(boost::beast::http::field::content_disposition, "attachment; filename='" + attachment + "'");
-			res.set(boost::beast::http::field::expires, 0);
+			auto const content_disposition = "attachment; filename='" + attachment + "'";
+			res.set(boost::beast::http::field::content_disposition, content_disposition);
+			//res.set(boost::beast::http::field::expires, "0");	//	already expired
 			res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
 			res.set(boost::beast::http::field::pragma, "public");
 			res.set(boost::beast::http::field::content_transfer_encoding, "binary");

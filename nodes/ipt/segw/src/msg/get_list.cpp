@@ -41,7 +41,7 @@ namespace node
 		{
 		}
 
-		void get_list::generate_response(obis&& code
+		cyng::tuple_t get_list::generate_response(obis&& code
 			, std::string trx
 			, cyng::buffer_t client_id
 			, cyng::buffer_t srv_id //	<- meter/sensor ID with the requested data
@@ -51,8 +51,7 @@ namespace node
 		{
 			switch (code.to_uint64()) {
 			case CODE_LIST_CURRENT_DATA_RECORD:	
-				current_data_record(trx, client_id, srv_id, req_field);
-				break;
+				return current_data_record(trx, client_id, srv_id, req_field);
 
 			default:
 				CYNG_LOG_ERROR(logger_, "sml.get.list.request - unknown OBIS code "
@@ -61,9 +60,11 @@ namespace node
 					<< cyng::io::to_hex(code.to_buffer()));
 				break;
 			}
+
+			return cyng::tuple_factory();
 		}
 
-		void get_list::current_data_record(std::string trx
+		cyng::tuple_t get_list::current_data_record(std::string trx
 			, cyng::buffer_t client_id
 			, cyng::buffer_t srv_id
 			, std::string req_field)
@@ -126,7 +127,7 @@ namespace node
 				});
 			});
 
-			sml_gen_.get_list(trx
+			return sml_gen_.get_list(trx
 				, client_id
 				, srv_id
 				, OBIS_LIST_CURRENT_DATA_RECORD

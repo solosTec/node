@@ -20,7 +20,6 @@
 #include <cyng/vm/controller.h>
 #include <cyng/dom/reader.h>
 
-#include <queue>
 #include <boost/predef.h>	//	requires Boost 1.55
 
 namespace node
@@ -34,8 +33,6 @@ namespace node
 	 */
 	class gateway_proxy
 	{
-		using input_queue = std::queue< proxy_data >;
-		using output_map = std::map<std::string, proxy_data>;
 
 	public:
 		using msg_0 = std::tuple<>;
@@ -210,7 +207,7 @@ namespace node
 			cyng::buffer_t srv,			//	[8] server id
 			std::string name,			//	[9] name
 			std::string	pwd,			//	[10] pwd
-			bool cache_enabled			//	[11] use cache
+			bool cache_enabled			//	[11] use cache (this is a setting in the dash application)
 		);
 
 		/**
@@ -245,69 +242,67 @@ namespace node
 
 	private:
 		void run_queue();
-		void execute_cmd(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::tuple_reader const& params);
-		void execute_cmd_get_profile_list(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::tuple_reader const& params);
-		void execute_cmd_set_proc_param(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::tuple_reader const& params);
-		void execute_cmd_get_list_request(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::tuple_reader const& params);
-		void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
-			, proxy_data const&
-			, std::uint8_t idx
-			, cyng::tuple_t&& tpl);
-		void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::tuple_t&& params);
-		void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::tuple_t&& params);
-		bool execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
-			, proxy_data const&
-			, std::uint8_t nr
-			, std::string&& str);
-		bool execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
-			, proxy_data const&
-			, std::uint8_t nr
-			, std::string&& str);
-		bool execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
-			, proxy_data const&
-			, std::uint8_t nr
-			, std::string&& );
-		bool execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
-			, proxy_data const&
-			, std::string &&
-			, std::string 
-			, std::string
-			, std::string
-			, std::string);
+		//void execute_cmd(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::tuple_reader const& params);
+		//void execute_cmd_get_profile_list(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::tuple_reader const& params);
+		//void execute_cmd_set_proc_param(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::tuple_reader const& params);
+		//void execute_cmd_get_list_request(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::tuple_reader const& params);
+		//void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, std::uint8_t idx
+		//	, cyng::tuple_t&& tpl);
+		//void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::tuple_t&& params);
+		//void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::tuple_t&& params);
+		//bool execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, std::uint8_t nr
+		//	, std::string&& str);
+		//bool execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, std::uint8_t nr
+		//	, std::string&& str);
+		//bool execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, std::uint8_t nr
+		//	, std::string&& );
+		//bool execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, std::string &&
+		//	, std::string 
+		//	, std::string
+		//	, std::string
+		//	, std::string);
 
-		void execute_cmd_set_proc_param_broker(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::vector_t&& params);
+		//void execute_cmd_set_proc_param_broker(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::vector_t&& params);
 
-		void execute_cmd_set_proc_param_hw_port(sml::req_generator& sml_gen
-			, proxy_data const&
-			, cyng::tuple_t const& vec);
+		//void execute_cmd_set_proc_param_hw_port(sml::req_generator& sml_gen
+		//	, proxy_data const&
+		//	, cyng::tuple_t const& vec);
 
 		/**
 		 * Store proxy data in transaction/output map
 		 */
-		void push_trx(std::string, proxy_data const&);
+		//void push_trx(std::string, proxy::data const&);
 
 		/**
 		 * update configuration cache
 		 */
 		void update_cfg_cache(std::string srv
 			, sml::obis_path_t root
-			, proxy_data const& pd
-			, cyng::param_map_t const& params
-			, bool force);
+			, cyng::param_t const& param);
 
 		/**
 		 * prepare cache to store store all active devices and 
@@ -336,10 +331,10 @@ namespace node
 		 * the next bunch of queries has to generated.
 		 */
 		void process_job_result(sml::obis_path_t path
-			, proxy_data const&
+			, proxy::data const&
 			, cyng::param_map_t const& params);
 
-		void queue_access_right_queries(proxy_data const& prx, cyng::param_map_t const& params);
+		void queue_access_right_queries(proxy::data const& prx, cyng::param_map_t const& params);
 
 		void place_access_right_request(boost::uuids::uuid tag
 			, boost::uuids::uuid source
@@ -354,6 +349,11 @@ namespace node
 			, std::string pwd
 			, cyng::tuple_t&&);
 
+		void send_get_proc_param_response(proxy::cluster_data const&
+			, sml::obis_path_t const& path
+			, std::string const& srv_str
+			, cyng::object val);
+
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
@@ -367,7 +367,7 @@ namespace node
 		 * All incoming requests from the network are first
 		 * queued in this input queue.
 		 */
-		input_queue		input_queue_;
+		proxy::input_queue		input_queue_;
 
 		/**
 		 * The output map stores the relation between a sent SML message
@@ -376,7 +376,7 @@ namespace node
 		 * The output helps to redirect the responses from the gateway
 		 * to the origin requester.
 		 */
-		output_map		output_map_;
+		proxy::output_map		output_map_;
 
 		/**
 		 * This is an counter for all pending requests sent
@@ -385,7 +385,7 @@ namespace node
 		 * will be incremented. After receiving an "sml.public.close.response"
 		 * the counter will be decremented.
 		 */
-		std::size_t		open_requests_;
+		//std::size_t		open_requests_;
 
 		/**
 		 * gateway proxy state
@@ -402,10 +402,6 @@ namespace node
 		 */
 		config_cache	config_cache_;
 	};
-
-	cyng::mac48 get_mac();
-
-
 }
 
 #if BOOST_COMP_GNUC

@@ -33,7 +33,8 @@ namespace node
 
 		private:
 			cyng::param_map_t cmd_merge(cyng::param_map_reader const& dom);
-			void cmd_reboot();
+			cyng::param_map_t cmd_update(cyng::param_map_reader const& dom);
+			cyng::param_map_t cmd_reboot();
 			cyng::param_map_t cmd_query();
 
 		private:

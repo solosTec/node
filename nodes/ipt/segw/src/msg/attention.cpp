@@ -100,36 +100,36 @@ namespace node
 
 		}
 
-		void attention::send_attention_code_ok(cyng::object trx, cyng::buffer_t server_id)
+		cyng::tuple_t attention::send_attention_code_ok(cyng::object trx, cyng::buffer_t server_id)
 		{
-			sml_gen_.attention_msg(trx	// trx
+			return sml_gen_.attention_msg(trx	// trx
 				, server_id	//	server ID
 				, OBIS_ATTENTION_OK.to_buffer()
 				, "OK"
 				, cyng::tuple_t());
 		}
 
-		void attention::send_attention_code_ok(cyng::object trx, cyng::object server_id)
+		cyng::tuple_t attention::send_attention_code_ok(cyng::object trx, cyng::object server_id)
 		{
 			cyng::buffer_t id;
 			id = cyng::value_cast(server_id, id);
-			send_attention_code_ok(trx, id);
+			return send_attention_code_ok(trx, id);
 		}
 
-		void attention::send_attention_code(cyng::object trx, cyng::buffer_t server_id, obis code, std::string msg)
+		cyng::tuple_t attention::send_attention_code(cyng::object trx, cyng::buffer_t server_id, obis code, std::string msg)
 		{
-			sml_gen_.attention_msg(trx	// trx
+			return sml_gen_.attention_msg(trx	// trx
 				, server_id	//	server ID
 				, code.to_buffer()
 				, msg
 				, cyng::tuple_t());
 		}
 
-		void attention::send_attention_code(cyng::object trx, cyng::object server_id, obis code, std::string msg)
+		cyng::tuple_t attention::send_attention_code(cyng::object trx, cyng::object server_id, obis code, std::string msg)
 		{
 			cyng::buffer_t id;
 			id = cyng::value_cast(server_id, id);
-			send_attention_code(trx, id, code, msg);
+			return send_attention_code(trx, id, code, msg);
 		}
 	}	//	sml
 }

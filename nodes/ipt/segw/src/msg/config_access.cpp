@@ -29,7 +29,7 @@ namespace node
 			, cache_(cfg)
 		{}
 
-		void config_access::get_proc_params(std::string trx
+		cyng::tuple_t config_access::get_proc_params(std::string trx
 			, cyng::buffer_t srv_id
 			, obis_path_t path) const
 		{
@@ -109,7 +109,7 @@ namespace node
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 
 		}
 
@@ -127,7 +127,7 @@ namespace node
 					obis const reg(cyng::to_buffer(rec["reg"]));
 					auto const priv = cyng::value_cast<std::uint8_t>(rec["priv"], 0);
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 							code,
 							reg
 						}, make_value(priv));
@@ -165,7 +165,7 @@ namespace node
 						<< ") "
 						<< cyng::io::to_str(msg));
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_ACCESS_RIGHTS,
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
@@ -178,7 +178,7 @@ namespace node
 						<< cyng::io::to_str(msg));
 
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_ACCESS_RIGHTS,
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
@@ -190,7 +190,7 @@ namespace node
 						<< ") "
 						<< cyng::io::to_str(msg));
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_ACCESS_RIGHTS,
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
@@ -206,7 +206,7 @@ namespace node
 					//	demo code
 
 					std::uint8_t idx{ 2 };
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_ACCESS_RIGHTS,
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
@@ -214,7 +214,7 @@ namespace node
 						}, make_value(cyng::make_buffer({ 0x01, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e })));
 
 					--idx;
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_ACCESS_RIGHTS,
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
 						make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
@@ -237,7 +237,7 @@ namespace node
 					std::uint8_t idx{ static_cast<std::uint8_t>(meters.size()) };
 					for(auto const& id: meters) {
 
-						append_get_proc_response(msg, {
+						merge_msg(msg, {
 							OBIS_ROOT_ACCESS_RIGHTS,
 							make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF),
 							make_obis(0x81, 0x81, 0x81, 0x60, rn, nr),
@@ -264,7 +264,7 @@ namespace node
 				//
 				//	there is no user with this role configured
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_ROOT_ACCESS_RIGHTS,
 					make_obis(0x81, 0x81, 0x81, 0x60, rn, 0xFF)
 					}, cyng::tuple_factory());	//	NULL

@@ -990,4 +990,17 @@ namespace node
 			;
 	}
 
+	cyng::vector_t client_internal_connection(boost::uuids::uuid tag
+		, bool state)
+	{
+		cyng::vector_t vec{};
+		return vec << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("client.internal.connection"
+				, tag
+				, cyng::code::IDENT
+				, state))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 }

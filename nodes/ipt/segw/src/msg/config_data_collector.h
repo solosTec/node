@@ -37,8 +37,8 @@ namespace node
 				, cache& c
 				, cyng::controller& vm);
 
-			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
-			void get_push_operations(std::string trx, cyng::buffer_t srv_id) const;
+			CYNG_ATTR_NODISCARD cyng::tuple_t get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
+			CYNG_ATTR_NODISCARD cyng::tuple_t get_push_operations(std::string trx, cyng::buffer_t srv_id) const;
 
 			void set_param(std::uint8_t nr
 				, cyng::buffer_t srv_id

@@ -19,6 +19,7 @@
 #include <smf/serial/parity.h>
 #include <smf/serial/flow_control.h>
 #include <smf/serial/stopbits.h>
+#include <cyng/set_cast.h>
 
 #include <cyng/numeric_cast.hpp>
 #include <cyng/buffer_cast.h>
@@ -37,7 +38,7 @@ namespace node
 			, cfg_(cfg)
 		{}
 
-		void config_broker::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_broker::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_BROKER);
 
@@ -49,15 +50,15 @@ namespace node
 			auto const lmn_wireless = cfg_.get_broker(cfg_broker::source::WIRELESS_LMN);
 			if (!lmn_wireless.empty()) {
 
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u), sml::OBIS_BROKER_LOGIN }, make_value(cfg_.is_login_required(cfg_broker::source::WIRELESS_LMN)));
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u), sml::OBIS_HARDWARE_PORT_NAME }, make_value(cfg_.get_port_name(cfg_broker::source::WIRELESS_LMN)));
+				merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u), sml::OBIS_BROKER_LOGIN }, make_value(cfg_.is_login_required(cfg_broker::source::WIRELESS_LMN)));
+				merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u), sml::OBIS_HARDWARE_PORT_NAME }, make_value(cfg_.get_port_name(cfg_broker::source::WIRELESS_LMN)));
 
 				std::uint8_t idx{ 1 };
 				for (auto const& lmn : lmn_wireless) {
-					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_SERVER, idx) }, make_value(lmn.get_address()));
-					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_SERVICE, idx) }, make_value(lmn.get_port()));
-					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_USER, idx) }, make_value(lmn.get_account()));
-					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_PWD, idx) }, make_value(lmn.get_pwd()));
+					merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_SERVER, idx) }, make_value(lmn.get_address()));
+					merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_SERVICE, idx) }, make_value(lmn.get_port()));
+					merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_USER, idx) }, make_value(lmn.get_account()));
+					merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 1u),  make_obis(OBIS_BROKER_PWD, idx) }, make_value(lmn.get_pwd()));
 					++idx;
 				}
 			}
@@ -70,14 +71,14 @@ namespace node
 			if (!lmn_wired.empty()) {
 
 				std::uint8_t idx{ 1 };
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u), sml::OBIS_BROKER_LOGIN }, make_value(cfg_.is_login_required(cfg_broker::source::WIRED_LMN)));
-				append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u), sml::OBIS_HARDWARE_PORT_NAME }, make_value(cfg_.get_port_name(cfg_broker::source::WIRED_LMN)));
+				merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u), sml::OBIS_BROKER_LOGIN }, make_value(cfg_.is_login_required(cfg_broker::source::WIRED_LMN)));
+				merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u), sml::OBIS_HARDWARE_PORT_NAME }, make_value(cfg_.get_port_name(cfg_broker::source::WIRED_LMN)));
 
 				for (auto const& lmn : lmn_wired) {
-					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_SERVER, idx) }, make_value(lmn.get_address()));
-					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_SERVICE, idx) }, make_value(lmn.get_port()));
-					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_USER, idx) }, make_value(lmn.get_account()));
-					append_get_proc_response(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_PWD, idx) }, make_value(lmn.get_pwd()));
+					merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_SERVER, idx) }, make_value(lmn.get_address()));
+					merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_SERVICE, idx) }, make_value(lmn.get_port()));
+					merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_USER, idx) }, make_value(lmn.get_account()));
+					merge_msg(msg, { OBIS_ROOT_BROKER, make_obis(OBIS_ROOT_BROKER, 2u),  make_obis(OBIS_BROKER_PWD, idx) }, make_value(lmn.get_pwd()));
 					++idx;
 				}
 			}
@@ -87,93 +88,114 @@ namespace node
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 
 		}
 
-		void config_broker::get_proc_params_port(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_broker::get_proc_params_port(std::string trx, cyng::buffer_t srv_id) const
 		{
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_HARDWARE_PORT);
 
 			cfg_wmbus wmbus(cache_);
 			cfg_rs485 rs485(cache_);
 
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_NAME, wmbus.port_idx) }, make_value(wmbus.get_port()));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_DATABITS, wmbus.port_idx) }, make_value(wmbus.get_databits().value()));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_PARITY, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_parity())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_FLOW_CONTROL, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_flow_control())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_STOPBITS, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_stopbits())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_SPEED, wmbus.port_idx) }, make_value(wmbus.get_baud_rate().value()));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_NAME, wmbus.port_idx) }, make_value(wmbus.get_port()));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_DATABITS, wmbus.port_idx) }, make_value(wmbus.get_databits().value()));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_PARITY, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_parity())));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_FLOW_CONTROL, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_flow_control())));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_STOPBITS, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_stopbits())));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_SPEED, wmbus.port_idx) }, make_value(wmbus.get_baud_rate().value()));
 
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_NAME, rs485.port_idx) }, make_value(rs485.get_port()));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_DATABITS, rs485.port_idx) }, make_value(rs485.get_databits().value()));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_PARITY, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_parity())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_FLOW_CONTROL, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_flow_control())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_STOPBITS, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_stopbits())));
-			append_get_proc_response(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_SPEED, rs485.port_idx) }, make_value(rs485.get_baud_rate().value()));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_NAME, rs485.port_idx) }, make_value(rs485.get_port()));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_DATABITS, rs485.port_idx) }, make_value(rs485.get_databits().value()));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_PARITY, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_parity())));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_FLOW_CONTROL, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_flow_control())));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_STOPBITS, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_stopbits())));
+			merge_msg(msg, { OBIS_ROOT_HARDWARE_PORT, make_obis(OBIS_HARDWARE_PORT_SPEED, rs485.port_idx) }, make_value(rs485.get_baud_rate().value()));
 
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 		}
 
-		void config_broker::set_proc_params(obis_path_t const& path, cyng::buffer_t srv_id, cyng::object obj)
+		void config_broker::set_proc_params(obis_path_t const& path, cyng::buffer_t srv_id, cyng::param_t const& values)
 		{
-			CYNG_LOG_DEBUG(logger_, to_hex(path, ':') << " = " << cyng::io::to_type(obj));
+			CYNG_LOG_DEBUG(logger_, sml::transform_to_str(path, true, ':') << " = " << cyng::io::to_type(values.second));
 
-			if (path.back().is_matching_5(OBIS_BROKER_LOGIN).second) {
-				//	BROKER_LOGIN
-				cache_.set_cfg(build_cfg_key(path), obj);
-			}
-			else if (path.back().is_matching_5(OBIS_BROKER_SERVER).second) {
-				//	BROKER_SERVER
-				cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(obj));
-			}
-			if (path.back().is_matching_5(OBIS_BROKER_SERVICE).second) {
-				//	BROKER_SERVICE (IP port)
-				cache_.set_cfg(build_cfg_key(path), cyng::numeric_cast<std::uint16_t>(obj, 12001u));
-			}
-			else if (path.back().is_matching_5(OBIS_BROKER_USER).second) {
-				//	BROKER_USER
-				cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(obj));
-			}
-			else if (path.back().is_matching_5(OBIS_BROKER_PWD).second) {
-				//	BROKER_PWD
-				cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(obj));
+			BOOST_ASSERT(!path.empty());
+			auto const code = sml::parse_obis(values.first);
+
+			BOOST_ASSERT(code.second);
+			BOOST_ASSERT(code.first == path.back());
+
+			if (values.second.get_class().tag() == cyng::TC_PARAM_MAP) {
+				auto const pm = cyng::to_param_map(values.second);
+				for (auto const& param : pm) {
+					auto const c = sml::parse_obis(param.first);
+					if (c.second) {
+						obis_path_t p(path);
+						p.push_back(c.first);
+						//CYNG_LOG_TRACE(logger_, "build path <" << sml::transform_to_str(p, true, ':') << ">");
+						set_proc_params(p, srv_id, param);
+					}
+				}
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "unknown broker value: " << to_hex(path, ':') << " = " << cyng::io::to_type(obj));
+
+				if (path.back().is_matching_5(OBIS_BROKER_LOGIN).second) {
+					//	BROKER_LOGIN
+					cache_.set_cfg(build_cfg_key(path), values.second);
+				}
+				else if (path.back().is_matching_5(OBIS_BROKER_SERVER).second) {
+					//	BROKER_SERVER
+					cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(values.second));
+				}
+				else if (path.back().is_matching_5(OBIS_BROKER_SERVICE).second) {
+					//	BROKER_SERVICE (IP port)
+					cache_.set_cfg(build_cfg_key(path), cyng::numeric_cast<std::uint16_t>(values.second, 12001u));
+				}
+				else if (path.back().is_matching_5(OBIS_BROKER_USER).second) {
+					//	BROKER_USER
+					cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(values.second));
+				}
+				else if (path.back().is_matching_5(OBIS_BROKER_PWD).second) {
+					//	BROKER_PWD
+					cache_.set_cfg(build_cfg_key(path), cyng::io::to_str(values.second));
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "unknown broker value: " << sml::transform_to_str(path, true, ':') << " = " << cyng::io::to_type(values.second));
+				}
 			}
 
 		}
 
-		void config_broker::set_proc_params_port(obis_path_t const& path, cyng::buffer_t srv_id, cyng::object obj) const
+		void config_broker::set_proc_params_port(obis_path_t const& path, cyng::buffer_t srv_id, cyng::param_t const& values) const
 		{
 			if (path.back().is_matching_5(OBIS_HARDWARE_PORT_DATABITS).second) {
 				//	HARDWARE_PORT_DATABITS
-				auto const val = cyng::numeric_cast<std::uint32_t>(obj, 8u);
+				auto const val = cyng::numeric_cast<std::uint32_t>(values.second, 8u);
 				cache_.set_cfg<std::uint32_t>(build_cfg_key(path), val);
 			}
 			else if (path.back().is_matching_5(OBIS_HARDWARE_PORT_PARITY).second) {
 				//	HARDWARE_PORT_PARITY
-				cache_.set_cfg(build_cfg_key(path), obj);
+				cache_.set_cfg(build_cfg_key(path), values.second);
 			}
 			else if (path.back().is_matching_5(OBIS_HARDWARE_PORT_FLOW_CONTROL).second) {
 				//	HARDWARE_PORT_FLOW_CONTROL
-				cache_.set_cfg(build_cfg_key(path), obj);
+				cache_.set_cfg(build_cfg_key(path), values.second);
 			}
 			else if (path.back().is_matching_5(OBIS_HARDWARE_PORT_STOPBITS).second) {
 				//	HARDWARE_PORT_STOPBITS
-				cache_.set_cfg(build_cfg_key(path), obj);
+				cache_.set_cfg(build_cfg_key(path), values.second);
 			}
 			else if (path.back().is_matching_5(OBIS_HARDWARE_PORT_SPEED).second) {
 				//	HARDWARE_PORT_SPEED
-				auto const val = cyng::numeric_cast<std::uint32_t>(obj, 8u);
+				auto const val = cyng::numeric_cast<std::uint32_t>(values.second, 8u);
 				cache_.set_cfg<std::uint32_t>(build_cfg_key(path), val);
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "unknown hardware port value: " << to_hex(path, ':') << " = " << cyng::io::to_type(obj));
+				CYNG_LOG_WARNING(logger_, "unknown hardware port value: " << to_hex(path, ':') << " = " << cyng::io::to_type(values.second));
 
 			}
 		}

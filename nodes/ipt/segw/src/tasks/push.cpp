@@ -182,32 +182,35 @@ namespace node
 			sml::trx trx;
 			sml::res_generator gen;
 
+			sml::messages_t	messages;
+
 			//
 			//	SML open request
 			//
-			gen.public_open(cyng::make_object(*trx++)
+			messages.push_back(gen.public_open(cyng::make_object(*trx++)
 				, cyng::make_object(cache_.get_srv_id())	//	client id
 				, cyng::make_object(sml::res_generator::gen_file_id())	//	req file id gen_file_id
 				, cyng::make_object(srv_id_)	//	server/meter id
-			);
+			));
 
 			//
 			//	SML data
 			//
 
-			send_push_data(gen, trx, channel, source);
+			messages.push_back(send_push_data(gen, trx, channel, source));
 
 			//
 			//	SML close request
 			//
-			gen.public_close(cyng::make_object(*trx++));
+			messages.push_back(gen.public_close(cyng::make_object(*trx++)));
 
 			//
 			//	sending all data
 			//
 			ipt_bus_->req_transfer_push_data(channel
 				, source
-				, gen.boxing()
+				, sml::to_sml(messages)
+				//, gen.boxing()
 				, base_.get_id());
 
 			ipt_bus_->req_channel_close(channel);
@@ -221,7 +224,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	bool push::send_push_data(sml::res_generator& gen
+	cyng::tuple_t push::send_push_data(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -255,7 +258,7 @@ namespace node
 						//	and insert this records into "_PushReq"
 						//
 						switch (profile_.to_uint64()) {
-						case sml::CODE_PROFILE_1_MINUTE:
+						case  sml::CODE_PROFILE_1_MINUTE:
 							collect_profile_8181C78610FF(gen, trx, channel, source);
 							break;
 						case sml::CODE_PROFILE_15_MINUTE:
@@ -337,7 +340,8 @@ namespace node
 		}	, cyng::store::read_access("_DataCollector")
 			, cyng::store::read_access("_DataMirror"));
 
-		return stop;
+		//return stop;
+		return cyng::tuple_factory();
 	}
 
 	std::vector<sml::obis> push::collect_obis_codes(cyng::store::table const* tbl)
@@ -364,7 +368,7 @@ namespace node
 		return codes;
 	}
 
-	void push::collect_profile_8181C78610FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78610FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -469,7 +473,7 @@ namespace node
 			//
 			//	build push msg
 			//
-			gen.get_profile_list(*trx++
+			return gen.get_profile_list(*trx++
 				, srv_id
 				, sml::OBIS_PROFILE_1_MINUTE
 				, act_time //	act_time
@@ -478,9 +482,11 @@ namespace node
 				, 0		//	status
 				, std::move(period_list));
 		}
+
+		return cyng::tuple_factory();
 	}
 
-	void push::collect_profile_8181C78611FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78611FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -586,7 +592,7 @@ namespace node
 			//
 			//	build push msg
 			//
-			gen.get_profile_list(*trx++
+			return gen.get_profile_list(*trx++
 				, cache_.get_srv_id()
 				, sml::OBIS_PROFILE_15_MINUTE
 				, act_time //	act_time
@@ -595,9 +601,10 @@ namespace node
 				, 0		//	status
 				, std::move(period_list));
 		}
+		return cyng::tuple_factory();
 	}
 
-	void push::collect_profile_8181C78612FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78612FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -710,7 +717,7 @@ namespace node
 			//
 			//	build push msg
 			//
-			gen.get_profile_list(*trx++
+			return gen.get_profile_list(*trx++
 				, srv_id_
 				, sml::OBIS_PROFILE_60_MINUTE
 				, act_time //	act_time
@@ -719,9 +726,10 @@ namespace node
 				, 0		//	status
 				, std::move(period_list));
 		}
+		return cyng::tuple_factory();
 	}
 
-	void push::collect_profile_8181C78613FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78613FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -731,9 +739,10 @@ namespace node
 			"FROM TProfile_8181C78613FF P13 INNER JOIN TStorage_8181C78613FF S13 ON P13.clientID = S13.clientID AND P13.tsidx = S13.tsidx "
 			"WHERE P13.clientID = ?;";
 
+		return cyng::tuple_factory();
 	}
 
-	void push::collect_profile_8181C78614FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78614FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -743,9 +752,10 @@ namespace node
 			"FROM TProfile_8181C78614FF P14 INNER JOIN TStorage_8181C78614FF S14 ON P14.clientID = S14.clientID AND P14.tsidx = S14.tsidx "
 			"WHERE P14.clientID = ?;";
 
+		return cyng::tuple_factory();
 	}
 
-	void push::collect_profile_8181C78615FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78615FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -755,9 +765,10 @@ namespace node
 			"FROM TProfile_8181C78615FF P15 INNER JOIN TStorage_8181C78615FF S15 ON P15.clientID = S15.clientID AND P15.tsidx = S15.tsidx "
 			"WHERE P15.clientID = ?;";
 
+		return cyng::tuple_factory();
 	}
 
-	void push::collect_profile_8181C78616FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78616FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -767,9 +778,10 @@ namespace node
 			"FROM TProfile_8181C78616FF P16 INNER JOIN TStorage_8181C78616FF S16 ON P16.clientID = S16.clientID AND P16.tsidx = S16.tsidx "
 			"WHERE P16.clientID = ?;";
 
+		return cyng::tuple_factory();
 	}
 
-	void push::collect_profile_8181C78617FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78617FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
@@ -779,14 +791,15 @@ namespace node
 			"FROM TProfile_8181C78617FF P17 INNER JOIN TStorage_8181C78617FF S17 ON P17.clientID = S17.clientID AND P17.tsidx = S17.tsidx "
 			"WHERE P17.clientID = ?;";
 
+		return cyng::tuple_factory();
 	}
 
-	void push::collect_profile_8181C78618FF(sml::res_generator& gen
+	cyng::tuple_t push::collect_profile_8181C78618FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
 		, std::uint32_t source)
 	{	//	initial
-
+		return cyng::tuple_factory();
 	}
 
 	cyng::continuation push::process(std::string target)

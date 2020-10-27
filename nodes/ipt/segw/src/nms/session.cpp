@@ -16,6 +16,7 @@
 #include <smf/serial/parity.h>
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>
+#include <smf/sml/obis_db.h>
 
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/io_buffer.h>
@@ -30,7 +31,9 @@
 #include <cyng/json.h>
 #include <cyng/dom/algorithm.h>
 #include <cyng/parser/version_parser.h>
+#include <cyng/compatibility/file_system.hpp>
 
+//#include <boost/process.hpp>
 
 namespace node
 {
@@ -193,15 +196,11 @@ namespace node
 			//	check version
 			//
 			if (!rv.second || rv.first != cyng::version(0,1)) {
-				pm["ec"] = cyng::make_object("wrong version");
-				return pm;
-			}
-
-			if (boost::algorithm::equals(cmd, "delete")) {
-				pm["ec"] = cyng::make_object("not implemented yet");
-			}
-			else if (boost::algorithm::equals(cmd, "insert")) {
-				pm["ec"] = cyng::make_object("not implemented yet");
+				return cyng::param_map_factory
+					("command", cmd)
+					("ec", "wrong version")
+					("version", "0.1")
+					;
 			}
 			else if (boost::algorithm::equals(cmd, "merge")) {
 				return cmd_merge(dom);
@@ -210,27 +209,36 @@ namespace node
 				return cmd_query();
 			}
 			else if (boost::algorithm::equals(cmd, "update")) {
-				pm["ec"] = cyng::make_object("not implemented yet");
+				//
+				//	software update
+				//
+				return cmd_update(dom);
 			}
 			else if (boost::algorithm::equals(cmd, "reboot")) {
-				cmd_reboot();
-				pm["ec"] = cyng::make_object("not implemented yet");
+				return cmd_reboot();
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "unknown NMS command: " << cmd);
-				pm["ec"] = cyng::make_object("unknown NMS command: " + cmd);
+				return cyng::param_map_factory
+					("command", cmd)
+					("ec", "unknown command")
+					("version", "0.1")
+					;
+
 			}
 
 			//
 			//	send response
 			//
-			return pm;
+			return cyng::param_map_factory
+				("ec", "command not specified")
+				("version", "0.1")
+				;
 		}
 
 		cyng::param_map_t reader::cmd_merge(cyng::param_map_reader const& dom)
 		{
 			auto const ports = cyng::to_param_map(dom.get("serial-port"));
-			//auto const meter = cyng::to_param_map(dom.get("meter"));
 			auto const version = cyng::to_param_map(dom.get("version"));
 
 			cfg_rs485 rs485(cache_);
@@ -502,8 +510,148 @@ namespace node
 				;
 		}
 
-		void reader::cmd_reboot()
+		cyng::param_map_t reader::cmd_reboot()
 		{
+#if defined(NODE_CROSS_COMPILE) && BOOST_OS_LINUX
+
+			auto const script_path = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS }, "script-path"),
+#if BOOST_OS_LINUX
+				"update-script.sh"
+#else
+				"update-script.cmd"
+#endif
+			);
+
+			cyng::filesystem::path const script(script_path);
+			cyng::error_code ec;
+
+			//
+			//	remove old file
+			//
+			cyng::filesystem::remove(script, ec);
+
+			std::fstream fs(script_path, std::fstream::trunc | std::fstream::out);
+			if (fs.is_open()) {
+				fs
+					<< "#!/bin/bash"
+					<< std::endl
+					<< "reboot.sh"
+					<< std::endl
+					;
+				fs.close();
+
+				//
+				//	set permissions
+				//
+				cyng::filesystem::permissions(script
+					, cyng::filesystem::perms::owner_exec | cyng::filesystem::perms::group_exec | cyng::filesystem::perms::others_exec
+					, cyng::filesystem::perm_options::add
+					, ec);
+			}
+
+
+
+			return cyng::param_map_factory
+				("command", "reboot")
+				("ec", !ec ? "ok" : ec.message())
+				("version", "0.1")
+				("rc", "reboot scheduled")
+				;
+
+#elif BOOST_OS_LINUX
+			//	after 1 minute
+			auto const rc = std::system("shutdown -r +1");
+#else
+			//	after 15 seconds
+			auto const rc = std::system("shutdown /r /t 15");
+#endif
+			return cyng::param_map_factory
+				("command", "reboot")
+				("ec", "ok")
+				("version", "0.1")
+				("rc", rc)
+				;
+
+		}
+
+		cyng::param_map_t reader::cmd_update(cyng::param_map_reader const& dom)
+		{
+			auto const script_path = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS }, "script-path"),
+#if BOOST_OS_LINUX
+				"update-script.sh"
+#else
+				"update-script.cmd"
+#endif
+			);
+
+			auto const address = cyng::value_cast<std::string>(dom.get("address"), "");
+			auto const port = cyng::value_cast<std::string>(dom.get("port"), "");
+			auto const username = cyng::value_cast<std::string>(dom.get("username"), "");
+			auto const password = cyng::value_cast<std::string>(dom.get("password"), "");
+			auto const filename = cyng::value_cast<std::string>(dom.get("filename"), "fw-filname");
+			auto const ca_path_download = cyng::value_cast<std::string>(dom.get("ca-path-download"), "");
+			auto const ca_path_vendor = cyng::value_cast<std::string>(dom.get("ca-path-vendor"), "");
+			auto const path_firmware = cyng::value_cast<std::string>(dom.get("path-firmware"), "");
+
+			//
+			//	create a script file
+			//
+			cyng::filesystem::path const script(script_path);
+			cyng::error_code ec;
+
+			//
+			//	remove old file
+			//
+			cyng::filesystem::remove(script, ec);
+
+			std::fstream fs(script_path, std::fstream::trunc | std::fstream::out);
+			if (fs.is_open()) {
+				fs
+					<< "#!/bin/bash"
+					<< std::endl
+					<< "/usr/local/sbin/fw-update.sh "
+					<< address 
+					<< " \""
+					<< username
+					<< "\" \""
+					<< password
+					<< "\" \""
+					<< filename
+					<< "\" \""
+					<< ca_path_download
+					<< "\" \""
+					<< ca_path_vendor
+					<< "\" \""
+					<< path_firmware
+					<< "\" "
+					<< port
+					<< std::endl
+					;
+				fs.close();
+
+				//
+				//	set permissions
+				//
+				cyng::filesystem::permissions(script
+					, cyng::filesystem::perms::owner_exec | cyng::filesystem::perms::group_exec | cyng::filesystem::perms::others_exec
+					, cyng::filesystem::perm_options::add
+					, ec);
+			}
+
+
+			return cyng::param_map_factory
+			("command", "update")
+				("ec", !ec ? "ok" : ec.message())
+				("version", "0.1")
+				("script-path", script_path)
+				("address", address)
+				("port", port)
+				("username", username)
+				("filename", filename)
+				("ca-path-download", ca_path_download)
+				("ca-path-vendor", ca_path_vendor)
+				("path-firmware", path_firmware)
+				;
 
 		}
 

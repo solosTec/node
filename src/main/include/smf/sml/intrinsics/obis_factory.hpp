@@ -61,19 +61,6 @@ namespace node
 		 */
 		cyng::vector_t path_to_vector(obis_path_t path);
 
-		/**
-		 * @param translate if true all known OBIS codes will be substituted to
-		 * human readable form.
-		 * @return vector of strings
-		 */
-		std::vector<std::string> transform_to_str_vector(obis_path_t const&, bool translate);
-
-		/**
-		 * @param translate if true all known OBIS codes will be substituted to
-		 * human readable form.
-		 * @return vector of objects of type string
-		 */
-		cyng::vector_t transform_to_obj_vector(obis_path_t const&, bool translate);
 
 
 	}	//	sml

@@ -40,7 +40,7 @@ namespace node
 			, vm_(vm)
 		{}
 
-		void config_data_collector::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_data_collector::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			//	81 81 C7 86 20 FF
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_DATA_COLLECTOR);
@@ -57,7 +57,7 @@ namespace node
 						//
 						//	81 81 C7 86 21 FF - active
 						//
-						append_get_proc_response(msg, {
+						merge_msg(msg, {
 							OBIS_ROOT_DATA_COLLECTOR,
 							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 							OBIS_DATA_COLLECTOR_ACTIVE
@@ -66,7 +66,7 @@ namespace node
 						//
 						//	81 81 C7 86 22 FF - Einträge
 						//
-						append_get_proc_response(msg, {
+						merge_msg(msg, {
 							OBIS_ROOT_DATA_COLLECTOR,
 							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 							OBIS_DATA_COLLECTOR_SIZE
@@ -75,7 +75,7 @@ namespace node
 						//
 						//	81 81 C7 87 81 FF  - Registerperiode (seconds)
 						//
-						append_get_proc_response(msg, {
+						merge_msg(msg, {
 							OBIS_ROOT_DATA_COLLECTOR,
 							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 							OBIS_DATA_REGISTER_PERIOD
@@ -84,7 +84,7 @@ namespace node
 						//
 						//	81 81 C7 8A 83 FF - profile
 						//
-						append_get_proc_response(msg, {
+						merge_msg(msg, {
 							OBIS_ROOT_DATA_COLLECTOR,
 							make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 							OBIS_PROFILE
@@ -104,10 +104,10 @@ namespace node
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 		}
 
-		void config_data_collector::get_push_operations(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_data_collector::get_push_operations(std::string trx, cyng::buffer_t srv_id) const
 		{
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_PUSH_OPERATIONS);
 
@@ -129,7 +129,7 @@ namespace node
 					//
 					//	81 81 C7 8A 02 FF - push interval in seconds
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_PUSH_OPERATIONS,
 						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 						OBIS_PUSH_INTERVAL
@@ -138,7 +138,7 @@ namespace node
 					//
 					//	81 81 C7 8A 03 FF - push delay in seconds
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_PUSH_OPERATIONS,
 						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 						OBIS_PUSH_DELAY
@@ -147,7 +147,7 @@ namespace node
 					//
 					//	81 47 17 07 00 FF - target name
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_PUSH_OPERATIONS,
 						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 						OBIS_PUSH_TARGET
@@ -157,7 +157,7 @@ namespace node
 					//	* 81 81 C7 8A 21 FF == IP-T
 					//	* 81 81 C7 8A 22 FF == SML client address
 					//	* 81 81 C7 8A 23 FF == KNX ID
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_PUSH_OPERATIONS,
 						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 						OBIS_PUSH_SERVICE
@@ -174,7 +174,7 @@ namespace node
 					//	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
 					//	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
 					//	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_PUSH_OPERATIONS,
 						make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
 						OBIS_PUSH_SOURCE
@@ -193,7 +193,7 @@ namespace node
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 
 		}
 
@@ -506,7 +506,7 @@ namespace node
 					obis const code(cyng::to_buffer(rec["code"]));
 					auto const reg = cyng::numeric_cast<std::uint8_t>(rec["reg"], 1);
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_DATA_COLLECTOR,
 						make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
 						OBIS_PROFILE,

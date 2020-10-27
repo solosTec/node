@@ -701,19 +701,20 @@ namespace node
 			//
 			//	detect OBIS codes with index
 			//
-			if (code.is_matching(0x81, 0x49, 0x0D, 0x07, 0x00).second) {
-				//	IP-T parameters
-				params.emplace(cyng::param_factory("idx", code.get_storage()));
-			}
-			else if (code.is_matching(0x00, 0x80, 0x80, 0x11, 0x01).second) {
-				//	Actuators:
-				params.emplace(cyng::param_factory("idx", code.get_storage()));
-			}
-			else if (code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x07).second) {
-				//	firmware
-				params.emplace(cyng::param_factory("idx", code.get_storage()));
-			}
-			else if (OBIS_DATA_PUBLIC_KEY == code
+			//if (code.is_matching(0x81, 0x49, 0x0D, 0x07, 0x00).second) {
+			//	//	IP-T parameters
+			//	params.emplace("idx", cyng::make_object(code.get_storage()));
+			//}
+			//else if (code.is_matching(0x00, 0x80, 0x80, 0x11, 0x01).second) {
+			//	//	Actuators:
+			//	params.emplace("idx", cyng::make_object(code.get_storage()));
+			//}
+			//else if (code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x07).second) {
+			//	//	firmware
+			//	params.emplace("idx", cyng::make_object(code.get_storage()));
+			//}
+			//else 
+			if (OBIS_DATA_PUBLIC_KEY == code
 				|| OBIS_ROOT_SENSOR_BITMASK == code
 				|| OBIS_DATA_USER_NAME == code
 				|| OBIS_DATA_USER_PWD == code) {
@@ -770,11 +771,24 @@ namespace node
 
 		cyng::object customize_value(obis code, cyng::object obj)
 		{
-			if (code.is_matching(0x81, 0x49, 0x17, 0x07, 0x00).second) {
+			if (code.is_matching(0x81, 0x49, 0x17, 0x07, 0x00).second
+				|| code.is_matching_5(OBIS_CUSTOM_IF_IP_CURRENT_1).second	//	CUSTOM_IF_IP_ADDRESS...
+				|| OBIS_CUSTOM_IF_IP_MASK_1 == code	
+				|| OBIS_CUSTOM_IF_IP_MASK_2 == code
+				|| OBIS_CUSTOM_IF_IP_ADDRESS_1 == code
+				|| OBIS_CUSTOM_IF_IP_ADDRESS_2 == code
+				|| OBIS_CUSTOM_IF_DHCP_LOCAL_IP_MASK == code
+				|| OBIS_CUSTOM_IF_DHCP_DEFAULT_GW == code
+				|| OBIS_CUSTOM_IF_DHCP_DNS == code
+				|| OBIS_CUSTOM_IF_DHCP_START_ADDRESS == code
+				|| OBIS_CUSTOM_IF_DHCP_END_ADDRESS == code
+				|| OBIS_NMS_ADDRESS == code)	{
 				return cyng::make_object(ip_address_to_str(obj));
 			}
 			else if (code.is_matching_5(OBIS_TARGET_PORT).second	//	TARGET_PORT
-				|| code.is_matching_5(OBIS_SOURCE_PORT).second) {	//	SOURCE_PORT
+				|| code.is_matching_5(OBIS_SOURCE_PORT).second		//	SOURCE_PORT
+				|| OBIS_BROKER_SERVICE == code
+				|| OBIS_NMS_PORT == code) {	
 				return cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 0u));
 			}
 			else if (OBIS_W_MBUS_MODE_S == code
@@ -804,7 +818,9 @@ namespace node
 				|| OBIS_PUSH_TARGET == code
 				|| code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x0A).second
 				|| OBIS_ACCESS_USER_NAME == code
-				|| OBIS_ACCESS_PASSWORD == code) {
+				|| OBIS_ACCESS_PASSWORD == code
+				|| OBIS_NMS_USER == code
+				|| OBIS_NMS_PWD == code) {
 				//	buffer to string
 				cyng::buffer_t const buffer = cyng::to_buffer(obj);
 				return cyng::make_object(std::string(buffer.begin(), buffer.end()));

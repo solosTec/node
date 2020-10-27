@@ -40,11 +40,15 @@ namespace node
 			void attention_send(cyng::context& ctx);
 			void attention_set(cyng::context& ctx);
 
-			void send_attention_code_ok(cyng::object trx, cyng::buffer_t);
-			void send_attention_code_ok(cyng::object trx, cyng::object);
+			CYNG_ATTR_NODISCARD
+			cyng::tuple_t send_attention_code_ok(cyng::object trx, cyng::buffer_t);
+			CYNG_ATTR_NODISCARD
+			cyng::tuple_t send_attention_code_ok(cyng::object trx, cyng::object);
 
-			void send_attention_code(cyng::object trx, cyng::buffer_t, obis, std::string);
-			void send_attention_code(cyng::object trx, cyng::object, obis, std::string);
+			CYNG_ATTR_NODISCARD
+			cyng::tuple_t send_attention_code(cyng::object trx, cyng::buffer_t, obis, std::string);
+			CYNG_ATTR_NODISCARD
+			cyng::tuple_t send_attention_code(cyng::object trx, cyng::object, obis, std::string);
 
 
 		private:

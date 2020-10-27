@@ -510,6 +510,9 @@ namespace node
 		, boost::uuids::uuid target
 		, std::uint64_t);
 
+	cyng::vector_t client_internal_connection(boost::uuids::uuid tag
+		, bool state);
+
 }
 
 #endif

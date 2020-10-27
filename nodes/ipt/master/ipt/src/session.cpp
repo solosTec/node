@@ -1241,7 +1241,7 @@ namespace node
 			const cyng::vector_t frame = ctx.get_frame();
 			if (bus_->is_online())
 			{
-				CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+				CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	number

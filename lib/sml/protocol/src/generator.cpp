@@ -6,16 +6,20 @@
  */
 
 #include <smf/sml/protocol/generator.h>
-#include <smf/sml/protocol/serializer.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
-#include <smf/sml/crc16.h>
 #include <smf/sml/obis_db.h>
 #include <NODE_project_info.h>
+
 #include <cyng/vm/generator.h>
 #include <cyng/chrono.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/io/swap.h>
 #include <cyng/sys/info.h>
+#include <cyng/set_cast.h>
+#ifdef _DEBUG
+#include <cyng/io/serializer.h>
+#endif
+
 #include <sstream>
 #include <iomanip>
 #include <boost/core/ignore_unused.hpp>
@@ -25,20 +29,18 @@ namespace node
 	namespace sml
 	{
 		generator::generator()
-			: msg_()
-			, group_no_(0)
+			: group_no_(0)
 		{}
 
 		void generator::reset()
 		{
-			msg_.clear();
 			group_no_ = 0;
 		}
 
-		cyng::buffer_t generator::boxing() const
-		{
-			return node::sml::boxing(msg_);
-		}
+		//cyng::buffer_t generator::boxing() const
+		//{
+		//	return node::sml::boxing(msg_);
+		//}
 
 		std::string generator::gen_file_id()
 		{
@@ -62,24 +64,43 @@ namespace node
 			return ss.str();
 		}
 
-		std::size_t generator::append(cyng::tuple_t&& msg)
-		{
-#ifdef SMF_IO_DEBUG
-			CYNG_LOG_TRACE(logger_, "msg: " << cyng::io::to_str(msg));
-#endif
+//		std::size_t generator::append(cyng::tuple_t&& msg)
+//		{
+//#ifdef SMF_IO_DEBUG
+//			CYNG_LOG_TRACE(logger_, "msg: " << cyng::io::to_str(msg));
+//#endif
+//
+//			//
+//			//	linearize and set CRC16
+//			//
+//			cyng::buffer_t b = linearize(msg);
+//			sml_set_crc16(b);
+//
+//			//
+//			//	append to current SML message
+//			//
+//			msg_.push_back(b);
+//			return msg_.size();
+//		}
 
-			//
-			//	linearize and set CRC16
-			//
-			cyng::buffer_t b = linearize(msg);
-			sml_set_crc16(b);
-
-			//
-			//	append to current SML message
-			//
-			msg_.push_back(b);
-			return msg_.size();
-		}
+//		std::string generator::append(msg_t&& p)
+//		{
+//#ifdef SMF_IO_DEBUG
+//			CYNG_LOG_TRACE(logger_, "msg: " << cyng::io::to_str(p.first));
+//#endif
+//
+//			//
+//			//	linearize and set CRC16
+//			//
+//			cyng::buffer_t b = linearize(p.first);
+//			sml_set_crc16(b);
+//
+//			//
+//			//	append to current SML message
+//			//
+//			msg_.push_back(b);
+//			return p.second;
+//		}
 
 
 		req_generator::req_generator(std::string const& name
@@ -90,12 +111,13 @@ namespace node
 			, pwd_(pwd)
 		{}
 
-		std::string req_generator::public_open(cyng::mac48 client_id
+		cyng::tuple_t req_generator::public_open(cyng::mac48 client_id
 			, cyng::buffer_t const& server_id)
 		{
-			BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
+			//BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
 			auto const trx = *trx_;
-			append(message(cyng::make_object(trx)	//	trx
+
+			return message(cyng::make_object(trx)	//	trx
 				, group_no_++	//	group
 				, 0 // abort code
 				, message_e::OPEN_REQUEST
@@ -111,16 +133,14 @@ namespace node
 					, cyng::make_object(pwd_)	//	pwd
 					, cyng::make_object()	// sml-Version 
 				)
-			));
-
-			return trx;
+			);
 		}
 
-		std::string req_generator::public_close()
+		cyng::tuple_t req_generator::public_close()
 		{
-			++trx_;
-			auto const trx = *trx_;
-			append(message(cyng::make_object(trx)
+			auto const trx = *++trx_;
+
+			return message(cyng::make_object(trx)
 				, 0	//	group is 0 for CLOSE REQUEST
 				, 0 //	abort code
 				, message_e::CLOSE_REQUEST
@@ -129,16 +149,14 @@ namespace node
 				//	generate public open response
 				//
 				, close_response(cyng::make_object())
-			));
-
-			return trx;
+			);
 		}
 
-		std::pair<cyng::tuple_t, std::string> req_generator::empty_set_proc_param(cyng::buffer_t server_id, obis root)
+		cyng::tuple_t req_generator::empty_set_proc_param(cyng::buffer_t server_id, obis root)
 		{
-			++trx_;
-			auto const trx = *trx_;
-			return std::make_pair(message(cyng::make_object(trx)
+			auto const trx = *++trx_;
+
+			return message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, message_e::SET_PROC_PARAMETER_REQUEST	//	0x600 (1536)
@@ -151,13 +169,13 @@ namespace node
 					, pwd_
 					, root
 					, child_list_tree(root, {}))
-				), trx);
+				);
 		}
 
-		std::size_t req_generator::set_proc_parameter_restart(cyng::buffer_t const& server_id)
+		cyng::tuple_t req_generator::set_proc_parameter_reboot(cyng::buffer_t const& server_id)
 		{
 			++trx_;
-			return append(message(cyng::make_object(*trx_)
+			return message(cyng::make_object(*trx_)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, message_e::SET_PROC_PARAMETER_REQUEST	//	0x600
@@ -170,71 +188,71 @@ namespace node
 					, pwd_
 					, OBIS_REBOOT
 					, empty_tree(OBIS_REBOOT))
-				)
 			);
 		}
 
-		std::string req_generator::set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
-			, std::uint8_t idx
-			, std::string const& address)
-		{
-			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_TARGET_IP_ADDRESS, idx) }
-				, address);
-		}
+		//cyng::tuple_t req_generator::set_proc_parameter_ipt_host(cyng::buffer_t const& server_id
+		//	, std::uint8_t idx
+		//	, std::string const& address)
+		//{
+		//	return set_proc_parameter(server_id
+		//		, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_TARGET_IP_ADDRESS, idx) }
+		//		, address);
+		//}
 
-		std::string req_generator::set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
-			, std::uint8_t idx
-			, std::uint16_t port)
-		{
-			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_TARGET_PORT, idx) }
-				, port);
-		}
+		//cyng::tuple_t req_generator::set_proc_parameter_ipt_port_local(cyng::buffer_t const& server_id
+		//	, std::uint8_t idx
+		//	, std::uint16_t port)
+		//{
+		//	return set_proc_parameter(server_id
+		//		, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_TARGET_PORT, idx) }
+		//		, port);
+		//}
 
-		std::string req_generator::set_proc_parameter_ipt_port_remote(cyng::buffer_t const& server_id
-			, std::uint8_t idx
-			, std::uint16_t port)
-		{
-			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_SOURCE_PORT, idx) }
-				, port);
-		}
+		//cyng::tuple_t req_generator::set_proc_parameter_ipt_port_remote(cyng::buffer_t const& server_id
+		//	, std::uint8_t idx
+		//	, std::uint16_t port)
+		//{
+		//	return set_proc_parameter(server_id
+		//		, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_SOURCE_PORT, idx) }
+		//		, port);
+		//}
 
-		std::string req_generator::set_proc_parameter_ipt_user(cyng::buffer_t const& server_id
-			, std::uint8_t idx
-			, std::string const& user)
-		{
-			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_IPT_ACCOUNT, idx) }
-				, user);
-		}
+		//cyng::tuple_t req_generator::set_proc_parameter_ipt_user(cyng::buffer_t const& server_id
+		//	, std::uint8_t idx
+		//	, std::string const& user)
+		//{
+		//	return set_proc_parameter(server_id
+		//		, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_IPT_ACCOUNT, idx) }
+		//		, user);
+		//}
 
-		std::string req_generator::set_proc_parameter_ipt_pwd(cyng::buffer_t const& server_id
-			, std::uint8_t idx
-			, std::string const& pwd)
-		{
-			return set_proc_parameter(server_id
-				, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_IPT_PASSWORD, idx) }
-				, pwd);
-		}
+		//cyng::tuple_t req_generator::set_proc_parameter_ipt_pwd(cyng::buffer_t const& server_id
+		//	, std::uint8_t idx
+		//	, std::string const& pwd)
+		//{
+		//	return set_proc_parameter(server_id
+		//		, { OBIS_ROOT_IPT_PARAM, make_obis(OBIS_ROOT_IPT_PARAM, idx), make_obis(OBIS_IPT_PASSWORD, idx) }
+		//		, pwd);
+		//}
 
-		std::string req_generator::set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
-			, std::uint8_t val)
-		{
-			BOOST_ASSERT_MSG(val < 4, "wireless M-Bus protocol type out of range");
 
-			return set_proc_parameter(server_id
-				, { OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }
-				, val);
-		}
+		//cyng::tuple_t req_generator::set_proc_parameter_wmbus_protocol(cyng::buffer_t const& server_id
+		//	, std::uint8_t val)
+		//{
+		//	BOOST_ASSERT_MSG(val < 4, "wireless M-Bus protocol type out of range");
 
-		std::string req_generator::get_proc_parameter(cyng::buffer_t const& server_id
+		//	return set_proc_parameter(server_id
+		//		, { OBIS_IF_wMBUS, OBIS_W_MBUS_PROTOCOL }
+		//		, val);
+		//}
+
+		cyng::tuple_t req_generator::get_proc_parameter(cyng::buffer_t const& server_id
 			, obis code)
 		{
-			++trx_;
-			auto const trx = *trx_;
-			append(message(cyng::make_object(trx)
+			auto const trx = *++trx_;
+
+			return message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_REQUEST	//	0x500
@@ -246,17 +264,15 @@ namespace node
 					, name_
 					, pwd_
 					, code)
-				)
-			);
-			return trx;
+				);
 		}
 
-		std::string req_generator::get_proc_parameter(cyng::buffer_t const& server_id
+		cyng::tuple_t req_generator::get_proc_parameter(cyng::buffer_t const& server_id
 			, obis_path_t path)
 		{
-			++trx_;
-			auto const trx = *trx_;
-			append(message(cyng::make_object(trx)
+			auto const trx = *++trx_;
+
+			return message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_REQUEST	//	0x500
@@ -268,18 +284,16 @@ namespace node
 					, name_
 					, pwd_
 					, path)
-				)
-			);
-			return trx;
+				);
 		}
 
-		std::string req_generator::get_list(cyng::buffer_t const& client_id
+		cyng::tuple_t req_generator::get_list(cyng::buffer_t const& client_id
 			, cyng::buffer_t const& server_id
 			, obis code)
 		{
-			++trx_;
-			auto const trx = *trx_;
-			append(message(cyng::make_object(trx)
+			auto const trx = *++trx_;
+
+			return message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, message_e::GET_LIST_REQUEST	//	0x700
@@ -292,25 +306,23 @@ namespace node
 					, name_
 					, pwd_
 					, code)
-				)
 			);
-			return trx;
 		}
 
-		std::string req_generator::get_list_last_data_record(cyng::buffer_t const& client_id
+		cyng::tuple_t req_generator::get_list_last_data_record(cyng::buffer_t const& client_id
 			, cyng::buffer_t const& server_id)
 		{
 			return get_list(client_id, server_id, OBIS_CODE(99, 00, 00, 00, 00, 03));
 		}
 
-		std::string req_generator::get_profile_list(cyng::buffer_t const& server_id
+		cyng::tuple_t req_generator::get_profile_list(cyng::buffer_t const& server_id
 			, std::chrono::system_clock::time_point begin_time
 			, std::chrono::system_clock::time_point end_time
 			, obis code)
 		{
-			++trx_;
-			auto const trx = *trx_;
-			append(message(cyng::make_object(trx)
+			auto const trx = *++trx_;
+
+			return message(cyng::make_object(trx)
 				, group_no_++	//	group
 				, 0 //	abort code
 				, message_e::GET_PROFILE_LIST_REQUEST	//	0x400
@@ -327,9 +339,7 @@ namespace node
 					, cyng::tuple_factory(code.to_buffer())	//	path entry
 					, cyng::make_object()	// object_List
 					, cyng::make_object()	// dasDetails
-				)
-			));
-			return trx;
+				));
 		}
 
 
@@ -337,14 +347,13 @@ namespace node
 			: generator()
 		{}
 
-		std::size_t res_generator::public_open(cyng::object trx
+		cyng::tuple_t res_generator::public_open(cyng::object trx
 			, cyng::object client_id
 			, cyng::object req
 			, cyng::object server_id)	//	server id
 		{
-			BOOST_ASSERT_MSG(msg_.empty(), "pending SML data");
 
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, group_no_++	//	group
 				, 0 // abort code
 				, message_e::OPEN_RESPONSE
@@ -359,12 +368,12 @@ namespace node
 					, cyng::make_object()	//	 ref time
 					, cyng::make_object()
 				)
-			));
+			);
 		}
 
-		std::size_t res_generator::public_close(cyng::object trx)
+		cyng::tuple_t res_generator::public_close(cyng::object trx)
 		{
-			return append(message(trx
+			return message(trx
 				, 0	//	group is 0 for CLOSE RESPONSE
 				, 0 //	abort code
 				, message_e::CLOSE_RESPONSE
@@ -374,14 +383,10 @@ namespace node
 				//
 				, close_response(cyng::make_object()
 				)
-			));
+			);
 		}
 
-		std::size_t res_generator::empty(std::string trx, cyng::buffer_t server_id, obis root)
-		{
-			return append(empty_get_proc_param(trx, server_id, root));
-		}
-
+ 
 		cyng::tuple_t res_generator::empty_get_proc_param(std::string trx
 			, cyng::buffer_t server_id
 			, obis root)
@@ -443,7 +448,7 @@ namespace node
 					, cyng::tuple_t{}));
 		}
 
-		std::size_t res_generator::get_profile_list(std::string trx
+		cyng::tuple_t res_generator::get_profile_list(std::string trx
 			, cyng::buffer_t client_id
 			, obis path
 			, std::chrono::system_clock::time_point act_time
@@ -452,7 +457,7 @@ namespace node
 			, std::uint64_t status
 			, cyng::tuple_t&& period_list)
 		{
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROFILE_LIST_RESPONSE	//	0x0401
@@ -466,10 +471,10 @@ namespace node
 					, path	//	path entry
 					, val_time
 					, status
-					, std::move(period_list))));
+					, std::move(period_list)));
 		}
 
-		std::size_t res_generator::get_proc_parameter_device_id(std::string trx
+		cyng::tuple_t res_generator::get_proc_parameter_device_id(std::string trx
 			, cyng::buffer_t server_id
 			, std::string const& manufacturer
 			, cyng::buffer_t const& server_id2
@@ -489,7 +494,7 @@ namespace node
 			
 			const auto os_name = cyng::sys::get_os_name();
 
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_RESPONSE
@@ -536,11 +541,11 @@ namespace node
 							parameter_tree(OBIS_CODE(81, 81, c7, 82, 0a, 02), make_value(serial_str))
 							//parameter_tree(OBIS_CODE(81, 81, c7, 82, 0a, 02), make_value(serial))	// works too
 						})
-					}))));
+					})));
 
 		}
 
-		std::size_t res_generator::get_proc_mem_usage(std::string trx
+		cyng::tuple_t res_generator::get_proc_mem_usage(std::string trx
 			, cyng::buffer_t server_id
 			, std::uint8_t mirror
 			, std::uint8_t tmp)
@@ -574,7 +579,7 @@ namespace node
 			//  631AA8                                          crc16: 6824
 			//  00                                              endOfSmlMsg: 00 
 
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_RESPONSE
@@ -593,11 +598,11 @@ namespace node
 
 						parameter_tree(OBIS_CODE(00, 80, 80, 00, 11, FF), make_value(mirror)),	//	mirror
 						parameter_tree(OBIS_CODE(00, 80, 80, 00, 12, FF), make_value(tmp))	// tmp
-				}))));
+				})));
 
 		}
 
-		std::size_t res_generator::get_proc_device_time(std::string trx
+		cyng::tuple_t res_generator::get_proc_device_time(std::string trx
 			, cyng::buffer_t server_id
 			, std::chrono::system_clock::time_point now
 			, std::int32_t tz
@@ -649,7 +654,7 @@ namespace node
 			//  633752                                          crc16: 14162
 			//  00                                              endOfSmlMsg: 00 
 
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_RESPONSE
@@ -670,17 +675,17 @@ namespace node
 						parameter_tree(OBIS_CODE(00, 00, 60, 08, 00, FF), make_sec_index_value(now)),
 						parameter_tree(OBIS_CODE(81, 00, 00, 09, 0B, 01), make_value(tz)),
 						parameter_tree(OBIS_CODE(81, 00, 00, 09, 0B, 02), make_value(sync_active))
-			}))));
+			})));
 		}
 
-		std::size_t res_generator::get_status_word(std::string trx
+		cyng::tuple_t res_generator::get_status_word(std::string trx
 			, cyng::buffer_t server_id
 			, std::int32_t word)
 		{
 			//	example:
 			//	81 00 60 05 00 00: 459266
 
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_RESPONSE
@@ -695,10 +700,10 @@ namespace node
 					//	generate get process parameter response
 					//	2 uint8 values 
 					//
-					, parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(word)))));
+					, parameter_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, make_value(word))));
 		}
 
-		std::size_t res_generator::get_proc_actuators(std::string trx
+		cyng::tuple_t res_generator::get_proc_actuators(std::string trx
 			, cyng::buffer_t server_id)
 		{
 			//00 80 80 11 00 FF                Not set
@@ -720,7 +725,7 @@ namespace node
 
 			//cyng::buffer_t actor_1{ 0x0A, (char)0xE0, 0x00, 0x01 }, actor_2{ 0x0A, (char)0xE0, 0x00, 0x02 };
 
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_RESPONSE
@@ -749,11 +754,11 @@ namespace node
 							parameter_tree(OBIS_CODE(00, 80, 80, 11, 16, FF), make_value("Einschalten_Manuell 51-100%"))
 						})
 
-					}))));
+					})));
 
 		}
 
-		std::size_t res_generator::get_proc_parameter_ipt_state(std::string trx
+		cyng::tuple_t res_generator::get_proc_parameter_ipt_state(std::string trx
 			, cyng::buffer_t server_id
 			, boost::asio::ip::tcp::endpoint remote_ep
 			, boost::asio::ip::tcp::endpoint local_ep)
@@ -802,7 +807,7 @@ namespace node
 			std::uint16_t const target_port = remote_ep.port()
 				, source_port = local_ep.port();
 
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_RESPONSE
@@ -817,11 +822,11 @@ namespace node
 						parameter_tree(OBIS_CODE(81, 49, 17, 07, 00, 00), make_value(ip_address)),
 						parameter_tree(OBIS_CODE(81, 49, 1A, 07, 00, 00), make_value(target_port)),
 						parameter_tree(OBIS_CODE(81, 49, 19, 07, 00, 00), make_value(source_port))
-					}))));
+					})));
 		}
 
 
-		std::size_t res_generator::get_profile_op_log(std::string trx
+		cyng::tuple_t res_generator::get_profile_op_log(std::string trx
 			, cyng::buffer_t client_id
 			, std::chrono::system_clock::time_point act_time
 			, std::uint32_t reg_period
@@ -838,7 +843,7 @@ namespace node
 			//	seconds since epoch
 			std::uint64_t sec = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
 
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROFILE_LIST_RESPONSE	//	0x0401
@@ -919,19 +924,19 @@ namespace node
 						//  5200                                    scaler: 0
 						period_entry(OBIS_DATA_PUSH_DETAILS, 0xFF, 0, cyng::make_object(details))
 
-				})));
+				}));
 
      
 		}
 
-		std::size_t res_generator::get_proc_w_mbus_status(std::string trx
+			cyng::tuple_t res_generator::get_proc_w_mbus_status(std::string trx
 			, cyng::buffer_t server_id
 			, std::string const& manufacturer	// manufacturer of w-mbus adapter
 			, cyng::buffer_t const&	id	//	adapter id (EN 13757-3/4)
 			, std::string const& firmware	//	firmware version of adapter
 			, std::string const& hardware)	//	hardware version of adapter);
 		{
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_PROC_PARAMETER_RESPONSE
@@ -948,41 +953,10 @@ namespace node
 						parameter_tree(OBIS_W_MBUS_FIRMWARE, make_value(firmware)),
 						parameter_tree(OBIS_W_MBUS_HARDWARE, make_value(hardware))
 
-			}))));
+			})));
 		}
 
-		std::size_t res_generator::get_proc_w_mbus_if(std::string trx
-			, cyng::buffer_t server_id
-			, cyng::object protocol	// radio protocol
-			, cyng::object s_mode	// duration in seconds
-			, cyng::object t_mode	// duration in seconds
-			, cyng::object reboot	//	duration in seconds
-			, cyng::object power	//	transmision power (transmission_power)
-			, cyng::object install_mode)
-		{
-			return append(message(trx	//	trx
-				, ++group_no_	//	group
-				, 0 //	abort code
-				, message_e::GET_PROC_PARAMETER_RESPONSE
-
-				//
-				//	generate get process parameter response
-				//
-				, get_proc_parameter_response(server_id
-					, OBIS_IF_wMBUS	//	path entry - 81 06 19 07 00 FF
-					, child_list_tree(OBIS_IF_wMBUS, {
-
-						parameter_tree(OBIS_W_MBUS_PROTOCOL, make_value(protocol)),
-						parameter_tree(OBIS_W_MBUS_MODE_S, make_value(s_mode)),
-						parameter_tree(OBIS_W_MBUS_MODE_T, make_value(t_mode)),
-						parameter_tree(OBIS_W_MBUS_REBOOT, make_value(reboot)),
-						parameter_tree(OBIS_W_MBUS_POWER, make_value(power)),
-						parameter_tree(OBIS_W_MBUS_INSTALL_MODE, make_value(install_mode))
-
-			}))));
-		}
-
-		std::size_t res_generator::get_list(std::string trx
+		cyng::tuple_t res_generator::get_list(std::string trx
 			, cyng::buffer_t const& client_id
 			, cyng::buffer_t const& server_id
 			, obis list_name
@@ -990,7 +964,7 @@ namespace node
 			, cyng::tuple_t act_gateway_time
 			, cyng::tuple_t val_list)
 		{
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::GET_LIST_RESPONSE
@@ -1003,16 +977,16 @@ namespace node
 					, list_name
 					, act_sensor_time
 					, act_gateway_time
-					, val_list)));
+					, val_list));
 		}
 
-		std::size_t res_generator::attention_msg(cyng::object trx
+		cyng::tuple_t res_generator::attention_msg(cyng::object trx
 			, cyng::buffer_t const& server_id
 			, cyng::buffer_t const& attention_nr
 			, std::string attention_msg
 			, cyng::tuple_t attention_details)
 		{
-			return append(message(trx	//	trx
+			return message(trx	//	trx
 				, ++group_no_	//	group
 				, 0 //	abort code
 				, message_e::ATTENTION_RESPONSE
@@ -1023,7 +997,7 @@ namespace node
 				, get_attention_response(server_id
 					, attention_nr
 					, attention_msg
-					, attention_details)));
+					, attention_details));
 		}
 
 		trx::trx()

@@ -224,7 +224,7 @@ namespace node
 				if (ro.read_public_open_response(pos, end)) {
 
 					BOOST_ASSERT(ro.client_id_.size() == 6);
-					BOOST_ASSERT(ro.server_id_.size() == 7);
+					BOOST_ASSERT(ro.server_id_.size() == 7 || ro.server_id_.size() == 9);
 
 					return cyng::generate_invoke("sml.public.open.response"
 						, ro.trx_

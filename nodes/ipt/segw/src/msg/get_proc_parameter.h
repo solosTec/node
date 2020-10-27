@@ -53,36 +53,46 @@ namespace node
 				, config_broker&
 				, config_customer_if&);
 
-			void generate_response(obis_path_t path
+			cyng::tuple_t generate_response(obis_path_t path
 				, std::string trx
 				, cyng::buffer_t srv_id
 				, std::string user
 				, std::string pwd);
 
 		private:
-			void class_op_log_status_word(std::string trx, cyng::buffer_t srv_id);
-			void code_root_device_ident(std::string trx, cyng::buffer_t srv_id);
-			void code_root_device_time(std::string trx, cyng::buffer_t srv_id);
-			void code_root_ntp(std::string trx, cyng::buffer_t srv_id);
-			void code_root_wan(std::string trx, cyng::buffer_t srv_id);
-			void code_root_gsm(std::string trx, cyng::buffer_t srv_id);
-			void code_root_gprs_param(std::string trx, cyng::buffer_t srv_id);
-			void code_root_ipt_state(std::string trx, cyng::buffer_t srv_id);
-			void code_root_w_mbus_status(std::string trx, cyng::buffer_t srv_id);
-			void code_if_wmbus(std::string trx, cyng::buffer_t srv_id);
-			void code_root_lan_dsl(std::string trx, cyng::buffer_t srv_id);
-			void code_if_lan_dsl(std::string trx, cyng::buffer_t srv_id);
-			void code_root_memory_usage(std::string trx, cyng::buffer_t srv_id);
-			void code_root_active_devices(std::string trx, cyng::buffer_t srv_id);
-			void code_root_visible_devices(std::string trx, cyng::buffer_t srv_id);
-			void code_root_device_info(std::string trx, cyng::buffer_t srv_id);
-			//void code_if_1107(std::string trx, cyng::buffer_t srv_id);
-			void storage_time_shift(std::string trx, cyng::buffer_t srv_id);
-			//void push_operations(std::string trx, cyng::buffer_t srv_id);
-			void list_services(std::string trx, cyng::buffer_t srv_id);
-			void actuators(std::string trx, cyng::buffer_t srv_id);
-			void code_if_edl(std::string trx, cyng::buffer_t srv_id);
-			void class_mbus(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t class_op_log_status_word(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_device_ident(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_device_time(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_ntp(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_wan(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_gsm(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_gprs_param(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_ipt_state(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_w_mbus_status(std::string trx, cyng::buffer_t srv_id);
+
+			/**
+			 * @param protocol node::mbus::radio_protocol
+			 * @param s_mode Zeitdauer, die fortlaufend im SMode empfangen wird (der Parameter
+			 *	wird nur benötigt, falls vorstehend die Variante 2 ==  S/T - Automatik gewählt ist).
+			 * @param t_mode Zeitdauer, die fortlaufend im TMode empfangen wird (der Parameter
+			 *	wird nur benötigt, falls vorstehend die Variante 2 ==  S/T - Automatik gewählt ist).
+			 * @param reboot Periode, anzugeben in Sekunden, nach deren Ablauf das W-MBUS-Modem
+			 *	im MUC-C neu initialisiert werden soll. Bei 0 ist der automatische Reboot inaktiv.
+			 * @param power transmision power
+			 * @param timeout Maximales Inter Message Timeout in Sekunden
+			 */
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_if_wmbus(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_lan_dsl(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_if_lan_dsl(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_memory_usage(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_active_devices(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_visible_devices(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_root_device_info(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t storage_time_shift(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t list_services(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t actuators(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t code_if_edl(std::string trx, cyng::buffer_t srv_id);
+			CYNG_ATTR_NODISCARD cyng::tuple_t class_mbus(std::string trx, cyng::buffer_t srv_id);
 
 		private:
 			cyng::logging::log_ptr logger_;

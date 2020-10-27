@@ -18,12 +18,13 @@ namespace node
 	 * This class makes gateway configuration available also when the device
 	 * is offline. In addition, it allows the incremental capturing of all 
 	 * configuration data and allows a backup to be created.
+	 * It also accelerates the reaction time.
 	 *
 	 * Each instance of this class stores the configuration of one gateway.
 	 */
 	class config_cache
 	{
-		using sections_t = std::map<sml::obis_path_t, cyng::param_map_t>;
+		using sections_t = std::map<sml::obis_path_t, cyng::object>;
 		using sections_v = typename sections_t::value_type;
 
 	public:
@@ -52,8 +53,14 @@ namespace node
 		 *
 		 * @return true if root is part of the actice sections
 		 */
-		bool update(sml::obis root, cyng::param_map_t const& params);
-		bool update(sml::obis_path_t root, cyng::param_map_t const& params, bool force);
+		bool update(sml::obis root, cyng::param_t const& param);
+
+		/**
+		 * update configuration cache
+		 *
+		 * @return true if path is part of the actice sections
+		 */
+		bool update(sml::obis_path_t path, cyng::param_t const& param);
 
 		/**
 		 * @return server as string
@@ -69,15 +76,15 @@ namespace node
 		/**
 		 * extend cache of specified root slots if required
 		 */
-		void add(cyng::buffer_t srv, sml::obis_path_t&&);
+		void add(cyng::buffer_t srv, sml::obis_path_t const&);
 		void remove(sml::obis_path_t&&);
 
 		/**
 		 * @return data of the cached section. Data set will be empty
 		 * if no data were cached.
 		 */
-		cyng::param_map_t get_section(sml::obis_path_t const&) const;
-		cyng::param_map_t get_section(sml::obis) const;
+		cyng::object get_section(sml::obis_path_t const&) const;
+		cyng::object get_section(sml::obis) const;
 
 		/**
 		 * Loop over access rights (81 81 81 60 FF FF)

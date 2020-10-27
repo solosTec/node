@@ -26,7 +26,7 @@ namespace node
 			, cache_(cfg)
 		{}
 
-		void config_security::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_security::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			//	00 80 80 01 00 FF
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_SECURITY);
@@ -34,7 +34,7 @@ namespace node
 			//
 			//	00 80 80 01 01 FF - server ID
 			//
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_SECURITY,
 				OBIS_SECURITY_SERVER_ID
 				}, make_value(srv_id));
@@ -42,7 +42,7 @@ namespace node
 			//
 			//	00 80 80 01 02 FF - owner
 			//
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_SECURITY,
 				OBIS_SECURITY_OWNER
 				}, make_value("solosTec"));
@@ -51,7 +51,7 @@ namespace node
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 
 		}
 

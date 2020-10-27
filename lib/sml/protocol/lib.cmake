@@ -8,7 +8,6 @@ set (sml_protocol_cpp
 	src/scaler.cpp
 	src/writer.hpp
 	src/writer.cpp
-	src/readout.cpp
 	src/mbus_defs.cpp
 	src/obis_db.cpp
 	src/obis_io.cpp
@@ -43,6 +42,7 @@ set (sml_generator
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/sml/protocol/reader.h
 
 	src/parser.cpp
+	src/readout.cpp
 	src/serializer.cpp
 	src/message.cpp
 	src/generator.cpp

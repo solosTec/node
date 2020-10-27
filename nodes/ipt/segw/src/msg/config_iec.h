@@ -35,7 +35,7 @@ namespace node
 				, res_generator& sml_gen
 				, cache& c);
 
-			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
+			CYNG_ATTR_NODISCARD cyng::tuple_t get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
 			//void set_param(node::sml::obis code
 			//	, cyng::buffer_t srv_id
 			//	, cyng::param_t const& param);

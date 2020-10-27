@@ -29,7 +29,7 @@ namespace node
 			, cache_(cfg)
 		{}
 
-		void config_iec::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_iec::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_IF_1107);
 
@@ -37,7 +37,7 @@ namespace node
 			//	81 81 C7 93 01 FF - if true 1107 interface active otherwise SML interface active
 			//
 			auto const active = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_ACTIVE }), false);
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_ACTIVE
 				}, make_value(active));
@@ -46,7 +46,7 @@ namespace node
 			//	81 81 C7 93 02 FF - Loop timeout in seconds
 			//
 			auto const loop_time = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_LOOP_TIME }), std::chrono::seconds(60));
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_LOOP_TIME
 				}, make_value(loop_time));
@@ -55,7 +55,7 @@ namespace node
 			//	81 81 C7 93 03 FF - Retry count
 			//
 			auto const retries = cache_.get_cfg<std::uint32_t>(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_RETRIES }), 3u);
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_RETRIES
 				}, make_value(retries));
@@ -64,7 +64,7 @@ namespace node
 			//	81 81 C7 93 04 FF - Minimal answer timeout(300) in milliseconds
 			//
 			auto const min_timeout = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_MIN_TIMEOUT }), std::chrono::milliseconds(200u));
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_MIN_TIMEOUT
 				}, make_value(min_timeout));
@@ -73,7 +73,7 @@ namespace node
 			//	81 81 C7 93 05 FF - Maximal answer timeout(5000) in milliseconds
 			//
 			auto const max_timeout = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_MAX_TIMEOUT }), std::chrono::milliseconds(5000u));
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_MAX_TIMEOUT
 				}, make_value(max_timeout));
@@ -82,7 +82,7 @@ namespace node
 			//	81 81 C7 93 06 FF - Maximum data bytes(10240)
 			//
 			auto const max_bytes = cache_.get_cfg<std::uint32_t>(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_MAX_DATA_RATE }), 10240u);
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_MAX_DATA_RATE
 				}, make_value(max_bytes));
@@ -91,7 +91,7 @@ namespace node
 			//	81 81 C7 93 08 FF - Protocol mode(A ... D)
 			//
 			auto const mode = cache_.get_cfg<std::uint8_t>(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_PROTOCOL_MODE }), 2u);
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_PROTOCOL_MODE
 				}, make_value(mode));
@@ -100,7 +100,7 @@ namespace node
 			//	81 81 C7 93 10 FF - auto activation
 			//
 			auto const auto_activation = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_AUTO_ACTIVATION }), false);
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_AUTO_ACTIVATION
 				}, make_value(auto_activation));
@@ -110,7 +110,7 @@ namespace node
 			//	default = 15min
 			//
 			auto const time_grid = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_TIME_GRID }), std::chrono::seconds(900u));
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_TIME_GRID
 				}, make_value(time_grid));
@@ -120,7 +120,7 @@ namespace node
 			//	default = 4h
 			//
 			auto const time_sync = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_TIME_SYNC }), std::chrono::seconds(14400u));
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_TIME_SYNC
 				}, make_value(time_sync));
@@ -129,7 +129,7 @@ namespace node
 			//	81 81 C7 93 14 FF - seconds
 			//
 			auto const max_var = cache_.get_cfg(build_cfg_key({ OBIS_IF_1107, OBIS_IF_1107_MAX_VARIATION }), std::chrono::seconds(9u));
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_IF_1107,
 				OBIS_IF_1107_MAX_VARIATION
 				}, make_value(max_var));
@@ -141,7 +141,7 @@ namespace node
 
 				auto const nr = cyng::value_cast<std::uint8_t>(rec.key().at(0), 1u);
 
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -151,7 +151,7 @@ namespace node
 				//
 				//	81 81 C7 93 0B FF - baudrate
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -161,7 +161,7 @@ namespace node
 				//
 				//	81 81 C7 93 0C FF - address
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -171,7 +171,7 @@ namespace node
 				//
 				//	81 81 C7 93 0D FF - P1
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -181,7 +181,7 @@ namespace node
 				//
 				//	81 81 C7 93 0E FF - W5
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -203,7 +203,7 @@ namespace node
 				//
 				//	81 81 C7 93 0A FF - meter id
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -213,7 +213,7 @@ namespace node
 				//
 				//	81 81 C7 93 0B FF - baudrate
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -223,7 +223,7 @@ namespace node
 				//
 				//	81 81 C7 93 0C FF - address
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -233,7 +233,7 @@ namespace node
 				//
 				//	81 81 C7 93 0D FF - P1
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -243,7 +243,7 @@ namespace node
 				//
 				//	81 81 C7 93 0E FF - W5
 				//
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_IF_1107,
 					OBIS_IF_1107_METER_LIST,
 					make_obis(0x81, 0x81, 0xC7, 0x93, 0x09, nr),
@@ -255,7 +255,7 @@ namespace node
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 
 		}
 

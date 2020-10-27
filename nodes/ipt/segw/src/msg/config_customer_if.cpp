@@ -27,7 +27,7 @@ namespace node
 			, cache_(cfg)
 		{}
 
-		void config_customer_if::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_customer_if::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			//	00 80 80 01 00 FF
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_CUSTOM_INTERFACE);
@@ -50,7 +50,7 @@ namespace node
 			//	81 02 00 07 01 FF - CUSTOM_IF_IP_REF
 			//	[u8] 0 == manual, 1 == DHCP
 			//
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_IP_REF
 				}, make_value<std::uint8_t>(0));
@@ -60,7 +60,7 @@ namespace node
 			//	192.168.0.200 on windows
 			//
 			auto const addr_1 = boost::asio::ip::make_address("192.168.0.200");			
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_IP_ADDRESS_1
 				}, make_value(addr_1));
@@ -68,14 +68,14 @@ namespace node
 			//	OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 02, CUSTOM_IF_IP_ADDRESS_2);	//	[IPv4/IPv6] second manual set IP address
 			try {
 				auto const addr_2 = boost::asio::ip::make_address("172.16.0.254");
-				append_get_proc_response(msg, {
+				merge_msg(msg, {
 					OBIS_ROOT_CUSTOM_INTERFACE,
 					OBIS_CUSTOM_IF_IP_ADDRESS_2
 					}, make_value(addr_2));
 			}
 			catch (std::exception const& ex) {
-				CYNG_LOG_WARNING(logger_, "get ROOT_CUSTOM_INTERFACE:CUSTOM_IF_IP_ADDRESS_2: " << ex.what());
-				append_get_proc_response(msg, {
+				//CYNG_LOG_WARNING(logger_, "get ROOT_CUSTOM_INTERFACE:CUSTOM_IF_IP_ADDRESS_2: " << ex.what());
+				merge_msg(msg, {
 					OBIS_ROOT_CUSTOM_INTERFACE,
 					OBIS_CUSTOM_IF_IP_ADDRESS_2
 					}, make_value<std::uint32_t>(0));
@@ -85,7 +85,7 @@ namespace node
 			//	OBIS_CODE_DEFINITION(81, 02, 17, 07, 01, 01, CUSTOM_IF_IP_MASK_1);	//	[IPv4/IPv6] 
 			//
 			auto const mask = boost::asio::ip::make_address("255.255.255.0");
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_IP_MASK_1
 				}, make_value(mask));
@@ -93,41 +93,41 @@ namespace node
 			//
 			//	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, FF, CUSTOM_IF_DHCP);	//	[bool] if true use a DHCP server
 			//
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_DHCP
 				}, make_value(false));
 
 			//	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 01, CUSTOM_IF_DHCP_LOCAL_IP_MASK);	//	[IPv4/IPv6] 
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_DHCP_LOCAL_IP_MASK
 				}, make_value(boost::asio::ip::make_address("255.255.0.0")));
 
 			//	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 02, CUSTOM_IF_DHCP_DEFAULT_GW);	//	[IPv4/IPv6] 
 			auto const gw = boost::asio::ip::make_address_v4("192.168.0.1");
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_DHCP_DEFAULT_GW
 				}, make_value(gw));
 
 			//	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 03, CUSTOM_IF_DHCP_DNS);	//	[IPv4/IPv6] 
 			auto const dns = boost::asio::ip::make_address_v4("1.1.1.1");
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_DHCP_DNS
 				}, make_value(dns));
 
 			//	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 04, CUSTOM_IF_DHCP_START_ADDRESS);	//	[IPv4/IPv6] 
 			auto const dhscp_start = boost::asio::ip::make_address_v4("192.168.0.2");
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_DHCP_START_ADDRESS
 				}, make_value(dhscp_start));
 
 			//	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 05, CUSTOM_IF_DHCP_END_ADDRESS);	//	[IPv4/IPv6] 
 			auto const dhscp_end = boost::asio::ip::make_address_v4("192.168.0.254");
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_INTERFACE,
 				OBIS_CUSTOM_IF_DHCP_END_ADDRESS
 				}, make_value(dhscp_end));
@@ -137,33 +137,75 @@ namespace node
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 
 		}
 
-		void config_customer_if::get_ip_address(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_customer_if::get_ip_address(std::string trx, cyng::buffer_t srv_id) const
 		{
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_CUSTOM_PARAM);
 
 			auto const rep = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_CUSTOM_PARAM }, "ep.remote"), boost::asio::ip::tcp::endpoint());
 
-			append_get_proc_response(msg, {
+			merge_msg(msg, {
 				OBIS_ROOT_CUSTOM_PARAM,
-				OBIS_CUSTOM_IF_IP_ADDRESS
+				OBIS_CUSTOM_IF_IP_CURRENT_1
 				}, make_value(rep.address()));
 
+			auto const ip2 = boost::asio::ip::make_address_v4("172.16.0.1");
+			merge_msg(msg, {
+				OBIS_ROOT_CUSTOM_PARAM,
+				OBIS_CUSTOM_IF_IP_CURRENT_2
+				}, make_value(ip2));
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 
+		}
+
+		cyng::tuple_t config_customer_if::get_nms(std::string trx, cyng::buffer_t srv_id) const
+		{
+			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, sml::OBIS_ROOT_NMS);
+
+			//auto const address = boost::asio::ip::make_address("0.0.0.0");
+			auto const address = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ADDRESS }), boost::asio::ip::make_address("0.0.0.0"));
+			merge_msg(msg, {
+				OBIS_ROOT_NMS,
+				OBIS_NMS_ADDRESS
+				}, make_value(address));
+
+			auto const port = cache_.get_cfg<std::uint16_t>(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }), 7261u);
+			merge_msg(msg, {
+				OBIS_ROOT_NMS,
+				OBIS_NMS_PORT
+				}, make_value(port));
+
+			auto const user = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_USER }), "operator");
+			merge_msg(msg, {
+				OBIS_ROOT_NMS,
+				OBIS_NMS_USER
+				}, make_value(user));
+
+			auto const pwd = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PWD }), "operator");
+			merge_msg(msg, {
+				OBIS_ROOT_NMS,
+				OBIS_NMS_PWD
+				}, make_value(pwd));
+
+			auto const enabled = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ENABLED }), false);
+			merge_msg(msg, {
+				OBIS_ROOT_NMS,
+				OBIS_NMS_ENABLED
+				}, make_value(enabled));
+
+			return msg;
 		}
 
 		void config_customer_if::set_params(obis_path_t const& path
 			, cyng::buffer_t srv_id
 			, cyng::object const& obj)
 		{
-
 		}
 
 

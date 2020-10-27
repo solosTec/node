@@ -35,14 +35,14 @@ namespace node
 				, res_generator& sml_gen
 				, cache& c);
 
-			void get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
-			void get_ip_address(std::string trx, cyng::buffer_t srv_id) const;
+			CYNG_ATTR_NODISCARD cyng::tuple_t get_proc_params(std::string trx, cyng::buffer_t srv_id) const;
+			CYNG_ATTR_NODISCARD cyng::tuple_t get_ip_address(std::string trx, cyng::buffer_t srv_id) const;
+			CYNG_ATTR_NODISCARD cyng::tuple_t get_nms(std::string trx, cyng::buffer_t srv_id) const;
 
 			void set_params(obis_path_t const& path
 				, cyng::buffer_t srv_id
 				, cyng::object const& obj);
 
-		private:
 
 		private:
 			cyng::logging::log_ptr logger_;

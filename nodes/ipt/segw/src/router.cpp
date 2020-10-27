@@ -77,6 +77,7 @@ namespace node
 		, get_profile_list_(logger, sml_gen_, cfg, db)
 		, get_list_(logger, sml_gen_, cfg, db)
 		, attention_(logger, sml_gen_, cfg)
+		, messages_()
 	{
 		//
 		//	SML transport
@@ -142,7 +143,9 @@ namespace node
 		//
 		//	build SML message frame
 		//
-		cyng::buffer_t buf = sml_gen_.boxing();
+		//cyng::buffer_t buf = sml_gen_.boxing();
+		auto const buf = sml::to_sml(messages_);
+
 
 #ifdef __DEBUG
 		cyng::io::cpp_dump cd;
@@ -173,6 +176,7 @@ namespace node
 		//	reset generator
 		//
 		sml_gen_.reset();
+		messages_.clear();
 	}
 
 	void router::sml_public_open_request(cyng::context& ctx)
@@ -218,10 +222,10 @@ namespace node
 			//	linearize and set CRC16
 			//	append to current SML message
 			//
-			sml_gen_.public_open(frame.at(0)	// trx
+			messages_.push_back(sml_gen_.public_open(frame.at(0)	// trx
 				, frame.at(1)	//	client id
 				, frame.at(3)	//	req file id
-				, frame.at(2));
+				, frame.at(2)));
 
 		}
 		else {
@@ -237,11 +241,11 @@ namespace node
 				if (!boost::algorithm::equals(account_, std::get<4>(tpl)) ||
 					!boost::algorithm::equals(pwd_, std::get<5>(tpl))) {
 
-					sml_gen_.attention_msg(frame.at(1)	// trx
+					messages_.push_back(sml_gen_.attention_msg(frame.at(1)	// trx
 						, std::get<2>(tpl)	//	server ID
 						, sml::OBIS_ATTENTION_NOT_AUTHORIZED.to_buffer()
 						, "login failed"
-						, cyng::tuple_t());
+						, cyng::tuple_t()));
 
 					CYNG_LOG_WARNING(logger_, "sml.public.open.request - login failed: "
 						<< std::get<4>(tpl)
@@ -255,10 +259,10 @@ namespace node
 					//	linearize and set CRC16
 					//	append to current SML message
 					//
-					sml_gen_.public_open(frame.at(0)	// trx
+					messages_.push_back(sml_gen_.public_open(frame.at(0)	// trx
 						, frame.at(1)	//	client id
 						, frame.at(3)	//	req file id
-						, frame.at(2));
+						, frame.at(2)));
 				}
 			}
 			else
@@ -269,11 +273,11 @@ namespace node
 					<< cyng::io::to_hex(cache_.get_srv_id())
 					<< ")");
 
-				sml_gen_.attention_msg(frame.at(0)	// trx
+				messages_.push_back(sml_gen_.attention_msg(frame.at(0)	// trx
 					, std::get<2>(tpl)	//	server ID
 					, sml::OBIS_ATTENTION_NO_SERVER_ID.to_buffer()
 					, "wrong server id"
-					, cyng::tuple_t());
+					, cyng::tuple_t()));
 			}
 		}
 	}
@@ -284,13 +288,17 @@ namespace node
 		//	[]
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
+			<< " #" 
+			<< messages_.size()
+			<< " - "
+			<< cyng::io::to_str(frame));
 
 		//
 		//	linearize and set CRC16
 		//	append to current SML message
 		//
-		sml_gen_.public_close(frame.at(0));
+		messages_.push_back(sml_gen_.public_close(frame.at(0)));
 	}
 
 	void router::sml_public_close_response(cyng::context& ctx)
@@ -312,7 +320,11 @@ namespace node
 		//	[]
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name()
+			<< " #"
+			<< messages_.size()
+			<< " - "
+			<< cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			std::string,		//	[0] trx
@@ -328,11 +340,11 @@ namespace node
 		//
 		//	routed to "get proc parameter" handler
 		//
-		get_proc_parameter_.generate_response(path
+		messages_.push_back(get_proc_parameter_.generate_response(path
 			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
-			, std::get<3>(tpl));
+			, std::get<3>(tpl)));
 
 	}
 
@@ -342,7 +354,9 @@ namespace node
 		//	[]
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name()
+			<< " - "
+			<< cyng::io::to_str(frame));
 
 		//	* [string] trx - transaction id
 		//	* [string] path
@@ -353,7 +367,7 @@ namespace node
 
 		auto const tpl = cyng::tuple_cast<
 			std::string,		//	[0] trx
-			std::string,		//	[1] path
+			std::string,		//	[1] root
 			cyng::buffer_t,		//	[2] server id
 			std::string,		//	[3] user
 			std::string,		//	[4] password
@@ -380,7 +394,11 @@ namespace node
 		//	[]
 		//
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name()
+			<< " #"
+			<< messages_.size()
+			<< " - "
+			<< cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			std::string,		//	[0] trx
@@ -395,7 +413,7 @@ namespace node
 
 		sml::obis const code(std::get<7>(tpl));
 
-		get_profile_list_.generate_response(code
+		auto const msgs = get_profile_list_.generate_response(code
 			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
@@ -404,12 +422,20 @@ namespace node
 			, std::get<5>(tpl)
 			, std::get<6>(tpl));
 
+		for (auto const& msg : msgs) {
+			messages_.push_back(msg);
+		}
+
 	}
 
 	void router::sml_get_list_request(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_DEBUG(logger_, ctx.get_name()
+			<< " #"
+			<< messages_.size()
+			<< " - "
+			<< cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			std::string,		//	[0] trx
@@ -423,12 +449,12 @@ namespace node
 
 		sml::obis const code(std::get<6>(tpl));
 
-		get_list_.generate_response(sml::obis(std::get<6>(tpl))
+		messages_.push_back(get_list_.generate_response(sml::obis(std::get<6>(tpl))
 			, std::get<0>(tpl)
 			, std::get<1>(tpl)
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
 			, std::get<4>(tpl)
-			, std::get<5>(tpl));
+			, std::get<5>(tpl)));
 	}
 }

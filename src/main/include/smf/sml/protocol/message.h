@@ -10,7 +10,9 @@
 
 #include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis.h>
+
 #include <cyng/intrinsics/sets.h>
+
 #include <ostream>
 #include <initializer_list>
 #include <chrono>
@@ -20,6 +22,20 @@ namespace node
 	namespace sml
 	{
 		/**
+		 * list of messages ready to serialize (see to_sml() function)
+		 */
+		using messages_t = std::vector < cyng::tuple_t >;
+
+		/**
+		 * Convert a list of messages into a SML message
+		 */
+		cyng::buffer_t to_sml(sml::messages_t const&);
+
+
+		/**
+		 * Each message is a tuple consiting of 6 elements.
+		 * The last element is EOD (0).
+		 * 
 		 * @param trx transaction ID
 		 * @param group_no group number
 		 * @param abort_code abort code
@@ -105,17 +121,6 @@ namespace node
 			, cyng::tuple_t params);
 
 
-		/** @brief append a child list (SML_Tree) at the specified path.
-		 *
-		 * msg must be of type SML_GetProcParameter.Res
-		 *
-		 * @param msg SML_GetProcParameter.Res
-		 * @param code path
-		 * @param val SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
-		 */
-		bool append_get_proc_response(cyng::tuple_t& msg
-			, std::initializer_list<obis> path
-			, cyng::tuple_t&& val);
 
 		/** @brief append a child list (SML_Tree) at the specified path.
 		 *
@@ -126,10 +131,22 @@ namespace node
 		 * @param val SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
 		 * @param child List_of_SML_Tree
 		 */
-		bool append_get_proc_response(cyng::tuple_t& msg
+		bool merge_msg(cyng::tuple_t& msg
 			, std::initializer_list<obis> path
 			, cyng::tuple_t&& val
 			, cyng::tuple_t&& child);
+
+		/** @brief append a child list (SML_Tree) at the specified path.
+		 *
+		 * msg must be of type SML_GetProcParameter.Res
+		 *
+		 * @param msg SML_GetProcParameter.Res
+		 * @param code path
+		 * @param val SML_ProcParValue (value, periodEntry, tupleENtry, time or listEntry)
+		 */
+		bool merge_msg(cyng::tuple_t& msg
+			, std::initializer_list<obis> path
+			, cyng::tuple_t&& val);
 
 		bool set_get_proc_response_attribute(cyng::tuple_t& msg
 			, std::initializer_list<obis> path
@@ -287,6 +304,22 @@ namespace node
 			, cyng::object unit
 			, cyng::object scaler
 			, cyng::object value);
+
+		/**
+		 * Extract the transaction id from an SML message
+		 */
+		std::string get_trx(cyng::tuple_t const&);
+
+		/**
+		 * Extract the message type from an SML message
+		 */
+		message_e get_msg_type(cyng::tuple_t const&);
+
+		/**
+		 * @return the message type and an iterator to the message body.
+		 * 
+		 */
+		std::pair<message_e, cyng::tuple_t::const_iterator> get_msg_body(cyng::tuple_t const&);
 	}
 }
 #endif

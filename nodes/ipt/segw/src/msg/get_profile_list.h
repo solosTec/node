@@ -11,6 +11,7 @@
 
 #include <smf/sml/defs.h>
 #include <smf/sml/intrinsics/obis.h>
+#include <smf/sml/protocol/message.h>
 
 #include <cyng/log.h>
 #include <cyng/vm/controller.h>
@@ -38,7 +39,7 @@ namespace node
 				, cache& cfg
 				, storage& db);
 
-			void generate_response(obis code
+			messages_t generate_response(obis code
 				, std::string		//	[0] trx
 				, cyng::buffer_t	//	[1] client id
 				, cyng::buffer_t	//	[2] server id
@@ -48,7 +49,7 @@ namespace node
 				, std::chrono::system_clock::time_point);
 
 		private:
-			void class_op_log(std::string trx
+			messages_t class_op_log(std::string trx
 				, cyng::buffer_t client_id
 				, cyng::buffer_t srv_id
 				, std::chrono::system_clock::time_point start
@@ -56,14 +57,14 @@ namespace node
 
 #ifdef _DEBUG
 			//	demo
-			void profile_15_minute(std::string trx
+			messages_t profile_15_minute(std::string trx
 				, cyng::buffer_t client_id
 				, cyng::buffer_t srv_id
 				, std::chrono::system_clock::time_point start
 				, std::chrono::system_clock::time_point end);
 #endif
 
-			void get_profile(obis code
+			messages_t get_profile(obis code
 				, std::string trx
 				, cyng::buffer_t client_id
 				, cyng::buffer_t srv_id

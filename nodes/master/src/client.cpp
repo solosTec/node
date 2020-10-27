@@ -60,6 +60,7 @@ namespace node
 		ctx.queue(cyng::register_function("client.req.transmit.data", 5, std::bind(&client::req_transmit_data, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("client.inc.throughput", 3, std::bind(&client::inc_throughput, this, std::placeholders::_1)));
 		ctx.queue(cyng::register_function("client.update.attr", 6, std::bind(&client::update_attr, this, std::placeholders::_1)));
+		ctx.queue(cyng::register_function("client.internal.connection", 3, std::bind(&client::internal_connection, this, std::placeholders::_1)));
 	}
 
 	void client::set_class(std::string const& node_class)
@@ -489,8 +490,8 @@ namespace node
 		//	* sequence number (should be continuously incremented)
 		//	* [bool] success flag
 		//
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] remote client tag
@@ -569,7 +570,7 @@ namespace node
 					const auto rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
 					const auto rkey = cyng::table::key_generator(rtag);
 
-					BOOST_ASSERT(tag != rtag);
+					//BOOST_ASSERT(tag != rtag);	//	internal connection
 					BOOST_ASSERT(!rtag.is_nil());
 
 					//
@@ -718,8 +719,8 @@ namespace node
 		//	* bag
 		//	* this session object
 		//
-		const cyng::vector_t frame = ctx.get_frame();
-		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] remote client tag
@@ -749,9 +750,10 @@ namespace node
 		auto caller_peer = cyng::object_cast<session>(self);
 		BOOST_ASSERT(caller_peer != nullptr);
 
-		cyng::param_map_t options;
-		options["origin-tag"] = cyng::make_object(tag);		//	send response to this session
-		options["local-peer"] = cyng::make_object(peer);	//	and this peer
+		cyng::param_map_t options = cyng::param_map_factory
+			("origin-tag", tag)		//	send response to this session
+			("local-peer", peer)	//	and this peer
+			;
 															
 		bool success{ false };
 
@@ -938,6 +940,59 @@ namespace node
 		}
 	}
 
+	void client::internal_connection(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] origin client tag
+			boost::uuids::uuid,		//	[1] peer tag
+			bool					//	[2] status
+		>(frame);
+
+		//
+		//	insert connection record
+		//
+		cache_.db_.access([&](cyng::store::table* tbl_session
+			, cyng::store::table* tbl_connection)->void {
+
+				//
+				//	generate table keys
+				//
+				auto const tag = std::get<0>(tpl);
+				auto const caller_tag = cyng::table::key_generator(tag);
+
+				//
+				//	get session objects
+				//
+				cyng::table::record caller_rec = tbl_session->lookup(caller_tag);
+				BOOST_ASSERT_MSG(!caller_rec.empty(), "no caller record");
+
+				if (std::get<2>(tpl)) {
+					//
+					//	set own session tag as remote session tag
+					//
+					tbl_session->modify(caller_tag, cyng::param_factory("rtag", tag), tag);
+					tbl_session->modify(caller_tag, cyng::param_t("remote", caller_rec["local"]), tag);
+				}
+				else {
+					//
+					//	remove own session tag as remote session tag
+					//
+					tbl_session->modify(caller_tag, cyng::param_factory("rtag", boost::uuids::nil_uuid()), tag);
+					tbl_session->modify(caller_tag, cyng::param_factory("remote", cyng::null()), tag);
+				}
+
+				//
+				//	ToDo: update connection table
+				//
+
+		}	, cyng::store::write_access("_Session")
+			, cyng::store::write_access("_Connection"));
+
+	}
+
 	void client::res_open_connection(cyng::context& ctx)
 	{
 		//	[client.res.open.connection,
@@ -950,7 +1005,7 @@ namespace node
 		//	* success
 		//	* options
 		//	* bag (origin)
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), " - ", frame));
 
 		auto const tpl = cyng::tuple_cast<
@@ -1012,8 +1067,8 @@ namespace node
 			//
 			//	generate table keys
 			//
-			auto caller_tag = cyng::table::key_generator(tag);
-			auto callee_tag = cyng::table::key_generator(rtag);
+			auto const caller_tag = cyng::table::key_generator(tag);
+			auto const callee_tag = cyng::table::key_generator(rtag);
 
 			//
 			//	get session objects
@@ -1041,10 +1096,10 @@ namespace node
 					//	update "remote" attributes
 					//
 					tbl_session->modify(caller_tag, cyng::param_t("remote", callee_rec["local"]), tag);
-					tbl_session->modify(caller_tag, cyng::param_t("rtag", cyng::make_object(rtag)), tag);
+					tbl_session->modify(caller_tag, cyng::param_factory("rtag", rtag), tag);
 
 					tbl_session->modify(callee_tag, cyng::param_t("remote", caller_rec["local"]), tag);
-					tbl_session->modify(callee_tag, cyng::param_t("rtag", cyng::make_object(tag)), tag);
+					tbl_session->modify(callee_tag, cyng::param_factory("rtag", tag), tag);
 
 					//
 					//	insert connection record

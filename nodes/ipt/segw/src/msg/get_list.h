@@ -38,7 +38,7 @@ namespace node
 				, cache& cfg
 				, storage& db);
 
-			void generate_response(obis&& code
+			cyng::tuple_t generate_response(obis&& code
 				, std::string		//	[0] trx
 				, cyng::buffer_t	//	[1] client id
 				, cyng::buffer_t	//	[2] server id <- meter/sensor ID with the requested data
@@ -47,7 +47,7 @@ namespace node
 				, std::string);		//	[5] password
 
 		private:
-			void current_data_record(std::string trx
+			cyng::tuple_t current_data_record(std::string trx
 				, cyng::buffer_t client_id
 				, cyng::buffer_t srv_id
 				, std::string req_field);

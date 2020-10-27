@@ -26,7 +26,7 @@ namespace node
 			, cache_(cfg)
 		{}
 
-		void config_sensor_params::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
+		cyng::tuple_t config_sensor_params::get_proc_params(std::string trx, cyng::buffer_t srv_id) const
 		{
 			//	81 81 C7 86 00 FF
 			auto msg = sml_gen_.empty_get_proc_param(trx, srv_id, OBIS_ROOT_SENSOR_PARAMS);
@@ -49,7 +49,7 @@ namespace node
 					//	repeat server id (81 81 C7 82 04 FF)
 					//	column "serverID"
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_SERVER_ID
 						}, make_value(srv_id));
@@ -59,7 +59,7 @@ namespace node
 					//	81 81 C7 82 02 FF
 					//	column: "class"
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_DEVICE_CLASS
 					}, make_value(cyng::make_buffer({ })));
@@ -69,7 +69,7 @@ namespace node
 					//	FLAG code
 					//	column: "descr"
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_DATA_MANUFACTURER
 						}, make_value(rec["descr"]));
@@ -78,7 +78,7 @@ namespace node
 					//	81 00 60 05 00 00 : OBIS_CLASS_OP_LOG_STATUS_WORD
 					//	column: "status"
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_CLASS_OP_LOG_STATUS_WORD
 						}, make_value(cyng::make_buffer({ 0x00 })));
@@ -88,7 +88,7 @@ namespace node
 					//	81 81 C7 86 01 FF (u16)
 					//	column: "mask"
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_ROOT_SENSOR_BITMASK
 						}, make_value(rec["mask"]));
@@ -96,7 +96,7 @@ namespace node
 					//
 					//	Durchschnittliche Zeit zwischen zwei empfangenen Datensätzen in Millisekunden
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_AVERAGE_TIME_MS
 						}, make_value(cyng::numeric_cast<std::uint64_t>(rec["interval"], 0u)));
@@ -108,7 +108,7 @@ namespace node
 					//
 					std::chrono::system_clock::time_point const now = cyng::value_cast(rec["lastSeen"], std::chrono::system_clock::now());
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_CURRENT_UTC
 						}, make_value(now));
@@ -119,7 +119,7 @@ namespace node
 					cyng::buffer_t public_key(16, 0u);
 					public_key = cyng::value_cast(rec["pubKey"], public_key);
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_DATA_PUBLIC_KEY
 						}, make_value(public_key));
@@ -130,7 +130,7 @@ namespace node
 					cyng::crypto::aes_128_key	aes_key;
 					aes_key = cyng::value_cast(rec["aes"], aes_key);
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_DATA_AES_KEY
 						}, make_value(aes_key));
@@ -138,12 +138,12 @@ namespace node
 					//
 					//	user and password
 					//
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_DATA_USER_NAME
 						}, make_value(rec["user"]));
 
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_DATA_USER_PWD
 						}, make_value(rec["pwd"]));
@@ -155,23 +155,17 @@ namespace node
 					//
 					std::uint8_t const time_ref = 0;
 						
-					append_get_proc_response(msg, {
+					merge_msg(msg, {
 						OBIS_ROOT_SENSOR_PARAMS,
 						OBIS_TIME_REFERENCE
 						}, make_value(time_ref));
-
-					//
-					//	append to message queue
-					//
-					sml_gen_.append(std::move(msg));
-
 				}
 			});
 
 			//
 			//	append to message queue
 			//
-			sml_gen_.append(std::move(msg));
+			return msg;
 
 		}
 

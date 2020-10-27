@@ -288,7 +288,7 @@ namespace node
 			//
 			//	convert attribute to parameter (as map)
 			//
-			auto val = [&]()->cyng::object {
+			auto f_val = [&]()->cyng::object {
 
 				auto pm = tbl->meta().to_param_map(attr);
 
@@ -306,7 +306,7 @@ namespace node
 				cyng::param_factory("cmd", std::string("modify")),
 				cyng::param_factory("channel", rel.channel_),
 				cyng::param_factory("key", key),
-				cyng::param_t("value", val()));
+				cyng::param_t("value", f_val()));
 
 			auto const msg = cyng::json::to_string(tpl);
 			connection_manager_.push_event(rel.channel_, msg);

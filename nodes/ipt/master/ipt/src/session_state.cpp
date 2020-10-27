@@ -90,13 +90,15 @@ namespace node
 
 		void session_state::redirect(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			auto tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
-			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+			auto const frame = ctx.get_frame();
+			CYNG_LOG_DEBUG(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+
+			auto const tsk = cyng::value_cast<std::size_t>(frame.at(0), cyng::async::NO_TASK);
 
 			switch (state_) {
 			case internal_state::AUTHORIZED:
 				if (tsk != cyng::async::NO_TASK) {
+
 					//
 					//	update state
 					//
@@ -107,6 +109,12 @@ namespace node
 						<< ctx.tag()
 						<< " connected to task #"
 						<< tsk);
+
+					//
+					//	signal that this session is in an internal connection
+					//
+					sp_->bus_->vm_.async_run(client_internal_connection(sp_->vm_.tag(), true));
+
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "session "
@@ -128,6 +136,12 @@ namespace node
 						<< ctx.tag()
 						<< " dis-connected from task #"
 						<< tsk);
+
+					//
+					//	signal that this session is not longer in an internal connection
+					//
+					sp_->bus_->vm_.async_run(client_internal_connection(sp_->vm_.tag(), false));
+
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "session "
@@ -806,7 +820,7 @@ namespace node
 			{
 				sp_->bus_->vm_.async_run(node::client_req_close_connection(sp_->vm().tag()
 					, false //	no shutdown
-					, cyng::param_map_factory("tp-layer", "ipt")("origin-tag", sp_->vm().tag())("seq", evt.seq_)("start", std::chrono::system_clock::now())));
+					, cyng::param_map_factory("origin-tag", sp_->vm().tag())("seq", evt.seq_)("start", std::chrono::system_clock::now())));
 			}
 			else
 			{

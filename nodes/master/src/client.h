@@ -86,6 +86,8 @@ namespace node
 			, cyng::param_map_t const&		//	[4] bag)
 			, cyng::object self);
 
+		void internal_connection(cyng::context& ctx);
+
 		void res_open_connection(cyng::context& ctx);
 		void res_open_connection_impl(cyng::context& ctx
 			, boost::uuids::uuid		//	[0] origin client tag
