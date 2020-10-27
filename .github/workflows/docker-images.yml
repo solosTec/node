@@ -17,4 +17,4 @@ jobs:
         shell: bash
         run: |
           echo '{"branch":"${{ steps.extract_branch.outputs.branch }}", "start_at":"node"}'
-          curl -u ${{secrets.GITHUB2CIRCLECITOKEN}}: -X POST https://circleci.com/api/v2/project/gh/mseemann/segw-build/pipeline --header "Content-Type: application/json" -d '{ "parameters": { "branch":"${{ steps.extract_branch.outputs.branch }}", "start_at":"node"}}'
+          curl -u ${{secrets.GITHUB2CIRCLECITOKEN}}: -X POST https://circleci.com/api/v2/project/gh/solosTec/segw-build/pipeline --header "Content-Type: application/json" -d '{ "parameters": { "branch":"${{ steps.extract_branch.outputs.branch }}", "start_at":"node"}}'
