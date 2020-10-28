@@ -34,7 +34,6 @@
 #include <cyng/compatibility/file_system.hpp>
 #include <cyng/sys/info.h>
 
-//#include <boost/process.hpp>
 
 namespace node
 {
@@ -173,9 +172,22 @@ namespace node
 
 
 		reader::reader(cyng::logging::log_ptr logger, cache& cfg)
-			: logger_(logger)
+		: logger_(logger)
 			, cache_(cfg)
+			, uuid_gen_()
+			, uuid_rnd_()
 		{}
+
+		boost::uuids::uuid reader::get_tag(std::string const& str)
+		{
+			try {
+				return uuid_gen_(str);
+			}
+			catch (std::exception const&) {
+			}
+
+			return uuid_rnd_();
+		}
 
 		cyng::param_map_t reader::run(cyng::param_map_t&& pm)
 		{
@@ -187,7 +199,13 @@ namespace node
 			auto const dom = cyng::make_reader(pm);
 			auto const cmd = cyng::value_cast<std::string>(dom.get("command"), "");
 			auto const rv = cyng::parse_version(cyng::value_cast<std::string>(dom.get("version"), ""));
-			auto const tag = cyng::value_cast(dom.get("source"), boost::uuids::nil_uuid());
+
+			//
+			//	get source tag
+			//
+			auto const source = cyng::value_cast<std::string>(dom.get("source"), "00000000-0000-0000-0000-000000000000");
+			boost::uuids::string_generator uuid_gen;
+			auto const tag = uuid_gen(source);
 
 			CYNG_LOG_INFO(logger_, "NMS "
 				<< rv.first
@@ -206,12 +224,16 @@ namespace node
 					;
 			}
 			else if (boost::algorithm::equals(cmd, "merge")
+				|| boost::algorithm::equals(cmd, "serialset")
+				|| boost::algorithm::equals(cmd, "serial-set")
+				|| boost::algorithm::equals(cmd, "setserial")
 				|| boost::algorithm::equals(cmd, "set-serial")) {
 				return cmd_merge(cmd, tag, dom);
 			}
 			else if (boost::algorithm::equals(cmd, "query")
 				|| boost::algorithm::equals(cmd, "serialget")
 				|| boost::algorithm::equals(cmd, "serial-get")
+				|| boost::algorithm::equals(cmd, "get serial")
 				|| boost::algorithm::equals(cmd, "get-serial")) {
 				return cmd_query(cmd, tag);
 			}

@@ -904,10 +904,14 @@ namespace node
 					values));
 			}
 
+			//
+			//	update - add a get-proc-param request to update cache
+			//
+			messages.push_back(sml_gen.get_proc_parameter(sd.srv_, sml::obis_path_t({ root })));
 			messages.push_back(sml_gen.public_close());
 
 			return proxy::make_data(std::move(messages)
-				, sml::get_trx(messages.at(1))	//	trx id
+				, { sml::get_trx(messages.at(1)), sml::get_trx(messages.at(2)) }	//	trx id
 				, std::move(cd)
 				, std::move(sd)
 				, sml::obis_path_t({ root })

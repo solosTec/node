@@ -15,6 +15,9 @@
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/dom/reader.h>
 
+#include <boost/uuid/string_generator.hpp>
+#include <boost/uuid/random_generator.hpp>
+
 namespace node
 {
 	class cache;
@@ -38,9 +41,12 @@ namespace node
 			cyng::param_map_t cmd_query(std::string const& cmd, boost::uuids::uuid);
 			cyng::param_map_t cmd_version(std::string const& cmd, boost::uuids::uuid);
 
+			boost::uuids::uuid get_tag(std::string const&);
 		private:
 			cyng::logging::log_ptr logger_;
 			cache& cache_;
+			boost::uuids::string_generator uuid_gen_;
+			boost::uuids::random_generator_mt19937 uuid_rnd_;
 		};
 
 		class session : public std::enable_shared_from_this<session>
@@ -93,6 +99,7 @@ namespace node
 			 * JSON parser
 			 */
 			cyng::json::parser parser_;
+
 
 		};
 	}

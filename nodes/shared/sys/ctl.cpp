@@ -149,7 +149,7 @@ namespace node
 		//	make configuration reader and extract some basic data
 		//
 		auto const dom = cyng::make_reader(cfg);
-		auto const tag = cyng::value_cast<boost::uuids::uuid>(dom.get("tag"), uidgen_());
+		auto const tag = cyng::value_cast(dom.get("tag"), uidgen_());
 
 		//
 		//	apply severity threshold
