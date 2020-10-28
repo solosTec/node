@@ -180,7 +180,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//	slot 1 - EOM
+	//	slot [1] - EOM
 	cyng::continuation gateway_proxy::process(std::uint16_t crc, std::size_t midx)
 	{
 		CYNG_LOG_TRACE(logger_, "task #"
@@ -190,11 +190,28 @@ namespace node
 			<< "> EOM #"
 			<< midx);
 
+		if (state_ == GWPS::CONNECTED_) {
+			//
+			//	clear remaining entries
+			//
+			output_map_.clear();
+
+			//
+			//	reset connection state to NOT-CONNECTED == authorized
+			//
+			vm_.async_run(cyng::generate_invoke("session.redirect", static_cast<std::size_t>(cyng::async::NO_TASK)));
+
+			//
+			//	update state
+			//
+			state_ = GWPS::OFFLINE_;
+
+		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	//	slot 2 - receive data
+	//	slot [2] - receive data
 	cyng::continuation gateway_proxy::process(cyng::buffer_t const& data)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
@@ -220,6 +237,7 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
+	//	slot [3] - GetProcParam.Res
 	void gateway_proxy::send_get_proc_param_response(proxy::cluster_data const& cd
 		, sml::obis_path_t const& path
 		, std::string const& srv_str
@@ -472,14 +490,18 @@ namespace node
 		//
 		auto pos = output_map_.find(trx);
 		if (pos != output_map_.end()) {
-			output_map_.erase(pos);
-			output_map_.clear();	//	ToDo: this is a hack - get problems if multiple requests are open
+
+			if (pos->second.get_sml_data().is_msg_type(sml::message_e::GET_PROFILE_LIST_REQUEST)) {
+				//	ToDo: this is a hack - get problems if multiple requests are open
+				output_map_.clear();	
+			}
+			else {
+				output_map_.erase(pos);
+			}
 		}
 
-		//if ((open_requests_ == 0u) && input_queue_.empty()) {
 		if (output_map_.empty() && input_queue_.empty()) {
 
-			//BOOST_ASSERT_MSG(input_queue_.empty(), "input queue is not empty");
 			//
 			//	update task state
 			//
@@ -1019,10 +1041,22 @@ namespace node
 			//
 			//	update output queue
 			//
-			for (auto const& trx : data.trxs_) {
-
-				output_map_.emplace(trx, data.reply_);
-
+			for (auto const& msg : data.messages_) {
+				switch (sml::get_msg_type(msg)) {
+				case sml::message_e::GET_PROFILE_LIST_REQUEST:
+					output_map_.emplace(sml::get_trx(msg), data.reply_);
+					//	ToDo: include public close message!
+					break;
+				case sml::message_e::OPEN_REQUEST:
+					//	skip
+					break;
+				case sml::message_e::CLOSE_REQUEST:
+					output_map_.emplace(sml::get_trx(msg), data.reply_);
+					break;
+				default:
+					output_map_.emplace(sml::get_trx(msg), data.reply_);
+					break;
+				}
 			}
 
 

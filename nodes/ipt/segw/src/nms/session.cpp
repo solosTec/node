@@ -254,6 +254,11 @@ namespace node
 				|| boost::algorithm::equals(cmd, "fw-version")) {
 				return cmd_version(cmd, tag);
 			}
+			else if (boost::algorithm::equals(cmd, "cminfo")
+				|| boost::algorithm::equals(cmd, "cm-info")
+				|| boost::algorithm::equals(cmd, "info-cm")) {
+				return cmd_cm(cmd, tag, dom);
+			}
 			else {
 				CYNG_LOG_WARNING(logger_, "unknown NMS command: " << cmd);
 				return cyng::param_map_factory
@@ -717,6 +722,54 @@ namespace node
 				("release", cyng::sys::get_os_release())
 				;
 
+		}
+
+		cyng::param_map_t reader::cmd_cm(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
+		{
+
+			//
+			//	create a script file
+			//
+			std::string const script_path("/usr/local/etc/cm.txt");
+			cyng::filesystem::path const script(script_path);
+			cyng::error_code ec;
+
+			//
+			//	remove old file
+			//
+			cyng::filesystem::remove(script, ec);
+
+			std::fstream fs(script_path, std::fstream::trunc | std::fstream::out);
+			if (fs.is_open()) {
+				fs
+					<< "key-1 = value-2"
+					<< std::endl
+					<< "key-2 = value-2"
+					<< std::endl
+					;
+				fs.close();
+
+				//
+				//	set permissions
+				//
+				cyng::filesystem::permissions(script
+					, cyng::filesystem::perms::owner_exec | cyng::filesystem::perms::group_exec | cyng::filesystem::perms::others_exec
+					, cyng::filesystem::perm_options::add
+					, ec);
+			}
+			else {
+				ec = cyng::make_error_code(cyng::errc::file_exists);
+			}
+
+
+
+			return cyng::param_map_factory
+				("command", cmd)
+				("ec", "not implemented yet ")
+				("version", "0.1")
+				("source", tag)
+				("path", script_path)
+				;
 		}
 
 	}

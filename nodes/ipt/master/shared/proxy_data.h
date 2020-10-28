@@ -168,12 +168,10 @@ namespace node
 		 * with all transaction IDs
 		 */
 		struct data {
-			data(sml::messages_t&&, reply_data&&, std::string const&);
-			data(sml::messages_t&&, reply_data&&, std::initializer_list<std::string>);
+			data(sml::messages_t&&, reply_data&&);
 
 			sml::messages_t const messages_;
 			reply_data const reply_;
-			std::vector<std::string> const trxs_;
 		};
 
 		/**
@@ -181,12 +179,8 @@ namespace node
 		 */
 		using input_queue = std::queue< data >;
 
-		data make_data(sml::messages_t&&, std::string const& trx, reply_data&&);
-		data make_data(sml::messages_t&&, std::string const& trx, cluster_data&&,
-			sml_data&&,
-			sml::obis_path_t path,
-			bool);
-		data make_data(sml::messages_t&&, std::initializer_list<std::string> trx, cluster_data&&,
+		data make_data(sml::messages_t&&, reply_data&&);
+		data make_data(sml::messages_t&&, cluster_data&&,
 			sml_data&&,
 			sml::obis_path_t path,
 			bool);

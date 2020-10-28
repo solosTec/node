@@ -40,6 +40,7 @@ namespace node
 			cyng::param_map_t cmd_reboot(std::string const& cmd, boost::uuids::uuid);
 			cyng::param_map_t cmd_query(std::string const& cmd, boost::uuids::uuid);
 			cyng::param_map_t cmd_version(std::string const& cmd, boost::uuids::uuid);
+			cyng::param_map_t cmd_cm(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
 
 			boost::uuids::uuid get_tag(std::string const&);
 		private:

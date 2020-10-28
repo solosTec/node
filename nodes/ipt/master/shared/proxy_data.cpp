@@ -555,7 +555,6 @@ namespace node
 		BOOST_ASSERT(messages.size() == 3);
 
 		return proxy::make_data(std::move(messages)
-			, sml::get_trx(messages.at(1))	//	trx id
 			, std::move(cd)
 			, std::move(sd)
 			, path
@@ -737,25 +736,7 @@ namespace node
 		//
 		//	build complete
 		//
-		//BOOST_ASSERT(messages.size() == 4);
-		if (messages.size() == 3) {
-			return proxy::make_data(std::move(messages)
-				, sml::get_trx(messages.at(1))	//	trx id
-				, std::move(cd)
-				, std::move(sd)
-				, path
-				, cache_enabled);
-		}
-		else if (messages.size() == 4) {
-			return proxy::make_data(std::move(messages)
-				, { sml::get_trx(messages.at(1)), sml::get_trx(messages.at(2)) }	//	trx id
-				, std::move(cd)
-				, std::move(sd)
-				, path
-				, cache_enabled);
-		}
 		return proxy::make_data(std::move(messages)
-			, { }	//	no trx id
 			, std::move(cd)
 			, std::move(sd)
 			, path
@@ -911,7 +892,6 @@ namespace node
 			messages.push_back(sml_gen.public_close());
 
 			return proxy::make_data(std::move(messages)
-				, { sml::get_trx(messages.at(1)), sml::get_trx(messages.at(2)) }	//	trx id
 				, std::move(cd)
 				, std::move(sd)
 				, sml::obis_path_t({ root })
@@ -947,20 +927,16 @@ namespace node
 		//
 		sml::messages_t messages{
 			sml_gen.public_open(get_mac(), sd.srv_),
-			sml_gen.get_profile_list(sd.srv_, 
-				std::chrono::system_clock::now() - std::chrono::hours(hours), 
+			sml_gen.get_profile_list(sd.srv_,
+				std::chrono::system_clock::now() - std::chrono::hours(hours),
 				std::chrono::system_clock::now(),
 				path.front()),
 			sml_gen.public_close()
 		};
 
-		//
-		//	add close message
-		//
-		messages.push_back(sml_gen.public_close());
+		BOOST_ASSERT(messages.size() == 3);
 
 		return proxy::make_data(std::move(messages)
-			, { sml::get_trx(messages.at(1)), sml::get_trx(messages.at(2)) }	//	trx id of close response!
 			, std::move(cd)
 			, std::move(sd)
 			, path
@@ -995,7 +971,6 @@ namespace node
 		//	ToDo: implement
 		//
 		return proxy::make_data(sml::messages_t()
-			, "ToDo"	//	trx id
 			, std::move(cd)
 			, std::move(sd)
 			, sml::obis_path_t({ root })
@@ -1029,7 +1004,6 @@ namespace node
 		messages.push_back(sml_gen.public_close());
 
 		return proxy::make_data(std::move(messages)
-			, sml::get_trx(messages.at(1))	//	trx id
 			, std::move(cd)
 			, std::move(sd)
 			, path
@@ -1063,7 +1037,6 @@ namespace node
 		//	ToDo: implement
 		//
 		return proxy::make_data(sml::messages_t()
-			, "ToDo"	//	trx id
 			, std::move(cd)
 			, std::move(sd)
 			, sml::obis_path_t({ root })
@@ -1129,7 +1102,6 @@ namespace node
 		//	error case
 		//
 		return proxy::make_data(sml::messages_t()
-			, "ToDo"	//	trx id
 			, proxy::cluster_data(tag, source, seq, origin, gw)
 			, proxy::sml_data(msg_code, srv_id, name, pwd)
 			, sml::obis_path_t({ code })
@@ -1192,38 +1164,25 @@ namespace node
 			return msg_code_ == msg_code;
 		}
 
-		data::data(sml::messages_t&& messages, reply_data&& reply, std::string const& trx)
+		data::data(sml::messages_t&& messages, reply_data&& reply)
 			: messages_(std::move(messages))
 			, reply_(std::move(reply))
-			, trxs_(1, trx)
 		{}
 
-		data::data(sml::messages_t&& messages, reply_data&& reply, std::initializer_list<std::string> trxs)
-			: messages_(std::move(messages))
-			, reply_(std::move(reply))
-			, trxs_(trxs.begin(), trxs.end())
-		{}
-
-		data make_data(sml::messages_t&& msgs, std::string const& trx, reply_data&& reply)
+		data make_data(sml::messages_t&& msgs, reply_data&& reply)
 		{
-			return data(std::move(msgs), std::move(reply), trx);
+			return data(std::move(msgs), std::move(reply));
 		}
 
-		data make_data(sml::messages_t&& msgs, std::string const& trx, cluster_data&& cd,
+		data make_data(sml::messages_t&& msgs, 
+			cluster_data&& cd,
 			sml_data&& sd,
 			sml::obis_path_t path,
 			bool job)
 		{
-			return data(std::move(msgs), reply_data(std::move(cd), std::move(sd), path, job), trx);
+			return data(std::move(msgs), reply_data(std::move(cd), std::move(sd), path, job));
 		}
 
-		data make_data(sml::messages_t&& msgs, std::initializer_list<std::string> trx, cluster_data&& cd,
-			sml_data&& sd,
-			sml::obis_path_t path,
-			bool job)
-		{
-			return data(std::move(msgs), reply_data(std::move(cd), std::move(sd), path, job), trx);
-		}
 	}
 
 	cyng::mac48 get_mac()
