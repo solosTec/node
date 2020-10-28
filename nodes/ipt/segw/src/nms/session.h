@@ -32,10 +32,11 @@ namespace node
 			cyng::param_map_t run(cyng::param_map_t&&);
 
 		private:
-			cyng::param_map_t cmd_merge(cyng::param_map_reader const& dom);
-			cyng::param_map_t cmd_update(cyng::param_map_reader const& dom);
-			cyng::param_map_t cmd_reboot();
-			cyng::param_map_t cmd_query();
+			cyng::param_map_t cmd_merge(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
+			cyng::param_map_t cmd_update(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
+			cyng::param_map_t cmd_reboot(std::string const& cmd, boost::uuids::uuid);
+			cyng::param_map_t cmd_query(std::string const& cmd, boost::uuids::uuid);
+			cyng::param_map_t cmd_version(std::string const& cmd, boost::uuids::uuid);
 
 		private:
 			cyng::logging::log_ptr logger_;

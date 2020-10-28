@@ -406,7 +406,11 @@ namespace node
 
 			{ OBIS_ROOT_BROKER, {"ROOT_BROKER", cyng::TC_TUPLE } },
 			{ OBIS_BROKER_LOGIN, {"BROKER_LOGIN", cyng::TC_BOOL } },
+
 			{ OBIS_ROOT_HARDWARE_PORT, {"ROOT_HARDWARE_PORT", cyng::TC_TUPLE } },
+
+			{ OBIS_ROOT_LISTENER, {"ROOT_LISTENER", cyng::TC_TUPLE } },
+			{ OBIS_LISTENER_LOGIN, {"LISTENER_LOGIN", cyng::TC_BOOL } },
 
 			{ OBIS_ROOT_NMS, {"ROOT_NMS", cyng::TC_NULL } },
 			{ OBIS_NMS_ADDRESS, {"NMS_ADDRESS", cyng::TC_NULL } },

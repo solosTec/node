@@ -294,7 +294,7 @@ namespace node
 					cyng::param_factory("speed", 2400),		//	initial
 					cyng::param_factory("protocol", "raw"),		//	raw, mbus, iec, sml
 
-					cyng::param_factory("collector-login", true),		//	send login
+					cyng::param_factory("collector-login", true),		//	broker sends login
 					cyng::param_factory("broker-enabled", true),		//	startup brokers
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
@@ -304,8 +304,18 @@ namespace node
 							("account", "rs485-" + gen_user(6))
 							("pwd", gen_user(8))
 						()
-					})
-				)))
+					})),
+					cyng::param_factory("listener-login", false),		//	request login
+					cyng::param_factory("listener", cyng::vector_factory({
+						//	define multiple listener here
+						cyng::param_map_factory
+							("address", "0.0.0.0")
+							("port", 6000)
+							("account", "listener-" + gen_user(6))
+							("pwd", gen_user(8))
+						()
+					}))
+				))
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
 					//	IEC 62056-21

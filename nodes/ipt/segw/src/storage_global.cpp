@@ -1072,6 +1072,43 @@ namespace node
 							sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx) },
 							"enabled" ), param.second);
 					}
+					else if (boost::algorithm::equals(param.first, "listener")) {
+						//	vector of broker nodes
+						std::uint8_t idx{ 0 };
+						auto const vec = cyng::to_vector(param.second);
+						for (auto const broker : vec) {
+
+							++idx;
+							auto const reader = cyng::make_reader(broker);
+
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_LISTENER,
+								sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
+								sml::make_obis(sml::OBIS_LISTENER_SERVER, idx) }), reader.get("address"));
+
+							auto const port = cyng::numeric_cast<std::uint16_t>(reader.get("port"), 12001u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_LISTENER,
+								sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
+								sml::make_obis(sml::OBIS_LISTENER_SERVICE, idx) }), cyng::make_object(port));
+
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_LISTENER,
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_LISTENER_USER, idx) }), reader.get("account"));
+
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_LISTENER,
+								sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
+								sml::make_obis(sml::OBIS_LISTENER_PWD, idx) }), reader.get("pwd"));
+						}
+					}
+					else if (boost::algorithm::equals(param.first, "listener-login")) {
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_LISTENER,
+							sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
+							sml::OBIS_LISTENER_LOGIN }), param.second);
+					}
 					else if (boost::algorithm::equals(param.first, "port")) {
 						init_config_record(s, build_cfg_key({ 
 							sml::OBIS_ROOT_HARDWARE_PORT, 

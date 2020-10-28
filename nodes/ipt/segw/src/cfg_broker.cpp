@@ -41,10 +41,33 @@ namespace node
 		return std::vector<cfg_broker::broker>();
 	}
 
-	cyng::vector_t cfg_broker::get_broker_vector(cfg_broker::source s) const
+	cfg_broker::broker_list_t cfg_broker::get_listener(cfg_broker::source s) const
+	{
+		switch (s) {
+		case source::WIRELESS_LMN:
+		case source::WIRED_LMN:
+			return get_listener(static_cast<std::uint8_t>(s));
+		default:
+			break;
+		}
+		return std::vector<cfg_broker::broker>();
+	}
+
+
+	cyng::vector_t cfg_broker::get_broker_vector(source s) const
 	{
 		cyng::vector_t vec;
 		auto const brokers = get_broker(s);
+		std::transform(std::begin(brokers), std::end(brokers), std::back_inserter(vec), [](cfg_broker::broker const& target) {
+			return cyng::make_object(to_param_map(target));
+			});
+		return vec;
+	}
+
+	cyng::vector_t cfg_broker::get_listener_vector(source s) const
+	{
+		cyng::vector_t vec;
+		auto const brokers = get_listener(s);
 		std::transform(std::begin(brokers), std::end(brokers), std::back_inserter(vec), [](cfg_broker::broker const& target) {
 			return cyng::make_object(to_param_map(target));
 			});
@@ -148,6 +171,42 @@ namespace node
 					sml::OBIS_ROOT_BROKER,
 					sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
 					sml::make_obis(sml::OBIS_BROKER_PWD, idx) }), "");
+
+				r.emplace_back(account, pwd, address, port);
+			}
+		}
+
+		return r;
+	}
+
+	cfg_broker::broker_list_t cfg_broker::get_listener(std::uint8_t port_idx) const
+	{
+		std::vector<cfg_broker::broker> r;
+
+		//	
+		//	test for up to 16 broker
+		//	
+		for (std::uint8_t idx = 1; idx < 16; ++idx) {
+
+			auto const address = cache_.get_cfg(build_cfg_key({
+				sml::OBIS_ROOT_LISTENER,
+				sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
+				sml::make_obis(sml::OBIS_LISTENER_SERVER, idx) }), "?");
+
+			if (!boost::algorithm::equals(address, "?")) {
+
+				auto const port = cache_.get_cfg(build_cfg_key({
+					sml::OBIS_ROOT_LISTENER,
+					sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
+					sml::make_obis(sml::OBIS_LISTENER_SERVICE, idx) }), static_cast<std::uint16_t>(6001u));
+				auto const account = cache_.get_cfg(build_cfg_key({
+					sml::OBIS_ROOT_LISTENER,
+					sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
+					sml::make_obis(sml::OBIS_LISTENER_USER, idx) }), "");
+				auto const pwd = cache_.get_cfg(build_cfg_key({
+					sml::OBIS_ROOT_LISTENER,
+					sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
+					sml::make_obis(sml::OBIS_LISTENER_PWD, idx) }), "");
 
 				r.emplace_back(account, pwd, address, port);
 			}

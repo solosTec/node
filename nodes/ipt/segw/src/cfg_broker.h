@@ -69,9 +69,20 @@ namespace node
 		 std::vector<broker> get_broker(source s) const;
 
 		 /**
-		  * @return a vector aof all brokers
+		  * @return a vector of all brokers
 		  */
 		 cyng::vector_t get_broker_vector(source s) const;
+
+		 /**
+		  * @param tty index to select port (ttyAPP[N], COM[N])
+		  * @return number of defined broker nodes
+		  */
+		 std::vector<broker> get_listener(source s) const;
+
+		 /**
+		  * @return a vector of all listener
+		  */
+		 cyng::vector_t get_listener_vector(source s) const;
 
 		 void set_broker(source s, std::uint8_t idx, broker const&);
 		 void set_broker(std::string const& port_name, std::uint8_t idx, broker const&);
@@ -119,6 +130,7 @@ namespace node
 
 	private:
 		broker_list_t get_broker(std::uint8_t) const;
+		broker_list_t get_listener(std::uint8_t) const;
 
 		bool is_login_required(std::string) const;
 		std::string get_port_name(std::string) const;

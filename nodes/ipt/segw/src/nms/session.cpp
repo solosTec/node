@@ -32,6 +32,7 @@
 #include <cyng/dom/algorithm.h>
 #include <cyng/parser/version_parser.h>
 #include <cyng/compatibility/file_system.hpp>
+#include <cyng/sys/info.h>
 
 //#include <boost/process.hpp>
 
@@ -186,6 +187,7 @@ namespace node
 			auto const dom = cyng::make_reader(pm);
 			auto const cmd = cyng::value_cast<std::string>(dom.get("command"), "");
 			auto const rv = cyng::parse_version(cyng::value_cast<std::string>(dom.get("version"), ""));
+			auto const tag = cyng::value_cast(dom.get("source"), boost::uuids::nil_uuid());
 
 			CYNG_LOG_INFO(logger_, "NMS "
 				<< rv.first
@@ -200,22 +202,35 @@ namespace node
 					("command", cmd)
 					("ec", "wrong version")
 					("version", "0.1")
+					("source", tag)
 					;
 			}
-			else if (boost::algorithm::equals(cmd, "merge")) {
-				return cmd_merge(dom);
+			else if (boost::algorithm::equals(cmd, "merge")
+				|| boost::algorithm::equals(cmd, "set-serial")) {
+				return cmd_merge(cmd, tag, dom);
 			}
-			else if (boost::algorithm::equals(cmd, "query")) {
-				return cmd_query();
+			else if (boost::algorithm::equals(cmd, "query")
+				|| boost::algorithm::equals(cmd, "serialget")
+				|| boost::algorithm::equals(cmd, "serial-get")
+				|| boost::algorithm::equals(cmd, "get-serial")) {
+				return cmd_query(cmd, tag);
 			}
-			else if (boost::algorithm::equals(cmd, "update")) {
+			else if (boost::algorithm::equals(cmd, "update")
+				|| boost::algorithm::equals(cmd, "fw-update")
+				|| boost::algorithm::equals(cmd, "fwupdate")) {
 				//
 				//	software update
 				//
-				return cmd_update(dom);
+				return cmd_update(cmd, tag, dom);
 			}
-			else if (boost::algorithm::equals(cmd, "reboot")) {
-				return cmd_reboot();
+			else if (boost::algorithm::equals(cmd, "reboot")
+				|| boost::algorithm::equals(cmd, "restart")) {
+				return cmd_reboot(cmd, tag);
+			}
+			else if (boost::algorithm::equals(cmd, "fwversion")
+				|| boost::algorithm::equals(cmd, "version")
+				|| boost::algorithm::equals(cmd, "fw-version")) {
+				return cmd_version(cmd, tag);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "unknown NMS command: " << cmd);
@@ -223,6 +238,7 @@ namespace node
 					("command", cmd)
 					("ec", "unknown command")
 					("version", "0.1")
+					("source", tag)
 					;
 
 			}
@@ -233,10 +249,11 @@ namespace node
 			return cyng::param_map_factory
 				("ec", "command not specified")
 				("version", "0.1")
+				("source", tag)
 				;
 		}
 
-		cyng::param_map_t reader::cmd_merge(cyng::param_map_reader const& dom)
+		cyng::param_map_t reader::cmd_merge(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
 		{
 			auto const ports = cyng::to_param_map(dom.get("serial-port"));
 			auto const version = cyng::to_param_map(dom.get("version"));
@@ -246,8 +263,9 @@ namespace node
 			cfg_broker broker(cache_);
 
 			cyng::param_map_t pm = cyng::param_map_factory
-				("command", "merge")
+				("command", cmd)
 				("ec", "ok")
+				("source", tag)
 				("version", "0.1")
 				("serial-port", cyng::param_map_factory()())
 				("meter", cyng::param_map_factory()())
@@ -461,7 +479,7 @@ namespace node
 			return pm;
 		}
 
-		cyng::param_map_t reader::cmd_query()
+		cyng::param_map_t reader::cmd_query(std::string const& cmd, boost::uuids::uuid tag)
 		{
 			//
 			//	serial ports
@@ -471,8 +489,9 @@ namespace node
 			cfg_broker const broker(cache_);
 
 			return cyng::param_map_factory
-				("command", "query")
+				("command", cmd)
 				("version", "0.1")
+				("source", tag)
 				("ec", "ok")
 				("serial-port", cyng::tuple_factory(
 					cyng::set_factory(rs485.get_port(), cyng::param_map_factory
@@ -485,6 +504,7 @@ namespace node
 						("baudrate", rs485.get_baud_rate().value())
 						("protocol", rs485.get_protocol_by_name())
 						("broker", broker.get_broker_vector(cfg_broker::source::WIRED_LMN))
+						("listener", broker.get_listener_vector(cfg_broker::source::WIRED_LMN))
 						("max-readout-frequency", 5)
 						("loop", cyng::param_map_factory
 							("timeout", 60)
@@ -510,17 +530,12 @@ namespace node
 				;
 		}
 
-		cyng::param_map_t reader::cmd_reboot()
+		cyng::param_map_t reader::cmd_reboot(std::string const& cmd, boost::uuids::uuid tag)
 		{
-#if defined(NODE_CROSS_COMPILE) && BOOST_OS_LINUX
-
-			auto const script_path = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS }, "script-path"),
 #if BOOST_OS_LINUX
-				"update-script.sh"
-#else
-				"update-script.cmd"
-#endif
-			);
+#if defined(NODE_CROSS_COMPILE)
+
+			auto const script_path = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS }, "script-path"), "/tmp/update-script.sh");
 
 			cyng::filesystem::path const script(script_path);
 			cyng::error_code ec;
@@ -552,35 +567,39 @@ namespace node
 
 
 			return cyng::param_map_factory
-				("command", "reboot")
+			("command", cmd)
 				("ec", !ec ? "ok" : ec.message())
 				("version", "0.1")
+				("source", tag)
 				("rc", "reboot scheduled")
 				;
-
-#elif BOOST_OS_LINUX
+#else
 			//	after 1 minute
 			auto const rc = std::system("shutdown -r +1");
 			return cyng::param_map_factory
-				("command", "reboot")
+			("command", cmd)
 				("ec", "ok")
 				("version", "0.1")
+				("source", tag)
 				("rc", rc)
 				;
+
+#endif
 #else
 			//	after 15 seconds
 			auto const rc = std::system("shutdown /r /t 15");
 			return cyng::param_map_factory
-				("command", "reboot")
+				("command", cmd)
 				("ec", "ok")
 				("version", "0.1")
-				// ("rc", rc)
+				("source", tag)
+				("rc", rc)
 				;
 #endif
 
 		}
 
-		cyng::param_map_t reader::cmd_update(cyng::param_map_reader const& dom)
+		cyng::param_map_t reader::cmd_update(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
 		{
 			auto const script_path = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS }, "script-path"),
 #if BOOST_OS_LINUX
@@ -643,12 +662,16 @@ namespace node
 					, cyng::filesystem::perm_options::add
 					, ec);
 			}
+			else {
+				ec = cyng::make_error_code(cyng::errc::file_exists);
+			}
 
 
 			return cyng::param_map_factory
-			("command", "update")
+				("command", cmd)
 				("ec", !ec ? "ok" : ec.message())
 				("version", "0.1")
+				("source", tag)
 				("script-path", script_path)
 				("address", address)
 				("port", port)
@@ -657,6 +680,19 @@ namespace node
 				("ca-path-download", ca_path_download)
 				("ca-path-vendor", ca_path_vendor)
 				("path-firmware", path_firmware)
+				;
+
+		}
+
+		cyng::param_map_t reader::cmd_version(std::string const& cmd, boost::uuids::uuid tag)
+		{
+			return cyng::param_map_factory
+				("command", cmd)
+				("ec", "ok")
+				("version", "0.1")
+				("source", tag)
+				("name", cyng::sys::get_os_name())
+				("release", cyng::sys::get_os_release())
 				;
 
 		}
