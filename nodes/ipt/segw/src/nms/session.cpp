@@ -561,16 +561,22 @@ namespace node
 #elif BOOST_OS_LINUX
 			//	after 1 minute
 			auto const rc = std::system("shutdown -r +1");
-#else
-			//	after 15 seconds
-			auto const rc = std::system("shutdown /r /t 15");
-#endif
 			return cyng::param_map_factory
 				("command", "reboot")
 				("ec", "ok")
 				("version", "0.1")
 				("rc", rc)
 				;
+#else
+			//	after 15 seconds
+			auto const rc = std::system("shutdown /r /t 15");
+			return cyng::param_map_factory
+				("command", "reboot")
+				("ec", "ok")
+				("version", "0.1")
+				// ("rc", rc)
+				;
+#endif
 
 		}
 
