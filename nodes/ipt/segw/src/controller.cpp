@@ -186,9 +186,9 @@ namespace node
 
 					cyng::param_factory("script-path", 
 #if BOOST_OS_LINUX
-						tmp / "update-script.sh"
+						(tmp / "update-script.sh").string()
 #else
-						tmp / "update-script.cmd"
+						(tmp / "update-script.cmd").string()
 #endif
 					)
 				))

@@ -40,7 +40,7 @@ namespace node
 				, "pwd"
 				, "msisdn"
 				, "descr"
-				, "id"
+				, "id"	//	model
 				, "vFirmware"
 				, "enabled"
 				, "creationTime"

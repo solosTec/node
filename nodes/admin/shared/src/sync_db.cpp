@@ -864,6 +864,14 @@ namespace node
 				//	change description
 				db.modify("TGateway", key, cyng::param_factory("descr", attr.second), origin);
 				break;
+			case 4:
+				//	change "id"
+				db.modify("TGateway", key, cyng::param_factory("model", attr.second), origin);
+				break;
+			case 5:
+				//	change "vFirmware"
+				db.modify("TGateway", key, cyng::param_factory("vFirmware", attr.second), origin);
+				break;
 			default:
 				break;
 			}
@@ -938,7 +946,7 @@ namespace node
 
 			if (boost::algorithm::equals(param.first, "rtag")) {
 
-				const auto rtag = cyng::value_cast(param.second, boost::uuids::nil_uuid());
+				auto const rtag = cyng::value_cast(param.second, boost::uuids::nil_uuid());
 
 				//
 				//	mark gateways as online
@@ -978,6 +986,19 @@ namespace node
 					, cyng::store::read_access("_Session"));
 			}
 		}
+		else if (boost::algorithm::equals(table, "TDevice")) {
+			BOOST_ASSERT(key.size() == 1);
+			if (boost::algorithm::equals(param.first, "id")) {
+				db.modify("TGateway", key, cyng::param_factory("model", param.second), origin);
+			}
+			else if (boost::algorithm::equals(param.first, "vFirmware")) {
+				db.modify("TGateway", key, cyng::param_factory("vFirmware", param.second), origin);
+			}
+		}
+
+		//
+		//	generic
+		//
 		if (!db.modify(table, key, param, origin))
 		{
 			CYNG_LOG_WARNING(logger, "db.req.modify.by.param failed "
