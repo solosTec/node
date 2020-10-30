@@ -289,12 +289,12 @@ namespace node
 
 				//
 				//	name of hardware port
-				//	different root (OBIS_ROOT_HARDWARE_PORT)
+				//	different root (OBIS_ROOT_SERIAL)
 				//	ToDo: separate message required
 				//	
 				//auto const hardware_port = cyng::value_cast<std::string>(broker.at("hardwarePort"), "");
 				//sml::merge_msg(msg
-				//	, { sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, idx_broker) }
+				//	, { sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_NAME, idx_broker) }
 				//, node::sml::make_value(hardware_port));
 
 				//
@@ -714,7 +714,7 @@ namespace node
 				sd.srv_,
 				cyng::to_vector(reader.get("brokers"))));
 			break;
-		case sml::CODE_ROOT_HARDWARE_PORT:
+		case sml::CODE_ROOT_SERIAL:
 			//	ToDo: find the proper index with help of the cache
 			break;
 
@@ -751,7 +751,7 @@ namespace node
 		, cyng::tuple_t tpl)
 	{
 		sml::merge_msg(msg
-			, { sml::OBIS_ROOT_HARDWARE_PORT, sml::OBIS_HARDWARE_PORT_NAME }
+			, { sml::OBIS_ROOT_SERIAL, sml::OBIS_SERIAL_NAME }
 		, node::sml::make_value(name));
 
 		for (auto const& obj : tpl) {
@@ -762,27 +762,27 @@ namespace node
 
 				const auto databits = cyng::numeric_cast<std::uint32_t>(param.second, 9600u);
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_HARDWARE_PORT, make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_DATABITS, idx) }
 				, node::sml::make_value(databits));
 			}
 			else if (boost::algorithm::equals(param.first, "parity")) {
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_HARDWARE_PORT, make_obis(sml::OBIS_HARDWARE_PORT_PARITY, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_PARITY, idx) }
 				, node::sml::make_value(param.second));
 			}
 			else if (boost::algorithm::equals(param.first, "flowcontrol")) {
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_HARDWARE_PORT, make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, idx) }
 				, node::sml::make_value(param.second));
 			}
 			else if (boost::algorithm::equals(param.first, "stopbits")) {
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_HARDWARE_PORT, make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_STOPBITS, idx) }
 				, node::sml::make_value(param.second));
 			}
 			else if (boost::algorithm::equals(param.first, "baudrate")) {
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_HARDWARE_PORT, make_obis(sml::OBIS_HARDWARE_PORT_SPEED, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_SPEED, idx) }
 				, node::sml::make_value(param.second));
 			}
 		}
@@ -867,7 +867,7 @@ namespace node
 					cache_enabled);
 			}
 		}
-		else if (sml::OBIS_ROOT_HARDWARE_PORT == root) {
+		else if (sml::OBIS_ROOT_SERIAL == root) {
 
 			node::sml::req_generator sml_gen(sd.name_, sd.pwd_);
 			sml::messages_t messages{ sml_gen.public_open(get_mac(), sd.srv_) };

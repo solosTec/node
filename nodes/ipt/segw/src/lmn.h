@@ -44,7 +44,7 @@ namespace node
 		void start();
 
 	private:
-		void start_lmn_wired(cfg_mbus const&);
+		void start_lmn_wired();
 		void start_lmn_wireless(cfg_wmbus const&);
 
 		std::size_t start_wireless_sender(cfg_wmbus const&, std::size_t tsk_status);
@@ -71,8 +71,8 @@ namespace node
 		 * or a server connected via TCP/IP.
 		 * @return a list of receiver tasks. The first one is the wireless M-Bus parser
 		 */
-		void start_wireless_mbus_receiver(bool profile, cfg_broker::broker_list_t&&);
-		void start_wired_mbus_receiver(bool profile, cfg_broker::broker_list_t&&);
+		void start_wireless_mbus_receiver(bool profile, server_list_t&&);
+		void start_wired_mbus_receiver(bool profile, server_list_t&&);
 
 		/**
 		 * incoming wireless M-Bus data

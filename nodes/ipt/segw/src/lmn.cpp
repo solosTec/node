@@ -5,22 +5,22 @@
  * 
  */ 
 
-#include "segw.h"
-#include "lmn.h"
-#include "bridge.h"
-#include "cache.h"
-#include "cfg_rs485.h"
-#include "cfg_wmbus.h"
+#include <segw.h>
+#include <lmn.h>
+#include <bridge.h>
+#include <cache.h>
+#include <cfg_rs485.h>
+#include <cfg_wmbus.h>
 
 
-#include "tasks/lmn_port.h"
-#include "tasks/parser_serial.h"
-#include "tasks/parser_wmbus.h"
-#include "tasks/parser_CP210x.h"
-#include "tasks/rs485.h"
-#include "tasks/iec.h"
-#include "tasks/broker.h"
-#include "tasks/lmn_status.h"
+#include <tasks/lmn_port.h>
+#include <tasks/parser_serial.h>
+#include <tasks/parser_wmbus.h>
+#include <tasks/parser_CP210x.h>
+#include <tasks/rs485.h>
+#include <tasks/iec.h>
+#include <tasks/broker.h>
+#include <tasks/lmn_status.h>
 
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/obis_db.h>
@@ -101,9 +101,9 @@ namespace node
 		//
 		//	rs485 port
 		//
-		cfg_mbus const mbus(cache_);
-		if (mbus.is_enabled()) {
-			start_lmn_wired(mbus);
+		cfg_rs485 const rs485(cache_);
+		if (rs485.is_enabled()) {
+			start_lmn_wired();
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "LMN wired (RS485) is disabled");
@@ -121,11 +121,12 @@ namespace node
 		}
 	}
 
-	void lmn::start_lmn_wired(cfg_mbus const& mbus)
+	void lmn::start_lmn_wired()
 	{
 		try {
 
 			cfg_broker broker(cache_);		
+			cfg_mbus mbus(cache_);
 
 			//
 			//	task to control SML status of wired (M-Bus)
@@ -141,15 +142,14 @@ namespace node
 			//
 			auto const sender = start_lmn_port_wired(tsk_status);
 			if (sender.second) {
-				serial_mgr_ = sender.first;
+
+				//
+				//	update receiver list
+				//
+				start_wired_mbus_receiver(
+					mbus.generate_profile(), //	generating profiles can be disabled
+					broker.get_server(source::WIRED_LMN));
 			}
-
-			//
-			//	update receiver list
-			//
-			//CYNG_LOG_FATAL(logger_, "ToDo: update receiver list");
-			start_wired_mbus_receiver(mbus.generate_profile(), broker.get_broker(cfg_broker::source::WIRED_LMN));
-
 		}
 		catch (boost::system::system_error const& ex) {
 			CYNG_LOG_FATAL(logger_, ex.what() << ":" << ex.code());
@@ -181,7 +181,7 @@ namespace node
 			//
 			//	Update receiver list
 			//
-			start_wireless_mbus_receiver(wmbus.generate_profile(), broker.get_broker(cfg_broker::source::WIRELESS_LMN));
+			start_wireless_mbus_receiver(wmbus.generate_profile(), broker.get_server(source::WIRELESS_LMN));
 
 		}
 		catch (boost::system::system_error const& ex) {
@@ -237,6 +237,8 @@ namespace node
 				radio_port_ = start_lmn_port_wireless(tsk_status	//	control status bit for wireless M-Bus
 					, cyng::make_buffer({ 0xA5, 0x81, 0x03, 0x17, 0x00, 0xFF, 0x00, 0x03, 0x00, 0xB3, 0x25, 0x51, 0x18, 0x10, 0x00, 0x01, 0x00, 0x01, 0xFD, 0x07, 0x32, 0x00, 0x01, 0x01, 0x02, 0x01, 0x00, 0x83, 0xC9 })).first;
 
+				//wmbus.set_lmn_task(r.first);
+
 				return unwrapper.first;
 			}
 			else {
@@ -251,7 +253,7 @@ namespace node
 	}
 
 
-	void lmn::start_wireless_mbus_receiver(bool profile, cfg_broker::broker_list_t&& nodes)
+	void lmn::start_wireless_mbus_receiver(bool profile, server_list_t&& nodes)
 	{
 		//
 		//	profile generation
@@ -281,7 +283,7 @@ namespace node
 
 	}
 
-	void lmn::start_wired_mbus_receiver(bool profile, cfg_broker::broker_list_t&& nodes)
+	void lmn::start_wired_mbus_receiver(bool profile, server_list_t&& nodes)
 	{
 
 		//
@@ -344,7 +346,7 @@ namespace node
 
 		auto const parity = cfg.get_parity();
 		auto const r = cyng::async::start_task_delayed<lmn_port>(mux_
-			, cfg.get_monitor()	//	use monitor as delay timer
+			, cfg.get_delay(std::chrono::seconds(4))	//	use monitor as delay timer
 			, logger_
 			, cfg.get_monitor()
 			, cfg.get_port()			//	port
@@ -362,6 +364,13 @@ namespace node
 				<< r.first
 				<< " :"
 				<< cfg.get_port());
+
+			//
+			//	update SERIAL_TASK
+			//
+			cfg.set_lmn_task(r.first);
+
+			serial_mgr_ = r.first;
 
 			switch (cfg.get_protocol()) {
 			case cfg_rs485::protocol::MBUS:
@@ -724,37 +733,37 @@ namespace node
 			CYNG_LOG_INFO(logger_, "LMN " << name << ": " << cyng::io::to_type(attr.second));
 		}
 #endif
-		if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, 1) }))) {
+		if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 1), sml::make_obis(sml::OBIS_SERIAL_DATABITS, 1) }))) {
 			//	wireless
-			mux_.post(radio_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_DATABITS.to_buffer(), attr.second));
+			mux_.post(radio_port_, 2u, cyng::tuple_factory(sml::OBIS_SERIAL_DATABITS.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, 2) }))) {
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 2), sml::make_obis(sml::OBIS_SERIAL_DATABITS, 2) }))) {
 			//	RS 485
-			mux_.post(serial_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_DATABITS.to_buffer(), attr.second));
+			mux_.post(serial_port_, 2u, cyng::tuple_factory(sml::OBIS_SERIAL_DATABITS.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, 1) }))) {
-			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_PARITY.to_buffer(), attr.second));
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 1), sml::make_obis(sml::OBIS_SERIAL_PARITY, 1) }))) {
+			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_SERIAL_PARITY.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, 2) }))) {
-			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_PARITY.to_buffer(), attr.second));
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 2), sml::make_obis(sml::OBIS_SERIAL_PARITY, 2) }))) {
+			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_SERIAL_PARITY.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, 1) }))) {
-			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL.to_buffer(), attr.second));
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 1), sml::make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, 1) }))) {
+			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_SERIAL_FLOW_CONTROL.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, 2) }))) {
-			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL.to_buffer(), attr.second));
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 2), sml::make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, 2) }))) {
+			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_SERIAL_FLOW_CONTROL.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, 1) }))) {
-			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_STOPBITS.to_buffer(), attr.second));
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 1), sml::make_obis(sml::OBIS_SERIAL_STOPBITS, 1) }))) {
+			mux_.post(radio_port_, 3u, cyng::tuple_factory(sml::OBIS_SERIAL_STOPBITS.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, 2) }))) {
-			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_STOPBITS.to_buffer(), attr.second));
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 2), sml::make_obis(sml::OBIS_SERIAL_STOPBITS, 2) }))) {
+			mux_.post(serial_port_, 3u, cyng::tuple_factory(sml::OBIS_SERIAL_STOPBITS.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, 1) }))) {
-			mux_.post(radio_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_SPEED.to_buffer(), attr.second));
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 1), sml::make_obis(sml::OBIS_SERIAL_SPEED, 1) }))) {
+			mux_.post(radio_port_, 2u, cyng::tuple_factory(sml::OBIS_SERIAL_SPEED.to_buffer(), attr.second));
 		}
-		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, 2) }))) {
-			mux_.post(serial_port_, 2u, cyng::tuple_factory(sml::OBIS_HARDWARE_PORT_SPEED.to_buffer(), attr.second));
+		else if (boost::algorithm::equals(name, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, 2), sml::make_obis(sml::OBIS_SERIAL_SPEED, 2) }))) {
+			mux_.post(serial_port_, 2u, cyng::tuple_factory(sml::OBIS_SERIAL_SPEED.to_buffer(), attr.second));
 		}
 		else if (boost::algorithm::equals(name, build_cfg_key({sml::OBIS_ROOT_BROKER, sml::make_obis(sml::OBIS_ROOT_BROKER, 1) }, "enabled"))) {
 			auto const enable = cyng::value_cast(attr.second, true);

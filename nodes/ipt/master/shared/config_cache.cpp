@@ -258,7 +258,7 @@ namespace node
         case sml::CODE_ROOT_W_MBUS_STATUS:
         case sml::CODE_IF_wMBUS:
         case sml::CODE_ROOT_BROKER:
-        case sml::CODE_ROOT_HARDWARE_PORT:
+        case sml::CODE_ROOT_SERIAL:
             return true;
         default:
             break;

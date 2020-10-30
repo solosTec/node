@@ -28,8 +28,9 @@ namespace node
 		/**
 		 * rs485:enabled"
 		 * @return "rs485:enabled"
+		 * see cfg_rs485
 		 */
-		bool is_enabled() const;
+		//bool is_enabled() const;
 
 		/**
 		 * @return "OBIS_CLASS_MBUS:OBIS_CLASS_MBUS_RO_INTERVAL"
@@ -55,6 +56,11 @@ namespace node
 		 */
 		bool is_auto_activation() const;
 
+		/**
+		 * "OBIS_CLASS_MBUS:generate-profile"
+		 * 
+		 * @return true if generating profiles for wired M-Bus is activated
+		 */
 		bool generate_profile() const;
 
 	private:

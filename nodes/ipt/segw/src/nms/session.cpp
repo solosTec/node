@@ -5,11 +5,12 @@
  *
  */
 
-#include "session.h"
-#include "../cache.h"
-#include "../cfg_rs485.h"
-#include "../cfg_wmbus.h"
-#include "../cfg_broker.h"
+#include <nms/session.h>
+#include <cache.h>
+#include <cfg_rs485.h>
+#include <cfg_wmbus.h>
+#include <cfg_broker.h>
+#include <cfg_redirector.h>
 
 #include <smf/cluster/generator.h>
 #include <smf/sml/srv_id_io.h>
@@ -64,7 +65,7 @@ namespace node
 
 			})
 		{
-			CYNG_LOG_INFO(logger_, "new session ["
+			CYNG_LOG_INFO(logger_, "new NMS session ["
 				//<< vm_.tag()
 				<< "] at "
 				<< socket_.remote_endpoint());
@@ -91,7 +92,7 @@ namespace node
 				{
 					if (!ec)
 					{
-						CYNG_LOG_TRACE(logger_, "session received "
+						CYNG_LOG_TRACE(logger_, "NMS session received "
 							<< cyng::bytes_to_str(bytes_transferred));
 
 #ifdef _DEBUG
@@ -159,11 +160,11 @@ namespace node
 //			CYNG_LOG_DEBUG(logger_, "send response: " << ec << ss.str());
 //#else
 			if (!ec) {
-				CYNG_LOG_DEBUG(logger_, "send response: "
+				CYNG_LOG_DEBUG(logger_, "NMS send response: "
 					<< str);
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "sending response failed: "
+				CYNG_LOG_WARNING(logger_, "NMS sending response failed: "
 					<< ec.message());
 			}
 //#endif
@@ -383,11 +384,11 @@ namespace node
 							//  merge port: /dev/ttyAPP0 - enabled: true
 							if (port_id == cfg_rs485::port_idx) {
 								//	RS 485
-								broker.set_enabled(cfg_broker::source::WIRED_LMN, param.second);
+								broker.set_enabled(source::WIRED_LMN, param.second);
 							}
 							else {
 								//	wireless M-Bus
-								broker.set_enabled(cfg_broker::source::WIRELESS_LMN, param.second);
+								broker.set_enabled(source::WIRELESS_LMN, param.second);
 							}
 							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
@@ -514,6 +515,7 @@ namespace node
 			cfg_rs485 const rs485(cache_);
 			cfg_wmbus const wmbus(cache_);
 			cfg_broker const broker(cache_);
+			cfg_redirector const redirector(cache_);
 
 			return cyng::param_map_factory
 				("command", cmd)
@@ -530,8 +532,8 @@ namespace node
 						("stopbits", serial::to_str(rs485.get_stopbits()))
 						("baudrate", rs485.get_baud_rate().value())
 						("protocol", rs485.get_protocol_by_name())
-						("broker", broker.get_broker_vector(cfg_broker::source::WIRED_LMN))
-						("listener", broker.get_listener_vector(cfg_broker::source::WIRED_LMN))
+						("broker", broker.get_server_vector(source::WIRED_LMN))
+						("listener", redirector.get_server_vector(source::WIRED_LMN))
 						("max-readout-frequency", 5)
 						("loop", cyng::param_map_factory
 							("timeout", 60)
@@ -546,7 +548,7 @@ namespace node
 						("flow-control", serial::to_str(wmbus.get_flow_control()))
 						("stopbits", serial::to_str(wmbus.get_stopbits()))
 						("baudrate", wmbus.get_baud_rate().value())
-						("broker", broker.get_broker_vector(cfg_broker::source::WIRELESS_LMN))
+						("broker", broker.get_server_vector(source::WIRELESS_LMN))
 						("blocklist", cyng::param_map_factory
 							("enabled", false)
 							("list", cyng::vector_factory({ "00684279" }))

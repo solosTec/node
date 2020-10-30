@@ -33,5 +33,15 @@ namespace node
 	 */
 	cyng::vector_t cfg_key(sml::obis_path_t path);
 
+	/**
+	 * pre-configured data sources
+	 */
+	enum class source : std::uint8_t {
+		OTHER = 0,
+		WIRELESS_LMN = 1,	//	IF_wMBUS
+		WIRED_LMN = 2,		//	rs485
+		ETHERNET,
+	};
+
 }
 #endif

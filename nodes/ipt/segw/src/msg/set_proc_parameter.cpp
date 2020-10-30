@@ -110,7 +110,7 @@ namespace node
 				case CODE_ROOT_BROKER:
 					config_broker_.set_proc_params(path, srv_id, param);
 					break;
-				case CODE_ROOT_HARDWARE_PORT:
+				case CODE_ROOT_SERIAL:
 					config_broker_.set_proc_params_port(path, srv_id, param);
 					break;
 				case CODE_ROOT_CUSTOM_INTERFACE:	//	81 02 00 07 00 FF

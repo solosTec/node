@@ -800,10 +800,10 @@ namespace node
 				|| code.is_matching_5(OBIS_BROKER_SERVER).second	//	BROKER_SERVER
 				|| code.is_matching_5(OBIS_BROKER_USER).second	//	BROKER_USER
 				|| code.is_matching_5(OBIS_BROKER_PWD).second	//	BROKER_PWD
-				|| code.is_matching_5(OBIS_HARDWARE_PORT_NAME).second	//	HARDWARE_PORT_NAME
-				|| code.is_matching_5(OBIS_HARDWARE_PORT_PARITY).second	//	HARDWARE_PORT_PARITY
-				|| code.is_matching_5(OBIS_HARDWARE_PORT_FLOW_CONTROL).second	//	HARDWARE_PORT_FLOW_CONTROL
-				|| code.is_matching_5(OBIS_HARDWARE_PORT_STOPBITS).second	//	HARDWARE_PORT_STOPBITS
+				|| code.is_matching_5(OBIS_SERIAL_NAME).second	//	SERIAL_NAME
+				|| code.is_matching_5(OBIS_SERIAL_PARITY).second	//	SERIAL_PARITY
+				|| code.is_matching_5(OBIS_SERIAL_FLOW_CONTROL).second	//	SERIAL_FLOW_CONTROL
+				|| code.is_matching_5(OBIS_SERIAL_STOPBITS).second	//	SERIAL_STOPBITS
 				|| OBIS_W_MBUS_ADAPTER_MANUFACTURER == code
 				|| OBIS_W_MBUS_FIRMWARE == code
 				|| OBIS_W_MBUS_HARDWARE == code

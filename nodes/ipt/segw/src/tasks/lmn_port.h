@@ -27,14 +27,14 @@ namespace node
 		using msg_1 = std::tuple<std::size_t, bool>;
 
 		//	[2] modify options int
-		//	HARDWARE_PORT_DATABITS
-		//	HARDWARE_PORT_PARITY
+		//	SERIAL_DATABITS
+		//	SERIAL_PARITY
 		using msg_2 = std::tuple<cyng::buffer_t, std::uint32_t>;
 
 		//	[3] modify options string
-		//	HARDWARE_PORT_FLOW_CONTROL
-		//	HARDWARE_PORT_STOPBITS
-		//	HARDWARE_PORT_SPEED
+		//	SERIAL_FLOW_CONTROL
+		//	SERIAL_STOPBITS
+		//	SERIAL_SPEED
 		using msg_3 = std::tuple<cyng::buffer_t, std::string>;
 
 		using signatures_t = std::tuple<msg_0, msg_1, msg_2, msg_3>;
@@ -68,14 +68,14 @@ namespace node
 		cyng::continuation process(std::size_t, bool);
 
 		//	@brief slot [2] modify options int
-		//	HARDWARE_PORT_DATABITS
-		//	HARDWARE_PORT_SPEED
+		//	SERIAL_DATABITS
+		//	SERIAL_SPEED
 		cyng::continuation process(cyng::buffer_t, std::uint32_t);
 
 		//	@brief slot [3] modify options string
-		//	HARDWARE_PORT_FLOW_CONTROL
-		//	HARDWARE_PORT_STOPBITS
-		//	HARDWARE_PORT_PARITY
+		//	SERIAL_FLOW_CONTROL
+		//	SERIAL_STOPBITS
+		//	SERIAL_PARITY
 		cyng::continuation process(cyng::buffer_t, std::string);
 
 	private:

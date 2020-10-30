@@ -5,7 +5,7 @@
  *
  */
 
-#include "lmn_port.h"
+#include <tasks/lmn_port.h>
 #include <smf/serial/parity.h>
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>
@@ -351,15 +351,15 @@ namespace node
 	}
 
 	//	[2] modify options int
-	//	HARDWARE_PORT_DATABITS
-	//	HARDWARE_PORT_SPEED
+	//	SERIAL_DATABITS
+	//	SERIAL_SPEED
 	cyng::continuation lmn_port::process(cyng::buffer_t buf, std::uint32_t val)
 	{
 		auto const code = sml::obis(buf);
 		boost::system::error_code ec;
 
 		switch (code.to_uint64()) {
-		case sml::CODE_HARDWARE_PORT_DATABITS:
+		case sml::CODE_SERIAL_DATABITS:
 			port_.set_option(boost::asio::serial_port_base::character_size(val), ec);
 			if (!ec) {
 				port_.get_option(databits_, ec);
@@ -381,7 +381,7 @@ namespace node
 					<< ec.message());
 			}
 			break;
-		case sml::CODE_HARDWARE_PORT_SPEED:
+		case sml::CODE_SERIAL_SPEED:
 			port_.set_option(boost::asio::serial_port_base::baud_rate(val), ec);
 			if (!ec) {
 				port_.get_option(baud_rate_, ec);
@@ -423,14 +423,14 @@ namespace node
 	}
 
 	//	[3] modify options string
-	//	HARDWARE_PORT_FLOW_CONTROL
-	//	HARDWARE_PORT_STOPBITS
-	//	HARDWARE_PORT_PARITY
+	//	SERIAL_FLOW_CONTROL
+	//	SERIAL_STOPBITS
+	//	SERIAL_PARITY
 	cyng::continuation lmn_port::process(cyng::buffer_t buf, std::string val)
 	{
 		auto const code = sml::obis(buf);
 		switch (code.to_uint64()) {
-		case sml::CODE_HARDWARE_PORT_FLOW_CONTROL:
+		case sml::CODE_SERIAL_FLOW_CONTROL:
 			port_.set_option(serial::to_flow_control(val));
 			port_.get_option(flow_control_);
 			CYNG_LOG_INFO(logger_, "task #"
@@ -440,7 +440,7 @@ namespace node
 				<< "> set flow control "
 				<< serial::to_str(flow_control_));
 			break;
-		case sml::CODE_HARDWARE_PORT_STOPBITS:
+		case sml::CODE_SERIAL_STOPBITS:
 			port_.set_option(serial::to_stopbits(val));
 			port_.get_option(stopbits_);
 			CYNG_LOG_INFO(logger_, "task #"
@@ -450,7 +450,7 @@ namespace node
 				<< "> set stopbits "
 				<< serial::to_str(stopbits_));
 			break;
-		case sml::CODE_HARDWARE_PORT_PARITY:
+		case sml::CODE_SERIAL_PARITY:
 			port_.set_option(serial::to_parity(val));
 			port_.get_option(parity_);
 			CYNG_LOG_INFO(logger_, "task #"

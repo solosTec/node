@@ -5,36 +5,38 @@
  *
  */
 
-#include <nms/server.h>
-#include <nms/session.h>
+#include <redirector/server.h>
+#include <redirector/session.h>
 #include <cache.h>
 #include <smf/cluster/generator.h>
 
 #include <cyng/vm/controller.h>
 #include <cyng/vm/context.h>
 #include <cyng/io/serializer.h>
+#include <cyng/async/mux.h>
 
 namespace node
 {
-	namespace nms
+	namespace redirector
 	{
-		server::server(cyng::io_service_t& ios
+		server::server(cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
 			, cache& cfg
 			, std::string account
 			, std::string pwd
 			, boost::asio::ip::tcp::endpoint ep)
-		: logger_(logger)
+		: mux_(mux)
+			, logger_(logger)
 			, cache_(cfg)
 			, account_(account)
 			, pwd_(pwd)
-			, acceptor_(ios, ep)
+			, acceptor_(mux.get_io_service(), ep)
 			, session_counter_{ 0 }
 		{}
 
 		void server::run()
 		{
-			CYNG_LOG_INFO(logger_, "NMS server listens at: " << acceptor_.local_endpoint());
+			CYNG_LOG_INFO(logger_, "redirector server listens at " << acceptor_.local_endpoint());
 			do_accept();
 		}
 
@@ -53,15 +55,15 @@ namespace node
 
 					if (!ec)
 					{
-						CYNG_LOG_TRACE(logger_, "start NMS session at " << socket.remote_endpoint());
+						CYNG_LOG_TRACE(logger_, "start redirector session at " << socket.remote_endpoint());
 
-						auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_, cache_), [this](session* s) {
+						auto sp = std::shared_ptr<session>(new session(std::move(socket), mux_, logger_, cache_), [this](session* s) {
 
 							//
 							//	update session counter
 							//
 							--session_counter_;
-							CYNG_LOG_TRACE(logger_, "NMS session count " << session_counter_);
+							CYNG_LOG_TRACE(logger_, "redirector session count " << session_counter_);
 
 							//
 							//	remove session

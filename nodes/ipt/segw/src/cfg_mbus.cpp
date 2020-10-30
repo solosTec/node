@@ -24,10 +24,10 @@ namespace node
 		: cache_(c)
 	{}
 
-	bool cfg_mbus::is_enabled() const
-	{
-		return cache_.get_cfg(build_cfg_key({ "rs485", "enabled" }), false);
-	}
+	//bool cfg_mbus::is_enabled() const
+	//{
+	//	return cache_.get_cfg(build_cfg_key({ "rs485", "enabled" }), false);
+	//}
 
 	std::chrono::seconds cfg_mbus::get_readout_interval() const
 	{

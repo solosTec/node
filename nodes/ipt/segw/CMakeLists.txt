@@ -7,6 +7,7 @@ add_executable(segw ${node_ipt_segw})
 target_include_directories(segw
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
 		${CYNG_INCLUDE_DIRS}
 		${CRYPT_INCLUDE_DIR}
 		${OPENSSL_INCLUDE_DIR}

@@ -6,7 +6,6 @@
  */
 
 #include "cfg_broker.h"
-#include "segw.h"
 #include "cache.h"
 #include "cfg_rs485.h"
 #include "cfg_wmbus.h"
@@ -29,52 +28,30 @@ namespace node
 		: cache_(c)
 	{}
 
-	cfg_broker::broker_list_t cfg_broker::get_broker(cfg_broker::source s) const
+	server_list_t cfg_broker::get_server(source s) const
 	{
 		switch (s) {
 		case source::WIRELESS_LMN:
 		case source::WIRED_LMN:
-			return get_broker(static_cast<std::uint8_t>(s));
+			return get_server(static_cast<std::uint8_t>(s));
 		default:
 			break;
 		}
-		return std::vector<cfg_broker::broker>();
-	}
-
-	cfg_broker::broker_list_t cfg_broker::get_listener(cfg_broker::source s) const
-	{
-		switch (s) {
-		case source::WIRELESS_LMN:
-		case source::WIRED_LMN:
-			return get_listener(static_cast<std::uint8_t>(s));
-		default:
-			break;
-		}
-		return std::vector<cfg_broker::broker>();
+		return server_list_t{};
 	}
 
 
-	cyng::vector_t cfg_broker::get_broker_vector(source s) const
+	cyng::vector_t cfg_broker::get_server_vector(source s) const
 	{
 		cyng::vector_t vec;
-		auto const brokers = get_broker(s);
-		std::transform(std::begin(brokers), std::end(brokers), std::back_inserter(vec), [](cfg_broker::broker const& target) {
+		auto const brokers = get_server(s);
+		std::transform(std::begin(brokers), std::end(brokers), std::back_inserter(vec), [](segw::server const& target) {
 			return cyng::make_object(to_param_map(target));
 			});
 		return vec;
 	}
 
-	cyng::vector_t cfg_broker::get_listener_vector(source s) const
-	{
-		cyng::vector_t vec;
-		auto const brokers = get_listener(s);
-		std::transform(std::begin(brokers), std::end(brokers), std::back_inserter(vec), [](cfg_broker::broker const& target) {
-			return cyng::make_object(to_param_map(target));
-			});
-		return vec;
-	}
-
-	void cfg_broker::set_broker(source s, std::uint8_t idx, broker const& data)
+	void cfg_broker::set_server(source s, std::uint8_t idx, segw::server const& data)
 	{
 		set_address(s, idx, data.get_address());
 		set_port(s, idx, data.get_port());
@@ -82,9 +59,9 @@ namespace node
 		set_pwd(s, idx, data.get_pwd());
 	}
 
-	void cfg_broker::set_broker(std::string const& port_name, std::uint8_t idx, broker const& data)
+	void cfg_broker::set_server(std::string const& port_name, std::uint8_t idx, segw::server const& data)
 	{
-		set_broker(get_port_source(port_name), idx, data);
+		set_server(get_port_source(port_name), idx, data);
 	}
 
 	bool cfg_broker::set_address(source s, std::uint8_t idx, std::string const& address)
@@ -143,9 +120,9 @@ namespace node
 		return set_port(get_port_source(port_name), idx, port);
 	}
 
-	cfg_broker::broker_list_t cfg_broker::get_broker(std::uint8_t port_idx) const
+	server_list_t cfg_broker::get_server(std::uint8_t port_idx) const
 	{
-		std::vector<cfg_broker::broker> r;
+		server_list_t r;
 
 		//	
 		//	test for up to 16 broker
@@ -179,43 +156,8 @@ namespace node
 		return r;
 	}
 
-	cfg_broker::broker_list_t cfg_broker::get_listener(std::uint8_t port_idx) const
-	{
-		std::vector<cfg_broker::broker> r;
 
-		//	
-		//	test for up to 16 broker
-		//	
-		for (std::uint8_t idx = 1; idx < 16; ++idx) {
-
-			auto const address = cache_.get_cfg(build_cfg_key({
-				sml::OBIS_ROOT_LISTENER,
-				sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
-				sml::make_obis(sml::OBIS_LISTENER_SERVER, idx) }), "?");
-
-			if (!boost::algorithm::equals(address, "?")) {
-
-				auto const port = cache_.get_cfg(build_cfg_key({
-					sml::OBIS_ROOT_LISTENER,
-					sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
-					sml::make_obis(sml::OBIS_LISTENER_SERVICE, idx) }), static_cast<std::uint16_t>(6001u));
-				auto const account = cache_.get_cfg(build_cfg_key({
-					sml::OBIS_ROOT_LISTENER,
-					sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
-					sml::make_obis(sml::OBIS_LISTENER_USER, idx) }), "");
-				auto const pwd = cache_.get_cfg(build_cfg_key({
-					sml::OBIS_ROOT_LISTENER,
-					sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
-					sml::make_obis(sml::OBIS_LISTENER_PWD, idx) }), "");
-
-				r.emplace_back(account, pwd, address, port);
-			}
-		}
-
-		return r;
-	}
-
-	bool cfg_broker::is_login_required(cfg_broker::source s) const
+	bool cfg_broker::is_login_required(source s) const
 	{
 		switch (s) {
 		case source::WIRELESS_LMN:
@@ -235,7 +177,7 @@ namespace node
 		return cache_.get_cfg(path, true);
 	}
 
-	bool cfg_broker::set_login_required(cfg_broker::source s, bool b) const
+	bool cfg_broker::set_login_required(source s, bool b) const
 	{
 		auto const idx = static_cast<std::uint8_t>(s);
 		return cache_.set_cfg(build_cfg_key({
@@ -249,12 +191,12 @@ namespace node
 		return set_login_required(get_port_source(port_name), b);
 	}
 
-	std::string cfg_broker::get_port_name(cfg_broker::source s) const
+	std::string cfg_broker::get_port_name(source s) const
 	{
 		switch (s) {
 		case source::WIRELESS_LMN:
 		case source::WIRED_LMN:
-			return get_port_name(build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, static_cast<std::uint8_t>(s)) }));
+			return get_port_name(build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_NAME, static_cast<std::uint8_t>(s)) }));
 		default:
 			break;
 		}
@@ -266,7 +208,7 @@ namespace node
 		return static_cast<std::uint8_t>(get_port_source(port_name));
 	}
 
-	cfg_broker::source cfg_broker::get_port_source(std::string const& port_name) const
+	source cfg_broker::get_port_source(std::string const& port_name) const
 	{
 		cfg_rs485 const rs485(cache_);
 		cfg_wmbus const wmbus(cache_);
@@ -285,7 +227,7 @@ namespace node
 		return cache_.get_cfg(path, "");
 	}
 
-	bool cfg_broker::is_enabled(cfg_broker::source s) const
+	bool cfg_broker::is_enabled(source s) const
 	{
 		auto const idx = static_cast<std::uint8_t>(s);
 		return cache_.get_cfg(build_cfg_key({
@@ -298,7 +240,7 @@ namespace node
 		return is_enabled(get_port_source(port_name));
 	}
 
-	bool cfg_broker::set_enabled(cfg_broker::source s, cyng::object obj) const
+	bool cfg_broker::set_enabled(source s, cyng::object obj) const
 	{
 		//
 		//	
@@ -316,41 +258,5 @@ namespace node
 	}
 
 
-	cfg_broker::broker::broker(std::string account, std::string pwd, std::string address, std::uint16_t port)
-		: account_(account)
-		, pwd_(pwd)
-		, address_(address)
-		, port_(port)
-	{}
-
-	std::string const& cfg_broker::broker::get_account() const
-	{
-		return account_;
-	}
-
-	std::string const& cfg_broker::broker::get_pwd() const
-	{
-		return pwd_;
-	}
-
-	std::string const& cfg_broker::broker::get_address() const
-	{
-		return address_;
-	}
-
-	std::uint16_t cfg_broker::broker::get_port() const
-	{
-		return port_;
-	}
-
-	cyng::param_map_t to_param_map(cfg_broker::broker const& target)
-	{
-		return cyng::param_map_factory
-			("address", target.get_address())
-			("port", target.get_port())
-			("account", target.get_account())
-			("pwd", target.get_pwd())
-			;
-	}
 
 }

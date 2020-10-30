@@ -935,21 +935,21 @@ namespace node
 							"enabled"), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::OBIS_SERIAL_NAME }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "databits")) {
 						//	unsigned int
 						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 8u);
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, port_idx) }), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_DATABITS, port_idx) }), cyng::make_object(val));
 					}
 					else if (boost::algorithm::equals(param.first, "parity")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_PARITY, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "flow-control")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "stopbits")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_STOPBITS, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "speed")) {
 						//	unsigned int
@@ -960,7 +960,7 @@ namespace node
 							115200u
 #endif
 							);
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, port_idx) }), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_SPEED, port_idx) }), cyng::make_object(val));
 					}
 					else {
 
@@ -1012,7 +1012,7 @@ namespace node
 				//
 				//	port index
 				//
-				std::uint8_t const port_idx{ 2 };
+				std::uint8_t const port_idx{ static_cast<std::uint8_t>(source::WIRED_LMN) };
 
 				init_config_record(s, build_cfg_key({
 					"rs485", "descr" 
@@ -1074,64 +1074,65 @@ namespace node
 					}
 					else if (boost::algorithm::equals(param.first, "listener")) {
 						//	vector of broker nodes
-						std::uint8_t idx{ 0 };
-						auto const vec = cyng::to_vector(param.second);
-						for (auto const broker : vec) {
+							auto const reader = cyng::make_reader(param.second);
 
-							++idx;
-							auto const reader = cyng::make_reader(broker);
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_REDIRECTOR,
+							sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+							sml::make_obis(sml::OBIS_REDIRECTOR_ADDRESS, port_idx) }), reader.get("address"));
 
-							init_config_record(s, build_cfg_key({
-								sml::OBIS_ROOT_LISTENER,
-								sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
-								sml::make_obis(sml::OBIS_LISTENER_SERVER, idx) }), reader.get("address"));
+						auto const port = cyng::numeric_cast<std::uint16_t>(reader.get("port"), 12001u);
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_REDIRECTOR,
+							sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+							sml::make_obis(sml::OBIS_REDIRECTOR_SERVICE, port_idx) }), cyng::make_object(port));
 
-							auto const port = cyng::numeric_cast<std::uint16_t>(reader.get("port"), 12001u);
-							init_config_record(s, build_cfg_key({
-								sml::OBIS_ROOT_LISTENER,
-								sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
-								sml::make_obis(sml::OBIS_LISTENER_SERVICE, idx) }), cyng::make_object(port));
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_REDIRECTOR,
+							sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+							sml::make_obis(sml::OBIS_REDIRECTOR_USER, port_idx) }), reader.get("account"));
 
-							init_config_record(s, build_cfg_key({
-								sml::OBIS_ROOT_LISTENER,
-								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
-								sml::make_obis(sml::OBIS_LISTENER_USER, idx) }), reader.get("account"));
-
-							init_config_record(s, build_cfg_key({
-								sml::OBIS_ROOT_LISTENER,
-								sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
-								sml::make_obis(sml::OBIS_LISTENER_PWD, idx) }), reader.get("pwd"));
-						}
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_REDIRECTOR,
+							sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+							sml::make_obis(sml::OBIS_REDIRECTOR_PWD, port_idx) }), reader.get("pwd"));
 					}
 					else if (boost::algorithm::equals(param.first, "listener-login")) {
 						init_config_record(s, build_cfg_key({
-							sml::OBIS_ROOT_LISTENER,
-							sml::make_obis(sml::OBIS_ROOT_LISTENER, port_idx),
-							sml::OBIS_LISTENER_LOGIN }), param.second);
+							sml::OBIS_ROOT_REDIRECTOR,
+							sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+							sml::OBIS_REDIRECTOR_LOGIN }), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "listener-enabled")) {
+						init_config_record(s, build_cfg_key({
+							sml::OBIS_ROOT_REDIRECTOR,
+							sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx) },
+							"enabled"), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
 						init_config_record(s, build_cfg_key({ 
-							sml::OBIS_ROOT_HARDWARE_PORT, 
-							sml::make_obis(0x91, 0x00, 0x00, 0x00, 0x01, port_idx) }), param.second);
+							sml::OBIS_ROOT_SERIAL, 
+							sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx),
+							sml::OBIS_SERIAL_NAME }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "databits")) {
 						//	unsigned int
 						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 8u);
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, port_idx) }), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_DATABITS, port_idx) }), cyng::make_object(val));
 					}
 					else if (boost::algorithm::equals(param.first, "parity")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_PARITY, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "flow-control")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "stopbits")) {
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, port_idx) }), param.second);
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_STOPBITS, port_idx) }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "speed")) {
 						//	unsigned int
 						auto const val = cyng::numeric_cast<std::uint32_t>(param.second, 2400u);
-						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, port_idx) }), cyng::make_object(val));
+						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::make_obis(sml::OBIS_SERIAL_SPEED, port_idx) }), cyng::make_object(val));
 					}
 					else {
 						init_config_record(s, build_cfg_key({ "rs485", param.first }), param.second);
@@ -1270,28 +1271,28 @@ namespace node
 			//
 			{
 				//	get a tuple/list of params
-				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("server"));
+				cyng::tuple_t const tpl = cyng::to_tuple(dom.get("sml"));
 				for (auto const& obj : tpl) {
 
 					auto const param = cyng::to_param(obj);
 
 					if (boost::algorithm::equals(param.first, "address")) {
-						init_config_record(s, build_cfg_key({ "server", "address" }), param.second);
+						init_config_record(s, build_cfg_key({ "sml", "address" }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "service")) {
-						init_config_record(s, build_cfg_key({ "server", "service" }), param.second);
+						init_config_record(s, build_cfg_key({ "sml", "service" }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "discover")) {
-						init_config_record(s, build_cfg_key({ "server", "discover" }), param.second);
+						init_config_record(s, build_cfg_key({ "sml", "discover" }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "account")) {
-						init_config_record(s, build_cfg_key({ "server", "account" }), param.second);
+						init_config_record(s, build_cfg_key({ "sml", "account" }), param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "pwd")) {
-						init_config_record(s, "server:pwd", param.second);
+						init_config_record(s, "sml:pwd", param.second);
 					}
 					else if (boost::algorithm::equals(param.first, "enabled")) {
-						init_config_record(s, "server:enabled", param.second);
+						init_config_record(s, "sml:enabled", param.second);
 					}
 				}
 			}

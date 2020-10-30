@@ -278,13 +278,13 @@ namespace node
 				, transform_broker_params(logger_, params)));
 
 		}
-		else if (sml::OBIS_ROOT_HARDWARE_PORT == path.front()) {
+		else if (sml::OBIS_ROOT_SERIAL == path.front()) {
 
 			CYNG_LOG_DEBUG(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> ROOT_HARDWARE_PORT: "
+				<< "> ROOT_SERIAL: "
 				<< cyng::io::to_type(params));
 
 			bus_->vm_.async_run(bus_res_com_sml(cd.tag_
@@ -1315,7 +1315,7 @@ namespace node
 	//		push_trx(sml_gen.append(sml_gen.get_proc_parameter(data.get_srv(), data.get_path())), data);
 	//		break;
 
-	//	case sml::CODE_ROOT_HARDWARE_PORT:
+	//	case sml::CODE_ROOT_SERIAL:
 	//		execute_cmd_set_proc_param_hw_port(sml_gen, data, params.container());
 	//		push_trx(sml_gen.append(sml_gen.get_proc_parameter(data.get_srv(), data.get_path())), data);
 	//		break;
@@ -1730,7 +1730,7 @@ namespace node
 	//			//	
 	//			auto const hardware_port = cyng::value_cast<std::string>(port.at("hardwarePort"), "");
 	//			push_trx(sml_gen.append(sml_gen.set_proc_parameter(data.get_srv()
-	//				, { sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, idxo) }
+	//				, { sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_NAME, idxo) }
 	//			, hardware_port)), data);
 
 	//			//
@@ -1830,41 +1830,41 @@ namespace node
 
 	//			if (boost::algorithm::equals(p.first, "databits")) {
 
-	//				//HARDWARE_PORT_DATABITS
+	//				//SERIAL_DATABITS
 	//				push_trx(sml_gen.append(sml_gen.set_proc_parameter(data.get_srv()
-	//					, { sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, idx) }
+	//					, { sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_DATABITS, idx) }
 	//				, p.second)), data);
 	//			}
 	//			else if (boost::algorithm::equals(p.first, "parity")) {
 
-	//				//HARDWARE_PORT_PARITY
+	//				//SERIAL_PARITY
 	//				push_trx(sml_gen.append(sml_gen.set_proc_parameter(data.get_srv()
-	//					, { sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, idx) }
+	//					, { sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_PARITY, idx) }
 	//				, p.second)), data);
 	//			}
 	//			else if (boost::algorithm::equals(p.first, "flowcontrol")) {
 
-	//				//HARDWARE_PORT_FLOW_CONTROL
+	//				//SERIAL_FLOW_CONTROL
 	//				push_trx(sml_gen.append(sml_gen.set_proc_parameter(data.get_srv()
-	//					, { sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, idx) }
+	//					, { sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, idx) }
 	//				, p.second)), data);
 	//			}
 	//			else if (boost::algorithm::equals(p.first, "stopbits")) {
 
-	//				//HARDWARE_PORT_STOPBITS
+	//				//SERIAL_STOPBITS
 	//				push_trx(sml_gen.append(sml_gen.set_proc_parameter(data.get_srv()
-	//					, { sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, idx) }
+	//					, { sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_STOPBITS, idx) }
 	//				, p.second)), data);
 	//			}
 	//			else if (boost::algorithm::equals(p.first, "baudrate")) {
 
-	//				//HARDWARE_PORT_SPEED
+	//				//SERIAL_SPEED
 	//				push_trx(sml_gen.append(sml_gen.set_proc_parameter(data.get_srv()
-	//					, { sml::OBIS_ROOT_HARDWARE_PORT, sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, idx) }
+	//					, { sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_SPEED, idx) }
 	//				, p.second)), data);
 	//			}
 
-	//			//HARDWARE_PORT_NAME
+	//			//SERIAL_NAME
 
 
 	//		}

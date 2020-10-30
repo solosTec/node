@@ -5,17 +5,18 @@
  *
  */
 
-#include "controller.h"
-#include "storage.h"
-#include "cache.h"
-#include "bridge.h"
-#include "lmn.h"
-#include "segw.h"
+#include <controller.h>
+#include <storage.h>
+#include <cache.h>
+#include <bridge.h>
+#include <lmn.h>
+#include <segw.h>
 
-#include "server/server.h"
-#include "nms/server.h"
-#include "tasks/network.h"
-#include "tasks/connect.h"
+#include <sml/server.h>
+#include <nms/server.h>
+#include <redirector/server.h>
+#include <tasks/network.h>
+#include <tasks/connect.h>
 #include <NODE_project_info.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
@@ -159,7 +160,7 @@ namespace node
 
 				//	on this address the gateway acts as a SML server
 				//	configuration interface
-				, cyng::param_factory("server", cyng::tuple_factory(
+				, cyng::param_factory("sml", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
 					cyng::param_factory("service", "7259"),
 					cyng::param_factory("discover", "5798"),	//	UDP
@@ -306,15 +307,16 @@ namespace node
 						()
 					})),
 					cyng::param_factory("listener-login", false),		//	request login
-					cyng::param_factory("listener", cyng::vector_factory({
+					cyng::param_factory("listener-enabled", false),		//	start rs485 server
+					cyng::param_factory("listener", 
 						//	define multiple listener here
 						cyng::param_map_factory
 							("address", "0.0.0.0")
-							("port", 6000)
-							("account", "listener-" + gen_user(6))
+							("port", 6006)
+							("account", "rs485-" + gen_user(6))
 							("pwd", gen_user(8))
 						()
-					}))
+					)
 				))
 
 				, cyng::param_factory("if-1107", cyng::tuple_factory(
@@ -471,14 +473,14 @@ namespace node
 		//
 		//	read SML login credentials
 		//
-		auto const account = cmgr.get_cfg<std::string>("server:account", "");
-		auto const pwd = cmgr.get_cfg<std::string>("server:pwd", "");
+		auto const account = cmgr.get_cfg<std::string>(build_cfg_key({ "sml", "account" }), "");
+		auto const pwd = cmgr.get_cfg<std::string>(build_cfg_key({ "sml", "pwd" }), "");
 
 		//
 		//	"accept-all-ids" will never change during the session lifetime.
 		//	Changes require a reboot.
 		//
-		auto const accept_all = cmgr.get_cfg("server:accept-all-ids", false);
+		auto const accept_all = cmgr.get_cfg(build_cfg_key({ "sml", "accept-all-ids" }), false);
 
 		//
 		//	connect to ipt master
@@ -511,7 +513,7 @@ namespace node
 				, accept_all
 				, get_sml_ep(cmgr));
 
-			if (cmgr.get_cfg("server:enabled", true)) {
+			if (cmgr.get_cfg(build_cfg_key({ "sml", "enabled" }), true)) {
 				srv.run();
 			}
 			else {
@@ -529,11 +531,35 @@ namespace node
 				, pwd
 				, get_nms_ep(cmgr));
 
-			if (cmgr.get_cfg("nms:enabled", false)) {
+			if (cmgr.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ENABLED }), false)) {
+
+				if (!cmgr.get_cfg(build_cfg_key({ "rs485", "enabled" }), false)) {
+					CYNG_LOG_WARNING(logger, "start RS 485 redirector but hardware port is not enabled");
+				}
+
 				nms.run();
+
 			}
 			else {
 				CYNG_LOG_WARNING(logger, "NMS server is not enabled");
+			}
+
+			//
+			//	create RS485 redirector
+			//	commuication with RS485 hardware port
+			//
+			redirector::server rs485(mux
+				, logger
+				, cmgr
+				, account
+				, pwd
+				, get_redirctor_ep(cmgr, 2));
+
+			if (cmgr.get_cfg(build_cfg_key({ sml::OBIS_ROOT_REDIRECTOR, sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, 2) }, "enabled"), false)) {
+				rs485.run();
+			}
+			else {
+				CYNG_LOG_WARNING(logger, "RS485 redirector is not enabled");
 			}
 
 			//
@@ -546,6 +572,12 @@ namespace node
 			//	wait for system signals
 			//
 			bool const shutdown = wait(logger);
+
+			//
+			//	close NMS server acceptor
+			//
+			CYNG_LOG_INFO(logger, "close RS 485 redirector");
+			rs485.close();
 
 			//
 			//	close NMS server acceptor
@@ -943,20 +975,41 @@ namespace node
 
 	boost::asio::ip::tcp::endpoint controller::get_sml_ep(cache& cfg) const
 	{
-		auto const sml_address = cfg.get_cfg<std::string>("server:address", "");
-		auto const sml_service = cfg.get_cfg<std::string>("server:service", "7259");
+		auto const sml_address = cfg.get_cfg<std::string>(build_cfg_key({ "sml", "address" }), "");
+		auto const sml_service = cfg.get_cfg<std::string>(build_cfg_key({ "sml", "service" }), "7259");
 		auto const sml_host = cyng::make_address(sml_address);
-		const auto sml_port = static_cast<unsigned short>(std::stoi(sml_service));
-		return { sml_host, sml_port };
+		try {
+			const auto sml_port = static_cast<unsigned short>(std::stoi(sml_service));
+			return { sml_host, sml_port };
+		}
+		catch (std::exception const&) {}
+		return { sml_host, 7259 };
 	}
 
 	boost::asio::ip::tcp::endpoint controller::get_nms_ep(cache& cfg) const
 	{
-		auto const nms_address = cfg.get_cfg<std::string>("nms:address", "");
-		auto const nms_service = cfg.get_cfg<std::string>("nms:service", "7261");
+		auto const nms_address = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ADDRESS }), "");
+		auto const nms_service = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }), "7261");
 		auto const nms_host = cyng::make_address(nms_address);
-		const auto nms_port = static_cast<unsigned short>(std::stoi(nms_service));
-		return { nms_host, nms_port };
+		try {
+			const auto nms_port = static_cast<unsigned short>(std::stoi(nms_service));
+			return { nms_host, nms_port };
+		}
+		catch (std::exception const&) {}
+		return { nms_host, 7261 };
+	}
+
+	boost::asio::ip::tcp::endpoint controller::get_redirctor_ep(cache& cfg, std::uint8_t nr) const
+	{
+		auto const nms_address = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_REDIRECTOR, sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, nr), sml::make_obis(sml::OBIS_REDIRECTOR_ADDRESS, nr) }), "");	//	address
+		auto const nms_service = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_REDIRECTOR, sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, nr), sml::make_obis(sml::OBIS_REDIRECTOR_SERVICE, nr) }), "6006");
+		auto const nms_host = cyng::make_address(nms_address);
+		try {
+			const auto nms_port = static_cast<unsigned short>(std::stoi(nms_service));
+			return { nms_host, nms_port };
+		}
+		catch(std::exception const&) {}
+		return { nms_host, 6006 };
 	}
 
 	std::pair<std::size_t, bool> join_network(cyng::async::mux& mux

@@ -45,7 +45,7 @@ namespace node
 				auto const targets = cyng::to_param_map(pos_broker->second);
 				//BOOST_ASSERT_MSG((targets.size() - 1) % 4 == 0, "invalid broker target data");
 
-				auto pos_port = targets.find(sml::OBIS_HARDWARE_PORT_NAME.to_str());
+				auto pos_port = targets.find(sml::OBIS_SERIAL_NAME.to_str());
 				if (pos_port != targets.end()) {
 					auto pos_login = targets.find(sml::OBIS_BROKER_LOGIN.to_str());
 					if (pos_login != targets.end()) {
@@ -121,20 +121,20 @@ namespace node
 		for (std::uint8_t idx = 1; idx < (pm.size() / 6) + 1; ++idx) {
 
 			//	port name
-			auto pos = pm.find(sml::make_obis(sml::OBIS_HARDWARE_PORT_NAME, idx).to_str());
+			auto pos = pm.find(sml::make_obis(sml::OBIS_SERIAL_NAME, idx).to_str());
 			if (pos != pm.end()) {
 
 				auto const name = cyng::value_cast<std::string>(pos->second, "");
 
-				auto pos_databits = pm.find(sml::make_obis(sml::OBIS_HARDWARE_PORT_DATABITS, idx).to_str());
+				auto pos_databits = pm.find(sml::make_obis(sml::OBIS_SERIAL_DATABITS, idx).to_str());
 				if (pos_databits != pm.end()) {
-					auto pos_parity = pm.find(sml::make_obis(sml::OBIS_HARDWARE_PORT_PARITY, idx).to_str());
+					auto pos_parity = pm.find(sml::make_obis(sml::OBIS_SERIAL_PARITY, idx).to_str());
 					if (pos_parity != pm.end()) {
-						auto pos_flow_control = pm.find(sml::make_obis(sml::OBIS_HARDWARE_PORT_FLOW_CONTROL, idx).to_str());
+						auto pos_flow_control = pm.find(sml::make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, idx).to_str());
 						if (pos_flow_control != pm.end()) {
-							auto pos_stopbits = pm.find(sml::make_obis(sml::OBIS_HARDWARE_PORT_STOPBITS, idx).to_str());
+							auto pos_stopbits = pm.find(sml::make_obis(sml::OBIS_SERIAL_STOPBITS, idx).to_str());
 							if (pos_stopbits != pm.end()) {
-								auto pos_speed = pm.find(sml::make_obis(sml::OBIS_HARDWARE_PORT_SPEED, idx).to_str());
+								auto pos_speed = pm.find(sml::make_obis(sml::OBIS_SERIAL_SPEED, idx).to_str());
 
 								//
 								//	serial port complete - build tuple

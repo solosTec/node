@@ -42,6 +42,7 @@ namespace node
 	private:
 		boost::asio::ip::tcp::endpoint get_sml_ep(cache&) const;
 		boost::asio::ip::tcp::endpoint get_nms_ep(cache&) const;
+		boost::asio::ip::tcp::endpoint get_redirctor_ep(cache&, std::uint8_t) const;
 
 	};
 }

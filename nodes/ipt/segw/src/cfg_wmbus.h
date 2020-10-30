@@ -8,11 +8,7 @@
 #ifndef NODE_WMBUS_SEGW_CONFIG_H
 #define NODE_WMBUS_SEGW_CONFIG_H
 
-#include <cyng/object.h>
-
-#include <string>
-#include <chrono>
-#include <cstdint>
+#include <segw.h>
 
 #include <boost/asio/serial_port_base.hpp>
 
@@ -38,7 +34,7 @@ namespace node
 
 		/**
 		 * Name of the serial port.
-		 * @return "ROOT_HARDWARE_PORT:910000000101"
+		 * @return "ROOT_SERIAL:910000000101"
 		 */
 		std::string get_port() const;
 
@@ -93,7 +89,7 @@ namespace node
 		 */
 		bool generate_profile() const;
 
-		static constexpr std::uint8_t port_idx = 1;
+		static constexpr std::uint8_t port_idx = static_cast<std::uint8_t>(source::WIRELESS_LMN);
 
 	private:
 		cache& cache_;

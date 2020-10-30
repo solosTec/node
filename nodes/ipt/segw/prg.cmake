@@ -13,7 +13,9 @@ set (node_ipt_segw_cpp
 	src/cfg_rs485.cpp
 	src/cfg_wmbus.cpp
 	src/cfg_mbus.cpp
+	src/cfg_server.cpp
 	src/cfg_broker.cpp
+	src/cfg_redirector.cpp
 	src/bridge.cpp
 	src/router.cpp
 	src/lmn.cpp
@@ -33,7 +35,9 @@ set (node_ipt_segw_h
 	src/cfg_rs485.h
 	src/cfg_wmbus.h
 	src/cfg_mbus.h
+	src/cfg_server.h
 	src/cfg_broker.h
+	src/cfg_redirector.h
 	src/bridge.h
 	src/router.h
 	src/lmn.h
@@ -94,14 +98,16 @@ set (node_ipt_segw_tasks
 	src/tasks/clock.cpp
 	src/tasks/broker.h
 	src/tasks/broker.cpp
+	src/tasks/reflux.h
+	src/tasks/reflux.cpp
 )
 	
-set (node_ipt_segw_server
+set (node_ipt_sml_server
 
-	src/server/server.h
-	src/server/server.cpp	
-	src/server/session.h
-	src/server/session.cpp	
+	src/sml/server.h
+	src/sml/server.cpp	
+	src/sml/session.h
+	src/sml/session.cpp	
 
 )
 
@@ -111,6 +117,14 @@ set (node_ipt_nms_server
 	src/nms/server.cpp	
 	src/nms/session.h
 	src/nms/session.cpp	
+)
+
+set (node_ipt_redirector_server
+
+	src/redirector/server.h
+	src/redirector/server.cpp	
+	src/redirector/session.h
+	src/redirector/session.cpp	
 )
 
 
@@ -173,8 +187,9 @@ endif()
 source_group("tasks" FILES ${node_ipt_segw_tasks})
 source_group("service" FILES ${node_ipt_segw_service})
 source_group("shared" FILES ${node_ipt_segw_shared})
-source_group("server" FILES ${node_ipt_segw_server})
+source_group("server" FILES ${node_ipt_sml_server})
 source_group("nms" FILES ${node_ipt_nms_server})
+source_group("redirector" FILES ${node_ipt_redirector_server})
 source_group("messaging" FILES ${node_ipt_segw_msg})
 
 
@@ -185,8 +200,9 @@ set (node_ipt_segw
   ${node_ipt_segw_tasks}
   ${node_ipt_segw_service}
   ${node_ipt_segw_shared}
-  ${node_ipt_segw_server}
+  ${node_ipt_sml_server}
   ${node_ipt_nms_server}
+  ${node_ipt_redirector_server}
   ${node_ipt_segw_msg}
 )
 

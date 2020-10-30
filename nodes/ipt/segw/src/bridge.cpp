@@ -5,18 +5,18 @@
  *
  */
 
-#include "bridge.h"
-#include "cache.h"
-#include "storage.h"
-#include "segw.h"
-#include "cfg_rs485.h"
-#include "cfg_wmbus.h"
+#include <bridge.h>
+#include <cache.h>
+#include <storage.h>
+#include <segw.h>
+#include <cfg_rs485.h>
+#include <cfg_wmbus.h>
 
-#include "tasks/gpio.h"
-#include "tasks/obislog.h"
-#include "tasks/clock.h"
-#include "tasks/readout.h"
-#include "tasks/limiter.h"
+#include <tasks/gpio.h>
+#include <tasks/obislog.h>
+#include <tasks/clock.h>
+#include <tasks/readout.h>
+#include <tasks/limiter.h>
 
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>

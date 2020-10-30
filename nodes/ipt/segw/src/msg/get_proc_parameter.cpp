@@ -144,7 +144,7 @@ namespace node
 				return config_security_.get_proc_params(trx, srv_id);
 			case CODE_ROOT_BROKER:
 				return config_broker_.get_proc_params(trx, srv_id);
-			case CODE_ROOT_HARDWARE_PORT:
+			case CODE_ROOT_SERIAL:
 				return config_broker_.get_proc_params_port(trx, srv_id);
 			default:
 				CYNG_LOG_ERROR(logger_, "sml.get.proc.parameter.request - unknown OBIS code "
