@@ -92,6 +92,7 @@ namespace node
 	 * try to convert a string into a valid manufacturer code
 	 */
 	std::string cleanup_manufacturer_code(std::string);
+	std::string cleanup_server_id(std::string const& meter_id, std::string const& manufacturer_code);
 
 	class forward
 	{

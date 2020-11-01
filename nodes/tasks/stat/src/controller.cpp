@@ -47,32 +47,38 @@ namespace node
 		//
 		cyng::crypto::rnd_num<int> rng(10, 120);
 
-		return cyng::vector_factory({
-			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
-			, cyng::param_factory("log-level", "INFO")
-				, cyng::param_factory("tag", get_random_tag())
-				, cyng::param_factory("generated", std::chrono::system_clock::now())
-				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-				, cyng::param_factory("load-config", "local")	//	options are local, master, mixed
+		return cyng::vector_factory(
+			{ cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
+			, cyng::param_factory("log-level",
+#ifdef _DEBUG
+					"TRACE"
+#else
+					"INFO"
+#endif
+			)
+			, cyng::param_factory("tag", get_random_tag())
+			, cyng::param_factory("generated", std::chrono::system_clock::now())
+			, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+			, cyng::param_factory("load-config", "local")	//	options are local, master, mixed
 
-				, cyng::param_factory("trigger", cyng::tuple_factory(
-					cyng::param_factory("offset", 7),	//	minutes after midnight
-					cyng::param_factory("frame", 3),	//	time frame in minutes
-					cyng::param_factory("format", "SML")	//	supported formats are "SML" and "IEC"
-				))
+			, cyng::param_factory("trigger", cyng::tuple_factory(
+				cyng::param_factory("offset", 7),	//	minutes after midnight
+				cyng::param_factory("frame", 3),	//	time frame in minutes
+				cyng::param_factory("format", "SML")	//	supported formats are "SML" and "IEC"
+			))
 
-				, cyng::param_factory("profile-15min", cyng::tuple_factory(
-					cyng::param_factory("root-dir", (cwd / "csv").string()),
-					cyng::param_factory("prefix", "smf-15min-report-"),
-                    cyng::param_factory("suffix", "csv"),
-					cyng::param_factory("header", true),
-					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-				))
+			, cyng::param_factory("profile-15min", cyng::tuple_factory(
+				cyng::param_factory("root-dir", (cwd / "csv").string()),
+				cyng::param_factory("prefix", "smf-15min-report-"),
+                   cyng::param_factory("suffix", "csv"),
+				cyng::param_factory("header", true),
+				cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+			))
 
-				, cyng::param_factory("profile-24h", cyng::tuple_factory(
-					cyng::param_factory("root-dir", (cwd / "csv").string()),
-					cyng::param_factory("prefix", "smf-24h-report-"),
-                    cyng::param_factory("suffix", "csv"),
+			, cyng::param_factory("profile-24h", cyng::tuple_factory(
+				cyng::param_factory("root-dir", (cwd / "csv").string()),
+				cyng::param_factory("prefix", "smf-24h-report-"),
+                   cyng::param_factory("suffix", "csv"),
 					cyng::param_factory("header", true),
 					cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 				))

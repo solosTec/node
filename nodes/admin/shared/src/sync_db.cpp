@@ -162,7 +162,7 @@ namespace node
 			, "port"		//	[u16] port
 			, "direction"	//	[bool] incoming/outgoing
 			, "interval"	//	[seconds] pull cycle
-					//	-- additional columns
+			//	-- additional columns
 			, "meter"
 			},
 			{ cyng::TC_UUID			//	pk

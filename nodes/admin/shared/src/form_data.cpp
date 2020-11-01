@@ -157,7 +157,7 @@ namespace node
 		//	* content size
 		//	* progress in %
 		//	
-#ifdef __DEBUG
+#ifdef _DEBUG
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, "http.upload.progress - " << cyng::value_cast<std::uint32_t>(frame.at(3), 0) << "%");
 #endif

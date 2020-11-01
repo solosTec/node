@@ -124,14 +124,16 @@ namespace node
 			//	generic redirects second
 			//
 			{
-				auto const pos = redirects_generic_.lower_bound(path);
-				if (pos != redirects_generic_.end()) {
+				auto pos = redirects_generic_.lower_bound(path);
+				if (pos != redirects_generic_.end() && pos != redirects_generic_.begin()) {
 
+					--pos;
 					auto const& key = pos->first;
 					if (boost::algorithm::starts_with(path, key)) {
 
 						CYNG_LOG_TRACE(logger_, "redirect (generic rule) " << path << " ==> " << pos->second);
-						path.replace(path.begin(), path.begin() + key.size(), key);
+						//path.replace(path.begin(), path.begin() + key.size(), pos->second);
+						path = pos->second;
 						return true;
 					}
 				}

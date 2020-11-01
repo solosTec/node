@@ -9,7 +9,6 @@
 #define NODE_LISTENER_SEGW_CONFIG_H
 
 #include <cfg_server.h>
-#include <cfg_server.h>
 #include "segw.h"
 
 namespace node
@@ -27,31 +26,39 @@ namespace node
 		cfg_redirector(cache&);
 
 		/**
-		 * @param tty index to select port (ttyAPP[N], COM[N])
-		 * @return number of defined broker nodes
+		 * It is possible to define one redirector for one serial
+		 * hardware port. Currently only redirector for the RS 485 
+		 * port is defined
+		 * 
+		 * @param s index to select port (ttyAPP[N], COM[N])
+		 * @return definition of the redirector for the specified
+		 * serial hardware port.
 		 */
-		server_list_t get_server(source s) const;
+		segw::server get_server(source s) const;
 
 		/**
-		 * @return a vector of all brokers
+		 * This is the same as the get_server() function but as a parameter map
+		 * 
+		 * @return a parameter map for the specified redirector
+		 * @see get_server
 		 */
-		cyng::vector_t get_server_vector(source s) const;
+		cyng::object get_server_obj(source s) const;
 
 
-		void set_server(source s, std::uint8_t idx, segw::server const&);
-		void set_server(std::string const& port_name, std::uint8_t idx, segw::server const&);
+		void set_server(source s, segw::server const&);
+		void set_server(std::string const& port_name, segw::server const&);
 
-		bool set_address(source s, std::uint8_t idx, std::string const&);
-		bool set_address(std::string const& port_name, std::uint8_t idx, std::string const&);
+		bool set_address(source s, std::string const&);
+		bool set_address(std::string const& port_name, std::string const&);
 
-		bool set_port(source s, std::uint8_t idx, std::uint16_t);
-		bool set_port(std::string const& port_name, std::uint8_t idx, std::uint16_t);
+		bool set_port(source s, std::uint16_t);
+		bool set_port(std::string const& port_name, std::uint16_t);
 
-		bool set_account(source s, std::uint8_t idx, std::string const&);
-		bool set_account(std::string const& port_name, std::uint8_t idx, std::string const&);
+		bool set_account(source s, std::string const&);
+		bool set_account(std::string const& port_name, std::string const&);
 
-		bool set_pwd(source s, std::uint8_t idx, std::string const&);
-		bool set_pwd(std::string const& port_name, std::uint8_t idx, std::string const&);
+		bool set_pwd(source s, std::string const&);
+		bool set_pwd(std::string const& port_name, std::string const&);
 
 		/**
 		 * Reference to "broker-login" configuration
@@ -83,7 +90,7 @@ namespace node
 		bool set_enabled(std::string const& port_name, cyng::object obj) const;
 
 	private:
-		server_list_t get_server(std::uint8_t) const;
+		segw::server get_server(std::uint8_t) const;
 
 		bool is_login_required(std::string) const;
 		std::string get_port_name(std::string) const;

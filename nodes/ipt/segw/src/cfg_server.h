@@ -24,7 +24,7 @@ namespace node
 		 */
 		class server {
 		public:
-			explicit server(std::string, std::string, std::string, std::uint16_t);
+			explicit server(std::string account, std::string pwd, std::string address, std::uint16_t port);
 			server() = delete;
 			server(server const&) = default;
 			server(server&&) noexcept = default;
@@ -33,6 +33,11 @@ namespace node
 			std::string const& get_pwd() const;
 			std::string const& get_address() const;
 			std::uint16_t get_port() const;
+
+			/**
+			 * @return true if the object contains no data
+			 */
+			bool empty() const;
 
 		private:
 			std::string const account_;

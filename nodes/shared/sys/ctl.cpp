@@ -198,7 +198,13 @@ namespace node
 	{
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
-			, cyng::param_factory("log-level", "INFO")
+				, cyng::param_factory("log-level",
+#ifdef _DEBUG
+					"TRACE"
+#else
+					"INFO"
+#endif
+				)
 			, cyng::param_factory("tag", uidgen_())
 			, cyng::param_factory("generated", std::chrono::system_clock::now())
 			, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR)))

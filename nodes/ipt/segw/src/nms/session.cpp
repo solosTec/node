@@ -533,7 +533,7 @@ namespace node
 						("baudrate", rs485.get_baud_rate().value())
 						("protocol", rs485.get_protocol_by_name())
 						("broker", broker.get_server_vector(source::WIRED_LMN))
-						("listener", redirector.get_server_vector(source::WIRED_LMN))
+						("listener", redirector.get_server_obj(source::WIRED_LMN))	//	could be null
 						("max-readout-frequency", 5)
 						("loop", cyng::param_map_factory
 							("timeout", 60)

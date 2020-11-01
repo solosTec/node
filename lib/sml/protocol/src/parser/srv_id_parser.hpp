@@ -34,19 +34,19 @@ namespace node
 				;
 
 			r_long
-				%= r_hex2
+				%= r_hex2	//	1 == wireless, 0 = wired
 				>> '-'
-				>> r_hex2
-				>> r_hex2
-				>> '-'
-				>> r_hex2
-				>> r_hex2
-				>> r_hex2
+				>> r_hex2	//	manufacturer
 				>> r_hex2
 				>> '-'
+				>> r_hex2	//	serial number
+				>> r_hex2
+				>> r_hex2
 				>> r_hex2
 				>> '-'
-				>> r_hex2
+				>> r_hex2	//	version
+				>> '-'
+				>> r_hex2	//	medium
 				;
 
 			//	00:FF:B0:4B:94:F8

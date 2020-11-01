@@ -34,7 +34,8 @@ namespace node
 		, cyng::logging::log_ptr
 		, boost::uuids::uuid
 		, cyng::vector_t
-		, cyng::tuple_t);
+		, cyng::tuple_t
+		, std::string oui);
 
 	controller::controller(unsigned int index
 		, unsigned int pool_size
@@ -59,7 +60,13 @@ namespace node
 
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
-				, cyng::param_factory("log-level", "INFO")
+				, cyng::param_factory("log-level",
+#ifdef _DEBUG
+					"TRACE"
+#else
+					"INFO"
+#endif
+				)
 				, cyng::param_factory("tag", uidgen())
 				, cyng::param_factory("generated", std::chrono::system_clock::now())
 				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
@@ -139,13 +146,19 @@ namespace node
 	bool controller::start(cyng::async::mux& mux, cyng::logging::log_ptr logger, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag)
 	{
 		//
+		//	Organizationally Unique Identifier database
+		//
+		auto const oui = cyng::value_cast(cfg.get("oui"), "oui.csv");
+
+		//
 		//	connect to cluster
 		//
 		join_cluster(mux
 			, logger
 			, tag
 			, cyng::to_vector(cfg.get("cluster"))
-			, cyng::to_tuple(cfg.get("server")));
+			, cyng::to_tuple(cfg.get("server"))
+			, oui);
 
 		//
 		//	wait for system signals
@@ -158,7 +171,8 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid cluster_tag
 		, cyng::vector_t cfg_cls
-		, cyng::tuple_t cfg_srv)
+		, cyng::tuple_t cfg_srv
+		, std::string oui)
 	{
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cls.size());
 
@@ -194,12 +208,15 @@ namespace node
 			CYNG_LOG_INFO(logger, "max-upload-size: " << cyng::bytes_to_str(max_upload_size));
 		}
 
-		auto const oui = cyng::value_cast<std::string>(dom.get("oui"), "oui.csv");
+		//
+		//	This takes abaout +40 MB.
+		//	10 MB is the normal load.
+		//
 		if (cyng::filesystem::exists(oui, ec)) {
 			CYNG_LOG_INFO(logger, "oui db: [" << oui << "]");
 		}
 		else {
-			CYNG_LOG_ERROR(logger, "oui db does not exists: [" << oui << "]");
+			CYNG_LOG_WARNING(logger, "oui db does not exists: [" << oui << "]");
 		}
 
 #ifdef NODE_SSL_INSTALLED

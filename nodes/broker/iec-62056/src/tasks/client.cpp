@@ -23,7 +23,7 @@ namespace node
 		, logger_(logger)
 		, cache_(db)
 		, ep_(ep)
-		, monitor_()
+		, monitor_(monitor)
 		, socket_(base_.mux_.get_io_service())
 		, buffer_read_()
 		, buffer_write_()

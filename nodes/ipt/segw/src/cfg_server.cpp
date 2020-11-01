@@ -41,6 +41,13 @@ namespace node
 			return port_;
 		}
 
+		bool server::empty() const
+		{
+			return (port_ == 0)
+				&& account_.empty()
+				;
+		}
+
 	}
 
 	cyng::param_map_t to_param_map(segw::server const& target)

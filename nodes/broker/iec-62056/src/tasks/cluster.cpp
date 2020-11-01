@@ -23,7 +23,8 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
 		, cluster_config_t const& cfg
-		, boost::asio::ip::tcp::endpoint ep)
+		, boost::asio::ip::tcp::endpoint ep
+		, bool client_login)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)

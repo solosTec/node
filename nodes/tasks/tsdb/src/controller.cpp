@@ -58,13 +58,18 @@ namespace node
 		//
 		cyng::crypto::rnd_num<int> rng(10, 120);
 
-		return cyng::vector_factory({
-			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
-			, cyng::param_factory("log-level", "INFO")
+		return cyng::vector_factory(
+			{ cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
+			, cyng::param_factory("log-level",
+#ifdef _DEBUG
+					"TRACE"
+#else
+					"INFO"
+#endif
+			)
 			, cyng::param_factory("tag", get_random_tag())
 			, cyng::param_factory("generated", std::chrono::system_clock::now())
 			, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
-			//, cyng::param_factory("load-config", "local")	//	options are local, master, mixed
 			, cyng::param_factory("force-mkdir", false)	//	create output directories if not exists
 
 			, cyng::param_factory("single-file", cyng::tuple_factory(

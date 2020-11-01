@@ -8,13 +8,9 @@
 #ifndef NODE_DASH_TASK_OUI_H
 #define NODE_DASH_TASK_OUI_H
 
-//#include <smf/cluster/bus.h>
-//#include <smf/cluster/config.h>
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
-//#include <cyng/async/policy.h>
 #include <cyng/store/db.h>
-//#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {

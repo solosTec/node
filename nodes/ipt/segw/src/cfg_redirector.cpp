@@ -29,7 +29,7 @@ namespace node
 		: cache_(c)
 	{}
 
-	server_list_t cfg_redirector::get_server(source s) const
+	segw::server cfg_redirector::get_server(source s) const
 	{
 		switch (s) {
 		case source::WIRELESS_LMN:
@@ -38,124 +38,112 @@ namespace node
 		default:
 			break;
 		}
-		return server_list_t{};
+		return segw::server("", "", "", 0);
 	}
 
-	cyng::vector_t cfg_redirector::get_server_vector(source s) const
+	cyng::object cfg_redirector::get_server_obj(source s) const
 	{
-		cyng::vector_t vec;
-		auto const brokers = get_server(s);
-		std::transform(std::begin(brokers), std::end(brokers), std::back_inserter(vec), [](segw::server const& target) {
-			return cyng::make_object(to_param_map(target));
-			});
-		return vec;
+		auto const srv = get_server(s);
+		return (srv.empty())
+			? cyng::make_object()
+			: cyng::make_object(to_param_map(get_server(s)))
+			;
 	}
 
 
-	void cfg_redirector::set_server(source s, std::uint8_t idx, segw::server const& data)
+	void cfg_redirector::set_server(source s, segw::server const& data)
 	{
-		set_address(s, idx, data.get_address());
-		set_port(s, idx, data.get_port());
-		set_account(s, idx, data.get_account());
-		set_pwd(s, idx, data.get_pwd());
+		set_address(s, data.get_address());
+		set_port(s, data.get_port());
+		set_account(s, data.get_account());
+		set_pwd(s, data.get_pwd());
 	}
 
-	void cfg_redirector::set_server(std::string const& port_name, std::uint8_t idx, segw::server const& data)
+	void cfg_redirector::set_server(std::string const& port_name, segw::server const& data)
 	{
-		set_server(get_port_source(port_name), idx, data);
+		set_server(get_port_source(port_name), data);
 	}
 
-	bool cfg_redirector::set_address(source s, std::uint8_t idx, std::string const& address)
-	{
-		auto const port_idx = static_cast<std::uint8_t>(s);
-		return cache_.set_cfg(build_cfg_key({
-				sml::OBIS_ROOT_REDIRECTOR,
-				sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
-				sml::make_obis(sml::OBIS_REDIRECTOR_ADDRESS, idx) }), address);
-	}
-
-	bool cfg_redirector::set_address(std::string const& port_name, std::uint8_t idx, std::string const& address)
-	{
-		return set_address(get_port_source(port_name), idx, address);
-	}
-
-	bool cfg_redirector::set_port(source s, std::uint8_t idx, std::uint16_t port)
+	bool cfg_redirector::set_address(source s, std::string const& address)
 	{
 		auto const port_idx = static_cast<std::uint8_t>(s);
 		return cache_.set_cfg(build_cfg_key({
 				sml::OBIS_ROOT_REDIRECTOR,
 				sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
-				sml::make_obis(sml::OBIS_REDIRECTOR_SERVICE, idx) }), port);
+				sml::make_obis(sml::OBIS_REDIRECTOR_ADDRESS, port_idx) }), address);
 	}
 
-	bool cfg_redirector::set_account(source s, std::uint8_t idx, std::string const& user)
+	bool cfg_redirector::set_address(std::string const& port_name, std::string const& address)
+	{
+		return set_address(get_port_source(port_name), address);
+	}
+
+	bool cfg_redirector::set_port(source s, std::uint16_t port)
 	{
 		auto const port_idx = static_cast<std::uint8_t>(s);
 		return cache_.set_cfg(build_cfg_key({
 				sml::OBIS_ROOT_REDIRECTOR,
 				sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
-				sml::make_obis(sml::OBIS_REDIRECTOR_USER, idx) }), user);
+				sml::make_obis(sml::OBIS_REDIRECTOR_SERVICE, port_idx) }), port);
 	}
 
-	bool cfg_redirector::set_account(std::string const& port_name, std::uint8_t idx, std::string const& user)
-	{
-		return set_account(get_port_source(port_name), idx, user);
-	}
-
-	bool cfg_redirector::set_pwd(source s, std::uint8_t idx, std::string const& pwd)
+	bool cfg_redirector::set_account(source s, std::string const& user)
 	{
 		auto const port_idx = static_cast<std::uint8_t>(s);
 		return cache_.set_cfg(build_cfg_key({
 				sml::OBIS_ROOT_REDIRECTOR,
 				sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
-				sml::make_obis(sml::OBIS_REDIRECTOR_PWD, idx) }), pwd);
+				sml::make_obis(sml::OBIS_REDIRECTOR_USER, port_idx) }), user);
 	}
 
-	bool cfg_redirector::set_pwd(std::string const& port_name, std::uint8_t idx, std::string const& pwd)
+	bool cfg_redirector::set_account(std::string const& port_name, std::string const& user)
 	{
-		return set_pwd(get_port_source(port_name), idx, pwd);
+		return set_account(get_port_source(port_name), user);
 	}
 
-	bool cfg_redirector::set_port(std::string const& port_name, std::uint8_t idx, std::uint16_t port)
+	bool cfg_redirector::set_pwd(source s, std::string const& pwd)
 	{
-		return set_port(get_port_source(port_name), idx, port);
-	}
-
-
-	server_list_t cfg_redirector::get_server(std::uint8_t port_idx) const
-	{
-		server_list_t r;
-
-		//	
-		//	test for up to 16 broker
-		//	
-		for (std::uint8_t idx = 1; idx < 16; ++idx) {
-
-			auto const address = cache_.get_cfg(build_cfg_key({
+		auto const port_idx = static_cast<std::uint8_t>(s);
+		return cache_.set_cfg(build_cfg_key({
 				sml::OBIS_ROOT_REDIRECTOR,
 				sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
-				sml::make_obis(sml::OBIS_REDIRECTOR_ADDRESS, idx) }), "?");
+				sml::make_obis(sml::OBIS_REDIRECTOR_PWD, port_idx) }), pwd);
+	}
 
-			if (!boost::algorithm::equals(address, "?")) {
+	bool cfg_redirector::set_pwd(std::string const& port_name, std::string const& pwd)
+	{
+		return set_pwd(get_port_source(port_name), pwd);
+	}
 
-				auto const port = cache_.get_cfg(build_cfg_key({
-					sml::OBIS_ROOT_REDIRECTOR,
-					sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
-					sml::make_obis(sml::OBIS_REDIRECTOR_SERVICE, idx) }), static_cast<std::uint16_t>(6001u));
-				auto const account = cache_.get_cfg(build_cfg_key({
-					sml::OBIS_ROOT_REDIRECTOR,
-					sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
-					sml::make_obis(sml::OBIS_REDIRECTOR_USER, idx) }), "");
-				auto const pwd = cache_.get_cfg(build_cfg_key({
-					sml::OBIS_ROOT_REDIRECTOR,
-					sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
-					sml::make_obis(sml::OBIS_REDIRECTOR_PWD, idx) }), "");
+	bool cfg_redirector::set_port(std::string const& port_name, std::uint16_t port)
+	{
+		return set_port(get_port_source(port_name), port);
+	}
 
-				r.emplace_back(account, pwd, address, port);
-			}
-		}
 
-		return r;
+	segw::server cfg_redirector::get_server(std::uint8_t port_idx) const
+	{
+		auto const address = cache_.get_cfg(build_cfg_key({
+			sml::OBIS_ROOT_REDIRECTOR,
+			sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+			sml::make_obis(sml::OBIS_REDIRECTOR_ADDRESS, port_idx) }), "");
+
+		auto const port = cache_.get_cfg(build_cfg_key({
+			sml::OBIS_ROOT_REDIRECTOR,
+			sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+			sml::make_obis(sml::OBIS_REDIRECTOR_SERVICE, port_idx) }), static_cast<std::uint16_t>(6001u));
+
+		auto const account = cache_.get_cfg(build_cfg_key({
+			sml::OBIS_ROOT_REDIRECTOR,
+			sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+			sml::make_obis(sml::OBIS_REDIRECTOR_USER, port_idx) }), "");
+
+		auto const pwd = cache_.get_cfg(build_cfg_key({
+			sml::OBIS_ROOT_REDIRECTOR,
+			sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
+			sml::make_obis(sml::OBIS_REDIRECTOR_PWD, port_idx) }), "");
+
+		return segw::server(account, pwd, address, port);
 	}
 
 	bool cfg_redirector::is_login_required(source s) const

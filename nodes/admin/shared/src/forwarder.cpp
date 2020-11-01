@@ -9,6 +9,9 @@
 #include "tables.h"
 #include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
+#include <smf/mbus/defs.h>
+#include <smf/sml/parser/srv_id_parser.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/table/key.hpp>
 #include <cyng/io/serializer.h>
@@ -23,6 +26,7 @@
 #include <cyng/csv.h>
 #include <cyng/json.h>
 #include <cyng/io/io_bytes.hpp>
+#include <cyng/util/slice.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -58,24 +62,6 @@ namespace node
 				, 0
 				, ctx.tag()));
 		}
-		//else if (boost::algorithm::starts_with(channel, "config.iec"))
-		//{
-		//	CYNG_LOG_WARNING(logger, "config.iec - not implemented yet: "
-		//		<< cyng::io::to_type(reader.get("rec")));
-
-		//	ctx.queue(bus_req_db_insert("TIECBridge"
-		//		//	generate new key
-		//		, cyng::table::key_generator(tag)
-		//		//	build data vector
-		//		, cyng::vector_t{ reader["rec"]["data"].get("address")
-		//			, reader["rec"]["data"].get("port")
-		//			, reader["rec"]["data"].get("direction")
-		//			, cyng::make_seconds(2)
-		//		}
-		//		, 0
-		//		, ctx.tag()));
-
-		//}
 		else
 		{
 			CYNG_LOG_WARNING(logger, "ws.read - unknown insert channel [" << channel << "]");
@@ -220,17 +206,23 @@ namespace node
 		auto const vec = cyng::to_vector(reader["rec"].get("key"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
 
-		auto key = cyng::table::key_generator(vec.at(0));
+		auto const key = cyng::table::key_generator(vec.at(0));
 
 		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
-		for (auto p : tpl)
+		for (auto obj : tpl)
 		{
-			cyng::param_t param;
-			ctx.queue(bus_req_db_modify(tbl_name
-				, key
-				, cyng::value_cast(p, param)
-				, 0
-				, ctx.tag()));
+			auto const param = cyng::to_param(obj);
+
+			//
+			//	skip primary key
+			//
+			if (!boost::algorithm::equals(param.first, "pk")) {
+				ctx.queue(bus_req_db_modify(tbl_name
+					, key
+					, param
+					, 0
+					, ctx.tag()));
+			}
 		}
 	}
 
@@ -247,13 +239,12 @@ namespace node
 		//
 		auto const vec = cyng::to_vector(reader["rec"].get("key"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
-		auto key = cyng::table::key_generator(vec.at(0));
+		auto const key = cyng::table::key_generator(vec.at(0));
 
 		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
-		for (auto p : tpl)
+		for (auto obj : tpl)
 		{
-			cyng::param_t param;
-			param = cyng::value_cast(p, param);
+			auto const param = cyng::to_param(obj);
 
 			if (boost::algorithm::equals(param.first, "serverId")) {
 				//
@@ -264,14 +255,17 @@ namespace node
 				boost::algorithm::to_upper(server_id);
 				ctx.queue(bus_req_db_modify(tbl_name
 					, key
-					, cyng::param_factory("serverId", server_id)
+					, cyng::param_factory(param.first, server_id)
 					, 0
 					, ctx.tag()));
+			}
+			else if (boost::algorithm::equals(param.first, "pk")) {
+				;	//	skip
 			}
 			else {
 				ctx.queue(bus_req_db_modify(tbl_name
 					, key
-					, cyng::value_cast(p, param)
+					, param
 					, 0
 					, ctx.tag()));
 			}
@@ -339,14 +333,34 @@ namespace node
 		auto const key = cyng::table::key_generator(vec.at(0));
 
 		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
-		for (auto p : tpl)
+		for (auto obj : tpl)
 		{
-			cyng::param_t param;
-			ctx.queue(bus_req_db_modify(tbl_name
-				, key
-				, cyng::value_cast(p, param)
-				, 0
-				, ctx.tag()));
+			auto const param = cyng::to_param(obj);
+			if (boost::algorithm::equals(param.first, "pk")) {
+				;	//	skip primary key
+			}
+			else if (boost::algorithm::equals(param.first, "tom")) {
+				//	TC_TIME_POINT (example: "2015-11-01")
+				auto const str = cyng::value_cast(param.second, "2020-10-30") + "T00:00:00.00Z";
+				auto const r = cyng::parse_rfc3339_timestamp(str);
+				if (r.second) {
+					ctx.queue(bus_req_db_modify(tbl_name
+						, key
+						, cyng::param_factory(param.first, r.first)
+						, 1u
+						, ctx.tag()));
+				}
+				else {
+					CYNG_LOG_WARNING(logger, "invalid TOM format [" << str << "]");
+				}
+			}
+			else {
+				ctx.queue(bus_req_db_modify(tbl_name
+					, key
+					, param
+					, 0
+					, ctx.tag()));
+			}
 		}
 	}
 
@@ -360,17 +374,59 @@ namespace node
 		auto const vec = cyng::to_vector(reader["rec"].get("key"));
 		BOOST_ASSERT_MSG(vec.size() == 1, "TIECBridge key has wrong size");
 
-		auto key = cyng::table::key_generator(vec.at(0));
+		auto const key = cyng::table::key_generator(vec.at(0));
 
 		auto const tpl = cyng::to_tuple(reader["rec"].get("data"));
-		for (auto p : tpl)
+		BOOST_ASSERT(!tpl.empty());
+		for (auto obj : tpl)
 		{
-			cyng::param_t param;
-			ctx.queue(bus_req_db_modify(tbl_name
-				, key
-				, cyng::value_cast(p, param)
-				, 0
-				, ctx.tag()));
+			cyng::param_t param = cyng::to_param(obj);
+
+			if (boost::algorithm::equals(param.first, "pk")) {
+				;	//	skip primary key
+			}
+			else if (boost::algorithm::equals(param.first, "address")) {
+				//	TC_IP_ADDRESS
+				boost::system::error_code ec;
+				auto const str = cyng::value_cast(param.second, "10.0.0.1");
+				ctx.queue(bus_req_db_modify(tbl_name
+					, key
+					, cyng::param_factory(param.first, boost::asio::ip::make_address(str, ec))
+					, 1u
+					, ctx.tag()));
+
+			}
+			else if (boost::algorithm::equals(param.first, "port")) {
+				//	TC_UINT16
+				auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 6001u);
+				ctx.queue(bus_req_db_modify(tbl_name
+					, key
+					, cyng::param_factory(param.first, port)
+					, 1u
+					, ctx.tag()));
+			}
+			else if (boost::algorithm::equals(param.first, "interval")) {
+				//	TC_SECOND
+				auto const str = cyng::value_cast(param.second, "00:30::00.0000");
+				auto const r = cyng::parse_timespan_seconds(str);
+				if (r.second) {
+					ctx.queue(bus_req_db_modify(tbl_name
+						, key
+						, cyng::param_factory(param.first, r.first)
+						, 1u
+						, ctx.tag()));
+				}
+				else {
+					CYNG_LOG_WARNING(logger, "invalid interval format [" << str << "]");
+				}
+			}
+			else {
+				ctx.queue(bus_req_db_modify(tbl_name
+					, key
+					, param
+					, 1u
+					, ctx.tag()));
+			}
 		}
 	}
 
@@ -1063,7 +1119,7 @@ namespace node
 			//	extract Meter_ID
 			//	have to contain at least 8 bytes
 			//
-			auto const mc = cyng::value_cast<std::string>(pm.at("Meter_ID"), "");
+			auto const mc = cyng::value_cast(pm.at("Meter_ID"), "");
 			if (mc.size() < 8)	return;
 
 			std::string meter_id = (mc.size() > 8)
@@ -1081,15 +1137,18 @@ namespace node
 				: rec.key()
 				;
 
+			auto const manufacturer_code = cleanup_manufacturer_code(cyng::value_cast<std::string>(pm.at("Manufacturer"), ""));
+			auto const server_id = cleanup_server_id(meter_id, manufacturer_code);
+
 			//
 			//	Create a new TMeter record from uploaded data and fill missing data
 			//	if available
 			//
 			auto const row = cyng::table::data_generator(
-				meter_id,	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				server_id,	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 				meter_id,	//	meter number (i.e. 16000913) 4 bytes 
 				mc,	//	metering code - changed at 2019-01-31
-				cleanup_manufacturer_code(cyng::value_cast<std::string>(pm.at("Manufacturer"), "")),	//	manufacturer
+				manufacturer_code,	//	manufacturer
 				std::chrono::system_clock::now(),			//	time of manufacture
 				pm.at("Meter_Type"),	//	firmware version (i.e. 11600000)
 				(rec.empty() ? cyng::make_object("") : rec["vParam"]),		//	parametrierversion (i.e. 16A098828.pse)
@@ -1123,7 +1182,7 @@ namespace node
 				auto const str_port = cyng::value_cast<std::string>(pm.at("Port"), "6000");
 				auto const port = static_cast<std::uint16_t>(std::stoul(str_port));
 				auto const str_address = cyng::value_cast<std::string>(pm.at("GWY_IP"), "0.0.0.0");
-				if (str_address.empty()) {
+				if (str_address.empty()) { 
 
 					std::stringstream ss;
 					ss
@@ -1141,8 +1200,8 @@ namespace node
 				auto const row_iec = cyng::table::data_generator(
 					address,	//	[ip] incoming/outgoing IP connection
 					port,		//	[ip] incoming/outgoing IP connection
-										//	[bool] incoming/outgoing
-					(rec_iec.empty() ? cyng::make_object(false) : rec["direction"]),
+					//	[bool] incoming/outgoing (default)
+					(rec_iec.empty() ? cyng::make_object(true) : rec["direction"]),
 					//	[seconds] pull cycle
 					(rec_iec.empty() ? cyng::make_seconds(15 * 60) : rec["interval"]));
 
@@ -1749,4 +1808,35 @@ namespace node
 		return manufacturer;
 	}
 
+	std::string cleanup_server_id(std::string const& meter_id, std::string const& manufacturer_code)
+	{
+		if (manufacturer_code.size() == 3) {
+			std::uint16_t mcode = sml::encode_id(manufacturer_code);
+			auto const ac = cyng::to_array<std::uint8_t>(mcode);
+
+			auto const r = sml::parse_srv_id(meter_id);
+			if (r.second) {
+
+				//
+				//	build server id
+				//
+				std::array<char, 9>	server_id = {
+					2,	//	wired M-Bus
+					ac.at(0),	//	manufacturer
+					ac.at(1),
+					r.first.at(3),	//	meter ID
+					r.first.at(2),
+					r.first.at(1),
+					r.first.at(0),
+					1,	//	version
+					2	//	2 == electricity
+				};
+
+				cyng::buffer_t b(server_id.begin(), server_id.end());
+				return sml::from_server_id(b);
+			}
+		}
+
+		return meter_id;
+	}
 }

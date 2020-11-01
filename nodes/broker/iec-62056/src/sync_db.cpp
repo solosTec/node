@@ -320,17 +320,16 @@ namespace node
 			//
 			auto const rec = db_.lookup("TIECBridge", key);
 			if (!rec.empty()) {
+
+				//
+				//	true is outgoing
+				//
 				auto direction = cyng::value_cast(rec["direction"], false);
-				if (!direction) {
+				if (direction) {
 
-					//	{
-					//	("key":%(("pk":47f5f627-5c6c-4119-8660-60b4301c8eda))),
-					//	("data":%(("address":10.132.24.165),("direction":false),("gen":1),("interval":00:15:0.000000),("port":1770)))
-					//	}
-					//auto const tpl = rec.convert();
-
-					//CYNG_LOG_INFO(logger_, "start client task for "
-					//	<< cyng::io::to_str(tpl));
+					//
+					//	start client with an outgoing connection
+					//
 					ctx.queue(cyng::generate_invoke("iec.client.start"
 						, rec["pk"]
 						, rec["address"]
@@ -338,6 +337,21 @@ namespace node
 						, rec["interval"]
 					));
 
+				}
+				else {
+
+					//
+					//	ToDo: start listener
+					//
+					CYNG_LOG_INFO(logger_, "ToDo: start listener for "
+						<< cyng::io::to_str(rec.convert_data()));
+
+					//ctx.queue(cyng::generate_invoke("iec.listener.start"
+					//	, rec["pk"]
+					//	, rec["address"]
+					//	, rec["port"]
+					//	, rec["interval"]
+					//));
 				}
 			}
 		}

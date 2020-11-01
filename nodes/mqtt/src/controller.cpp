@@ -44,25 +44,31 @@ namespace node
 
 		return cyng::vector_factory({
 			cyng::tuple_factory(cyng::param_factory("log-dir", tmp.string())
-			, cyng::param_factory("log-level", "INFO")
-				, cyng::param_factory("tag", get_random_tag())
-				, cyng::param_factory("generated", std::chrono::system_clock::now())
-				, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
+				, cyng::param_factory("log-level",
+#ifdef _DEBUG
+					"TRACE"
+#else
+					"INFO"
+#endif
+				)
+			, cyng::param_factory("tag", get_random_tag())
+			, cyng::param_factory("generated", std::chrono::system_clock::now())
+			, cyng::param_factory("version", cyng::version(NODE_VERSION_MAJOR, NODE_VERSION_MINOR))
 
-				, cyng::param_factory("server", cyng::tuple_factory(
-					cyng::param_factory("address", "0.0.0.0"),
-                    cyng::param_factory("service", "1883"),	//	without encryption
-                    cyng::param_factory("ssl", "8883")	//	port 8883 for SSL encrypion
-                ))
-				, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
-					cyng::param_factory("host", "127.0.0.1"),
-					cyng::param_factory("service", "7701"),
-					cyng::param_factory("account", "root"),
-					cyng::param_factory("pwd", NODE_PWD),
-					cyng::param_factory("salt", NODE_SALT),
-					cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
-					cyng::param_factory("group", 0)	//	customer ID
-				) }))
+			, cyng::param_factory("server", cyng::tuple_factory(
+				cyng::param_factory("address", "0.0.0.0"),
+                   cyng::param_factory("service", "1883"),	//	without encryption
+                   cyng::param_factory("ssl", "8883")	//	port 8883 for SSL encrypion
+               ))
+			, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
+				cyng::param_factory("host", "127.0.0.1"),
+				cyng::param_factory("service", "7701"),
+				cyng::param_factory("account", "root"),
+				cyng::param_factory("pwd", NODE_PWD),
+				cyng::param_factory("salt", NODE_SALT),
+				cyng::param_factory("monitor", monitor_dist(rng_)),	//	seconds
+				cyng::param_factory("group", 0)	//	customer ID
+			) }))
 			)
 		});
 	}
