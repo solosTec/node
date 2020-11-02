@@ -196,7 +196,7 @@ namespace node
 		switch (s) {
 		case source::WIRELESS_LMN:
 		case source::WIRED_LMN:
-			return get_port_name(build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_NAME, static_cast<std::uint8_t>(s)) }));
+			return get_port_name(build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, static_cast<std::uint8_t>(s)), sml::OBIS_SERIAL_NAME }));
 		default:
 			break;
 		}

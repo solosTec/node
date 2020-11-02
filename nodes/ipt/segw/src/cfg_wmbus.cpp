@@ -42,7 +42,7 @@ namespace node
 
 	std::string cfg_wmbus::get_port() const
 	{
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_SERIAL_NAME, port_idx) }),
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::OBIS_SERIAL_NAME }),
 #if BOOST_OS_WINDOWS
 			std::string("COM8")
 #else
