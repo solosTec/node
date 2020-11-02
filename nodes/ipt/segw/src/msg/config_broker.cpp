@@ -172,31 +172,55 @@ namespace node
 
 		void config_broker::set_proc_params_port(obis_path_t const& path, cyng::buffer_t srv_id, cyng::param_t const& values) const
 		{
-			if (path.back().is_matching_5(OBIS_SERIAL_DATABITS).second) {
-				//	SERIAL_DATABITS
-				auto const val = cyng::numeric_cast<std::uint32_t>(values.second, 8u);
-				cache_.set_cfg<std::uint32_t>(build_cfg_key(path), val);
-			}
-			else if (path.back().is_matching_5(OBIS_SERIAL_PARITY).second) {
-				//	SERIAL_PARITY
-				cache_.set_cfg(build_cfg_key(path), values.second);
-			}
-			else if (path.back().is_matching_5(OBIS_SERIAL_FLOW_CONTROL).second) {
-				//	SERIAL_FLOW_CONTROL
-				cache_.set_cfg(build_cfg_key(path), values.second);
-			}
-			else if (path.back().is_matching_5(OBIS_SERIAL_STOPBITS).second) {
-				//	SERIAL_STOPBITS
-				cache_.set_cfg(build_cfg_key(path), values.second);
-			}
-			else if (path.back().is_matching_5(OBIS_SERIAL_SPEED).second) {
-				//	SERIAL_SPEED
-				auto const val = cyng::numeric_cast<std::uint32_t>(values.second, 8u);
-				cache_.set_cfg<std::uint32_t>(build_cfg_key(path), val);
+
+			CYNG_LOG_DEBUG(logger_, sml::transform_to_str(path, true, ':') << " = " << cyng::io::to_type(values.second));
+
+			BOOST_ASSERT(!path.empty());
+			auto const code = sml::parse_obis(values.first);
+
+			BOOST_ASSERT(code.second);
+			BOOST_ASSERT(code.first == path.back());
+
+			if (values.second.get_class().tag() == cyng::TC_PARAM_MAP) {
+				auto const pm = cyng::to_param_map(values.second);
+				for (auto const& param : pm) {
+					auto const c = sml::parse_obis(param.first);
+					if (c.second) {
+						obis_path_t p(path);
+						p.push_back(c.first);
+						//CYNG_LOG_TRACE(logger_, "build path <" << sml::transform_to_str(p, true, ':') << ">");
+						set_proc_params_port(p, srv_id, param);
+					}
+				}
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "unknown hardware port value: " << to_hex(path, ':') << " = " << cyng::io::to_type(values.second));
 
+				if (path.back().is_matching_5(OBIS_SERIAL_DATABITS).second) {
+					//	SERIAL_DATABITS
+					auto const val = cyng::numeric_cast<std::uint32_t>(values.second, 8u);
+					cache_.set_cfg<std::uint32_t>(build_cfg_key(path), val);
+				}
+				else if (path.back().is_matching_5(OBIS_SERIAL_PARITY).second) {
+					//	SERIAL_PARITY
+					cache_.set_cfg(build_cfg_key(path), values.second);
+				}
+				else if (path.back().is_matching_5(OBIS_SERIAL_FLOW_CONTROL).second) {
+					//	SERIAL_FLOW_CONTROL
+					cache_.set_cfg(build_cfg_key(path), values.second);
+				}
+				else if (path.back().is_matching_5(OBIS_SERIAL_STOPBITS).second) {
+					//	SERIAL_STOPBITS
+					cache_.set_cfg(build_cfg_key(path), values.second);
+				}
+				else if (path.back().is_matching_5(OBIS_SERIAL_SPEED).second) {
+					//	SERIAL_SPEED
+					auto const val = cyng::numeric_cast<std::uint32_t>(values.second, 8u);
+					cache_.set_cfg<std::uint32_t>(build_cfg_key(path), val);
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "unknown hardware port value: " << to_hex(path, ':') << " = " << cyng::io::to_type(values.second));
+
+				}
 			}
 		}
 
