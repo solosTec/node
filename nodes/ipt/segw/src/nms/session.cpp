@@ -255,9 +255,9 @@ namespace node
 				|| boost::algorithm::equals(cmd, "fw-version")) {
 				return cmd_version(cmd, tag);
 			}
-			else if (boost::algorithm::equals(cmd, "cminfo")
-				|| boost::algorithm::equals(cmd, "cm-info")
-				|| boost::algorithm::equals(cmd, "info-cm")) {
+			else if (boost::algorithm::equals(cmd, "cminfos")
+				|| boost::algorithm::equals(cmd, "cm-infos")
+				|| boost::algorithm::equals(cmd, "infos-cm")) {
 				return cmd_cm(cmd, tag, dom);
 			}
 			else {
@@ -656,7 +656,7 @@ namespace node
 			//
 			//	remove old file
 			//
-			cyng::filesystem::remove(script, ec);
+			 cyng::filesystem::remove(script, ec);
 
 			std::fstream fs(script_path, std::fstream::trunc | std::fstream::out);
 			if (fs.is_open()) {
@@ -732,7 +732,7 @@ namespace node
 			//
 			//	create a script file
 			//
-			std::string const script_path("/usr/local/etc/cm.txt");
+			std::string const script_path("/usr/local/etc/cminfos.txt");
 			cyng::filesystem::path const script(script_path);
 			cyng::error_code ec;
 

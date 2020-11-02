@@ -10,11 +10,13 @@
 #include <smf/sml/status.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
+#include <smf/sml/parser/obis_parser.h>
 
 #include <cyng/factory.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/io/serializer.h>
+#include <cyng/dom/reader.h>
 
 namespace node
 {
@@ -111,52 +113,68 @@ namespace node
 
 	cyng::param_map_t transform_broker_hw_params(cyng::logging::log_ptr logger, cyng::param_map_t const& pm)
 	{
-		//	%(("910000000101":COM3),("910000000102":COM6),("910000000201":8),("910000000202":8),("910000000301":none),("910000000302":even),("910000000401":none),("910000000402":none),("910000000501":one),("910000000502":one),("910000000601":e100),("910000000602":0960))
+		//	%(
+		//		("910000000001":%(
+		//			("9100000001FF":"COM8"),("910000000201":8u8),("910000000301":"none"),("910000000401":"none"),("910000000501":"one"),("910000000601":e100u16))),
+		//		("910000000002":%(
+		//			("910000000102":"COM6"),("910000000202":8u8),("910000000302":"even"),("910000000402":"none"),("910000000502":"one"),("910000000602":0960u16)))
+		//	)
 
-		BOOST_ASSERT_MSG(pm.size() % 6 == 0, "invalid broker hardware data");
-
-		//name: {}
+		//BOOST_ASSERT_MSG(pm.size() % 6 == 0, "invalid broker hardware data");
+		//CYNG_LOG_WARNING(logger, "CONVERT: "
+		//	<< cyng::io::to_type(pm));
 
 		cyng::param_map_t result;
-		for (std::uint8_t idx = 1; idx < (pm.size() / 6) + 1; ++idx) {
+		for (auto const& param : pm) {
+			//CYNG_LOG_DEBUG(logger, param.first << " = " << cyng::io::to_type(param.second));
+			auto const r = sml::parse_obis(param.first);
+			if (r.second) {
 
-			//	port name
-			auto pos = pm.find(sml::make_obis(sml::OBIS_SERIAL_NAME, idx).to_str());
-			if (pos != pm.end()) {
+				//	
+				//	get index
+				//
+				auto const nr = r.first.get_storage();
 
-				auto const name = cyng::value_cast<std::string>(pos->second, "");
 
-				auto pos_databits = pm.find(sml::make_obis(sml::OBIS_SERIAL_DATABITS, idx).to_str());
-				if (pos_databits != pm.end()) {
-					auto pos_parity = pm.find(sml::make_obis(sml::OBIS_SERIAL_PARITY, idx).to_str());
-					if (pos_parity != pm.end()) {
-						auto pos_flow_control = pm.find(sml::make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, idx).to_str());
-						if (pos_flow_control != pm.end()) {
-							auto pos_stopbits = pm.find(sml::make_obis(sml::OBIS_SERIAL_STOPBITS, idx).to_str());
-							if (pos_stopbits != pm.end()) {
-								auto pos_speed = pm.find(sml::make_obis(sml::OBIS_SERIAL_SPEED, idx).to_str());
+#ifdef _DEBUG
+				//
+				//	loop over values
+				//
+				auto const serial = cyng::to_param_map(param.second);
+				BOOST_ASSERT_MSG(serial.size() == 6, "invalid broker hardware data");
 
-								//
-								//	serial port complete - build tuple
-								//
-								auto const tpl = cyng::tuple_factory(
-									cyng::param_t("databits", pos_databits->second),
-									cyng::param_t("parity", pos_parity->second),
-									cyng::param_t("flowcontrol", pos_flow_control->second),
-									cyng::param_t("stopbits", pos_stopbits->second),
-									cyng::param_t("baudrate", pos_speed->second));
+				for (auto const& value : serial) {
+					CYNG_LOG_DEBUG(logger, value.first << " = " << cyng::io::to_type(value.second));
 
-								result.emplace(name, cyng::make_object(tpl));
+					 //	9100000001FF = "COM8"
+					 //	910000000201 = 8u8
+					 //	910000000301 = "none"
+					 //	910000000401 = "none"
+					 //	910000000501 = "one"
+					 //	910000000601 = e100u16
 
-							}
-						}
-					}
 				}
+#endif
+				auto const dom = cyng::make_reader(param.second);
+
+				auto const tpl = cyng::tuple_factory(
+					cyng::param_t("databits", dom.get(sml::make_obis(sml::OBIS_SERIAL_DATABITS, nr).to_str())),
+					cyng::param_t("parity", dom.get(sml::make_obis(sml::OBIS_SERIAL_PARITY, nr).to_str())),
+					cyng::param_t("flowcontrol", dom.get(sml::make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, nr).to_str())),
+					cyng::param_t("stopbits", dom.get(sml::make_obis(sml::OBIS_SERIAL_STOPBITS, nr).to_str())),
+					cyng::param_t("baudrate", dom.get(sml::make_obis(sml::OBIS_SERIAL_SPEED, nr).to_str())),
+					cyng::param_factory("index", nr));
+
+				auto const name = cyng::value_cast(dom.get(sml::OBIS_SERIAL_NAME.to_str()), param.first);
+				result.emplace(name, cyng::make_object(tpl));
 
 			}
+			else {
+				CYNG_LOG_WARNING(logger, "invalid OBIS code: " << param.first << ": " << cyng::io::to_type(param.second));
+			}
 		}
-
 		return result;
+
 	}
 
 	cyng::param_map_t transform_data_collector_params(cyng::logging::log_ptr logger, cyng::param_map_t const& collectors)

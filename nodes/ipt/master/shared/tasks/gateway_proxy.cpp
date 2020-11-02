@@ -134,9 +134,8 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> gain access and processing input queue with "
-				<< input_queue_.size()
-				<< " entries");
+				<< "> opens internal connection - input queue size: "
+				<< input_queue_.size());
 
 			//
 			//	update state
@@ -190,23 +189,23 @@ namespace node
 			<< "> EOM #"
 			<< midx);
 
-		if (state_ == GWPS::CONNECTED_) {
-			//
-			//	clear remaining entries
-			//
-			output_map_.clear();
+		//if (state_ == GWPS::CONNECTED_) {
+		//	//
+		//	//	clear remaining entries
+		//	//
+		//	output_map_.clear();
 
-			//
-			//	reset connection state to NOT-CONNECTED == authorized
-			//
-			vm_.async_run(cyng::generate_invoke("session.redirect", static_cast<std::size_t>(cyng::async::NO_TASK)));
+		//	//
+		//	//	reset connection state to NOT-CONNECTED == authorized
+		//	//
+		//	vm_.async_run(cyng::generate_invoke("session.redirect", static_cast<std::size_t>(cyng::async::NO_TASK)));
 
-			//
-			//	update state
-			//
-			state_ = GWPS::OFFLINE_;
+		//	//
+		//	//	update state
+		//	//
+		//	state_ = GWPS::OFFLINE_;
 
-		}
+		//}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

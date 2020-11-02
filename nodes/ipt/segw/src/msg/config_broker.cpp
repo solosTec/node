@@ -106,12 +106,12 @@ namespace node
 			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, wmbus.port_idx), make_obis(OBIS_SERIAL_STOPBITS, wmbus.port_idx) }, make_value(node::serial::to_str(wmbus.get_stopbits())));
 			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, wmbus.port_idx), make_obis(OBIS_SERIAL_SPEED, wmbus.port_idx) }, make_value(wmbus.get_baud_rate().value()));
 
-			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, wmbus.port_idx), make_obis(OBIS_SERIAL_NAME, rs485.port_idx) }, make_value(rs485.get_port()));
-			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, wmbus.port_idx), make_obis(OBIS_SERIAL_DATABITS, rs485.port_idx) }, make_value(rs485.get_databits().value()));
-			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, wmbus.port_idx), make_obis(OBIS_SERIAL_PARITY, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_parity())));
-			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, wmbus.port_idx), make_obis(OBIS_SERIAL_FLOW_CONTROL, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_flow_control())));
-			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, wmbus.port_idx), make_obis(OBIS_SERIAL_STOPBITS, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_stopbits())));
-			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, wmbus.port_idx), make_obis(OBIS_SERIAL_SPEED, rs485.port_idx) }, make_value(rs485.get_baud_rate().value()));
+			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, rs485.port_idx), OBIS_SERIAL_NAME }, make_value(rs485.get_port()));
+			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, rs485.port_idx), make_obis(OBIS_SERIAL_DATABITS, rs485.port_idx) }, make_value(rs485.get_databits().value()));
+			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, rs485.port_idx), make_obis(OBIS_SERIAL_PARITY, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_parity())));
+			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, rs485.port_idx), make_obis(OBIS_SERIAL_FLOW_CONTROL, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_flow_control())));
+			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, rs485.port_idx), make_obis(OBIS_SERIAL_STOPBITS, rs485.port_idx) }, make_value(node::serial::to_str(rs485.get_stopbits())));
+			merge_msg(msg, { OBIS_ROOT_SERIAL, make_obis(OBIS_ROOT_SERIAL, rs485.port_idx), make_obis(OBIS_SERIAL_SPEED, rs485.port_idx) }, make_value(rs485.get_baud_rate().value()));
 
 			//
 			//	append to message queue
