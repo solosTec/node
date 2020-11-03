@@ -412,7 +412,7 @@ namespace node
 				//	4. status
 				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
 				//	6. val
-				auto const val = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+				auto const val = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "");
 				//	7. type
 				auto const type = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
 				auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
@@ -531,7 +531,7 @@ namespace node
 				//	4. status
 				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
 				//	6. val
-				auto const val = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+				auto const val = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "");
 				//	7. type
 				auto const type = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
 				auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
@@ -652,7 +652,7 @@ namespace node
 				//	(5) S12.OBIS
 				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
 				//	(6) S12.val
-				auto const val = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+				auto const val = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "");
 				//	(7) S12.type
 				auto const type = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
 				//	(8) S12.scaler

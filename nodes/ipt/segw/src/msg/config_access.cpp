@@ -156,7 +156,7 @@ namespace node
 					//
 
 					auto const nr = cyng::value_cast<std::uint8_t>(rec["nr"], 1u);
-					auto const name = cyng::value_cast<std::string>(rec["user"], "");
+					auto const name = cyng::value_cast(rec["user"], "");
 					auto const pwd = cyng::value_cast(rec["pwd"], cyng::crypto::digest_sha256());
 					auto const h = cyng::io::to_str(pwd);	//	hash as string
 

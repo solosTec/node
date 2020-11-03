@@ -86,7 +86,7 @@ namespace node
 		vm.register_function("sml.eom", 2, std::bind(&router::sml_eom, this, std::placeholders::_1));
 		vm.register_function("sml.log", 1, [this](cyng::context& ctx) {
 			cyng::vector_t const frame = ctx.get_frame();
-			CYNG_LOG_INFO(logger_, "sml.log - " << cyng::value_cast<std::string>(frame.at(0), ""));
+			CYNG_LOG_INFO(logger_, "sml.log - " << cyng::value_cast(frame.at(0), ""));
 		});
 
 		//

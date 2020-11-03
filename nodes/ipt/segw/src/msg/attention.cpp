@@ -71,7 +71,7 @@ namespace node
 				if (!rec.empty()) {
 
 					obis const code(cyng::to_buffer(rec["code"]));
-					auto const msg = cyng::value_cast<std::string>(rec["msg"], "");
+					auto const msg = cyng::value_cast(rec["msg"], "");
 
 					//
 					//	send entry

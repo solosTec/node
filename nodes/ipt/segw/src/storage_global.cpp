@@ -440,7 +440,7 @@ namespace node
 
 	bool init_storage(cyng::param_map_t&& cfg, cyng::object obj)
 	{
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {
@@ -585,7 +585,7 @@ namespace node
 		//
 		//	create a database session
 		//
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {
@@ -1163,7 +1163,7 @@ namespace node
 							ss << cyng::generate_random_mac48();
 							ss >> rnd_mac_str;
 						}
-						auto const mac = cyng::value_cast<std::string>(param.second, rnd_mac_str);
+						auto const mac = cyng::value_cast(param.second, rnd_mac_str);
 
 						auto const r = cyng::parse_mac48(mac);
 						init_config_record(s, build_cfg_key({
@@ -1174,7 +1174,7 @@ namespace node
 					else if (boost::algorithm::equals(param.first, "class")) {
 
 						//	"class": "129-129:199.130.83*255", (81 81 C7 82 53 FF)
-						auto const id = cyng::value_cast<std::string>(param.second, "129-129:199.130.83*255");
+						auto const id = cyng::value_cast(param.second, "129-129:199.130.83*255");
 						auto const r = sml::parse_obis(id);
 						if (r.second) {
 							init_config_record(s, build_cfg_key({
@@ -1190,7 +1190,7 @@ namespace node
 					else if (boost::algorithm::equals(param.first, "manufacturer")) {
 
 						//	"manufacturer": "ACME Inc.",
-						auto const id = cyng::value_cast<std::string>(param.second, "solosTec");
+						auto const id = cyng::value_cast(param.second, "solosTec");
 						init_config_record(s, build_cfg_key({
 							sml::OBIS_DATA_MANUFACTURER
 							}), cyng::make_object(id));
@@ -1309,7 +1309,7 @@ namespace node
 					auto const param = cyng::to_param(obj);
 
 					if (boost::algorithm::equals(param.first, "address")) {
-						auto const address = boost::asio::ip::make_address(cyng::value_cast<std::string>(param.second, "0.0.0.0"));
+						auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"));
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ADDRESS }), cyng::make_object(address));
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
@@ -1347,7 +1347,7 @@ namespace node
 		//
 		//	clear table TCfg
 		//
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {
@@ -1370,7 +1370,7 @@ namespace node
 		//
 		//	create a database session
 		//
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {
@@ -1410,7 +1410,7 @@ namespace node
 						//	4. status
 						sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
 						//	6. val
-						auto const val = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+						auto const val = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "");
 						//	7. type
 						auto const type = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
 						auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
@@ -1466,7 +1466,7 @@ namespace node
 		//
 		//	create a database session
 		//
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {
@@ -1491,7 +1491,7 @@ namespace node
 					auto const nr = cyng::value_cast<std::uint8_t>(res->get(2, cyng::TC_UINT8, 0), 0);
 					auto const interval = cyng::value_cast<std::uint32_t>(res->get(3, cyng::TC_UINT32, 0), 0);
 					auto const delay = cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), 0);
-					auto const target = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+					auto const target = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "");
 					sml::obis const service(cyng::to_buffer(res->get(7, cyng::TC_BUFFER, 6)));
 					auto const tsdix = cyng::value_cast<std::uint64_t>(res->get(8, cyng::TC_UINT64, 0), 0);	//	lowerBound
 					sml::obis const profile(cyng::to_buffer(res->get(9, cyng::TC_BUFFER, 6)));
@@ -1520,7 +1520,7 @@ namespace node
 		//
 		//	create a database session
 		//
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {
@@ -1547,11 +1547,11 @@ namespace node
 					//	lastSeen
 					auto const lastSeen = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
 					//	class
-					auto const devClass = cyng::value_cast<std::string>(res->get(4, cyng::TC_STRING, 0), "");
+					auto const devClass = cyng::value_cast(res->get(4, cyng::TC_STRING, 0), "");
 					//	active
 					auto const active = cyng::value_cast(res->get(5, cyng::TC_BOOL, 0), false);
 					//	descr
-					auto const descr = cyng::value_cast<std::string>(res->get(6, cyng::TC_STRING, 0), "");
+					auto const descr = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "");
 					//	status
 					auto const status = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
 
@@ -1598,7 +1598,7 @@ namespace node
 		//
 		//	create a database session
 		//
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {
@@ -1611,9 +1611,9 @@ namespace node
 			if (r.second) {
 				std::string section{ "000000000000" };
 				while (auto res = stmt->get_result()) {
-					auto const path = cyng::value_cast<std::string>(res->get(1, cyng::TC_STRING, 0), "");
-					auto const val = cyng::value_cast<std::string>(res->get(3, cyng::TC_STRING, 0), "");
-					auto const def = cyng::value_cast<std::string>(res->get(4, cyng::TC_STRING, 0), "");
+					auto const path = cyng::value_cast(res->get(1, cyng::TC_STRING, 0), "");
+					auto const val = cyng::value_cast(res->get(3, cyng::TC_STRING, 0), "");
+					auto const def = cyng::value_cast(res->get(4, cyng::TC_STRING, 0), "");
 					auto const type = cyng::value_cast<std::uint32_t>(res->get(5, cyng::TC_UINT32, 0), 0);
 					auto const obj = cyng::table::restore(val, type);
 
@@ -1775,7 +1775,7 @@ namespace node
 			ss << cyng::generate_random_mac48();
 			ss >> rnd_mac_str;
 		}
-		auto const mac = cyng::value_cast<std::string>(obj, rnd_mac_str);
+		auto const mac = cyng::value_cast(obj, rnd_mac_str);
 		auto const r = cyng::parse_mac48(mac);
 		return (r.second)
 			? sml::to_gateway_srv_id(r.first)
@@ -1846,7 +1846,7 @@ namespace node
 		//
 		//	create a database session
 		//
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["type"], "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["type"], "SQLite"));
 		cyng::db::session s(con_type);
 		auto r = s.connect(cfg);
 		if (r.second) {

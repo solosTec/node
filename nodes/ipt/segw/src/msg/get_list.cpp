@@ -94,7 +94,7 @@ namespace node
 							obis const code(cyng::to_buffer(rec_data["OBIS"]));
 
 							auto const type = cyng::value_cast<std::uint32_t>(rec_data["type"], 0);
-							auto const value = cyng::value_cast<std::string>(rec_data["val"], "");
+							auto const value = cyng::value_cast(rec_data["val"], "");
 							cyng::object obj;
 							try {
 								obj = cyng::table::restore(value, type);

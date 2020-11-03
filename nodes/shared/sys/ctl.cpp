@@ -154,10 +154,10 @@ namespace node
 		//
 		//	apply severity threshold
 		//
-		logger->set_severity(cyng::logging::to_severity(cyng::value_cast<std::string>(dom.get("log-level"), "INFO")));
+		logger->set_severity(cyng::logging::to_severity(cyng::value_cast(dom.get("log-level"), "INFO")));
 
 #if BOOST_OS_LINUX
-		cyng::filesystem::path const log_dir{ cyng::value_cast<std::string>(dom.get("log-dir"), ".") };
+		cyng::filesystem::path const log_dir{ cyng::value_cast(dom.get("log-dir"), ".") };
 		write_pid(log_dir, tag);
 #endif
 

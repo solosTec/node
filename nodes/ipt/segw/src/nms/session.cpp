@@ -198,13 +198,13 @@ namespace node
 			//	read request and execute commands
 			//
 			auto const dom = cyng::make_reader(pm);
-			auto const cmd = cyng::value_cast<std::string>(dom.get("command"), "");
-			auto const rv = cyng::parse_version(cyng::value_cast<std::string>(dom.get("version"), ""));
+			auto const cmd = cyng::value_cast(dom.get("command"), "");
+			auto const rv = cyng::parse_version(cyng::value_cast(dom.get("version"), "0.0"));
 
 			//
 			//	get source tag
 			//
-			auto const source = cyng::value_cast<std::string>(dom.get("source"), "00000000-0000-0000-0000-000000000000");
+			auto const source = cyng::value_cast(dom.get("source"), "00000000-0000-0000-0000-000000000000");
 			boost::uuids::string_generator uuid_gen;
 			auto const tag = uuid_gen(source);
 
@@ -345,7 +345,7 @@ namespace node
 								for (auto const& p : sender) {
 									CYNG_LOG_TRACE(logger_, "broker: " << p.first << ": " << cyng::io::to_type(p.second));
 									if (boost::algorithm::equals(p.first, "address")) {
-										auto const address = cyng::value_cast<std::string>(p.second, "");
+										auto const address = cyng::value_cast(p.second, "");
 										broker.set_address(port.first, idx, address);
 									}
 									else if (boost::algorithm::equals(p.first, "port")) {
@@ -353,11 +353,11 @@ namespace node
 										broker.set_port(port.first, idx, service);
 									}
 									else if (boost::algorithm::equals(p.first, "account")) {
-										auto const user = cyng::value_cast<std::string>(p.second, "");
+										auto const user = cyng::value_cast(p.second, "");
 										broker.set_account(port.first, idx, user);
 									}
 									else if (boost::algorithm::equals(p.first, "pwd")) {
-										auto const pwd = cyng::value_cast<std::string>(p.second, "");
+										auto const pwd = cyng::value_cast(p.second, "");
 										broker.set_pwd(port.first, idx, pwd);
 									}
 									else {
@@ -638,22 +638,23 @@ namespace node
 
 		cyng::param_map_t reader::cmd_update(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
 		{
+			auto const tmp = cyng::filesystem::temp_directory_path();
 			auto const script_path = cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS }, "script-path"),
 #if BOOST_OS_LINUX
-				"update-script.sh"
+			(tmp / "update-script.sh").string()
 #else
-				"update-script.cmd"
+			(tmp / "update-script.cmd").string()
 #endif
 			);
 
-			auto const address = cyng::value_cast<std::string>(dom.get("address"), "");
-			auto const port = cyng::value_cast<std::string>(dom.get("port"), "");
-			auto const username = cyng::value_cast<std::string>(dom.get("username"), "");
-			auto const password = cyng::value_cast<std::string>(dom.get("password"), "");
-			auto const filename = cyng::value_cast<std::string>(dom.get("filename"), "fw-filname");
-			auto const ca_path_download = cyng::value_cast<std::string>(dom.get("ca-path-download"), "");
-			auto const ca_path_vendor = cyng::value_cast<std::string>(dom.get("ca-path-vendor"), "");
-			auto const path_firmware = cyng::value_cast<std::string>(dom.get("path-firmware"), "");
+			auto const address = cyng::value_cast(dom.get("address"), "localhost");
+			auto const port = cyng::value_cast(dom.get("port"), "9009");
+			auto const username = cyng::value_cast(dom.get("user"), "user");
+			auto const password = cyng::value_cast(dom.get("pwd"), "pwd");
+			auto const filename = cyng::value_cast(dom.get("fw-filename"), "fw-filname");
+			auto const ca_path_download = cyng::value_cast(dom.get("download-ca-path"), "");
+			auto const ca_path_vendor = cyng::value_cast(dom.get("vendor-ca-path"), "");
+			auto const path_firmware = cyng::value_cast(dom.get("firmware-path"), "");
 
 			//
 			//	create a script file
@@ -712,11 +713,11 @@ namespace node
 				("script-path", script_path)
 				("address", address)
 				("port", port)
-				("username", username)
-				("filename", filename)
-				("ca-path-download", ca_path_download)
-				("ca-path-vendor", ca_path_vendor)
-				("path-firmware", path_firmware)
+				("user", username)
+				("fw-filename", filename)
+				("download-ca-path", ca_path_download)
+				("vendor-ca-path", ca_path_vendor)
+				("firmware-path", path_firmware)
 				;
 
 		}
@@ -762,7 +763,7 @@ namespace node
 					<< "cm-id = "
 					<< cyng::value_cast(dom.get("cm-id"), "000000000000")
 					<< std::endl
-					<< "dn-ip = "
+					<< "dns-ip = "
  					<< cyng::value_cast(dom.get("dns-ip"), "0.0.0.0")
 					<< std::endl
 					;

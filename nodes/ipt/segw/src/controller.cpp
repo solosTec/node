@@ -288,13 +288,24 @@ namespace node
 					cyng::param_factory("port", "/dev/ttyAPP1"),
 					cyng::param_factory("parity", "none"),	//	none, odd, even
 #endif
+
+#if defined(NODE_CROSS_COMPILE)
+
+					//	8N1
+					cyng::param_factory("databits", 8),
+					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
+					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
+					cyng::param_factory("speed", 9600),		//	initial
+#else
 					//	8N1
 					cyng::param_factory("databits", 8),
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 2400),		//	initial
 					cyng::param_factory("protocol", "raw"),		//	raw, mbus, iec, sml
+#endif
 
+					cyng::param_factory("protocol", "raw"),		//	raw, mbus, iec, sml
 					cyng::param_factory("collector-login", true),		//	broker sends login
 					cyng::param_factory("broker-enabled", true),		//	startup brokers
 					cyng::param_factory("broker", cyng::vector_factory({
@@ -439,7 +450,7 @@ namespace node
 		//
 		//	setup storage manager
 		//
-		auto con_type = cyng::db::get_connection_type(cyng::value_cast<std::string>(cfg["DB"].get("type"), "SQLite"));
+		auto con_type = cyng::db::get_connection_type(cyng::value_cast(cfg["DB"].get("type"), "SQLite"));
 		storage store(mux.get_io_service(), con_type);
 
 		//

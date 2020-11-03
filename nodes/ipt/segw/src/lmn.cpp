@@ -727,7 +727,7 @@ namespace node
 		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
 		BOOST_ASSERT(key.size() == 1);
 
-		auto const name = cyng::value_cast<std::string>(key.at(0), "");
+		auto const name = cyng::value_cast(key.at(0), "");
 #ifdef _DEBUG
 		if (boost::algorithm::starts_with(name, "9100000000FF")) {
 			CYNG_LOG_INFO(logger_, "LMN " << name << ": " << cyng::io::to_type(attr.second));

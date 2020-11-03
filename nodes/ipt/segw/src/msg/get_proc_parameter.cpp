@@ -296,7 +296,7 @@ namespace node
 				std::uint32_t reboot = 86400u;	//	seconds
 				auto const obj = get_obj(tbl_cfg, cfg_key({ OBIS_IF_wMBUS, OBIS_W_MBUS_REBOOT }));
 				if (obj.get_class().tag() == cyng::TC_STRING) {
-					auto const r = cyng::parse_timespan_seconds(cyng::value_cast<std::string>(obj, "24:00:0.000000"));
+					auto const r = cyng::parse_timespan_seconds(cyng::value_cast(obj, "24:00:0.000000"));
 					if (r.second) {
 						reboot = static_cast<std::uint32_t>(r.first.count());
 					}
@@ -531,7 +531,7 @@ namespace node
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x11, 0x06, quant, store),
 					OBIS_DEVICE_CLASS
-					}, make_value(cyng::value_cast<std::string>(rec["class"], "")));
+					}, make_value(cyng::value_cast(rec["class"], "")));
 
 				//
 				//	timestamp (last seen)
@@ -609,7 +609,7 @@ namespace node
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, 0xFF),
 					make_obis(0x81, 0x81, 0x10, 0x06, quant, store),
 					OBIS_DEVICE_CLASS
-					}, make_value(cyng::value_cast<std::string>(rec["class"], "")));
+					}, make_value(cyng::value_cast(rec["class"], "")));
 
 				//
 				//	timestamp (last seen)

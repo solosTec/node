@@ -100,7 +100,7 @@ namespace node
 		 * The non-template function wins.
 		 */
 		std::string get_cfg(std::string name, const char* def) {
-			return cyng::value_cast<std::string>(get_obj(name), def);
+			return cyng::value_cast(get_obj(name), def);
 		}
 
 		/**

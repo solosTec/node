@@ -565,7 +565,7 @@ namespace node
 			if (!rec.empty()) {
 
 				auto const srv_id = cyng::to_buffer(rec["serverID"]);
-				auto const target = cyng::value_cast<std::string>(rec["target"], "");
+				auto const target = cyng::value_cast(rec["target"], "");
 				auto const interval = cyng::value_cast<std::uint32_t>(rec["interval"], 0);
 				auto const delay = cyng::value_cast<std::uint32_t>(rec["delay"], 0);
 

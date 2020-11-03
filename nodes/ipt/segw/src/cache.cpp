@@ -250,7 +250,7 @@ namespace node
 
 	std::string cache::get_target(cyng::buffer_t const& srv_id, std::uint8_t nr)
 	{
-		return cyng::value_cast<std::string>(db_.get_value("_PushOps", "target", srv_id, nr), "");
+		return cyng::value_cast(db_.get_value("_PushOps", "target", srv_id, nr), "");
 	}
 
 	bool cache::update_ts_index(cyng::buffer_t const& srv_id, std::uint8_t nr, std::uint64_t tsidx)

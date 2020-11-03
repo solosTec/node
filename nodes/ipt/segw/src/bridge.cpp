@@ -170,11 +170,11 @@ namespace node
 
 			storage_.loop("TCfg", [&](cyng::table::record const& rec)->bool {
 
-				auto const name = cyng::value_cast<std::string>(rec["path"], "");
+				auto const name = cyng::value_cast(rec["path"], "");
 				auto const key = cyng::table::key_generator(name);
 
 				auto const type = cyng::value_cast(rec["type"], 15u);
-				auto const val = cyng::value_cast<std::string>(rec["val"], "");
+				auto const val = cyng::value_cast(rec["val"], "");
 
 				try {
 
@@ -766,7 +766,7 @@ namespace node
 	{
 		BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "_Cfg"));
 
-		auto const name = cyng::value_cast<std::string>(key.at(0), "");
+		auto const name = cyng::value_cast(key.at(0), "");
 		if (boost::algorithm::equals(name, "status.word")) {
 
 			//LOG_CODE_24 = 0x02100008,	//	Ethernet - Link an KundenSchnittstelle aktiviert

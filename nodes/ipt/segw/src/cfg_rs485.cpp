@@ -80,7 +80,7 @@ namespace node
 
 	bool cfg_rs485::set_parity(cyng::object obj) const
 	{
-		auto const parity = cyng::value_cast<std::string>(obj, "none");
+		auto const parity = cyng::value_cast(obj, "none");
 		return cache_.set_cfg(build_cfg_key({ 
 			sml::OBIS_ROOT_SERIAL, 
 			sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), 
@@ -97,7 +97,7 @@ namespace node
 
 	bool cfg_rs485::set_flow_control(cyng::object obj) const
 	{
-		auto const val = cyng::value_cast<std::string>(obj, "none");
+		auto const val = cyng::value_cast(obj, "none");
 		return cache_.set_cfg(build_cfg_key({ 
 			sml::OBIS_ROOT_SERIAL, 
 			sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), 
@@ -114,7 +114,7 @@ namespace node
 
 	bool cfg_rs485::set_stopbits(cyng::object obj) const
 	{
-		auto const val = cyng::value_cast<std::string>(obj, "one");
+		auto const val = cyng::value_cast(obj, "one");
 		return cache_.set_cfg(build_cfg_key({ 
 			sml::OBIS_ROOT_SERIAL, 
 			sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), 
@@ -176,7 +176,7 @@ namespace node
 
 	bool cfg_rs485::set_protocol(cyng::object obj) const
 	{
-		auto const val = cyng::value_cast<std::string>(obj, "raw");
+		auto const val = cyng::value_cast(obj, "raw");
 		return cache_.set_cfg(build_cfg_key({ "rs485", "protocol" }), val);
 	}
 
