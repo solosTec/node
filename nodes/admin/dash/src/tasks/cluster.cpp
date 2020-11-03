@@ -437,12 +437,20 @@ namespace node
 				, channel
 				, reader);
 		}
+		else if (boost::algorithm::equals(cmd, "cleanup"))
+		{
+			node::fwd_cleanup(logger_
+				, ctx
+				, channel
+				, reader);
+		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, ctx.get_name()
 				<< " unknown command ["
 				<< cmd
-				<< "]");
+				<< "] "
+				<< channel);
 		}
 	}
 }

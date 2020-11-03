@@ -99,7 +99,7 @@ namespace node
 		, counter_(counter)
 	{}
 
-	bool channel::rel::is_empty() const {
+	bool channel::rel::empty() const {
 		return table_.empty();
 	}
 

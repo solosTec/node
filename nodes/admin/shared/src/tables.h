@@ -51,7 +51,7 @@ namespace node
             const std::string channel_;
             const std::string counter_;
 
-            bool is_empty() const;
+            bool empty() const;
             bool has_counter() const;
         };
 

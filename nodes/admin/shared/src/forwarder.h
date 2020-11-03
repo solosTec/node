@@ -88,6 +88,11 @@ namespace node
 		, std::string const& channel
 		, cyng::reader<cyng::object> const&);
 
+	void fwd_cleanup(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, std::string const& channel
+		, cyng::reader<cyng::object> const& reader);
+
 	/**
 	 * try to convert a string into a valid manufacturer code
 	 */

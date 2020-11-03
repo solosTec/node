@@ -68,86 +68,6 @@ namespace node
 		}
 	}
 
-	void fwd_delete_device(cyng::logging::log_ptr logger
-		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader
-		, std::string const& tbl_name)
-	{
-		BOOST_ASSERT(tbl_name == "TDevice");
-
-		//
-		//	TDevice key is of type UUID
-		//
-		cyng::vector_t const vec = cyng::to_vector(reader["key"].get("tag"));
-		BOOST_ASSERT_MSG(vec.size() == 1, "TDevice key has wrong size");
-		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
-	}
-
-	void fwd_delete_gateway(cyng::logging::log_ptr logger
-		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader
-		, std::string const& tbl_name)
-	{
-		BOOST_ASSERT(tbl_name == "TGateway");
-
-		//
-		//	TGateway key is of type UUID
-		//
-		cyng::vector_t const vec = cyng::to_vector(reader["key"].get("tag"));
-		BOOST_ASSERT_MSG(vec.size() == 1, "TGateway key has wrong size");
-		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
-	}
-
-	void fwd_delete_meter(cyng::logging::log_ptr logger
-		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader
-		, std::string const& tbl_name)
-	{
-		BOOST_ASSERT(tbl_name == "TMeter");
-
-		//
-		//	TDevice key is of type UUID
-		//
-		cyng::vector_t const vec = cyng::to_vector(reader["key"].get("tag"));
-		BOOST_ASSERT_MSG(vec.size() == 1, "TMeter key has wrong size");
-		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
-	}
-
-	void fwd_delete_iec(cyng::logging::log_ptr logger
-		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader
-		, std::string const& tbl_name)
-	{
-		BOOST_ASSERT(tbl_name == "TIECBridge");
-
-		//
-		//	TIECBridge key is of type UUID
-		//
-		cyng::vector_t const vec = cyng::to_vector(reader["key"].get("tag"));
-		BOOST_ASSERT_MSG(vec.size() == 1, "TIECBridge key has wrong size");
-		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
-	}
-
-	void fwd_delete_lora(cyng::logging::log_ptr logger
-		, cyng::context& ctx
-		, cyng::reader<cyng::object> const& reader
-		, std::string const& tbl_name)
-	{
-		BOOST_ASSERT(tbl_name == "TLoRaDevice");
-		//
-		//	TLoRaDevice key is of type UUID
-		//
-		cyng::vector_t vec;
-		vec = cyng::value_cast(reader["key"].get("tag"), vec);
-		BOOST_ASSERT_MSG(vec.size() == 1, "TLoRaDevice key has wrong size");
-		auto key = cyng::table::key_generator(vec.at(0));
-		ctx.queue(bus_req_db_remove(tbl_name, key, ctx.tag()));
-	}
-
 	void fwd_delete(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, cyng::reader<cyng::object> const& reader)
@@ -158,26 +78,11 @@ namespace node
 		try {
 
 			auto const rel = channel::find_rel_by_channel(channel);
-
-			if (boost::algorithm::starts_with(channel, "config.device"))
-			{
-				fwd_delete_device(logger, ctx, reader, rel.table_);
-			}
-			else if (boost::algorithm::starts_with(channel, "config.gateway"))
-			{
-				fwd_delete_gateway(logger, ctx, reader, rel.table_);
-			}
-			else if (boost::algorithm::starts_with(channel, "config.meter"))
-			{
-				fwd_delete_meter(logger, ctx, reader, rel.table_);
-			}
-			else if (boost::algorithm::starts_with(channel, "config.iec"))
-			{
-				fwd_delete_iec(logger, ctx, reader, rel.table_);
-			}
-			else if (boost::algorithm::starts_with(channel, "config.lora"))
-			{
-				fwd_delete_lora(logger, ctx, reader, rel.table_);
+			if (!rel.empty()) {
+				auto const vec = cyng::to_vector(reader["key"].get("tag"));
+				BOOST_ASSERT_MSG(vec.size() == 1, "invalid key size");
+				auto key = cyng::table::key_generator(vec.at(0));
+				ctx.queue(bus_req_db_remove(rel.table_, key, ctx.tag()));
 			}
 			else
 			{
@@ -646,6 +551,24 @@ namespace node
 		}
 	}
 
+	void fwd_cleanup(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, std::string const& channel
+		, cyng::reader<cyng::object> const& reader)
+	{
+		//	channel: "config.iec"
+		CYNG_LOG_TRACE(logger, "ws.read - cleanup channel [" << channel << "]");
+		auto const rel = channel::find_rel_by_channel(channel);
+
+		if (!rel.empty()) {
+			ctx.queue(bus_db_cleanup(rel.table_, ctx.tag()));
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger, "ws.read - unknown cleanup channel [" << channel << "]");
+		}
+	}
+
 	void fwd_com_sml(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, boost::uuids::uuid tag_ws
@@ -751,8 +674,6 @@ namespace node
 			, cyng::to_vector(reader.get("section"))
 			, cyng::to_vector(reader.get("params"))));
 	}
-
-
 
 	forward::forward(cyng::logging::log_ptr logger
 		, cyng::store::db& db

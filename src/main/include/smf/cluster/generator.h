@@ -95,6 +95,12 @@ namespace node
 	cyng::vector_t bus_res_watchdog(std::uint64_t seq, std::chrono::system_clock::time_point);
 
 	/**
+	 * remove duplicates, orphaned entries, ...
+	 */
+	cyng::vector_t bus_db_cleanup(std::string const&
+		, boost::uuids::uuid source);
+
+	/**
 	 * place a system message
 	 */
 	cyng::vector_t bus_insert_msg(cyng::logging::severity, std::string const&);

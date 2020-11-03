@@ -194,7 +194,7 @@ namespace node
 		cyng::table::record rec(tbl->meta_ptr(), key, data, gen);
 
 		auto const rel = channel::find_rel_by_table(tbl->meta().get_name());
-		if (!rel.is_empty()) {
+		if (!rel.empty()) {
 
 			sig_insert(rec, rel.channel_);
 			if (rel.has_counter()) {
@@ -222,7 +222,7 @@ namespace node
 	void dispatcher::sig_del(cyng::store::table const* tbl, cyng::table::key_type const& key, boost::uuids::uuid source)
 	{
 		auto const rel = channel::find_rel_by_table(tbl->meta().get_name());
-		if (!rel.is_empty()) {
+		if (!rel.empty()) {
 
 			sig_delete(key, rel.channel_);
 			if (rel.has_counter()) {
@@ -249,7 +249,7 @@ namespace node
 	void dispatcher::sig_clr(cyng::store::table const* tbl, boost::uuids::uuid source)
 	{
 		auto const rel = channel::find_rel_by_table(tbl->meta().get_name());
-		if (!rel.is_empty()) {
+		if (!rel.empty()) {
 
 			sig_clear(rel.channel_);
 			if (rel.has_counter()) {
@@ -283,7 +283,7 @@ namespace node
 #endif
 
 		auto const rel = channel::find_rel_by_table(tbl->meta().get_name());
-		if (!rel.is_empty()) {
+		if (!rel.empty()) {
 
 			//
 			//	convert attribute to parameter (as map)
@@ -333,12 +333,12 @@ namespace node
 	void dispatcher::subscribe_channel(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
 	{
 		auto const rel = channel::find_rel_by_channel(channel);
-		if (!rel.is_empty())	{
+		if (!rel.empty())	{
 			subscribe(db, rel.table_, channel, tag);
 		}
 		else {
 			auto const rel = channel::find_rel_by_counter(channel);
-			if (!rel.is_empty()) 
+			if (!rel.empty()) 
 			{
 				subscribe_table_count(db, channel, rel.table_, tag);
 			}

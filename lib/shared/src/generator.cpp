@@ -183,6 +183,16 @@ namespace node
 			;
 	}
 
+	cyng::vector_t bus_db_cleanup(std::string const& table
+		, boost::uuids::uuid source)
+	{
+		cyng::vector_t vec{};
+		return vec << cyng::generate_invoke_unwinded("stream.serialize"
+			, cyng::generate_invoke_remote_unwinded("bus.cleanup", table, source))
+			<< cyng::generate_invoke_unwinded("stream.flush")
+			;
+	}
+
 	cyng::vector_t bus_res_db_remove(std::string const& table
 		, cyng::vector_t const& key)
 	{

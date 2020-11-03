@@ -104,6 +104,11 @@ namespace node
 		vm_.register_function("bus.insert.wMBus.uplink", 5, std::bind(&session::bus_insert_wmbus_uplink, this, std::placeholders::_1));
 
 		//
+		//	execute data cleanup
+		//
+		vm_.register_function("bus.cleanup", 2, std::bind(&session::bus_cleanup, this, std::placeholders::_1));
+
+		//
 		//	statistical data
 		//
 		vm_.async_run(cyng::generate_invoke("log.msg.debug", cyng::invoke("lib.size"), " callbacks registered"));
@@ -993,7 +998,7 @@ namespace node
 
 				return true;
 				});
-			}, cyng::store::read_access("_Session")
+			}	, cyng::store::read_access("_Session")
 				, cyng::store::write_access("_TimeSeries"));
 	}
 
@@ -1108,7 +1113,7 @@ namespace node
 
 	void session::bus_insert_lora_uplink(cyng::context& ctx)
 	{
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto const tpl = cyng::tuple_cast<
@@ -1141,7 +1146,7 @@ namespace node
 
 	void session::bus_insert_wmbus_uplink(cyng::context& ctx)
 	{
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 
 		auto const tpl = cyng::tuple_cast<
 			boost::uuids::uuid,			//	[0] origin client tag
@@ -1168,6 +1173,57 @@ namespace node
 				<< " failed: " 
 				<< cyng::io::to_str(frame));
 		}
+	}
+
+	void session::bus_cleanup(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		auto const tpl = cyng::tuple_cast<
+			std::string,			//	[0] table
+			boost::uuids::uuid		//	[1] origin client tag
+		>(frame);
+
+		//
+		//	remove all orphaned entries from TIECBridge
+		//
+		std::size_t counter{ 0 };
+		cache_.db_.access([&](cyng::store::table const* tbl_meter, cyng::store::table* tbl_iec)->void {
+
+			cyng::table::key_list_t orphanes;
+
+			tbl_iec->loop([&](cyng::table::record const& rec) -> bool {
+
+				if (!tbl_meter->exist(rec.key())) {
+					
+					CYNG_LOG_DEBUG(logger_, ctx.get_name()
+						<< " - entry "
+						<< cyng::io::to_type(rec.convert_data())
+						<< " is orphaned");
+
+					orphanes.push_back(rec.key());
+				}
+
+				//	continue
+				return true;
+			});
+
+			//
+			//	remove all orphanes
+			//
+			CYNG_LOG_WARNING(logger_, ctx.get_name()
+				<< " remove "
+				<< orphanes.size()
+				<< "orphaned entries from TIECBridge");
+
+			for (auto const& key : orphanes) {
+				tbl_iec->erase(key, std::get<1>(tpl));
+			}
+
+		}	, cyng::store::read_access("TMeter")
+			, cyng::store::write_access("TIECBridge"));
+
 	}
 
 
