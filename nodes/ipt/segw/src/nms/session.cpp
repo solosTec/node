@@ -246,6 +246,15 @@ namespace node
 				//
 				return cmd_update(cmd, tag, dom);
 			}
+			else if (boost::algorithm::equals(cmd, "update-status")
+				|| boost::algorithm::equals(cmd, "get-update")
+				|| boost::algorithm::equals(cmd, "get-update-status")
+				|| boost::algorithm::equals(cmd, "update-status")) {
+				//
+				//	update state
+				//
+				return cmd_update_status(cmd, tag, dom);
+			}
 			else if (boost::algorithm::equals(cmd, "reboot")
 				|| boost::algorithm::equals(cmd, "restart")) {
 				return cmd_reboot(cmd, tag);
@@ -743,10 +752,13 @@ namespace node
 
 			std::fstream fs(script_path, std::fstream::trunc | std::fstream::out);
 			if (fs.is_open()) {
+
 				fs
-					<< "key-1 = value-2"
+					<< "cm-id = "
+					<< cyng::value_cast(dom.get("cm-id"), "000000000000")
 					<< std::endl
-					<< "key-2 = value-2"
+					<< "dn-ip = "
+ 					<< cyng::value_cast(dom.get("dns-ip"), "0.0.0.0")
 					<< std::endl
 					;
 				fs.close();
@@ -774,5 +786,122 @@ namespace node
 				;
 		}
 
+		cyng::param_map_t reader::cmd_update_status(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
+		{
+			//
+			//	read file "/usr/local/CLS/etc/firwareupdate.conf"
+			//
+			std::string const path(
+#if BOOST_OS_LINUX
+				"/usr/local/CLS/etc/firwareupdate.conf"
+#else
+				"firwareupdate.conf"
+#endif
+			);
+			std::ifstream fs(path);
+			if (fs.is_open()) {
+
+				//
+				//	read line
+				//
+				std::string line;
+				if (std::getline(fs, line)) {
+
+					//
+					//	format: fwUpdateStatus=N
+					//
+					auto const vec = cyng::split(line, "=");
+					if (vec.size() == 2) {
+
+						try {
+							int code = std::stoi(vec.at(1));
+
+							return cyng::param_map_factory
+								("command", cmd)
+								("ec", "ok")
+								("version", "0.1")
+								("source", tag)
+								("path", path)
+								("line", line)
+								("code", code)
+								("msg", get_code_name(code))
+								;
+						}
+						catch (std::exception const& ex) {
+							return cyng::param_map_factory
+								("command", cmd)
+								("ec", ex.what())
+								("version", "0.1")
+								("source", tag)
+								("path", path)
+								("line", line)
+								;
+						}
+					}
+					else {
+						return cyng::param_map_factory
+						("command", cmd)
+							("ec", "error: invalid format")
+							("version", "0.1")
+							("source", tag)
+							("path", path)
+							("line", line)
+							;
+					}
+				}
+			}
+
+			return cyng::param_map_factory
+				("command", cmd)
+				("ec", "error: file not found")
+				("version", "0.1")
+				("source", tag)
+				("path", path)
+				;
+
+		}
+
+		std::string get_code_name(int status)
+		{
+			switch (status)
+			{
+			case -99:   return "UNDEFINED";
+			case 0:     return "SUCCESS";
+			case 1:     return "DOWNLOADING";   //  Firmware Download Procedure Initiated Successfully
+			case 2:     return "VERIFIED";      //  Firmware Verification Procedure Initiated Successfully
+			case 3:     return "INITIATED";     //  Firmware Update Procedure Initiated Successfully
+			case -1:    return "CURL-ERROR-GENERAL";    //    Error while executing curl command
+			case -2:    return "INVALID-SIGNATURE"; //    Couldn't verify the signatures, aborting FW update
+			case -6:    return "ABORTED";       //   Error while initiating FW Update, aborting FW update
+
+			case 101:   return "PARAMETER-ERROR-DOWNLOAD";  //  Parameter error in FW Download
+			case 102:   return "ROOT-CA-NOT-FOUND-1"; //   Path to Root CA not found
+			case 103:   return "CERTSOUT-NOT-FOUND-1"; //   Path to Certsout not found
+			case 104:   return "HTTP-DOWNLOAD-FAILED"; //   HTTP error as download failed
+			case 105:   return "CURL-ERROR-DOWNLOAD"; //   Curl error as download failed
+
+			case 201:   return "PARAMETER-ERROR-VERIFICATION"; //   Parameter Error in FW Verification
+			case 202:   return "OPENSSL-TOOL-NOT-FOUND"; //   Openssl tool not found
+			case 203:   return "CERT-FORMAT-NOT-SUPPORTED"; //   Format (DER/PEM) not supported
+			case 204:   return "ROOT-CA-NOT-FOUND-2"; //   Path to Root CA not found
+			case 205:   return "SIGNATURES-NOT-FOUND"; //   Signatures not found
+			case 206:   return "FW-FILE-NOT-FOUND"; //   FW File not found
+			case 207:   return "CERTSOUT-NOT-FOUND-2"; //   Path to Certsout not found
+			case 209:   return "INVALID-COMMAND-OPTIONS"; //   an error occurred parsing the command options
+			case 210:   return "CANNOT-READ-INPUT-FILE"; //   one of the input files could not be read
+			case 211:   return "SIGNATURE_VERIFICATION-FAILED"; //   Signature verification ERROR (an error occurred creating the CMS file or when reading the MIME message)
+			case 212:   return "CANNOT-DECRYPT-MESSAGE"; //   an error occurred decrypting or verifying the message
+			case 213:   return "CANNOT-WRITE-OUT-SIGNERS-CERTIFICATE"; //   the message was verified correctly but an error occurred writing out the signers certificates
+			case 214:   return "UNKNOWN-ERROR"; //   unknown error
+
+			case 250:   return "ALREADY-RUNNING"; //   Script is already running
+			default:
+				break;
+			}
+
+			return "OTHER-ERROR";
+		}
+
 	}
+
 }

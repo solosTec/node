@@ -37,6 +37,7 @@ namespace node
 		private:
 			cyng::param_map_t cmd_merge(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
 			cyng::param_map_t cmd_update(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
+			cyng::param_map_t cmd_update_status(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
 			cyng::param_map_t cmd_reboot(std::string const& cmd, boost::uuids::uuid);
 			cyng::param_map_t cmd_query(std::string const& cmd, boost::uuids::uuid);
 			cyng::param_map_t cmd_version(std::string const& cmd, boost::uuids::uuid);
@@ -103,6 +104,12 @@ namespace node
 
 
 		};
+
+		/**
+		 * @return textual description of firmware update code
+		 */
+		std::string get_code_name(int status);
+
 	}
 }
 
