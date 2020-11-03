@@ -248,8 +248,7 @@ namespace node
 			}
 			else if (boost::algorithm::equals(cmd, "update-status")
 				|| boost::algorithm::equals(cmd, "get-update")
-				|| boost::algorithm::equals(cmd, "get-update-status")
-				|| boost::algorithm::equals(cmd, "update-status")) {
+				|| boost::algorithm::equals(cmd, "get-update-status")) {
 				//
 				//	update state
 				//
@@ -741,7 +740,13 @@ namespace node
 			//
 			//	create a script file
 			//
-			std::string const script_path("/usr/local/etc/cminfos.txt");
+			std::string const script_path(
+#if BOOST_OS_LINUX
+				"/usr/local/etc/cminfos.txt"
+#else
+				"cminfos.txt"
+#endif
+			);
 			cyng::filesystem::path const script(script_path);
 			cyng::error_code ec;
 
@@ -779,7 +784,7 @@ namespace node
 
 			return cyng::param_map_factory
 				("command", cmd)
-				("ec", "not implemented yet ")
+				("ec", (ec ? ec.message() : "ok"))
 				("version", "0.1")
 				("source", tag)
 				("path", script_path)
@@ -789,67 +794,78 @@ namespace node
 		cyng::param_map_t reader::cmd_update_status(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
 		{
 			//
-			//	read file "/usr/local/CLS/etc/firwareupdate.conf"
+			//	read file "/usr/local/CLS/etc/firmwareupdate.conf"
 			//
-			std::string const path(
+			std::filesystem::path const path(
 #if BOOST_OS_LINUX
-				"/usr/local/CLS/etc/firwareupdate.conf"
+				"/usr/local/CLS/etc/firmwareupdate.conf"
 #else
-				"firwareupdate.conf"
+				"firmwareupdate.conf"
 #endif
 			);
-			std::ifstream fs(path);
-			if (fs.is_open()) {
 
-				//
-				//	read line
-				//
-				std::string line;
-				if (std::getline(fs, line)) {
+			if (cyng::filesystem::exists(path)) {
+				auto const tp = cyng::filesystem::get_write_time(path);
+
+				std::ifstream fs(path.string());
+				if (fs.is_open()) {
 
 					//
-					//	format: fwUpdateStatus=N
+					//	read line
 					//
-					auto const vec = cyng::split(line, "=");
-					if (vec.size() == 2) {
+					std::string line;
+					if (std::getline(fs, line)) {
 
-						try {
-							int code = std::stoi(vec.at(1));
+						//
+						//	format: fwUpdateStatus=N
+						//
+						auto const vec = cyng::split(line, "=");
+						if (vec.size() == 2) {
 
-							return cyng::param_map_factory
+							try {
+								int code = std::stoi(vec.at(1));
+
+								return cyng::param_map_factory
 								("command", cmd)
-								("ec", "ok")
+									("ec", "ok")
+									("version", "0.1")
+									("source", tag)
+									("path", path)
+									("line", line)
+									("code", code)
+									("msg", get_code_name(code))
+									("modified", tp)
+									;
+							}
+							catch (std::exception const& ex) {
+								return cyng::param_map_factory
+								("command", cmd)
+									("ec", ex.what())
+									("version", "0.1")
+									("source", tag)
+									("path", path)
+									("line", line)
+									("code", -99)
+									("modified", tp)
+									;
+							}
+						}
+						else {
+							return cyng::param_map_factory
+							("command", cmd)
+								("ec", "error: invalid format")
 								("version", "0.1")
 								("source", tag)
 								("path", path)
 								("line", line)
-								("code", code)
-								("msg", get_code_name(code))
+								("code", -99)
+								("modified", tp)
 								;
 						}
-						catch (std::exception const& ex) {
-							return cyng::param_map_factory
-								("command", cmd)
-								("ec", ex.what())
-								("version", "0.1")
-								("source", tag)
-								("path", path)
-								("line", line)
-								;
-						}
-					}
-					else {
-						return cyng::param_map_factory
-						("command", cmd)
-							("ec", "error: invalid format")
-							("version", "0.1")
-							("source", tag)
-							("path", path)
-							("line", line)
-							;
 					}
 				}
 			}
+
 
 			return cyng::param_map_factory
 				("command", cmd)
@@ -857,6 +873,7 @@ namespace node
 				("version", "0.1")
 				("source", tag)
 				("path", path)
+				("code", -99)
 				;
 
 		}
@@ -889,7 +906,7 @@ namespace node
 			case 207:   return "CERTSOUT-NOT-FOUND-2"; //   Path to Certsout not found
 			case 209:   return "INVALID-COMMAND-OPTIONS"; //   an error occurred parsing the command options
 			case 210:   return "CANNOT-READ-INPUT-FILE"; //   one of the input files could not be read
-			case 211:   return "SIGNATURE_VERIFICATION-FAILED"; //   Signature verification ERROR (an error occurred creating the CMS file or when reading the MIME message)
+			case 211:   return "SIGNATURE-VERIFICATION-FAILED"; //   Signature verification ERROR (an error occurred creating the CMS file or when reading the MIME message)
 			case 212:   return "CANNOT-DECRYPT-MESSAGE"; //   an error occurred decrypting or verifying the message
 			case 213:   return "CANNOT-WRITE-OUT-SIGNERS-CERTIFICATE"; //   the message was verified correctly but an error occurred writing out the signers certificates
 			case 214:   return "UNKNOWN-ERROR"; //   unknown error
