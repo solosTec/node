@@ -716,6 +716,7 @@ namespace node
 			break;
 		case sml::CODE_ROOT_SERIAL:
 			//	ToDo: find the proper index with help of the cache
+		{int i = 0; }
 			break;
 
 		default:
@@ -762,27 +763,27 @@ namespace node
 
 				const auto databits = cyng::numeric_cast<std::uint32_t>(param.second, 9600u);
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_DATABITS, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_ROOT_SERIAL, idx), make_obis(sml::OBIS_SERIAL_DATABITS, idx) }
 				, node::sml::make_value(databits));
 			}
 			else if (boost::algorithm::equals(param.first, "parity")) {
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_PARITY, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_ROOT_SERIAL, idx), make_obis(sml::OBIS_SERIAL_PARITY, idx) }
 				, node::sml::make_value(param.second));
 			}
 			else if (boost::algorithm::equals(param.first, "flowcontrol")) {
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_ROOT_SERIAL, idx), make_obis(sml::OBIS_SERIAL_FLOW_CONTROL, idx) }
 				, node::sml::make_value(param.second));
 			}
 			else if (boost::algorithm::equals(param.first, "stopbits")) {
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_STOPBITS, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_ROOT_SERIAL, idx), make_obis(sml::OBIS_SERIAL_STOPBITS, idx) }
 				, node::sml::make_value(param.second));
 			}
 			else if (boost::algorithm::equals(param.first, "baudrate")) {
 				sml::merge_msg(msg
-					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_SERIAL_SPEED, idx) }
+					, { sml::OBIS_ROOT_SERIAL, make_obis(sml::OBIS_ROOT_SERIAL, idx), make_obis(sml::OBIS_SERIAL_SPEED, idx) }
 				, node::sml::make_value(param.second));
 			}
 		}
@@ -872,12 +873,11 @@ namespace node
 			node::sml::req_generator sml_gen(sd.name_, sd.pwd_);
 			sml::messages_t messages{ sml_gen.public_open(get_mac(), sd.srv_) };
 
-			std::uint8_t idx{ 0 };
 			for (auto const& obj : params) {
 				auto const param = cyng::to_param(obj);
 				auto const values = cyng::to_tuple(param.second);
-				//auto const port_name = param.first;
-				++idx;
+				auto const dom = cyng::make_reader(values);
+				std::uint8_t idx = cyng::numeric_cast<std::uint8_t>(dom.get("index"), 1u);
 				messages.push_back(set_proc_parameter_hardware_port(sml_gen.empty_set_proc_param(sd.srv_, root),
 					sd.srv_,
 					param.first,
