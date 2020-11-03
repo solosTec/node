@@ -242,60 +242,11 @@ namespace node
 
 	private:
 		void run_queue();
-		//void execute_cmd(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::tuple_reader const& params);
-		//void execute_cmd_get_profile_list(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::tuple_reader const& params);
-		//void execute_cmd_set_proc_param(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::tuple_reader const& params);
-		//void execute_cmd_get_list_request(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::tuple_reader const& params);
-		//void execute_cmd_set_proc_param_ipt(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, std::uint8_t idx
-		//	, cyng::tuple_t&& tpl);
-		//void execute_cmd_set_proc_param_wmbus(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::tuple_t&& params);
-		//void execute_cmd_set_proc_param_iec(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::tuple_t&& params);
-		//bool execute_cmd_set_proc_param_activate(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, std::uint8_t nr
-		//	, std::string&& str);
-		//bool execute_cmd_set_proc_param_deactivate(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, std::uint8_t nr
-		//	, std::string&& str);
-		//bool execute_cmd_set_proc_param_delete(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, std::uint8_t nr
-		//	, std::string&& );
-		//bool execute_cmd_set_proc_param_meter(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, std::string &&
-		//	, std::string 
-		//	, std::string
-		//	, std::string
-		//	, std::string);
-
-		//void execute_cmd_set_proc_param_broker(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::vector_t&& params);
-
-		//void execute_cmd_set_proc_param_hw_port(sml::req_generator& sml_gen
-		//	, proxy_data const&
-		//	, cyng::tuple_t const& vec);
 
 		/**
-		 * Store proxy data in transaction/output map
+		 *close connection if all work items re done
 		 */
-		//void push_trx(std::string, proxy::data const&);
+		void check_link_state();
 
 		/**
 		 * update configuration cache

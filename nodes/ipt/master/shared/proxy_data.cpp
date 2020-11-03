@@ -878,6 +878,7 @@ namespace node
 				auto const values = cyng::to_tuple(param.second);
 				auto const dom = cyng::make_reader(values);
 				std::uint8_t idx = cyng::numeric_cast<std::uint8_t>(dom.get("index"), 1u);
+				BOOST_ASSERT(idx != 0);
 				messages.push_back(set_proc_parameter_hardware_port(sml_gen.empty_set_proc_param(sd.srv_, root),
 					sd.srv_,
 					param.first,

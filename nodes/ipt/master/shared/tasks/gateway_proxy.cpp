@@ -111,6 +111,9 @@ namespace node
 				//
 				run_queue();
 			}
+			else {
+				check_link_state();
+			}
 			break;
 		default:
 			break;
@@ -499,6 +502,16 @@ namespace node
 			}
 		}
 
+		//
+		//	close connection if all work items re done
+		//
+		check_link_state();
+
+		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	void gateway_proxy::check_link_state()
+	{
 		if (output_map_.empty() && input_queue_.empty()) {
 
 			//
@@ -517,8 +530,6 @@ namespace node
 				<< base_.get_class_name()
 				<< "> cancel redirection");
 		}
-
-		return cyng::continuation::TASK_CONTINUE;
 	}
 
 	//	-- slot [5]: GetList.Res
