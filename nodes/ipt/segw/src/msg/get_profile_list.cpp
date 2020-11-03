@@ -51,8 +51,7 @@ namespace node
 		{
 			switch (code.to_uint64()) {
 			case 0x8181C789E1FF:	//	CLASS_OP_LOG
-				class_op_log(trx, client_id, srv_id, start, end);
-				break;
+				return class_op_log(trx, client_id, srv_id, start, end);
 			case 0x8181C78610FF:	//	PROFILE_1_MINUTE
 			case 0x8181C78611FF:	//	PROFILE_15_MINUTE
 				//profile_15_minute(trx, client_id, srv_id, start, end);

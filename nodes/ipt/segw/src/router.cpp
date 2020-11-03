@@ -422,9 +422,7 @@ namespace node
 			, std::get<5>(tpl)
 			, std::get<6>(tpl));
 
-		for (auto const& msg : msgs) {
-			messages_.push_back(msg);
-		}
+		messages_.insert(messages_.end(), msgs.begin(), msgs.end());
 
 	}
 

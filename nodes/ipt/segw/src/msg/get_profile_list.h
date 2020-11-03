@@ -49,6 +49,7 @@ namespace node
 				, std::chrono::system_clock::time_point);
 
 		private:
+			CYNG_ATTR_NODISCARD
 			messages_t class_op_log(std::string trx
 				, cyng::buffer_t client_id
 				, cyng::buffer_t srv_id
@@ -57,13 +58,14 @@ namespace node
 
 #ifdef _DEBUG
 			//	demo
+			CYNG_ATTR_NODISCARD
 			messages_t profile_15_minute(std::string trx
 				, cyng::buffer_t client_id
 				, cyng::buffer_t srv_id
 				, std::chrono::system_clock::time_point start
 				, std::chrono::system_clock::time_point end);
 #endif
-
+			CYNG_ATTR_NODISCARD
 			messages_t get_profile(obis code
 				, std::string trx
 				, cyng::buffer_t client_id
