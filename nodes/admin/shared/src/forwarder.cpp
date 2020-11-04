@@ -1061,8 +1061,8 @@ namespace node
 
 			auto const manufacturer_code = cleanup_manufacturer_code(pm);
 			auto const server_id = cleanup_server_id(meter_id, manufacturer_code);
-			//auto const protocol = cleanup_protocol(pm.at("Protocol"));
 			auto const protocol = cleanup_protocol(pm);
+			auto const meter_type = cleanup_meter_type(pm);
 
 			//
 			//	Create a new TMeter record from uploaded data and fill missing data
@@ -1074,13 +1074,13 @@ namespace node
 				mc,	//	metering code - changed at 2019-01-31
 				manufacturer_code,	//	manufacturer
 				std::chrono::system_clock::now(),			//	time of manufacture
-				pm.at("Meter_Type"),	//	firmware version (i.e. 11600000)
+				meter_type,
 				(rec.empty() ? cyng::make_object("") : rec["vParam"]),		//	parametrierversion (i.e. 16A098828.pse)
 				(rec.empty() ? cyng::make_object("") : rec["factoryNr"]),		//	fabrik nummer (i.e. 06441734)
 				pm.at("Meter_Type"),		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 				"C",		//	Metrological Class: A, B, C, Q3/Q1, ...
 				(rec.empty() ? cyng::make_object(boost::uuids::nil_uuid()) : rec["gw"]),			//	optional gateway pk
-				pm.at("Protocol"));	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+				protocol);	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
 
 			//
 			//	use specified policy
@@ -1752,6 +1752,22 @@ namespace node
 			else return protocol;
 		}
 		return "any";
+	}
+
+	std::string cleanup_meter_type(cyng::param_map_t const& pm)
+	{
+		auto const pos = pm.find("Meter_Type");
+		if (pos != pm.end()) {
+
+			auto const item = cyng::value_cast<std::string>(pos->second, "");
+
+			//Landys & Gyr E350
+			//Elster AS 1440
+			//EMH ED100L
+			//EasymeterQ3D
+			return item
+		}
+		return "";
 	}
 
 	std::string cleanup_server_id(std::string const& meter_id, std::string const& manufacturer_code)

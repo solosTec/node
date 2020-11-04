@@ -302,7 +302,6 @@ namespace node
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 2400),		//	initial
-					cyng::param_factory("protocol", "raw"),		//	raw, mbus, iec, sml
 #endif
 
 					cyng::param_factory("protocol", "raw"),		//	raw, mbus, iec, sml
