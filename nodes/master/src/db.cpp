@@ -412,7 +412,7 @@ namespace node
 	{
 		bool r{ false };
 		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
-			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-wMBus-records"));
+			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-IEC-records"));
 			const std::uint64_t max_messages = (!rec.empty())
 				? cyng::numeric_cast<std::uint64_t>(rec["value"], 500u)
 				: 500u
@@ -435,7 +435,7 @@ namespace node
 		, std::uint64_t max_messages)
 	{
 		//
-		//	upper limit is defined in "max-wMBus-records"
+		//	upper limit is defined in "max-IEC-records"
 		//
 		if (tbl->size() > max_messages)
 		{
@@ -829,6 +829,11 @@ namespace node
 	std::uint64_t cache::get_max_wMBus_records()
 	{
 		return get_cfg<std::uint64_t>("max-wMBus-records", 500u);
+	}
+
+	std::uint64_t cache::get_max_IEC_records()
+	{
+		return get_cfg<std::uint64_t>("max-IEC-records", 600u);
 	}
 
 }

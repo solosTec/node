@@ -85,6 +85,10 @@ namespace node
 		cache_.set_cfg("max-wMBus-records", max_wMBus_records);
 		cache_.set_cfg("max-wMBus-records-default", max_wMBus_records);
 
+		auto max_IEC_records = cyng::numeric_cast<std::uint64_t>(dom.get("max-IEC-records"), 600);
+		CYNG_LOG_INFO(logger_, "store max. " << max_IEC_records << " IEC uplink records");
+		cache_.set_cfg("max-IEC-records", max_IEC_records);
+		cache_.set_cfg("max-IEC-records-default", max_IEC_records);
 
 		CYNG_LOG_INFO(logger_, "cluster heartbeat " << cyng::to_str(std::chrono::seconds(monitor)));
 		cache_.set_cfg("cluster-heartbeat", std::chrono::seconds(monitor));

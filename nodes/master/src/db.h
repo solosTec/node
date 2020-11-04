@@ -264,6 +264,11 @@ namespace node
 		 */
 		std::uint64_t get_max_wMBus_records();
 
+		/**
+		 *	read max number of IEC uplink records
+		 */
+		std::uint64_t get_max_IEC_records();
+
 	public:
 		/**
 		 * global data cache
