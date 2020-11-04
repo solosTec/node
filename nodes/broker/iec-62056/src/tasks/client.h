@@ -14,6 +14,7 @@
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
 #include <cyng/store/db.h>
+#include <cyng/vm/controller_fwd.h>
 
 namespace node
 {
@@ -29,6 +30,7 @@ namespace node
 
 	public:
 		client(cyng::async::base_task* bt
+			, cyng::controller& cluster
 			, cyng::logging::log_ptr
 			, cyng::store::db&
 			, boost::asio::ip::tcp::endpoint
@@ -60,10 +62,11 @@ namespace node
 		void reset_write_buffer();
 
 	private:
+		cyng::async::base_task& base_;
 		/**
 		 * communication bus to master
 		 */
-		cyng::async::base_task& base_;
+		cyng::controller& cluster_;
 		cyng::logging::log_ptr logger_;
 
 		/**

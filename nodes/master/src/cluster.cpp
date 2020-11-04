@@ -434,7 +434,7 @@ namespace node
 					//	catch meters automatically
 					//
 					tbl_meter->insert(key
-						, cyng::table::data_generator(ident, meter, mc, maker, age, "", "", "", "", class_name, gw_tag, "")
+						, cyng::table::data_generator(ident, meter, mc, maker, age, "", "", "", "", class_name, gw_tag, "IPT:E43863-4")
 						, 0
 						, source);
 				}

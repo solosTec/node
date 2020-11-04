@@ -138,6 +138,16 @@ namespace node
 		, boost::uuids::uuid tag);
 
 	/**
+	 * place a IEC uplink event
+	 *
+	 * @param frame_type ci_field
+	 */
+	cyng::vector_t bus_insert_IEC_uplink(std::chrono::system_clock::time_point
+		, std::string const& event
+		, boost::asio::ip::tcp::endpoint
+		, boost::uuids::uuid tag);
+
+	/**
 	 * Send an arbitrary function call to receiver, which will send it back.
 	 */
 	template < typename ...Args >

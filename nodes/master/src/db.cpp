@@ -162,6 +162,17 @@ namespace node
 			, 3
 			, tag);
 
+		{
+			//	segw.ch
+			auto const host = cyng::make_address("138.201.95.180");
+			auto const ep = boost::asio::ip::tcp::endpoint{ host, 6006 };
+			db.insert("_IECUplink"
+				, cyng::table::key_generator(2)
+				, cyng::table::data_generator(std::chrono::system_clock::now(), "DEBUG EVENT", ep, tag)
+				, 3
+				, tag);
+		}
+
 #endif
 
 	}
@@ -392,6 +403,68 @@ namespace node
 				, 1, origin);
 	}
 
+	bool insert_iec_uplink(cyng::store::db& db
+		, std::chrono::system_clock::time_point tp
+		, std::string const& evt
+		, boost::asio::ip::tcp::endpoint ep
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid origin)
+	{
+		bool r{ false };
+		db.access([&](cyng::store::table* tbl, cyng::store::table const* tbl_cfg)->void {
+			auto rec = tbl_cfg->lookup(cyng::table::key_generator("max-wMBus-records"));
+			const std::uint64_t max_messages = (!rec.empty())
+				? cyng::numeric_cast<std::uint64_t>(rec["value"], 500u)
+				: 500u
+				;
+
+			r = insert_iec_uplink(tbl, tp, evt, ep, tag, origin, max_messages);
+
+		}	, cyng::store::write_access("_IECUplink")
+			, cyng::store::read_access("_Config"));
+
+		return r;
+	}
+
+	bool insert_iec_uplink(cyng::store::table* tbl
+		, std::chrono::system_clock::time_point tp
+		, std::string const& evt
+		, boost::asio::ip::tcp::endpoint ep
+		, boost::uuids::uuid tag
+		, boost::uuids::uuid origin
+		, std::uint64_t max_messages)
+	{
+		//
+		//	upper limit is defined in "max-wMBus-records"
+		//
+		if (tbl->size() > max_messages)
+		{
+			//
+			//	remove oldest message (message with the lowest id)
+			//
+			auto min_rec = tbl->min_record();
+			if (!min_rec.empty()) {
+				tbl->erase(min_rec.key(), origin);
+			}
+
+			auto max_rec = tbl->max_record();
+			if (!max_rec.empty()) {
+
+				//	get next message id
+				auto next_idx = cyng::value_cast<std::uint64_t>(max_rec["id"], 0u);
+
+				return tbl->insert(cyng::table::key_generator(++next_idx)
+					, cyng::table::data_generator(tp, evt, ep, tag)
+					, 1, origin);
+			}
+
+		}
+
+		return tbl->insert(cyng::table::key_generator(static_cast<std::uint64_t>(tbl->size()))
+			, cyng::table::data_generator(tp, evt, ep, tag)
+			, 1, origin);
+	}
+
 	cyng::table::record connection_lookup(cyng::store::table* tbl, cyng::table::key_type&& key)
 	{
 		cyng::table::record rec = tbl->lookup(key);
@@ -452,7 +525,7 @@ namespace node
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<cache::tbl_descr, 22>	cache::tables_ =
+	const std::array<cache::tbl_descr, 23>	cache::tables_ =
 	{
 		tbl_descr{"TDevice", false},
 		tbl_descr{"TGateway", false},
@@ -474,6 +547,7 @@ namespace node
 		tbl_descr{"_TimeSeries", false},
 		tbl_descr{"_LoRaUplink", false},
 		tbl_descr{"_wMBusUplink", false},
+		tbl_descr{"_IECUplink", false},
 		tbl_descr{"_CSV", false},
 		tbl_descr{"_Broker", false}	//	broker 
 	};

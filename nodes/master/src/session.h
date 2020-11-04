@@ -83,6 +83,7 @@ namespace node
 		void bus_req_push_data(cyng::context& ctx);
 		void bus_insert_lora_uplink(cyng::context& ctx);
 		void bus_insert_wmbus_uplink(cyng::context& ctx);
+		void bus_insert_iec_uplink(cyng::context& ctx);
 		void bus_cleanup(cyng::context& ctx);
 
 		cyng::vector_t reply(std::chrono::system_clock::time_point, bool);

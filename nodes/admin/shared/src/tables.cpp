@@ -33,6 +33,7 @@ namespace node
 		tables::tbl_descr{"_TimeSeries", false, false},
 		tables::tbl_descr{"_LoRaUplink", false, false},
 		tables::tbl_descr{"_wMBusUplink", false, false},
+		tables::tbl_descr{"_IECUplink", false, false},
 		tables::tbl_descr{"_CSV", false, false},
 		tables::tbl_descr{"_HTTPSession", false, true}	//	local handling
 	};
@@ -86,6 +87,7 @@ namespace node
 		channel::rel{"_TimeSeries", "monitor.tsdb", ""},
 		channel::rel{"_LoRaUplink", "monitor.lora", "table.uplink.count"},
 		channel::rel{"_wMBusUplink", "monitor.wMBus", "table.wMBus.count"},
+		channel::rel{"_IECUplink", "monitor.IEC", "table.IEC.count"},
 		channel::rel{"_CSV", "task.csv", ""},
 		channel::rel{"TGWSnapshot", "monitor.snapshot", "table.snapshot.count"}
 	};

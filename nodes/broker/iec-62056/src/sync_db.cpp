@@ -417,7 +417,7 @@ namespace node
 	{
 		tbl_descr{"TMeter", false},
 		tbl_descr{"TIECBridge", false},
-		tbl_descr{"_Broker", false},	//	broker
+		tbl_descr{"_IECUplink", false},	//	broker
 	};
 
 }

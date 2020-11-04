@@ -456,6 +456,27 @@ namespace node
 				, 0		//	tag
 				});
 		}
+		else if (boost::algorithm::equals(name, "_IECUplink")) {
+
+			return cyng::table::make_meta_table<1, 4>(name, { "id"	//	message number
+				, "ts"			//	timestamp
+				, "event"
+				, "ep"
+				, "tag"
+				},
+				{ cyng::TC_UINT64		//	id
+				, cyng::TC_TIME_POINT	//	ts
+				, cyng::TC_STRING		//	Payload
+				, cyng::TC_IP_TCP_ENDPOINT	//	ep
+				, cyng::TC_UUID			//	tag
+				},
+				{ 0		//	id
+				, 0		//	ts
+				, 512	//	event
+				, 0		//	ep
+				, 0		//	tag
+			});
+		}
 		else if (boost::algorithm::equals(name, "_TimeSeries")) {
 
 			return cyng::table::make_meta_table<1, 5>(name, { "id"	//	message number

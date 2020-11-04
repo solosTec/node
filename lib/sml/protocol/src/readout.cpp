@@ -669,51 +669,51 @@ namespace node
 				return collect_access_rights(tpl);
 			}
 
-
 			std::size_t duplicates{ 0 };
 			for (auto const child : tpl)
 			{
-				BOOST_ASSERT(child.get_class().tag() == cyng::TC_TUPLE);
-				cyng::tuple_t const tree = cyng::to_tuple(child);
-				BOOST_ASSERT_MSG(tree.size() == 3, "SML Tree");
+				//BOOST_ASSERT(child.get_class().tag() == cyng::TC_TUPLE);
+				if (child.get_class().tag() == cyng::TC_TUPLE) {
+					cyng::tuple_t const tree = cyng::to_tuple(child);
+					BOOST_ASSERT_MSG(tree.size() == 3, "SML Tree");
 
-				auto const param = read_param_tree(depth + 1, tree.begin(), tree.end());
+					auto const param = read_param_tree(depth + 1, tree.begin(), tree.end());
 
-				//
-				//	collect all optional values in a parameter map.
-				//	No duplicates allowed
-				//
-				BOOST_ASSERT(params.find(param.first) == params.end());
-				auto const r = params.emplace(param.first, param.second);
-				if (!r.second) {
-					std::stringstream ss;
-					ss
-						<< "duplicate-"
-						<< duplicates
-						<< '-'
-						<< param.first
+					//
+					//	collect all optional values in a parameter map.
+					//	No duplicates allowed
+					//
+					BOOST_ASSERT(params.find(param.first) == params.end());
+					auto const r = params.emplace(param.first, param.second);
+					if (!r.second) {
+						std::stringstream ss;
+						ss
+							<< "duplicate-"
+							<< duplicates
+							<< '-'
+							<< param.first
+							;
+						params.emplace(ss.str(), param.second);
+						++duplicates;
+					}
+				}
+				else {
+					//
+					//	protocol error!
+					//
+#ifdef _DEBUG
+					std::cout 
+						<< std::endl
+						<< "***error: read_param_tree ("
+						<< depth
+						<< ") "
+						<< code.to_str()
+						<< std::endl
 						;
-					params.emplace(ss.str(), param.second);
-					++duplicates;
+#endif
 				}
 			}
 
-			//
-			//	detect OBIS codes with index
-			//
-			//if (code.is_matching(0x81, 0x49, 0x0D, 0x07, 0x00).second) {
-			//	//	IP-T parameters
-			//	params.emplace("idx", cyng::make_object(code.get_storage()));
-			//}
-			//else if (code.is_matching(0x00, 0x80, 0x80, 0x11, 0x01).second) {
-			//	//	Actuators:
-			//	params.emplace("idx", cyng::make_object(code.get_storage()));
-			//}
-			//else if (code.is_matching(0x81, 0x81, 0xC7, 0x82, 0x07).second) {
-			//	//	firmware
-			//	params.emplace("idx", cyng::make_object(code.get_storage()));
-			//}
-			//else 
 			if (OBIS_DATA_PUBLIC_KEY == code
 				|| OBIS_ROOT_SENSOR_BITMASK == code
 				|| OBIS_DATA_USER_NAME == code

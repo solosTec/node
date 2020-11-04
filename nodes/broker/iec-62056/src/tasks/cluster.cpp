@@ -5,8 +5,8 @@
  *
  */
 
-#include "cluster.h"
-#include "client.h"
+#include <tasks/cluster.h>
+#include <tasks/client.h>
 
 #include <smf/cluster/generator.h>
 
@@ -86,25 +86,40 @@ namespace node
 			auto const frame = ctx.get_frame();
 
 			auto const tpl = cyng::tuple_cast<
-				boost::uuids::uuid,		//	[0] key to TMeter table
-				boost::asio::ip::address,			//	[1] address
-				std::uint16_t,	//	[2] port
-				std::chrono::seconds
+				boost::uuids::uuid,				//	[0] key to TMeter table
+				boost::asio::ip::address,		//	[1] address
+				std::uint16_t,					//	[2] port
+				std::chrono::seconds			//	[3] monitor
 			>(frame);
 
-			auto tsk = cyng::async::start_task_detached<client>(base_.mux_
-				, logger_
-				, cache_
-				, boost::asio::ip::tcp::endpoint{ std::get<1>(tpl), std::get<2>(tpl) }
-				, std::get<3>(tpl));
+			//
+			//	lookup for associated meter
+			//
+			auto const rec = cache_.lookup("TMeter", cyng::table::key_generator(std::get<0>(tpl)));
+			if (!rec.empty()) {
 
-			CYNG_LOG_TRACE(logger_,
-				ctx.get_name()
-				<< " #"
-				<< tsk
-				<< " - "
-				<< cyng::io::to_type(frame));
-			});
+				auto tsk = cyng::async::start_task_detached<client>(base_.mux_
+					, bus_->vm_
+					, logger_
+					, cache_
+					, boost::asio::ip::tcp::endpoint{ std::get<1>(tpl), std::get<2>(tpl) }
+					, std::get<3>(tpl));
+
+				CYNG_LOG_TRACE(logger_,
+					ctx.get_name()
+					<< " #"
+					<< tsk
+					<< " - "
+					<< cyng::io::to_type(frame));
+			}
+			else {
+				CYNG_LOG_WARNING(logger_,
+					ctx.get_name()
+					<< " IEC record "
+					<< std::get<0>(tpl)
+					<< " has no meter data");
+			}
+		});
 
 		bus_->vm_.register_function("iec.client.stop", 0, [this](cyng::context& ctx) {
 			auto const frame = ctx.get_frame();
@@ -163,6 +178,7 @@ namespace node
 		//
 		sync_table("TMeter");
 		sync_table("TIECBridge");
+		//sync_table("_IECUplink");
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

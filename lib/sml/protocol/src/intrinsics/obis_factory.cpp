@@ -34,14 +34,24 @@ namespace node
 				, static_cast<std::uint8_t>(f & 0xFF));
 		}
 
-		obis make_obis(obis const& code, std::uint32_t f)
+		obis make_obis(obis const& code, std::uint32_t s)
 		{
 			return obis(code.get_medium()
 				, code.get_channel()
 				, code.get_indicator()
 				, code.get_mode()
 				, code.get_quantities()
-				, static_cast<std::uint8_t>(f & 0xFF));
+				, static_cast<std::uint8_t>(s & 0xFF));
+		}
+
+		obis make_obis(obis const& code, std::uint32_t q, std::uint32_t s)
+		{
+			return obis(code.get_medium()
+				, code.get_channel()
+				, code.get_indicator()
+				, code.get_mode()
+				, static_cast<std::uint8_t>(q & 0xFF)
+				, static_cast<std::uint8_t>(s & 0xFF));
 		}
 
 		namespace {

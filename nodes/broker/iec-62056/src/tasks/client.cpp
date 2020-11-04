@@ -5,21 +5,22 @@
  *
  */
 
-#include "client.h"
-//#include <smf/cluster/generator.h>
-//#include <cyng/async/task/task_builder.hpp>
+#include <tasks/client.h>
+#include <smf/cluster/generator.h>
+
+#include <cyng/vm/controller.h>
 #include <cyng/io/io_bytes.hpp>
-//#include <cyng/vm/generator.h>
-//#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
 	client::client(cyng::async::base_task* btp
+		, cyng::controller& cluster
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, boost::asio::ip::tcp::endpoint ep
 		, std::chrono::seconds monitor)
 	: base_(*btp)
+		, cluster_(cluster)
 		, logger_(logger)
 		, cache_(db)
 		, ep_(ep)
@@ -34,6 +35,8 @@ namespace node
 			<< base_.get_class_name()
 			<< "> "
 			<< ep_);
+
+		reset_write_buffer();
 	}
 
 	cyng::continuation client::run()
@@ -56,7 +59,6 @@ namespace node
 
 				boost::asio::ip::tcp::resolver resolver(base_.mux_.get_io_service());
 				auto const endpoints = resolver.resolve(ep_);
-				//auto const endpoints = resolver.resolve(host_, std::to_string(port_));
 				do_connect(endpoints);
 			}
 			catch (std::exception const& ex) {
@@ -101,8 +103,13 @@ namespace node
 						<< "> connected to "
 						<< ep);
 
+					cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
+						, "connected"
+						, ep
+						, cluster_.tag()));
+
 					//
-					//	send login
+					//	send query
 					//
 					do_write();
 
@@ -120,6 +127,11 @@ namespace node
 						<< ep_
 						<< ' '
 						<< ec.message());
+
+					cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
+						, "connect failed"
+						, ep_
+						, cluster_.tag()));
 
 				}
 			});
@@ -174,35 +186,35 @@ namespace node
 
 	void client::do_write()
 	{
-		boost::asio::async_write(socket_,
-			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-			[this](boost::system::error_code ec, std::size_t bytes_transferred)
-			{
-				if (!ec)
+		if (!buffer_write_.empty()) {
+			boost::asio::async_write(socket_,
+				boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
+				[this](boost::system::error_code ec, std::size_t bytes_transferred)
 				{
-					buffer_write_.pop_front();
-					if (!buffer_write_.empty())
+					if (!ec)
 					{
-						do_write();
+						buffer_write_.pop_front();
+						if (!buffer_write_.empty())
+						{
+							do_write();
+						}
 					}
-				}
-				else
-				{
-					//
-					//	no more data will be send
-					//
-					socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
-				}
-			});
+					else
+					{
+						//
+						//	no more data will be send
+						//
+						socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
+					}
+				});
+		}
 	}
 
 	void client::reset_write_buffer()
 	{
 		buffer_write_.clear();
-		//buffer_write_.emplace_back(cyng::buffer_t(account_.begin(), account_.end()));
-		//buffer_write_.emplace_back(cyng::buffer_t(1, ':'));
-		//buffer_write_.emplace_back(cyng::buffer_t(pwd_.begin(), pwd_.end()));
-		//buffer_write_.emplace_back(cyng::buffer_t(1, '\n'));
+		std::string const hello("/?!\r\n");
+		buffer_write_.emplace_back(cyng::buffer_t(hello.begin(), hello.end()));
 	}
 
 }

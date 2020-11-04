@@ -101,7 +101,8 @@ namespace node
 		vm_.register_function("bus.insert.msg", 2, std::bind(&session::bus_insert_msg, this, std::placeholders::_1));
 		vm_.register_function("bus.req.push.data", 7, std::bind(&session::bus_req_push_data, this, std::placeholders::_1));
 		vm_.register_function("bus.insert.LoRa.uplink", 11, std::bind(&session::bus_insert_lora_uplink, this, std::placeholders::_1));
-		vm_.register_function("bus.insert.wMBus.uplink", 5, std::bind(&session::bus_insert_wmbus_uplink, this, std::placeholders::_1));
+		vm_.register_function("bus.insert.wMBus.uplink", 8, std::bind(&session::bus_insert_wmbus_uplink, this, std::placeholders::_1));
+		vm_.register_function("bus.insert.IEC.uplink", 5, std::bind(&session::bus_insert_iec_uplink, this, std::placeholders::_1));
 
 		//
 		//	execute data cleanup
@@ -1171,6 +1172,31 @@ namespace node
 
 			CYNG_LOG_WARNING(logger_, ctx.get_name() 
 				<< " failed: " 
+				<< cyng::io::to_str(frame));
+		}
+	}
+
+	void session::bus_insert_iec_uplink(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+
+		auto const tpl = cyng::tuple_cast<
+			boost::uuids::uuid,			//	[0] origin client tag
+			std::chrono::system_clock::time_point,	//	[1] tp
+			std::string,			// [2] event
+			boost::asio::ip::tcp::endpoint,		//	[3] ep
+			boost::uuids::uuid		// [4] tag
+		>(frame);
+
+		if (!insert_iec_uplink(cache_.db_
+			, std::get<1>(tpl)	//	tp
+			, std::get<2>(tpl)	//	event
+			, std::get<3>(tpl)	//	ep
+			, std::get<4>(tpl)	//	tag
+			, ctx.tag())) {
+
+			CYNG_LOG_WARNING(logger_, ctx.get_name()
+				<< " failed: "
 				<< cyng::io::to_str(frame));
 		}
 	}

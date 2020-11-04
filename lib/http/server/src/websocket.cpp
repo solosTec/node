@@ -327,10 +327,16 @@ namespace node
 				, 0u
 				, connection_manager_.vm().tag()));
 
-			//
-			//	execute on bus VM
-			//
-			connection_manager_.vm().async_run(cyng::generate_invoke("ws.read", tag(), cyng::json::read(str)));
+			try {
+				//
+				//	execute on bus VM
+				//
+				connection_manager_.vm().async_run(cyng::generate_invoke("ws.read", tag(), cyng::json::read(str)));
+
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_WARNING(logger_, "ws.read.json invalid input: " << str << " - " << ex.what());
+			}
 
 			// Clear buffer
 			ws_.text();

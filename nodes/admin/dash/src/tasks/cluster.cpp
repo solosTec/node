@@ -235,6 +235,7 @@ namespace node
 		cache_.clear("_TimeSeries", bus_->vm_.tag());
 		cache_.clear("_LoRaUplink", bus_->vm_.tag());
 		cache_.clear("_wMBusUplink", bus_->vm_.tag());
+		cache_.clear("_IECUplink", bus_->vm_.tag());
 
 		for (auto const& tbl : tables::list_) {
 			if (!tbl.local_) {

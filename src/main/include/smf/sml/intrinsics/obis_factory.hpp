@@ -22,8 +22,18 @@ namespace node
 
 		/**
 		 * Generate an OBIS code from an existing code but change the storage field
+		 * 
+		 * @param s storage value
 		 */
-		obis make_obis(obis const&, std::uint32_t);
+		obis make_obis(obis const&, std::uint32_t s);
+
+		/**
+		 * Generate an OBIS code from an existing code but change the storage field
+		 * 
+		 * @param q quantity value
+		 * @param s storage value
+		 */
+		obis make_obis(obis const&, std::uint32_t q, std::uint32_t s);
 
 		/**
 		 * @return a tuple of buffer_t objects
