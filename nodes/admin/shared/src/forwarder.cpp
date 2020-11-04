@@ -1603,25 +1603,25 @@ namespace node
 			auto const manufacturer = cyng::value_cast<std::string>(pos->second, "");
 			if (manufacturer.size() != 3) {
 				if (boost::algorithm::istarts_with(manufacturer, "Easymeter")) return "ESY";	//	not offical
-				//ABB	0442	ABB AB, P.O. Box 1005, SE-61129 Nyköping, Nyköping,Sweden
-				//ACE	0465	Actaris (Elektrizität)
+				//ABB	0442	ABB AB, P.O. Box 1005, SE-61129 Nykï¿½ping, Nykï¿½ping,Sweden
+				//ACE	0465	Actaris (Elektrizitï¿½t)
 				//ACG	0467	Actaris (Gas)
-				//ACW	0477	Actaris (Wasser und Wärme)
+				//ACW	0477	Actaris (Wasser und Wï¿½rme)
 				else if (boost::algorithm::istarts_with(manufacturer, "Actaris"))	return "ACE";
 				//AEG	04A7	AEG
-				//AEL	04AC	Kohler, Türkei
+				//AEL	04AC	Kohler, Tï¿½rkei
 				else if (boost::algorithm::istarts_with(manufacturer, "Kohler"))	return "AEL";
 				//AEM	04AD	S.C. AEM S.A. Romania
 				else if (boost::algorithm::istarts_with(manufacturer, "S.C. AEM"))	return "AEM";
 				//AMP	05B0	Ampy Automation Digilog Ltd
 				else if (boost::algorithm::istarts_with(manufacturer, "Ampy"))	return "AMP";
 				//AMT	05B4	Aquametro
-	//APS	0613	Apsis Kontrol Sistemleri, Türkei
+	//APS	0613	Apsis Kontrol Sistemleri, Tï¿½rkei
 	//BEC	08A3	Berg Energiekontrollsysteme GmbH
 	//BER	08B2	Bernina Electronic AG
-	//BSE	0A65	Basari Elektronik A.S., Türkei
-	//BST	0A74	BESTAS Elektronik Optik, Türkei
-	//CBI	0C49	Circuit Breaker Industries, Südafrika
+	//BSE	0A65	Basari Elektronik A.S., Tï¿½rkei
+	//BST	0A74	BESTAS Elektronik Optik, Tï¿½rkei
+	//CBI	0C49	Circuit Breaker Industries, Sï¿½dafrika
 	//CLO	0D8F	Clorius Raab Karcher Energie Service A/S
 	//CON	0DEE	Conlog
 	//CZM	0F4D	Cazzaniga S.p.A.
@@ -1629,26 +1629,26 @@ namespace node
 	//DFS	10D3	Danfoss A/S
 	//DME	11A5	DIEHL Metering, Industriestrasse 13, 91522 Ansbach, Germany
 				else if (boost::algorithm::istarts_with(manufacturer, "Diehl"))	return "DME";
-				//DZG	1347	Deutsche Zählergesellschaft
-				else if (boost::algorithm::istarts_with(manufacturer, "Deutsche Zählergesellschaft"))	return "DZG";
+				//DZG	1347	Deutsche Zï¿½hlergesellschaft
+				else if (boost::algorithm::istarts_with(manufacturer, "Deutsche Zï¿½hlergesellschaft"))	return "DZG";
 				//EDM	148D	EDMI Pty.Ltd.
 	//EFE	14C5	Engelmann Sensor GmbH
 	//EKT	1574	PA KVANT J.S., Russland
-	//ELM	158D	Elektromed Elektronik Ltd, Türkei
+	//ELM	158D	Elektromed Elektronik Ltd, Tï¿½rkei
 	//ELS	1593	ELSTER Produktion GmbH
 				else if (boost::algorithm::istarts_with(manufacturer, "Elster")) return "ELS";
-				//EMH	15A8	EMH Elektrizitätszähler GmbH & CO KG
+				//EMH	15A8	EMH Elektrizitï¿½tszï¿½hler GmbH & CO KG
 				else if (boost::algorithm::istarts_with(manufacturer, "EMH")) return "EMH";
 				//EMU	15B5	EMU Elektronik AG
 	//EMO	15AF	Enermet
 	//END	15C4	ENDYS GmbH
 	//ENP	15D0	Kiev Polytechnical Scientific Research
-	//ENT	15D4	ENTES Elektronik, Türkei
-	//ERL	164C	Erelsan Elektrik ve Elektronik, Türkei
-	//ESM	166D	Starion Elektrik ve Elektronik, Türkei
+	//ENT	15D4	ENTES Elektronik, Tï¿½rkei
+	//ERL	164C	Erelsan Elektrik ve Elektronik, Tï¿½rkei
+	//ESM	166D	Starion Elektrik ve Elektronik, Tï¿½rkei
 	//EUR	16B2	Eurometers Ltd
 	//EWT	16F4	Elin Wasserwerkstechnik
-	//FED	18A4	Federal Elektrik, Türkei
+	//FED	18A4	Federal Elektrik, Tï¿½rkei
 	//FML	19AC	Siemens Measurements Ltd.( Formerly FML Ltd.)
 	//GBJ	1C4A	Grundfoss A/S
 	//GEC	1CA3	GEC Meters Ltd.
@@ -1670,10 +1670,10 @@ namespace node
 				//IWK	26EB	IWK Regler und Kompensatoren GmbH
 	//KAM	2C2D	Kamstrup Energie A/S
 				else if (boost::algorithm::istarts_with(manufacturer, "Kamstrup"))	return "KAM";
-				//KHL	2D0C	Kohler, Türkei
+				//KHL	2D0C	Kohler, Tï¿½rkei
 	//KKE	2D65	KK-Electronic A/S
 	//KNX	2DD8	KONNEX-based users (Siemens Regensburg)
-	//KRO	2E4F	Kromschröder
+	//KRO	2E4F	Kromschrï¿½der
 	//KST	2E74	Kundo SystemTechnik GmbH
 	//LEM	30AD	LEM HEME Ltd., UK
 	//LGB	30E2	Landis & Gyr Energy Management (UK) Ltd.
@@ -1684,7 +1684,7 @@ namespace node
 				else if (boost::algorithm::istarts_with(manufacturer, "Landis & Gyr Zug"))	return "LGZ";
 				else if (boost::algorithm::istarts_with(manufacturer, "L & G"))	return "LGZ";	//	switzerland / zug
 
-	//LHA	3101	Atlantic Meters, Südafrika
+	//LHA	3101	Atlantic Meters, Sï¿½dafrika
 	//LML	31AC	LUMEL, Polen
 	//LSE	3265	Landis & Staefa electronic
 	//LSP	3270	Landis & Staefa production
@@ -1692,14 +1692,14 @@ namespace node
 	//LSZ	327A	Siemens Building Technologies
 	//MAD	3424	Maddalena S.r.I., Italien
 	//MEI	34A9	H. Meinecke AG (jetzt Invensys Metering Systems AG)
-	//MKS	3573	MAK-SAY Elektrik Elektronik, Türkei
-	//MNS	35D3	MANAS Elektronik, Türkei
+	//MKS	3573	MAK-SAY Elektrik Elektronik, Tï¿½rkei
+	//MNS	35D3	MANAS Elektronik, Tï¿½rkei
 	//MPS	3613	Multiprocessor Systems Ltd, Bulgarien
 	//MTC	3683	Metering Technology Corporation, USA
 	//NIS	3933	Nisko Industries Israel
 	//NMS	39B3	Nisko Advanced Metering Solutions Israel
-	//NRM	3A4D	Norm Elektronik, Türkei
-	//ONR	3DD2	ONUR Elektroteknik, Türkei
+	//NRM	3A4D	Norm Elektronik, Tï¿½rkei
+	//ONR	3DD2	ONUR Elektroteknik, Tï¿½rkei
 	//PAD	4024	PadMess GmbH
 	//PMG	41A7	Spanner-Pollux GmbH (jetzt Invensys Metering Systems AG)
 	//PRI	4249	Polymeters Response International Ltd.
@@ -1719,15 +1719,15 @@ namespace node
 	//SOF	4DE6	softflow.de GmbH
 	//SPL	4E0C	Sappel
 	//SPX	4E18	Spanner Pollux GmbH (jetzt Invensys Metering Systems AG)
-	//SVM	4ECD	AB Svensk Värmemätning SVM
+	//SVM	4ECD	AB Svensk Vï¿½rmemï¿½tning SVM
 	//TCH	5068	Techem Service AG
-	//TIP	5130	TIP Thüringer Industrie Produkte GmbH
+	//TIP	5130	TIP Thï¿½ringer Industrie Produkte GmbH
 	//UAG	5427	Uher
 	//UGI	54E9	United Gas Industries
 	//VES	58B3	ista Deutschland (bis 2005 Viterra Energy Services)
 	//VPI	5A09	Van Putten Instruments B.V.
 	//WMO	5DAF	Westermo Teleindustri AB, Schweden
-	//YTE	6685	Yuksek Teknoloji, Türkei
+	//YTE	6685	Yuksek Teknoloji, Tï¿½rkei
 	//ZAG	6827	Zellwerg Uster AG
 	//ZAP	6830	Zaptronix
 	//ZIV	6936	ZIV Aplicaciones y Tecnologia, S.A.
@@ -1758,7 +1758,7 @@ namespace node
 	{
 		if (manufacturer_code.size() == 3) {
 			std::uint16_t mcode = sml::encode_id(manufacturer_code);
-			auto const ac = cyng::to_array<std::uint8_t>(mcode);
+			auto const ac = cyng::to_array<std::int8_t>(mcode);
 
 			auto const r = sml::parse_srv_id(meter_id);
 			if (r.second) {
