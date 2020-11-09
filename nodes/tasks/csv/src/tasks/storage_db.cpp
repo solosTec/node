@@ -5,10 +5,10 @@
  *
  */
 
-#include "storage_db.h"
-#include "profile_15_min.h"
-#include "profile_60_min.h"
-#include "profile_24_h.h"
+#include <tasks/storage_db.h>
+#include <tasks/profile_15_min.h>
+#include <tasks/profile_60_min.h>
+#include <tasks/profile_24_h.h>
 #include <smf/shared/db_meta.h>
 
 #include <NODE_project_info.h>
@@ -119,7 +119,7 @@ namespace node
 				<< base_.get_class_name()
 				<< "> failed to open connection pool"
 				;
-			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, ss.str()));
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, "CSV - " + ss.str()));
 			CYNG_LOG_FATAL(logger_, ss.str());
 			return cyng::continuation::TASK_YIELD;
 		}
@@ -182,7 +182,7 @@ namespace node
 				<< base_.get_class_name()
 				<< "> failed to open connection pool"
 				;
-			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, ss.str()));
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, "CSV - " + ss.str()));
 			CYNG_LOG_FATAL(logger_, ss.str());
 			return cyng::continuation::TASK_YIELD;
 		}
@@ -251,7 +251,7 @@ namespace node
 				<< base_.get_class_name()
 				<< "> failed to open connection pool"
 				;
-			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, ss.str()));
+			bus_->vm_.async_run(bus_insert_msg(cyng::logging::severity::LEVEL_FATAL, "CSV - " + ss.str()));
 			CYNG_LOG_FATAL(logger_, ss.str());
 			return cyng::continuation::TASK_YIELD;
 		}
@@ -1123,8 +1123,11 @@ namespace node
 			<< '.'
 			<< suffix	//	.csv
 			;
-		CYNG_LOG_INFO(logger_, "open "<< root_dir / ss.str());
         auto path = root_dir / ss.str();
+		CYNG_LOG_INFO(logger_, "open " << root_dir / ss.str());
+
+		check_path(path);
+
         std::ofstream ofs(path.string());
         if (ofs.is_open()) {
 
@@ -1194,8 +1197,12 @@ namespace node
 			<< '.'
 			<< suffix	//	.csv
 			;
-		CYNG_LOG_INFO(logger_, "open " << root_dir / ss.str());
+
 		auto path = root_dir / ss.str();
+		CYNG_LOG_INFO(logger_, "open " << root_dir / ss.str());
+
+		check_path(path);
+
 		std::ofstream ofs(path.string());
 		if (ofs.is_open()) {
 
@@ -1250,9 +1257,12 @@ namespace node
 			<< suffix	//	.csv
 			;
 
-		CYNG_LOG_INFO(logger_, "open " << root_dir / ss.str());
         auto path = root_dir / ss.str();
-        std::ofstream ofs(path.string());
+		CYNG_LOG_INFO(logger_, "open " << path);
+
+		check_path(path);
+		
+		std::ofstream ofs(path.string());
         if (ofs.is_open()) {
 
 			std::stringstream ss;
@@ -1433,6 +1443,24 @@ namespace node
 			meta_map.emplace("TSMLData", create_meta("TSMLData"));
 		}
 		return meta_map;
+	}
+
+	bool storage_db::check_path(cyng::filesystem::path p)
+	{
+		auto const root = p.parent_path();
+		if (!cyng::filesystem::exists(root)) {
+
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> output path "
+				<< root
+				<< " does not exists");
+
+			return cyng::filesystem::create_directories(root);
+		}
+		return true;
 	}
 
 

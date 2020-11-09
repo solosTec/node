@@ -5,7 +5,7 @@
  *
  */
 
-#include "profile_24_h.h"
+#include <tasks/profile_24_h.h>
 #include <cyng/chrono.h>
 #include <cyng/io/io_chrono.hpp>
 #include <cyng/async/task/base_task.h>

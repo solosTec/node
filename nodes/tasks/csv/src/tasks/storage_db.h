@@ -9,6 +9,7 @@
 #define NODE_CSV_TASK_STORAGE_DB_H
 
 #include <smf/cluster/bus.h>
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
@@ -162,6 +163,8 @@ namespace node
 		void update_csv_15min(std::chrono::system_clock::time_point start, std::size_t size);
 		void update_csv_60min(std::chrono::system_clock::time_point start, std::size_t size);
 		void update_csv_24h(std::chrono::system_clock::time_point start, std::size_t size);
+
+		bool check_path(cyng::filesystem::path);
 
 	private:
 		cyng::async::base_task& base_;
