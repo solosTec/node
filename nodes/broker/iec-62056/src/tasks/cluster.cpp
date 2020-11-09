@@ -103,12 +103,19 @@ namespace node
 				auto const protocol = from_str(str);
 
 				if (protocol == protocol_e::IEC) {
+
+					//
+					//	meter number (i.e. 16000913)
+					//
+					auto const meter = cyng::value_cast(rec["meter"], "00000000");
+
 					auto tsk = cyng::async::start_task_detached<client>(base_.mux_
 						, bus_->vm_
 						, logger_
 						, cache_
 						, boost::asio::ip::tcp::endpoint{ std::get<1>(tpl), std::get<2>(tpl) }
-					, std::get<3>(tpl));
+						, std::get<3>(tpl)
+						, meter);
 
 					CYNG_LOG_TRACE(logger_,
 						ctx.get_name()

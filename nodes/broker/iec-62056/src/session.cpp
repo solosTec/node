@@ -5,7 +5,8 @@
  *
  */
 
-#include "session.h"
+#include <session.h>
+
 #include <smf/cluster/generator.h>
 #include <smf/sml/srv_id_io.h>
 

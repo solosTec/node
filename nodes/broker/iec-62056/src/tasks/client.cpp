@@ -18,13 +18,15 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, boost::asio::ip::tcp::endpoint ep
-		, std::chrono::seconds monitor)
+		, std::chrono::seconds monitor
+		, std::string const& meter)
 	: base_(*btp)
 		, cluster_(cluster)
 		, logger_(logger)
 		, cache_(db)
 		, ep_(ep)
 		, monitor_(monitor)
+		, meter_(meter)
 		, socket_(base_.mux_.get_io_service())
 		, buffer_read_()
 		, buffer_write_()
@@ -213,7 +215,7 @@ namespace node
 	void client::reset_write_buffer()
 	{
 		buffer_write_.clear();
-		std::string const hello("/?!\r\n");
+		std::string const hello("/?" + meter_ + "!\r\n");
 		buffer_write_.emplace_back(cyng::buffer_t(hello.begin(), hello.end()));
 	}
 

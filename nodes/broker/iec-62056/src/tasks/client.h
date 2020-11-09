@@ -34,7 +34,8 @@ namespace node
 			, cyng::logging::log_ptr
 			, cyng::store::db&
 			, boost::asio::ip::tcp::endpoint
-			, std::chrono::seconds );
+			, std::chrono::seconds 
+			, std::string const& meter);
 		cyng::continuation run();
 		void stop(bool shutdown);
 
@@ -76,6 +77,8 @@ namespace node
 
 		boost::asio::ip::tcp::endpoint const ep_;
 		std::chrono::seconds const monitor_;
+
+		std::string const meter_;
 
 		/**
 		 * connection socket
