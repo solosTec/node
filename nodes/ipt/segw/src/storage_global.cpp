@@ -1277,10 +1277,12 @@ namespace node
 					auto const param = cyng::to_param(obj);
 
 					if (boost::algorithm::equals(param.first, "address")) {
-						init_config_record(s, build_cfg_key({ "sml", "address" }), param.second);
+						auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"));
+						init_config_record(s, build_cfg_key({ "sml", "address" }), cyng::make_object(address));
 					}
 					else if (boost::algorithm::equals(param.first, "service")) {
-						init_config_record(s, build_cfg_key({ "sml", "service" }), param.second);
+						auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 5798u);
+						init_config_record(s, build_cfg_key({ "sml", "service" }), cyng::make_object(port));
 					}
 					else if (boost::algorithm::equals(param.first, "discover")) {
 						init_config_record(s, build_cfg_key({ "sml", "discover" }), param.second);
@@ -1313,7 +1315,7 @@ namespace node
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ADDRESS }), cyng::make_object(address));
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
-						auto const port = cyng::numeric_cast<std::int16_t>(param.second, 7261u);
+						auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 7261u);
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }), cyng::make_object(port));
 					}
 					else if (boost::algorithm::equals(param.first, "account")) {

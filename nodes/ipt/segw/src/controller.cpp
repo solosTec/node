@@ -985,41 +985,36 @@ namespace node
 
 	boost::asio::ip::tcp::endpoint controller::get_sml_ep(cache& cfg) const
 	{
-		auto const sml_address = cfg.get_cfg<std::string>(build_cfg_key({ "sml", "address" }), "");
-		auto const sml_service = cfg.get_cfg<std::string>(build_cfg_key({ "sml", "service" }), "7259");
-		auto const sml_host = cyng::make_address(sml_address);
 		try {
-			const auto sml_port = static_cast<unsigned short>(std::stoi(sml_service));
-			return { sml_host, sml_port };
+			auto const sml_address = cfg.get_cfg(build_cfg_key({ "sml", "address" }), boost::asio::ip::address());
+			auto const sml_service = cfg.get_cfg<std::uint16_t>(build_cfg_key({ "sml", "service" }), 7259u);
+			return { sml_address, sml_service };
 		}
 		catch (std::exception const&) {}
-		return { sml_host, 7259 };
+		return { cyng::make_address("0.0.0.0"), 7259 };
 	}
 
 	boost::asio::ip::tcp::endpoint controller::get_nms_ep(cache& cfg) const
 	{
-		auto const nms_address = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ADDRESS }), "");
-		auto const nms_service = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }), "7261");
-		auto const nms_host = cyng::make_address(nms_address);
 		try {
-			const auto nms_port = static_cast<unsigned short>(std::stoi(nms_service));
-			return { nms_host, nms_port };
+			auto const nms_address = cfg.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ADDRESS }), boost::asio::ip::address());
+			auto const nms_port = cfg.get_cfg<std::uint16_t>(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }), 7261);
+			return { nms_address, nms_port };
 		}
 		catch (std::exception const&) {}
-		return { nms_host, 7261 };
+		return { cyng::make_address("0.0.0.0"), 7261 };
 	}
 
 	boost::asio::ip::tcp::endpoint controller::get_redirctor_ep(cache& cfg, std::uint8_t nr) const
 	{
-		auto const nms_address = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_REDIRECTOR, sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, nr), sml::make_obis(sml::OBIS_REDIRECTOR_ADDRESS, nr) }), "");	//	address
-		auto const nms_service = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_REDIRECTOR, sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, nr), sml::make_obis(sml::OBIS_REDIRECTOR_SERVICE, nr) }), "6006");
-		auto const nms_host = cyng::make_address(nms_address);
 		try {
-			const auto nms_port = static_cast<unsigned short>(std::stoi(nms_service));
-			return { nms_host, nms_port };
+			auto const nms_address = cfg.get_cfg<std::string>(build_cfg_key({ sml::OBIS_ROOT_REDIRECTOR, sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, nr), sml::make_obis(sml::OBIS_REDIRECTOR_ADDRESS, nr) }), "");	//	address
+			auto const nms_service = cfg.get_cfg<std::uint16_t>(build_cfg_key({ sml::OBIS_ROOT_REDIRECTOR, sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, nr), sml::make_obis(sml::OBIS_REDIRECTOR_SERVICE, nr) }), 6006u);
+			auto const nms_host = cyng::make_address(nms_address);
+			return { nms_host, nms_service };
 		}
 		catch(std::exception const&) {}
-		return { nms_host, 6006 };
+		return { cyng::make_address("0.0.0.0"), 6006 };
 	}
 
 	std::pair<std::size_t, bool> join_network(cyng::async::mux& mux
