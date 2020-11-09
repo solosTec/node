@@ -264,6 +264,7 @@ namespace node
 				return cmd_version(cmd, tag);
 			}
 			else if (boost::algorithm::equals(cmd, "cminfos")
+				|| boost::algorithm::equals(cmd, "cminfo")
 				|| boost::algorithm::equals(cmd, "cm-infos")
 				|| boost::algorithm::equals(cmd, "infos-cm")) {
 				return cmd_cm(cmd, tag, dom);
