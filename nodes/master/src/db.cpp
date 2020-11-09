@@ -133,12 +133,19 @@ namespace node
 			, 5
 			, tag);
 
+		db.insert("TLocation"
+			, cyng::table::key_generator(tag)
+			, cyng::table::data_generator("description", "region", "address", 45.1, 33.9, "GPS")
+			, 3
+			, tag);
+
+
 		{
 			//	segw.ch
 			auto const host = cyng::make_address("138.201.95.180");
 			auto const ep = boost::asio::ip::tcp::endpoint{ host, 4004 };
 
-			db.insert("TIECBridge"
+			db.insert("TBridge"
 				, cyng::table::key_generator(tag)
 				, cyng::table::data_generator(ep.address()
 					, ep.port()
@@ -525,18 +532,19 @@ namespace node
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<cache::tbl_descr, 23>	cache::tables_ =
+	const std::array<cache::tbl_descr, 24>	cache::tables_ =
 	{
 		tbl_descr{"TDevice", false},
 		tbl_descr{"TGateway", false},
 		tbl_descr{"TLoRaDevice", false},
 		tbl_descr{"TMeter", false},
-		tbl_descr{"TMeterwMBUS", false},
+		tbl_descr{"TLocation", false},
+		tbl_descr{"TMeterAccess", false},
 		tbl_descr{"TLL", false},
 		tbl_descr{"TGUIUser", false},
 		tbl_descr{"TGWSnapshot", false},
 		tbl_descr{"TNodeNames", false},
-		tbl_descr{"TIECBridge", false},
+		tbl_descr{"TBridge", false},
 		tbl_descr{"_Session", false},
 		tbl_descr{"_Channel", true},	//	custom
 		tbl_descr{"_Target", false},

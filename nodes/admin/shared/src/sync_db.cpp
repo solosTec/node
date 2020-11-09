@@ -154,9 +154,9 @@ namespace node
 
 
 		//
-		//	TIECBridge is supplementary table to TMeter.
+		//	TBridge is supplementary table to TMeter.
 		//
-		if (!db.create_table(cyng::table::make_meta_table<1, 5>("TIECBridge",
+		if (!db.create_table(cyng::table::make_meta_table<1, 6>("TBridge",
 			{ "pk"		//	same key as in TMeter table
 			, "address"		//	[ip address] incoming/outgoing IP connection
 			, "port"		//	[u16] port
@@ -164,12 +164,14 @@ namespace node
 			, "interval"	//	[seconds] pull cycle
 			//	-- additional columns
 			, "meter"
+			, "protocol"
 			},
 			{ cyng::TC_UUID			//	pk
 			, cyng::TC_IP_ADDRESS	//	host address
 			, cyng::TC_UINT16		//	TCP/IP port
 			, cyng::TC_BOOL
 			, cyng::TC_SECOND
+			, cyng::TC_STRING
 			, cyng::TC_STRING
 			},
 			{ 36
@@ -178,9 +180,10 @@ namespace node
 			, 0	//	direction
 			, 0
 			, 8
+			, 32
 			})))
 		{
-			CYNG_LOG_FATAL(logger, "cannot create table TIECBridge");
+			CYNG_LOG_FATAL(logger, "cannot create table TBridge");
 		}
 
 		//
@@ -261,20 +264,20 @@ namespace node
 		//
 		//	Boost IEC records with additional data from TMeter
 		//
-		else if (boost::algorithm::equals(table, "TIECBridge"))
+		else if (boost::algorithm::equals(table, "TBridge"))
 		{
 //#ifdef _DEBUG
 			//
 			//	hunting a bug on linux: IP address is NULL
 			//
-			CYNG_LOG_DEBUG(logger, "IEC device "
-				<< cyng::io::to_str(key)
-				<< " - "
-				<< cyng::io::to_str(data));
+			//CYNG_LOG_DEBUG(logger, "Bridge meter "
+			//	<< cyng::io::to_str(key)
+			//	<< " - "
+			//	<< cyng::io::to_str(data));
 
 //#endif
 
-			if (!complete_data_iec(db, key, data)) {
+			if (!complete_data_bridge(db, key, data)) {
 
 				CYNG_LOG_WARNING(logger, "IEC device "
 					<< cyng::io::to_str(key)
@@ -619,15 +622,24 @@ namespace node
 					<< " has no associated gateway");
 			}
 		}
-		else if (boost::algorithm::equals(table, "TIECBridge"))
+		else if (boost::algorithm::equals(table, "TBridge"))
 		{
-			if (!complete_data_iec(db_, key, data)) {
+			if (!complete_data_bridge(db_, key, data)) {
 
-				CYNG_LOG_WARNING(logger_, "IEC device "
+				CYNG_LOG_WARNING(logger_, "bridged meter "
 					<< cyng::io::to_str(key)
 					<< " has no associated meter");
 			}
 		}
+		//else if (boost::algorithm::equals(table, "TLocation"))
+		//{
+		//	if (!complete_data_location(db_, key, data)) {
+
+		//		CYNG_LOG_WARNING(logger_, "location of  meter "
+		//			<< cyng::io::to_str(key)
+		//			<< " has no associated meter");
+		//	}
+		//}
 
 		//
 		//	insert
@@ -1030,19 +1042,19 @@ namespace node
 		return result;
 	}
 
-	bool complete_data_iec(cyng::store::db& db
+	bool complete_data_bridge(cyng::store::db& db
 		, cyng::table::key_type const& key
 		, cyng::table::data_type& data)
 	{
 		bool rc{ false };
 
 		//
-		//	Additional values for TMeter from TMeter
+		//	Additional values for TBridge from TMeter
 		//
 		db.access([&](const cyng::store::table* tbl_meter) {
 				
 			//
-			//	TIECBridge shares the primary key with TMeter table
+			//	TBridge shares the primary key with TMeter table
 			//
 			auto rec = tbl_meter->lookup(key);
 				
@@ -1052,11 +1064,13 @@ namespace node
 			if (!rec.empty())
 			{
 				data.push_back(rec["meter"]);
+				data.push_back(rec["protocol"]);
 				rc = true;
 			}
 			else
 			{
 				data.push_back(cyng::make_object("00000000"));
+				data.push_back(cyng::make_object("any"));
 			}
 		}, cyng::store::read_access("TMeter"));
 

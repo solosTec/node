@@ -23,7 +23,7 @@ namespace cyng {
   * Similar to db_schemes.h but with focus on gateway tables to save disk space.
   *
   * Since both implementation using the same interface they cannot be used in the same
-  * complation unit!
+  * compilation unit!
   */
 
 namespace node 

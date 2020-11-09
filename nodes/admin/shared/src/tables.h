@@ -26,7 +26,7 @@ namespace node
             {}
         };
 
-        using array_t = std::array<tbl_descr, 21>;
+        using array_t = std::array<tbl_descr, 22>;
         static const array_t list_;
 
         static array_t::const_iterator find(std::string);
@@ -65,7 +65,7 @@ namespace node
         /**
          * same size as tables::array_t
          */
-        using array_t = std::array<rel, 21>;
+        using array_t = std::array<rel, 22>;
         static array_t const rel_;
 
     };

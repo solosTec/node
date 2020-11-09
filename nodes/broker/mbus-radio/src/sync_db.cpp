@@ -371,7 +371,7 @@ namespace node
 	const std::array<db_sync::tbl_descr, 3>	db_sync::tables_ =
 	{
 		tbl_descr{"TMeter", false},
-		tbl_descr{"TMeterwMBUS", false},
+		tbl_descr{"TMeterAccess", false},
 		tbl_descr{"_Broker", false},	//	broker
 	};
 

@@ -103,9 +103,9 @@ namespace node
 
 	/**
 	 * Take data from TMeter table to make
-	 * IEC data complete
+	 * TBridge complete
 	 */
-	bool complete_data_iec(cyng::store::db& db
+	bool complete_data_bridge(cyng::store::db& db
 		, cyng::table::key_type const& key
 		, cyng::table::data_type& data);
 

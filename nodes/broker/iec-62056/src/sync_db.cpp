@@ -314,11 +314,11 @@ namespace node
 			return false;
 		}
 
-		if (boost::algorithm::equals(table, "TIECBridge")) {
+		if (boost::algorithm::equals(table, "TBridge")) {
 			//
 			//	if connection is outgoin - start a new task
 			//
-			auto const rec = db_.lookup("TIECBridge", key);
+			auto const rec = db_.lookup("TBridge", key);
 			if (!rec.empty()) {
 
 				//
@@ -416,7 +416,7 @@ namespace node
 	const std::array<db_sync::tbl_descr, 3>	db_sync::tables_ =
 	{
 		tbl_descr{"TMeter", false},
-		tbl_descr{"TIECBridge", false},
+		tbl_descr{"TBridge", false},
 		tbl_descr{"_IECUplink", false},	//	broker
 	};
 

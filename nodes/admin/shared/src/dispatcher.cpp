@@ -381,6 +381,45 @@ namespace node
 		}
 	}
 
+	void dispatcher::query_channel(cyng::store::db& cache, std::string const& channel, boost::uuids::uuid tag, cyng::vector_t const& key)
+	{
+		try {
+			auto const rel = channel::find_rel_by_channel(channel);
+
+			auto const rec = cache.lookup(rel.table_, key);
+			if (!rec.empty()) {
+
+				auto const row = rec.convert();
+
+				CYNG_LOG_DEBUG(logger_, "ws.read - query channel ["
+					<< channel
+					<< "] "
+					<< cyng::io::to_type(row));
+
+				auto const tpl = cyng::tuple_factory(
+					cyng::param_factory("cmd", std::string("update")),
+					cyng::param_factory("channel", channel),
+					cyng::param_factory("rec", rec.convert()));
+
+				auto const msg = cyng::json::to_string(tpl);
+				connection_manager_.ws_msg(tag, msg);
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "ws.read - query channel ["
+					<< channel
+					<< "] has no data");
+			}
+
+		}
+		catch (std::exception const& ex) {
+			CYNG_LOG_ERROR(logger_, "ws.read - query channel ["
+				<< channel <<
+				"] failed:"
+				<< ex.what());
+		}
+	}
+
 	void dispatcher::update_sys_cpu_usage_total(cyng::store::db& db, std::string const& channel, boost::uuids::uuid tag)
 	{
 		db.access([&](cyng::store::table* tbl) {

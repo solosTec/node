@@ -239,7 +239,7 @@ namespace node
 					cyng::param_factory("parity", "none"),	//	none, odd, even
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
 					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
-					cyng::param_factory("speed", 57600),
+					cyng::param_factory("speed", 57600),	//	0xE100
 #else
 					cyng::param_factory("enabled", true),
 					cyng::param_factory("port", "/dev/ttyAPP0"),

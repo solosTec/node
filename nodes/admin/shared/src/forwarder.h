@@ -9,13 +9,17 @@
 #define NODE_HTTP_FORWARDER_H
 
 #include <smf/http/srv/cm_interface.h>
+#include <smf/shared/protocols.h>
+
 #include <cyng/log.h>
 #include <cyng/vm/context.h>
 #include <cyng/dom/reader.h>
 #include <cyng/vm/controller.h>
 #include <cyng/store/db.h>
 #include <cyng/table/record.h>
+#include <cyng/crypto/aes_keys.h>
 #include <pugixml.hpp>
+
 #include <boost/uuid/random_generator.hpp>
 
 namespace node 
@@ -98,8 +102,11 @@ namespace node
 	 */
 	std::string cleanup_manufacturer_code(cyng::param_map_t const& pm);
 	std::string cleanup_server_id(std::string const& meter_id, std::string const& manufacturer_code);
-	std::string cleanup_protocol(cyng::param_map_t const& pm);
+	protocol_e cleanup_protocol(cyng::param_map_t const& pm);
 	std::string cleanup_meter_type(cyng::param_map_t const& pm);
+	cyng::crypto::aes_128_key cleanup_aes_key(cyng::param_map_t const& pm);
+	std::string cleanup_region(cyng::param_map_t const& pm);		//	region
+	std::string cleanup_address(cyng::param_map_t const& pm);	//	address
 
 	class forward
 	{
@@ -119,7 +126,7 @@ namespace node
 		void cfg_upload_gateways(cyng::context& ctx);
 		void cfg_upload_meter(cyng::context& ctx);
 		void cfg_upload_LoRa(cyng::context& ctx);
-		void cfg_upload_iec(cyng::context& ctx);
+		void cfg_upload_bridge(cyng::context& ctx);
 
 		void read_device_configuration_3_2(cyng::context& ctx, pugi::xml_document const& doc, bool);
 		void read_device_configuration_4_0(cyng::context& ctx, pugi::xml_document const& doc, bool);

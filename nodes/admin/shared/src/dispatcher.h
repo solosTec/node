@@ -42,6 +42,11 @@ namespace node
 		 */
 		void pull(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag);
 
+		/**
+		 * Query from ws
+		 */
+		void query_channel(cyng::store::db&, std::string const& channel, boost::uuids::uuid tag, cyng::vector_t const& key);
+
 	private:
 		void sig_ins(cyng::store::table const*
 			, cyng::table::key_type const&

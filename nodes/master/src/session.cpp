@@ -1212,7 +1212,7 @@ namespace node
 		>(frame);
 
 		//
-		//	remove all orphaned entries from TIECBridge
+		//	remove all orphaned entries from TBridge
 		//
 		std::size_t counter{ 0 };
 		cache_.db_.access([&](cyng::store::table const* tbl_meter, cyng::store::table* tbl_iec)->void {
@@ -1241,14 +1241,14 @@ namespace node
 			CYNG_LOG_WARNING(logger_, ctx.get_name()
 				<< " remove "
 				<< orphanes.size()
-				<< "orphaned entries from TIECBridge");
+				<< "orphaned entries from TBridge");
 
 			for (auto const& key : orphanes) {
 				tbl_iec->erase(key, std::get<1>(tpl));
 			}
 
 		}	, cyng::store::read_access("TMeter")
-			, cyng::store::write_access("TIECBridge"));
+			, cyng::store::write_access("TBridge"));
 
 	}
 

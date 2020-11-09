@@ -270,15 +270,15 @@ namespace node
 		}
 	}
 
-	void fwd_modify_iec(cyng::logging::log_ptr logger
+	void fwd_modify_bridge(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, cyng::reader<cyng::object> const& reader
 		, std::string const& tbl_name)
 	{
-		BOOST_ASSERT(tbl_name == "TIECBridge");
+		BOOST_ASSERT(tbl_name == "TBridge");
 
 		auto const vec = cyng::to_vector(reader["rec"].get("key"));
-		BOOST_ASSERT_MSG(vec.size() == 1, "TIECBridge key has wrong size");
+		BOOST_ASSERT_MSG(vec.size() == 1, "TBridge key has wrong size");
 
 		auto const key = cyng::table::key_generator(vec.at(0));
 
@@ -485,9 +485,9 @@ namespace node
 			{
 				fwd_modify_meter(logger, ctx, reader, rel.table_);
 			}
-			else if (boost::algorithm::starts_with(channel, "config.iec"))
+			else if (boost::algorithm::starts_with(channel, "config.bridge"))
 			{
-				fwd_modify_iec(logger, ctx, reader, rel.table_);
+				fwd_modify_bridge(logger, ctx, reader, rel.table_);
 			}
 			else if (boost::algorithm::starts_with(channel, "config.lora"))
 			{
@@ -513,6 +513,46 @@ namespace node
 				<< ex.what());
 		}
 	}
+
+	//void fwd_query_location(cyng::logging::log_ptr logger
+	//	, cyng::context& ctx
+	//	, cyng::reader<cyng::object> const& reader
+	//	, std::string const& tbl_name)
+	//{
+	//	BOOST_ASSERT(tbl_name == "TLocation");
+	//	auto const vec = cyng::to_vector(reader["rec"].get("key"));
+	//	BOOST_ASSERT_MSG(vec.size() == 1, "TLocation key has wrong size");
+
+	//	auto const key = cyng::table::key_generator(vec.at(0));
+	//}
+
+	//void fwd_query(cyng::logging::log_ptr logger
+	//	, cyng::context& ctx
+	//	, cyng::reader<cyng::object> const& reader)
+	//{
+	//	const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
+	//	CYNG_LOG_TRACE(logger, "ws.read - query channel [" << channel << "]");
+	//	try {
+
+	//		auto const rel = channel::find_rel_by_channel(channel);
+	//		if (boost::algorithm::starts_with(channel, "config.location"))
+	//		{
+	//			fwd_query_location(logger, ctx, reader, rel.table_);
+	//		}
+	//		else
+	//		{
+	//			CYNG_LOG_WARNING(logger, "ws.read - unknown query channel [" << channel << "]");
+	//		}
+
+	//	}
+	//	catch (std::exception const& ex) {
+	//		CYNG_LOG_ERROR(logger, "ws.read - query channel ["
+	//			<< channel <<
+	//			"] failed:"
+	//			<< ex.what());
+	//	}
+
+	//}
 
 	void fwd_stop(cyng::logging::log_ptr logger
 		, cyng::context& ctx
@@ -557,7 +597,7 @@ namespace node
 		, std::string const& channel
 		, cyng::reader<cyng::object> const& reader)
 	{
-		//	channel: "config.iec"
+		//	channel: "config.bridge"
 		CYNG_LOG_TRACE(logger, "ws.read - cleanup channel [" << channel << "]");
 		auto const rel = channel::find_rel_by_channel(channel);
 
@@ -691,7 +731,7 @@ namespace node
 		vm.register_function("cfg.upload.gateways", 2, std::bind(&forward::cfg_upload_gateways, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.meter", 2, std::bind(&forward::cfg_upload_meter, this, std::placeholders::_1));
 		vm.register_function("cfg.upload.LoRa", 2, std::bind(&forward::cfg_upload_LoRa, this, std::placeholders::_1));
-		vm.register_function("cfg.upload.iec", 2, std::bind(&forward::cfg_upload_iec, this, std::placeholders::_1));
+		vm.register_function("cfg.upload.bridge", 2, std::bind(&forward::cfg_upload_bridge, this, std::placeholders::_1));
 
 		vm.register_function("http.post.json", 5, std::bind(&forward::cfg_post_json, this, std::placeholders::_1));
 		vm.register_function("http.post.form.urlencoded", 5, std::bind(&forward::cfg_post_form_urlencoded, this, std::placeholders::_1));
@@ -1004,7 +1044,7 @@ namespace node
 		}
 	}
 
-	void forward::cfg_upload_iec(cyng::context& ctx)
+	void forward::cfg_upload_bridge(cyng::context& ctx)
 	{
 		const cyng::vector_t frame = ctx.get_frame();
 		//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
@@ -1080,7 +1120,7 @@ namespace node
 				pm.at("Meter_Type"),		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
 				"C",		//	Metrological Class: A, B, C, Q3/Q1, ...
 				(rec.empty() ? cyng::make_object(boost::uuids::nil_uuid()) : rec["gw"]),			//	optional gateway pk
-				protocol);	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+				to_str(protocol));	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
 
 			//
 			//	use specified policy
@@ -1098,9 +1138,9 @@ namespace node
 			}
 
 			//
-			//	update/create entry for "TIECBridge"
+			//	update/create entry for "TBridge"
 			//
-			auto const rec_iec = db_.lookup("TIECBridge", pk);
+			auto const rec_iec = db_.lookup("TBridge", pk);
 
 			try {
 				auto const str_port = cyng::value_cast<std::string>(pm.at("Port"), "6000");
@@ -1125,22 +1165,23 @@ namespace node
 					address,	//	[ip] incoming/outgoing IP connection
 					port,		//	[ip] incoming/outgoing IP connection
 					//	[bool] incoming/outgoing (default)
-					(rec_iec.empty() ? cyng::make_object(true) : rec["direction"]),
+					//(rec_iec.empty() ? cyng::make_object(true) : rec["direction"]),
+					(protocol == protocol_e::IEC ? true : false),
 					//	[seconds] pull cycle
 					(rec_iec.empty() ? cyng::make_seconds(15 * 60) : rec["interval"]));
 
 				//
-				//	use specified policy to insert/update table TIECBridge
+				//	use specified policy to insert/update table TBridge
 				//
 				switch (policy) {
 				case cyng::table::POLICY_MERGE:
-					ctx.queue(bus_req_db_merge("TIECBridge", pk, row_iec, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
+					ctx.queue(bus_req_db_merge("TBridge", pk, row_iec, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
 					break;
 				case cyng::table::POLICY_SUBSTITUTE:
-					ctx.queue(bus_req_db_update("TIECBridge", pk, row_iec, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
+					ctx.queue(bus_req_db_update("TBridge", pk, row_iec, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
 					break;
 				default:
-					ctx.queue(bus_req_db_insert("TIECBridge", pk, row_iec, 1u, ctx.tag()));
+					ctx.queue(bus_req_db_insert("TBridge", pk, row_iec, 1u, ctx.tag()));
 					break;
 				}
 			}
@@ -1148,7 +1189,7 @@ namespace node
 
 				std::stringstream ss;
 				ss
-					<< "IEC upload: record for meter " 
+					<< "Bridge upload: record for meter " 
 					<< meter_id 
 					<< " has no valid IP address: "
 					<< ex.what()
@@ -1158,8 +1199,92 @@ namespace node
 				ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
 			}
 
-			//	ToDo: update table "TMeterwMBUS" with AES key - if defined
+			//	update table "TMeterAccess" with AES key - if defined
 			//	pm.at("Key") 
+
+			//
+			//	update/create entry for "TMeterAccess"
+			//
+			auto const rec_access = db_.lookup("TMeterAccess", pk);
+			try {
+
+				auto const aes = cleanup_aes_key(pm);
+				auto const row_access = cyng::table::data_generator(
+					0u,						//	status
+					cyng::make_buffer({}),	//	pubKey
+					aes, //	aes
+					"", //	user
+					"" //	pwd
+					);
+
+				switch (policy) {
+				case cyng::table::POLICY_MERGE:
+					ctx.queue(bus_req_db_merge("TMeterAccess", pk, row_access, (rec_access.empty() ? 1u : rec_access.get_generation()), ctx.tag()));
+					break;
+				case cyng::table::POLICY_SUBSTITUTE:
+					ctx.queue(bus_req_db_update("TMeterAccess", pk, row_access, (rec_access.empty() ? 1u : rec_access.get_generation()), ctx.tag()));
+					break;
+				default:
+					ctx.queue(bus_req_db_insert("TMeterAccess", pk, row_access, 1u, ctx.tag()));
+					break;
+				}
+			}
+			catch (std::exception const& ex) {
+
+				std::stringstream ss;
+				ss
+					<< "Error during Bridge upload of meter "
+					<< meter_id
+					<< ":"
+					<< ex.what()
+					;
+				CYNG_LOG_WARNING(logger_, ss.str());
+
+				ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+			}
+
+			//
+			//	update/create entry for "TLocation"
+			//
+			auto const rec_location = db_.lookup("TLocation", pk);
+			try {
+
+				auto const row_location = cyng::table::data_generator(
+					"",				//	desc
+					"",		//	country
+					cleanup_region(pm),		//	region
+					cleanup_address(pm),	//	address
+					33.942088,	//	latitude 
+					-6.801931,	//	longitude
+					"GPS"
+				);
+
+				switch (policy) {
+				case cyng::table::POLICY_MERGE:
+					ctx.queue(bus_req_db_merge("TLocation", pk, row_location, (row_location.empty() ? 1u : rec_location.get_generation()), ctx.tag()));
+					break;
+				case cyng::table::POLICY_SUBSTITUTE:
+					ctx.queue(bus_req_db_update("TLocation", pk, row_location, (row_location.empty() ? 1u : rec_location.get_generation()), ctx.tag()));
+					break;
+				default:
+					ctx.queue(bus_req_db_insert("TLocation", pk, row_location, 1u, ctx.tag()));
+					break;
+				}
+			}
+			catch (std::exception const& ex) {
+
+				std::stringstream ss;
+				ss
+					<< "Error during Location upload of meter "
+					<< meter_id
+					<< ":"
+					<< ex.what()
+					;
+				CYNG_LOG_WARNING(logger_, ss.str());
+
+				ctx.queue(bus_insert_msg(cyng::logging::severity::LEVEL_WARNING, ss.str()));
+			}
+
 
 		});
 
@@ -1174,7 +1299,7 @@ namespace node
 
 			CYNG_LOG_INFO(logger_, ctx.get_name()
 				<< size
-				<< " TMeter/TIECBridge records inserted/updated");
+				<< " TMeter/TBridge records inserted/updated");
 
 		}
 	}
@@ -1738,20 +1863,18 @@ namespace node
 		return "???";
 	}
 
-	std::string cleanup_protocol(cyng::param_map_t const& pm)
+	protocol_e cleanup_protocol(cyng::param_map_t const& pm)
 	{
 		auto const pos = pm.find("Protocol");
 		if (pos != pm.end()) {
 
-			auto const protocol = cyng::value_cast<std::string>(pos->second, "");
-
 			//IEC 62056
 			//Wireless MBUS
-			if (boost::algorithm::starts_with(protocol, "IEC 62056"))	return "IEC:62056";
-			else if (boost::algorithm::starts_with(protocol, "Wireless MBUS"))	return "wM-Bus:EN13757-4";
-			else return protocol;
+			auto const protocol = cyng::value_cast<std::string>(pos->second, "");
+			return from_str(protocol);
+
 		}
-		return "any";
+		return protocol_e::ANY;
 	}
 
 	std::string cleanup_meter_type(cyng::param_map_t const& pm)
@@ -1801,4 +1924,58 @@ namespace node
 
 		return meter_id;
 	}
+
+	cyng::crypto::aes_128_key cleanup_aes_key(cyng::param_map_t const& pm)
+	{
+		auto const pos = pm.find("Key");
+		if (pos != pm.end()) {
+
+			auto const str = cyng::value_cast<std::string>(pos->second, "");
+			if (str.size() == 32) {
+
+				auto const r = cyng::parse_hex_string(str);
+				if (r.second && r.first.size() == 16) {
+					cyng::crypto::aes_128_key::key_type const key { 
+						r.first.at(0),
+						r.first.at(1),
+						r.first.at(2),
+						r.first.at(3),
+						r.first.at(4),
+						r.first.at(5),
+						r.first.at(6),
+						r.first.at(7),
+						r.first.at(8),
+						r.first.at(9),
+						r.first.at(10),
+						r.first.at(11),
+						r.first.at(12),
+						r.first.at(13),
+						r.first.at(14),
+						r.first.at(15)
+					};
+
+					return key;
+				}
+			}
+		}
+		return cyng::crypto::aes_128_key();
+	}
+
+	std::string cleanup_region(cyng::param_map_t const& pm)
+	{
+		auto const pos = pm.find("Area");
+		if (pos != pm.end()) {
+			return cyng::value_cast<std::string>(pos->second, "");
+		}
+		return "";
+	}
+	std::string cleanup_address(cyng::param_map_t const& pm)
+	{
+		auto const pos = pm.find("Name");
+		if (pos != pm.end()) {
+			return cyng::value_cast<std::string>(pos->second, "");
+		}
+		return "";
+	}
+
 }

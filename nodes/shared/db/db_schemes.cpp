@@ -193,10 +193,11 @@ namespace node
 				, 32	//	protocol
 				});
 		}
-		else if (boost::algorithm::equals(name, "TMeterwMBUS")) {
+		else if (boost::algorithm::equals(name, "TMeterAccess")) {
 
 			//
 			//	pk is key to table TMeter
+			//	ToDo: rename this table to TMeterAccess
 			//
 			return cyng::table::make_meta_table<1, 5>(name,
 				{ "pk"			//	same as TMeter
@@ -568,7 +569,7 @@ namespace node
 				, 64	//	name
 				});
 		}
-		else if (boost::algorithm::equals(name, "TIECBridge")) {
+		else if (boost::algorithm::equals(name, "TBridge")) {
 
 			//
 			//	This table contains addition information about 
@@ -595,12 +596,48 @@ namespace node
 				});
 		}
 
+		else if (boost::algorithm::equals(name, "TLocation")) {
+
+			//
+			//	This table contains location data of meters
+			//
+			return cyng::table::make_meta_table<1, 7>(name,
+				{ "pk"		//	same key as in TMeter table
+				, "desc"		//	Description
+				, "country"		//	street, city
+				, "region"		//	general location
+				, "address"		//	street, city
+				, "lat"			//	latitude
+				, "long"		//	longitude
+				, "projection"	//	mapping format
+				},
+				{ cyng::TC_UUID		//	pk
+				, cyng::TC_STRING	//	desc
+				, cyng::TC_STRING	//	country
+				, cyng::TC_STRING	//	region
+				, cyng::TC_STRING	//	address
+				, cyng::TC_DOUBLE	//	lat
+				, cyng::TC_DOUBLE	//	long
+				, cyng::TC_STRING	//	projection
+				},
+				{ 36
+				, 128	//	desc
+				, 32	//	country
+				, 32	//	region
+				, 64	//	address
+				, 0		//	lat
+				, 0		//	long
+				, 16	//	projection
+			});
+		}
 		else if (boost::algorithm::equals(name, "_Broker")) {
 			//
 			//	Define a list of all servers to listen for incoming raw wireless
 			//	M-Bus data
+			//	Note: This table is currently only used by meter broker, but data
+			//	are not used anywhere. Therefore this table should be removed.
 			//
-			return cyng::table::make_meta_table<1, 3>("_Broker",
+			return cyng::table::make_meta_table<1, 3>(name,
 				{ "pk"			//	[uuid] tag from node (cluster session tag)
 				, "address"		//	[ip] incoming/outgoing IP connection
 				, "port"		//	[u16] incoming/outgoing IP connection

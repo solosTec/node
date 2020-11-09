@@ -153,11 +153,11 @@ namespace node
 		//	* TGateway
 		//	* TLoRaDevice
 		//	* TMeter
-		//	* TMeterwMBUS
+		//	* TMeterAccess
 		//	* TLL
 		//	* TGUIUser
 		//	* TNodeNames
-		//	* TIECBridge
+		//	* TBridge
 		//	* TGWSnapshot
 		//	* TLoraUplink
 		//

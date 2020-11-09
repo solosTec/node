@@ -20,11 +20,12 @@ namespace node
 		tables::tbl_descr{"TGateway", true, false},
 		tables::tbl_descr{"TLoRaDevice", true, false},
 		tables::tbl_descr{"TMeter", true, false},
-		tables::tbl_descr{"TMeterwMBUS", true, false},
+		tables::tbl_descr{"TMeterAccess", true, false},
 		tables::tbl_descr{"TLL", false, false},
 		tables::tbl_descr{"TGUIUser", true, false},
 		tables::tbl_descr{"TNodeNames", true, false},
-		tables::tbl_descr{"TIECBridge", true, false},	//	TIECBroker
+		tables::tbl_descr{"TBridge", true, false},
+		tables::tbl_descr{"TLocation", true, false},
 		tables::tbl_descr{"TGWSnapshot", false, false},
 		tables::tbl_descr{"TLoraUplink", false, true}	//	custom handling
 	};

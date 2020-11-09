@@ -9,6 +9,7 @@
 #include <tasks/client.h>
 
 #include <smf/cluster/generator.h>
+#include <smf/shared/protocols.h>
 
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
@@ -98,19 +99,30 @@ namespace node
 			auto const rec = cache_.lookup("TMeter", cyng::table::key_generator(std::get<0>(tpl)));
 			if (!rec.empty()) {
 
-				auto tsk = cyng::async::start_task_detached<client>(base_.mux_
-					, bus_->vm_
-					, logger_
-					, cache_
-					, boost::asio::ip::tcp::endpoint{ std::get<1>(tpl), std::get<2>(tpl) }
+				auto const str = cyng::value_cast(rec["protocol"], protocol_any);
+				auto const protocol = from_str(str);
+
+				if (protocol == protocol_e::IEC) {
+					auto tsk = cyng::async::start_task_detached<client>(base_.mux_
+						, bus_->vm_
+						, logger_
+						, cache_
+						, boost::asio::ip::tcp::endpoint{ std::get<1>(tpl), std::get<2>(tpl) }
 					, std::get<3>(tpl));
 
-				CYNG_LOG_TRACE(logger_,
-					ctx.get_name()
-					<< " #"
-					<< tsk
-					<< " - "
-					<< cyng::io::to_type(frame));
+					CYNG_LOG_TRACE(logger_,
+						ctx.get_name()
+						<< " #"
+						<< tsk
+						<< " - "
+						<< cyng::io::to_type(frame));
+				}
+				else {
+					CYNG_LOG_TRACE(logger_,
+						ctx.get_name()
+						<< " - skip protocol "
+						<< str);
+				}
 			}
 			else {
 				CYNG_LOG_WARNING(logger_,
@@ -177,7 +189,7 @@ namespace node
 		//	sync tables
 		//
 		sync_table("TMeter");
-		sync_table("TIECBridge");
+		sync_table("TBridge");
 		//sync_table("_IECUplink");
 
 		return cyng::continuation::TASK_CONTINUE;

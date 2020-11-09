@@ -756,7 +756,7 @@ namespace node
 			, 32	//	protocol
 			}));
 
-		insert(meta_map, cyng::table::make_meta_table_gen<1, 5>("TMeterwMBUS",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 5>("TMeterAccess",
 			{ "pk"
 			, "status"	//	"Statusinformation: 00"
 			, "pubKey"	//	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
@@ -999,7 +999,7 @@ namespace node
 		//	This table contains addition information about 
 		//	meters with IEC communiction.
 		//
-		insert(meta_map, cyng::table::make_meta_table_gen<1, 4>("TIECBridge",
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 4>("TBridge",
 			{ "pk"			//	same key as in TMeter table
 			, "address"		//	[ip] incoming/outgoing IP connection
 			, "port"		//	[ip] incoming/outgoing IP connection
@@ -1017,6 +1017,35 @@ namespace node
 			, 0	//	port
 			, 0	//	direction
 			, 0
+			}));
+
+		insert(meta_map, cyng::table::make_meta_table_gen<1, 7>("TLocation",
+			{ "pk"		//	same key as in TMeter table
+			, "desc"		//	Description
+			, "country"		//	street, city
+			, "region"		//	general location
+			, "address"		//	street, city
+			, "lat"			//	latitude
+			, "long"		//	longitude
+			, "projection"	//	mapping format
+			},
+			{ cyng::TC_UUID		//	pk
+			, cyng::TC_STRING	//	desc
+			, cyng::TC_STRING	//	country
+			, cyng::TC_STRING	//	region
+			, cyng::TC_STRING	//	address
+			, cyng::TC_DOUBLE	//	lat
+			, cyng::TC_DOUBLE	//	long
+			, cyng::TC_STRING	//	projection
+			},
+			{ 36
+			, 128	//	desc
+			, 32	//	country
+			, 32	//	region
+			, 64	//	address
+			, 0		//	lat
+			, 0		//	long
+			, 16	//	projection
 			}));
 
 		return meta_map;

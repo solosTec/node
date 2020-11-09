@@ -26,7 +26,7 @@ namespace node
             {}
         };
 
-        using array_t = std::array<tbl_descr, 11>;
+        using array_t = std::array<tbl_descr, 12>;
         static const array_t list_;
 
         static array_t::const_iterator find(std::string);

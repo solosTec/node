@@ -41,6 +41,8 @@ set (node_admin_shared
 	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
 
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/protocols.h
+	${CMAKE_SOURCE_DIR}/nodes/shared/protocols.cpp
 
 	shared/src/tasks/system.h
 	shared/src/tasks/system.cpp

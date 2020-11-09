@@ -19,11 +19,12 @@ namespace node
 		tables::tbl_descr{"TGateway", true, false},	//	custom
 		tables::tbl_descr{"TLoRaDevice", false, false},
 		tables::tbl_descr{"TMeter", true, false},		//	custom
-		tables::tbl_descr{"TMeterwMBUS", false, false},
+		tables::tbl_descr{"TMeterAccess", false, false},
+		tables::tbl_descr{"TLocation", false, false},
 		tables::tbl_descr{"TGUIUser", false, false},
 		tables::tbl_descr{"TGWSnapshot", false, false},
 		tables::tbl_descr{"TNodeNames", false, false},
-		tables::tbl_descr{"TIECBridge", true, false},	//	custom
+		tables::tbl_descr{"TBridge", true, false},	//	custom
 		tables::tbl_descr{"_Session", false, false},
 		tables::tbl_descr{"_Target", false, false},
 		tables::tbl_descr{"_Connection", false, false},
@@ -72,8 +73,9 @@ namespace node
 		channel::rel{"TDevice", "config.device", "table.device.count"},
 		channel::rel{"TGateway", "config.gateway", "table.gateway.count"},
 		channel::rel{"TMeter", "config.meter", "table.meter.count"},
-		channel::rel{"TMeterwMBUS", "config.meterwMBus", "table.meterwMBus.count"},
-		channel::rel{"TIECBridge", "config.iec", "table.iec.count"},
+		channel::rel{"TMeterAccess", "config.meterwMBus", "table.meterwMBus.count"},
+		channel::rel{"TLocation", "config.location", "table.location.count"},
+		channel::rel{"TBridge", "config.bridge", "table.bridge.count"},
 		channel::rel{"TLoRaDevice", "config.lora", "table.LoRa.count"},
 		channel::rel{"TGUIUser", "config.user", "table.user.count"},
 		channel::rel{"_Session", "status.session", "table.session.count"},

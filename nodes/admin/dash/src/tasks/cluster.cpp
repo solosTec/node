@@ -400,6 +400,12 @@ namespace node
 				, ctx
 				, reader);
 		}
+		else if (boost::algorithm::equals(cmd, "query"))
+		{
+			//auto const rel = channel::find_rel_by_channel(channel);
+			auto const key = cyng::to_vector(reader["rec"].get("key"));
+			dispatcher_.query_channel(cache_, channel, tag_ws, key);
+		}
 		else if (boost::algorithm::equals(cmd, "stop"))
 		{
 			node::fwd_stop(logger_

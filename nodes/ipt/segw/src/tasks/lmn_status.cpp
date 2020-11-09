@@ -86,17 +86,16 @@ namespace node
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< "> "
-				<< sml::get_status_name(status_bits_)
-				<< " available");
+				<< "> running - status: "
+				<< sml::get_status_name(status_bits_));
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
 				<< base_.get_class_name()
-				<< sml::get_status_name(status_bits_)
-				<< " lost");
+				<< "> lost - status: "
+				<< sml::get_status_name(status_bits_));
 		}
 
 		//

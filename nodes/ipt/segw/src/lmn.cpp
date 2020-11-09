@@ -106,7 +106,7 @@ namespace node
 			start_lmn_wired();
 		}
 		else {
-			CYNG_LOG_WARNING(logger_, "LMN wired (RS485) is disabled");
+			CYNG_LOG_WARNING(logger_, "LMN wired RS485 is disabled (rs485:enabled)");
 		}
 
 		//
@@ -117,7 +117,7 @@ namespace node
 			start_lmn_wireless(wmbus);
 		}
 		else {
-			CYNG_LOG_WARNING(logger_, "LMN wireless (M-Bus) is disabled");
+			CYNG_LOG_WARNING(logger_, "LMN wireless M-Bus is disabled (IF_wMBUS::enabled)");
 		}
 	}
 
@@ -174,7 +174,7 @@ namespace node
 				, sml::STATUS_BIT_WIRELESS_MBUS_IF_AVAILABLE).first;
 
 			//
-			//	the wireless sende is either a LMN port or the CP210x parser (on windows)
+			//	the wireless sender is either a LMN port or the CP210x parser (on windows)
 			//
 			radio_distributor_ = start_wireless_sender(wmbus, tsk_status);
 
@@ -202,7 +202,7 @@ namespace node
 				, logger_
 				, vm_);
 
-			if (unwrapper.second) {
+ 			if (unwrapper.second) {
 
 				//
 				//	LMN port send incoming data to HCI (CP210x) parser
@@ -237,7 +237,10 @@ namespace node
 				radio_port_ = start_lmn_port_wireless(tsk_status	//	control status bit for wireless M-Bus
 					, cyng::make_buffer({ 0xA5, 0x81, 0x03, 0x17, 0x00, 0xFF, 0x00, 0x03, 0x00, 0xB3, 0x25, 0x51, 0x18, 0x10, 0x00, 0x01, 0x00, 0x01, 0xFD, 0x07, 0x32, 0x00, 0x01, 0x01, 0x02, 0x01, 0x00, 0x83, 0xC9 })).first;
 
-				//wmbus.set_lmn_task(r.first);
+				//
+				//	send data from COM port to parser_CP210x
+				//
+				mux_.post(radio_port_, 1u, cyng::tuple_factory(unwrapper.first, unwrapper.second));
 
 				return unwrapper.first;
 			}
@@ -326,8 +329,8 @@ namespace node
 
 		CYNG_LOG_INFO(logger_, "LMN wireless is running on port: " << cfg.get_port());
 
-		return cyng::async::start_task_delayed<lmn_port>(mux_
-			, cfg.get_delay(std::chrono::seconds(5))	//	use monitor as delay timer
+		return cyng::async::start_task_sync<lmn_port>(mux_
+			//, cfg.get_delay(std::chrono::seconds(5))	//	use monitor as delay timer
 			, logger_
 			, cfg.get_monitor()
 			, cfg.get_port()			//	port
