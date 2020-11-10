@@ -74,13 +74,6 @@ namespace node
 		vm_.register_function("bus.res.login", 5, [this](cyng::context& ctx) {
 			auto const frame = ctx.get_frame();
 
-			//	[20,true,9a07da33-589f-442f-b927-f638531e41f3,0.4,2018-05-07 13:34:01.58677900,2018-05-07 13:34:01.68164700]
-			//	[true,435a75e4-b97d-4152-a9b7-cdc2e21e8599,0.2,2018-01-11 16:54:48.89934220,2018-01-11 16:54:48.91710660]
-			//std::cerr << cyng::io::to_str(frame.at(0)) << std::endl;
-			//std::cerr << cyng::io::to_str(frame.at(1)) << std::endl;
-			//std::cerr << cyng::io::to_str(frame.at(2)) << std::endl;
-			//std::cerr << cyng::io::to_str(frame.at(3)) << std::endl;
-			//std::cerr << cyng::io::to_str(frame.at(4)) << std::endl;
 			CYNG_LOG_TRACE(logger_, "login response " << cyng::io::to_str(frame));
 
 			if (cyng::value_cast(frame.at(0), false))
@@ -88,7 +81,7 @@ namespace node
 				state_ = state::AUTHORIZED_;
 				remote_tag_ = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
 				remote_version_ = cyng::value_cast(frame.at(2), remote_version_);
-				ctx.run(cyng::generate_invoke("log.msg.info", "successful cluster login", remote_tag_, remote_version_));
+				ctx.run(cyng::generate_invoke("log.msg.info", "successful cluster login ", remote_tag_, " v", remote_version_));
 
 				auto lag = std::chrono::system_clock::now() - cyng::value_cast(frame.at(3), std::chrono::system_clock::now());
 				CYNG_LOG_TRACE(logger_, "cluster login lag: " << cyng::to_str(lag));
