@@ -69,7 +69,8 @@ namespace node
 			)
          
 			, cyng::param_factory("client", cyng::tuple_factory(
-				cyng::param_factory("login", false))
+				cyng::param_factory("login", false),
+				cyng::param_factory("verbose", false))	//	parser	
 			)
 
 			, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
@@ -138,6 +139,7 @@ namespace node
 			CYNG_LOG_INFO(logger, "service: " << service);
 
 			auto const client_login = cyng::value_cast(dom_client.get("login"), false);
+			auto const verbose = cyng::value_cast(dom_client.get("verbose"), false);
 
 			auto r = cyng::async::start_task_delayed<cluster>(mux
 				, std::chrono::seconds(1)
@@ -145,7 +147,8 @@ namespace node
 				, cluster_tag
 				, load_cluster_cfg(cfg_cls)
 				, boost::asio::ip::tcp::endpoint{ host, port }
-				, client_login);
+				, client_login
+				, verbose);
 
 			if (r.second)	return r.first;
 		}

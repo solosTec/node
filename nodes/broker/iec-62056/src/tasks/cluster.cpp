@@ -25,7 +25,8 @@ namespace node
 		, boost::uuids::uuid tag
 		, cluster_config_t const& cfg
 		, boost::asio::ip::tcp::endpoint ep
-		, bool client_login)
+		, bool client_login
+		, bool verbose)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)

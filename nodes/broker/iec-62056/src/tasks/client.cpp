@@ -28,6 +28,16 @@ namespace node
 		, monitor_(monitor)
 		, meter_(meter)
 		, socket_(base_.mux_.get_io_service())
+		, parser_([this](cyng::vector_t&& prg) -> void {
+
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> IEC data: "
+				<< cyng::io::to_type(prg));
+
+		}, true)
 		, buffer_read_()
 		, buffer_write_()
 	{
@@ -147,8 +157,9 @@ namespace node
 				if (!ec) {
 
 					//
-					//	ToDo: forward to serial interface
+					//	parse IEC data
 					//
+					parser_.read(buffer_read_.begin(), buffer_read_.begin() + bytes_transferred);
 
 					//
 					//	continue reading
@@ -195,6 +206,23 @@ namespace node
 				{
 					if (!ec)
 					{
+						CYNG_LOG_TRACE(logger_, "task #"
+							<< base_.get_id()
+							<< " <"
+							<< base_.get_class_name()
+							<< "> send "
+							<< cyng::bytes_to_str(bytes_transferred));
+
+
+						CYNG_LOG_TRACE(logger_, "task #"
+							<< base_.get_id()
+							<< " <"
+							<< base_.get_class_name()
+							<< "> send "
+							<< cyng::io::to_hex(buffer_write_.front()));
+
+						
+
 						buffer_write_.pop_front();
 						if (!buffer_write_.empty())
 						{

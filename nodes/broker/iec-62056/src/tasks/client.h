@@ -9,6 +9,7 @@
 #define NODE_IEC_62056_TASK_CLIENT_H
 
 #include <NODE_project_info.h>
+#include <smf/iec/parser.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -86,10 +87,16 @@ namespace node
 		boost::asio::ip::tcp::socket socket_;
 
 		/**
+		 * IEC parser
+		 */
+		iec::parser parser_;
+
+		/**
 		 * Buffer for incoming data.
 		 */
 		read_buffer_t buffer_read_;
 		std::deque<cyng::buffer_t>	buffer_write_;
+
 
 	};
 	

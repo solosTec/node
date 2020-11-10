@@ -34,7 +34,8 @@ namespace node
 			, boost::uuids::uuid tag
 			, cluster_config_t const& cfg
 			, boost::asio::ip::tcp::endpoint ep
-			, bool client_login);
+			, bool client_login
+			, bool verbose);
 		cyng::continuation run();
 		void stop(bool shutdown);
 
