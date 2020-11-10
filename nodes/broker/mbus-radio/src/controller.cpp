@@ -58,7 +58,7 @@ namespace node
 
 				, cyng::param_factory("server", cyng::tuple_factory(
 					cyng::param_factory("address", "0.0.0.0"),
-					cyng::param_factory("service", "12000")))
+					cyng::param_factory("service", "2000")))
                     
 			, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
 					cyng::param_factory("host", "127.0.0.1"),
@@ -116,9 +116,15 @@ namespace node
 
 		//	http::server build a string view
 		auto address = cyng::value_cast<std::string>(dom.get("address"), "0.0.0.0");
-		auto service = cyng::value_cast<std::string>(dom.get("service"), "8443");
+		auto service = cyng::value_cast<std::string>(dom.get("service"), "2000");
 		auto const host = cyng::make_address(address);
-		const auto port = static_cast<unsigned short>(std::stoi(service));
+		std::uint16_t port = 2000u;
+		try {
+			port = static_cast<std::uint16_t>(std::stoi(service));
+		}
+		catch (std::exception const& ex) {
+			CYNG_LOG_INFO(logger, "invalid service: " << ex.what());
+		}
 
 		CYNG_LOG_INFO(logger, "address: " << address);
 		CYNG_LOG_INFO(logger, "service: " << service);
