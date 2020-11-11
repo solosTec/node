@@ -47,7 +47,7 @@ namespace node
 			, logger_(logger)
 			, reader_(logger, cfg)
 			, buffer_()
-			, authorized_(false)
+			//, authorized_(false)
 			, data_()
 			, rx_(0)
 			, sx_(0)
@@ -116,12 +116,7 @@ namespace node
 						//	leave
 						CYNG_LOG_WARNING(logger_, "NMS session closed <" << ec << ':' << ec.value() << ':' << ec.message() << '>');
 
-						//
-						//	remove client
-						//
-						//cluster_.async_run(client_req_close(vm_.tag(), ec.value()));
-
-						authorized_ = false;
+						//authorized_ = false;
 
 					}
 				});
@@ -138,13 +133,6 @@ namespace node
 			//	update "sx" value of this session/device
 			//
 			sx_ += data.size();
-			//cluster_.async_run(bus_req_db_modify("_Session"
-			//	, cyng::table::key_generator(vm_.tag())
-			//	, cyng::param_factory("sx", sx_)
-			//	, 0u
-			//	, vm_.tag()));
-
-
 		}
 
 		void session::send_response(cyng::param_map_t&& res)

@@ -85,7 +85,7 @@ namespace node
 			/**
 			 * authorization state
 			 */
-			bool authorized_;
+			//bool authorized_;
 
 			/**
 			 * temporary data buffer
