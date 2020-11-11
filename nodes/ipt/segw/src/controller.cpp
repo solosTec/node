@@ -12,12 +12,13 @@
 #include <lmn.h>
 #include <segw.h>
 
+#include <NODE_project_info.h>
+
 #include <sml/server.h>
 #include <nms/server.h>
 #include <redirector/server.h>
 #include <tasks/network.h>
 #include <tasks/connect.h>
-#include <NODE_project_info.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
@@ -36,6 +37,9 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/util/split.h>
 #include <cyng/parser/chrono_parser.h>
+//#include <cyng/io/serializer.h>
+
+#include <crypto/hash/sha512.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -105,10 +109,17 @@ namespace node
 		auto const host = boost::asio::ip::host_name();
 
 		//
-		//	generate radnom account names + passwords
+		//	generate random account names + passwords
 		//
 		auto gen_user = cyng::crypto::make_rnd_alnum();
 		auto gen_pwd = cyng::crypto::make_rnd_pwd();
+
+		//
+		//	create account names/password as hash from host name + salt
+		//
+		auto const pwd = cyng::io::to_str(cyng::sha512_hash(host + NODE::SALT));
+		auto const rs484_pwd = cyng::io::to_str(cyng::sha512_hash(host + NODE::SALT + "rs485"));	//	broker
+		auto const wmbus_pwd = cyng::io::to_str(cyng::sha512_hash(host + NODE::SALT + "wmbus"));	//	broker
 
 
 		return cyng::vector_factory({
@@ -271,8 +282,8 @@ namespace node
 						cyng::param_map_factory
 							("address", "segw.ch")
 							("port", 12001)
-							("account", "wmbus-" + gen_user(6))
-							("pwd", gen_user(8))
+							("account", host + "-wmbus")
+							("pwd", wmbus_pwd)
 						()
 					})
 				)))
@@ -312,8 +323,8 @@ namespace node
 						cyng::param_map_factory
 							("address", "segw.ch")
 							("port", 12002)
-							("account", "rs485-" + gen_user(6))
-							("pwd", gen_user(8))
+							("account", host + "-rs485")
+							("pwd", rs484_pwd)
 						()
 					})),
 					cyng::param_factory("listener-login", false),		//	request login

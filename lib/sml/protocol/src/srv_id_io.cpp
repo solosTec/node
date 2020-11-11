@@ -403,6 +403,31 @@ namespace node
 			return cyng::mac48();
 		}
 
+		std::string gen_metering_code(std::string const& country_code
+			, std::string const& meter
+			, boost::uuids::uuid tag)
+		{
+			BOOST_ASSERT_MSG(country_code.size() == 2, "invalid country code");
+
+			std::stringstream ss;
+			ss
+				<< country_code
+				<< std::setfill('0')
+				<< std::setw(5)
+				<< 0	//	1 .. 5
+				<< +tag.data[15]	//	6
+				<< +tag.data[14]	//	7
+				<< +tag.data[13]	//	8
+				<< +tag.data[12]	//	9
+				<< +tag.data[11]	//	10
+				<< +tag.data[10]	//	11
+				<< std::setw(20)
+				<< meter
+				;
+
+			return ss.str();
+
+		}
 
 	}
 }

@@ -10,10 +10,14 @@
 
 #include <NODE_project_info.h>
 #include <smf/mbus/parser.h>
+#include <cache.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller_fwd.h>
+#include <cyng/store/store_fwd.h>
+
+#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -25,8 +29,11 @@ namespace node
 	public:
 		session(boost::asio::ip::tcp::socket socket
 			, cyng::logging::log_ptr
-			, cyng::controller&
-			, cyng::controller&);
+			, cyng::controller& cluster
+			, cyng::controller& vm
+			, cyng::store::db&
+			, bool session_login
+			, bool session_auto_insert);
 		virtual ~session();
 
 	public:
@@ -37,11 +44,17 @@ namespace node
 		void process_data(cyng::buffer_t&&);
 		void process_login(cyng::buffer_t&&);
 
+		void decode(wmbus::header const& h, cyng::buffer_t const& data);
+		void insert_meter(wmbus::header const& h);
+
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& cluster_;	//!< cluster bus VM
 		cyng::controller& vm_;	//!< session VM
+		cache cache_;
+		bool const session_login_;
+		bool const session_auto_insert_;
 
 		/**
 		 * Buffer for incoming data.
@@ -68,6 +81,10 @@ namespace node
 		 */
 		wmbus::parser parser_;
 
+		/**
+		 * generate PKs for TMeter table
+		 */
+		boost::uuids::random_generator_mt19937 uuidgen_;
 	};
 	
 }

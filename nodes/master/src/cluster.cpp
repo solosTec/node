@@ -6,12 +6,14 @@
  */ 
 
 
-#include "cluster.h"
-#include "session.h"
-#include "db.h"
 #include <NODE_project_info.h>
+#include <cluster.h>
+#include <session.h>
+#include <db.h>
+
 #include <smf/cluster/generator.h>
 #include <smf/shared/db_cfg.h>
+#include <smf/sml/srv_id_io.h>
 
 #include <cyng/tuple_cast.hpp>
 #include <cyng/vector_cast.hpp>
@@ -407,22 +409,26 @@ namespace node
 				//
 				//	generate meter code
 				//
-				std::stringstream ss;
-				ss
-					<< cyng::value_cast<std::string>(get_config(tbl_cfg, "country-code"), "AU")
-					<< std::setfill('0')
-					<< std::setw(5)
-					<< 0	//	1 .. 5
-					<< +tag.data[15]	//	6
-					<< +tag.data[14]	//	7
-					<< +tag.data[13]	//	8
-					<< +tag.data[12]	//	9
-					<< +tag.data[11]	//	10
-					<< +tag.data[10]	//	11
-					<< std::setw(20)
-					<< meter
-					;
-				const auto mc = ss.str();
+				//std::stringstream ss;
+				//ss
+				//	<< cyng::value_cast(get_config(tbl_cfg, "country-code"), "AU")
+				//	<< std::setfill('0')
+				//	<< std::setw(5)
+				//	<< 0	//	1 .. 5
+				//	<< +tag.data[15]	//	6
+				//	<< +tag.data[14]	//	7
+				//	<< +tag.data[13]	//	8
+				//	<< +tag.data[12]	//	9
+				//	<< +tag.data[11]	//	10
+				//	<< +tag.data[10]	//	11
+				//	<< std::setw(20)
+				//	<< meter
+				//	;
+				//const auto mc = ss.str();
+				auto const mc = sml::gen_metering_code(cyng::value_cast(get_config(tbl_cfg, "country-code"), "AU")
+					, meter
+					, tag);
+
 
 				auto const key = cyng::table::key_generator(tag);
 

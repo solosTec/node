@@ -122,6 +122,16 @@ namespace node
 		cyng::mac48 to_mac48(cyng::buffer_t const&);
 		cyng::mac48 to_mac48(std::string const&);
 
+		/**
+		 * generates a metering code
+		 * 
+		 * @param country_code 2 digit country code
+		 * @param server_id server ID
+		 */
+		std::string gen_metering_code(std::string const& country_code
+			, std::string const& meter
+			, boost::uuids::uuid tag);
+
 	}	//	sml
 }	//	node
 

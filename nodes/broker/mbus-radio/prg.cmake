@@ -8,6 +8,7 @@ set (node_mbus_radio_cpp
 	src/sync_db.cpp
 	src/server.cpp
 	src/session.cpp
+	src/cache.cpp
 
 )
 
@@ -17,6 +18,7 @@ set (node_mbus_radio_h
 	src/sync_db.h
 	src/server.h
 	src/session.h
+	src/cache.h
 
 )
 
@@ -29,6 +31,10 @@ set (node_shared
 	${CMAKE_SOURCE_DIR}/nodes/show_ip_address.h
 
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/ctl.h
+
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/shared/protocols.h
+	${CMAKE_SOURCE_DIR}/nodes/shared/protocols.cpp
+
 )
 
 

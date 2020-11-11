@@ -237,6 +237,7 @@ namespace node
 			else if (boost::algorithm::equals(cmd, "update-status")
 				|| boost::algorithm::equals(cmd, "get-update")
 				|| boost::algorithm::equals(cmd, "fw-status")
+				|| boost::algorithm::equals(cmd, "fwstatus")
 				|| boost::algorithm::equals(cmd, "get-update-status")) {
 				//
 				//	update state

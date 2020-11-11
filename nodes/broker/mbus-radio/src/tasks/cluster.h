@@ -10,9 +10,9 @@
 
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
-#include "../sync_db.h"
-#include "../server.h"
 
+#include <sync_db.h>
+#include <server.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -34,7 +34,9 @@ namespace node
 			, cyng::logging::log_ptr
 			, boost::uuids::uuid tag
 			, cluster_config_t const& cfg
-			, boost::asio::ip::tcp::endpoint ep);
+			, boost::asio::ip::tcp::endpoint ep
+			, bool session_login
+			, bool session_auto_insert);
 		cyng::continuation run();
 		void stop(bool shutdown);
 

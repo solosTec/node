@@ -298,6 +298,10 @@ namespace node
 			void reset();
 
 			std::size_t	size() const;
+
+			/**
+			 * @return 3 char code
+			 */
 			std::string get_manufacturer() const;
 			std::uint8_t get_version() const;
 			std::uint8_t get_medium() const;

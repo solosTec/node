@@ -5,8 +5,10 @@
  *
  */
 
-#include "cluster.h"
+#include <tasks/cluster.h>
+
 #include <smf/cluster/generator.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
@@ -19,14 +21,16 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
 		, cluster_config_t const& cfg
-		, boost::asio::ip::tcp::endpoint ep)
+		, boost::asio::ip::tcp::endpoint ep
+		, bool session_login
+		, bool session_auto_insert)
 	: base_(*btp)
 		, bus_(bus_factory(btp->mux_, logger, tag, btp->get_id()))
 		, logger_(logger)
 		, config_(cfg)
 		, cache_()
 		, db_sync_(logger, cache_)
-		, server_(btp->mux_.get_io_service(), logger, bus_->vm_, ep)
+		, server_(btp->mux_.get_io_service(), logger, bus_->vm_, ep, cache_, session_login, session_auto_insert)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()

@@ -1161,7 +1161,7 @@ namespace node
 
 				boost::system::error_code ec;
 				auto const address = boost::asio::ip::make_address(str_address, ec);
-				auto const row_iec = cyng::table::data_generator(
+				auto const row_bridge = cyng::table::data_generator(
 					address,	//	[ip] incoming/outgoing IP connection
 					port,		//	[ip] incoming/outgoing IP connection
 					//	[bool] incoming/outgoing (default)
@@ -1175,13 +1175,13 @@ namespace node
 				//
 				switch (policy) {
 				case cyng::table::POLICY_MERGE:
-					ctx.queue(bus_req_db_merge("TBridge", pk, row_iec, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
+					ctx.queue(bus_req_db_merge("TBridge", pk, row_bridge, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
 					break;
 				case cyng::table::POLICY_SUBSTITUTE:
-					ctx.queue(bus_req_db_update("TBridge", pk, row_iec, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
+					ctx.queue(bus_req_db_update("TBridge", pk, row_bridge, (rec_iec.empty() ? 1u : rec_iec.get_generation()), ctx.tag()));
 					break;
 				default:
-					ctx.queue(bus_req_db_insert("TBridge", pk, row_iec, 1u, ctx.tag()));
+					ctx.queue(bus_req_db_insert("TBridge", pk, row_bridge, 1u, ctx.tag()));
 					break;
 				}
 			}

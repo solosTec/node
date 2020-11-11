@@ -249,10 +249,21 @@ namespace node
 				}
 				else
 				{
+					CYNG_LOG_WARNING(logger_, "task #"
+						<< base_.get_id()
+						<< " <"
+						<< base_.get_class_name()
+						<< "> "
+						<< host_
+						<< ':'
+						<< port_
+						<< ' '
+						<< ec.message());
+
 					//
 					//	no more data will be send
 					//
-					socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
+					socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
 				}
 		});
 	}

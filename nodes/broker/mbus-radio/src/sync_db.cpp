@@ -5,7 +5,8 @@
  * 
  */ 
 
-#include "sync_db.h"
+#include <sync_db.h>
+
 #include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
 

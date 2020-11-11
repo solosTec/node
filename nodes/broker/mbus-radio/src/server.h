@@ -11,6 +11,7 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller_fwd.h>
+#include <cyng/store/store_fwd.h>
 
 #include <boost/uuid/uuid_generators.hpp>
 
@@ -23,7 +24,10 @@ namespace node
 		server(cyng::io_service_t&
 			, cyng::logging::log_ptr
 			, cyng::controller&
-			, boost::asio::ip::tcp::endpoint ep);
+			, boost::asio::ip::tcp::endpoint ep
+			, cyng::store::db&
+			, bool session_login
+			, bool session_auto_insert);
 
 	public:
 		void run();
@@ -36,6 +40,10 @@ namespace node
 		boost::asio::ip::tcp::acceptor acceptor_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& vm_;
+		cyng::store::db& cache_;
+		bool const session_login_;
+		bool const session_auto_insert_;
+
 		std::uint64_t session_counter_;
 		boost::uuids::random_generator uuid_gen_;
 	};

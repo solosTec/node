@@ -8,6 +8,7 @@
 #include "session.h"
 #include <smf/cluster/generator.h>
 #include <smf/sml/srv_id_io.h>
+#include <smf/shared/protocols.h>
 
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/io_buffer.h>
@@ -17,45 +18,42 @@
 #include <cyng/util/split.h>
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
+#include <cyng/store/db.h>
 
 namespace node
 {
 	session::session(boost::asio::ip::tcp::socket socket
 		, cyng::logging::log_ptr logger
 		, cyng::controller& cluster
-		, cyng::controller& vm)
+		, cyng::controller& vm
+		, cyng::store::db& db
+		, bool session_login	//	session login required
+		, bool session_auto_insert)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, cluster_(cluster)
 		, vm_(vm)
+		, cache_(logger, db)
+		, session_login_(session_login)
+		, session_auto_insert_(session_auto_insert)
 		, buffer_()
-		, authorized_(false)
+		, authorized_(!session_login)	//	if session login required authorization also required
 		, data_()
 		, rx_(0)
 		, sx_(0)
 		, parser_([&](wmbus::header const& h, cyng::buffer_t const& data) {
 
-			auto const str = cyng::io::to_hex(data);
-			auto const srv_id = sml::from_server_id(h.get_server_id());
 
-			CYNG_LOG_INFO(logger_, srv_id
-				<< " sent " 
-				<< cyng::bytes_to_str(data.size()));
-
-			cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
-				, srv_id
-				, h.get_medium()
-				, h.get_manufacturer()
-				, h.get_frame_type()
-				, str
-				, cluster_.tag()));
+			this->decode(h, data);
 
 		})
+		, uuidgen_()
 	{
 		CYNG_LOG_INFO(logger_, "new session [" 
 			<< vm_.tag()
 			<< "] at " 
-			<< socket_.remote_endpoint());
+			<< socket_.remote_endpoint() 
+			<< (session_login_ ? " - authorization required" : ""));
 
 		vm_.register_function("client.res.login", 1, [&](cyng::context& ctx) {
 
@@ -208,5 +206,133 @@ namespace node
 		}
 	}
 
+	void session::decode(wmbus::header const& h, cyng::buffer_t const& data)
+	{
+		auto const srv_id = h.get_server_id();
+		auto const ident = sml::from_server_id(srv_id);
+
+		CYNG_LOG_INFO(logger_, "received "
+			<< cyng::bytes_to_str(data.size())
+			<< " from "
+			<< ident);
+
+
+		//	lookup meter pk
+		auto const rec = cache_.lookup_meter_by_ident(ident);
+		if (!rec.empty()) {
+
+			auto const aes = cache_.lookup_aes(rec.key());
+			CYNG_LOG_DEBUG(logger_, "aes key = " << cyng::io::to_str(aes));
+
+			cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
+				, ident
+				, h.get_medium()
+				, h.get_manufacturer()
+				, h.get_frame_type()
+				, cyng::io::to_str(rec.convert())
+				, cluster_.tag()));
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "meter "
+				<< ident
+				<< " not configured");
+
+			auto const str = cyng::io::to_hex(data);
+
+			cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
+				, ident
+				, h.get_medium()
+				, h.get_manufacturer()
+				, h.get_frame_type()
+				, str
+				, cluster_.tag()));
+
+			if (session_auto_insert_) {
+
+				//
+				//	insert into TMeter and TMeterAccess 
+				//
+				insert_meter(h);
+			}
+
+		}
+		
+	}
+
+	void session::insert_meter(wmbus::header const& h)
+	{
+		auto const srv_id = h.get_server_id();
+		auto const ident = sml::from_server_id(srv_id);
+		auto const meter = sml::get_serial(srv_id);	//	string
+		auto const tag = uuidgen_();
+
+		auto const mc = sml::gen_metering_code("YY"
+			, meter
+			, tag);
+
+		//
+		//	TMeter
+		//
+		CYNG_LOG_INFO(logger_, "insert meter "
+			<< ident);
+
+		auto const row_meter = cyng::table::data_generator(
+			ident,	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+			meter,	//	meter number (i.e. 16000913) 4 bytes 
+			mc,		//	metering code 
+			h.get_manufacturer(),	//	manufacturer (3 char-code)
+			std::chrono::system_clock::now(),			//	time of manufacture
+			h.get_manufacturer(),	//	meter type
+			"",		//	parametrierversion (i.e. 16A098828.pse)
+			"",		//	fabrik nummer (i.e. 06441734)
+			"",		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+			"C",		//	Metrological Class: A, B, C, Q3/Q1, ...
+			boost::uuids::nil_uuid(),			//	optional gateway pk
+			to_str(protocol_e::wMBUS));	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+
+		auto const pk = cyng::table::key_generator(tag);
+		
+		cluster_.async_run(bus_req_db_insert("TMeter", pk, row_meter, 1u, cluster_.tag()));
+
+		//
+		//	TMeterAccess
+		//
+
+		cyng::crypto::aes_128_key aes;
+		if (boost::algorithm::equals(ident, "01-e61e-79426800-02-0e")) {
+
+			//
+			//	gas meter
+			//
+			CYNG_LOG_DEBUG(logger_, "\n\n GAS METER 01-e61e-79426800-02-0e\n\n");
+
+			aes.key_ = { 0x61, 0x40, 0xB8, 0xC0, 0x66, 0xED, 0xDE, 0x37, 0x73, 0xED, 0xF7, 0xF8, 0x00, 0x7A, 0x45, 0xAB };
+		}
+		auto const row_access = cyng::table::data_generator(
+			0u,						//	status
+			cyng::make_buffer({}),	//	pubKey
+			aes, //	aes
+			"", //	user
+			"" //	pwd
+		);
+
+		cluster_.async_run(bus_req_db_insert("TMeterAccess", pk, row_access, 1u, cluster_.tag()));
+
+		//
+		//	TBridge
+		//
+
+		auto const ep = socket_.local_endpoint();
+		auto const row_bridge = cyng::table::data_generator(
+			ep.address(),	//	[ip] incoming/outgoing IP connection
+			ep.port(),		//	[ip] incoming/outgoing IP connection
+			false,	//	outgoing
+			//	[seconds] pull cycle
+			cyng::make_seconds(15 * 60));
+
+		cluster_.async_run(bus_req_db_insert("TBridge", pk, row_bridge, 1u, cluster_.tag()));
+
+	}
 
 }

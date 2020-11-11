@@ -18,10 +18,16 @@ namespace node
 	server::server(cyng::io_service_t& ios
 		, cyng::logging::log_ptr logger
 		, cyng::controller& vm
-		, boost::asio::ip::tcp::endpoint ep)
+		, boost::asio::ip::tcp::endpoint ep
+		, cyng::store::db& cache
+		, bool session_login
+		, bool session_auto_insert)
 	: acceptor_(ios, ep)
 		, logger_(logger)
 		, vm_(vm)
+		, cache_(cache)
+		, session_login_(session_login)
+		, session_auto_insert_(session_auto_insert)
 		, session_counter_{ 0 }
 		, uuid_gen_{}
 	{
@@ -76,7 +82,14 @@ namespace node
 					CYNG_LOG_TRACE(logger_, "start session at " << socket.remote_endpoint());
 
 					auto const tag = uuid_gen_();
-					auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_, vm_, vm_.emplace(tag)), [this, tag](session* s) {
+					auto sp = std::shared_ptr<session>(new session(std::move(socket)
+						, logger_
+						, vm_
+						, vm_.emplace(tag)
+						, cache_
+						, session_login_
+						, session_auto_insert_
+						), [this, tag](session* s) {
 
 						//
 						//	update session counter
