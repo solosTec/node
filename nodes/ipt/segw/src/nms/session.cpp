@@ -460,6 +460,10 @@ namespace node
 
 							}
 							else {
+
+								//
+								//	ToDo: accept
+								//
 								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: not supported by wirless M-Bus"));
 							}
 						}
@@ -638,7 +642,7 @@ namespace node
 			);
 
 			auto const address = cyng::value_cast(dom.get("address"), "localhost");
-			auto const port = cyng::value_cast(dom.get("port"), "9009");
+			auto const port = cyng::value_cast<std::int64_t>(dom.get("port"), 9009);
 			auto const username = cyng::value_cast(dom.get("user"), "user");
 			auto const password = cyng::value_cast(dom.get("pwd"), "pwd");
 			auto const filename = cyng::value_cast(dom.get("fw-filename"), "fw-filname");
