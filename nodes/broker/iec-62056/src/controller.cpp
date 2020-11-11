@@ -121,6 +121,8 @@ namespace node
 		, cyng::tuple_t&& cfg_srv
 		, cyng::tuple_t&& cfg_client)
 	{
+		CYNG_LOG_INFO(logger, "BUILD DATE: 2020-11-11");
+
 		CYNG_LOG_TRACE(logger, "cluster redundancy: " << cfg_cls.size());
 
 		auto const dom_srv = cyng::make_reader(cfg_srv);
@@ -131,7 +133,7 @@ namespace node
 		//	http::server build a string view
 		try {
 			auto address = cyng::value_cast(dom_srv.get("address"), "0.0.0.0");
-			auto service = cyng::value_cast(dom_srv.get("service"), "8443");
+			auto service = cyng::value_cast(dom_srv.get("service"), "2000");
 			auto const host = cyng::make_address(address);
 			const auto port = static_cast<unsigned short>(std::stoi(service));
 

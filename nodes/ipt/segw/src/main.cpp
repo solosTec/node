@@ -237,7 +237,7 @@ int main(int argc, char **argv)
 
 			if (vm.count("connect"))
 			{
-				return ctrl.dry_connect(connect);
+				return ctrl.try_connect(connect);
 			}
 		}
 		catch (std::exception const& ex) {

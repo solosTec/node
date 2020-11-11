@@ -816,7 +816,7 @@ namespace node
 		return EXIT_FAILURE;
 	}
 
-	int controller::dry_connect(std::string connect) const
+	int controller::try_connect(std::string connect) const
 	{
 		//	syntax: "demo:demo@segw.ch:26862" 
 
