@@ -128,7 +128,7 @@ namespace node
 		//
 		//	define service type
 		//
-		typedef service< CTL >	service_type;
+		using service_type = service< CTL >;
 
 		//
 		//	messages

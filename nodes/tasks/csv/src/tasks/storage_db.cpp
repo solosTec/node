@@ -1016,7 +1016,7 @@ namespace node
 		//	SELECT server FROM TSMLMeta WHERE ((actTime > julianday('2018-08-08 00:00:00')) AND (actTime < julianday('2018-08-09 00:00:00'))) GROUP BY server
 		//
 		auto const sql = cmd.select()[cyng::sql::column(8)]
-			.where(cyng::sql::column(5) > cyng::sql::make_constant(start) && cyng::sql::column(5) < cyng::sql::make_constant(end) && cyng::sql::column(13) == cyng::sql::make_constant(profile))
+			.where((cyng::sql::column(5) > cyng::sql::make_constant(start)) && (cyng::sql::column(5) < cyng::sql::make_constant(end)) && (cyng::sql::column(13) == cyng::sql::make_constant(profile)))
 			.group_by(cyng::sql::column(8))();
 
 		CYNG_LOG_TRACE(logger_, sql);	//	select ... from name
