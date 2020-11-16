@@ -120,13 +120,14 @@ namespace node
 					CYNG_LOG_WARNING(logger_, "session closed: "
 						<< ec.message());
 
-					//
-					//	remove client
-					//
-					cluster_.async_run(client_req_close(vm_.tag(), ec.value()));
+					if (session_login_ && authorized_) {
 
-					authorized_ = false;
-
+						//
+						//	remove client
+						//
+						cluster_.async_run(client_req_close(vm_.tag(), ec.value()));
+						authorized_ = false;
+					}
 				}
 			});
 	}
@@ -142,12 +143,17 @@ namespace node
 		//	update "sx" value of this session/device
 		//
 		sx_ += data.size();
-		cluster_.async_run(bus_req_db_modify("_Session"
-			, cyng::table::key_generator(vm_.tag())
-			, cyng::param_factory("sx", sx_)
-			, 0u
-			, vm_.tag()));
+		if (session_login_ && authorized_) {
 
+			//
+			//	update session throughput if session is authorized
+			//
+			cluster_.async_run(bus_req_db_modify("_Session"
+				, cyng::table::key_generator(vm_.tag())
+				, cyng::param_factory("sx", sx_)
+				, 0u
+				, vm_.tag()));
+		}
 
 	}
 
@@ -169,12 +175,11 @@ namespace node
 					<< socket_.remote_endpoint());
 
 				cluster_.async_run(client_req_login(vm_.tag()
-					, vec.at(0)
-					, vec.at(1)
-					, "plain" //	login scheme
+					, vec.at(0)	//	name
+					, vec.at(1)	//	password
+					, "plain"	//	login scheme
 					, cyng::param_map_factory("tp-layer", "TCP/IP")
 					("data-layer", "wM-Bus:EN13757-4")
-					("security", "public")
 					("time", std::chrono::system_clock::now())
 					("local-ep", socket_.remote_endpoint())
 					("remote-ep", socket_.local_endpoint())));

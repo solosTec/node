@@ -6,11 +6,13 @@
  */ 
 
 
-#include "session.h"
-#include "client.h"
-#include "db.h"
-#include "tasks/watchdog.h"
+#include <session.h>
+#include <client.h>
+#include <db.h>
+#include <tasks/watchdog.h>
+
 #include <NODE_project_info.h>
+
 #include <smf/cluster/generator.h>
 #include <smf/ipt/response.hpp>
 
@@ -113,6 +115,12 @@ namespace node
 		//	statistical data
 		//
 		vm_.async_run(cyng::generate_invoke("log.msg.debug", cyng::invoke("lib.size"), " callbacks registered"));
+
+		//
+		//	register additional request handler for database access
+		//
+		cyng::register_store(this->cache_.db_, vm_);
+
 	}
 
 
@@ -501,7 +509,7 @@ namespace node
 		, std::uint32_t group
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string platform
-		, std::int64_t pid) //	
+		, std::int64_t pid) 
 	{
 		//
 		//	ToDo: check for duplicate tags
@@ -522,10 +530,10 @@ namespace node
 				<< ep
 				<< " successful authorized");
 
-			//
-			//	register additional request handler for database access
-			//
-			cyng::register_store(this->cache_.db_, ctx);
+			////
+			////	register additional request handler for database access
+			////
+			//cyng::register_store(this->cache_.db_, ctx);
 
 			//
 			//	register client functions
@@ -1027,6 +1035,8 @@ namespace node
 			CYNG_LOG_INFO(logger_, tbl->meta().get_name() << "->size(" << tbl->size() << ")");
 			tbl->loop([&](cyng::table::record const& rec) -> bool {
 
+				BOOST_ASSERT_MSG(!rec.key().empty(), "empty key");
+
 #ifdef _DEBUG
 				if (boost::algorithm::equals(tbl->meta().get_name(), "TLoRaDevice")) {
 					BOOST_ASSERT_MSG(rec.data().at(0).get_class().tag() == cyng::TC_MAC64, "DevEUI has wrong data type");
@@ -1038,7 +1048,7 @@ namespace node
 					, rec.data()
 					, rec.get_generation()
 					, std::get<1>(tpl)		//	session tag
-					, std::get<2>(tpl)));	//	task id (optional)
+					, std::get<2>(tpl)));
 
 				//	continue loop
 				return true;

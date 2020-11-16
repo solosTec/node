@@ -94,27 +94,30 @@ namespace node
 			, 64	//	model
 			, 64	//	vFirmware
 			, 0		//	online/offline state
-			})))
+			}))) 
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
 
-		if (!db.create_table(cyng::table::make_meta_table<1, 14>("TMeter", { "pk"
-					, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-					, "meter"		//	meter number (i.e. 16000913) 4 bytes 
-					, "code"		//	metering code - changed at 2019-01-31
-					, "maker"		//	manufacturer
-					, "tom"			//	time of manufacture
-					, "vFirmware"	//	firmwareversion (i.e. 11600000)
-					, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
-					, "factoryNr"	//	fabrik nummer (i.e. 06441734)
-					, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
-					, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
-					, "gw"			//	optional gateway pk
-					, "protocol"	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
-					//	-- additional columns
-					, "serverId"	//	optional gateway server ID
-					, "online"		//	gateway online state (1,2,3)
+		if (!db.create_table(cyng::table::make_meta_table<1, 16>("TMeter", { "pk"
+				, "ident"		//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "meter"		//	meter number (i.e. 16000913) 4 bytes 
+				, "code"		//	metering code - changed at 2019-01-31
+				, "maker"		//	manufacturer
+				, "tom"			//	time of manufacture
+				, "vFirmware"	//	firmwareversion (i.e. 11600000)
+				, "vParam"		//	parametrierversion (i.e. 16A098828.pse)
+				, "factoryNr"	//	fabrik nummer (i.e. 06441734)
+				, "item"		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, "mClass"		//	Metrological Class: A, B, C, Q3/Q1, ...
+				, "gw"			//	optional gateway pk
+				, "protocol"	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+				//	-- additional columns
+				, "serverId"	//	optional gateway server ID
+				, "online"		//	gateway online state (1,2,3)
+				, "region"		//	general location
+				, "address"		//	street, city
+
 			},
 			{ cyng::TC_UUID
 			, cyng::TC_STRING		//	ident
@@ -131,6 +134,8 @@ namespace node
 			, cyng::TC_STRING		//	protocol
 			, cyng::TC_STRING		//	serverID
 			, cyng::TC_INT32		//	on/offline state
+			, cyng::TC_STRING		//	region
+			, cyng::TC_STRING		//	address
 			},
 			{ 36
 			, 24	//	ident
@@ -147,6 +152,8 @@ namespace node
 			, 32	//	protocol
 			, 23 	//	serverId
 			, 0		//	on/offline state
+			, 32	//	region
+			, 64	//	address
 			})))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
@@ -249,7 +256,7 @@ namespace node
 		}
 		
 		//
-		//	Boost meter records with additional data from TGateway
+		//	Boost meter records with additional data from TGateway and TLocation
 		//
 		else if (boost::algorithm::equals(table, "TMeter"))
 		{
@@ -306,47 +313,11 @@ namespace node
 				//
 				//	mark gateways as online
 				//
-				db.access([&](cyng::store::table* tbl_gw, cyng::store::table* tbl_meter, const cyng::store::table* tbl_ses) {
-
-					//
-					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
-					//	Gateway and Device table share the same table key
-					//
-					auto rec = tbl_ses->lookup(key);
-					if (rec.empty())	{
-						//	set state: offline
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
-					}
-					else {
-
-						//
-						//	If rtag is not nil then this session has an open connection
-						//
-						auto const rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
-						auto const state = rtag.is_nil() ? 1 : 2;
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", state), origin);
-
-						//
-						//	update TMeter
-						//	Lookup if TMeter has a gateway with this key
-						//	This method is inherently slow.
-						//	ToDo: optimize
-						//
-						//std::map<cyng::table::key_type, int>	result;
-						auto const gw_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
-						auto const meters = collect_meter_of_gw(tbl_meter, gw_tag);
-
-						//
-						//	Update all found meters
-						//
-						for (auto const& item : meters) {
-							tbl_meter->modify(item, cyng::param_factory("online", state), origin);
-						}
-					}
-
-				}	, cyng::store::write_access("TGateway")
-					, cyng::store::write_access("TMeter")
-					, cyng::store::read_access("_Session"));
+				update_data_online_status(db, key, data, origin);
+			}
+			else if (boost::algorithm::equals(table, "TLocation"))
+			{
+				update_data_meter(db, key, data, origin);
 			}
 		}
 	}
@@ -545,7 +516,7 @@ namespace node
 		const cyng::vector_t frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, "db.res.modify.by.param - " << cyng::io::to_str(frame));
 
-		auto tpl = cyng::tuple_cast<
+		auto const tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name
 			cyng::table::key_type,	//	[1] table key
 			cyng::param_t			//	[2] parameter
@@ -631,15 +602,6 @@ namespace node
 					<< " has no associated meter");
 			}
 		}
-		//else if (boost::algorithm::equals(table, "TLocation"))
-		//{
-		//	if (!complete_data_location(db_, key, data)) {
-
-		//		CYNG_LOG_WARNING(logger_, "location of  meter "
-		//			<< cyng::io::to_str(key)
-		//			<< " has no associated meter");
-		//	}
-		//}
 
 		//
 		//	insert
@@ -675,59 +637,83 @@ namespace node
 		}
 		else
 		{
+			//
+			//	update online state of meters and gateways
+			//
 			if (boost::algorithm::equals(table, "_Session"))
 			{
-				db_.access([&](cyng::store::table* tbl_gw, cyng::store::table* tbl_meter, const cyng::store::table* tbl_ses) {
-
-					//
-					//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
-					//	Gateway and Device table share the same table key
-					//
-					auto rec = tbl_ses->lookup(key);
-					if (rec.empty()) {
-						//	set online state
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
-					}
-					else {
-						auto const rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
-						auto const state = rtag.is_nil() ? 1 : 2;
-						tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", state), origin);
-
-						//
-						//	update TMeter
-						//	Lookup if TMeter has a gateway with this key
-						//	This method is inherently slow.
-						//	ToDo: optimize
-						//
-
-						std::map<cyng::table::key_type, int>	result;
-						auto const gw_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
-						tbl_meter->loop([&](cyng::table::record const& rec) -> bool {
-
-							auto const tag = cyng::value_cast(rec["gw"], boost::uuids::nil_uuid());
-							if (tag == gw_tag) {
-
-								//
-								//	The gateway of this meter is online/connected
-								//
-								result.emplace(rec.key(), state);
-							}
-							return true;	//	continue
-						});
-
-						//
-						//	Update all found meters
-						//
-						for (auto const& item : result) {
-							tbl_meter->modify(item.first, cyng::param_factory("online", item.second), origin);
-						}
-
-					}
-				}	, cyng::store::write_access("TGateway")
-					, cyng::store::write_access("TMeter")
-					, cyng::store::read_access("_Session"));
+				update_data_online_status(db_, key, data, origin);
+			}
+			else if (boost::algorithm::equals(table, "TLocation"))
+			{
+				update_data_meter(db_, key, data, origin);
 			}
 		}
+	}
+
+	void update_data_online_status(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data
+		, boost::uuids::uuid origin)
+	{
+		db.access([&](cyng::store::table* tbl_gw, cyng::store::table* tbl_meter, const cyng::store::table* tbl_ses) {
+
+			//
+			//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
+			//	Gateway and Device table share the same table key
+			//
+			auto rec = tbl_ses->lookup(key);
+			if (rec.empty()) {
+				//	set online state
+				tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
+				tbl_meter->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
+			}
+			else {
+				auto const rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
+				auto const state = rtag.is_nil() ? 1 : 2;
+				tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", state), origin);
+
+				//
+				//	update TMeter
+				//	Lookup if TMeter has a gateway with this key
+				//	This method is inherently slow.
+				//	ToDo: optimize
+				//
+
+				std::map<cyng::table::key_type, int>	result;
+				auto const gw_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
+				auto const meters = collect_meter_of_gw(tbl_meter, gw_tag);
+
+				//
+				//	Update all found meters
+				//
+				for (auto const& item : meters) {
+					tbl_meter->modify(item, cyng::param_factory("online", state), origin);
+				}
+
+			}
+		}	, cyng::store::write_access("TGateway")
+			, cyng::store::write_access("TMeter")
+			, cyng::store::read_access("_Session"));
+
+	}
+
+	void update_data_meter(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data
+		, boost::uuids::uuid origin)
+	{
+		//
+		//	Update values of TMeter
+		//
+		db.access([&](cyng::store::table* tbl_meter) {
+			if (tbl_meter->exist(key)) {
+
+				tbl_meter->modify(key, cyng::param_t("region", data.at(2)), origin);
+				tbl_meter->modify(key, cyng::param_t("address", data.at(3)), origin);
+			}
+		}, cyng::store::write_access("TMeter"));
+
 	}
 
 	void db_sync::res_subscribe(cyng::context& ctx)
@@ -1007,6 +993,15 @@ namespace node
 				db.modify("TGateway", key, cyng::param_factory("vFirmware", param.second), origin);
 			}
 		}
+		else if (boost::algorithm::equals(table, "TLocation")) {
+			BOOST_ASSERT(key.size() == 1);
+			if (boost::algorithm::equals(param.first, "region")) {
+				db.modify("TMeter", key, cyng::param_factory(param.first, param.second), origin);
+			}
+			else if (boost::algorithm::equals(param.first, "address")) {
+				db.modify("TMeter", key, cyng::param_factory(param.first, param.second), origin);
+			}
+		}
 
 		//
 		//	generic
@@ -1086,7 +1081,7 @@ namespace node
 		//
 		//	Additional values for TMeter
 		//
-		db.access([&](cyng::store::table const* tbl_gw) {
+		db.access([&](cyng::store::table const* tbl_gw, cyng::store::table const* tbl_loc) {
 
 			//
 			//	TMeter contains an optional reference to TGateway table
@@ -1109,7 +1104,23 @@ namespace node
 				data.push_back(cyng::make_object(-1));
 			}
 
-		} , cyng::store::read_access("TGateway"));
+			//
+			//	get data from TLocation
+			//
+			auto const rec = tbl_loc->lookup(key); 
+			if (!rec.empty()) {
+				data.push_back(rec["region"]);
+				data.push_back(rec["address"]);
+			}
+			else {
+				// "region"		- general location
+				// "address"	- street, city
+				data.push_back(cyng::make_object(""));
+				data.push_back(cyng::make_object(""));
+			}
+
+		}	, cyng::store::read_access("TGateway")
+			, cyng::store::read_access("TLocation"));
 
 		return rc;
 	}

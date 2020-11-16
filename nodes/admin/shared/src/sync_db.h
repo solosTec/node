@@ -125,6 +125,19 @@ namespace node
 		, cyng::table::key_type const& key
 		, cyng::table::data_type& data);
 
+	void update_data_online_status(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data
+		, boost::uuids::uuid origin);
+
+	/**
+	 * Take data from TLocation to insert into TMeter
+	 */
+	void update_data_meter(cyng::store::db& db
+		, cyng::table::key_type const& key
+		, cyng::table::data_type& data
+		, boost::uuids::uuid origin);
+
 	/**
 	 * helper function to find all meters of gateway
 	 */

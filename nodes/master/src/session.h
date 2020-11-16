@@ -8,8 +8,9 @@
 #ifndef NODE_MASTER_SESSION_H
 #define NODE_MASTER_SESSION_H
 
-#include "client.h"
-#include "cluster.h"
+#include <client.h>
+#include <cluster.h>
+
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
 #include <cyng/store/db.h>

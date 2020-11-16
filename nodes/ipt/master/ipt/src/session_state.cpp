@@ -563,7 +563,6 @@ namespace node
 					, cyng::param_map_factory
 					("tp-layer", "IP-T:43863-4")
 					("data-layer", "SML")
-					("security", "public")
 					("time", std::chrono::system_clock::now())
 					("local-ep", evt.lep_)
 					("remote-ep", evt.rep_)));

@@ -661,7 +661,7 @@ namespace node
 					cyng::param_factory("rec", rec.convert()));
 
 				//
-				//	convert to JSON may fail
+				//	convert to JSON may fail 
 				//
 				try {
 					auto msg = cyng::json::to_string(tpl);
@@ -675,13 +675,11 @@ namespace node
 					const auto prev_percent = percent;
 					percent = (100u * idx) / size;
 
+					//
+					//	don't send fractions
+					//
 					if (prev_percent != percent) {
 						display_loading_level(tag, percent, channel);
-
-						//
-						//	give GUI a chance to refresh
-						//
-						//std::this_thread::sleep_for(std::chrono::milliseconds(12));
 					}
 				}
 				catch (std::exception const& ex) {
@@ -708,9 +706,18 @@ namespace node
 				<< tag);
 
 			//
+			//	make sure 100% is complete
+			//
+			if (percent < 100) {
+				percent = 100;
+				display_loading_level(tag, percent, channel);
+			}
+
+			//
 			//	inform client that data upload is finished
 			//
 			display_loading_icon(tag, false, channel);
+
 		}, cyng::store::read_access(table));
 	}
 
