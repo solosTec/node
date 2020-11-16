@@ -6,6 +6,7 @@
  */
 
 #include <tasks/cluster.h>
+#include <sync_db.h>
 
 #include <smf/cluster/generator.h>
 
@@ -125,8 +126,10 @@ namespace node
 		//
 		//	sync tables
 		//
-		sync_table("TMeter");
-		sync_table("_Broker");
+		for (auto const& tbl : db_sync::tables_) {
+			CYNG_LOG_INFO(logger_, "subscribe " << tbl.name_);
+			sync_table(tbl.name_);
+		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}

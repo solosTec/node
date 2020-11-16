@@ -5,6 +5,8 @@ target_include_directories(broker_mbus_radio
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
 		${CYNG_INCLUDE_DIRS}
+		${CRYPT_INCLUDE_DIR}
+		${OPENSSL_INCLUDE_DIR}
 		${BOOST_INCLUDE_DIR}
 )
 target_link_libraries(broker_mbus_radio 

@@ -8,8 +8,8 @@
 #ifndef NODE_SEGW_TASK_RS485_H
 #define NODE_SEGW_TASK_RS485_H
 
-#include "../cfg_mbus.h"
-#include "../decoder.h"
+#include <cfg_mbus.h>
+#include <mbus_decoder.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>

@@ -8,8 +8,7 @@
 #ifndef NODE_SEGW_TASK_IEC_H
 #define NODE_SEGW_TASK_IEC_H
 
-//#include "../cfg_mbus.h"
-#include "../decoder.h"
+#include <mbus_decoder.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>

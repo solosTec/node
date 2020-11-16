@@ -7,8 +7,9 @@
 #ifndef NODE_LMN_H
 #define NODE_LMN_H
 
-#include "decoder.h"
-#include "cfg_broker.h"
+//#include <decoder.h>
+#include <cfg_broker.h>
+#include <smf/mbus/decoder.h>
 
 #include <cyng/async/mux.h>
 #include <cyng/vm/controller.h>
@@ -100,12 +101,29 @@ namespace node
 			, std::uint64_t
 			, boost::uuids::uuid);
 
+		void cb_wmbus_meter(cyng::buffer_t const& srv_id
+			, std::uint8_t status
+			, std::uint8_t aes_mode
+			, cyng::crypto::aes_128_key const& aes);
+
+		void cb_wmbus_data(cyng::buffer_t const& srv_id
+			, cyng::buffer_t const& data
+			, std::uint8_t status
+			, boost::uuids::uuid pk);
+
+		void cb_wmbus_value(cyng::buffer_t const& srv_id
+			, cyng::object const& val
+			, std::uint8_t scaler
+			, mbus::units unit
+			, sml::obis code
+			, boost::uuids::uuid pk);
+
 	private:
 		cyng::logging::log_ptr logger_;
 		cyng::async::mux& mux_;
 		cyng::controller vm_;
 		cache& cache_;
-		decoder_wireless_mbus decoder_wmbus_;
+		wmbus::decoder decoder_;
 
 		std::size_t serial_mgr_;
 		std::size_t radio_port_;	//	[1] wireless LMN task (M-Bus)

@@ -19,7 +19,7 @@ set (node_ipt_segw_cpp
 	src/bridge.cpp
 	src/router.cpp
 	src/lmn.cpp
-	src/decoder.cpp
+	src/mbus_decoder.cpp
 	src/profiles.cpp
 
 )
@@ -41,7 +41,7 @@ set (node_ipt_segw_h
 	src/bridge.h
 	src/router.h
 	src/lmn.h
-	src/decoder.h
+	src/mbus_decoder.h
 	src/profiles.h
 
 )

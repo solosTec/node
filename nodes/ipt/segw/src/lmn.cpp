@@ -51,7 +51,13 @@ namespace node
 		, mux_(m)
 		, vm_(m.get_io_service(), tag)
 		, cache_(cfg)
-		, decoder_wmbus_(logger, cfg, vm_)
+		//, decoder_wmbus_(logger, cfg, vm_)
+		, decoder_(logger
+			, vm_
+			, std::bind(&lmn::cb_wmbus_meter, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+			, std::bind(&lmn::cb_wmbus_data, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+			, std::bind(&lmn::cb_wmbus_value, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)
+		)
 
 		, serial_mgr_(cyng::async::NO_TASK)
 		, radio_port_(cyng::async::NO_TASK)
@@ -483,20 +489,23 @@ namespace node
 		}
 		
 		//
+		//	get AES key and decrypt content (AES CBC - mode 5)
+		//
+		auto const aes = cache_.get_aes_key(server_id);
+
+		decoder_.run(server_id
+			, std::get<5>(tpl)	//	frame type
+			, payload
+			, aes);
+
+		//
 		//	decoding depends on frame type and AES key from
 		//	device table
 		//
 		switch (std::get<5>(tpl)) {
 		case node::mbus::FIELD_CI_HEADER_LONG:	//	0x72
-			//	e.g. HYD
-			decoder_wmbus_.read_frame_header_long(server_id, payload);
-			break;
 		case node::mbus::FIELD_CI_HEADER_SHORT:	//	0x7A
-			decoder_wmbus_.read_frame_header_short(server_id, payload);
-			break;
 		case node::mbus::FIELD_CI_RES_SHORT_SML:	//	0x7F
-			//	e.g. ED300L
-			decoder_wmbus_.read_frame_header_short_sml(server_id, payload);
 			break;
 		default:
 		{
@@ -518,7 +527,7 @@ namespace node
 			CYNG_LOG_WARNING(logger_, ctx.get_name()
 				<< ss.str());
 		}
-		break;
+			break;
 		}
 
 		//
@@ -529,7 +538,7 @@ namespace node
 			, 0u	//	status
 			, std::get<2>(tpl)
 			, std::get<3>(tpl)
-			, cyng::crypto::aes_128_key{}
+			, aes
 			, ctx.tag())) {
 
 			CYNG_LOG_INFO(logger_, "new device: "
@@ -793,5 +802,88 @@ namespace node
 			}
 		}
 	}
+
+	void lmn::cb_wmbus_meter(cyng::buffer_t const& srv_id
+		, std::uint8_t status
+		, std::uint8_t aes_mode
+		, cyng::crypto::aes_128_key const& aes)
+	{
+		auto const manufacturer = sml::get_manufacturer_code(srv_id);
+
+		CYNG_LOG_DEBUG(logger_, "server ID   : " << sml::from_server_id(srv_id));	//	OBIS_SERIAL_NR - 00 00 60 01 00 FF
+		CYNG_LOG_DEBUG(logger_, "medium      : " << mbus::get_medium_name(sml::get_medium_code(srv_id)));
+		CYNG_LOG_DEBUG(logger_, "manufacturer: " << sml::decode(manufacturer));	//	OBIS_DATA_MANUFACTURER - 81 81 C7 82 03 FF
+		CYNG_LOG_DEBUG(logger_, "device id   : " << sml::get_serial(srv_id));
+		CYNG_LOG_DEBUG(logger_, "status      : " << +status);
+		CYNG_LOG_DEBUG(logger_, "mode        : " << +aes_mode);
+
+		//
+		// update device table
+		//
+		if (cache_.update_device_table(srv_id
+			, sml::decode(manufacturer)
+			, status	//	M-Bus status
+			, sml::get_version(srv_id)
+			, sml::get_medium_code(srv_id)
+			, aes
+			, vm_.tag())) {
+
+			CYNG_LOG_INFO(logger_, "new device: "
+				<< sml::from_server_id(srv_id));
+		}
+
+	}
+	void lmn::cb_wmbus_data(cyng::buffer_t const& srv_id
+		, cyng::buffer_t const& data
+		, std::uint8_t wmbus_status
+		, boost::uuids::uuid pk)
+	{
+		//
+		//	read data block
+		//
+		CYNG_LOG_DEBUG(logger_, "decoded data of "
+			<< sml::from_server_id(srv_id)
+			<< ": "
+			<< cyng::io::to_hex(data));
+
+		//
+		//	"_Readout"
+		//
+		cache_.write_table("_Readout", [&](cyng::store::table* tbl) {
+			tbl->insert(cyng::table::key_generator(pk)
+				, cyng::table::data_generator(srv_id, std::chrono::system_clock::now(), wmbus_status)
+				, 1u	//	generation
+				, cache_.get_tag());
+			});
+
+	}
+
+	void lmn::cb_wmbus_value(cyng::buffer_t const& srv_id
+		, cyng::object const& val
+		, std::uint8_t scaler
+		, mbus::units unit
+		, sml::obis code
+		, boost::uuids::uuid pk)
+	{
+		CYNG_LOG_TRACE(logger_, "readout (wireless mBus) "
+			<< sml::from_server_id(srv_id)
+			<< " value: "
+			<< cyng::io::to_type(val)
+			<< " "
+			<< mbus::get_unit_name(unit));
+
+		cache_.write_table("_ReadoutData", [&](cyng::store::table* tbl) {
+
+			auto const type = static_cast<std::uint32_t>(val.get_class().tag());
+			auto const unit_v = static_cast<std::uint8_t>(unit);
+
+			tbl->insert(cyng::table::key_generator(pk, code.to_buffer())
+				, cyng::table::data_generator(val, type, scaler, unit_v)
+				, 1u	//	generation
+				, cache_.get_tag());
+		});
+
+	}
+
 }
 

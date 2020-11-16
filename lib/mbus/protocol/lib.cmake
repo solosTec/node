@@ -11,6 +11,7 @@ set (mbus_protocol_cpp
 	src/dif.cpp
 	src/vif.cpp
 	src/bcd.cpp
+	src/decoder.cpp
 )
 
 set (mbus_protocol_h
@@ -23,6 +24,7 @@ set (mbus_protocol_h
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/mbus/dif.h
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/mbus/vif.h
 	${CMAKE_SOURCE_DIR}/src/main/include/smf/mbus/bcd.h
+	${CMAKE_SOURCE_DIR}/src/main/include/smf/mbus/decoder.h
 )
 
 # define the main program

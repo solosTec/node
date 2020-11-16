@@ -187,7 +187,12 @@ int main(int argc, char **argv)
 				//	write default configuration
 #ifdef _DEBUG
 				std::cout
-					<< "create deafult configuration"
+					<< "create default configuration with config index: "
+					<< config_index
+					<< ", pool size: "
+					<< pool_size 
+					<< " and JSON path: "
+					<< json_path
 					<< std::endl;
 #endif
 				return ctrl.ctl::create_config();	//	base class method is hidden
