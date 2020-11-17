@@ -138,6 +138,7 @@ namespace node
 			 *	@return value group D
 			 */
 			std::uint8_t get_mode() const;
+			const char* get_mode_name() const;
 
 			/**
 			 *	A value of 0xFF means "don't care".
@@ -198,6 +199,9 @@ namespace node
 				auto const n = cyng::slicer<std::uint64_t, 0u>(value_) & 0x0000FFFFFFFFFFFF;
 				return cyng::swap_num(n * 0x10000);
 			}
+
+			std::uint8_t& operator[](value_group);
+			std::uint8_t const& operator[](value_group) const;
 
 		private:
 			const char* get_indicator_name_abstract() const;

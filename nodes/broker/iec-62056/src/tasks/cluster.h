@@ -73,6 +73,9 @@ namespace node
 		cyng::logging::log_ptr logger_;
 		cluster_redundancy const config_;
 
+		bool const client_login_;
+		bool const verbose_;	//	parser
+
 		/**
 		 * global data cache
 		 */
@@ -87,6 +90,8 @@ namespace node
 		 *  TCP/IP server
 		 */
 		server server_;
+
+		boost::uuids::random_generator uuid_gen_;
 
 	};
 	

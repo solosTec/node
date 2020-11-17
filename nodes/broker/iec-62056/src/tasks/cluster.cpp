@@ -31,9 +31,12 @@ namespace node
 		, bus_(bus_factory(btp->mux_, logger, boost::uuids::random_generator()(), btp->get_id()))
 		, logger_(logger)
 		, config_(cfg)
+		, client_login_(client_login)
+		, verbose_(verbose)
 		, cache_()
 		, db_sync_(logger, cache_)
 		, server_(btp->mux_.get_io_service(), logger, bus_->vm_, ep)
+		, uuid_gen_()
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -109,14 +112,18 @@ namespace node
 					//	meter number (i.e. 16000913)
 					//
 					auto const meter = cyng::value_cast(rec["meter"], "00000000");
+					auto const tag = uuid_gen_();
 
 					auto tsk = cyng::async::start_task_detached<client>(base_.mux_
 						, bus_->vm_
+						, bus_->vm_.emplace(tag)
 						, logger_
 						, cache_
 						, boost::asio::ip::tcp::endpoint{ std::get<1>(tpl), std::get<2>(tpl) }
 						, std::get<3>(tpl)
-						, meter);
+						, meter
+						, client_login_
+						, verbose_);
 
 					CYNG_LOG_TRACE(logger_,
 						ctx.get_name()

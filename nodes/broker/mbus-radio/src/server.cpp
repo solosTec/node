@@ -5,8 +5,8 @@
  *
  */
 
-#include "server.h"
-#include "session.h"
+#include <server.h>
+#include <session.h>
 #include <smf/cluster/generator.h>
 
 #include <cyng/vm/controller.h>

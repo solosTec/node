@@ -333,6 +333,27 @@ namespace node
 			return value_.at(VG_MODE);
 		}
 
+		const char* obis::get_mode_name() const
+		{
+			switch (get_mode()) {
+			case 0:	return "id";
+			case 1:	return "reset counter";
+			case 2:	return "Pmax cum.";
+			//case 3:	return "";
+			case 4:	return "Tm";	//	Tm abgelaufen
+			case 5:	return "P last measuring period";
+			case 6:	return "Pmax";
+			case 7:	return "current power";
+			case 8:	return "energy";
+			case 9:	return "time";
+			case 128:	return "collection counter";	//	Inkassozählwerk (see quantity)
+			default:
+				break;
+			}
+			return "";
+		}
+
+
 		std::uint8_t obis::get_quantities() const
 		{
 			return value_.at(VG_QUANTITY);
@@ -413,6 +434,16 @@ namespace node
 				boost::hash_combine(seed, c);
 			}
 			return seed;
+		}
+
+		std::uint8_t& obis::operator[](value_group idx)
+		{
+			return value_[idx];
+		}
+
+		std::uint8_t const& obis::operator[](value_group idx) const
+		{
+			return value_[idx];
 		}
 
 		//

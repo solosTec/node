@@ -52,6 +52,14 @@ namespace node
 				cb_(cyng::generate_invoke("iec.data.start", pk_));
 			}
 
+			//
+			//	formats:
+			//	OBIS(data)	- Measurement value
+			//	OBIS(data)(time) - Extreme value
+			//	OBIS(minutes)(data) - Average value
+			//	OBIS(minutes)(data) - Average value
+			//	OBIS(data)(Sum of the overrun times)(Number of the overrun times) - Overconsumption
+
 			auto prev_state = state_;
 			state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
 			if (state_ != prev_state) {
@@ -144,7 +152,7 @@ namespace node
 			if (r.second) {
 				this->id_ = r.first;
 				if (verbose_) {
-					cb_(cyng::generate_invoke("log.msg.debug", "IEC: OBIS ", this->id_));
+					cb_(cyng::generate_invoke("log.msg.debug", "IEC: OBIS ", this->id_.to_str()));
 				}
 			}
 			else if (verbose_) {
@@ -173,15 +181,12 @@ namespace node
 		void parser::set_value(std::string const& val)
 		{
 			
-			//if (val.size() > 12 && (val.find('*') == std::string::npos)) {
+			value_ = val;
 			if (val.find('.') == std::string::npos) {
-					set_status(val);
+				set_status(val);
 			}
-			else {
-				value_ = val;
-				if (verbose_) {
-					cb_(cyng::generate_invoke("log.msg.debug", "IEC: ", node::sml::to_string(id_), " = ", value_));
-				}
+			if (verbose_) {
+				cb_(cyng::generate_invoke("log.msg.debug", "IEC: ", id_.to_str(), " = ", value_));
 			}
 		}
 
@@ -196,10 +201,53 @@ namespace node
 			//	* var - reactive power (Blindleistung)
 			//	* J - energy
 			//	* Wh - dissipative energy
+			//	* h
+			//	* min
+
 			//
 			unit_ = val;
 			if (verbose_) {
 				cb_(cyng::generate_invoke("log.msg.debug", "IEC: unit = ", val));
+			}
+
+			if (boost::algorithm::equals(unit_, "V")
+				|| boost::algorithm::equals(unit_, "kV")
+
+				|| boost::algorithm::equals(unit_, "A")
+				|| boost::algorithm::equals(unit_, "kA")
+
+				|| boost::algorithm::equals(unit_, "VA")
+				|| boost::algorithm::equals(unit_, "kVA")
+				|| boost::algorithm::equals(unit_, "MVA")
+				|| boost::algorithm::equals(unit_, "GVA")
+
+				|| boost::algorithm::equals(unit_, "W")
+				|| boost::algorithm::equals(unit_, "kW")
+				|| boost::algorithm::equals(unit_, "MW")
+				|| boost::algorithm::equals(unit_, "GW")
+
+				|| boost::algorithm::equals(unit_, "VAh")
+				|| boost::algorithm::equals(unit_, "kVAh")
+				|| boost::algorithm::equals(unit_, "MVAh")
+				|| boost::algorithm::equals(unit_, "GVAh")
+
+				|| boost::algorithm::equals(unit_, "var")
+				|| boost::algorithm::equals(unit_, "kvar")
+				|| boost::algorithm::equals(unit_, "Mvar")
+				|| boost::algorithm::equals(unit_, "Gvar")
+
+				|| boost::algorithm::equals(unit_, "varh")
+				|| boost::algorithm::equals(unit_, "kvarh")
+				|| boost::algorithm::equals(unit_, "Mvarh")
+				|| boost::algorithm::equals(unit_, "Gvarh")
+
+				|| boost::algorithm::equals(unit_, "Wh")
+				|| boost::algorithm::equals(unit_, "kWh")
+				|| boost::algorithm::equals(unit_, "MWh")
+				|| boost::algorithm::equals(unit_, "GWh")
+				) {
+
+				id_[sml::obis::VG_MEDIUM] = 1;
 			}
 		}
 

@@ -43,6 +43,7 @@ namespace node
 		{
 			r_start
 				= boost::spirit::qi::lit("F.F")[boost::spirit::qi::_val = boost::phoenix::construct<node::sml::obis>(0, 0, 97, 97, 0, 255)]
+				//| boost::spirit::qi::lit("0.0.0")[boost::spirit::qi::_val = boost::phoenix::construct<node::sml::obis>(0, 0, 0, 0, 0, 255)]	//	METER_ADDRESS
 				| r_obis_medium[boost::spirit::qi::_val = boost::spirit::qi::_1]
 				| r_obis_short[boost::spirit::qi::_val = boost::spirit::qi::_1]
 				| r_obis_dec[boost::spirit::qi::_val = boost::spirit::qi::_1]
@@ -76,19 +77,19 @@ namespace node
 					>> boost::spirit::qi::ushort_
 					>> '.'
 					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, boost::spirit::qi::_1, boost::spirit::qi::_2, boost::spirit::qi::_3, 255)]
-				| (boost::spirit::qi::lit("C.")
+				| (boost::spirit::qi::lit("C.")	//	Serviceangaben
 					>> boost::spirit::qi::ushort_
 					>> '.'
 					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, 96, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
-				| (boost::spirit::qi::lit("F.")
+				| (boost::spirit::qi::lit("F.")	//	error messages
 					>> boost::spirit::qi::ushort_
 					>> '.'
 					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, 97, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
-				| (boost::spirit::qi::lit("L.")
+				| (boost::spirit::qi::lit("L.")	//	Listen
 					>> boost::spirit::qi::ushort_
 					>> '.'
 					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, 98, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]
-				| (boost::spirit::qi::lit("P.")
+				| (boost::spirit::qi::lit("P.")	//	Datenprofile (Lastgang, Betriebslogbuch)
 					>> boost::spirit::qi::ushort_
 					>> '.'
 					>> boost::spirit::qi::ushort_)[boost::spirit::qi::_val = boost::phoenix::bind(&make_obis_phoenix, 0, 0, 99, boost::spirit::qi::_1, boost::spirit::qi::_2, 255)]

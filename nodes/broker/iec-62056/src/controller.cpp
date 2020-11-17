@@ -141,7 +141,7 @@ namespace node
 			CYNG_LOG_INFO(logger, "service: " << service);
 
 			auto const client_login = cyng::value_cast(dom_client.get("login"), false);
-			auto const verbose = cyng::value_cast(dom_client.get("verbose"), false);
+			auto const verbose = cyng::value_cast(dom_client.get("verbose"), false);	// parser
 
 			auto r = cyng::async::start_task_delayed<cluster>(mux
 				, std::chrono::seconds(1)

@@ -10,18 +10,24 @@
 
 #include <cyng/vm/controller.h>
 #include <cyng/io/io_bytes.hpp>
+#include <cyng/io/hex_dump.hpp>
+ #include <cyng/vm/domain/log_domain.h>
 
 namespace node
 {
 	client::client(cyng::async::base_task* btp
 		, cyng::controller& cluster
+		, cyng::controller& vm
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, boost::asio::ip::tcp::endpoint ep
 		, std::chrono::seconds monitor
-		, std::string const& meter)
+		, std::string const& meter
+		, bool client_login
+		, bool verbose)
 	: base_(*btp)
 		, cluster_(cluster)
+		, vm_(vm)
 		, logger_(logger)
 		, cache_(db)
 		, ep_(ep)
@@ -30,16 +36,19 @@ namespace node
 		, socket_(base_.mux_.get_io_service())
 		, parser_([this](cyng::vector_t&& prg) -> void {
 
-			CYNG_LOG_TRACE(logger_, "task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< "> IEC data: "
-				<< cyng::io::to_type(prg));
+			//CYNG_LOG_TRACE(logger_, "task #"
+			//	<< base_.get_id()
+			//	<< " <"
+			//	<< base_.get_class_name()
+			//	<< "> IEC data: "
+			//	<< cyng::io::to_type(prg));
 
-		}, true)
+			vm_.async_run(std::move(prg));
+
+		}, verbose)
 		, buffer_read_()
 		, buffer_write_()
+		, client_login_(client_login)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -49,6 +58,18 @@ namespace node
 			<< ep_);
 
 		reset_write_buffer();
+
+		//
+		//	register logger domain
+		//
+		cyng::register_logger(logger_, vm_);
+		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
+
+		vm_.register_function("iec.data.start", 1, std::bind(&client::data_start, this, std::placeholders::_1));
+		vm_.register_function("iec.data.line", 6, std::bind(&client::data_line, this, std::placeholders::_1));
+		vm_.register_function("iec.data.bcc", 1, std::bind(&client::data_bcc, this, std::placeholders::_1));
+		vm_.register_function("iec.data.eof", 2, std::bind(&client::data_eof, this, std::placeholders::_1));
+
 	}
 
 	cyng::continuation client::run()
@@ -95,6 +116,15 @@ namespace node
 
 	void client::stop(bool shutdown)
 	{
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> remove embedded vm "
+			<< vm_.tag());
+
+		cluster_.async_run(cyng::generate_invoke("vm.remove", vm_.tag()));
+
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -155,6 +185,18 @@ namespace node
 			[this](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
 				if (!ec) {
+
+#ifdef _DEBUG
+					cyng::io::hex_dump hd;
+					std::stringstream ss;
+					hd(ss, buffer_read_.begin(), buffer_read_.begin() + bytes_transferred);
+					CYNG_LOG_TRACE(logger_, "\n" << ss.str());
+#endif
+
+					//cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
+					//	, std::string(buffer_read_.begin(), buffer_read_.begin() + bytes_transferred)
+					//	, socket_.remote_endpoint()
+					//	, cluster_.tag()));
 
 					//
 					//	parse IEC data
@@ -245,6 +287,72 @@ namespace node
 		buffer_write_.clear();
 		std::string const hello("/?" + meter_ + "!\r\n");
 		buffer_write_.emplace_back(cyng::buffer_t(hello.begin(), hello.end()));
+
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> query: "
+			<< hello);
+
+	}
+
+	void client::data_start(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
+			, "start reading"
+			, ep_
+			, cluster_.tag()));
+
+	}
+
+	void client::data_line(cyng::context& ctx)
+	{
+		//	[c8b5e3fb-ad83-47c8-ab21-357aec360af6,0000470700FF,0.000,A,,28]
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		std::stringstream ss;
+		ss
+			<< cyng::io::to_str(frame.at(1))
+			<< ": "
+			<< cyng::io::to_str(frame.at(2))
+			<< ' '
+			<< cyng::io::to_str(frame.at(3))
+			;
+		cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
+			, ss.str()
+			, ep_
+			, cluster_.tag()));
+	}
+
+	void client::data_bcc(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+	}
+
+	void client::data_eof(cyng::context& ctx)
+	{
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+
+		cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
+			, "stop reading"
+			, ep_
+			, cluster_.tag()));
+
+		//
+		//	close socket
+		//
+		boost::system::error_code ec;
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+		socket_.close(ec);
+
 	}
 
 }

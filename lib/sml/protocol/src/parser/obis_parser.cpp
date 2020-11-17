@@ -5,7 +5,7 @@
  *
  */
 
-#include "obis_parser.hpp"
+#include <parser/obis_parser.hpp>
 #include <smf/sml/obis_db.h>
 
 #include <cyng/util/split.h>

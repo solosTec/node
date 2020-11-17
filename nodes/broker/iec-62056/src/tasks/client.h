@@ -25,30 +25,25 @@ namespace node
 		using read_buffer_t = std::array<char, NODE::PREFERRED_BUFFER_SIZE>;
 
 	public:
-		//using msg_0 = std::tuple<cyng::version>;
 		using msg_1 = std::tuple<>;
 		using signatures_t = std::tuple<msg_1>;
 
 	public:
 		client(cyng::async::base_task* bt
 			, cyng::controller& cluster
+			, cyng::controller& vm
 			, cyng::logging::log_ptr
 			, cyng::store::db&
 			, boost::asio::ip::tcp::endpoint
 			, std::chrono::seconds 
-			, std::string const& meter);
+			, std::string const& meter
+			, bool client_login
+			, bool verbose);
 		cyng::continuation run();
 		void stop(bool shutdown);
 
 		/**
 		 * @brief slot [0]
-		 *
-		 * sucessful cluster login
-		 */
-		//cyng::continuation process(cyng::version const&);
-
-		/**
-		 * @brief slot [1]
 		 *
 		 * reconnect
 		 */
@@ -63,12 +58,18 @@ namespace node
 		void do_write();
 		void reset_write_buffer();
 
+		void data_start(cyng::context& ctx);
+		void data_line(cyng::context& ctx);
+		void data_bcc(cyng::context& ctx);
+		void data_eof(cyng::context& ctx);
+
 	private:
 		cyng::async::base_task& base_;
 		/**
 		 * communication bus to master
 		 */
 		cyng::controller& cluster_;
+		cyng::controller& vm_;
 		cyng::logging::log_ptr logger_;
 
 		/**
@@ -80,6 +81,8 @@ namespace node
 		std::chrono::seconds const monitor_;
 
 		std::string const meter_;
+
+		bool const client_login_;
 
 		/**
 		 * connection socket
