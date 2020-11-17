@@ -57,9 +57,14 @@ namespace node
 			//
 			if (!rs485_.is_enabled()) {
 
-				CYNG_LOG_WARNING(logger_, "RS 485 not enabled - close session");
-
+				CYNG_LOG_WARNING(logger_, "RS-485 interface is not enabled - close session");
 				boost::system::error_code ec;
+
+#ifdef _DEBUG
+				std::string str("RS-485: serial port is not enabled - close session");
+				boost::asio::write(socket_, boost::asio::buffer(str.data(), str.size()), ec);
+#endif
+
 				socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ec);
 				socket_.close(ec);
 			}
@@ -78,7 +83,8 @@ namespace node
 				//	get data from serial interface
 				//
 				auto const r = cyng::async::start_task_sync<reflux>(mux_
-					, logger_);
+					, logger_
+					, std::bind(&session::cb_data, this, std::placeholders::_1, std::placeholders::_2));
 				if (r.second) {
 
 					//
@@ -158,14 +164,15 @@ namespace node
 
 		}
 
-		void session::send_response(cyng::param_map_t&& res)
+		void session::cb_data(cyng::buffer_t data, std::size_t msg_counter)
 		{
-			//auto const str = cyng::json::to_string(res);
+			CYNG_LOG_INFO(logger_, "redirect "
+				<< cyng::bytes_to_str(data.size())
+				<< " to "
+				<< socket_.remote_endpoint());
 
-			//boost::system::error_code ec;
-			//boost::asio::write(socket_, boost::asio::buffer(str.data(), str.size()), ec);
-
-
+			boost::system::error_code ec;
+			boost::asio::write(socket_, boost::asio::buffer(data.data(), data.size()), ec);
 		}
 	}
 }

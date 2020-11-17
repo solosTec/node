@@ -40,7 +40,8 @@ namespace node
 		private:
 			void do_read();
 			void process_data(cyng::buffer_t&&);
-			void send_response(cyng::param_map_t&&);
+			//void send_response(cyng::param_map_t&&);
+			void cb_data(cyng::buffer_t, std::size_t);
 
 		private:
 			boost::asio::ip::tcp::socket socket_;

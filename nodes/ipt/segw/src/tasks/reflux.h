@@ -14,32 +14,32 @@
 namespace node
 {
 	/**
-	 * cyclic update of "time-offset"
+	 * redirect data back from serial port
 	 */
-	class cache;
 	class reflux
 	{
 	public:
-		//	[0] write entry
-		using msg_0 = std::tuple<>;
+		//	[0] receive data
+		using msg_0 = std::tuple<cyng::buffer_t, std::size_t>;
 
 		using signatures_t = std::tuple<msg_0>;
 
 	public:
 		reflux(cyng::async::base_task* bt
-			, cyng::logging::log_ptr);
+			, cyng::logging::log_ptr
+			, std::function<void(cyng::buffer_t, std::size_t)>);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
 
 		/**
-		 * @brief slot [0] - write an entry
+		 * @brief slot [0] - receive data
 		 *
 		 */
-		cyng::continuation process();
+		cyng::continuation process(cyng::buffer_t, std::size_t);
 
 	private:
-		void init();
+		//void init();
 
 
 	private:
@@ -50,15 +50,11 @@ namespace node
 		 */
 		cyng::logging::log_ptr logger_;
 
-		/**
-		 * permanent storage
-		 */
-		//cache& cache_;
-
+		std::function<void(cyng::buffer_t, std::size_t)> cb_;
 		/**
 		 * manage task state
 		 */
-		bool initialized_;
+		//bool initialized_;
 	};
 
 }

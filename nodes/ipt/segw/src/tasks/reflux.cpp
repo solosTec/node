@@ -14,14 +14,16 @@
 #endif
 
 #include <cyng/io/io_chrono.hpp>
+#include <cyng/io/io_bytes.hpp>
 
 namespace node
 {
 	reflux::reflux(cyng::async::base_task* btp
-		, cyng::logging::log_ptr logger)
+		, cyng::logging::log_ptr logger
+		, std::function<void(cyng::buffer_t, std::size_t)> cb)
 	: base_(*btp)
 		, logger_(logger)
-		, initialized_(false)
+		, cb_(cb)
 	{
 		CYNG_LOG_INFO(logger_, "initialize task #"
 			<< base_.get_id()
@@ -43,26 +45,7 @@ namespace node
 		//
 		//	start/restart timer
 		//
-		base_.suspend(std::chrono::minutes(5));
-
-		if (initialized_) {
-			//
-			//	update "time-offset"
-			//
-			//cache_.set_cfg("time-offset", std::chrono::system_clock::now());
-		}
-		else {
-
-			//
-			//	init cache and database values
-			//
-			init();
-
-			//
-			//	update task state
-			//
-			initialized_ = true;
-		}
+		//base_.suspend(std::chrono::minutes(5));
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -76,17 +59,23 @@ namespace node
 			<< "> is stopped");
 	}
 
-	cyng::continuation reflux::process()
+	cyng::continuation reflux::process(cyng::buffer_t data, std::size_t msg_counter)
 	{
+		CYNG_LOG_TRACE(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> received msg #"
+			<< msg_counter
+			<< " with "
+			<< cyng::bytes_to_str(data.size()));
+
+		cb_(data, msg_counter);
+
 		//
 		//	continue task
 		//
 		return cyng::continuation::TASK_CONTINUE;
-	}
-
-	void reflux::init()
-	{
-
 	}
 
 }
