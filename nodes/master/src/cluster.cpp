@@ -13,7 +13,6 @@
 
 #include <smf/cluster/generator.h>
 #include <smf/shared/db_cfg.h>
-//#include <smf/sml/srv_id_io.h>
 
 #include <cyng/tuple_cast.hpp>
 #include <cyng/vector_cast.hpp>

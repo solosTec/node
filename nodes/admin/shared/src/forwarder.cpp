@@ -74,15 +74,26 @@ namespace node
 	{
 		//	[ce28c0c4-1914-45d1-bcf1-22bcbe461855,{("cmd":delete),("channel":config.device),("key":{("tag":a8b3d691-6ea9-40d3-83aa-b1e4dfbcb2f1)})}]
 		const std::string channel = cyng::value_cast<std::string>(reader.get("channel"), "");
-		CYNG_LOG_TRACE(logger, "ws.read - delete channel [" << channel << "]");
 		try {
 
 			auto const rel = channel::find_rel_by_channel(channel);
 			if (!rel.empty()) {
+				CYNG_LOG_TRACE(logger, "ws.read - delete channel [" << channel << "] -> " << rel.table_);
 				auto const vec = cyng::to_vector(reader["key"].get("tag"));
 				BOOST_ASSERT_MSG(vec.size() == 1, "invalid key size");
-				auto key = cyng::table::key_generator(vec.at(0));
-				ctx.queue(bus_req_db_remove(rel.table_, key, ctx.tag()));
+				if (boost::algorithm::equals(rel.table_, "_wMBusUplink")
+					|| boost::algorithm::equals(rel.table_, "_IECUplink")) {
+
+					//
+					//	repackage key type from i32 => u64
+					//
+					auto key = cyng::table::key_generator(cyng::numeric_cast<std::uint64_t>(vec.at(0), 0));
+					ctx.queue(bus_req_db_remove(rel.table_, key, ctx.tag()));
+				}
+				else {
+					auto key = cyng::table::key_generator(vec.at(0));
+					ctx.queue(bus_req_db_remove(rel.table_, key, ctx.tag()));
+				}
 			}
 			else
 			{
