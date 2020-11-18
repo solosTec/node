@@ -237,8 +237,8 @@ namespace node
 		//	* record key
 		//	* param [column,value]
 		//	
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "db.res.modify.by.param - " << cyng::io::to_str(frame));
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name
@@ -246,12 +246,13 @@ namespace node
 			cyng::param_t			//	[2] parameter
 		>(frame);
 
-		//node::db_res_modify_by_param(logger_
-		//	, db_
-		//	, std::get<0>(tpl)		//	[0] table name
-		//	, std::get<1>(tpl)		//	[1] table key
-		//	, std::move(std::get<2>(tpl))		//	[2] parameter
-		//	, ctx.tag());			//	[3] source
+		if (!db_.modify(std::get<0>(tpl), std::get<1>(tpl), std::move(std::get<2>(tpl)), ctx.tag()))
+		{
+			CYNG_LOG_WARNING(logger_, "db.res.modify.by.param failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_type(std::get<1>(tpl)));
+		}
 	}
 
 	void db_sync::db_req_modify_by_param(cyng::context& ctx)
@@ -266,8 +267,8 @@ namespace node
 		//	* generation
 		//	* source
 		//	
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, "db.req.modify.by.param - " << cyng::io::to_str(frame));
+		auto const frame = ctx.get_frame();
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		auto tpl = cyng::tuple_cast<
 			std::string,			//	[0] table name
@@ -282,13 +283,17 @@ namespace node
 		//	
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 
-		//node::db_req_modify_by_param(logger_
-		//	, db_
-		//	, std::get<0>(tpl)		//	[0] table name
-		//	, std::get<1>(tpl)		//	[1] table key
-		//	, std::move(std::get<2>(tpl))		//	[2] parameter
-		//	, std::get<3>(tpl)		//	[3] generation
-		//	, std::get<4>(tpl));	//	[4] source
+		if (!db_.modify(std::get<0>(tpl), std::get<1>(tpl), std::move(std::get<2>(tpl)), std::get<4>(tpl)))
+		{
+			CYNG_LOG_WARNING(logger_, "db.req.modify.by.param failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_str(std::get<1>(tpl))
+				<< " => ");
+				//<< param.first
+				//<< " := "
+				//<< cyng::io::to_str(param.second));
+		}
 	}
 
 	bool db_sync::db_insert(cyng::context& ctx

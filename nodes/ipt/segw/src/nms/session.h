@@ -13,6 +13,7 @@
 
 #include <cyng/log.h>
 #include <cyng/intrinsics/buffer.h>
+#include <cyng/intrinsics/version.h>
 #include <cyng/dom/reader.h>
 
 #include <boost/uuid/string_generator.hpp>
@@ -31,7 +32,10 @@ namespace node
 		{
 
 		public:
-			reader(cyng::logging::log_ptr logger, cache&);
+			reader(cyng::logging::log_ptr logger
+				, cache&
+				, std::string const& account
+				, std::string const& pwd);
 			cyng::param_map_t run(cyng::param_map_t&&);
 
 		private:
@@ -44,11 +48,25 @@ namespace node
 			cyng::param_map_t cmd_cm(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
 
 			boost::uuids::uuid get_tag(std::string const&);
+			bool check_credentials(std::string const& cmd, cyng::param_map_t const& credentials);
+
 		private:
 			cyng::logging::log_ptr logger_;
 			cache& cache_;
+
+			/**
+			 * credentials
+			 */
+			std::string const account_;
+			std::string const pwd_;
+
 			boost::uuids::string_generator uuid_gen_;
 			boost::uuids::random_generator_mt19937 uuid_rnd_;
+
+			/**
+			 * required protocol version
+			 */
+			static constexpr cyng::version	protocol_version_{ 1, 0 };
 		};
 
 		class session : public std::enable_shared_from_this<session>
@@ -58,7 +76,9 @@ namespace node
 		public:
 			session(boost::asio::ip::tcp::socket socket
 				, cyng::logging::log_ptr
-				, cache&);
+				, cache&
+				, std::string const& account
+				, std::string const& pwd);
 			virtual ~session();
 
 			session(session const&) = delete;
@@ -101,7 +121,6 @@ namespace node
 			 * JSON parser
 			 */
 			cyng::json::parser parser_;
-
 
 		};
 

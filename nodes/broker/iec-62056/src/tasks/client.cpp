@@ -11,7 +11,8 @@
 #include <cyng/vm/controller.h>
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/hex_dump.hpp>
- #include <cyng/vm/domain/log_domain.h>
+#include <cyng/vm/domain/log_domain.h>
+#include <cyng/store/db.h>
 
 namespace node
 {
@@ -21,8 +22,9 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, cyng::store::db& db
 		, boost::asio::ip::tcp::endpoint ep
-		, std::chrono::seconds monitor
+		//, std::chrono::seconds monitor
 		, std::string const& meter
+		, cyng::table::key_type const& key
 		, bool client_login
 		, bool verbose)
 	: base_(*btp)
@@ -31,8 +33,9 @@ namespace node
 		, logger_(logger)
 		, cache_(db)
 		, ep_(ep)
-		, monitor_(monitor)
+		//, monitor_(monitor)
 		, meter_(meter)
+		, key_(key)
 		, socket_(base_.mux_.get_io_service())
 		, parser_([this](cyng::vector_t&& prg) -> void {
 
@@ -77,7 +80,8 @@ namespace node
 		//
 		//	start/restart timer
 		//
-		base_.suspend(monitor_);
+		std::chrono::seconds const monitor = cyng::value_cast(cache_.get_value("TBridge", "interval", key_), std::chrono::seconds(12 * 60));
+		base_.suspend(monitor);
 
 		if (!socket_.is_open()) {
 

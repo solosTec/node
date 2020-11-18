@@ -14,7 +14,8 @@
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>
-#include <cyng/store/db.h>
+#include <cyng/store/store_fwd.h>
+#include <cyng/table/key.hpp>
 #include <cyng/vm/controller_fwd.h>
 
 namespace node
@@ -35,8 +36,8 @@ namespace node
 			, cyng::logging::log_ptr
 			, cyng::store::db&
 			, boost::asio::ip::tcp::endpoint
-			, std::chrono::seconds 
 			, std::string const& meter
+			, cyng::table::key_type const&
 			, bool client_login
 			, bool verbose);
 		cyng::continuation run();
@@ -78,9 +79,10 @@ namespace node
 		cyng::store::db& cache_;
 
 		boost::asio::ip::tcp::endpoint const ep_;
-		std::chrono::seconds const monitor_;
+		//std::chrono::seconds const monitor_;
 
 		std::string const meter_;
+		cyng::table::key_type const key_;
 
 		bool const client_login_;
 

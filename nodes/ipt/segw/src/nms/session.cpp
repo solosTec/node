@@ -42,12 +42,13 @@ namespace node
 	{
 		session::session(boost::asio::ip::tcp::socket socket
 			, cyng::logging::log_ptr logger
-			, cache& cfg)
+			, cache& cfg
+			, std::string const& account
+			, std::string const& pwd)
 		: socket_(std::move(socket))
 			, logger_(logger)
-			, reader_(logger, cfg)
+			, reader_(logger, cfg, account, pwd)
 			, buffer_()
-			//, authorized_(false)
 			, data_()
 			, rx_(0)
 			, sx_(0)
@@ -160,9 +161,14 @@ namespace node
 		}
 
 
-		reader::reader(cyng::logging::log_ptr logger, cache& cfg)
+		reader::reader(cyng::logging::log_ptr logger
+			, cache& cfg
+			, std::string const& account
+			, std::string const& pwd)
 		: logger_(logger)
 			, cache_(cfg)
+			, account_(account)
+			, pwd_(pwd)
 			, uuid_gen_()
 			, uuid_rnd_()
 		{}
@@ -202,17 +208,31 @@ namespace node
 				<< cmd);
 
 			//
-			//	check version
+			//	check version - only version 1.0 is valid
 			//
-			if (!rv.second || rv.first != cyng::version(0,1)) {
+			if (!rv.second || rv.first != protocol_version_) {
 				return cyng::param_map_factory
 					("command", cmd)
 					("ec", "wrong version")
+					("version", protocol_version_)
+					("source", tag)
+					;
+			}
+
+			//
+			//	check credentials
+			//
+			auto const credentials = cyng::to_param_map(dom.get("credentials"));
+
+			if (!check_credentials(cmd, credentials)) {
+				return cyng::param_map_factory
+					("command", cmd)
+					("ec", "unknown account or invalid password")
 					("version", "0.1")
 					("source", tag)
 					;
 			}
-			else if (boost::algorithm::equals(cmd, "merge")
+			if (boost::algorithm::equals(cmd, "merge")
 				|| boost::algorithm::equals(cmd, "serialset")
 				|| boost::algorithm::equals(cmd, "serial-set")
 				|| boost::algorithm::equals(cmd, "setserial")
@@ -280,10 +300,27 @@ namespace node
 				;
 		}
 
+		bool reader::check_credentials(std::string const& cmd, cyng::param_map_t const& credentials)
+		{
+			if (credentials.size() == 2) {
+				auto const user = credentials.find("user");
+				auto const pwd = credentials.find("pwd");
+				if (user != credentials.end() 
+					&& pwd != credentials.end()
+					&& boost::algorithm::equals(account_, cyng::value_cast(user->second, ""))
+					&& boost::algorithm::equals(pwd_, cyng::value_cast(pwd->second, "")))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+
 		cyng::param_map_t reader::cmd_merge(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
 		{
 			auto const ports = cyng::to_param_map(dom.get("serial-port"));
-			auto const version = cyng::to_param_map(dom.get("version"));
+			//auto const version = cyng::to_param_map(dom.get("version"));
 
 			cfg_rs485 rs485(cache_);
 			cfg_wmbus wmbus(cache_);
@@ -293,7 +330,7 @@ namespace node
 				("command", cmd)
 				("ec", "ok")
 				("source", tag)
-				("version", "0.1")
+				("version", protocol_version_)
 				("serial-port", cyng::param_map_factory()())
 				("meter", cyng::param_map_factory()())
 				
@@ -500,13 +537,6 @@ namespace node
 				}
 			}
 
-			//for (auto const& section : meter) {
-			//	CYNG_LOG_TRACE(logger_, "merge meter section: " << section.first);
-			//	//  merge meter section: blocklist
-			//	//  merge meter section: loop
-			//	//  merge meter section: max-readout-frequency
-			//}
-
 			return pm;
 		}
 
@@ -522,7 +552,7 @@ namespace node
 
 			return cyng::param_map_factory
 				("command", cmd)
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				("ec", "ok")
 				("serial-port", cyng::tuple_factory(
@@ -601,7 +631,7 @@ namespace node
 			return cyng::param_map_factory
 			("command", cmd)
 				("ec", !ec ? "ok" : ec.message())
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				("rc", "reboot scheduled")
 				;
@@ -611,7 +641,7 @@ namespace node
 			return cyng::param_map_factory
 			("command", cmd)
 				("ec", "ok")
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				("rc", rc)
 				;
@@ -623,7 +653,7 @@ namespace node
 			return cyng::param_map_factory
 				("command", cmd)
 				("ec", "ok")
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				("rc", rc)
 				;
@@ -703,7 +733,7 @@ namespace node
 			return cyng::param_map_factory
 				("command", cmd)
 				("ec", !ec ? "ok" : ec.message())
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				("script-path", script_path)
 				("address", address)
@@ -722,7 +752,7 @@ namespace node
 			return cyng::param_map_factory
 				("command", cmd)
 				("ec", "ok")
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				("name", cyng::sys::get_os_name())
 				("release", cyng::sys::get_os_release())
@@ -781,7 +811,7 @@ namespace node
 			return cyng::param_map_factory
 				("command", cmd)
 				("ec", (ec ? ec.message() : "ok"))
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				("path", script_path)
 				;
@@ -824,7 +854,7 @@ namespace node
 								return cyng::param_map_factory
 								("command", cmd)
 									("ec", "ok")
-									("version", "0.1")
+									("version", protocol_version_)
 									("source", tag)
 									("path", path)
 									("line", line)
@@ -837,7 +867,7 @@ namespace node
 								return cyng::param_map_factory
 								("command", cmd)
 									("ec", ex.what())
-									("version", "0.1")
+									("version", protocol_version_)
 									("source", tag)
 									("path", path)
 									("line", line)
@@ -850,7 +880,7 @@ namespace node
 							return cyng::param_map_factory
 							("command", cmd)
 								("ec", "error: invalid format")
-								("version", "0.1")
+								("version", protocol_version_)
 								("source", tag)
 								("path", path)
 								("line", line)
@@ -866,7 +896,7 @@ namespace node
 			return cyng::param_map_factory
 				("command", cmd)
 				("ec", "error: file not found")
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				("path", path)
 				("code", -99)

@@ -55,7 +55,7 @@ namespace node
 					{
 						CYNG_LOG_TRACE(logger_, "start NMS session at " << socket.remote_endpoint());
 
-						auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_, cache_), [this](session* s) {
+						auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_, cache_, account_, pwd_), [this](session* s) {
 
 							//
 							//	update session counter
