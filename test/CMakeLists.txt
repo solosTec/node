@@ -3,6 +3,7 @@ add_executable(unit_test ${unit_test})
 target_include_directories(unit_test
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/unit-test/src>"
 		${CYNG_INCLUDE_DIRS}
 		${BOOST_INCLUDE_DIR}
 		${OPENSSL_INCLUDE_DIR}
@@ -17,7 +18,7 @@ target_include_directories(unit_test
 # BOOST_TEST_DYN_LINK is required to build a main() function
 target_compile_definitions(unit_test
 	PRIVATE
-		BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE)
+		BOOST_TEST_DYN_LINK BOOST_ASIO_HAS_MOVE NODE_UNIT_TEST)
 
 target_link_libraries(unit_test 
 	smf_protocol_ipt 

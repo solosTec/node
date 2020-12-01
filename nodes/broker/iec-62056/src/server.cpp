@@ -25,34 +25,8 @@ namespace node
 		, session_counter_{ 0 }
 		, uuid_gen_{}
 	{
-		CYNG_LOG_INFO(logger_, "configured local endpoint " << ep);
-
-		vm_.register_function("client.res.login", 1, [&](cyng::context& ctx) {
-
-			auto frame = ctx.get_frame();
-
-			//	[67dd63f3-a055-41de-bdee-475f71621a21,26c841a3-a1c4-4ac2-92f6-8bdd2cbe80f4,1,false,name,unknown device,00000000,
-			//	%(("data-layer":wM-Bus),("local-ep":127.0.0.1:63953),("remote-ep":127.0.0.1:12001),("security":public),("time":2020-08-23 18:02:59.18770200),("tp-layer":raw))]
-
-			//	[67dd63f3-a055-41de-bdee-475f71621a21,[26c841a3-a1c4-4ac2-92f6-8bdd2cbe80f4,1,false,name,unknown device,00000000,
-			//	%(("data-layer":wM-Bus),("local-ep":127.0.0.1:63953),("remote-ep":127.0.0.1:12001),("security":public),("time":2020-08-23 18:02:59.18770200),("tp-layer":raw))]]
-			CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
-
-			//
-			//	get tag from adressed child VM
-			//
-			auto pos = frame.begin();
-			auto const tag = cyng::value_cast(*pos, uuid_gen_());
-
-			//
-			//	remove first element
-			//
-			frame.erase(pos);
-
-			ctx.forward(tag, cyng::generate_invoke(ctx.get_name(), tag, frame));
-
-		});
-		
+		CYNG_LOG_INFO(logger_, "configured local endpoint " << ep << " [" << vm_.tag() << "]");
+	
 	}
 
 	void server::run()
@@ -76,7 +50,7 @@ namespace node
 					CYNG_LOG_TRACE(logger_, "start session at " << socket.remote_endpoint());
 
 					auto const tag = uuid_gen_();
-					auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_, vm_, vm_.emplace(tag)), [this, tag](session* s) {
+					auto sp = std::shared_ptr<session>(new session(std::move(socket), logger_, vm_, tag), [this, tag](session* s) {
 
 						//
 						//	update session counter
@@ -90,7 +64,7 @@ namespace node
 						//
 						//	remove from VM controller
 						//
-						vm_.async_run(cyng::generate_invoke("vm.remove", tag));
+						vm_.remove(tag);
 
 						//
 						//	remove session

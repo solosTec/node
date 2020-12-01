@@ -6,8 +6,9 @@
  */ 
 
 
-#include "session_state.h"
-#include "session.h"
+#include <session_state.h>
+#include <session.h>
+
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_io.hpp>
 #include <smf/sml/status.h>
@@ -154,7 +155,7 @@ namespace node
 				//
 				//	clear connection map
 				//
-				sp_->bus_->vm_.async_run(cyng::generate_invoke("server.connection-map.clear", sp_->vm_.tag()));
+				sp_->bus_.async_run(cyng::generate_invoke("server.connection-map.clear", sp_->vm_.tag()));
 
 				//
 				//	note: NO BREAK here - continue with AUTHORIZED state
@@ -275,22 +276,22 @@ namespace node
 
 			case S_CONNECTED_REMOTE:
 
-				if (sp_->bus_->is_online()) {
+				//if (sp_->bus_->is_online()) {
 					CYNG_LOG_DEBUG(logger_, sp_->vm().tag()
 						<< " transmit "
 						<< ptr->size()
 						<< " bytes to remote session");
 					remote_.transmit(sp_->bus_, sp_->vm().tag(), evt.obj_);
-				}
-				else {
+				//}
+				//else {
 
-					//
-					//	cannot deliver data
-					//
-					CYNG_LOG_WARNING(logger_, "ipt.req.transmit.data "
-						<< sp_->vm().tag()
-						<< " - no master");
-				}
+				//	//
+				//	//	cannot deliver data
+				//	//
+				//	CYNG_LOG_WARNING(logger_, "ipt.req.transmit.data "
+				//		<< sp_->vm().tag()
+				//		<< " - no master");
+				//}
 				break;
 
 			case S_CONNECTED_TASK:
@@ -389,17 +390,17 @@ namespace node
 			//
 			cyng::param_map_t const bag = cyng::param_map_factory("tp-layer", "modem");
 
-			sp_->bus_->vm_.async_run(client_update_attr(sp_->vm().tag()
+			sp_->bus_.async_run(client_update_attr(sp_->vm().tag()
 				, "TDevice.vFirmware"
 				, cyng::make_object(NODE_VERSION)
 				, bag));
-			sp_->bus_->vm_.async_run(client_update_attr(sp_->vm().tag()
+			sp_->bus_.async_run(client_update_attr(sp_->vm().tag()
 				, "TDevice.id"
 				, cyng::make_object("modem")
 				, bag));
 
 #ifdef _DEBUG
-			sp_->bus_->vm_.async_run(client_update_attr(sp_->vm().tag()
+			sp_->bus_.async_run(client_update_attr(sp_->vm().tag()
 				, "device.time"
 				, cyng::make_now()
 				, bag));
@@ -452,9 +453,9 @@ namespace node
 				<< ':'
 				<< evt.pwd_);
 
-			if (sp_->bus_->is_online()) {
+			//if (sp_->bus_->is_online()) {
 
-				sp_->bus_->vm_.async_run(client_req_login(evt.tag_
+				sp_->bus_.async_run(client_req_login(evt.tag_
 					, evt.name_	//	name
 					, evt.pwd_	//	pwd
 					, "plain" //	login scheme
@@ -465,17 +466,17 @@ namespace node
 						("local-ep", evt.lep_)
 						("remote-ep", evt.rep_)));
 
-			}
-			else {
+			//}
+			//else {
 
-				CYNG_LOG_WARNING(logger_, "cannot forward authorization request - no master");
+			//	CYNG_LOG_WARNING(logger_, "cannot forward authorization request - no master");
 
-				prg
-					<< cyng::generate_invoke_unwinded("print.error")
-					<< cyng::generate_invoke_unwinded("stream.flush")
-					;
+			//	prg
+			//		<< cyng::generate_invoke_unwinded("print.error")
+			//		<< cyng::generate_invoke_unwinded("stream.flush")
+			//		;
 
-			}
+			//}
 
 			//
 			//	update watchdog timer
@@ -498,7 +499,7 @@ namespace node
 			default:
 				signal_wrong_state("evt_client_req_open_connection");
 				if (auto_answer_) {
-					sp_->bus_->vm_.async_run(node::client_res_open_connection(target
+					sp_->bus_.async_run(node::client_res_open_connection(target
 						, evt.seq_	//	sequence
 						, false		//	no success
 						, evt.master_
@@ -527,7 +528,7 @@ namespace node
 				//
 				//	send connection open response response
 				//			
-				sp_->bus_->vm_.async_run(node::client_res_open_connection(target
+				sp_->bus_.async_run(node::client_res_open_connection(target
 					, evt.seq_	//	sequence
 					, true		//	success
 					, evt.master_
@@ -717,21 +718,21 @@ namespace node
 			}
 
 
-			if (sp_->bus_->is_online())
-			{
+			//if (sp_->bus_->is_online())
+			//{
 				CYNG_LOG_TRACE(logger_, sp_->vm().tag() << " received connection close request");
-				sp_->bus_->vm_.async_run(node::client_req_close_connection(sp_->vm().tag()
+				sp_->bus_.async_run(node::client_req_close_connection(sp_->vm().tag()
 					, false //	no shutdown
 					, cyng::param_map_factory("tp-layer", "modem")("origin-tag", sp_->vm().tag())("start", std::chrono::system_clock::now())));
-			}
-			else
-			{
-				CYNG_LOG_WARNING(logger_, sp_->vm().tag() << " received connection close request - no master");
-				prg
-					<< cyng::generate_invoke_unwinded("print.error")
-					<< cyng::generate_invoke_unwinded("stream.flush")
-					;
-			}
+			//}
+			//else
+			//{
+			//	CYNG_LOG_WARNING(logger_, sp_->vm().tag() << " received connection close request - no master");
+			//	prg
+			//		<< cyng::generate_invoke_unwinded("print.error")
+			//		<< cyng::generate_invoke_unwinded("stream.flush")
+			//		;
+			//}
 
 			//
 			//	update watchdog timer
@@ -765,7 +766,7 @@ namespace node
 			//if (ipt::tp_res_open_connection_policy::is_success(evt.res_)) {
 			//	switch (wait_for_open_response_.type_) {
 			//	case state::state_wait_for_open_response::E_LOCAL:
-			//		sp_->bus_->vm_.async_run(wait_for_open_response_.establish_local_connection());
+			//		sp_->bus_.async_run(wait_for_open_response_.establish_local_connection());
 			//		transit(S_CONNECTED_LOCAL);
 			//		break;
 			//	case state::state_wait_for_open_response::E_REMOTE:
@@ -784,13 +785,13 @@ namespace node
 			//	transit(S_AUTHORIZED);
 			//}
 			
-			if (sp_->bus_->is_online()) {
-				//sp_->bus_->vm_.async_run(client_res_open_connection(wait_for_open_response_.get_origin_tag()
-				//	, wait_for_open_response_.seq_	//	cluster sequence
-				//	, ipt::tp_res_open_connection_policy::is_success(evt.res_)
-				//	, wait_for_open_response_.master_params_
-				//	, wait_for_open_response_.client_params_));
-			}
+			//if (sp_->bus_->is_online()) {
+			//	//sp_->bus_.async_run(client_res_open_connection(wait_for_open_response_.get_origin_tag()
+			//	//	, wait_for_open_response_.seq_	//	cluster sequence
+			//	//	, ipt::tp_res_open_connection_policy::is_success(evt.res_)
+			//	//	, wait_for_open_response_.master_params_
+			//	//	, wait_for_open_response_.client_params_));
+			//}
 
 			//
 			//	reset old state
@@ -880,7 +881,7 @@ namespace node
 				//	don't send response in shutdown mode
 				//
 
-				sp_->bus_->vm_.async_run(client_res_close_connection(sp_->vm().tag()
+				sp_->bus_.async_run(client_res_close_connection(sp_->vm().tag()
 					, evt.seq_	//	cluster sequence
 					, true	//	success
 					, evt.master_
@@ -937,7 +938,7 @@ namespace node
 				prg << cyng::generate_invoke_unwinded("print.text", sp_->vm().tag());
 				break;
 			case 10:
-				prg << cyng::generate_invoke_unwinded("print.text", sp_->bus_->vm_.tag());
+				prg << cyng::generate_invoke_unwinded("print.text", sp_->bus_.tag());
 				break;
 			case 11:
 			{
@@ -1724,16 +1725,16 @@ namespace node
 				return cyng::value_cast(dom.get("local-connect"), false);
 			}
 
-			void state_wait_for_close_response::terminate(bus::shared_type bus/*, response_type res*/)
+			void state_wait_for_close_response::terminate(cyng::controller& bus/*, response_type res*/)
 			{
-				if (!shutdown_ && bus->is_online())
+				if (!shutdown_ /*&& bus->is_online()*/)
 				{
 					if (is_connection_local()) {
 
 						//
 						//	remove from connection_map_
 						//
-						bus->vm_.async_run(cyng::generate_invoke("server.connection-map.clear", tag_));
+						bus.async_run(cyng::generate_invoke("server.connection-map.clear", tag_));
 					}
 
 					//	send "client.res.close.connection" to SMF master
@@ -1756,9 +1757,9 @@ namespace node
 			state_connected_local::state_connected_local()
 			{}
 
-			void state_connected_local::transmit(bus::shared_type bus, boost::uuids::uuid tag, cyng::object obj)
+			void state_connected_local::transmit(cyng::controller& bus, boost::uuids::uuid tag, cyng::object obj)
 			{
-				bus->vm_.async_run(cyng::generate_invoke("server.transmit.data", tag, obj));
+				bus.async_run(cyng::generate_invoke("server.transmit.data", tag, obj));
 			}
 
 			//
@@ -1766,9 +1767,9 @@ namespace node
 			//
 			state_connected_remote::state_connected_remote()
 			{}
-			void state_connected_remote::transmit(bus::shared_type bus, boost::uuids::uuid tag, cyng::object obj)
+			void state_connected_remote::transmit(cyng::controller& bus, boost::uuids::uuid tag, cyng::object obj)
 			{
-				bus->vm_.async_run(client_req_transmit_data(tag
+				bus.async_run(client_req_transmit_data(tag
 					, cyng::param_map_factory("tp-layer", "modem")("start", std::chrono::system_clock::now())
 					, obj));
 			}

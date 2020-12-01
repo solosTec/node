@@ -56,7 +56,7 @@ namespace node
 
 		readout& readout::set_value(std::string const& name, cyng::object obj)
 		{
-			values_.emplace(name, obj);
+			values_[name] = obj;
 			return *this;
 		}
 
@@ -1151,7 +1151,7 @@ namespace node
 			//
 			//	scaler
 			//
-			const auto scaler = read_scaler(*pos++);
+			auto const scaler = read_scaler(*pos++);
 
 			//
 			//	value

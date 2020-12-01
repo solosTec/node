@@ -6,6 +6,7 @@ add_executable(ipt ${node_ipt_master})
 target_include_directories(ipt
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 		${CYNG_INCLUDE_DIRS}
 		${BOOST_INCLUDE_DIR}
 )
@@ -28,6 +29,7 @@ add_executable(ipts ${node_ipts_master})
 target_include_directories(ipts
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 		${CYNG_INCLUDE_DIRS}
 		${BOOST_INCLUDE_DIR}
 )

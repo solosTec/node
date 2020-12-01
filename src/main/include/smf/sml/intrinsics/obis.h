@@ -36,6 +36,21 @@ namespace node
 				VG_STORAGE = 5		//	F
 			};
 
+			/**
+			 * Value group A codes
+			 */
+			enum media : std::uint8_t {
+				MEDIA_ABSTRACT = 0,
+				MEDIA_ELECTRICITY = 1,
+				MEDIA_HEAT_COST_ALLOCATOR = 4,
+				MEDIA_COOLING = 5,
+				MEDIA_HEAT = 6,
+				MEDIA_GAS = 7,
+				MEDIA_WATER_COLD = 8,
+				MEDIA_WATER_HOT = 9
+
+			};
+
 		public:
 			constexpr obis()
 				: value_{ 0 }
@@ -112,7 +127,9 @@ namespace node
 			}
 
 			/**
-			 *	@return value group A
+			 * media
+			 * 
+			 * @return value group A
 			 */
 			std::uint8_t get_medium() const;
 			const char* get_medium_name() const;
@@ -123,6 +140,8 @@ namespace node
 			bool is_abstract() const;
 
 			/**
+			 * channel
+			 *
 			 *	@return value group B
 			 */
 			std::uint8_t get_channel() const;
@@ -141,7 +160,8 @@ namespace node
 			const char* get_mode_name() const;
 
 			/**
-			 *	A value of 0xFF means "don't care".
+			 *	Rate. A value of 0xFF means "don't care"
+			 * 
 			 *	@return value group E
 			 */
 			std::uint8_t get_quantities() const;

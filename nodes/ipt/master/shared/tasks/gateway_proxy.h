@@ -8,8 +8,8 @@
 #ifndef NODE_IP_MASTER_TASK_GATEWAY_PROXY_H
 #define NODE_IP_MASTER_TASK_GATEWAY_PROXY_H
 
-#include "../proxy_data.h"
-#include "../config_cache.h"
+#include <shared/proxy_data.h>
+#include <shared/config_cache.h>
 
 #include <smf/cluster/bus.h>
 #include <smf/ipt/defs.h>
@@ -112,7 +112,7 @@ namespace node
 	public:
 		gateway_proxy(cyng::async::base_task* btp
 			, cyng::logging::log_ptr
-			, bus::shared_type bus
+			, cyng::controller& bus
 			, cyng::controller& vm
 			, std::chrono::seconds timeout
 			, bool sml_log);
@@ -308,7 +308,7 @@ namespace node
 	private:
 		cyng::async::base_task& base_;
 		cyng::logging::log_ptr logger_;
-		bus::shared_type bus_;
+		cyng::controller& bus_;
 		cyng::controller& vm_;
 		std::chrono::seconds const timeout_;
 		std::chrono::system_clock::time_point const start_;

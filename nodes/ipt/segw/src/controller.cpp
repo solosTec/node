@@ -37,7 +37,6 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/util/split.h>
 #include <cyng/parser/chrono_parser.h>
-//#include <cyng/io/serializer.h>
 
 #include <crypto/hash/sha512.h>
 

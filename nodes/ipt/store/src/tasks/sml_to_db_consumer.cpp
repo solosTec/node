@@ -5,11 +5,12 @@
  *
  */
 
-#include "sml_to_db_consumer.h"
-#include "../message_ids.h"
-#include <smf/shared/db_meta.h>
+#include <tasks/sml_to_db_consumer.h>
+#include <message_ids.h>
 
+#include <smf/shared/db_meta.h>
 #include <smf/sml/defs.h>
+
 #include <NODE_project_info.h>
 
 #include <cyng/async/task/base_task.h>
@@ -168,7 +169,7 @@ namespace node
 			<< " received: "
 			<< sml::messages::name_from_value(code));
 
-		auto pos = lines_.find(line);
+		auto const pos = lines_.find(line);
 		if (pos != lines_.end()) {
 
 			try {
@@ -213,7 +214,7 @@ namespace node
 			<< " close line "
 			<< line);
 
-		auto pos = lines_.find(line);
+		auto const pos = lines_.find(line);
 		if (pos != lines_.end()) {
 
 			//

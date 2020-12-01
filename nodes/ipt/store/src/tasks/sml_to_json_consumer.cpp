@@ -5,8 +5,9 @@
  *
  */
 
-#include "sml_to_json_consumer.h"
+#include <tasks/sml_to_json_consumer.h>
 #include <smf/sml/defs.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>

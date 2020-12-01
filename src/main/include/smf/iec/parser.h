@@ -8,7 +8,10 @@
 #define NODE_IEC_PARSER_H
 
 #include <smf/sml/intrinsics/obis.h>
+#include <smf/mbus/units.h>
+
 #include <cyng/intrinsics/sets.h>
+
 #include <boost/asio.hpp>
 #include <boost/variant.hpp>
 
@@ -158,6 +161,8 @@ namespace node
 			void set_id(std::string const&);
 			void set_status(std::string const&);
 
+			void update_scaler(char);
+
 		private:
 			/**
 			 * call this method if parsing is complete
@@ -179,6 +184,8 @@ namespace node
 			 * value, unit_, status
 			 */
 			std::string value_, unit_, status_;
+			mbus::units unit_code_;
+			std::int8_t scaler_;
 
 			/**
 			 * current OBIS code

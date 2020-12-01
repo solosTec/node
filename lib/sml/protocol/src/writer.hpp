@@ -109,5 +109,10 @@ namespace node
 		{
 			static std::ostream& write(std::ostream& os, cyng::tuple_t const& v);
 		};
+
+#ifdef NODE_UNIT_TEST
+		void write_length_field(std::ostream& os, std::uint32_t length, std::uint8_t type);
+#endif
+
 	}
 }

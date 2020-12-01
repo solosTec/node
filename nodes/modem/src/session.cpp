@@ -6,7 +6,7 @@
  */ 
 
 
-#include "session.h"
+#include <session.h>
 #include "../../shared/tasks/gatekeeper.h"
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
@@ -30,7 +30,7 @@ namespace node
 		session::session(boost::asio::ip::tcp::socket&& socket
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, bus::shared_type bus
+			, cyng::controller& bus
 			, boost::uuids::uuid tag
 			, std::chrono::seconds const& timeout
 			, bool auto_answer
@@ -356,8 +356,10 @@ namespace node
 			//	* bag
 			//	* data
 			//
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transmit.data.forward", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 			ctx.queue(cyng::generate_invoke("modem.transfer.data", frame.at(3)));
 			ctx.queue(cyng::generate_invoke("stream.flush"));
@@ -456,23 +458,14 @@ namespace node
 
 		void session::modem_req_open_connection(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.info", ctx.get_name(), frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("modem");
-				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(1), "")	//	number
-					, bag));
-			}
-            else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.error", ctx.get_name(), frame));
-				ctx.queue(cyng::generate_invoke("print.error"));
-				ctx.queue(cyng::generate_invoke("stream.flush"));
-			}
+			bus_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, cyng::value_cast<std::string>(frame.at(1), "")	//	number
+				, cyng::param_map_factory("tp-layer", "AT")));
 		}
 
 		void session::client_req_open_connection_forward(cyng::context& ctx)
@@ -517,8 +510,10 @@ namespace node
 
 		void session::client_req_close_connection_forward(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.trace", ctx.get_name(), frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 			//
 			//	[5ef23385-4b75-4ed7-997b-a84f7f3e63c0,4,false,
@@ -630,26 +625,19 @@ namespace node
 		void session::modem_req_close_connection(cyng::context& ctx)
 		{
 			//	[99cf07d5-0f3e-4a39-a5ca-bb8484834386]
-			const cyng::vector_t frame = ctx.get_frame();
+			BOOST_ASSERT(vm_.tag() == ctx.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+
 			state_.react(state::evt_modem_req_close_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())));
 
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "modem.req.close.connection", frame));
-
-				bus_->vm_.async_run(node::client_req_close_connection(ctx.tag()
-					, false //	no shutdown
-					, cyng::param_map_factory("tp-layer", "AT")
-					("data-layer", "any")
-					("origin-tag", ctx.tag())
-					("start", std::chrono::system_clock::now())));
-			}
-			else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.error", "modem.req.close.connection - no master", frame));
-				ctx.queue(cyng::generate_invoke("print.error"));
-				ctx.queue(cyng::generate_invoke("stream.flush"));
-			}
+			bus_.async_run(node::client_req_close_connection(ctx.tag()
+				, false //	no shutdown
+				, cyng::param_map_factory("tp-layer", "AT")
+				("data-layer", "any")
+				("origin-tag", ctx.tag())
+				("start", std::chrono::system_clock::now())));
 		}
 
 		void session::client_res_open_connection(cyng::context& ctx)
@@ -688,7 +676,7 @@ namespace node
 			return cyng::make_object<session>(std::move(socket)
 				, mux
 				, logger
-				, bus
+				, bus->vm_
 				, tag
 				, timeout
 				, auto_answer

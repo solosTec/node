@@ -85,7 +85,7 @@ namespace node
 					auto sp = std::shared_ptr<session>(new session(std::move(socket)
 						, logger_
 						, vm_
-						, vm_.emplace(tag)
+						, tag
 						, cache_
 						, session_login_
 						, session_auto_insert_
@@ -103,7 +103,7 @@ namespace node
 						//
 						//	remove from VM controller
 						//
-						vm_.async_run(cyng::generate_invoke("vm.remove", tag));
+						vm_.remove(tag);
 
 						//
 						//	remove session

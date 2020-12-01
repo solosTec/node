@@ -74,14 +74,14 @@ namespace node
 		vm_.register_function("bus.res.login", 5, [this](cyng::context& ctx) {
 			auto const frame = ctx.get_frame();
 
-			CYNG_LOG_TRACE(logger_, "login response " << cyng::io::to_str(frame));
+			CYNG_LOG_TRACE(logger_, "cluster bus login response " << cyng::io::to_str(frame));
 
 			if (cyng::value_cast(frame.at(0), false))
 			{
 				state_ = state::AUTHORIZED_;
 				remote_tag_ = cyng::value_cast(frame.at(1), boost::uuids::nil_uuid());
 				remote_version_ = cyng::value_cast(frame.at(2), remote_version_);
-				ctx.run(cyng::generate_invoke("log.msg.info", "successful cluster login ", remote_tag_, " v", remote_version_));
+				ctx.queue(cyng::generate_invoke("log.msg.info", "successful cluster login ", remote_tag_, " v", remote_version_));
 
 				auto lag = std::chrono::system_clock::now() - cyng::value_cast(frame.at(3), std::chrono::system_clock::now());
 				CYNG_LOG_TRACE(logger_, "cluster login lag: " << cyng::to_str(lag));
@@ -96,7 +96,7 @@ namespace node
 			else
 			{
 				state_ = state::ERROR_;
-				ctx.run(cyng::generate_invoke("log.msg.warning", "cluster login failed"));
+				CYNG_LOG_WARNING(logger_, "cluster login failed");
 
 				//
 				//	slot [1] - go offline

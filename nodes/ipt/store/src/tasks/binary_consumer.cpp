@@ -5,8 +5,9 @@
  *
  */
 
-#include "binary_consumer.h"
-#include "../message_ids.h"
+#include <tasks/binary_consumer.h>
+#include <message_ids.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>

@@ -27,36 +27,44 @@ namespace node
 		, number_(number)
 		, timeout_(timeout)
 		, start_(std::chrono::system_clock::now())
-		, is_waiting_(false)
+		, is_initialized_(false)
 	{
 		CYNG_LOG_INFO(logger_, "task #"
 		<< base_.get_id()
 		<< " <"
 		<< base_.get_class_name()
-		<< "> is running until "
+		<< "> "
+		<< vm_.tag()
+		<< " is running for "
+		<< cyng::to_str(timeout_)
+		<< " until "
 		<< cyng::to_str(start_ + timeout_));
 
 	}
 
 	cyng::continuation open_connection::run()
 	{	
-		if (!is_waiting_)
+		if (!is_initialized_)
 		{
 			//
 			//	update task state
 			//
-			is_waiting_ = true;
+			is_initialized_ = true;
 
 			//
-			//	* forward connection open request to device
 			//	* store sequence - task relation
+			//	* forward connection open request to device
 			//	* start timer to check connection setup
 			//
+			//	"ipt.seq.push" can only be invoked when "req.open.connection" has generated the new sequence number
 
-			vm_.async_run({ cyng::generate_invoke("req.open.connection", number_)
-				, cyng::generate_invoke("session.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id(), 0u)
-				, cyng::generate_invoke("stream.flush")
-				, cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward", cyng::invoke("ipt.seq.push"), number_) });
+			vm_.access([this](cyng::vm& vm)->void {
+				vm.run(cyng::generate_invoke("req.open.connection", number_));
+				vm.run(cyng::generate_invoke("session.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id()));
+				vm.run(cyng::generate_invoke("stream.flush"));
+				vm.run(cyng::generate_invoke("log.msg.info", "client.req.open.connection.forward, seq: ", cyng::invoke("ipt.seq.push"), ", MSISDN: ", number_));
+				}
+			);
 
 			//
 			//	start monitor
@@ -70,7 +78,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> timeout after "
+			<< "> "
+			<< vm_.tag()
+			<< " - timeout after "
 			<< cyng::to_str(std::chrono::system_clock::now() - start_));
 
 		//
@@ -81,9 +91,11 @@ namespace node
 		//	* update cluster master state and
 		//	* remove session from IP-T masters client_map
 		//
-		vm_.async_run({ cyng::generate_invoke("session.state.pending")
-			, cyng::generate_invoke("ip.tcp.socket.shutdown")
-			, cyng::generate_invoke("ip.tcp.socket.close") });
+		vm_.async_run({ 
+			cyng::generate_invoke("session.state.pending"), 
+			cyng::generate_invoke("ip.tcp.socket.shutdown"), 
+			cyng::generate_invoke("ip.tcp.socket.close") 
+		});
 
 		return cyng::continuation::TASK_STOP;
 	}
@@ -97,7 +109,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> is stopped after "
+			<< "> "
+			<< vm_.tag()
+			<< " - is stopped after "
 			<< cyng::to_str(std::chrono::system_clock::now() - start_));
 
 	}
@@ -109,7 +123,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> received response ["
+			<< "> "
+			<< vm_.tag()
+			<< " - received response ["
 			<< ipt::tp_res_open_connection_policy::get_response_name(res)
 			<< "]");
 

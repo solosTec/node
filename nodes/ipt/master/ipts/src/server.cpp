@@ -30,7 +30,7 @@ namespace node
 			//
 			//	client/server functions
 			//
-			bus_->vm_.register_function("client.req.gateway", 13, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
+			//bus_->vm_.register_function("client.req.gateway", 13, [&](cyng::context& ctx) { this->server_stub::client_propagate(ctx); });
 
 			//
 			//	statistical data

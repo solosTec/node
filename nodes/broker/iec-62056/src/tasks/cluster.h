@@ -35,7 +35,8 @@ namespace node
 			, cluster_config_t const& cfg
 			, boost::asio::ip::tcp::endpoint ep
 			, bool client_login
-			, bool verbose);
+			, bool verbose
+			, std::string const& target);
 		cyng::continuation run();
 		void stop(bool shutdown);
 
@@ -63,6 +64,8 @@ namespace node
 		 * subscribe a table
 		 */
 		void sync_table(std::string const&);
+		void res_open_push_channel(cyng::context& ctx);
+		void res_close_push_channel(cyng::context& ctx);
 
 	private:
 		/**
@@ -75,6 +78,7 @@ namespace node
 
 		bool const client_login_;
 		bool const verbose_;	//	parser
+		std::string const target_;	//	push target name
 
 		/**
 		 * global data cache

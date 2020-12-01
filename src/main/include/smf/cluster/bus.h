@@ -101,6 +101,10 @@ namespace node
 		 */
 		boost::uuids::uuid remote_tag_;
 		cyng::version	remote_version_;
+
+		/**
+		 * cluster message sequence
+		 */
 		std::uint64_t seq_;
 	};
 

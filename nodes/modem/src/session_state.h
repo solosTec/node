@@ -8,9 +8,9 @@
 #ifndef NODE_MODEM_SESSION_STATE_H
 #define NODE_MODEM_SESSION_STATE_H
 
-#include <smf/cluster/bus.h>
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
+#include <cyng/vm/controller_fwd.h>
 
 
 /*
@@ -412,7 +412,7 @@ namespace node
 				void init(std::size_t, boost::uuids::uuid, bool, std::uint64_t, cyng::param_map_t, cyng::param_map_t, bool);
 				void reset();
 				bool is_connection_local() const;
-				void terminate(bus::shared_type/*, response_type res*/);
+				void terminate(cyng::controller& /*, response_type res*/);
 
 				std::size_t tsk_connection_close_;
 				boost::uuids::uuid tag_;	//!< original tag
@@ -424,12 +424,12 @@ namespace node
 			struct state_connected_local
 			{
 				state_connected_local();
-				void transmit(bus::shared_type, boost::uuids::uuid tag, cyng::object);
+				void transmit(cyng::controller&, boost::uuids::uuid tag, cyng::object);
 			};
 			struct state_connected_remote
 			{
 				state_connected_remote();
-				void transmit(bus::shared_type, boost::uuids::uuid tag, cyng::object);
+				void transmit(cyng::controller&, boost::uuids::uuid tag, cyng::object);
 			};
 			struct state_connected_task
 			{

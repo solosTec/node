@@ -6,12 +6,14 @@
  */ 
 
 
-#include "session.h"
-#include "tasks/open_connection.h"
-#include "tasks/close_connection.h"
-#include "../../../../shared/tasks/gatekeeper.h"
-#include "../../shared/tasks/gateway_proxy.h"
-#include "../../shared/tasks/watchdog.h"
+#include <ipts/src/session.h>
+#include <ipts/src/tasks/open_connection.h>
+#include <ipts/src/tasks/close_connection.h>
+
+#include <shared/tasks/gatekeeper.h>
+#include <shared/tasks/gateway_proxy.h>
+#include <shared/tasks/watchdog.h>
+
 #include <NODE_project_info.h>
 
 #include <smf/cluster/generator.h>
@@ -38,7 +40,7 @@ namespace node
 		session::session(boost::asio::ip::tcp::socket&& socket
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, bus::shared_type bus
+			, cyng::controller& bus
 			, boost::uuids::uuid tag
 			, std::chrono::seconds timeout
 			, scramble_key const& sk
@@ -59,7 +61,7 @@ namespace node
 #endif
 		{
 
-			vm_.register_function("session.store.relation", 3, std::bind(&session::store_relation, this, std::placeholders::_1));
+			vm_.register_function("session.store.relation", 2, std::bind(&session::store_relation, this, std::placeholders::_1));
 			vm_.register_function("session.remove.relation", 1, std::bind(&session::remove_relation, this, std::placeholders::_1));
 
 			vm_.register_function("session.start.watchdog", 1, [this](cyng::context& ctx) {
@@ -515,38 +517,19 @@ namespace node
 			//	* device id
 			//	* max. time out
 			//
-			const cyng::vector_t frame = ctx.get_frame();
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.info", ctx.get_name(), " - ", frame));
-
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bus_->vm_.async_run(client_req_open_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(2), "")
-					, cyng::value_cast<std::string>(frame.at(3), "")
-					, cyng::value_cast<std::string>(frame.at(4), "")
-					, cyng::value_cast<std::string>(frame.at(5), "")
-					, cyng::value_cast<std::string>(frame.at(6), "")
-					, cyng::value_cast<std::uint16_t>(frame.at(7), 30)
-					, bag));
-			}
-			else
-			{
-				CYNG_LOG_ERROR(logger_, "ipt.req.open.push.channel - no master " << cyng::io::to_str(frame));
-				ctx.queue(cyng::generate_invoke("res.open.push.channel"
-					, frame.at(1)
-					, static_cast<response_type>(tp_res_open_push_channel_policy::UNREACHABLE)
-					, static_cast<std::uint32_t>(0)	//	channel
-					, static_cast<std::uint32_t>(0)	//	source
-					, static_cast<std::uint16_t>(0)	//	packet size
-					, static_cast<std::uint8_t>(0)	//	window size
-					, static_cast<std::uint8_t>(0)	//	status
-					, static_cast<std::uint32_t>(0)));	//	count
-				ctx.queue(cyng::generate_invoke("stream.flush"));
-			}
+			bus_.async_run(client_req_open_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, cyng::value_cast<std::string>(frame.at(2), "")
+				, cyng::value_cast<std::string>(frame.at(3), "")
+				, cyng::value_cast<std::string>(frame.at(4), "")
+				, cyng::value_cast<std::string>(frame.at(5), "")
+				, cyng::value_cast<std::string>(frame.at(6), "")
+				, cyng::value_cast<std::uint16_t>(frame.at(7), 30)
+				, cyng::param_map_factory("seq", frame.at(1))));
 
 			//
 			//	update watchdog timer
@@ -556,43 +539,33 @@ namespace node
 
 		void session::ipt_res_open_push_channel(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_INFO(logger_, "ipt.res.open.push.channel " << cyng::io::to_str(frame));
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.res.open.push.channel ", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-				cyng::param_map_t bag, options;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
 
-				auto const tpl = cyng::tuple_cast<
-					boost::uuids::uuid,		//	[0] tag
-					sequence_type,			//	[1] ipt seq
-					response_type,			//	[2] response
-					std::uint32_t,			//	[3] channel
-					std::uint32_t,			//	[4] source
-					std::uint16_t,			//	[5] packet size
-					std::uint8_t,			//	[6] window size
-					std::uint8_t,			//	[7] status
-					std::uint32_t			//	[8] target count
-				>(frame);
+			auto const tpl = cyng::tuple_cast<
+				boost::uuids::uuid,		//	[0] tag
+				sequence_type,			//	[1] ipt seq
+				response_type,			//	[2] response
+				std::uint32_t,			//	[3] channel
+				std::uint32_t,			//	[4] source
+				std::uint16_t,			//	[5] packet size
+				std::uint8_t,			//	[6] window size
+				std::uint8_t,			//	[7] status
+				std::uint32_t			//	[8] target count
+			>(frame);
 
-				//auto res = cyng::value_cast<response_type>(frame.at(2), tp_res_open_push_channel_policy::UNREACHABLE);
 
-				bus_->vm_.async_run(node::client_res_open_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, 0u //	sequence
-					, tp_res_open_push_channel_policy::is_success(std::get<2>(tpl))
-					, std::get<3>(tpl)	//	channel
-					, std::get<4>(tpl)	//	source
-					, std::get<8>(tpl)	//	count
-					, options
-					, bag));
-			}
-			else
-			{
-				CYNG_LOG_ERROR(logger_, "ipt.res.open.push.channel - no master " << cyng::io::to_str(frame));
-			}
+			bus_.async_run(node::client_res_open_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, 0u //	sequence
+				, tp_res_open_push_channel_policy::is_success(std::get<2>(tpl))
+				, std::get<3>(tpl)	//	channel
+				, std::get<4>(tpl)	//	source
+				, std::get<8>(tpl)	//	count
+				, cyng::param_map_factory()
+				, cyng::param_map_factory("seq", frame.at(1))));
 
 			//
 			//	update watchdog timer
@@ -607,29 +580,15 @@ namespace node
 			//	* session tag
 			//	* ipt sequence
 			//	* channel 
-			const cyng::vector_t frame = ctx.get_frame();
-			//CYNG_LOG_INFO(logger_, "ipt.req.close.push.channel " << cyng::io::to_str(frame));
+			//
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.close.push.channel", frame));
-
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bus_->vm_.async_run(client_req_close_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::uint32_t>(frame.at(2), 0)
-					, bag));
-			}
-			else
-			{				
-				CYNG_LOG_ERROR(logger_, "ipt.req.close.push.channel - no master " << cyng::io::to_str(frame));
-				ctx.queue(cyng::generate_invoke("res.close.push.channel"
-					, frame.at(1)
-					, static_cast<response_type>(tp_res_close_push_channel_policy::BROKEN)
-					, frame.at(2)));
-				ctx.queue(cyng::generate_invoke("stream.flush"));
-			}
+			bus_.async_run(client_req_close_push_channel(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, cyng::value_cast<std::uint32_t>(frame.at(2), 0)
+				, cyng::param_map_factory("seq", frame.at(1))));
 
 			//
 			//	update watchdog timer
@@ -654,19 +613,17 @@ namespace node
 
 		void session::client_req_transmit_data_forward(cyng::context& ctx)
 		{
-			//	[client.req.transmit.data.forward,
-			//	[95a4ccf9-1171-4ff0-ad64-d06cb74da24e,8,
-			//	%(("tp-layer":ipt)),
-			//	1B1B1B1B01010101768106313830313330323133...0000001B1B1B1B1A0353AD]]
 			//
 			//	* peer
 			//	* cluster sequence
 			//	* bag
 			//	* data
 			//
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.info", ctx.get_name(), frame));
-		
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+
 #ifdef SMF_IO_LOG
 			std::stringstream ss;
 			ss
@@ -699,11 +656,10 @@ namespace node
 
 		void session::ipt_res_watchdog(cyng::context& ctx)
 		{
-			//BOOST_ASSERT_MSG(bus_->is_online(), "no master");
-
-			//	[]
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.info", "ipt.res.watchdog", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 			//
 			//	update watchdog timer
@@ -764,24 +720,15 @@ namespace node
 
 		void session::ipt_res_software_version(cyng::context& ctx)
 		{
-			//	 [b22572a5-1233-43da-967b-aa6b16be002e,2,0.2.2018030]
-			const cyng::vector_t frame = ctx.get_frame();
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.debug", "ipt.res.software.version", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bus_->vm_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, "TDevice.vFirmware"
-					, frame.at(2)
-					, bag));
-			}
-			else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.error", "ipt.res.software.version - no master", frame));
-			}
+			bus_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, "TDevice.vFirmware"
+				, frame.at(2)
+				, cyng::param_map_factory("seq", frame.at(1))));
 
 			//
 			//	update watchdog timer
@@ -791,28 +738,23 @@ namespace node
 
 		void session::ipt_res_dev_id(cyng::context& ctx)
 		{
-			//	[65134d13-2d67-4208-bfe3-de8e2bd093d2,3,ipt:store]
-			const cyng::vector_t frame = ctx.get_frame();
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+
 			//
 			//	device ID
 			//
 			auto id = cyng::value_cast<std::string>(frame.at(2), "");
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.debug", "ipt.res.device.id", id));
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " = " << id);
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bus_->vm_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, "TDevice.id"
-					, frame.at(2)
-					, bag));
-			}
-			else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.error", "ipt.res.device.id - no master", id));
-			}
+			cyng::param_map_t bag;
+			bag["tp-layer"] = cyng::make_object("ipt");
+			bag["seq"] = frame.at(1);
+			bus_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, "TDevice.id"
+				, frame.at(2)
+				, bag));
 
 			//
 			//	update watchdog timer
@@ -921,23 +863,15 @@ namespace node
 		void session::ipt_res_dev_time(cyng::context& ctx)
 		{
 			//	[420fa09c-e9a7-4092-bbdb-368b02f18e84,6,00000000]
-			const cyng::vector_t frame = ctx.get_frame();
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.debug", "ipt.res.dev.time", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bus_->vm_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, "device.time"
-					, frame.at(2)
-					, bag));
-			}
-			else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.error", "ipt.res.device.time - no master", frame));
-			}
+			bus_.async_run(client_update_attr(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, "device.time"
+				, frame.at(2)
+				, cyng::param_map_factory("seq", frame.at(1))));
 
 			//
 			//	update watchdog timer
@@ -1094,8 +1028,8 @@ namespace node
 			//	
 			const cyng::vector_t frame = ctx.get_frame();
 
-			if (bus_->is_online())
-			{
+			//if (bus_->is_online())
+			//{
 				ctx.queue(cyng::generate_invoke("log.msg.info", "ipt.req.register.push.target", frame));
 
 				cyng::param_map_t bag;
@@ -1103,20 +1037,20 @@ namespace node
 				bag["seq"] = frame.at(1);
 				bag["pSize"] = frame.at(3);
 				bag["wSize"] = frame.at(4);
-				bus_->vm_.async_run(client_req_register_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				bus_.async_run(client_req_register_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	target name
 					, bag));
-			}
-			else
-			{
-				CYNG_LOG_ERROR(logger_, "ipt.req.register.push.target - no master " << cyng::io::to_str(frame));
-				ctx	.queue(cyng::generate_invoke("res.register.push.target"
-					, frame.at(1)
-					, static_cast<response_type>(ctrl_res_register_target_policy::GENERAL_ERROR)
-					, static_cast<std::uint32_t>(0)))
-					.queue(cyng::generate_invoke("stream.flush"));
+			//}
+			//else
+			//{
+			//	CYNG_LOG_ERROR(logger_, "ipt.req.register.push.target - no master " << cyng::io::to_str(frame));
+			//	ctx	.queue(cyng::generate_invoke("res.register.push.target"
+			//		, frame.at(1)
+			//		, static_cast<response_type>(ctrl_res_register_target_policy::GENERAL_ERROR)
+			//		, static_cast<std::uint32_t>(0)))
+			//		.queue(cyng::generate_invoke("stream.flush"));
 
-			}
+			//}
 
 			//
 			//	update watchdog timer
@@ -1127,26 +1061,26 @@ namespace node
 		void session::ipt_req_deregister_push_target(cyng::context& ctx)
 		{
 			const cyng::vector_t frame = ctx.get_frame();
-			if (bus_->is_online())
-			{
+			//if (bus_->is_online())
+			//{
 				ctx.queue(cyng::generate_invoke("log.msg.info", "ipt.res.deregister.push.target", frame));
 
 				cyng::param_map_t bag;
 				bag["tp-layer"] = cyng::make_object("ipt");
 				bag["seq"] = frame.at(1);
-				bus_->vm_.async_run(client_req_deregister_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				bus_.async_run(client_req_deregister_push_target(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::string>(frame.at(2), "")	//	target name
 					, bag));
-			}
-			else
-			{
-				CYNG_LOG_ERROR(logger_, "ipt.req.deregister.push.target - no master " << cyng::io::to_str(frame));
-				ctx	.queue(cyng::generate_invoke("res.deregister.push.target"
-					, frame.at(1)		//	seq
-					, static_cast<response_type>(ctrl_res_deregister_target_policy::GENERAL_ERROR)
-					, frame.at(2)))	//	target name
-					.queue(cyng::generate_invoke("stream.flush"));
-			}
+			//}
+			//else
+			//{
+			//	CYNG_LOG_ERROR(logger_, "ipt.req.deregister.push.target - no master " << cyng::io::to_str(frame));
+			//	ctx	.queue(cyng::generate_invoke("res.deregister.push.target"
+			//		, frame.at(1)		//	seq
+			//		, static_cast<response_type>(ctrl_res_deregister_target_policy::GENERAL_ERROR)
+			//		, frame.at(2)))	//	target name
+			//		.queue(cyng::generate_invoke("stream.flush"));
+			//}
 
 			//
 			//	update watchdog timer
@@ -1213,21 +1147,17 @@ namespace node
 
 		void session::ipt_req_open_connection(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.info", ctx.get_name(), frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(2), "")	//	number
-					, cyng::param_map_factory("tp-layer", "ipt")("origin-tag", ctx.tag())("seq", frame.at(1))("start", std::chrono::system_clock::now())));
-			}
-            else
-			{
-				ctx	.queue(cyng::generate_invoke("log.msg.error", ctx.get_name(), frame))
-					.queue(cyng::generate_invoke("res.open.connection", frame.at(1), static_cast<response_type>(tp_res_open_connection_policy::NO_MASTER)))
-					.queue(cyng::generate_invoke("stream.flush"));
-			}
+			bus_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, cyng::value_cast<std::string>(frame.at(2), "")	//	number
+				, cyng::param_map_factory("tp-layer", "ipt")
+				("origin-tag", ctx.tag())
+				("seq", frame.at(1))
+				("start", std::chrono::system_clock::now())));
 
 			//
 			//	update watchdog timer
@@ -1287,10 +1217,10 @@ namespace node
 
 		void session::client_req_close_connection_forward(cyng::context& ctx)
 		{
-			//
-			//
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.trace", "client.req.close.connection.forward", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 			//	[	86e6f4a5-fb44-49cd-ac25-96677e9f2e8a,8,c439ade5-f75f-4a28-a69b-aa9e5827a1f9,false,
 			//		%(("local-connect":true),("local-peer":9462fd76-02e8-4494-ac3c-ee96e0011604)),
@@ -1669,37 +1599,34 @@ namespace node
 			//	* data
 			const cyng::vector_t frame = ctx.get_frame();
 
-			if (bus_->is_online())
-			{
+			//if (bus_->is_online())
+			//{
 				//
 				//	ToDo: log less data
 				//
 				//ctx.run(cyng::generate_invoke("log.msg.info", "ipt.req.transfer.pushdata", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bag["status"] = frame.at(4);
-				bag["block"] = frame.at(5);
-				bus_->vm_.async_run(client_req_transfer_pushdata(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				bus_.async_run(client_req_transfer_pushdata(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 					, cyng::value_cast<std::uint32_t>(frame.at(2), 0)
 					, cyng::value_cast<std::uint32_t>(frame.at(3), 0)
 					, frame.at(6)
-					, bag));
-			}
-			else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.error", "ipt.req.transfer.pushdata - offline", frame));
-				ctx.queue(cyng::generate_invoke("res.transfer.push.data"
-					, frame.at(1)	//	seq
-					, static_cast<response_type>(tp_res_pushdata_transfer_policy::UNREACHABLE)
-					, frame.at(2)	//	channel
-					, frame.at(3)	//	source
-					, frame.at(4)	//	status
-					, frame.at(5)	//	block
-				));
-				ctx.queue(cyng::generate_invoke("stream.flush"));
-			}
+					, cyng::param_map_factory("seq", frame.at(1))
+					("status", frame.at(4))
+					("block", frame.at(5))));
+				//}
+			//else
+			//{
+			//	ctx.queue(cyng::generate_invoke("log.msg.error", "ipt.req.transfer.pushdata - offline", frame));
+			//	ctx.queue(cyng::generate_invoke("res.transfer.push.data"
+			//		, frame.at(1)	//	seq
+			//		, static_cast<response_type>(tp_res_pushdata_transfer_policy::UNREACHABLE)
+			//		, frame.at(2)	//	channel
+			//		, frame.at(3)	//	source
+			//		, frame.at(4)	//	status
+			//		, frame.at(5)	//	block
+			//	));
+			//	ctx.queue(cyng::generate_invoke("stream.flush"));
+			//}
 
 			//
 			//	update watchdog timer
@@ -1716,33 +1643,28 @@ namespace node
 			//	* status
 			//	* block
 
-			const cyng::vector_t frame = ctx.get_frame();
+			BOOST_ASSERT(vm_.tag() == ctx.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "ipt.res.transfer.pushdata", frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("ipt");
-				bag["seq"] = frame.at(1);
-				bag["status"] = frame.at(4);
-				bag["block"] = frame.at(5);
+			auto bag = cyng::param_map_factory("tp-layer", "ipt")
+				("seq", frame.at(1))
+				("status", frame.at(4))
+				("block", frame.at(5))
+				.operator cyng::param_map_t();
 
 				//
 				//	master generates response already
 				//
 
-				//bus_->vm_.async_run(node::client_res_transfer_pushdata(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-				//	, cyng::value_cast<std::uint32_t>(frame.at(2), 0)
-				//	, cyng::value_cast<std::uint32_t>(frame.at(3), 0)
-				//	, frame.at(6)
-				//	, bag));
-			}
-			else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.warning - offline", "ipt.res.transfer.pushdata", frame));
-				ctx.queue(cyng::generate_invoke("stream.flush"));
-			}
+			//}
+			//else
+			//{
+			//	ctx.queue(cyng::generate_invoke("log.msg.warning - offline", "ipt.res.transfer.pushdata", frame));
+			//	ctx.queue(cyng::generate_invoke("stream.flush"));
+			//}
 
 			//
 			//	update watchdog timer
@@ -1763,7 +1685,7 @@ namespace node
 			return cyng::make_object<session>(std::move(socket)
 				, mux
 				, logger
-				, bus
+				, bus->vm_
 				, tag
 				, timeout
 				, sk

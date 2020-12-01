@@ -5,8 +5,9 @@
  *
  */
 
-#include "sml_to_influxdb_consumer.h"
-#include "../message_ids.h"
+#include <tasks/sml_to_influxdb_consumer.h>
+#include <message_ids.h>
+
 #include <NODE_project_info.h>
 
 #include <smf/sml/defs.h>

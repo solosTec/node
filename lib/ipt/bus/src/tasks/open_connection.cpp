@@ -6,7 +6,9 @@
  */
 
 #include "open_connection.h"
+
 #include <smf/ipt/response.hpp>
+
 #include <cyng/vm/generator.h>
 #include <cyng/intrinsics/op.h>
 
@@ -56,10 +58,15 @@ namespace node
 			//	* store sequence - task relation
 			//	* start timer to check connection setup
 			//
-			vm_.async_run({ cyng::generate_invoke("req.open.connection", msisdn_)
-				, cyng::generate_invoke("bus.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id())
-				, cyng::generate_invoke("stream.flush")
-				, cyng::generate_invoke("log.msg.info", "send req.open.connection(", cyng::invoke("ipt.seq.push"), ", msisdn: ", msisdn_, ")") });
+			cyng::vector_t prg;
+			prg
+				<< cyng::generate_invoke_unwinded("req.open.connection", msisdn_)
+				<< cyng::generate_invoke_unwinded("bus.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id())
+				<< cyng::generate_invoke_unwinded("stream.flush")
+				<< cyng::generate_invoke_unwinded("log.msg.info", "bus req.open.connection(, seq: ", cyng::invoke("ipt.seq.push"), ", MSISDN: ", msisdn_)
+				;
+
+			vm_.async_run(std::move(prg));
 
 			//
 			//	start monitor

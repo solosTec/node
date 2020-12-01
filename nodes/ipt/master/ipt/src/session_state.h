@@ -8,11 +8,12 @@
 #ifndef NODE_IPT_MASTER_SESSION_STATE_H
 #define NODE_IPT_MASTER_SESSION_STATE_H
 
-#include <smf/cluster/bus.h>
 #include <smf/ipt/scramble_key.h>
 #include <smf/ipt/defs.h>
+
 #include <cyng/async/mux.h>
 #include <cyng/log.h>
+#include <cyng/vm/controller_fwd.h>
 
 
 /** @brief session states
@@ -58,6 +59,27 @@
  */
 
 
+/**@brief sequemcdiagram open connection
+ * 
+
+title IP-T open connection
+
+T1->S1: ipt.req.open.connection
+activate T1
+S1->M:client.req.open.connection
+M->S2:client.req.open.connection.forward
+
+S2->T2:ipt.req.open.connection
+activate T2
+S2<-T2:ipt.res.open.connection
+deactivate T2
+
+M<-S2:client.res.open.connection
+S1<-M:client.res.open.connection.forward
+T1<-S1:ipt.res.open.connection
+deactivate T1
+
+ */
 namespace node 
 {
 	namespace ipt
@@ -160,9 +182,8 @@ namespace node
 			struct evt_ipt_res_open_connection
 			{
 				std::size_t const tsk_;
-				std::size_t const slot_;
 				response_type const res_;
-				evt_ipt_res_open_connection(std::size_t, std::size_t, response_type);
+				evt_ipt_res_open_connection(std::size_t, response_type);
 			};
 
 			/**
@@ -184,9 +205,8 @@ namespace node
 			struct evt_ipt_res_close_connection 
 			{
 				std::size_t const tsk_;
-				std::size_t const slot_;
 				response_type const res_;
-				evt_ipt_res_close_connection(std::size_t, std::size_t, response_type);
+				evt_ipt_res_close_connection(std::size_t, response_type);
 			};
 
 			/**
@@ -403,7 +423,7 @@ namespace node
 				void init(std::size_t, boost::uuids::uuid, bool, std::uint64_t, cyng::param_map_t, cyng::param_map_t, bool);
 				void reset();
 				bool is_connection_local() const;
-				void terminate(bus::shared_type, response_type res);
+				void terminate(cyng::controller&, response_type res);
 
 				std::size_t tsk_connection_close_;
 				boost::uuids::uuid tag_;	//!< original tag
@@ -415,12 +435,12 @@ namespace node
 			struct state_connected_local
 			{
 				state_connected_local();
-				void transmit(bus::shared_type, boost::uuids::uuid tag, cyng::object);
+				void transmit(cyng::controller&, boost::uuids::uuid tag, cyng::object);
 			};
 			struct state_connected_remote
 			{
 				state_connected_remote();
-				void transmit(bus::shared_type, boost::uuids::uuid tag, cyng::object);
+				void transmit(cyng::controller&, boost::uuids::uuid tag, cyng::object);
 			};
 
 			struct state_connected_task
@@ -466,7 +486,7 @@ namespace node
 			cyng::vector_t react(state::evt_client_res_close_connection);
 			cyng::vector_t react(state::evt_client_res_open_connection);
 			cyng::vector_t react(state::evt_ipt_req_close_connection);
-			cyng::vector_t react(state::evt_ipt_res_open_connection);
+			void react(state::evt_ipt_res_open_connection);
 			cyng::vector_t react(state::evt_ipt_res_close_connection);
 			cyng::vector_t react(state::evt_client_req_close_connection);
 

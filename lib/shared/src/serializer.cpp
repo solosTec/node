@@ -34,9 +34,8 @@ namespace node
         vm.register_function("stream.serialize", 0, [this](cyng::context& ctx) {
 
 			const cyng::vector_t frame = ctx.get_frame();
-			for (auto obj : frame)
+			for (auto const& obj : frame)
 			{
-				//cyng::io::serialize_plain(std::cerr, obj);
 				cyng::io::serialize_binary(ostream_, obj);
 			}
 

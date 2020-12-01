@@ -31,18 +31,20 @@ namespace node
 			<< base_.get_class_name()
 			<< "> "
 			<< vm_.tag()
-			<< " is running until "
+			<< " is running for "
+			<< cyng::to_str(timeout_)
+			<< " until "
 			<< cyng::to_str(start_ + timeout_));
 	}
 
 	gatekeeper::~gatekeeper()
 	{
-		CYNG_LOG_DEBUG(logger_, "task #"
-			<< base_.get_id()
-			<< " <~"
-			<< base_.get_class_name()
-			<< "> "
-			<< vm_.tag());
+		//CYNG_LOG_DEBUG(logger_, "task #"
+		//	<< base_.get_id()
+		//	<< " <~"
+		//	<< base_.get_class_name()
+		//	<< "> "
+		//	<< vm_.tag());
 	}
 
 	cyng::continuation gatekeeper::run()
@@ -78,9 +80,11 @@ namespace node
 		//	* update cluster master state and
 		//	* remove session from IP-T masters client_map
 		//
-		vm_.async_run({ cyng::generate_invoke("session.state.pending")
-			, cyng::generate_invoke("ip.tcp.socket.shutdown")
-			, cyng::generate_invoke("ip.tcp.socket.close") });
+		vm_.async_run({ 
+			cyng::generate_invoke("session.state.pending"), 
+			cyng::generate_invoke("ip.tcp.socket.shutdown"), 
+			cyng::generate_invoke("ip.tcp.socket.close") 
+		});
 
 		return cyng::continuation::TASK_STOP;
 	}
@@ -99,7 +103,9 @@ namespace node
 			<< base_.get_id()
 			<< " <"
 			<< base_.get_class_name()
-			<< "> stopped after "
+			<< "> "
+			<< vm_.tag()
+			<< " stopped after "
 			<< cyng::to_str(uptime));
 	}
 

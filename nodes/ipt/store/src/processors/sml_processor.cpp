@@ -50,7 +50,7 @@ namespace node
 			//	<< prg.size()
 			//	<< " instructions");
 
-			//CYNG_LOG_TRACE(logger_, cyng::io::to_str(prg));
+			CYNG_LOG_DEBUG(logger_, cyng::io::to_type(prg));
 
 			//
 			//	execute programm

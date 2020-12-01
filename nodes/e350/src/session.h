@@ -40,7 +40,7 @@ namespace node
 			session(boost::asio::ip::tcp::socket&& socket
 				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
-				, bus::shared_type
+				, cyng::controller& bus
 				, boost::uuids::uuid tag
 				, std::chrono::seconds
 				, std::string pwd_policy

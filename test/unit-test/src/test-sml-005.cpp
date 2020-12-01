@@ -4,12 +4,16 @@
  * Copyright (c) 2019 Sylko Olzscher 
  * 
  */ 
-#include "test-sml-005.h"
+#include <test-sml-005.h>
 #include <iostream>
 #include <fstream>
+
 #include <boost/test/unit_test.hpp>
-#include <cyng/compatibility/file_system.hpp>
+
 #include <smf/sml/protocol/serializer.h>
+#include "../../../lib/sml/protocol/src/writer.hpp"
+
+#include <cyng/compatibility/file_system.hpp>
 #include <cyng/factory.h>
 
 namespace node 
@@ -43,6 +47,50 @@ namespace node
 
 	bool test_sml_005()
 	{
+		{
+			//	SML octet with a length of 48 bytes
+			//	[8302]FEA5D6BC658D734673F5790051D61C2EBD55344A6285686DE3B645EE0104D65F5ABBA6CB68F1BFCB7FCF94F99CD4D845
+			std::stringstream ss;
+			sml::write_length_field(ss, 48, 0x00);
+
+			char c[4] = { 0 };
+			BOOST_CHECK_EQUAL(sizeof(c), 4);
+			ss.read(c, sizeof(c));
+			BOOST_CHECK_EQUAL(c[0], 0x83);
+			BOOST_CHECK_EQUAL(c[1], 0x02);
+		}
+		{
+			//	SML list with a length of 48 bytes
+			std::stringstream ss;
+			sml::write_length_field(ss, 48, 0x70);
+
+			char c[4] = { 0 };
+			BOOST_CHECK_EQUAL(sizeof(c), 4);
+			ss.read(c, sizeof(c));
+			BOOST_CHECK_EQUAL(c[0], 0xF3);
+			BOOST_CHECK_EQUAL(c[1], 0x01);
+		}
+
+		//
+		//	show length field for all possible values
+		//
+#ifdef __DEBUG
+		for (std::uint32_t length = 0; length < std::numeric_limits<std::uint32_t>::max(); ++length) {
+			std::stringstream ss;
+			sml::write_length_field(ss, length, 0x70);
+			//sml::write_length_field(ss, length, 0x00);
+
+			std::cout << std::hex << length << '\t';
+			while (true) {
+				int c = ss.get();
+				if (c == std::stringstream::traits_type::eof())	break;
+				std::cout << (c & 0xFF) << ' ';
+
+			}
+			std::cout << std::endl;
+		}
+#endif
+
 		//
 		//	test serialization
 		//

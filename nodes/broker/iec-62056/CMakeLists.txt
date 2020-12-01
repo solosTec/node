@@ -5,6 +5,8 @@ target_include_directories(broker_iec
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
 		${CYNG_INCLUDE_DIRS}
+		${CRYPT_INCLUDE_DIR}
+		${OPENSSL_INCLUDE_DIR}
 		${BOOST_INCLUDE_DIR}
 )
 target_link_libraries(broker_iec 
@@ -14,6 +16,7 @@ target_link_libraries(broker_iec
 	smf_protocol_iec
 	smf_protocol_sml
 	${CYNG_LIBRARIES}
+	${SMF_CRYPTO_LIBRARY}
 	${OPENSSL_LIBRARIES}
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 	$<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>

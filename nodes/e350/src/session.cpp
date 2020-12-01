@@ -6,8 +6,9 @@
  */ 
 
 
-#include "session.h"
+#include <session.h>
 #include "../../shared/tasks/gatekeeper.h"
+
 #include <NODE_project_info.h>
 #include <smf/cluster/generator.h>
 
@@ -32,7 +33,7 @@ namespace node
 		session::session(boost::asio::ip::tcp::socket&& socket
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, bus::shared_type bus
+			, cyng::controller& bus
 			, boost::uuids::uuid tag
 			, std::chrono::seconds timeout
 			, std::string pwd_policy
@@ -273,7 +274,7 @@ namespace node
 			//
 			if (connect_state_.is_connected()) {
 
-				bus_->vm_.async_run(cyng::generate_invoke("server.connection-map.clear", vm_.tag()));
+				bus_.async_run(cyng::generate_invoke("server.connection-map.clear", vm_.tag()));
 			}
 
 			//
@@ -330,8 +331,8 @@ namespace node
 			//
 			//	send authorization request to master
 			//
-			if (bus_->is_online())
-			{
+			//if (bus_->is_online())
+			//{
 				//const std::string name = cyng::value_cast<std::string>(frame.at(0));
 				cyng::param_map_t bag = cyng::param_map_factory
 					("tp-layer", "iMega")
@@ -346,7 +347,7 @@ namespace node
 					;
 
 				if (boost::algorithm::iequals(pwd_policy_, "global")) {
-					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+					bus_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 						, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
 						, global_pwd_	//	fixed password
 						, "plain" //	login scheme
@@ -356,7 +357,7 @@ namespace node
 					//	the swibi way
 					CYNG_LOG_INFO(logger_, "use login credentials: " << cyng::io::to_str(frame));
 
-					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+					bus_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 						, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
 						, cyng::value_cast<std::string>(frame.at(4), "")	//	as username and password
 						, "plain" //	login scheme
@@ -366,52 +367,54 @@ namespace node
 					//	the sgsw way
 					CYNG_LOG_INFO(logger_, "use TELNB as password: " << cyng::io::to_str(frame));
 
-					bus_->vm_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+					bus_.async_run(client_req_login(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
 						, cyng::value_cast<std::string>(frame.at(3), "")	//	"TELNB" as username and password
 						, cyng::value_cast<std::string>(frame.at(4), "")	//	"MNAME" - meter ID
 						, "plain" //	login scheme
 						, bag));
 				}
-			}
-			else
-			{
-				CYNG_LOG_WARNING(logger_, "cannot forward authorization request - no master");
+			//}
+			//else
+			//{
+			//	CYNG_LOG_WARNING(logger_, "cannot forward authorization request - no master");
 
-				//
-				//	reject login - no master
-				//
-			}
+			//	//
+			//	//	reject login - no master
+			//	//
+			//}
 		}
 
 		void session::imega_req_transmit_data(cyng::context& ctx)
 		{
-			//	[imega.req.transmit.data,
+			//	[imega.req.transmit.data,
 			//	[c5eae235-d5f5-413f-a008-5d317d8baab7,1B1B1B1B01010101768106313830313...1B1B1B1B1A034276]]
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.debug", "imega.req.transmit.data", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-			if (bus_->is_online())
-			{
+			//if (bus_->is_online())
+			//{
 				auto const tag = cyng::value_cast(frame.at(0), boost::uuids::nil_uuid());
 
 				if (connect_state_.is_local())
 				{
-					bus_->vm_.async_run(cyng::generate_invoke("server.transmit.data", tag, frame.at(1)));
+					bus_.async_run(cyng::generate_invoke("server.transmit.data", tag, frame.at(1)));
 				}
 				else
 				{
 					cyng::param_map_t bag;
 					bag["tp-layer"] = cyng::make_object("imega");
 
-					bus_->vm_.async_run(client_req_transmit_data(tag
+					bus_.async_run(client_req_transmit_data(tag
 						, bag
 						, frame.at(1)));
 				}
-			}
-			else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.warning", "imega.req.transmit.data", "no master", frame));
-			}
+			//}
+			//else
+			//{
+			//	ctx.queue(cyng::generate_invoke("log.msg.warning", "imega.req.transmit.data", "no master", frame));
+			//}
 		}
 
 		void session::client_req_transmit_data_forward(cyng::context& ctx)
@@ -427,8 +430,10 @@ namespace node
 			//	* bag
 			//	* data
 			//
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.info", "client.req.transmit.data.forward", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 			ctx.queue(cyng::generate_invoke("imega.transfer.data", frame.at(3)));
 			ctx.queue(cyng::generate_invoke("stream.flush"));
@@ -476,12 +481,12 @@ namespace node
 
 				const cyng::param_map_t bag = cyng::param_map_factory("tp-layer", "ipt")("seq", frame.at(1));
 
-				bus_->vm_.async_run(client_update_attr(ctx.tag()
+				bus_.async_run(client_update_attr(ctx.tag()
 					, "TDevice.vFirmware"
 					, cyng::make_object(NODE_VERSION)
 					, bag));
 
-				bus_->vm_.async_run(client_update_attr(ctx.tag()
+				bus_.async_run(client_update_attr(ctx.tag()
 					, "TDevice.id"
 					, cyng::make_object("iMEGA")
 					, bag));
@@ -591,21 +596,14 @@ namespace node
 
 		void session::imega_req_open_connection(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			if (bus_->is_online())
-			{
-				ctx.run(cyng::generate_invoke("log.msg.info", "imega.req.open.connection", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
-				cyng::param_map_t bag;
-				bag["tp-layer"] = cyng::make_object("iMega");
-				bus_->vm_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
-					, cyng::value_cast<std::string>(frame.at(1), "")	//	number
-					, bag));
-			}
-            else
-			{
-				ctx.queue(cyng::generate_invoke("log.msg.error", "imega.req.open.connection", frame));
-			}
+			bus_.async_run(client_req_open_connection(cyng::value_cast(frame.at(0), boost::uuids::nil_uuid())
+				, cyng::value_cast<std::string>(frame.at(1), "")	//	number
+				, cyng::param_map_factory("tp-layer", "iMega")));
 		}
 
 		void session::client_req_open_connection_forward(cyng::context& ctx)
@@ -650,7 +648,7 @@ namespace node
 			//	send connection open response response
 			//
 			auto target = cyng::value_cast(dom.get("origin-tag"), boost::uuids::nil_uuid());
-			bus_->vm_.async_run(node::client_res_open_connection(target
+			bus_.async_run(node::client_res_open_connection(target
 				, std::get<1>(tpl)
 				, !connect_state_.is_connected()
 				, std::get<3>(tpl)
@@ -665,8 +663,10 @@ namespace node
 
 		void session::client_req_close_connection_forward(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
-			ctx.run(cyng::generate_invoke("log.msg.trace", "client.req.close.connection.forward", frame));
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 			//
 			//	[5ef23385-4b75-4ed7-997b-a84f7f3e63c0,4,false,
@@ -695,7 +695,7 @@ namespace node
 			auto shutdown = std::get<3>(tpl);
 			if (!shutdown)
 			{
-				bus_->vm_.async_run(client_res_close_connection(ctx.tag()
+				bus_.async_run(client_res_close_connection(ctx.tag()
 					, std::get<1>(tpl)	//	cluster sequence
 					, true	//	always success
 					, std::get<4>(tpl)
@@ -707,7 +707,8 @@ namespace node
 			//
 			if (!connect_state_.is_connected())
 			{
-				ctx.run(cyng::generate_invoke("log.msg.warning", "connection close request for not existing connection"));
+				CYNG_LOG_WARNING(logger_, "connection close request for not existing connection");
+				//ctx.run(cyng::generate_invoke("log.msg.warning", "connection close request for not existing connection"));
 			}
 
 			//
@@ -718,7 +719,10 @@ namespace node
 
 		void session::client_res_close_connection_forward(cyng::context& ctx)
 		{
-			const cyng::vector_t frame = ctx.get_frame();
+			BOOST_ASSERT(ctx.tag() == vm_.tag());
+			auto const frame = ctx.get_frame();
+			BOOST_ASSERT(frame.size() == ctx.frame_size());
+			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 			//
 			//	[b985e67c-38e2-4850-b584-242c75a5036c,3,true,
@@ -736,8 +740,6 @@ namespace node
 
 			if (std::get<2>(tpl))
 			{
-				ctx.run(cyng::generate_invoke("log.msg.trace", "client.res.close.connection.forward", frame));
-
 				//
 				//	reset connection state
 				//
@@ -746,7 +748,7 @@ namespace node
 			}
 			else
 			{
-				ctx.run(cyng::generate_invoke("log.msg.warning", "client.res.close.connection.forward", frame));
+				CYNG_LOG_WARNING(logger_, ctx.get_name() << " - failed");
 			}
 		}
 
@@ -942,7 +944,7 @@ namespace node
 			return cyng::make_object<session>(std::move(socket)
 				, mux
 				, logger
-				, bus
+				, bus->vm_
 				, tag
 				, timeout
 				, pwd_policy

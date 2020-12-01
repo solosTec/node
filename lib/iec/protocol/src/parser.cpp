@@ -28,6 +28,8 @@ namespace node
 			, parser_state_(iec_start())
 			, value_()
 			, unit_()
+			, unit_code_(mbus::units::UNDEFINED_)
+			, scaler_(0)
 			, status_()
 			, id_()
 			, counter_(0)
@@ -116,6 +118,8 @@ namespace node
 			value_.clear();
 			unit_.clear();
 			status_.clear();
+			unit_code_ = mbus::units::UNDEFINED_;
+			scaler_ = 0;
 		}
 
 		void parser::reset()
@@ -182,8 +186,13 @@ namespace node
 		{
 			
 			value_ = val;
-			if (val.find('.') == std::string::npos) {
+			auto const pos = val.find('.');
+			if (pos == std::string::npos) {
 				set_status(val);
+			}
+			else {
+				scaler_ = (pos - value_.size()) + 1;
+				value_.erase(pos, 1);
 			}
 			if (verbose_) {
 				cb_(cyng::generate_invoke("log.msg.debug", "IEC: ", id_.to_str(), " = ", value_));
@@ -211,43 +220,96 @@ namespace node
 			}
 
 			if (boost::algorithm::equals(unit_, "V")
-				|| boost::algorithm::equals(unit_, "kV")
-
-				|| boost::algorithm::equals(unit_, "A")
-				|| boost::algorithm::equals(unit_, "kA")
-
-				|| boost::algorithm::equals(unit_, "VA")
-				|| boost::algorithm::equals(unit_, "kVA")
-				|| boost::algorithm::equals(unit_, "MVA")
-				|| boost::algorithm::equals(unit_, "GVA")
-
-				|| boost::algorithm::equals(unit_, "W")
-				|| boost::algorithm::equals(unit_, "kW")
-				|| boost::algorithm::equals(unit_, "MW")
-				|| boost::algorithm::equals(unit_, "GW")
-
-				|| boost::algorithm::equals(unit_, "VAh")
-				|| boost::algorithm::equals(unit_, "kVAh")
-				|| boost::algorithm::equals(unit_, "MVAh")
-				|| boost::algorithm::equals(unit_, "GVAh")
-
-				|| boost::algorithm::equals(unit_, "var")
-				|| boost::algorithm::equals(unit_, "kvar")
-				|| boost::algorithm::equals(unit_, "Mvar")
-				|| boost::algorithm::equals(unit_, "Gvar")
-
-				|| boost::algorithm::equals(unit_, "varh")
-				|| boost::algorithm::equals(unit_, "kvarh")
-				|| boost::algorithm::equals(unit_, "Mvarh")
-				|| boost::algorithm::equals(unit_, "Gvarh")
-
-				|| boost::algorithm::equals(unit_, "Wh")
-				|| boost::algorithm::equals(unit_, "kWh")
-				|| boost::algorithm::equals(unit_, "MWh")
-				|| boost::algorithm::equals(unit_, "GWh")
-				) {
+				|| boost::algorithm::equals(unit_, "kV")) {
 
 				id_[sml::obis::VG_MEDIUM] = 1;
+				unit_code_ = mbus::units::VOLT;
+				if (unit_.size() > 1)	update_scaler(unit_.at(0));
+			}
+			else if (boost::algorithm::equals(unit_, "A")
+				|| boost::algorithm::equals(unit_, "kA")) {
+
+				id_[sml::obis::VG_MEDIUM] = 1;
+				unit_code_ = mbus::units::AMPERE;
+				if (unit_.size() > 1)	update_scaler(unit_.at(0));
+			}
+			else if (boost::algorithm::equals(unit_, "VA")
+				|| boost::algorithm::equals(unit_, "kVA")
+				|| boost::algorithm::equals(unit_, "MVA")
+				|| boost::algorithm::equals(unit_, "GVA")) {
+
+				id_[sml::obis::VG_MEDIUM] = 1;
+				unit_code_ = mbus::units::VOLT_AMPERE;
+				if (unit_.size() > 2)	update_scaler(unit_.at(0));
+			}
+			else if (boost::algorithm::equals(unit_, "W")
+				|| boost::algorithm::equals(unit_, "kW")
+				|| boost::algorithm::equals(unit_, "MW")
+				|| boost::algorithm::equals(unit_, "GW")) {
+
+				id_[sml::obis::VG_MEDIUM] = 1;
+				unit_code_ = mbus::units::WATT;
+				if (unit_.size() > 1)	update_scaler(unit_.at(0));
+			}
+			else if (boost::algorithm::equals(unit_, "VAh")
+				|| boost::algorithm::equals(unit_, "kVAh")
+				|| boost::algorithm::equals(unit_, "MVAh")
+				|| boost::algorithm::equals(unit_, "GVAh")) {
+
+				id_[sml::obis::VG_MEDIUM] = 1;
+				unit_code_ = mbus::units::VOLT_AMPERE_HOUR;
+				if (unit_.size() > 3)	update_scaler(unit_.at(0));
+			}
+			else if (boost::algorithm::equals(unit_, "var")
+				|| boost::algorithm::equals(unit_, "kvar")
+				|| boost::algorithm::equals(unit_, "Mvar")
+				|| boost::algorithm::equals(unit_, "Gvar")) {
+
+				id_[sml::obis::VG_MEDIUM] = 1;
+				unit_code_ = mbus::units::VAR;
+				if (unit_.size() > 3)	update_scaler(unit_.at(0));
+			}
+			else if (boost::algorithm::equals(unit_, "varh")
+				|| boost::algorithm::equals(unit_, "kvarh")
+				|| boost::algorithm::equals(unit_, "Mvarh")
+				|| boost::algorithm::equals(unit_, "Gvarh")) {
+
+				id_[sml::obis::VG_MEDIUM] = 1;
+				unit_code_ = mbus::units::VAR_HOUR;
+				if (unit_.size() > 4)	update_scaler(unit_.at(0));
+
+			}
+			else if (boost::algorithm::equals(unit_, "Wh")
+				|| boost::algorithm::equals(unit_, "kWh")
+				|| boost::algorithm::equals(unit_, "MWh")
+				|| boost::algorithm::equals(unit_, "GWh")) {
+
+				id_[sml::obis::VG_MEDIUM] = 1;
+				unit_code_ = mbus::units::WATT_HOUR;
+				if (unit_.size() > 2)	update_scaler(unit_.at(0));
+			}
+			else if (boost::algorithm::equals(unit_, "Hz")) {
+				unit_code_ = mbus::units::HERTZ;
+			}
+			else if (boost::algorithm::equals(unit_, "min")) {
+				unit_code_ = mbus::units::MIN;
+			}
+			else if (boost::algorithm::equals(unit_, "h")) {
+				unit_code_ = mbus::units::HOUR;
+			}
+			else {
+				unit_code_ = mbus::units::COUNT;
+			}
+		}
+
+		void parser::update_scaler(char u)
+		{
+			switch (u) {
+			case 'k':	scaler_ += 3;
+			case 'M':	scaler_ += 6;
+			case 'G':	scaler_ += 9;
+			default:
+				break;
 			}
 		}
 
@@ -351,13 +413,34 @@ namespace node
 				//
 				//	produce code
 				//
+#ifdef __DEBUG
+				//
+				//	generate virtual test data
+				//
+				auto gen_value = cyng::crypto::make_rnd_num();
+				auto scaler = cyng::crypto::make_rnd(0, 6);
+				std::int8_t const s = scaler() - 3;
+
+				this->parser_.cb_(cyng::generate_invoke("iec.data.line"
+					, this->parser_.pk_
+					, this->parser_.id_.to_buffer()
+					, gen_value(6)
+					, s
+					, this->parser_.unit_
+					, static_cast<std::uint8_t>(this->parser_.unit_code_)
+					, this->parser_.status_
+					, this->parser_.counter_));
+#else
 				this->parser_.cb_(cyng::generate_invoke("iec.data.line"
 					, this->parser_.pk_
 					, this->parser_.id_.to_buffer()
 					, this->parser_.value_
+					, this->parser_.scaler_
 					, this->parser_.unit_
+					, static_cast<std::uint8_t>(this->parser_.unit_code_)
 					, this->parser_.status_
 					, this->parser_.counter_));
+#endif
 				++this->parser_.counter_;
 				this->parser_.clear();
 				return state::OBIS;

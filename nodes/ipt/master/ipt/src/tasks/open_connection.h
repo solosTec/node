@@ -47,7 +47,7 @@ namespace node
 		const std::string number_;
 		const std::chrono::seconds timeout_;
 		const std::chrono::system_clock::time_point start_;
-		bool is_waiting_;
+		bool is_initialized_;
 	};
 	
 }

@@ -13,7 +13,7 @@
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
-#include <cyng/vm/controller_fwd.h>
+#include <cyng/vm/controller.h>
 
 namespace node
 {
@@ -26,7 +26,7 @@ namespace node
 		session(boost::asio::ip::tcp::socket socket
 			, cyng::logging::log_ptr
 			, cyng::controller&
-			, cyng::controller&);
+			, boost::uuids::uuid tag);
 		virtual ~session();
 
 	public:
@@ -41,7 +41,7 @@ namespace node
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& cluster_;	//!< cluster bus VM
-		cyng::controller& vm_;	//!< session VM
+		cyng::controller vm_;	//!< session VM
 
 		/**
 		 * Buffer for incoming data.

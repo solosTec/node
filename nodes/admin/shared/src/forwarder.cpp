@@ -1918,8 +1918,8 @@ namespace node
 				//
 				std::array<char, 9>	server_id = {
 					2,	//	wired M-Bus
-					ac.at(0),	//	manufacturer
-					ac.at(1),
+					static_cast<char>(ac.at(0)),	//	manufacturer
+					static_cast<char>(ac.at(1)),
 					r.first.at(3),	//	meter ID
 					r.first.at(2),
 					r.first.at(1),
@@ -1947,22 +1947,22 @@ namespace node
 				auto const r = cyng::parse_hex_string(str);
 				if (r.second && r.first.size() == 16) {
 					cyng::crypto::aes_128_key::key_type const key { 
-						r.first.at(0),
-						r.first.at(1),
-						r.first.at(2),
-						r.first.at(3),
-						r.first.at(4),
-						r.first.at(5),
-						r.first.at(6),
-						r.first.at(7),
-						r.first.at(8),
-						r.first.at(9),
-						r.first.at(10),
-						r.first.at(11),
-						r.first.at(12),
-						r.first.at(13),
-						r.first.at(14),
-						r.first.at(15)
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(0)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(1)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(2)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(3)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(4)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(5)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(6)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(7)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(8)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(9)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(10)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(11)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(12)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(13)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(14)),
+						static_cast<cyng::crypto::aes_128_key::key_type::value_type>(r.first.at(15))
 					};
 
 					return key;

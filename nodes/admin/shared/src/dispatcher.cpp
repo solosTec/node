@@ -583,7 +583,6 @@ namespace node
 						auto const r = cyng::parse_json(privs);
 						if (r.second) {
 
-							//cyng::table::record tmp(rec);
 							rec_user.set("privs", r.first);
 
 							auto tpl = cyng::tuple_factory(

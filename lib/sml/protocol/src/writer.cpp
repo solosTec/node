@@ -5,7 +5,7 @@
  *
  */
 
-#include "writer.hpp"
+#include <writer.hpp>
 #include <smf/sml/protocol/value.hpp>
 
 #include <limits>
@@ -22,17 +22,67 @@ namespace node
 		 */
 		std::uint32_t get_shift_count(std::uint32_t length)
 		{
-			std::uint32_t shifts = 1;
-			for (;;) {
-				if ((length + shifts) < (std::uint32_t)(1 << 4 * shifts)) {
-					break;
-				}
-				shifts++;
-			}
+			std::uint32_t shifts =  length / 0x0F;
+			//std::uint32_t shifts = 1;
+			//for (;;) {
+			//	if ((length + shifts) < (std::uint32_t)(1 << 4 * shifts)) {
+			//		break;
+			//	}
+			//	shifts++;
+			//}
 			return shifts;
 		}
 
 		void write_length_field(std::ostream& os, std::uint32_t length, std::uint8_t type)
+		{
+			// set the type
+			std::uint8_t c = type;
+
+			if (type != 0x70) {
+				length++;
+			}
+
+			if (length > 0x0F) {
+
+				//	init mask position
+				int mask_pos = (sizeof(std::uint32_t) * 2) - 1;
+
+				// the 4 most significant bits of l (1111 0000 0000 ...)
+				std::uint32_t mask = 0xF0 << (8 * (sizeof(std::uint32_t) - 1));
+
+				// select the next 4 most significant bits with a bit set until there
+				// is something
+				while (!(mask & length)) {
+					mask >>= 4;
+					mask_pos--;
+				}
+
+				// TL-field is also counted 
+				length += mask_pos; 
+
+				if ((0x0F << (4 * (mask_pos + 1))) & length) {
+					// for the rare case that the addition of the number of TL-fields
+					// result in another TL-field.
+					mask_pos++;
+					length++;
+				}
+
+				// copy 4 bits of the number to the buffer
+				while (mask > 0x0F) {
+					c |= 0x80;
+					c |= ((mask & length) >> (4 * mask_pos));
+					mask >>= 4;
+					mask_pos--;
+					os.put(c);
+					c = 0;
+				}
+			}
+
+			c |= (length & 0x0F);
+			os.put(c);
+		}
+
+		void write_length_field_deprecated(std::ostream& os, std::uint32_t length, std::uint8_t type)
 		{
 			BOOST_ASSERT_MSG((type == 0x70) || (type == 0x00), "invalid type mask");
 
@@ -59,6 +109,7 @@ namespace node
 				auto n = (length & mask) >> (4 * (shifts - pos));
 				std::uint8_t c = 0x80 + type + n;	//	set type and continuation bit
 				os.put(c);
+
 				mask >>= 4;
 			}
 			auto n = (length & mask);

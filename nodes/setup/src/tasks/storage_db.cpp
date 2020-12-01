@@ -572,7 +572,7 @@ namespace node
 					//BOOST_ASSERT(r.first == 9);	//	3 parameters to bind
 					BOOST_ASSERT(r.second);
 
-					auto digest = cyng::sha1_hash("secret");
+					auto digest = cyng::sha1_hash("secret"); 
 
 					//	bind parameters
 					stmt->push(cyng::make_object(boost::uuids::random_generator()()), 36)

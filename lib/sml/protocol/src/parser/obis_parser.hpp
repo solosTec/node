@@ -44,6 +44,10 @@ namespace node
 			r_start
 				= boost::spirit::qi::lit("F.F")[boost::spirit::qi::_val = boost::phoenix::construct<node::sml::obis>(0, 0, 97, 97, 0, 255)]
 				//| boost::spirit::qi::lit("0.0.0")[boost::spirit::qi::_val = boost::phoenix::construct<node::sml::obis>(0, 0, 0, 0, 0, 255)]	//	METER_ADDRESS
+				| boost::spirit::qi::lit("F.F.1")[boost::spirit::qi::_val = boost::phoenix::construct<node::sml::obis>(0, 0, 97, 97, 1, 255)]
+				| boost::spirit::qi::lit("F.F.2")[boost::spirit::qi::_val = boost::phoenix::construct<node::sml::obis>(0, 0, 97, 97, 2, 255)]
+				| boost::spirit::qi::lit("F.F.3")[boost::spirit::qi::_val = boost::phoenix::construct<node::sml::obis>(0, 0, 97, 97, 3, 255)]
+				| boost::spirit::qi::lit("F.F.4")[boost::spirit::qi::_val = boost::phoenix::construct<node::sml::obis>(0, 0, 97, 97, 4, 255)]
 				| r_obis_medium[boost::spirit::qi::_val = boost::spirit::qi::_1]
 				| r_obis_short[boost::spirit::qi::_val = boost::spirit::qi::_1]
 				| r_obis_dec[boost::spirit::qi::_val = boost::spirit::qi::_1]

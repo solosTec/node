@@ -450,7 +450,7 @@ namespace node
 
 		cyng::tuple_t res_generator::get_profile_list(std::string trx
 			, cyng::buffer_t client_id
-			, obis path
+			, obis profile
 			, std::chrono::system_clock::time_point act_time
 			, std::uint32_t reg_period
 			, std::chrono::system_clock::time_point val_time
@@ -468,7 +468,7 @@ namespace node
 				, get_profile_list_response(client_id
 					, act_time
 					, reg_period
-					, path	//	path entry
+					, profile
 					, val_time
 					, status
 					, std::move(period_list)));

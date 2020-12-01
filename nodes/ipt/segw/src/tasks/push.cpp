@@ -5,10 +5,11 @@
  *
  */
 
-#include "push.h"
-#include "../cache.h"
-#include "../storage.h"
-#include "../profiles.h"
+#include <tasks/push.h>
+#include <cache.h>
+#include <storage.h>
+#include <profiles.h>
+
 #include <smf/sml/event.h>
 #include <smf/sml/obis_db.h>
 #include <smf/sml/srv_id_io.h>
@@ -210,7 +211,6 @@ namespace node
 			ipt_bus_->req_transfer_push_data(channel
 				, source
 				, sml::to_sml(messages)
-				//, gen.boxing()
 				, base_.get_id());
 
 			ipt_bus_->req_channel_close(channel);
@@ -340,7 +340,6 @@ namespace node
 		}	, cyng::store::read_access("_DataCollector")
 			, cyng::store::read_access("_DataMirror"));
 
-		//return stop;
 		return cyng::tuple_factory();
 	}
 

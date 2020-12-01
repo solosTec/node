@@ -49,7 +49,7 @@ namespace node
 		 * Assumes that the first value of the program vector contains
 		 * a client tag.
 		 */
-		void client_propagate(cyng::context&);
+		//void client_propagate(cyng::context&);
 
 	private:
 		/**
@@ -65,7 +65,6 @@ namespace node
 		void clear_connection_map(cyng::context& ctx);
 
 		void insert_connection_map(cyng::context& ctx);
-		void insert_connection_map_impl(boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid);
 
 		void shutdown_clients(cyng::context& ctx);
 
@@ -74,9 +73,6 @@ namespace node
 
 		void client_res_close_impl(cyng::context&);
 		void client_req_close_impl(cyng::context&);
-		void client_res_open_connection_forward(cyng::context&);
-
-		void propagate(std::string, cyng::vector_t const&);
 
 		/**
 		 * Search for client tag in client_map_ and propagate function call
@@ -86,7 +82,7 @@ namespace node
 		 * @param tag client tag
 		 * @param prg program vector
 		 */
-		void propagate(std::string fn, boost::uuids::uuid tag, cyng::vector_t&& prg);
+		//void propagate(std::string fn, boost::uuids::uuid tag, cyng::vector_t&& prg);
 
 		/**
 		 * create a reference of this object on stack.

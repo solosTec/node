@@ -320,6 +320,15 @@ namespace node
 		, std::string const& scheme //	login scheme
 		, cyng::param_map_t const& bag);
 
+	/**
+	 * @param tag target session
+	 * @param seq cluster sequence (from request)
+	 * @param success true if successful
+	 * @param name account/user name
+	 * @param msg welcome message for logging/debugging purposes
+	 * @param query bit field that defines which device parameter should be queried
+	 * @param bag echo the data bag that came with the login request. Helps the client to identify the client that sent the request.
+	 */
 	cyng::vector_t client_res_login(boost::uuids::uuid tag
 		, std::uint64_t seq
 		, bool success
@@ -391,6 +400,16 @@ namespace node
 		, std::string const& user
 		, std::string const& pwd);
 
+	/**
+	 * @param tag session tag
+	 * @param target push target name
+	 * @param device device name (typically an empty string)
+	 * @param number device number (typically an empty string)
+	 * @param version device version (typically an empty string)
+	 * @param id device id (typically an empty string)
+	 * @param timeout maximal timeout in seconds
+	 * @param bag arbitrary data that will be included in response
+	 */
 	cyng::vector_t client_req_open_push_channel(boost::uuids::uuid tag
 		, std::string const& target
 		, std::string const& device

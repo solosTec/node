@@ -27,7 +27,7 @@ namespace node
 			WEEK = 3,
 			DAY = 4,
 			HOUR = 5,
-			MIN = 6,
+			MIN = 6,	//	minute
 			SECOND = 7,
 			DEGREE = 8,
 			DEGREE_CELSIUS = 9,

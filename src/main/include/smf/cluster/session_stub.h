@@ -62,7 +62,7 @@ namespace node
 		/**
 		 * cluster bus
 		 */
-		bus::shared_type bus_;
+		cyng::controller& bus_;
 
 		/**
 		 * device specific functions and state
@@ -78,14 +78,14 @@ namespace node
 		session_stub(boost::asio::ip::tcp::socket&& socket
 			, cyng::async::mux& mux
 			, cyng::logging::log_ptr logger
-			, bus::shared_type bus
+			, cyng::controller& bus
 			, boost::uuids::uuid tag
 			, std::chrono::seconds timeout);
 
 		session_stub(session_stub const&) = delete;
 		session_stub& operator=(session_stub const&) = delete;
 
-		~session_stub();
+		virtual ~session_stub();
 
 		/**
 		 * start reading from socket

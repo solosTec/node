@@ -6,6 +6,7 @@ add_executable(store ${node_ipt_store})
 target_include_directories(store
 	PRIVATE
 		"$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/main/include;${CMAKE_BINARY_DIR}>"
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
 		${CYNG_INCLUDE_DIRS}
 		${BOOST_INCLUDE_DIR}
 )

@@ -25,7 +25,17 @@
  */
 int main(int argc, char **argv) 
 {
-
+#ifdef _DEBUG
+	////std::string val = "715263.6125";
+	//std::string val = "001.00";
+	//auto pos = val.find('.');
+	//std::int8_t scaler = (pos - val.size()) + 1;
+	//val.erase(pos, 1);
+	//auto f = std::stod(val);
+	//std::cout << std::fixed << std::setprecision(5);
+	//auto m = std::pow(10, scaler);
+	//std::cout << val << ", " << f << ", " << m << ", " << (f * m) << std::endl;
+#endif
 
     //	will contain the path to an optional configuration file
     std::string config_file;

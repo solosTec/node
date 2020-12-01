@@ -5,7 +5,8 @@
  *
  */
 
-#include "network.h"
+#include <tasks/network.h>
+
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/generator.h>
 
@@ -236,7 +237,7 @@ namespace node
 			//	check secondary data to get protocol type and start parser
 			//	if required
 			//
-			auto pos = channel_protocol_map_.find(channel);
+			auto const pos = channel_protocol_map_.find(channel);
 			if (pos != channel_protocol_map_.end()) {
 
 				CYNG_LOG_TRACE(logger_, "channel "
@@ -381,18 +382,18 @@ namespace node
 		{
 			auto line = build_line(channel, source);
 
-			auto pos = sml_lines_.find(line);
+			auto const pos = sml_lines_.find(line);
 			if (pos == sml_lines_.end()) {
 
 				//
 				//	get all SML consumer
 				//	
-				auto consumers = get_consumer("SML:");
+				auto const consumers = get_consumer("SML:");
 
 				//
 				//	create a new SML processor
 				//
-				auto tag = uidgen_();
+				auto const tag = uidgen_();
 
 				CYNG_LOG_TRACE(logger_, "create SML processor " 
 					<< tag 

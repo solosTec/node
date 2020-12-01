@@ -8,11 +8,13 @@
 #ifndef NODE_IPT_MASTER_SESSION_H
 #define NODE_IPT_MASTER_SESSION_H
 
+#include <ipt/src/session_state.h>
+#include <ipt/src/proxy_comm.h>
+
 #include <smf/ipt/parser.h>
 #include <smf/ipt/serializer.h>
 #include <smf/cluster/session_stub.h>
-#include "session_state.h"
-#include "proxy_comm.h"
+
 
 namespace node 
 {
@@ -32,7 +34,7 @@ namespace node
 			session(boost::asio::ip::tcp::socket&& socket
 				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
-				, bus::shared_type bus
+				, cyng::controller& bus
 				, boost::uuids::uuid tag
 				, std::chrono::seconds timeout
 				, scramble_key const& sk
@@ -140,7 +142,7 @@ namespace node
 			 * bookkeeping of ip-t sequence to task relation
 			 * ipt seq => <task id / channel>
 			 */
-			std::map<sequence_type, std::pair<std::size_t, std::size_t>>	task_db_;
+			std::map<sequence_type, std::size_t>	task_db_;
 
 			/**
 			 * contains state of local connections

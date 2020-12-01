@@ -53,16 +53,20 @@ namespace node
 			//
 
 			//	prepare IP-T command: close connection request
-			vm_.async_run({ cyng::generate_invoke("req.close.connection")
+			vm_.access([this](cyng::vm& vm)->void {
+
+				vm.run(cyng::generate_invoke("req.close.connection"));
 
 				//	tie IP-T sequence with this task id
-				, cyng::generate_invoke("session.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id(), 0u)
+				vm.run(cyng::generate_invoke("session.store.relation", cyng::invoke("ipt.seq.push"), base_.get_id()));
 
 				//	send IP-T request
-				, cyng::generate_invoke("stream.flush")
+				vm.run(cyng::generate_invoke("stream.flush"));
 
 				//	logging
-				, cyng::generate_invoke("log.msg.info", "client.req.close.connection.forward", cyng::invoke("ipt.seq.push"), timeout_) });
+				vm.run(cyng::generate_invoke("log.msg.info", "client.req.close.connection.forward", cyng::invoke("ipt.seq.push"), timeout_));
+				}
+			);
 
 			//
 			//	start monitor

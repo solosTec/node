@@ -5,11 +5,13 @@
  *
  */
 
-#include "sml_to_abl_consumer.h"
+#include <tasks/sml_to_abl_consumer.h>
+#include <message_ids.h>
+
 #include <NODE_project_info.h>
-#include "../message_ids.h"
 
 #include <smf/sml/defs.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>

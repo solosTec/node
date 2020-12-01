@@ -8,10 +8,11 @@
 #ifndef NODE_MODEM_SESSION_H
 #define NODE_MODEM_SESSION_H
 
+#include <session_state.h>
+
 #include <smf/modem/parser.h>
 #include <smf/modem/serializer.h>
 #include <smf/cluster/session_stub.h>
-#include "session_state.h"
 
 namespace node 
 {
@@ -28,7 +29,7 @@ namespace node
 			session(boost::asio::ip::tcp::socket&& socket
 				, cyng::async::mux& mux
 				, cyng::logging::log_ptr logger
-				, bus::shared_type
+				, cyng::controller& bus
 				, boost::uuids::uuid tag
 				, std::chrono::seconds const& timeout
 				, bool auto_answer

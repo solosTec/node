@@ -35,10 +35,12 @@ namespace node
 		OBIS_CODE_DEFINITION(00, 00, 00, 00, 02, FF, IDENTITY_NR_2);
 		OBIS_CODE_DEFINITION(00, 00, 00, 00, 03, FF, IDENTITY_NR_3);
 		OBIS_CODE_DEFINITION(00, 00, 00, 01, 00, FF, RESET_COUNTER);
+		OBIS_CODE_DEFINITION(00, 00, 00, 02, 00, FF, FIRMWARE_VERSION);	//	COSEM class id 1
 		OBIS_CODE_DEFINITION(00, 00, 01, 00, 00, FF, REAL_TIME_CLOCK);	//	current time
 
-		OBIS_CODE_DEFINITION(00, 00, 60, 01, 00, FF, SERIAL_NR);	//	Serial number I (assigned by the manufacturer).
+		OBIS_CODE_DEFINITION(00, 00, 60, 01, 00, FF, SERIAL_NR);	//	(C.1.0) Serial number I (assigned by the manufacturer).
 		OBIS_CODE_DEFINITION(00, 00, 60, 01, 01, FF, SERIAL_NR_SECOND);	//	Serial number II (assigned by the manufacturer).
+		OBIS_CODE_DEFINITION(00, 00, 60, 01, 03, FF, PRODUCTION_DATE);	//	(C.1.3) date of manufacture
 		OBIS_CODE_DEFINITION(00, 00, 60, 01, FF, FF, FABRICATION_NR);	//	fabrication number
 		OBIS_CODE_DEFINITION(00, 00, 60, 02, 01, FF, DATE_TIME_PARAMETERISATION);	//	32 bit
 		OBIS_CODE_DEFINITION(00, 00, 60, 07, 00, FF, POWER_OUTAGES);	//	Number of power failures 
@@ -220,7 +222,7 @@ namespace node
 		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, 13, PEER_ADDRESS_WANGSM);	//	peer address: WAN/GSM
 		OBIS_CODE_DEFINITION(81, 81, 00, 00, 00, FF, PEER_ADDRESS);	//	unit is 255
 
-		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 00, VERSION);		//	[string]
+		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 00, VERSION);		//	[string] (0.2.0) firmware revision
 		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 02, FILE_NAME);	//	[string]
 		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 03, MSG_COUNTER);	//	[u32] Anzahl aller Nachrichten zur Übertragung des Binary
 		OBIS_CODE_DEFINITION(81, 81, 00, 02, 00, 04, LAST_MSG);	//	[u32] Nummer der zuletzt erfolgreich übertragenen Nachricht des	Binary
@@ -388,14 +390,56 @@ namespace node
 		//	Leistungsfaktor - power factor
 		//	Scheinleistung - apparent power
 		//	Wirkleistung - effective (or active) power
+		OBIS_CODE_DEFINITION(01, 00, 01, 06, 00, FF, REG_POS_ACT_MAX_DEMAND_NO_TARIFF);	//	1.6.0 - Positive active maximum demand (A+) total [kW]
 
-		OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, FF, REG_POS_AE_NO_TARIFF);	//	1.8.0 - Zählwerk pos. Wirkenergie, 	tariflos
-		OBIS_CODE_DEFINITION(01, 00, 01, 08, 01, FF, REG_POS_AE_T1);		//	1.8.1 - Zählwerk pos. Wirkenergie, Tarif 1
-		OBIS_CODE_DEFINITION(01, 00, 01, 08, 02, FF, REG_POS_AE_T2);		//	1.8.2 - Zählwerk pos. Wirkenergie, Tarif 2
-		OBIS_CODE_DEFINITION(01, 00, 02, 08, 00, FF, REG_NEG_AE_NO_TARIFF);	//	2.8.0 - Zählwerk neg. Wirkenergie, 	tariflos
-		OBIS_CODE_DEFINITION(01, 00, 02, 08, 01, FF, REG_NEG_AE_T1);		//	2.8.1 - Zählwerk neg. Wirkenergie, Tarif 1
-		OBIS_CODE_DEFINITION(01, 00, 02, 08, 02, FF, REG_NEG_AE_T2);		//	2.8.2 - Zählwerk neg. Wirkenergie, Tarif 2
+		OBIS_CODE_DEFINITION(01, 00, 02, 06, 00, FF, REG_NEG_ACT_MAX_DEMAND_NO_TARIFF);	//	2.6.0 - Negative active maximum demand (A-) total [kW]
+
+		OBIS_CODE_DEFINITION(01, 00, 03, 06, 00, FF, REG_POS_REACT_MAX_DEMAND_NO_TARIFF);	//	3.6.0 - Positive reactive maximum demand (Q+) total [kvar]
+
+		OBIS_CODE_DEFINITION(01, 00, 04, 06, 00, FF, REG_NEG_REACT_MAX_DEMAND_NO_TARIFF);	//	4.6.0 - Negative reactive maximum demand (Q-) total [kvar]
+
+		OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, FF, REG_POS_AE_NO_TARIFF);	//	1.8.0 - Zählwerk pos. Wirkenergie,	tariflos - Positive active energy (A+) total [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 01, 08, 01, FF, REG_POS_AE_T1);		//	1.8.1 - Zählwerk pos. Wirkenergie, Tarif 1 - Positive active energy (A+) in tariff T1 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 01, 08, 02, FF, REG_POS_AE_T2);		//	1.8.2 - Zählwerk pos. Wirkenergie, Tarif 2 - Positive active energy (A+) in tariff T2 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 01, 08, 03, FF, REG_POS_AE_T3);		//	1.8.3 - Zählwerk pos. Wirkenergie, Tarif 3 - Positive active energy (A+) in tariff T3 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 01, 08, 04, FF, REG_POS_AE_T4);		//	1.8.4 - Zählwerk pos. Wirkenergie, Tarif 4 - Positive active energy (A+) in tariff T4 [kWh]
+
+		OBIS_CODE_DEFINITION(01, 00, 02, 08, 00, FF, REG_NEG_AE_NO_TARIFF);	//	2.8.0 - Zählwerk neg. Wirkenergie, tariflos - Negative active energy (A+) total [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 02, 08, 01, FF, REG_NEG_AE_T1);		//	2.8.1 - Zählwerk neg. Wirkenergie, Tarif 1 - Negative active energy (A+) in tariff T1 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 02, 08, 02, FF, REG_NEG_AE_T2);		//	2.8.2 - Zählwerk neg. Wirkenergie, Tarif 2 - Negative active energy (A+) in tariff T2 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 02, 08, 03, FF, REG_NEG_AE_T3);		//	2.8.3 - Zählwerk neg. Wirkenergie, Tarif 3 - Negative active energy (A+) in tariff T3 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 02, 08, 04, FF, REG_NEG_AE_T4);		//	2.8.4 - Zählwerk neg. Wirkenergie, Tarif 4 - Negative active energy (A+) in tariff T4 [kWh]
+
+		OBIS_CODE_DEFINITION(01, 00, 03, 08, 00, FF, REG_POS_RE_NO_TARIFF);	//	3.8.0 - Positive reactive energy (Q+) total [kvarh]
+		OBIS_CODE_DEFINITION(01, 00, 03, 08, 01, FF, REG_POS_RE_NO_T1);		//	3.8.1 - Positive reactive energy (Q+) in tariff T1 [kvarh]
+		OBIS_CODE_DEFINITION(01, 00, 03, 08, 02, FF, REG_POS_RE_NO_T2);		//	3.8.2 - Positive reactive energy (Q+) in tariff T2 [kvarh]
+		OBIS_CODE_DEFINITION(01, 00, 03, 08, 03, FF, REG_POS_RE_NO_T3);		//	3.8.3 - Positive reactive energy (Q+) in tariff T3 [kvarh]
+		OBIS_CODE_DEFINITION(01, 00, 03, 08, 04, FF, REG_POS_RE_NO_T4);		//	3.8.4 - Positive reactive energy (Q+) in tariff T4 [kvarh]
+
+		OBIS_CODE_DEFINITION(01, 00, 04, 08, 00, FF, REG_NEG_RE_NO_TARIFF);	//	4.8.0 - Negative reactive energy (Q-) total [kvarh]
+		OBIS_CODE_DEFINITION(01, 00, 04, 08, 01, FF, REG_NEG_RE_NO_T1);		//	4.8.1 - Negative reactive energy (Q-) in tariff T1 [kvarh]
+		OBIS_CODE_DEFINITION(01, 00, 04, 08, 02, FF, REG_NEG_RE_NO_T2);		//	4.8.2 - Negative reactive energy (Q-) in tariff T2 [kvarh]
+		OBIS_CODE_DEFINITION(01, 00, 04, 08, 03, FF, REG_NEG_RE_NO_T3);		//	4.8.3 - Negative reactive energy (Q-) in tariff T3 [kvarh]
+		OBIS_CODE_DEFINITION(01, 00, 04, 08, 04, FF, REG_NEG_RE_NO_T4);		//	4.8.4 - Negative reactive energy (Q-) in tariff T4 [kvarh]
+
+		OBIS_CODE_DEFINITION(01, 00, 05, 08, 00, FF, REG_IMP_IND_RE_NO_TARIFF);	//	5.8.0 - Imported inductive reactive energy in 1-st quadrant (Q1) total [kvarh]
+
+		OBIS_CODE_DEFINITION(01, 00, 06, 08, 00, FF, REG_IMP_CAP_RE_NO_TARIFF);	//	6.8.0 - Imported capacitive reactive energy in 2-nd quadrant (Q2) total [kvarh]
+
+		OBIS_CODE_DEFINITION(01, 00, 07, 08, 00, FF, REG_EXP_IND_RE_NO_TARIFF);	//	7.8.0 - Exported inductive reactive energy in 3-rd quadrant (Q3) total [kvarh]
+
+		OBIS_CODE_DEFINITION(01, 00, 08, 08, 00, FF, REG_EXP_CAP_RE_NO_TARIFF);	//	8.8.0 - Exported capacitive reactive energy in 4-th quadrant (Q4) total [kvarh]
+
+		OBIS_CODE_DEFINITION(01, 00, 09, 08, 00, FF, REG_APPARENT_E_NO_TARIFF);	//	9.8.0 - Apparent energy (S+) total [kVAh]
+
 		OBIS_CODE_DEFINITION(01, 00, 0F, 07, 00, FF, REG_CUR_POS_AE);		//	15.7.0 - Aktuelle positive Wirkleistung, Betrag
+
+		OBIS_CODE_DEFINITION(01, 00, 0F, 08, 00, FF, REG_ABS_AE_NO_TARIFF);	//	15.8.0 - Absolute active energy (A+) total [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 0F, 08, 01, FF, REG_ABS_AE_T1);		//	15.8.1 - Absolute active energy (A+) in tariff T1 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 0F, 08, 02, FF, REG_ABS_AE_T2);		//	15.8.2 - Absolute active energy (A+) in tariff T2 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 0F, 08, 03, FF, REG_ABS_AE_T3);		//	15.8.3 - Absolute active energy (A+) in tariff T3 [kWh]
+		OBIS_CODE_DEFINITION(01, 00, 0F, 08, 04, FF, REG_ABS_AE_T4);		//	15.8.4 - Absolute active energy (A+) in tariff T4 [kWh]
+
 		OBIS_CODE_DEFINITION(01, 00, 10, 07, 00, ff, REG_CUR_AP);		//	aktuelle Wirkleistung 
 
 		//	01 00 24 07 00 FF: Wirkleistung L1
@@ -407,12 +451,15 @@ namespace node
 		//01 00 60 32 00 05: Gemittelte Chiptemperatur
 		OBIS_CODE_DEFINITION(01, 00, 1F, 07, 00, FF, REG_CURRENT_L1);	//	Strom L1
 		OBIS_CODE_DEFINITION(01, 00, 20, 07, 00, FF, REG_VOLTAGE_L1);	//	Spannung L1
+		OBIS_CODE_DEFINITION(01, 00, 24, 07, 00, FF, REG_NEG_REACTIVE_INST_POWER_L1);	//	Negative reactive instantaneous power (Q-) in phase L1 [kvar]
 		OBIS_CODE_DEFINITION(01, 00, 33, 07, 00, FF, REG_CURRENT_L2);	//	Strom L2
 		OBIS_CODE_DEFINITION(01, 00, 34, 07, 00, FF, REG_VOLTAGE_L2);	//	Spannung L2
+		OBIS_CODE_DEFINITION(01, 00, 44, 07, 00, FF, REG_NEG_REACTIVE_INST_POWER_L2);	//	Negative reactive instantaneous power (Q-) in phase L2 [kvar]
 		OBIS_CODE_DEFINITION(01, 00, 47, 07, 00, FF, REG_CURRENT_L3);	//	Strom L3
 		OBIS_CODE_DEFINITION(01, 00, 48, 07, 00, FF, REG_VOLTAGE_L3);	//	Spannung L3 
 		OBIS_CODE_DEFINITION(01, 00, 60, 32, 03, 03, REG_VOLTAGE_MIN);	//	Spannungsminimum
 		OBIS_CODE_DEFINITION(01, 00, 60, 32, 03, 04, REG_VOLTAGE_MAX);	//	Spannungsmaximum
+		OBIS_CODE_DEFINITION(01, 00, 64, 07, 00, FF, REG_NEG_REACTIVE_INST_POWER_L3);	//	Negative reactive instantaneous power (Q-) in phase L3 [kvar]
 
 
 		//		constexpr static obis	OBIS_CLASS_OP_LOG_EVENT(0x81, 0x81, 0xC7, 0x89, 0xE2, 0xFF);	//	Ereignis (uint32)

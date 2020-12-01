@@ -43,7 +43,7 @@ namespace node
 {
 	gateway_proxy::gateway_proxy(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, bus::shared_type bus
+		, cyng::controller& bus
 		, cyng::controller& vm
 		, std::chrono::seconds timeout
 		, bool sml_log)
@@ -249,7 +249,7 @@ namespace node
 
 		if (sml::OBIS_CLASS_OP_LOG_STATUS_WORD == path.front()) {
 
-			bus_->vm_.async_run(bus_res_com_sml(cd.tag_
+			bus_.async_run(bus_res_com_sml(cd.tag_
 				, cd.source_
 				, cd.seq_
 				, cd.gw_
@@ -269,7 +269,7 @@ namespace node
 				<< "> OBIS_ROOT_BROKER: "
 				<< cyng::io::to_type(params));
 
-			bus_->vm_.async_run(bus_res_com_sml(cd.tag_
+			bus_.async_run(bus_res_com_sml(cd.tag_
 				, cd.source_
 				, cd.seq_
 				, cd.gw_
@@ -289,7 +289,7 @@ namespace node
 				<< "> ROOT_SERIAL: "
 				<< cyng::io::to_type(params));
 
-			bus_->vm_.async_run(bus_res_com_sml(cd.tag_
+			bus_.async_run(bus_res_com_sml(cd.tag_
 				, cd.source_
 				, cd.seq_
 				, cd.gw_
@@ -309,7 +309,7 @@ namespace node
 				<< "> ROOT_DATA_COLLECTOR: "
 				<< cyng::io::to_type(params));
 
-			bus_->vm_.async_run(bus_res_com_sml(cd.tag_
+			bus_.async_run(bus_res_com_sml(cd.tag_
 				, cd.source_
 				, cd.seq_
 				, cd.gw_
@@ -338,7 +338,7 @@ namespace node
 				<< "]: "
 				<< cyng::io::to_str(params));
 
-			bus_->vm_.async_run(bus_res_com_sml(cd.tag_
+			bus_.async_run(bus_res_com_sml(cd.tag_
 				, cd.source_
 				, cd.seq_
 				, cd.gw_
@@ -583,7 +583,7 @@ namespace node
 			//	send response to requester
 			//
 			auto const& cd = pos->second.get_cluster_data();
-			bus_->vm_.async_run(bus_res_com_sml(cd.tag_
+			bus_.async_run(bus_res_com_sml(cd.tag_
 				, cd.source_
 				, cd.seq_
 				, cd.gw_
@@ -643,7 +643,7 @@ namespace node
 					<< " attention code "
 					<< sml::get_attention_name(attention));
 
-				bus_->vm_.async_run(bus_res_attention_code(cd.tag_
+				bus_.async_run(bus_res_attention_code(cd.tag_
 					, cd.source_
 					, cd.seq_
 					, cd.origin_
@@ -736,7 +736,7 @@ namespace node
 				<< " status "
 				<< stat);
 
-			bus_->vm_.async_run(bus_res_com_sml(cd.tag_
+			bus_.async_run(bus_res_com_sml(cd.tag_
 				, cd.source_
 				, cd.seq_
 				, cd.gw_
@@ -905,7 +905,7 @@ namespace node
 			 */
 			config_cache_.reset(srv_id, sml::vector_to_path(secs));
 
-			bus_->vm_.async_run(bus_res_com_proxy(tag
+			bus_.async_run(bus_res_com_proxy(tag
 				, source
 				, seq
 				, pk
@@ -923,7 +923,7 @@ namespace node
 			//
 			auto const roots = config_cache_.get_root_sections();
 
-			bus_->vm_.async_run(bus_res_com_proxy(tag
+			bus_.async_run(bus_res_com_proxy(tag
 				, source
 				, seq
 				, pk
@@ -984,7 +984,7 @@ namespace node
 			//
 			//	synchronize configuration cache to master node
 			//
-			bus_->vm_.async_run(bus_res_com_proxy(tag
+			bus_.async_run(bus_res_com_proxy(tag
 				, source
 				, seq
 				, pk
@@ -1044,7 +1044,7 @@ namespace node
 			//
 			//	update data throughput (outgoing)
 			//
-			bus_->vm_.async_run(client_inc_throughput(vm_.tag()
+			bus_.async_run(client_inc_throughput(vm_.tag()
 				, data.reply_.get_cluster_data().source_
 				, buffer.size()));
 
@@ -2129,7 +2129,7 @@ namespace node
 				//	send data back
 				//
 				//auto const pm = cyng::to_param_map(prx.get_params());
-				//bus_->vm_.async_run(bus_res_com_proxy(prx.get_tag_ident()
+				//bus_.async_run(bus_res_com_proxy(prx.get_tag_ident()
 				//	, prx.get_tag_source()
 				//	, prx.get_sequence()
 				//	, prx.get_key_gw()
@@ -2169,7 +2169,7 @@ namespace node
 			//	send data back
 			//
 			BOOST_ASSERT_MSG(false, "ToDo");
-			//bus_->vm_.async_run(bus_res_com_proxy(prx.get_tag_ident()
+			//bus_.async_run(bus_res_com_proxy(prx.get_tag_ident()
 			//	, prx.get_tag_source()
 			//	, prx.get_sequence()
 			//	, prx.get_key_gw()
@@ -2325,7 +2325,7 @@ namespace node
 		//			section["counter"] = cyng::make_object(counter);
 		//			section["total"] = cyng::make_object(devices.size());
 
-		//			bus_->vm_.async_run(bus_res_com_proxy(tag
+		//			bus_.async_run(bus_res_com_proxy(tag
 		//				, source
 		//				, seq
 		//				, pk

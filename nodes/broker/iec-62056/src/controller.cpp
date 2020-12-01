@@ -70,7 +70,8 @@ namespace node
          
 			, cyng::param_factory("client", cyng::tuple_factory(
 				cyng::param_factory("login", false),
-				cyng::param_factory("verbose", false))	//	parser	
+				cyng::param_factory("verbose", false),	//	parser	
+				cyng::param_factory("target", "power@solostec"))	//	push target name
 			)
 
 			, cyng::param_factory("cluster", cyng::vector_factory({ cyng::tuple_factory(
@@ -142,6 +143,7 @@ namespace node
 
 			auto const client_login = cyng::value_cast(dom_client.get("login"), false);
 			auto const verbose = cyng::value_cast(dom_client.get("verbose"), false);	// parser
+			auto const target = cyng::value_cast(dom_client.get("target"), "power@solostec");	// push target name
 
 			auto r = cyng::async::start_task_delayed<cluster>(mux
 				, std::chrono::seconds(1)
@@ -150,7 +152,8 @@ namespace node
 				, load_cluster_cfg(cfg_cls)
 				, boost::asio::ip::tcp::endpoint{ host, port }
 				, client_login
-				, verbose);
+				, verbose
+				, target);
 
 			if (r.second)	return r.first;
 		}
@@ -161,6 +164,5 @@ namespace node
 		CYNG_LOG_FATAL(logger, "could not start cluster");
 		return cyng::async::NO_TASK;
 	}
-
 
 }

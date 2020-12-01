@@ -5,9 +5,11 @@
  *
  */
 
-#include "sml_to_xml_consumer.h"
-#include "../message_ids.h"
+#include <tasks/sml_to_xml_consumer.h>
+#include <message_ids.h>
+
 #include <smf/sml/defs.h>
+
 #include <cyng/async/task/base_task.h>
 #include <cyng/dom/reader.h>
 #include <cyng/io/serializer.h>

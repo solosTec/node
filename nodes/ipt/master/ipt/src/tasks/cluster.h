@@ -8,9 +8,11 @@
 #ifndef NODE_IP_MASTER_TASK_CLUSTER_H
 #define NODE_IP_MASTER_TASK_CLUSTER_H
 
+#include <ipt/src/server.h>
+
 #include <smf/cluster/bus.h>
 #include <smf/cluster/config.h>
-#include "../server.h"
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>

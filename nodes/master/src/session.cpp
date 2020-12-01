@@ -1043,7 +1043,7 @@ namespace node
 				}
 #endif
 
-				ctx.run(bus_res_subscribe(tbl->meta().get_name()
+				ctx.queue(bus_res_subscribe(tbl->meta().get_name()
 					, rec.key()
 					, rec.data()
 					, rec.get_generation()

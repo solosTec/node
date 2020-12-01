@@ -5,18 +5,19 @@
  * 
  */ 
 
-#include "controller.h"
+#include <controller.h>
+#include <tasks/sml_to_db_consumer.h>
+#include <tasks/sml_to_xml_consumer.h>
+#include <tasks/sml_to_abl_consumer.h>
+#include <tasks/binary_consumer.h>
+#include <tasks/sml_to_json_consumer.h>
+#include <tasks/sml_to_log_consumer.h>
+#include <tasks/sml_to_csv_consumer.h>
+#include <tasks/sml_to_influxdb_consumer.h>
+#include <tasks/iec_to_db_consumer.h>
+#include <tasks/network.h>
+
 #include <NODE_project_info.h>
-#include "tasks/sml_to_db_consumer.h"
-#include "tasks/sml_to_xml_consumer.h"
-#include "tasks/sml_to_abl_consumer.h"
-#include "tasks/binary_consumer.h"
-#include "tasks/sml_to_json_consumer.h"
-#include "tasks/sml_to_log_consumer.h"
-#include "tasks/sml_to_csv_consumer.h"
-#include "tasks/sml_to_influxdb_consumer.h"
-#include "tasks/iec_to_db_consumer.h"
-#include "tasks/network.h"
 #include <smf/sml/exporter/influxdb_sml_exporter.h>
 
 #include <cyng/async/task/task_builder.hpp>
@@ -48,7 +49,7 @@ namespace node
 		, cyng::logging::log_ptr
 		, boost::uuids::uuid tag
 		, bool log_pushdata
-		, cyng::vector_t const&
+		, cyng::vector_t&&
 		, cyng::param_map_t);
 
 	/**
@@ -346,12 +347,11 @@ namespace node
 		//
 		//	connect to ipt master
 		//
-		cyng::vector_t tmp;
 		auto ntid = join_network(mux
 			, logger
 			, tag
 			, log_pushdata
-			, cyng::value_cast(cfg.get("ipt"), tmp)
+			, cyng::to_vector(cfg.get("ipt"))
 			, cyng::to_param_map(cyng::to_vector(cfg.get("targets"))));
 
 		//
@@ -521,7 +521,7 @@ namespace node
 		, cyng::logging::log_ptr logger
 		, boost::uuids::uuid tag
 		, bool log_pushdata
-		, cyng::vector_t const& cfg
+		, cyng::vector_t&& cfg
 		, cyng::param_map_t targets)
 	{
 		CYNG_LOG_TRACE(logger, "ipt network redundancy: " << cfg.size());

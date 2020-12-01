@@ -25,7 +25,7 @@ namespace node
 	session_stub::session_stub(boost::asio::ip::tcp::socket&& socket
 		, cyng::async::mux& mux
 		, cyng::logging::log_ptr logger
-		, bus::shared_type bus
+		, cyng::controller& bus
 		, boost::uuids::uuid tag
 		, std::chrono::seconds timeout)
 	: socket_(std::move(socket))
@@ -41,8 +41,13 @@ namespace node
 		, sml_counter_{ 0u }
 		, dir_out_()
 #endif
-		, name_(boost::uuids::to_string(tag))
+		, name_(boost::uuids::to_string(vm_.tag()))
 	{
+		//
+		//	insert child VM
+		//
+		bus_.embed(vm_);
+
 		//
 		//	register logger domain
 		//
@@ -65,16 +70,15 @@ namespace node
 
 		vm_.register_function("session.update.name", 1, [&](cyng::context& ctx) {
 
-			auto const frame = ctx.get_frame();
-			auto const tpl = cyng::tuple_cast<
-				std::string			//	[0] device name
-			>(frame);
-
 			//
 			//	set session name
 			//
-			name_ = std::get<0>(tpl);
-			CYNG_LOG_DEBUG(logger_, vm_.tag() << " - " << name_);
+			auto const frame = ctx.get_frame();
+			std::tie(name_) = cyng::tuple_cast<
+				std::string			//	[0] device name
+			>(frame);
+
+			CYNG_LOG_INFO(logger_, vm_.tag() << " = " << name_);
 
 #ifdef SMF_IO_LOG
 			std::stringstream ss;
@@ -104,8 +108,8 @@ namespace node
 
 	session_stub::~session_stub()
 	{
-		//CYNG_LOG_DEBUG(logger_, "deconstruct connection(" << tag_ << ')');
 		BOOST_ASSERT_MSG(vm_.is_halted(), "session not in HALT state");
+		CYNG_LOG_DEBUG(logger_, "rip " << name_);
 	}
 
 	cyng::controller& session_stub::vm()
@@ -163,14 +167,15 @@ namespace node
 			//
 			//	instruct master to close *this* client and send a "client.res.close" response
 			//
-			bus_->vm_.async_run(client_req_close(vm_.tag(), ec.value()));
+			bus_.async_run(client_req_close(vm_.tag(), ec.value()));
 		}
 		else {
 			//
 			//	remove from connection map - call destructor
 			//	server::remove_client();
 			//
-			bus_->vm_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
+			bus_.async_run(cyng::generate_invoke("server.remove.client", vm_.tag()));
+
 		}
 	}
 
@@ -389,8 +394,6 @@ namespace node
 				//
 				do_read();
 			}
-
-
 			else if (ec != boost::asio::error::operation_aborted)
 			{
 				//

@@ -79,7 +79,7 @@ namespace node
 		//	running_in_this_thread()
 		//
 		vm_.register_function("iec.data.start", 1, std::bind(&iec_processor::iec_data_start, this, std::placeholders::_1));
-		vm_.register_function("iec.data.line", 5, std::bind(&iec_processor::iec_data_line, this, std::placeholders::_1));
+		vm_.register_function("iec.data.line", 8, std::bind(&iec_processor::iec_data_line, this, std::placeholders::_1));
 		vm_.register_function("iec.data.bcc", 1, std::bind(&iec_processor::iec_bcc, this, std::placeholders::_1));
 		vm_.register_function("iec.data.eof", 1, std::bind(&iec_processor::iec_data_eof, this, std::placeholders::_1));
 
@@ -198,39 +198,61 @@ namespace node
 		//	* OBIS
 		//	* value
 		//	* unit
+		//	* unit-code
 		//	* status
 		//	* message counter
 		//
 		const cyng::vector_t frame = ctx.get_frame();
 		//CYNG_LOG_INFO(logger_, "iec.data.line " << cyng::io::to_str(frame));
 
-		auto const tpl = cyng::tuple_cast<
-			boost::uuids::uuid,	//	[0] pk
-			cyng::buffer_t,		//	[1] obis
-			std::string,		//	[2] value
-			std::string,		//	[3] unit
-			std::string,		//	[4] status
-			std::size_t			//	[5] counter
+		boost::uuids::uuid tag;
+		sml::obis code;			//	[1] OBIS code
+		std::string value;		//	[2] value
+		std::int8_t scaler;		//	[3] scaler
+		std::string unit;		//	[4] unit
+		std::uint8_t unit_code;	//	[5] unit
+		std::string status;		//	[6] status
+		std::uint64_t idx;		//	[7] index
+
+		std::tie(tag, code, value, scaler, unit, unit_code, status, idx) = cyng::tuple_cast<
+			boost::uuids::uuid,		//	[0] record tag
+			cyng::buffer_t,			//	[1] OBIS code
+			std::string,			//	[2] value
+			std::int8_t,			//	[3] scaler
+			std::string,			//	[4] unit
+			std::uint8_t,			//	[5] unit-code
+			std::string,			//	[6] status
+			std::uint64_t			//	[7] index
 		>(frame);
 
-		CYNG_LOG_TRACE(logger_, "iec.data.line #"
-			<< std::get<5>(tpl)
-			<< " "
-			<< sml::obis(std::get<1>(tpl))
-			<< " = "
-			<< std::get<2>(tpl)
-			<< " "
-			<< std::get<3>(tpl)
-			<< " "
-			<< std::get<4>(tpl));
+		//auto const tpl = cyng::tuple_cast<
+		//	boost::uuids::uuid,	//	[0] pk
+		//	cyng::buffer_t,		//	[1] obis
+		//	std::string,		//	[2] value
+		//	std::string,		//	[3] unit
+		//	std::uint8_t,		//	[4] unit-code
+		//	std::string,		//	[5] status
+		//	std::size_t			//	[6] counter
+		//>(frame);
 
-		if (sml::obis(std::get<1>(tpl)) == sml::OBIS_METER_ADDRESS) {
-			meter_id_ = std::get<4>(tpl);
+		CYNG_LOG_TRACE(logger_, "iec.data.line #"
+			<< status
+			<< " "
+			<< code
+			<< " = "
+			<< value
+			<< " "
+			<< unit
+			<< " "
+			<< status);
+
+		if (code == sml::OBIS_METER_ADDRESS) {
+			meter_id_ = status;
 			CYNG_LOG_TRACE(logger_, "meter ID is " << meter_id_);
 		}
-		else if (sml::obis(std::get<1>(tpl)) == sml::OBIS_MBUS_STATE) {
+		else if (code == sml::OBIS_MBUS_STATE) {
 			//0-0:97.97.0*255
-			status_ = std::get<4>(tpl);
+			status_ = status;
 			CYNG_LOG_TRACE(logger_, "status is " << status_);
 		}
 
@@ -239,14 +261,14 @@ namespace node
 		//
 		cyng::param_map_t params;
 		params["value"] = frame.at(2);
-		params["unit"] = frame.at(3);
-		params["status"] = frame.at(4);
+		params["unit"] = frame.at(4);
+		params["status"] = frame.at(6);
 
 		for (auto tid : consumers_) {
 			mux_.post(tid, CONSUMER_PUSH_DATA, cyng::tuple_factory(line_
-				, std::get<0>(tpl)	//	[uuid] pk
-				, std::get<1>(tpl)	//	[buffer_t] OBIS
-				, std::get<5>(tpl)	//	[size_t] index
+				, tag	//	[uuid] pk
+				, code.to_buffer()	//	[buffer_t] OBIS
+				, idx	//	[size_t] index
 				, params
 			));
 		}

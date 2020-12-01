@@ -8,10 +8,12 @@
 #ifndef NODE_IPT_STORE_TASK_NETWORK_H
 #define NODE_IPT_STORE_TASK_NETWORK_H
 
+#include <processors/sml_processor.h>
+#include <processors/iec_processor.h>
+
 #include <smf/ipt/bus.h>
 #include <smf/ipt/config.h>
-#include "../processors/sml_processor.h"
-#include "../processors/iec_processor.h"
+
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/async/policy.h>

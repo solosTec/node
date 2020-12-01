@@ -14,7 +14,6 @@
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/hex_dump.hpp>
 #include <cyng/io/serializer.h>
-#include <cyng/vm/controller.h>
 #include <cyng/util/split.h>
 #include <cyng/table/key.hpp>
 #include <cyng/table/body.hpp>
@@ -24,11 +23,11 @@ namespace node
 	session::session(boost::asio::ip::tcp::socket socket
 		, cyng::logging::log_ptr logger
 		, cyng::controller& cluster
-		, cyng::controller& vm)
+		, boost::uuids::uuid tag)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, cluster_(cluster)
-		, vm_(vm)
+		, vm_(cluster.get_io_service(), tag)
 		, buffer_()
 		, authorized_(false)
 		, data_()
@@ -56,6 +55,12 @@ namespace node
 			<< vm_.tag()
 			<< "] at " 
 			<< socket_.remote_endpoint());
+
+		//
+		//	insert child VM
+		//
+		cluster_.embed(vm_);
+
 
 		vm_.register_function("client.res.login", 1, [&](cyng::context& ctx) {
 

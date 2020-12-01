@@ -5,8 +5,10 @@
  *
  */
 
-#include "cluster.h"
+#include <ipt/src/tasks/cluster.h>
+
 #include <smf/cluster/generator.h>
+
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>

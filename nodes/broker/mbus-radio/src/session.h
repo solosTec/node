@@ -16,7 +16,7 @@
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
-#include <cyng/vm/controller_fwd.h>
+#include <cyng/vm/controller.h>
 #include <cyng/store/store_fwd.h>
 
 #include <boost/uuid/random_generator.hpp>
@@ -32,7 +32,7 @@ namespace node
 		session(boost::asio::ip::tcp::socket socket
 			, cyng::logging::log_ptr
 			, cyng::controller& cluster
-			, cyng::controller& vm
+			, boost::uuids::uuid tag
 			, cyng::store::db&
 			, bool session_login
 			, bool session_auto_insert);
@@ -73,7 +73,7 @@ namespace node
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logging::log_ptr logger_;
 		cyng::controller& cluster_;	//!< cluster bus VM
-		cyng::controller& vm_;	//!< session VM
+		cyng::controller vm_;	//!< session VM
 		cache cache_;
 		bool const session_login_;
 		bool const session_auto_insert_;
