@@ -453,7 +453,7 @@ namespace node
 				buffer = cyng::value_cast(obj, buffer);
 				const auto manufacturer = cyng::io::to_ascii(buffer);
 				ro_.set_value("value", cyng::make_object(manufacturer));
-				ro_.set_value("type", cyng::make_object("manufacturer"));
+				//ro_.set_value("type", cyng::make_object("manufacturer"));
 			}
 			else if (code == OBIS_CURRENT_UTC)
 			{
@@ -469,14 +469,14 @@ namespace node
 					ro_.set_value("value", cyng::make_object(tp));
 					ro_.set_value("roTime", cyng::make_object(tp));
 				}
-				ro_.set_value("type", cyng::make_object("roTime"));
+				//ro_.set_value("type", cyng::make_object("roTime"));
 			}
 			else if (code == OBIS_ACT_SENSOR_TIME)
 			{
 				const auto tm = cyng::value_cast<std::uint32_t>(obj, 0);
 				const auto tp = std::chrono::system_clock::from_time_t(tm);
 				ro_.set_value("value", cyng::make_object(tp));
-				ro_.set_value("type", cyng::make_object("actTime"));
+				//ro_.set_value("type", cyng::make_object("actTime"));
 			}
 			else if (code == OBIS_SERIAL_NR)
 			{ 
@@ -485,7 +485,7 @@ namespace node
 				std::reverse(buffer.begin(), buffer.end());
 				const auto serial_nr = cyng::io::to_hex(buffer);
 				ro_.set_value("value", cyng::make_object(serial_nr));
-				ro_.set_value("type", cyng::make_object("serialNr"));
+				//ro_.set_value("type", cyng::make_object("serialNr"));
 			}
 			else if (code == OBIS_SERIAL_NR_SECOND)
 			{
@@ -494,7 +494,7 @@ namespace node
 				std::reverse(buffer.begin(), buffer.end());
 				const auto serial_nr = cyng::io::to_hex(buffer);
 				ro_.set_value("value", cyng::make_object(serial_nr));
-				ro_.set_value("type", cyng::make_object("serialNr2"));
+				//ro_.set_value("type", cyng::make_object("serialNr2"));
 			}
 			else if (code == OBIS_MBUS_STATE)
 			{
@@ -503,7 +503,7 @@ namespace node
 				//ro_.set_value("MBusPermanentError", cyng::make_object(((status & 0x08) == 0x08)));
 				//ro_.set_value("MBusTemporaryError", cyng::make_object(((status & 0x10) == 0x10)));
 				ro_.set_value("value", obj);
-				ro_.set_value("type", cyng::make_object("MBus"));
+				//ro_.set_value("type", cyng::make_object("MBus"));
 			}
 			else
 			{
@@ -516,7 +516,7 @@ namespace node
 						const std::int64_t value = cyng::value_cast<std::int64_t>(obj, 0);
 						const auto str = scale_value(value, scaler);
 						ro_.set_value("value", cyng::make_object(str));
-						ro_.set_value("type", cyng::make_object("valueScaled64"));
+						//ro_.set_value("type", cyng::make_object("valueScaled64"));
 					}
 					break;
 					case cyng::TC_INT32:
@@ -524,7 +524,15 @@ namespace node
 						const std::int32_t value = cyng::value_cast<std::int32_t>(obj, 0);
 						const auto str = scale_value(value, scaler);
 						ro_.set_value("value", cyng::make_object(str));
-						ro_.set_value("type", cyng::make_object("valueScaled32"));
+						//ro_.set_value("type", cyng::make_object("valueScaled32"));
+					}
+					break;
+					case cyng::TC_INT16:
+					{
+						const std::int16_t value = cyng::value_cast<std::int16_t>(obj, 0);
+						const auto str = scale_value(value, scaler);
+						ro_.set_value("value", cyng::make_object(str));
+						//ro_.set_value("type", cyng::make_object("valueScaled16"));
 					}
 					break;
 					default:

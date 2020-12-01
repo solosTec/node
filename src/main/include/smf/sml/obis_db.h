@@ -48,6 +48,9 @@ namespace node
 		OBIS_CODE_DEFINITION(00, 00, 60, 10, 00, FF, LOGICAL_NAME);   //	
 		OBIS_CODE_DEFINITION(00, 00, 60, F0, 0D, FF, HARDWARE_TYPE);   //	octet
 		OBIS_CODE_DEFINITION(00, 00, 61, 61, 00, FF, MBUS_STATE);   //	Status according to EN13757-3 (error register)
+		OBIS_CODE_DEFINITION(00, 00, 61, 61, 01, FF, MBUS_STATE_1);   //	not relevant under calibration law	
+		OBIS_CODE_DEFINITION(00, 00, 61, 61, 02, FF, MBUS_STATE_2);   //	not relevant under calibration law	
+		OBIS_CODE_DEFINITION(00, 00, 61, 61, 03, FF, MBUS_STATE_3);   //	not relevant under calibration law	
 
 		OBIS_CODE_DEFINITION(00, 80, 80, 00, 00, FF, STORAGE_TIME_SHIFT);	//	root push operations
 		OBIS_CODE_DEFINITION(00, 80, 80, 00, 03, 01, HAS_SSL_CONFIG);		//	SSL/TSL configuration available

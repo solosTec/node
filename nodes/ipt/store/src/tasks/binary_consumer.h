@@ -45,6 +45,7 @@ namespace node
 
 	private:
 		void register_consumer();
+		bool check_output_path() const;
 
 	private:
 		cyng::async::base_task& base_;

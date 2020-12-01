@@ -14,7 +14,7 @@
 #include <smf/sml/protocol/serializer.h>
 #include <smf/sml/crc16.h>
 
-#include <crypto/hash/sha512.h>
+#include <crypto/hash/sha1.h>
 
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/hex_dump.hpp>
@@ -208,7 +208,7 @@ namespace node
 
 	void client::authorize_client()
 	{
-		auto const pwd = cyng::io::to_str(cyng::sha512_hash(meter_ + NODE::SALT));
+		auto const pwd = cyng::io::to_str(cyng::sha1_hash(meter_ + NODE::SALT));
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -535,14 +535,69 @@ namespace node
 				<< +scaler);
 
 		}
+		else if (code == sml::OBIS_MBUS_STATE) {
+			//	"00000000"
+			if (!boost::algorithm::equals(value, "00000000")) {
+				//	fatal error
+				cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
+					, "fatal error code from metering device: " + value
+					, ep_
+					, cluster_.tag()));
+			}
+			auto ec = static_cast<std::int32_t>(std::stoul(value));
+			period_list_.push_back(sml::period_entry(code
+				, unit_code
+				, scaler
+				, cyng::make_object(ec)));
 
+		}
+		else if (code == sml::OBIS_MBUS_STATE) {
+			//	"00000000"
+			if (!boost::algorithm::equals(value, "00000000")) {
+				//	fatal error
+				cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
+					, "fatal error code from metering device: " + value
+					, ep_
+					, cluster_.tag()));
+			}
+			auto ec = static_cast<std::int32_t>(std::stoul(value));
+			period_list_.push_back(sml::period_entry(code
+				, unit_code
+				, scaler
+				, cyng::make_object(ec)));
 
-		//cluster_.async_run(client_req_transfer_pushdata(vm_.tag()
-		//	, source_
-		//	, channel_
-		//	, cyng::make_object()	//	data
-		//	, cyng::param_map_factory("code", frame.at(1))
-		//		("unit", frame.at(3))));
+		}
+		else if (code == sml::OBIS_MBUS_STATE_1
+			|| code == sml::OBIS_MBUS_STATE_2
+			|| code == sml::OBIS_MBUS_STATE_3) {
+			//	"00000000"
+			auto ec = static_cast<std::int32_t>(std::stoul(value));
+			period_list_.push_back(sml::period_entry(code
+				, unit_code
+				, scaler
+				, cyng::make_object(ec)));
+
+		}
+		else if (code == sml::OBIS_METER_ADDRESS) {
+			//	03218421
+			period_list_.push_back(sml::period_entry(code
+				, unit_code
+				, scaler
+				, cyng::make_object(cyng::make_buffer(value))));
+		}
+		else {
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< vm_.tag()
+				<< " push data ["
+				<< meter_
+				<< "]: "
+				<< value);
+
+		}
 
 	}
 
@@ -588,10 +643,10 @@ namespace node
 			, 0		//	status
 			, std::move(period_list_));
 
-		CYNG_LOG_TRACE(logger_, "DATA " << cyng::io::to_type(tpl));
+		//CYNG_LOG_TRACE(logger_, "DATA " << cyng::io::to_type(tpl));
 		auto buffer = sml::linearize(tpl);
 		sml::sml_set_crc16(buffer);
-		CYNG_LOG_TRACE(logger_, "BUFFER " << cyng::io::to_hex(buffer));
+		//CYNG_LOG_TRACE(logger_, "BUFFER " << cyng::io::to_hex(buffer));
 
 		cluster_.async_run(client_req_transfer_pushdata(vm_.tag()
 			, channel_

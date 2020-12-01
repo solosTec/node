@@ -151,6 +151,8 @@ namespace node
 		connection_manager_interface & connection_manager_;
 		boost::uuids::random_generator uidgen_;
 	};
+
+	std::string get_description();
 }
 
 #endif

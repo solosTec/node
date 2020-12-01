@@ -87,13 +87,8 @@ namespace node
 				CYNG_LOG_FATAL(logger_, "DB connection pool is empty");
 				return cyng::continuation::TASK_STOP;
 			}
-			task_state_ = task_state::DB_OK;
-			break;
-
-		case task_state::DB_OK:
-
 			//
-			//	register as SML:XML consumer 
+			//	register as SML:DB consumer 
 			//
 			register_consumer();
 			task_state_ = task_state::REGISTERED;

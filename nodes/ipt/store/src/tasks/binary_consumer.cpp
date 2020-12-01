@@ -57,6 +57,8 @@ namespace node
 	{
 		switch (task_state_) {
 		case TASK_STATE_INITIAL:
+			//cyng::filesystem::path(root_dir_)
+			check_output_path();
 			//
 			//	register as SML:XML consumer 
 			//
@@ -168,6 +170,31 @@ namespace node
 	void binary_consumer::register_consumer()
 	{
 		base_.mux_.post(ntid_, STORE_EVENT_REGISTER_CONSUMER, cyng::tuple_factory("ALL:RAW", base_.get_id()));
+	}
+
+	bool binary_consumer::check_output_path() const
+	{
+		auto const p = cyng::filesystem::path(root_dir_);
+		if (!cyng::filesystem::exists(p)) {
+
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> output directory "
+				<< root_dir_
+				<< " does not exists");
+
+			//
+			//	try to create
+			//
+			cyng::error_code ec;
+			cyng::filesystem::create_directories(p, ec);
+
+			return !ec;
+
+		}
+		return true;
 	}
 
 }

@@ -272,7 +272,7 @@ namespace node
 			return cyng::buffer_t();
 		}
 
-		//	 slot [0] - message from costumer to register
+		//	 slot [0] - message from consumer to register
 		cyng::continuation network::process(std::string type, std::size_t tid)
 		{
 			consumers_.emplace(type, tid);

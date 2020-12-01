@@ -5,8 +5,9 @@
  * 
  */ 
 
-#include "forwarder.h"
-#include "tables.h"
+#include <forwarder.h>
+#include <tables.h>
+
 #include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
 #include <smf/mbus/defs.h>
@@ -27,6 +28,8 @@
 #include <cyng/json.h>
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/util/slice.hpp>
+
+#include <crypto/hash/sha1.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -1116,6 +1119,35 @@ namespace node
 			auto const meter_type = cleanup_meter_type(pm);
 
 			//
+			//	create new device
+			//
+			auto const pwd = cyng::io::to_str(cyng::sha1_hash(meter_id + NODE::SALT));
+
+			//	build data vector
+			auto const device = cyng::table::data_generator(meter_id
+				, pwd
+				, meter_id
+				, get_description()	//	"imported at ..."
+				, meter_type		//	model
+				, std::string("")	//	version
+				, true				//	enabled
+				, std::chrono::system_clock::now()
+				, 0u);
+
+
+			switch (policy) {
+			case cyng::table::POLICY_MERGE:
+				ctx.queue(bus_req_db_merge("TDevice", pk, device, 1, ctx.tag()));
+				break;
+			case cyng::table::POLICY_SUBSTITUTE:
+				ctx.queue(bus_req_db_update("TDevice", pk, device, 1, ctx.tag()));
+				break;
+			default:
+				ctx.queue(bus_req_db_insert("TDevice", pk, device, 1, ctx.tag()));
+				break;
+			}
+
+			//
 			//	Create a new TMeter record from uploaded data and fill missing data
 			//	if available
 			//
@@ -1176,7 +1208,6 @@ namespace node
 					address,	//	[ip] incoming/outgoing IP connection
 					port,		//	[ip] incoming/outgoing IP connection
 					//	[bool] incoming/outgoing (default)
-					//(rec_iec.empty() ? cyng::make_object(true) : rec["direction"]),
 					(protocol == protocol_e::IEC ? true : false),
 					//	[seconds] pull cycle
 					(rec_iec.empty() ? cyng::make_seconds(15 * 60) : rec["interval"]));
@@ -1987,6 +2018,16 @@ namespace node
 			return cyng::value_cast<std::string>(pos->second, "");
 		}
 		return "";
+	}
+
+	std::string get_description()
+	{
+		std::stringstream ss;
+		ss
+			<< "imported at "
+			<< cyng::chrono::to_string(std::chrono::system_clock::now())
+			;
+		return ss.str();
 	}
 
 }

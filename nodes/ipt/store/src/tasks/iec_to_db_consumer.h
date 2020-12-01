@@ -87,7 +87,6 @@ namespace node
 		cyng::table::meta_map_t	meta_map_;
 		enum class task_state {
 			INITIAL,
-			DB_OK,
 			REGISTERED,
 		} task_state_;
 		std::unordered_map<std::uint64_t, iec::db_exporter>	lines_;

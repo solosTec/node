@@ -85,11 +85,6 @@ namespace node
 				CYNG_LOG_FATAL(logger_, "DB connection pool is empty");
 				return cyng::continuation::TASK_STOP;
 			}
-			task_state_ = task_state::DB_OK;
-			break;
-
-		case task_state::DB_OK:
-
 			//
 			//	register as IEC:DB consumer 
 			//
