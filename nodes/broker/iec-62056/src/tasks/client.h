@@ -75,6 +75,10 @@ namespace node
 		void authorize_client();
 		void query_metering_data();
 
+		std::chrono::seconds get_monitor() const;
+		//std::chrono::seconds const monitor = cyng::value_cast(cache_.get_value("TBridge", "interval", key_), std::chrono::seconds(12 * 60));
+
+
 	private:
 		cyng::async::base_task& base_;
 
@@ -120,7 +124,6 @@ namespace node
 			INITIAL,
 			WAIT,	//	for login response
 			AUTHORIZED,	//	check connection state with socket
-			//CONNECTED,	//	TCP/IP connection to device
 		} state_;
 
 		bool target_available_;		//	push target

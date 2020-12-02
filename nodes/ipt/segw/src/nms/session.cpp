@@ -228,7 +228,7 @@ namespace node
 				return cyng::param_map_factory
 					("command", cmd)
 					("ec", "unknown account or invalid password")
-					("version", "0.1")
+					("version", protocol_version_)
 					("source", tag)
 					;
 			}
@@ -284,7 +284,7 @@ namespace node
 				return cyng::param_map_factory
 					("command", cmd)
 					("ec", "unknown command")
-					("version", "0.1")
+					("version", protocol_version_)
 					("source", tag)
 					;
 
@@ -295,7 +295,7 @@ namespace node
 			//
 			return cyng::param_map_factory
 				("ec", "command not specified")
-				("version", "0.1")
+				("version", protocol_version_)
 				("source", tag)
 				;
 		}

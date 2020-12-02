@@ -167,10 +167,15 @@ namespace node
 		//
 		//	start/restart timer
 		//
-		std::chrono::seconds const monitor = cyng::value_cast(cache_.get_value("TBridge", "interval", key_), std::chrono::seconds(12 * 60));
+		auto const monitor = get_monitor();
 		base_.suspend(monitor);
 
 		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	std::chrono::seconds client::get_monitor() const
+	{
+		return cyng::value_cast(cache_.get_value("TBridge", "interval", key_), std::chrono::seconds(12 * 60));
 	}
 
 	void client::query_metering_data()
@@ -283,6 +288,8 @@ namespace node
 					do_read();
 				}
 				else {
+					auto const next_ts = std::chrono::system_clock::now() + get_monitor();
+
 					CYNG_LOG_WARNING(logger_, "task #"
 						<< base_.get_id()
 						<< " <"
@@ -292,11 +299,20 @@ namespace node
 						<< ' '
 						<< ec.message());
 
+					std::stringstream ss;
+					ss
+						<< "connect failed: "
+						<< ec.message()
+						<< " -  next try at "
+						<< cyng::to_str(next_ts)
+						<< " UTC"
+						;
 					cluster_.async_run(bus_insert_IEC_uplink(std::chrono::system_clock::now()
-						, "connect failed"
+						, ss.str()
 						, ep_
 						, cluster_.tag()));
 
+					socket_.close(ec);
 				}
 			});
 	}
@@ -398,7 +414,8 @@ namespace node
 						//
 						//	no more data will be send
 						//
-						socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
+						socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+						socket_.close(ec);
 					}
 				});
 		}
