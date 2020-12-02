@@ -103,11 +103,10 @@ namespace node
 		vm_.register_function("iec.data.bcc", 1, std::bind(&client::data_bcc, this, std::placeholders::_1));
 		vm_.register_function("iec.data.eof", 2, std::bind(&client::data_eof, this, std::placeholders::_1));
 
-		vm_.register_function("client.res.login", 7, std::bind(&client::res_login, this, std::placeholders::_1));
+		vm_.register_function("client.res.login", 7, std::bind(&client::client_res_login, this, std::placeholders::_1));
 		vm_.register_function("client.res.open.push.channel", 8, std::bind(&client::client_res_open_push_channel, this, std::placeholders::_1));
 		vm_.register_function("client.res.close.push.channel", 5, std::bind(&client::client_res_close_push_channel, this, std::placeholders::_1));
 		vm_.register_function("client.res.transfer.pushdata", 6, std::bind(&client::client_res_transfer_push_data, this, std::placeholders::_1));
-	// [2020-11-30 12:12:02.32840910] ERROR 15176 -- session.09b0c01d-63ca-4289-9667-32bc3c2f2275 - ***Warning: function [client.res.close.push.channel] is not registered in VM 09b0c01d-63ca-4289-9667-32bc3c2f2275 - [ee76091f-3a55-4476-ae11-7ef2df7117fd:uuid,4u64,false,00000000u32,%(("meter":"03218421"))]
 	}
 
 	cyng::continuation client::run()
@@ -250,7 +249,10 @@ namespace node
 			<< "> remove embedded vm "
 			<< vm_.tag());
 
-		cluster_.async_run(cyng::generate_invoke("vm.remove", vm_.tag()));
+		//
+		//	remove from parent VM
+		//
+		cluster_.remove(vm_.tag());
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
@@ -687,7 +689,7 @@ namespace node
 
 	}
 
-	void client::res_login(cyng::context& ctx)
+	void client::client_res_login(cyng::context& ctx)
 	{
 		//	[ccf28039-33a5-4737-8da8-7dfe3fc3a948,1,false,03218421,unknown device,00000000,%(("data-layer":IEC:62056),("ep":192.168.0.200:6006),("time":2020-11-24 17:47:31.37567800),("tp-layer":tcp))]
 		auto const frame = ctx.get_frame();

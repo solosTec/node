@@ -64,8 +64,6 @@ namespace node
 		 * subscribe a table
 		 */
 		void sync_table(std::string const&);
-		void res_open_push_channel(cyng::context& ctx);
-		void res_close_push_channel(cyng::context& ctx);
 
 	private:
 		/**

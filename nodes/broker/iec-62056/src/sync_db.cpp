@@ -5,7 +5,8 @@
  * 
  */ 
 
-#include "sync_db.h"
+#include <sync_db.h>
+
 #include <smf/shared/db_schemes.h>
 #include <smf/cluster/generator.h>
 
@@ -18,7 +19,8 @@
 
 namespace node 
 {
-	void create_cache(cyng::logging::log_ptr logger, cyng::store::db& db)
+	void create_cache(cyng::logging::log_ptr logger
+		, cyng::store::db& db)
 	{
 		CYNG_LOG_TRACE(logger, "create "
 			<< db_sync::tables_.size()
@@ -33,7 +35,15 @@ namespace node
 					CYNG_LOG_DEBUG(logger, "create table: " << tbl.name_);
 				}
 			}
+			else {
+
+				//
+				//	create custom table
+				//
+				db.create_table(create_table_tasks(tbl.name_));
+			}
 		}
+
 
 		//
 		//	all tables created
@@ -48,21 +58,24 @@ namespace node
 		}
 	}
 
-	db_sync::db_sync(cyng::logging::log_ptr logger, cyng::store::db& db)
-		: logger_(logger)
+	db_sync::db_sync(cyng::logging::log_ptr logger
+		, cyng::store::db& db
+		, cyng::controller& vm)
+	: logger_(logger)
 		, db_(db)
+		, vm_(vm)
 	{}
 
-	void db_sync::register_this(cyng::controller& vm)
+	void db_sync::register_this()
 	{
-		vm.register_function("db.res.insert", 4, std::bind(&db_sync::db_res_insert, this, std::placeholders::_1));
-		vm.register_function("db.res.remove", 2, std::bind(&db_sync::db_res_remove, this, std::placeholders::_1));
-		vm.register_function("db.res.modify.by.attr", 3, std::bind(&db_sync::db_res_modify_by_attr, this, std::placeholders::_1));
-		vm.register_function("db.res.modify.by.param", 3, std::bind(&db_sync::db_res_modify_by_param, this, std::placeholders::_1));
-		vm.register_function("db.req.insert", 4, std::bind(&db_sync::db_req_insert, this, std::placeholders::_1));
-		vm.register_function("db.req.remove", 3, std::bind(&db_sync::db_req_remove, this, std::placeholders::_1));
-		vm.register_function("db.req.modify.by.param", 5, std::bind(&db_sync::db_req_modify_by_param, this, std::placeholders::_1));
-		vm.register_function("bus.res.subscribe", 6, std::bind(&db_sync::res_subscribe, this, std::placeholders::_1));
+		vm_.register_function("db.res.insert", 4, std::bind(&db_sync::db_res_insert, this, std::placeholders::_1));
+		vm_.register_function("db.res.remove", 2, std::bind(&db_sync::db_res_remove, this, std::placeholders::_1));
+		vm_.register_function("db.res.modify.by.attr", 3, std::bind(&db_sync::db_res_modify_by_attr, this, std::placeholders::_1));
+		vm_.register_function("db.res.modify.by.param", 3, std::bind(&db_sync::db_res_modify_by_param, this, std::placeholders::_1));
+		vm_.register_function("db.req.insert", 4, std::bind(&db_sync::db_req_insert, this, std::placeholders::_1));
+		vm_.register_function("db.req.remove", 3, std::bind(&db_sync::db_req_remove, this, std::placeholders::_1));
+		vm_.register_function("db.req.modify.by.param", 5, std::bind(&db_sync::db_req_modify_by_param, this, std::placeholders::_1));
+		vm_.register_function("bus.res.subscribe", 6, std::bind(&db_sync::res_subscribe, this, std::placeholders::_1));
 
 	}
 
@@ -163,12 +176,27 @@ namespace node
 		//	
 		std::reverse(std::get<1>(tpl).begin(), std::get<1>(tpl).end());
 
-		//node::db_req_remove(logger_
-		//	, db_
-		//	, std::get<0>(tpl)		//	[0] table name
-		//	, std::get<1>(tpl)		//	[1] table key
-		//	, std::get<2>(tpl));	//	[2] source
+		if (!db_.erase(std::get<0>(tpl), std::get<1>(tpl), std::get<2>(tpl)))
+		{
+			CYNG_LOG_WARNING(logger_, "db.req.remove failed "
+				<< std::get<0>(tpl)		// table name
+				<< " - "
+				<< cyng::io::to_type(std::get<1>(tpl)));
+		}
+		else {
 
+			if (boost::algorithm::equals(std::get<0>(tpl), "TMeter")
+				|| boost::algorithm::equals(std::get<0>(tpl), "TBridge"))	{
+
+				//
+				//	terminate task
+				//
+				auto const rec = db_.lookup("_Tasks", std::get<1>(tpl));
+				if (!rec.empty()) {
+					vm_.async_run(cyng::generate_invoke("mux.stop.task", rec["task"]));
+				}
+			}
+		}
 	}
 
 	void db_sync::db_res_remove(cyng::context& ctx)
@@ -412,17 +440,44 @@ namespace node
 				<< " - "
 				<< cyng::io::to_str(std::get<1>(tpl)));
 		}
+	}
+
+	void db_sync::add_client(cyng::table::key_type const& key, std::size_t tsk, boost::uuids::uuid source)
+	{
+		if (!db_.insert("_Tasks"	//	table name
+			, key	//	table key
+			, cyng::table::data_generator(tsk)
+			, 1	//	generation
+			, source))
+		{
+			CYNG_LOG_WARNING(logger_, "_Tasks insert failed - "
+				<< cyng::io::to_str(key));
+		}
 
 	}
 
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<db_sync::tbl_descr, 3>	db_sync::tables_ =
+	const std::array<db_sync::tbl_descr, 4>	db_sync::tables_ =
 	{
 		tbl_descr{"TMeter", false},
 		tbl_descr{"TBridge", false},
 		tbl_descr{"_IECUplink", false},	//	broker
+		tbl_descr{"_Tasks", true},	//	internal task
 	};
 
+	cyng::table::meta_table_ptr create_table_tasks(std::string name)
+	{
+		return cyng::table::make_meta_table<1, 1>(name,
+			{ "pk"			//	same key as in TMeter/TBridge table
+			, "task"		//	[size_t] task ID
+			},
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_UINT64		//	task
+			},
+			{ 36
+			, 0	//	task
+			});
+	}
 }

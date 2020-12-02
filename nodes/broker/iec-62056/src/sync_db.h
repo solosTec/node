@@ -33,15 +33,22 @@ namespace node
 		/**
 		 * List of all required tables
 		 */
-		const static std::array<tbl_descr, 3>	tables_;
+		const static std::array<tbl_descr, 4>	tables_;
 
 	public:
-		db_sync(cyng::logging::log_ptr, cyng::store::db&);
+		db_sync(cyng::logging::log_ptr, cyng::store::db&, cyng::controller&);
 
 		/**
 		 * register provided functions
 		 */
-		void register_this(cyng::controller&);
+		void register_this();
+
+		/**
+		 * internal list of meters and the assoziated tasks
+		 */
+		void add_client(cyng::table::key_type const&
+			, std::size_t tsk
+			, boost::uuids::uuid);
 
 	private:
 		void res_subscribe(cyng::context& ctx);
@@ -69,8 +76,11 @@ namespace node
 	private:
 		cyng::logging::log_ptr logger_;
 		cyng::store::db& db_;
-
+		cyng::controller& vm_;
 	};
+
+	cyng::table::meta_table_ptr create_table_tasks(std::string);
+
 }
 
 #endif

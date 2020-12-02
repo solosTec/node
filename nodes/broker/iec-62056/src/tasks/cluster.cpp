@@ -16,6 +16,7 @@
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/numeric_cast.hpp>
 #include <cyng/vm/domain/log_domain.h>
 
 #include <boost/uuid/random_generator.hpp>
@@ -38,7 +39,7 @@ namespace node
 		, verbose_(verbose)
 		, target_(target)
 		, cache_()
-		, db_sync_(logger, cache_)
+		, db_sync_(logger, cache_, bus_->vm_)
 		, server_(btp->mux_.get_io_service(), logger, bus_->vm_, ep)
 		, uuid_gen_()
 	{
@@ -92,7 +93,7 @@ namespace node
 		//
 		//	register all database/cache related functions
 		//
-		db_sync_.register_this(bus_->vm_);
+		db_sync_.register_this();
 
 		bus_->vm_.register_function("iec.client.start", 0, [this](cyng::context& ctx) {
 
@@ -122,7 +123,6 @@ namespace node
 					//
 					auto const meter = cyng::value_cast(rec["meter"], "00000000");
 					auto const ident = cyng::value_cast(rec["ident"], "");	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-					//std::pair<cyng::buffer_t, bool> parse_srv_id(std::string const&);
 					auto const srv_id = sml::parse_srv_id(ident);
 					if (!srv_id.second) {
 						CYNG_LOG_ERROR(logger_,
@@ -159,6 +159,8 @@ namespace node
 							<< " => "
 							<< tag
 							<< "]");
+						
+						db_sync_.add_client(rec.key(), tsk, bus_->vm_.tag());
 					}
 				}
 				else {
@@ -182,8 +184,14 @@ namespace node
 			CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 			});
 
-		bus_->vm_.register_function("client.res.open.push.channel", 8, std::bind(&cluster::res_open_push_channel, this, std::placeholders::_1));
-		bus_->vm_.register_function("client.res.close.push.channel", 6, std::bind(&cluster::res_close_push_channel, this, std::placeholders::_1));
+		bus_->vm_.register_function("mux.stop.task", 1, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			auto const tsk = cyng::numeric_cast<std::size_t>(frame.at(0), 0);
+			CYNG_LOG_WARNING(logger_, ctx.get_name()
+				<< " #"
+				<< tsk);
+			base_.mux_.stop(tsk);
+		});
 	}
 
 	cyng::continuation cluster::run()
@@ -318,85 +326,4 @@ namespace node
 
 	}
 
-	void cluster::res_open_push_channel(cyng::context& ctx)
-	{
-		BOOST_ASSERT(ctx.tag() == bus_->vm_.tag());
-
-		//	[
-		//		cbbe3e6c-c174-4856-9b71-ba7b364fb20c,
-		//		21fd166c-44b4-4ca2-ae6d-1993f4eeacfb,
-		//		1,
-		//		false,		- success
-		//		00000000,	- channel
-		//		00000000,	- source
-		//		00000000,	- target count
-		//		%(("channel-status":0),("packet-size":0000),("response-code":0),("window-size":0)),
-		//		%(("meter":03218421))
-		//	]
-		//
-		//	* [session tag] - removed
-		//	* peer
-		//	* cluster bus sequence
-		//	* success flag
-		//	* channel
-		//	* source
-		//	* target count
-		//	* options
-		//	* bag
-		//	
-		auto frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
-
-		//auto const tpl = cyng::tuple_cast<
-		//	boost::uuids::uuid,		//	[1] peer
-		//	std::uint64_t,			//	[2] cluster sequence
-		//	bool,					//	[3] success flag
-		//	std::uint32_t,			//	[4] channel
-		//	std::uint32_t,			//	[5] source
-		//	std::uint32_t,			//	[6] count
-		//	cyng::param_map_t,		//	[7] options
-		//	cyng::param_map_t		//	[8] bag
-		//>(frame);
-
-		//
-		//	get tag from adressed child VM
-		//
-		auto pos = frame.begin();
-		auto const tag = cyng::value_cast(*pos, uuid_gen_());
-		BOOST_ASSERT(ctx.tag() != tag);
-
-		//
-		//	remove first element
-		//
-		frame.erase(pos);
-
-		//CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << ctx.tag() << ", " << bus_->vm_.tag() << " => " << tag);
-
-
-		ctx.forward(tag, cyng::generate_invoke(ctx.get_name(), tag, frame));
-
-	}
-
-	void cluster::res_close_push_channel(cyng::context& ctx)
-	{
-		BOOST_ASSERT(ctx.tag() == bus_->vm_.tag());
-		//	[
-		//		c4e0f5d2-e194-4e5d-a0de-e5be911a9b05,
-		//		25c15706-b463-4036-b6e6-e229e7427e25,
-		//		2,
-		//		false,
-		//		00000000,
-		//		%(("meter":03218421))
-		//	]
-		const cyng::vector_t frame = ctx.get_frame();
-		CYNG_LOG_INFO(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
-
-		//
-		//	get tag from adressed child VM
-		//
-		auto pos = frame.begin();
-		auto const tag = cyng::value_cast(*pos, uuid_gen_());
-		BOOST_ASSERT(ctx.tag() != tag);
-
-	}
 }

@@ -67,7 +67,7 @@ namespace node
 		void data_bcc(cyng::context& ctx);
 		void data_eof(cyng::context& ctx);
 
-		void res_login(cyng::context& ctx);
+		void client_res_login(cyng::context& ctx);
 		void client_res_open_push_channel(cyng::context& ctx);
 		void client_res_close_push_channel(cyng::context& ctx);
 		void client_res_transfer_push_data(cyng::context& ctx);
@@ -76,8 +76,6 @@ namespace node
 		void query_metering_data();
 
 		std::chrono::seconds get_monitor() const;
-		//std::chrono::seconds const monitor = cyng::value_cast(cache_.get_value("TBridge", "interval", key_), std::chrono::seconds(12 * 60));
-
 
 	private:
 		cyng::async::base_task& base_;
