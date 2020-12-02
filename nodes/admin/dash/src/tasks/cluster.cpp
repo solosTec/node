@@ -341,8 +341,6 @@ namespace node
 
 	}
 
-
-
 	void cluster::ws_read(cyng::context& ctx)
 	{
 		//	[1adb06d2-bfbf-4b00-a7b1-80b49ba48f79,{("cmd":subscribe),("channel":status.session),("push":true)}]
@@ -351,7 +349,7 @@ namespace node
 		//	* ws object
 		//	* json object
 		auto const frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 		//
 		//	get session tag of websocket
@@ -383,10 +381,13 @@ namespace node
 		}
 		else if (boost::algorithm::equals(cmd, "insert"))
 		{
+			auto const cc = cyng::value_cast(cache_.get_value("_Config", "value", "country-code"), "CH");
+
 			node::fwd_insert(logger_
 				, ctx
 				, reader
-				, uidgen_());
+				, uidgen_()
+				, cc);
 		}
 		else if (boost::algorithm::equals(cmd, "delete"))
 		{

@@ -30,7 +30,8 @@ namespace node
 	void fwd_insert(cyng::logging::log_ptr
 		, cyng::context& ctx
 		, cyng::reader<cyng::object> const&
-		, boost::uuids::uuid);
+		, boost::uuids::uuid
+		, std::string const& country_code);
 
 	/**
 	 * Incoming delete request from web application
@@ -101,7 +102,13 @@ namespace node
 	 * try to convert a string into a valid manufacturer code
 	 */
 	std::string cleanup_manufacturer_code(cyng::param_map_t const& pm);
-	std::string cleanup_server_id(std::string const& meter_id, std::string const& manufacturer_code);
+	std::string cleanup_manufacturer_code(std::string const&);
+
+	std::string cleanup_server_id(std::string const& meter_id
+		, std::string const& manufacturer_code
+		, bool
+		, std::uint8_t version
+		, std::uint8_t medium);
 	protocol_e cleanup_protocol(cyng::param_map_t const& pm);
 	std::string cleanup_meter_type(cyng::param_map_t const& pm);
 	cyng::crypto::aes_128_key cleanup_aes_key(cyng::param_map_t const& pm);
