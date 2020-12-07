@@ -86,7 +86,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "setup"));
+			, NODE::classes[NODE::class_e::_SETUP]));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
 			<< config_.get().host_
@@ -524,7 +524,7 @@ namespace node
 
 		for (auto const& tbl : tables::list_) {
 			if (tbl.cache_) {
-				if (!create_table(cache_, tbl.name_))
+				if (!create_table(cache_, tbl.name_, false))
 				{
 					CYNG_LOG_FATAL(logger_, "cannot create table " << tbl.name_);
 				}

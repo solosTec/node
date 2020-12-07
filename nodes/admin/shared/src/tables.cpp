@@ -15,28 +15,29 @@ namespace node
 	 */
 	const tables::array_t	tables::list_ =
 	{
-		tables::tbl_descr{"TDevice", false, false},
-		tables::tbl_descr{"TGateway", true, false},	//	custom
-		tables::tbl_descr{"TLoRaDevice", false, false},
-		tables::tbl_descr{"TMeter", true, false},		//	custom
-		tables::tbl_descr{"TMeterAccess", false, false},
-		tables::tbl_descr{"TLocation", false, false},
-		tables::tbl_descr{"TGUIUser", false, false},
-		tables::tbl_descr{"TGWSnapshot", false, false},
-		tables::tbl_descr{"TNodeNames", false, false},
-		tables::tbl_descr{"TBridge", true, false},	//	custom
-		tables::tbl_descr{"_Session", false, false},
-		tables::tbl_descr{"_Target", false, false},
-		tables::tbl_descr{"_Connection", false, false},
-		tables::tbl_descr{"_Cluster", false, false},
-		tables::tbl_descr{"_Config", false, false},
-		tables::tbl_descr{"_SysMsg", false, false},
-		tables::tbl_descr{"_TimeSeries", false, false},
-		tables::tbl_descr{"_LoRaUplink", false, false},
-		tables::tbl_descr{"_wMBusUplink", false, false},
-		tables::tbl_descr{"_IECUplink", false, false},
-		tables::tbl_descr{"_CSV", false, false},
-		tables::tbl_descr{"_HTTPSession", false, true}	//	local handling
+		tables::tbl_descr{"TDevice", false, false, false},
+		tables::tbl_descr{"TGateway", true, false, false},	//	custom
+		tables::tbl_descr{"TLoRaDevice", false, false, false},
+		tables::tbl_descr{"TMeter", true, false, false},		//	custom
+		tables::tbl_descr{"TMeterAccess", false, false, false},
+		tables::tbl_descr{"TLocation", false, false, false},
+		tables::tbl_descr{"TGUIUser", false, false, false},
+		tables::tbl_descr{"TGWSnapshot", false, false, false},
+		tables::tbl_descr{"TNodeNames", false, false, false},
+		tables::tbl_descr{"TBridge", true, false, false},	//	custom
+		tables::tbl_descr{"_Session", false, false, false},
+		tables::tbl_descr{"_Target", false, false, false},
+		tables::tbl_descr{"_Connection", false, false, false},
+		tables::tbl_descr{"_Cluster", false, false, false},
+		tables::tbl_descr{"_Config", false, false, false},
+		tables::tbl_descr{"_SysMsg", false, false, false},
+		tables::tbl_descr{"_TimeSeries", false, false, false},
+		tables::tbl_descr{"_LoRaUplink", false, false, false},
+		tables::tbl_descr{"_wMBusUplink", false, false, false},
+		tables::tbl_descr{"_IECUplink", false, false, false},
+		tables::tbl_descr{"_CSV", false, false, false},
+		tables::tbl_descr{"_HTTPSession", false, true, false},	//	local handling
+		tables::tbl_descr{"_EventQueue", false, false, true}	//	pass through
 	};
 
 	tables::array_t::const_iterator tables::find(std::string name)
@@ -91,7 +92,8 @@ namespace node
 		channel::rel{"_wMBusUplink", "monitor.wMBus", "table.wMBus.count"},
 		channel::rel{"_IECUplink", "monitor.IEC", "table.IEC.count"},
 		channel::rel{"_CSV", "task.csv", ""},
-		channel::rel{"TGWSnapshot", "monitor.snapshot", "table.snapshot.count"}
+		channel::rel{"TGWSnapshot", "monitor.snapshot", "table.snapshot.count"},
+		channel::rel{"_EventQueue", "event.queue", "table.event.queue"},
 	};
 
 	//

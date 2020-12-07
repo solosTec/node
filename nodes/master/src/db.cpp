@@ -6,9 +6,10 @@
  */ 
 
 
-#include "db.h"
-#include <smf/shared/db_schemes.h>
+#include <db.h>
 #include <NODE_project_info.h>
+
+#include <smf/shared/db_schemes.h>
 #include <cyng/table/meta.hpp>
 #include <cyng/intrinsics/traits/tag.hpp>
 #include <cyng/intrinsics/traits.hpp>
@@ -39,7 +40,7 @@ namespace node
 
 		for (auto const& tbl : cache::tables_) {
 			if (!tbl.custom_) {
-				if (!create_table(db, tbl.name_)) {
+				if (!create_table(db, tbl.name_, tbl.pass_trough_)) {
 					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
 				}
 				else {
@@ -82,7 +83,7 @@ namespace node
 				cyng::TC_STRING,
 				cyng::TC_STRING
 			},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 64 })))
+			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 64 }), false))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Channel");
 		}
@@ -532,32 +533,33 @@ namespace node
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<cache::tbl_descr, 24>	cache::tables_ =
+	const cache::tables_t	cache::tables_ =
 	{
-		tbl_descr{"TDevice", false},
-		tbl_descr{"TGateway", false},
-		tbl_descr{"TLoRaDevice", false},
-		tbl_descr{"TMeter", false},
-		tbl_descr{"TLocation", false},
-		tbl_descr{"TMeterAccess", false},
-		tbl_descr{"TLL", false},
-		tbl_descr{"TGUIUser", false},
-		tbl_descr{"TGWSnapshot", false},
-		tbl_descr{"TNodeNames", false},
-		tbl_descr{"TBridge", false},
-		tbl_descr{"_Session", false},
-		tbl_descr{"_Channel", true},	//	custom
-		tbl_descr{"_Target", false},
-		tbl_descr{"_Connection", false},
-		tbl_descr{"_Cluster", false},
-		tbl_descr{"_Config", false},
-		tbl_descr{"_SysMsg", false},
-		tbl_descr{"_TimeSeries", false},
-		tbl_descr{"_LoRaUplink", false},
-		tbl_descr{"_wMBusUplink", false},
-		tbl_descr{"_IECUplink", false},
-		tbl_descr{"_CSV", false},
-		tbl_descr{"_Broker", false}	//	broker 
+		tbl_descr{"TDevice", false, false},
+		tbl_descr{"TGateway", false, false},
+		tbl_descr{"TLoRaDevice", false, false},
+		tbl_descr{"TMeter", false, false},
+		tbl_descr{"TLocation", false, false},
+		tbl_descr{"TMeterAccess", false, false},
+		tbl_descr{"TLL", false, false},
+		tbl_descr{"TGUIUser", false, false},
+		tbl_descr{"TGWSnapshot", false, false},
+		tbl_descr{"TNodeNames", false, false},
+		tbl_descr{"TBridge", false, false},
+		tbl_descr{"_Session", false, false},
+		tbl_descr{"_Channel", true, false},	//	custom
+		tbl_descr{"_Target", false, false},
+		tbl_descr{"_Connection", false, false},
+		tbl_descr{"_Cluster", false, false},
+		tbl_descr{"_Config", false, false},
+		tbl_descr{"_SysMsg", false, false},
+		tbl_descr{"_TimeSeries", false, false},
+		tbl_descr{"_LoRaUplink", false, false},
+		tbl_descr{"_wMBusUplink", false, false},
+		tbl_descr{"_IECUplink", false, false},
+		tbl_descr{"_CSV", false, false},
+		tbl_descr{"_Broker", false, false},	//	broker 
+		tbl_descr{"_EventQueue", false, true}	//	pass through
 	};
 
 	cache::cache(cyng::store::db& db, boost::uuids::uuid tag)

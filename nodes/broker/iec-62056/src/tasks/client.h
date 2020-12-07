@@ -27,8 +27,8 @@ namespace node
 		using read_buffer_t = std::array<char, NODE::PREFERRED_BUFFER_SIZE>;
 
 	public:
-		using msg_1 = std::tuple<>;
-		using signatures_t = std::tuple<msg_1>;
+		using msg_0 = std::tuple<std::chrono::system_clock::time_point>;
+		using signatures_t = std::tuple<msg_0>;
 
 	public:
 		client(cyng::async::base_task* bt
@@ -49,9 +49,9 @@ namespace node
 		/**
 		 * @brief slot [0]
 		 *
-		 * reconnect
+		 * query meter data
 		 */
-		cyng::continuation process();
+		cyng::continuation process(std::chrono::system_clock::time_point);
 
 	private:
 		/**
@@ -122,6 +122,7 @@ namespace node
 			INITIAL,
 			WAIT,	//	for login response
 			AUTHORIZED,	//	check connection state with socket
+			READING,	//	readout is running
 		} state_;
 
 		bool target_available_;		//	push target

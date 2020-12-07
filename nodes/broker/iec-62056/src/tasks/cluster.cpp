@@ -84,7 +84,7 @@ namespace node
 					//	generate new key
 					, cyng::table::key_generator(tag)
 					//	build data vector
-					, cyng::table::data_generator(ep.address(), ep.port(), "IEC-62056-21:2002")
+					, cyng::table::data_generator(ep.address(), ep.port(), protocol_IEC)
 					, 0
 					, ctx.tag()));
 			}
@@ -192,6 +192,17 @@ namespace node
 				<< tsk);
 			base_.mux_.stop(tsk);
 		});
+
+		bus_->vm_.register_function("mux.readout.task", 2, [this](cyng::context& ctx) {
+			auto const frame = ctx.get_frame();
+			auto const tsk = cyng::numeric_cast<std::size_t>(frame.at(0), 0);
+			CYNG_LOG_TRACE(logger_, ctx.get_name()
+				<< " #"
+				<< tsk);
+			base_.mux_.post(tsk, 0, cyng::tuple_t{ frame.at(1) });
+
+			});
+
 	}
 
 	cyng::continuation cluster::run()
@@ -243,9 +254,12 @@ namespace node
 		//
 		//	sync tables
 		//
-		sync_table("TMeter");
-		sync_table("TBridge");
-		//sync_table("_IECUplink");
+		for (auto const& tbl : db_sync::tables_) {
+			if (!tbl.custom_) {
+				CYNG_LOG_INFO(logger_, "subscribe table: " << tbl.name_);
+				sync_table(tbl.name_);
+			}
+		}
 
 		return cyng::continuation::TASK_CONTINUE;
 	}
@@ -285,7 +299,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "IEC-62056-21:2002 broker"));
+			, NODE::classes[NODE::class_e::_BROKER_IEC]));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
 			<< config_.get().host_

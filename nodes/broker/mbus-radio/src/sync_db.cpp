@@ -27,7 +27,7 @@ namespace node
 
 		for (auto const& tbl : db_sync::tables_) {
 			if (!tbl.custom_) {
-				if (!create_table(db, tbl.name_)) {
+				if (!create_table(db, tbl.name_, false)) {
 					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
 				}
 				else {
@@ -369,11 +369,12 @@ namespace node
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<db_sync::tbl_descr, 3>	db_sync::tables_ =
+	const db_sync::tables_t	db_sync::tables_ =
 	{
 		tbl_descr{"TMeter", false},
 		tbl_descr{"TMeterAccess", false},
 		tbl_descr{"_Broker", false},	//	broker
+		tbl_descr{"_EventQueue", false}
 	};
 
 

@@ -101,6 +101,14 @@ namespace node
 		, boost::uuids::uuid source);
 
 	/**
+	 * start a readout
+	 */
+	//cyng::vector_t bus_readout(std::string const&
+	//	, cyng::vector_t const&
+	//	, std::string node_type
+	//	, boost::uuids::uuid source);
+
+	/**
 	 * place a system message
 	 */
 	cyng::vector_t bus_insert_msg(cyng::logging::severity, std::string const&);
@@ -264,11 +272,11 @@ namespace node
 	 * @param channel channel name (get.proc.param, set.proc.param, ...)
 	 * @param vec vector of parameter requests
 	 */
-	cyng::vector_t bus_req_com_node(boost::uuids::uuid key
-		, boost::uuids::uuid tag_ws
-		, std::string channel
-		, cyng::vector_t sections
-		, cyng::vector_t params);
+	//cyng::vector_t bus_req_com_node(boost::uuids::uuid key
+	//	, boost::uuids::uuid tag_ws
+	//	, std::string channel
+	//	, cyng::vector_t sections
+	//	, cyng::vector_t params);
 
 	/**
 	 * Send a process parameter change request to an gateway

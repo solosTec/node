@@ -288,7 +288,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "dashs"));
+			, NODE::classes[NODE::class_e::_DASHS]));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to " 
 			<< config_.get().host_
@@ -365,10 +365,13 @@ namespace node
 		}
 		else if (boost::algorithm::equals(cmd, "insert"))
 		{
+			auto const cc = cyng::value_cast(cache_.get_value("_Config", "value", "country-code"), "CH");
+
 			node::fwd_insert(logger_
 				, ctx
 				, reader
-				, uidgen_());
+				, uidgen_()
+				, cc);
 		}
 		else if (boost::algorithm::equals(cmd, "delete"))
 		{
@@ -407,14 +410,6 @@ namespace node
 		else if (boost::algorithm::equals(cmd, "com:task"))
 		{
 			node::fwd_com_task(logger_
-				, ctx
-				, tag_ws
-				, channel
-				, reader);
-		}
-		else if (boost::algorithm::equals(cmd, "com:node"))
-		{
-			node::fwd_com_node(logger_
 				, ctx
 				, tag_ws
 				, channel

@@ -87,16 +87,22 @@ namespace node
 	/**
 	 * Incoming request from web application to communicate with a node
 	 */
-	void fwd_com_node(cyng::logging::log_ptr
-		, cyng::context& ctx
-		, boost::uuids::uuid tag_ws
-		, std::string const& channel
-		, cyng::reader<cyng::object> const&);
+	//void fwd_com_node(cyng::logging::log_ptr
+	//	, cyng::context& ctx
+	//	, boost::uuids::uuid tag_ws
+	//	, std::string const& channel
+	//	, cyng::reader<cyng::object> const&);
 
 	void fwd_cleanup(cyng::logging::log_ptr logger
 		, cyng::context& ctx
 		, std::string const& channel
 		, cyng::reader<cyng::object> const& reader);
+
+	void fwd_readout(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, std::string const& channel
+		, cyng::reader<cyng::object> const& reader
+		, boost::uuids::uuid tag);
 
 	/**
 	 * try to convert a string into a valid manufacturer code

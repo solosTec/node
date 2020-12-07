@@ -19,14 +19,16 @@ namespace node
             std::string const name_;
             bool const custom_;
             bool const local_;  //  internal dash table
-            inline tbl_descr(std::string name, bool custom, bool local)
+            bool const pass_trough_;  
+            inline tbl_descr(std::string name, bool custom, bool local, bool pass_trough)
                 : name_(name)
                 , custom_(custom)
                 , local_(local)
+                , pass_trough_(pass_trough)
             {}
         };
 
-        using array_t = std::array<tbl_descr, 22>;
+        using array_t = std::array<tbl_descr, 23>;
         static const array_t list_;
 
         static array_t::const_iterator find(std::string);
@@ -65,7 +67,7 @@ namespace node
         /**
          * same size as tables::array_t
          */
-        using array_t = std::array<rel, 22>;
+        using array_t = std::array<rel, 23>;
         static array_t const rel_;
 
     };

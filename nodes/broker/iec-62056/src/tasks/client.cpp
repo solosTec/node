@@ -6,6 +6,7 @@
  */
 
 #include <tasks/client.h>
+
 #include <smf/cluster/generator.h>
 #include <smf/shared/protocols.h>
 #include <smf/ipt/defs.h>
@@ -235,8 +236,31 @@ namespace node
 
 	}
 
-	cyng::continuation client::process()
+	cyng::continuation client::process(std::chrono::system_clock::time_point tp)
 	{
+
+		if (internal_state::AUTHORIZED == state_) {
+			CYNG_LOG_TRACE(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> start readout "
+				<< meter_
+				<< " at "
+				<< tp);
+			query_metering_data();
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> cannot start readout "
+				<< meter_
+				<< " - wrong state");
+		}
+
+
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
@@ -442,6 +466,7 @@ namespace node
 	{
 		auto const frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		state_ = internal_state::READING;
 
 		auto const [tag] = cyng::tuple_cast<
 			boost::uuids::uuid		//	[0] record tag
@@ -632,6 +657,7 @@ namespace node
 		//	[57da25c7-85a8-4f05-966f-904f52d3204b,35]
 		auto const frame = ctx.get_frame();
 		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		state_ = internal_state::AUTHORIZED;
 
 		auto const [tag, count] = cyng::tuple_cast<
 			boost::uuids::uuid,		//	[0] record tag

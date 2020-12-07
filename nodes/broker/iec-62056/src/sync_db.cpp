@@ -13,6 +13,7 @@
 #include <cyng/table/meta.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>
+#include <cyng/set_cast.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/nil_generator.hpp>
@@ -28,7 +29,7 @@ namespace node
 
 		for (auto const& tbl : db_sync::tables_) {
 			if (!tbl.custom_) {
-				if (!create_table(db, tbl.name_)) {
+				if (!create_table(db, tbl.name_, tbl.pass_trough_)) {
 					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
 				}
 				else {
@@ -40,7 +41,7 @@ namespace node
 				//
 				//	create custom table
 				//
-				db.create_table(create_table_tasks(tbl.name_));
+				db.create_table(create_table_tasks(tbl.name_), false);
 			}
 		}
 
@@ -388,6 +389,54 @@ namespace node
 				}
 			}
 		}
+		else if (boost::algorithm::equals(table, "_EventQueue")) {
+
+			//
+			//	 
+			//	{
+			//		("key":%(("pk":43f6946b-d483-450d-8be2-ab22e148819d))),
+			//		("data":%(
+			//			("at":2020-12-03 12:27:46.78353500),
+			//			("data":%(("channel":config.bridge),("class":IEC-62056-21:2002 broker))),
+			//			("gen":0),
+			//			("key":[c949e537-df5d-4f22-99d1-340c162bc9bf]),
+			//			("table":TBridge),
+			//			("type":readout)))
+			//	}
+			//
+
+			//auto const rec = db_.lookup(table, key);
+			cyng::table::record rec(db_.meta(table), key, data, gen);
+			BOOST_ASSERT_MSG(!rec.empty(), "event not found");
+
+			auto const type = cyng::value_cast(rec["type"], "");
+			auto const tbl_name = cyng::value_cast(rec["table"], "");
+
+			if (boost::algorithm::equals(type, "readout")
+				&& boost::algorithm::equals(tbl_name, "TBridge")) {
+
+				CYNG_LOG_INFO(logger_, "readout event "
+					<< cyng::io::to_str(rec.convert()));
+
+				auto const tbl_key = cyng::to_vector(rec["key"]);
+
+				//
+				//	signal readout
+				//
+				auto const rec_tsk = db_.lookup("_Tasks", tbl_key);
+				if (!rec_tsk.empty()) {
+					vm_.async_run(cyng::generate_invoke("mux.readout.task", rec_tsk["task"], rec_tsk["at"]));
+				}
+
+			}
+
+			//
+			//	remove event
+			//
+			db_.erase(table, key, ctx.tag());
+
+		}
+
 		return true;
 	}
 
@@ -459,12 +508,13 @@ namespace node
 	/**
 	 * Initialize all used table names
 	 */
-	const std::array<db_sync::tbl_descr, 4>	db_sync::tables_ =
+	const db_sync::tables_t	db_sync::tables_ =
 	{
-		tbl_descr{"TMeter", false},
-		tbl_descr{"TBridge", false},
-		tbl_descr{"_IECUplink", false},	//	broker
-		tbl_descr{"_Tasks", true},	//	internal task
+		tbl_descr{"TMeter", false, false},
+		tbl_descr{"TBridge", false, false},
+		tbl_descr{"_IECUplink", false, false},	//	broker
+		tbl_descr{"_Tasks", true, false},		//	internal table
+		tbl_descr{"_EventQueue", false, true}	//	pass through
 	};
 
 	cyng::table::meta_table_ptr create_table_tasks(std::string name)

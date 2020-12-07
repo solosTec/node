@@ -14,6 +14,40 @@ namespace @PROJECT_NAME@
 	constexpr char SALT[]  =	"${${PROJECT_NAME}_SALT_STRING}";
 	constexpr unsigned ADDRESS_MODEL = ${${PROJECT_NAME}_ADDRESS_MODEL};	//	bits
 	constexpr unsigned PREFERRED_BUFFER_SIZE = ${${PROJECT_NAME}_PREFERRED_BUFFER_SIZE};	//	bytes
+
+	enum class_e {
+		_MAIN,	//	"main"
+		_DASH,	//	"dash"
+		_DASHS,	//	"dashs"
+		_SETUP,	//	"setup"
+		_IPT,	//	"ipt"
+		_IPTS,	//	"ipts"
+		_MODEM,	//	"modem"
+		_BROKER_IEC,	//	"IEC-62056-21:2002 broker"
+		_BROKER_WMBUS,	//	"EN13757-4 wM-Bus broker"
+		_IMEGA,	//	"CU"
+		_MQTT,	//	"mqtt"
+		_LORA,	//	"LoRa"
+		_CSV,	//	"csv"
+		_STAT,	//	"statistics"
+	};
+
+	constexpr char const * classes[] = {
+		"main",
+		"dash",
+		"dashs",
+		"setup",
+		"ipt",
+		"ipts",
+		"modem",
+		"IEC-62056-21:2002 broker",
+		"EN13757-4 wM-Bus broker",
+		"iMega",	//	e350
+		"mqtt",
+		"LoRa",
+		"csv",	//	data export
+		"statistics",
+	};
 }
 
 #define @PROJECT_NAME@_PLATFORM	 	"@CMAKE_SYSTEM@"

@@ -581,7 +581,7 @@ namespace node
 
 	bool create_table(cyng::store::db& db, std::string name)
 	{
-		return db.create_table(create_meta(name));
+		return db.create_table(create_meta(name), false);
 	}
 }
 

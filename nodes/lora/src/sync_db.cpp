@@ -23,17 +23,17 @@ namespace node
 		//	https://www.thethingsnetwork.org/docs/lorawan/address-space.html#devices
 		//	DevEUI - 64 bit end-device identifier, EUI-64 (unique)
 		//	DevAddr - 32 bit device address (non-unique)
-		if (!create_table(cache, "TLoRaDevice"))
+		if (!create_table(cache, "TLoRaDevice", false))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TLoRaDevice");
 		}
 
-		if (!create_table(cache, "_Config"))
+		if (!create_table(cache, "_Config", false))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _Config");
 		}
 
-		if (!create_table(cache, "_HTTPSession"))
+		if (!create_table(cache, "_HTTPSession", false))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _HTTPSession");
 		}

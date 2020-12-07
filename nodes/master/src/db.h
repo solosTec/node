@@ -132,9 +132,11 @@ namespace node
 		struct tbl_descr {
 			std::string const name_;
 			bool const custom_;
-			inline tbl_descr(std::string name, bool custom)
+			bool const pass_trough_;
+			inline tbl_descr(std::string name, bool custom, bool pass_trough)
 				: name_(name)
 				, custom_(custom)
+				, pass_trough_(pass_trough)
 			{}
 		};
 
@@ -142,7 +144,8 @@ namespace node
 		/**
 		 * List of all used table names
 		 */
-		const static std::array<tbl_descr, 24>	tables_;
+		using tables_t = std::array<tbl_descr, 25>;
+		static const tables_t tables_;
 
 	public:
 		cache(cyng::store::db&, boost::uuids::uuid tag);

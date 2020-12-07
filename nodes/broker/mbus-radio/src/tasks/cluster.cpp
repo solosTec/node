@@ -8,6 +8,7 @@
 #include <tasks/cluster.h>
 #include <sync_db.h>
 
+#include <smf/shared/protocols.h>
 #include <smf/cluster/generator.h>
 
 #include <cyng/async/task/task_builder.hpp>
@@ -67,7 +68,7 @@ namespace node
 					//	generate new key
 					, cyng::table::key_generator(tag)
 					//	build data vector
-					, cyng::table::data_generator(ep.address(), ep.port(), "EN13757-4 wM-Bus")
+					, cyng::table::data_generator(ep.address(), ep.port(), protocol_wMBUS)
 					, 0
 					, ctx.tag()));
 			}
@@ -127,7 +128,7 @@ namespace node
 		//	sync tables
 		//
 		for (auto const& tbl : db_sync::tables_) {
-			CYNG_LOG_INFO(logger_, "subscribe " << tbl.name_);
+			CYNG_LOG_INFO(logger_, "subscribe table: " << tbl.name_);
 			sync_table(tbl.name_);
 		}
 
@@ -169,7 +170,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "EN13757-4 wM-Bus broker"));
+			, NODE::classes[NODE::class_e::_BROKER_WMBUS]));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
 			<< config_.get().host_

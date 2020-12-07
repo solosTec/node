@@ -687,7 +687,7 @@ namespace node
 			//	Contains data of validation report
 			//
 			return cyng::table::make_meta_table<1, 5>(name,
-				{ "pk"			//	[uuid] same key as TMeter
+				{ "pk"			//	[string] 
 				, "from"		//	[ts] start time
 				, "to"			//	[ts] end time
 				, "type"		//	[u32] type of validation (missing, implausible)
@@ -709,16 +709,46 @@ namespace node
 				, 0	//	edited
 				});
 		}
+		else if (boost::algorithm::equals(name, "_EventQueue")) {
 
+			//
+			//	Contains data of validation report
+			//
+			return cyng::table::make_meta_table<1, 5>(name,
+				{ "pk"			//	[uuid] same key as TMeter
+				, "table"		//	[string] table name
+				, "key"			//	[vec] any vector as table key
+				, "at"			//	[ts] start time
+				, "type"		//	[string] event type
+				, "data"		//	[pm]
+				},
+				{ cyng::TC_UUID		//	pk
+				, cyng::TC_STRING	//	table
+				, cyng::TC_VECTOR	//	key
+				, cyng::TC_TIME_POINT	//	at
+				, cyng::TC_STRING		//	type
+				, cyng::TC_PARAM_MAP	//	data
+				},
+				{ 36
+				, 0		//	table
+				, 0		//	key
+				, 0		//	at
+				, 0		//	type
+				, 0		//	data
+				});
+		}
+		
 		//
 		//	table name not defined
 		//
 		return cyng::table::meta_table_ptr();
 	}
 
-	bool create_table(cyng::store::db& db, std::string name)
+	bool create_table(cyng::store::db& db
+		, std::string const& table_name
+		, bool pass_through)
 	{
-		return db.create_table(create_meta(name));
+		return db.create_table(create_meta(table_name), pass_through);
 	}
 
 }

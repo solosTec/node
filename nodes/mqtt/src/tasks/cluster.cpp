@@ -119,7 +119,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "mqtt"));
+			, NODE::classes[NODE::class_e::_MQTT]));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to "
 			<< config_.get().host_

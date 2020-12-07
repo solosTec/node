@@ -9,6 +9,7 @@
 
 #include <smf/cluster/generator.h>
 #include <smf/sml/srv_id_io.h>
+#include <smf/shared/protocols.h>
 
 #include <cyng/io/io_bytes.hpp>
 #include <cyng/io/io_buffer.h>
@@ -179,8 +180,8 @@ namespace node
 					, vec.at(0)
 					, vec.at(1)
 					, "plain" //	login scheme
-					, cyng::param_map_factory("tp-layer", "TCP/IP")
-					("data-layer", "IEC-62056-21:2002")
+					, cyng::param_map_factory("tp-layer", protocol_TCP)
+					("data-layer", protocol_IEC)
 					("security", "public")
 					("time", std::chrono::system_clock::now())
 					("local-ep", socket_.remote_endpoint())

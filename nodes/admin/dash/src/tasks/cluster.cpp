@@ -236,6 +236,7 @@ namespace node
 		cache_.clear("_LoRaUplink", bus_->vm_.tag());
 		cache_.clear("_wMBusUplink", bus_->vm_.tag());
 		cache_.clear("_IECUplink", bus_->vm_.tag());
+		cache_.clear("_EventQueue", bus_->vm_.tag());
 
 		for (auto const& tbl : tables::list_) {
 			if (!tbl.local_) {
@@ -299,7 +300,7 @@ namespace node
 			, config_.get().pwd_
 			, config_.get().auto_config_
 			, config_.get().group_
-			, "dash"));
+			, NODE::classes[NODE::class_e::_DASH]));
 
 		CYNG_LOG_INFO(logger_, "cluster login request is sent to " 
 			<< config_.get().host_
@@ -437,20 +438,28 @@ namespace node
 				, channel
 				, reader);
 		}
-		else if (boost::algorithm::equals(cmd, "com:node"))
-		{
-			node::fwd_com_node(logger_
-				, ctx
-				, tag_ws
-				, channel
-				, reader);
-		}
+		//else if (boost::algorithm::equals(cmd, "com:node"))
+		//{
+		//	node::fwd_com_node(logger_
+		//		, ctx
+		//		, tag_ws
+		//		, channel
+		//		, reader);
+		//}
 		else if (boost::algorithm::equals(cmd, "cleanup"))
 		{
 			node::fwd_cleanup(logger_
 				, ctx
 				, channel
 				, reader);
+		}
+		else if (boost::algorithm::equals(cmd, "readout"))
+		{
+			node::fwd_readout(logger_
+				, ctx
+				, channel
+				, reader
+				, uidgen_());
 		}
 		else
 		{

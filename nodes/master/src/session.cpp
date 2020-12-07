@@ -112,6 +112,11 @@ namespace node
 		vm_.register_function("bus.cleanup", 2, std::bind(&session::bus_cleanup, this, std::placeholders::_1));
 
 		//
+		//	execute readout
+		//
+		//vm_.register_function("bus.readout", 4, std::bind(&session::bus_readout, this, std::placeholders::_1));
+
+		//
 		//	statistical data
 		//
 		vm_.async_run(cyng::generate_invoke("log.msg.debug", cyng::invoke("lib.size"), " callbacks registered"));
@@ -312,7 +317,7 @@ namespace node
 		//
 		//	clean up "EN13757-4 wM-Bus broker" broker
 		//
-		if (boost::algorithm::equals(node_class, "EN13757-4 wM-Bus broker")) {
+		if (boost::algorithm::equals(node_class, NODE::classes[NODE::class_e::_BROKER_WMBUS])) {
 
 			cache_.write_table("_Broker", [&](cyng::store::table* tbl_broker)->void {
 
@@ -327,7 +332,7 @@ namespace node
 		//
 		//	clean up "IEC-62056-21:2002 broker" broker
 		//
-		if (boost::algorithm::equals(node_class, "IEC-62056-21:2002 broker")) {
+		if (boost::algorithm::equals(node_class, NODE::classes[NODE::class_e::_BROKER_IEC])) {
 
 			cache_.write_table("_Broker", [&](cyng::store::table* tbl_broker)->void {
 
@@ -1214,7 +1219,7 @@ namespace node
 	void session::bus_cleanup(cyng::context& ctx)
 	{
 		auto const frame = ctx.get_frame();
-		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
+		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
 
 		auto const tpl = cyng::tuple_cast<
 			std::string,			//	[0] table
@@ -1262,6 +1267,12 @@ namespace node
 
 	}
 
+	//void session::bus_readout(cyng::context& ctx)
+	//{
+	//	auto const frame = ctx.get_frame();
+	//	CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_type(frame));
+
+	//}
 
 	void session::bus_req_push_data(cyng::context& ctx)
 	{

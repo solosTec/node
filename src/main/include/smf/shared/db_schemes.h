@@ -31,7 +31,9 @@ namespace node
 	/**
 	 * create a table with the specified name.
 	 */
-	bool create_table(cyng::store::db&, std::string);
+	bool create_table(cyng::store::db&
+		, std::string const& table_name
+		, bool pass_through);
 
 }
 

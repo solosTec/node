@@ -663,7 +663,7 @@ namespace node
 		, cyng::reader<cyng::object> const& reader)
 	{
 		//	channel: "config.bridge"
-		CYNG_LOG_TRACE(logger, "ws.read - cleanup channel [" << channel << "]");
+		CYNG_LOG_TRACE(logger, ctx.get_name() << " - [" << channel << "]");
 		auto const rel = channel::find_rel_by_channel(channel);
 
 		if (!rel.empty()) {
@@ -673,6 +673,52 @@ namespace node
 		{
 			CYNG_LOG_WARNING(logger, "ws.read - unknown cleanup channel [" << channel << "]");
 		}
+	}
+
+
+	void fwd_readout(cyng::logging::log_ptr logger
+		, cyng::context& ctx
+		, std::string const& channel
+		, cyng::reader<cyng::object> const& reader
+		, boost::uuids::uuid tag)
+	{
+		//	channel: "config.bridge"
+		CYNG_LOG_TRACE(logger, ctx.get_name() << " - [" << channel << "]");
+		auto const rel = channel::find_rel_by_channel(channel);
+
+		if (!rel.empty()) {
+
+			auto const key = cyng::to_vector(reader.get("key"));
+			auto const pk = cyng::table::key_generator(tag);
+			auto const data = cyng::table::data_generator(
+				"TBridge",
+				key,
+				std::chrono::system_clock::now(),
+				"readout",
+				cyng::param_map_factory
+					("channel", channel)
+					("class", NODE::classes[NODE::class_e::_BROKER_IEC])
+					()
+			);
+			
+			//	forward request
+			ctx.queue(bus_req_db_insert("_EventQueue"
+				, pk
+				, data
+				, 0		// generation
+				, ctx.tag()));
+
+			//cache.insert("_EventQueue"
+			//	, pk
+			//	, data
+			//	, 0		// generation
+			//	, ctx.tag());
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger, "ws.read - unknown cleanup channel [" << channel << "]");
+		}
+
 	}
 
 	void fwd_com_sml(cyng::logging::log_ptr logger
@@ -765,21 +811,21 @@ namespace node
 			, cyng::to_vector(reader.get("params"))));
 	}
 
-	void fwd_com_node(cyng::logging::log_ptr logger
-		, cyng::context& ctx
-		, boost::uuids::uuid tag_ws
-		, std::string const& channel
-		, cyng::reader<cyng::object> const& reader)
-	{
-		auto const tag = cyng::value_cast(reader.get("key"), boost::uuids::nil_uuid());
-		CYNG_LOG_WARNING(logger, "ws tag: " << tag_ws << " - NODE key" << tag);
+	//void fwd_com_node(cyng::logging::log_ptr logger
+	//	, cyng::context& ctx
+	//	, boost::uuids::uuid tag_ws
+	//	, std::string const& channel
+	//	, cyng::reader<cyng::object> const& reader)
+	//{
+	//	auto const tag = cyng::value_cast(reader.get("key"), boost::uuids::nil_uuid());
+	//	CYNG_LOG_WARNING(logger, "ws tag: " << tag_ws << " - NODE key" << tag);
 
-		ctx.queue(bus_req_com_node(tag	//	key
-			, tag_ws	//	web-socket tag
-			, channel
-			, cyng::to_vector(reader.get("section"))
-			, cyng::to_vector(reader.get("params"))));
-	}
+	//	ctx.queue(bus_req_com_node(tag	//	key
+	//		, tag_ws	//	web-socket tag
+	//		, channel
+	//		, cyng::to_vector(reader.get("section"))
+	//		, cyng::to_vector(reader.get("params"))));
+	//}
 
 	forward::forward(cyng::logging::log_ptr logger
 		, cyng::store::db& db

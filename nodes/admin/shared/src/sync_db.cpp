@@ -29,7 +29,7 @@ namespace node
 
 		for (auto const& tbl : tables::list_) {
 			if (!tbl.custom_) {
-				if (!create_table(db, tbl.name_)) {
+				if (!create_table(db, tbl.name_, tbl.pass_trough_)) {
 					CYNG_LOG_FATAL(logger, "cannot create table: " << tbl.name_);
 				}
 				else {
@@ -94,7 +94,7 @@ namespace node
 			, 64	//	model
 			, 64	//	vFirmware
 			, 0		//	online/offline state
-			}))) 
+			}), false))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TGateway");
 		}
@@ -154,7 +154,7 @@ namespace node
 			, 0		//	on/offline state
 			, 32	//	region
 			, 64	//	address
-			})))
+			}), false))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TMeter");
 		}
@@ -188,7 +188,7 @@ namespace node
 			, 0
 			, 8
 			, 32
-			})))
+			}), false))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table TBridge");
 		}
@@ -205,7 +205,7 @@ namespace node
 			},
 			{ 3
 			, 128	//	organisation
-			})))
+			}), false))
 		{
 			CYNG_LOG_FATAL(logger, "cannot create table _OUI");
 		}

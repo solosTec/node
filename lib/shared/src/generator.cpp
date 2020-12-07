@@ -193,6 +193,19 @@ namespace node
 			;
 	}
 
+	//cyng::vector_t bus_readout(std::string const& table
+	//	, cyng::vector_t const& key
+	//	, std::string node_type
+	//	, boost::uuids::uuid source)
+	//{
+	//	cyng::vector_t vec{};
+	//	return vec << cyng::generate_invoke_unwinded("stream.serialize"
+	//		, cyng::generate_invoke_remote_unwinded("bus.readout", table, key, node_type, source))
+	//		<< cyng::generate_invoke_unwinded("stream.flush")
+	//		;
+	//}
+
+
 	cyng::vector_t bus_res_db_remove(std::string const& table
 		, cyng::vector_t const& key)
 	{
@@ -408,18 +421,18 @@ namespace node
 			;
 	}
 
-	cyng::vector_t bus_req_com_node(boost::uuids::uuid key
-		, boost::uuids::uuid tag_ws
-		, std::string channel
-		, cyng::vector_t sections
-		, cyng::vector_t params)
-	{
-        cyng::vector_t vec{};
-		return vec << cyng::generate_invoke_unwinded("stream.serialize"
-			, cyng::generate_invoke_remote_unwinded("bus.req.com.node", cyng::code::IDENT, cyng::invoke("bus.seq.next"), key, tag_ws, channel, sections, params))
-			<< cyng::generate_invoke_unwinded("stream.flush")
-			;
-	}
+	//cyng::vector_t bus_req_com_node(boost::uuids::uuid key
+	//	, boost::uuids::uuid tag_ws
+	//	, std::string channel
+	//	, cyng::vector_t sections
+	//	, cyng::vector_t params)
+	//{
+ //       cyng::vector_t vec{};
+	//	return vec << cyng::generate_invoke_unwinded("stream.serialize"
+	//		, cyng::generate_invoke_remote_unwinded("bus.req.com.node", cyng::code::IDENT, cyng::invoke("bus.seq.next"), key, tag_ws, channel, sections, params))
+	//		<< cyng::generate_invoke_unwinded("stream.flush")
+	//		;
+	//}
 
 	cyng::vector_t bus_req_modify_gateway(std::string section
 		, cyng::vector_t const& key

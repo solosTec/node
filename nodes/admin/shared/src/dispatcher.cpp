@@ -5,8 +5,9 @@
  * 
  */ 
 
-#include "dispatcher.h"
-#include "tables.h"
+#include <dispatcher.h>
+#include <tables.h>
+
 #include <cyng/json.h>
 #include <cyng/io/serializer.h>
 #include <cyng/tuple_cast.hpp>

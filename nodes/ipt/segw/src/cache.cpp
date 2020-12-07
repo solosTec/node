@@ -628,7 +628,7 @@ namespace node
 		//	create all cache(d) tables
 		//
 		for (auto const& tbl : cache::mm_) {
-			db.create_table(tbl.second);
+			db.create_table(tbl.second, false);
 		}
 	}
 
