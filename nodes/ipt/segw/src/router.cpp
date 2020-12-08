@@ -319,14 +319,14 @@ namespace node
 		//	example:
 		//	[]
 		//
-		const cyng::vector_t frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		CYNG_LOG_DEBUG(logger_, ctx.get_name()
 			<< " #"
 			<< messages_.size()
 			<< " - "
 			<< cyng::io::to_str(frame));
 
-		auto const tpl = cyng::tuple_cast<
+		auto const [trx, srv_id, user, pwd, path] = cyng::tuple_cast<
 			std::string,		//	[0] trx
 			cyng::buffer_t,		//	[1] server id
 			std::string,		//	[2] user
@@ -334,17 +334,17 @@ namespace node
 			cyng::vector_t		//	[4] path (OBIS)
 		>(frame);
 
-		auto const path = sml::vector_to_path(std::get<4>(tpl));
-		BOOST_ASSERT(!path.empty());
+		auto const p = sml::vector_to_path(path);
+		BOOST_ASSERT(!p.empty());
 
 		//
 		//	routed to "get proc parameter" handler
 		//
-		messages_.push_back(get_proc_parameter_.generate_response(path
-			, std::get<0>(tpl)
-			, std::get<1>(tpl)
-			, std::get<2>(tpl)
-			, std::get<3>(tpl)));
+		messages_.push_back(get_proc_parameter_.generate_response(p
+			, trx
+			, srv_id
+			, user
+			, pwd));
 
 	}
 

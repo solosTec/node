@@ -38,9 +38,6 @@ namespace node
 		 */
 		cyng::continuation process(cyng::buffer_t, std::size_t);
 
-	private:
-		//void init();
-
 
 	private:
 		cyng::async::base_task& base_;
@@ -51,10 +48,6 @@ namespace node
 		cyng::logging::log_ptr logger_;
 
 		std::function<void(cyng::buffer_t, std::size_t)> cb_;
-		/**
-		 * manage task state
-		 */
-		//bool initialized_;
 	};
 
 }

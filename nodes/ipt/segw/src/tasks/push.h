@@ -9,6 +9,7 @@
 #define NODE_SEGW_TASK_PUSH_H
 
 #include <smf/sml/intrinsics/obis.h>
+#include <smf/sml/protocol/message.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
@@ -87,10 +88,11 @@ namespace node
 		cyng::continuation process(bool, std::uint32_t, std::uint32_t, std::uint8_t);
 
 	private:
-		cyng::tuple_t send_push_data(sml::res_generator&
+		void send_push_data(sml::res_generator&
 			, sml::trx&
 			, std::uint32_t channel
-			, std::uint32_t source);
+			, std::uint32_t source
+			, sml::messages_t&);
 		std::vector<sml::obis> collect_obis_codes(cyng::store::table const* tbl_dm);
 
 		//

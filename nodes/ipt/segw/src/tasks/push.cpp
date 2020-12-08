@@ -197,8 +197,8 @@ namespace node
 			//
 			//	SML data
 			//
-
-			messages.push_back(send_push_data(gen, trx, channel, source));
+			send_push_data(gen, trx, channel, source, messages);
+			//messages.push_back(send_push_data(gen, trx, channel, source));
 
 			//
 			//	SML close request
@@ -224,12 +224,14 @@ namespace node
 		return cyng::continuation::TASK_CONTINUE;
 	}
 
-	cyng::tuple_t push::send_push_data(sml::res_generator& gen
+	void push::send_push_data(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{
 		bool stop{ false };
+
 		//
 		//	Write data into a memory table "_PushReq" triggers listener
 		//	that will send the push data to an ipt master.
@@ -259,19 +261,19 @@ namespace node
 						//
 						switch (profile_.to_uint64()) {
 						case  sml::CODE_PROFILE_1_MINUTE:
-							collect_profile_8181C78610FF(gen, trx, channel, source);
+							messages.push_back(collect_profile_8181C78610FF(gen, trx, channel, source));
 							break;
 						case sml::CODE_PROFILE_15_MINUTE:
-							collect_profile_8181C78611FF(gen, trx, channel, source);
+							messages.push_back(collect_profile_8181C78611FF(gen, trx, channel, source));
 							break;
 						case sml::CODE_PROFILE_60_MINUTE:
-							collect_profile_8181C78612FF(gen, trx, channel, source);
+							messages.push_back(collect_profile_8181C78612FF(gen, trx, channel, source));
 							break;
 						case sml::CODE_PROFILE_24_HOUR:
-							collect_profile_8181C78613FF(gen, trx, channel, source);
+							messages.push_back(collect_profile_8181C78613FF(gen, trx, channel, source));
 							break;
 						case sml::CODE_PROFILE_LAST_2_HOURS:
-							//collect_profile_8181C78614FF(tbl_req);
+							messages.push_back(collect_profile_8181C78614FF(gen, trx, channel, source));
 							break;
 						case sml::CODE_PROFILE_LAST_WEEK:
 							//collect_profile_8181C78615FF(tbl_req);
@@ -339,8 +341,6 @@ namespace node
 			
 		}	, cyng::store::read_access("_DataCollector")
 			, cyng::store::read_access("_DataMirror"));
-
-		return cyng::tuple_factory();
 	}
 
 	std::vector<sml::obis> push::collect_obis_codes(cyng::store::table const* tbl)
@@ -406,7 +406,7 @@ namespace node
 				if (tsidx_ == 0) {
 					tsidx_ = tsidx;
 				}
-				//	(3) P12.actTime
+				//	(3) P13.actTime
 				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
 				//	4. status
 				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
@@ -525,7 +525,7 @@ namespace node
 				if (tsidx_ == 0) {
 					tsidx_ = tsidx;
 				}
-				//	(3) P12.actTime
+				//	(3) P13.actTime
 				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
 				//	4. status
 				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
@@ -738,6 +738,118 @@ namespace node
 			"FROM TProfile_8181C78613FF P13 INNER JOIN TStorage_8181C78613FF S13 ON P13.clientID = S13.clientID AND P13.tsidx = S13.tsidx "
 			"WHERE P13.clientID = ?;";
 
+		auto s = storage_.get_session();
+		auto stmt = s.create_statement();
+		auto const r = stmt->prepare(sql);
+		if (r.second) {
+
+			//
+			//	WHERE clause
+			//
+			stmt->push(cyng::make_object(srv_id_), 9);
+
+			//
+			//	read all results
+			//
+			cyng::tuple_t period_list;
+			std::uint8_t counter{ 0 };
+			tsidx_ = 0;
+			std::chrono::system_clock::time_point act_time = std::chrono::system_clock::now();
+			while (auto res = stmt->get_result()) {
+
+				//
+				//	Convert SQL result to record
+				//
+				BOOST_ASSERT(res->column_count() == 9);
+
+				//	(1) P13.clientID
+				auto const srv_id = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
+				BOOST_ASSERT(srv_id_ == srv_id);
+				//	(2) P13.tsidx
+				auto const tsidx = cyng::value_cast<std::uint64_t>(res->get(2, cyng::TC_UINT64, 0), 0);
+				if (tsidx_ == 0) {
+					tsidx_ = tsidx;
+				}
+				//	(3) P13.actTime
+				act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), std::chrono::system_clock::now());
+				//	4. status
+				//	(5) S12.OBIS
+				sml::obis const code(cyng::to_buffer(res->get(5, cyng::TC_BUFFER, 6)));
+				//	(6) S12.val
+				auto const val = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "");
+				//	(7) S12.type
+				auto const type = cyng::value_cast<std::uint32_t>(res->get(7, cyng::TC_UINT32, 0), 0);
+				//	(8) S12.scaler
+				auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
+				//	(9) S12.unit
+				auto const unit = cyng::value_cast<std::uint8_t>(res->get(9, cyng::TC_UINT8, 0), 0);
+
+				//
+				//	restore object from string and type info
+				//
+				auto const obj = cyng::table::restore(val, type);
+
+				CYNG_LOG_DEBUG(logger_, "task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> push "
+					<< sml::from_server_id(srv_id)
+					<< ", "
+					<< tsidx
+					<< " - "
+					<< cyng::to_str(get_ts(profile_, tsidx))
+					<< ", "
+					<< cyng::io::to_str(res->get(3, cyng::TC_TIME_POINT, 0)).substr(0, 19)
+					<< ", "
+					<< cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), -1)
+					<< ", "
+					<< code.to_str()
+					<< ", "
+					<< cyng::io::to_str(obj)
+					<< " "
+					<< mbus::get_unit_name(unit));
+
+				if (tsidx_ != tsidx) {
+					tsidx_ = tsidx;
+					//
+					//	build push msg
+					//
+					gen.get_profile_list(*trx++
+						, srv_id_
+						, sml::OBIS_PROFILE_24_HOUR
+						, act_time //	act_time
+						, 0 //	reg_period
+						, std::chrono::system_clock::now() //	val_time
+						, 0		//	status
+						, std::move(period_list));
+
+					BOOST_ASSERT(period_list.empty());
+				}
+
+				period_list.push_back(sml::period_entry(code
+					, unit
+					, scaler
+					, obj));
+
+				//
+				//	update counter
+				//
+				++counter;
+			}
+
+			//
+			//	build push msg
+			//
+			return gen.get_profile_list(*trx++
+				, srv_id_
+				, sml::OBIS_PROFILE_24_HOUR
+				, act_time //	act_time
+				, 0 //	reg_period
+				, std::chrono::system_clock::now() //	val_time
+				, 0		//	status
+				, std::move(period_list));
+		}
 		return cyng::tuple_factory();
 	}
 

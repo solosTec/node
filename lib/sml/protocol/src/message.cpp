@@ -16,7 +16,6 @@
 #include <cyng/buffer_cast.h>
 #include <cyng/numeric_cast.hpp>
 #include <cyng/factory/set_factory.h>
-//#include <cyng/compatibility/optional.hpp>
 
 namespace node
 {

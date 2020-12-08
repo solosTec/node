@@ -83,12 +83,6 @@ namespace node
 					<< std::endl
 					;
 			}
-
-			//std::
-			//os
-			//	<< port
-			//	<< std::endl
-			//	;
 		}
 
 		return EXIT_SUCCESS;
