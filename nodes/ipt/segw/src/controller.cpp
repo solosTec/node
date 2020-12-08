@@ -38,7 +38,7 @@
 #include <cyng/util/split.h>
 #include <cyng/parser/chrono_parser.h>
 
-#include <crypto/hash/sha512.h>
+#include <crypto/hash/sha1.h>
 
 #include <boost/core/ignore_unused.hpp>
 
@@ -116,9 +116,9 @@ namespace node
 		//
 		//	create account names/password as hash from host name + salt
 		//
-		auto const pwd = cyng::io::to_str(cyng::sha512_hash(host + NODE::SALT));
-		auto const rs484_pwd = cyng::io::to_str(cyng::sha512_hash(host + NODE::SALT + "rs485"));	//	broker
-		auto const wmbus_pwd = cyng::io::to_str(cyng::sha512_hash(host + NODE::SALT + "wmbus"));	//	broker
+		auto const pwd = cyng::io::to_str(cyng::sha1_hash(host + NODE::SALT));
+		auto const rs484_pwd = cyng::io::to_str(cyng::sha1_hash(host + NODE::SALT + "rs485"));	//	broker
+		auto const wmbus_pwd = cyng::io::to_str(cyng::sha1_hash(host + NODE::SALT + "wmbus"));	//	broker
 
 
 		return cyng::vector_factory({
@@ -284,9 +284,20 @@ namespace node
 							("account", host + "-wmbus")
 							("pwd", wmbus_pwd)
 						()
-					})
-				)))
-
+					}))
+					, cyng::param_factory("blocklist", cyng::param_map_factory
+#ifdef _DEBUG
+						("enabled", true)
+						("list", cyng::vector_factory({ "00684279", "12345678" }))
+#else
+						("enabled", false)
+						("list", cyng::vector_factory())
+#endif
+						("mode", "drop")	//	or accept
+						("period", 30 )	//	seconds
+						()
+					)
+				))
 				, cyng::param_factory("wired-LMN", cyng::tuple_factory(
 					cyng::param_factory("monitor", rnd_monitor()),	//	seconds
 #if BOOST_OS_WINDOWS
@@ -366,7 +377,6 @@ namespace node
 					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str(), 9),	//	max. variation in seconds
 					cyng::param_factory(sml::OBIS_IF_1107_MAX_VARIATION.to_str() + "-desc", "MAX_VARIATION"),	//	max. variation in seconds
 					cyng::param_factory("request", "/?!")	//	generic IEC request
-
 				))
 				, cyng::param_factory("mbus", cyng::tuple_factory(
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_RO_INTERVAL.to_str(), 3600),	//	readout interval in seconds
@@ -375,8 +385,8 @@ namespace node
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_INTERVAL.to_str() + "-desc", "MBUS_SEARCH_INTERVAL"),	//	search interval in seconds
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_DEVICE.to_str(), true),	//	search device now and by restart
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_SEARCH_DEVICE.to_str() + "-desc", "MBUS_SEARCH_DEVICE"),	//	search device now and by restart
-					cyng::param_factory(sml::OBIS_CLASS_MBUS_AUTO_ACTICATE.to_str(), false),	//	automatic activation of meters 
-					cyng::param_factory(sml::OBIS_CLASS_MBUS_AUTO_ACTICATE.to_str() + "-desc", "MBUS_SEARCH_DEVICE"),	//	automatic activation of meters 
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_AUTO_ACTIVATE.to_str(), false),	//	automatic activation of meters 
+					cyng::param_factory(sml::OBIS_CLASS_MBUS_AUTO_ACTIVATE.to_str() + "-desc", "MBUS_SEARCH_DEVICE"),	//	automatic activation of meters 
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_BITRATE.to_str(), 82),	//	used baud rates(bitmap)
 					cyng::param_factory(sml::OBIS_CLASS_MBUS_BITRATE.to_str() + "-desc", "MBUS_BITRATE"),	//	used baud rates(bitmap)
 					cyng::param_factory("generate-profile", true)
@@ -415,7 +425,8 @@ namespace node
 				, cyng::param_factory("ipt-param", cyng::tuple_factory(
 					cyng::param_factory(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str(), 1u),	//	minutes
 					cyng::param_factory(sml::OBIS_TCP_CONNECT_RETRIES.to_str(), 20u),
-					cyng::param_factory(sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01).to_str(), 0u)	//	has SSL configuration
+					cyng::param_factory(sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01).to_str(), 0u),	//	has SSL configuration
+					cyng::param_factory("enabled", true)
 				))
 
 				//	built-in meter
@@ -912,7 +923,7 @@ namespace node
 				<< json_path_
 				<< " with index ["
 				<< config_index_
-				<< "] into database "
+				<< "] from database "
 				<< cyng::io::to_str(db_cfg)
 				<< std::endl;
 

@@ -19,8 +19,6 @@
 #include <cstdint>
 #include <array>
 
-#include <boost/uuid/random_generator.hpp>
-
 namespace node
 {
 	namespace mbus	
@@ -46,14 +44,6 @@ namespace node
 				, cyng::crypto::aes_128_key const& aes)>;
 
 			/**
-			 * Callback for decoded data
-			 */
-			using cb_data = std::function<void(cyng::buffer_t const& srv_id
-				, cyng::buffer_t const& data
-				, std::uint8_t status
-				, boost::uuids::uuid pk)>;
-
-			/**
 			 * Callback for values
 			 */
 			using cb_value = std::function<void(cyng::buffer_t const& srv_id
@@ -67,10 +57,10 @@ namespace node
 			decoder(cyng::logging::log_ptr
 				, cyng::controller& vm
 				, cb_meter
-				, cb_data
 				, cb_value);
 
-			bool run(cyng::buffer_t const& srv_id
+			bool run(boost::uuids::uuid pk
+				, cyng::buffer_t const& srv_id
 				, std::uint8_t frame_type
 				, cyng::buffer_t const& payload
 				, cyng::crypto::aes_128_key const& aes);
@@ -81,21 +71,24 @@ namespace node
 			 * Applied from master with CI = 0x53, 0x55, 0x5B, 0x5F, 0x60, 0x64, 0x6Ch, 0x6D
 			 * Applied from slave with CI = 0x68, 0x6F, 0x72, 0x75, 0x7C, 0x7E, 0x9F
 			 */
-			bool read_frame_header_long(cyng::buffer_t const& srv_id
+			bool read_frame_header_long(boost::uuids::uuid pk
+				, cyng::buffer_t const& srv_id
 				, cyng::buffer_t const& payload
 				, cyng::crypto::aes_128_key const& aes);
 
 			/**
 			 * Applied from slave with CI = 0x7A
 			 */
-			bool read_frame_header_short(cyng::buffer_t const& srv_id
+			bool read_frame_header_short(boost::uuids::uuid pk
+				, cyng::buffer_t const& srv_id
 				, cyng::buffer_t const& payload
 				, cyng::crypto::aes_128_key const& aes);
 
 			/**
 			 * includes an SML parser
 			 */
-			bool read_frame_header_short_sml(cyng::buffer_t const& srv_id
+			bool read_frame_header_short_sml(boost::uuids::uuid pk
+				, cyng::buffer_t const& srv_id
 				, cyng::buffer_t const& payload
 				, cyng::crypto::aes_128_key const& aes);
 
@@ -106,19 +99,17 @@ namespace node
 			/**
 			 * read VIFs and DIFs
 			 */
-			void read_variable_data_block(cyng::buffer_t const& server_id
+			void read_variable_data_block(boost::uuids::uuid pk
+				, cyng::buffer_t const& server_id
 				, std::uint8_t const blocks
-				, cyng::buffer_t const& raw_data
-				, boost::uuids::uuid);
+				, cyng::buffer_t const& raw_data);
 
 
 		private:
 			cyng::logging::log_ptr logger_;
 			cyng::controller& vm_;
 			cb_meter cb_meter_;
-			cb_data cb_data_;
 			cb_value cb_value_;
-			boost::uuids::random_generator_mt19937 uuidgen_;
 		};
 	}
 }

@@ -54,7 +54,7 @@ namespace node
 		, decoder_(logger
 			, vm_
 			, std::bind(&session::cb_meter_decoded, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
-			, std::bind(&session::cb_data_decoded, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+			//, std::bind(&session::cb_data_decoded, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
 			, std::bind(&session::cb_value_decoded, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)
 		)
 	{
@@ -263,7 +263,8 @@ namespace node
 				, cyng::io::to_str(rec.convert())
 				, cluster_.tag()));
 
-			decoder_.run(h.get_server_id()
+			decoder_.run(uuidgen_()	//	pk
+				, h.get_server_id()
 				, h.get_frame_type()
 				, data
 				, aes);
@@ -399,20 +400,20 @@ namespace node
 
 	}
 
-	void session::cb_data_decoded(cyng::buffer_t const& srv_id
-		, cyng::buffer_t const& data
-		, std::uint8_t status
-		, boost::uuids::uuid pk)
-	{
-		//
-		//	read data block
-		//
-		CYNG_LOG_DEBUG(logger_, "decoded data of "
-			<< sml::from_server_id(srv_id)
-			<< ": "
-			<< cyng::io::to_hex(data));
+	//void session::cb_data_decoded(cyng::buffer_t const& srv_id
+	//	, cyng::buffer_t const& data
+	//	, std::uint8_t status
+	//	, boost::uuids::uuid pk)
+	//{
+	//	//
+	//	//	read data block
+	//	//
+	//	CYNG_LOG_DEBUG(logger_, "decoded data of "
+	//		<< sml::from_server_id(srv_id)
+	//		<< ": "
+	//		<< cyng::io::to_hex(data));
 
-	}
+	//}
 
 	void session::cb_value_decoded(cyng::buffer_t const& srv_id
 		, cyng::object const& val

@@ -7,8 +7,8 @@
 #ifndef NODE_LMN_H
 #define NODE_LMN_H
 
-//#include <decoder.h>
 #include <cfg_broker.h>
+
 #include <smf/mbus/decoder.h>
 
 #include <cyng/async/mux.h>
@@ -16,6 +16,7 @@
 #include <cyng/table/table_fwd.h>
 
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 namespace node
 {
@@ -133,6 +134,8 @@ namespace node
 		 * distribute incoming data to receiver (optionally parsed)
 		 */
 		std::size_t radio_distributor_;	
+
+		boost::uuids::random_generator_mt19937 uuidgen_;
 	};
 
 }

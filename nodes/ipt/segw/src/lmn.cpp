@@ -12,7 +12,6 @@
 #include <cfg_rs485.h>
 #include <cfg_wmbus.h>
 
-
 #include <tasks/lmn_port.h>
 #include <tasks/parser_serial.h>
 #include <tasks/parser_wmbus.h>
@@ -51,11 +50,9 @@ namespace node
 		, mux_(m)
 		, vm_(m.get_io_service(), tag)
 		, cache_(cfg)
-		//, decoder_wmbus_(logger, cfg, vm_)
 		, decoder_(logger
 			, vm_
 			, std::bind(&lmn::cb_wmbus_meter, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
-			, std::bind(&lmn::cb_wmbus_data, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
 			, std::bind(&lmn::cb_wmbus_value, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)
 		)
 
@@ -64,15 +61,19 @@ namespace node
 		, serial_port_(cyng::async::NO_TASK)
 
 		, radio_distributor_(cyng::async::NO_TASK)
+		, uuidgen_()
 	{
 		cyng::register_logger(logger_, vm_);
 		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
 
 		//
-		//	callback from wireless LMN
+		//	callback from wired LMN
 		//
 		vm_.register_function("wmbus.push.frame", 7, std::bind(&lmn::wmbus_push_frame, this, std::placeholders::_1));
 
+		//
+		//	incoming data from task "parser_wmbus"
+		//
 		vm_.register_function("sml.msg", 3, std::bind(&lmn::sml_msg, this, std::placeholders::_1));
 		//vm.register_function("sml.eom", 2, std::bind(&lmn::sml_eom, this, std::placeholders::_1));
 
@@ -308,22 +309,23 @@ namespace node
 				, cache_);
 
 			mux_.post(serial_port_, 1u, cyng::tuple_factory(r.first, r.second));
-		}
 
-		//
-		//	broker
-		//
-		for (auto const node : nodes) {
-			auto const r = cyng::async::start_task_sync<broker>(mux_
-				, logger_
-				, vm_
-				, cache_
-				, node.get_account()
-				, node.get_pwd()
-				, node.get_address()
-				, node.get_port());
+			//
+			//	broker
+			//
+			for (auto const node : nodes) {
+				auto const r = cyng::async::start_task_sync<broker>(mux_
+					, logger_
+					, vm_
+					, cache_
+					, node.get_account()
+					, node.get_pwd()
+					, node.get_address()
+					, node.get_port());
 
-			mux_.post(serial_port_, 1u, cyng::tuple_factory(r.first, r.second));
+				//	broker are observers of table "_Readout"
+				//mux_.post(serial_port_, 1u, cyng::tuple_factory(r.first, r.second));
+			}
 		}
 	}
 
@@ -436,11 +438,11 @@ namespace node
 		CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		//	[01242396072000630E,HYD,63,e,0003105c,72,29436587E61EBF03B900200540C83A80A8E0668CAAB369804FBEFBA35725B34A55369C7877E42924BD812D6D]
-		auto const tpl = cyng::tuple_cast<
+		auto const [srv_id, manufacturer, version, medium, dev_id, frame_type, payload] = cyng::tuple_cast<
 			cyng::buffer_t,		//	[0] server id
 			std::string,		//	[1] manufacturer
 			std::uint8_t,		//	[2] version
-			std::uint8_t,		//	[3] media
+			std::uint8_t,		//	[3] medium
 			std::uint32_t,		//	[4] device id
 			std::uint8_t,		//	[5] frame_type
 			cyng::buffer_t		//	[6] payload
@@ -449,37 +451,37 @@ namespace node
 		//
 		//	extract server ID and payload
 		//
-		cyng::buffer_t const& server_id = std::get<0>(tpl);
-		cyng::buffer_t const& payload = std::get<6>(tpl);
+		//cyng::buffer_t const& server_id = std::get<0>(tpl);
+		//cyng::buffer_t const& payload = std::get<6>(tpl);
 
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
 			<< " - server id: " 
-			<< sml::from_server_id(server_id));
+			<< sml::from_server_id(srv_id));
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
 			<< " - manufacturer: " 
-			<< std::get<1>(tpl));
+			<< manufacturer);
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
 			<< " - version: " 
-			<< +std::get<2>(tpl));
+			<< +version);
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
-			<< " - media: " 
-			<< +std::get<3>(tpl) 
+			<< " - medium: " 
+			<< +medium
 			<< " - " 
-			<< node::mbus::get_medium_name(std::get<3>(tpl)));
+			<< node::mbus::get_medium_name(medium));
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
 			<< " - device id: " 
 			<< std::setw(8)
 			<< std::setfill('0')
-			<< std::get<4>(tpl));
+			<< dev_id);
 		CYNG_LOG_DEBUG(logger_, ctx.get_name() 
 			<< " - frame type: 0x" 
 			<< std::hex
-			<< +std::get<5>(tpl));
+			<< +frame_type);
 		CYNG_LOG_DEBUG(logger_, ctx.get_name()
 			<< " - data: "
-			<< cyng::io::to_hex(std::get<6>(tpl)));
+			<< cyng::io::to_hex(payload));
 
-		if (boost::algorithm::equals(sml::from_server_id(server_id), "01-e61e-79426800-02-0e")) {
+		if (boost::algorithm::equals(sml::from_server_id(srv_id), "01-e61e-79426800-02-0e")) {
 
 			//
 			//	gas meter
@@ -489,12 +491,50 @@ namespace node
 		}
 		
 		//
+		//	check block list
+		//
+
+
+		//
+		//	new readout pk
+		//
+		auto const pk = uuidgen_();
+
+		//
+		//	generate cb_wmbus_data
+		//
+		//
+		//	"_Readout"
+		//
+		cache_.write_table("_Readout", [&](cyng::store::table* tbl) {
+			if (!tbl->insert(cyng::table::key_generator(pk)
+				, cyng::table::data_generator(srv_id
+					, manufacturer
+					, version
+					, medium
+					, dev_id
+					, frame_type
+					, payload
+					, std::chrono::system_clock::now()
+				)
+				, 1u	//	generation
+				, cache_.get_tag())) {
+
+				CYNG_LOG_ERROR(logger_, ctx.get_name()
+					<< " - write into \"_Readout\" table failed");
+
+			}
+		});
+
+
+		//
 		//	get AES key and decrypt content (AES CBC - mode 5)
 		//
-		auto const aes = cache_.get_aes_key(server_id);
+		auto const aes = cache_.get_aes_key(srv_id);
 
-		decoder_.run(server_id
-			, std::get<5>(tpl)	//	frame type
+		decoder_.run(pk
+			, srv_id
+			, frame_type	//	frame type
 			, payload
 			, aes);
 
@@ -502,47 +542,47 @@ namespace node
 		//	decoding depends on frame type and AES key from
 		//	device table
 		//
-		switch (std::get<5>(tpl)) {
-		case node::mbus::FIELD_CI_HEADER_LONG:	//	0x72
-		case node::mbus::FIELD_CI_HEADER_SHORT:	//	0x7A
-		case node::mbus::FIELD_CI_RES_SHORT_SML:	//	0x7F
-			break;
-		default:
-		{
-			//
-			//	frame type not supported
-			//
-			std::stringstream ss;
-			ss
-				<< " frame type ["
-				<< std::hex
-				<< std::setw(2)
-				<< +std::get<5>(tpl)
-				<< "] not supported - data\n"
-				;
+		//switch (frame_type) {
+		//case node::mbus::FIELD_CI_HEADER_LONG:		//	0x72
+		//case node::mbus::FIELD_CI_HEADER_SHORT:		//	0x7A
+		//case node::mbus::FIELD_CI_RES_SHORT_SML:	//	0x7F
+		//	break;
+		//default:
+		//{
+		//	//
+		//	//	frame type not supported
+		//	//
+		//	std::stringstream ss;
+		//	ss
+		//		<< " frame type ["
+		//		<< std::hex
+		//		<< std::setw(2)
+		//		<< +frame_type
+		//		<< "] not supported - data\n"
+		//		;
 
-			cyng::io::hex_dump hd;
- 			hd(ss, std::get<6>(tpl).cbegin(), std::get<6>(tpl).cend());
+		//	cyng::io::hex_dump hd;
+ 	//		hd(ss, payload.cbegin(), payload.cend());
 
-			CYNG_LOG_WARNING(logger_, ctx.get_name()
-				<< ss.str());
-		}
-			break;
-		}
+		//	CYNG_LOG_WARNING(logger_, ctx.get_name()
+		//		<< ss.str());
+		//}
+		//	break;
+		//}
 
 		//
 		// update device table
 		//
-		if (cache_.update_device_table(std::get<0>(tpl)	
-			, std::get<1>(tpl)
+		if (cache_.update_device_table(srv_id
+			, manufacturer
 			, 0u	//	status
-			, std::get<2>(tpl)
-			, std::get<3>(tpl)
+			, version
+			, medium
 			, aes
 			, ctx.tag())) {
 
 			CYNG_LOG_INFO(logger_, "new device: "
-				<< sml::from_server_id(server_id));
+				<< sml::from_server_id(srv_id));
 		}
 	}
 
@@ -650,7 +690,7 @@ namespace node
 		//	* [uuid] pk
 		//	
 
-		cyng::vector_t const frame = ctx.get_frame();
+		auto const frame = ctx.get_frame();
 		//CYNG_LOG_TRACE(logger_, ctx.get_name() << " - " << cyng::io::to_str(frame));
 
 		//

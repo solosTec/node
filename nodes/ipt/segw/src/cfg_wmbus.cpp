@@ -5,9 +5,10 @@
  *
  */
 
-#include "cfg_wmbus.h"
-#include "segw.h"
-#include "cache.h"
+#include <cfg_wmbus.h>
+#include <segw.h>
+#include <cache.h>
+
 #include <smf/serial/parity.h>
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>
@@ -171,6 +172,57 @@ namespace node
 	bool cfg_wmbus::generate_profile() const
 	{
 		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "generate-profile"), true);
+	}
+
+	bool cfg_wmbus::is_blocklist_enabled() const
+	{
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "enabled" }), false);
+	}
+
+	bool cfg_wmbus::set_blocklist_enabled(cyng::object obj) const
+	{
+		auto const val = cyng::value_cast(obj, true);
+		return cache_.set_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "enabled" }), val);
+	}
+
+	bool cfg_wmbus::is_blocklist_drop_mode() const
+	{
+		auto const mode = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "mode" }), "drop");
+		return boost::algorithm::equals(mode, "drop");
+	}
+
+	bool cfg_wmbus::set_blocklist_drop_mode() const
+	{
+		return cache_.set_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "mode" }), cyng::make_object("drop"));
+	}
+
+	bool cfg_wmbus::set_blocklist_accept_mode() const
+	{
+		return cache_.set_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "mode" }), cyng::make_object("accept"));
+	}
+
+	std::vector<std::uint32_t> cfg_wmbus::get_block_list() const
+	{
+		std::vector<std::uint32_t> vec;
+		for (std::size_t idx = 1; ; idx++) {
+			auto const meter = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "meter", std::to_string(idx) }), "");
+			if (meter.empty())	break;
+			try {
+				vec.push_back(std::stoul(meter, nullptr, 0));
+			}
+			catch (std::exception const&) {
+			}
+		}
+		return vec;
+	}
+
+	bool cfg_wmbus::is_meter_blocked(std::uint32_t id) const
+	{
+		if (is_blocklist_enabled()) {
+
+
+		}
+		return false;
 	}
 
 }

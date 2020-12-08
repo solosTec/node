@@ -5,9 +5,10 @@
  *
  */
 
-#include "cfg_ipt.h"
-#include "segw.h"
-#include "cache.h"
+#include <cfg_ipt.h>
+#include <segw.h>
+#include <cache.h>
+
 #include <smf/sml/obis_db.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/ipt/scramble_key_format.h>
@@ -45,6 +46,11 @@ namespace node
 	{
 		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM
 			, sml::OBIS_HAS_SSL_CONFIG }), false);
+	}
+
+	bool cfg_ipt::is_ipt_enabled() const
+	{
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_ROOT_IPT_PARAM }, "enabled"), true);
 	}
 
 	std::uint8_t cfg_ipt::get_ipt_master_index()

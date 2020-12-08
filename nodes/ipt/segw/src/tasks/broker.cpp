@@ -53,6 +53,22 @@ namespace node
 		//	login message
 		//
 		reset_write_buffer();
+
+		cfg.get_db().get_insert_listener("_Readout", std::bind(&broker::sig_ins, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+	}
+
+	void broker::sig_ins(cyng::store::table const* tbl
+		, cyng::table::key_type const& key
+		, cyng::table::data_type const& data
+		, std::uint64_t gen
+		, boost::uuids::uuid source)
+	{
+		CYNG_LOG_INFO(logger_, "task #"
+			<< base_.get_id()
+			<< " <"
+			<< base_.get_class_name()
+			<< "> readout: "
+			<< tbl->meta().get_name());
 	}
 
 	void broker::reset_write_buffer()

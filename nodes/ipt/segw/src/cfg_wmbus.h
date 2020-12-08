@@ -22,6 +22,11 @@ namespace node
 	class cfg_wmbus
 	{
 	public:
+		/** @brief port index
+		 * Each serial port has a speficic index
+		 */
+		static constexpr std::uint8_t port_idx = static_cast<std::uint8_t>(source::WIRELESS_LMN);
+
 		cfg_wmbus(cache&);
 
 		/**
@@ -89,7 +94,62 @@ namespace node
 		 */
 		bool generate_profile() const;
 
-		static constexpr std::uint8_t port_idx = static_cast<std::uint8_t>(source::WIRELESS_LMN);
+		/**
+		 * @return IF_wMBUS:blocklist:enabled................: true (true:bool)
+		 */
+		bool is_blocklist_enabled() const;
+		bool set_blocklist_enabled(cyng::object obj) const;
+
+		/**
+		 * @return IF_wMBUS:blocklist:mode...................: drop (drop:s)
+		 */
+		bool is_blocklist_drop_mode() const;
+		bool set_blocklist_drop_mode() const;
+		bool set_blocklist_accept_mode() const;
+
+		std::vector<std::uint32_t> get_block_list() const;
+		//IF_wMBUS:blocklist:meter:1................: 00684279 (00684279:s)
+		//IF_wMBUS:blocklist:meter:2................: 12345678 (12345678:s)
+		//IF_wMBUS:blocklist:period.................: 30 (30:i64)
+
+		/**
+		 * Determine if data should be send:
+											 +-------+
+											 |       |
+											 | START |
+											 |       |
+											 +---+---+
+												 |
+											+----v---------+
+											| is blocklist +----------+
+											| enabled?     |          |
+											+---+----------+          |
+												|                     |
+											+---v----------+          |
+											| parse        |          |
+											| meter ID     |          |
+											+---+----------+          |
+												|                     |
+												|                     |
+							 yes            +---v------------+        |
+						+-------------------+ is in list?    |        |
+						|                   +----+-----------+        |
+						|                        |                    |
+						|                        |no                  |
+				 +------v------+            +----v----------+         |
+			+----+ACCEPT mode? |            | DROP mode?    +--+      |
+			|    +------+------+            +---------------+  |      |
+			|           |                        |no           |      |
+			|           |yes                +----v---------+   |      |
+			|           +-------------------> send data    <----------+
+			|                               +---+----------+   |
+			|                                   |              |
+			|                               +---v-----+        |
+			+------------------------------>+ STOP    +<-------+
+											+---------+
+		*/
+		bool is_meter_blocked(std::uint32_t) const;
+
 
 	private:
 		cache& cache_;

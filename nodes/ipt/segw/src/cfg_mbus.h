@@ -52,7 +52,7 @@ namespace node
 		/**
 		 * @brief automatic activation of meters 
 		 *
-		 * @return "OBIS_CLASS_MBUS:OBIS_CLASS_MBUS_AUTO_ACTICATE"
+		 * @return "OBIS_CLASS_MBUS:OBIS_CLASS_MBUS_AUTO_ACTIVATE"
 		 */
 		bool is_auto_activation() const;
 

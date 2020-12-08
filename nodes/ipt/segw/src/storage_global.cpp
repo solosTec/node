@@ -5,9 +5,10 @@
  *
  */
 
-#include "storage_global.h"
-#include "storage.h"
-#include "segw.h"
+#include <storage_global.h>
+#include <storage.h>
+#include <segw.h>
+
 #include <smf/sml/obis_db.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
 #include <smf/ipt/config.h>
@@ -680,6 +681,12 @@ namespace node
 					sml::OBIS_HAS_SSL_CONFIG
 					}), cyng::make_object(false));
 
+				//	enable/disable IP-T
+				auto const enabled = cyng::value_cast(dom["ipt-param"].get("enabled"), true);
+				init_config_record(s, build_cfg_key({
+					sml::OBIS_ROOT_IPT_PARAM }, "enabled" ), cyng::make_object(enabled));
+
+
 				//
 				//	master index (0..1)
 				//
@@ -933,6 +940,26 @@ namespace node
 							sml::OBIS_ROOT_BROKER,
 							sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx) },
 							"enabled"), param.second);
+					}
+					else if (boost::algorithm::equals(param.first, "blocklist")) {
+
+						auto const blocklist = cyng::to_param_map(param.second);
+						auto const reader = cyng::make_reader(blocklist);
+
+						auto const enabled = cyng::value_cast(reader.get("enabled"), false);
+						init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "enabled" }), cyng::make_object(enabled));
+
+						auto const mode = cyng::value_cast(reader.get("mode"), "accept");
+						init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "mode" }), cyng::make_object(mode));
+
+						auto const period = cyng::numeric_cast<std::int64_t>(reader.get("period"), 30);
+						init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "period" }), cyng::make_object(period));
+
+						auto const list = cyng::vector_cast<std::string>(reader.get("list"), "");
+						std::size_t idx{ 0 };
+						for(auto const& meter: list) {
+							init_config_record(s, build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "meter", std::to_string(++idx) }), cyng::make_object(meter));
+						}
 					}
 					else if (boost::algorithm::equals(param.first, "port")) {
 						init_config_record(s, build_cfg_key({ sml::OBIS_ROOT_SERIAL, sml::make_obis(sml::OBIS_ROOT_SERIAL, port_idx), sml::OBIS_SERIAL_NAME }), param.second);
@@ -1647,7 +1674,28 @@ namespace node
 						<< cyng::io::to_str(obj)
 						<< ':'
 						<< obj.get_class().type_name()
-						<< ")"
+						<< ")";
+
+					//
+					//	additional information
+					//
+					if (boost::algorithm::equals(path, build_cfg_key({ sml::OBIS_IF_wMBUS }, "enabled"))) {
+						os << "\t- start LMN task";
+					}
+					else if (boost::algorithm::equals(path, build_cfg_key({ "rs485", "enabled" }))) {
+						os << "\t- start LMN task";
+					}
+					else if (boost::algorithm::equals(path, build_cfg_key({ sml::OBIS_SERVER_ID }))) {
+						//	show real server ID starting with 05...
+						auto mac = cyng::value_cast(obj, cyng::generate_random_mac48());
+						auto srv_id = sml::to_gateway_srv_id(mac);
+						os << "\t- " << cyng::io::to_hex(srv_id);
+					}
+					else if (boost::algorithm::equals(path, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }))) {
+						//	show port number as decimal value
+						os << "\t- " << cyng::numeric_cast<std::uint16_t>(obj, 0) << " (decimal)";
+					}
+					os
 						<< std::endl;
 				}
 			}

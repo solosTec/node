@@ -5,12 +5,12 @@
  *
  */
 
-#include "network.h"
-#include "push.h"
-#include "../cache.h"
-#include "../storage.h"
-#include "../bridge.h"
-#include "../segw.h"
+#include <tasks/network.h>
+#include <tasks/push.h>
+#include <cache.h>
+#include <storage.h>
+#include <bridge.h>
+#include <segw.h>
 
 #include <smf/serial/baudrate.h>
 #include <smf/ipt/response.hpp>
@@ -72,11 +72,26 @@ namespace node
 			, task_gpio_(cyng::async::NO_TASK)
 			, retries_(cfg_.get_ipt_tcp_connect_retries())
 		{
-			CYNG_LOG_INFO(logger_, "initialize task #"
-				<< base_.get_id()
-				<< " <"
-				<< base_.get_class_name()
-				<< ">");
+
+			if (cfg_.is_ipt_enabled()) {
+
+				CYNG_LOG_INFO(logger_, "initialize task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> as "
+					<< account
+					<< ':'
+					<< pwd);
+			}
+			else {
+
+				CYNG_LOG_INFO(logger_, "initialize task #"
+					<< base_.get_id()
+					<< " <"
+					<< base_.get_class_name()
+					<< "> without IP-T");
+			}
 
 			//
 			//	register the task manager on this VM
@@ -180,7 +195,6 @@ namespace node
 
 		cyng::continuation network::run()
 		{
-
 			if (is_online())
 			{
 				//
@@ -188,7 +202,7 @@ namespace node
 				//
 				base_.suspend(cfg_.get_ipt_tcp_wait_to_reconnect());
 			}
-			else
+			else if (cfg_.is_ipt_enabled()) 
 			{
 				//
 				//	reset parser and serializer

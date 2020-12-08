@@ -379,20 +379,35 @@ namespace node
 			, 32	//	pwd
 			}),
 
-			cyng::table::make_meta_table<1, 3>("_Readout",
+			cyng::table::make_meta_table<1, 8>("_Readout",
 			{ "pk"			//	UUID
 			, "serverID"	//	server/meter ID
+			, "manufacturer"
+			, "version"
+			, "medium"
+			, "dev_id"
+			, "frame_type"
+			, "payload"
 			, "ts"			//	timestamp
-			, "status"		//	M-Bus status
 			},
-			{ cyng::TC_UUID
-			, cyng::TC_BUFFER
-			, cyng::TC_TIME_POINT
-			, cyng::TC_UINT8
+			{ cyng::TC_UUID			//	pk
+			, cyng::TC_BUFFER		//	serverID
+			, cyng::TC_STRING		//	manufacturer
+			, cyng::TC_UINT8		//	version
+			, cyng::TC_UINT8		//	medium
+			, cyng::TC_UINT32		//	dev id
+			, cyng::TC_UINT8		//	frame_type
+			, cyng::TC_BUFFER		//	payload
+			, cyng::TC_TIME_POINT	//	ts
 			},
 			{ 0
 			, 9
+			, 3
 			, 0
+			, 0
+			, 0
+			, 0
+			, 512
 			, 0
 			}),
 
@@ -404,7 +419,7 @@ namespace node
 			, "scaler"		//	decimal place
 			, "unit"		//	physical unit
 			//	future options
-			//, "status"
+			//, "status"		//	M-Bus status
 			//, "ts"		//	timepoint
 			//, "signature"
 			},

@@ -23,17 +23,15 @@ namespace node
 		decoder::decoder(cyng::logging::log_ptr logger
 			, cyng::controller& vm
 			, cb_meter cb1
-			, cb_data cb2
 			, cb_value cb3)
 		: logger_(logger)
 			, vm_(vm)
 			, cb_meter_(cb1)
-			, cb_data_(cb2)
 			, cb_value_(cb3)
-			, uuidgen_()
 		{}
 
-		bool decoder::run(cyng::buffer_t const& srv_id
+		bool decoder::run(boost::uuids::uuid pk
+			, cyng::buffer_t const& srv_id
 			, std::uint8_t frame_type
 			, cyng::buffer_t const& payload
 			, cyng::crypto::aes_128_key const& aes)
@@ -41,12 +39,12 @@ namespace node
 			switch (frame_type) {
 			case node::mbus::FIELD_CI_HEADER_LONG:	//	0x72
 				//	e.g. HYD
-				return read_frame_header_long(srv_id, payload, aes);
+				return read_frame_header_long(pk, srv_id, payload, aes);
 			case node::mbus::FIELD_CI_HEADER_SHORT:	//	0x7A
-				return read_frame_header_short(srv_id, payload, aes);
+				return read_frame_header_short(pk, srv_id, payload, aes);
 			case node::mbus::FIELD_CI_RES_SHORT_SML:	//	0x7F
 				//	e.g. ED300L
-				return read_frame_header_short_sml(srv_id, payload, aes);
+				return read_frame_header_short_sml(pk, srv_id, payload, aes);
 			default:
 				break;
 			}
@@ -54,7 +52,8 @@ namespace node
 			return false;
 		}
 
-		bool decoder::read_frame_header_long(cyng::buffer_t const& srv_id
+		bool decoder::read_frame_header_long(boost::uuids::uuid pk
+			, cyng::buffer_t const& srv_id
 			, cyng::buffer_t const& payload
 			, cyng::crypto::aes_128_key const& aes)
 		{
@@ -83,12 +82,12 @@ namespace node
 					//
 					//	new readout pk
 					//
-					auto const pk = uuidgen_();
+					//auto const pk = uuidgen_();
 
 					//
 					//	data callback
 					//
-					cb_data_(server_id, r2.first, mbus_status, pk);
+					//cb_data_(server_id, r2.first, mbus_status, pk);
 
 					switch (r1.first.get_block_counter()) {
 					case 0:
@@ -98,10 +97,10 @@ namespace node
 						// partial encryption disabled
 						break;
 					default:
-						read_variable_data_block(server_id
+						read_variable_data_block(pk
+							, server_id
 							, r1.first.get_block_counter()
-							, r2.first
-							, pk);
+							, r2.first);
 					}
 					return true;
 				}
@@ -109,7 +108,8 @@ namespace node
 			return false;
 		}
 
-		bool decoder::read_frame_header_short(cyng::buffer_t const& srv_id
+		bool decoder::read_frame_header_short(boost::uuids::uuid pk
+			, cyng::buffer_t const& srv_id
 			, cyng::buffer_t const& payload
 			, cyng::crypto::aes_128_key const& aes)
 		{
@@ -124,7 +124,8 @@ namespace node
 			return false;
 		}
 
-		bool decoder::read_frame_header_short_sml(cyng::buffer_t const& srv_id
+		bool decoder::read_frame_header_short_sml(boost::uuids::uuid pk
+			, cyng::buffer_t const& srv_id
 			, cyng::buffer_t const& payload
 			, cyng::crypto::aes_128_key const& aes)
 		{
@@ -157,12 +158,12 @@ namespace node
 					//
 					//	new readout
 					//
-					auto const pk = uuidgen_();
+					//auto const pk = uuidgen_();
 
 					//
 					//	data callback
 					//
-					cb_data_(srv_id, r2.first, prefix.first.get_status(), pk);
+					//cb_data_(srv_id, r2.first, prefix.first.get_status(), pk);
 
 					//
 					//	start SML parser
@@ -210,10 +211,10 @@ namespace node
 			return std::make_pair(cyng::buffer_t{}, false);
 		}
 
-		void decoder::read_variable_data_block(cyng::buffer_t const& server_id
+		void decoder::read_variable_data_block(boost::uuids::uuid pk
+			, cyng::buffer_t const& server_id
 			, std::uint8_t const blocks
-			, cyng::buffer_t const& raw_data
-			, boost::uuids::uuid pk)
+			, cyng::buffer_t const& raw_data)
 		{
 			BOOST_ASSERT(blocks != 0);
 			BOOST_ASSERT(blocks != 0x0f);

@@ -46,7 +46,7 @@ namespace node
 
 	bool cfg_mbus::is_auto_activation() const
 	{
-		return cache_.get_cfg(build_cfg_key({ sml::OBIS_CLASS_MBUS, sml::OBIS_CLASS_MBUS_AUTO_ACTICATE }), false);
+		return cache_.get_cfg(build_cfg_key({ sml::OBIS_CLASS_MBUS, sml::OBIS_CLASS_MBUS_AUTO_ACTIVATE }), false);
 	}
 
 	bool cfg_mbus::generate_profile() const

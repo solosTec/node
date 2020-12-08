@@ -54,10 +54,10 @@ namespace node
 			, std::uint8_t aes_mode
 			, cyng::crypto::aes_128_key const& aes);
 
-		void cb_data_decoded(cyng::buffer_t const& srv_id
-			, cyng::buffer_t const& data
-			, std::uint8_t status
-			, boost::uuids::uuid pk);
+		//void cb_data_decoded(cyng::buffer_t const& srv_id
+		//	, cyng::buffer_t const& data
+		//	, std::uint8_t status
+		//	, boost::uuids::uuid pk);
 
 		void cb_value_decoded(cyng::buffer_t const& srv_id
 			, cyng::object const& val

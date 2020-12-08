@@ -772,10 +772,10 @@ namespace node
 			//
 			//	[bool] automatic activation of meters
 			//
-			auto const auto_activate = cache_.get_cfg(build_cfg_key({ OBIS_CLASS_MBUS, OBIS_CLASS_MBUS_AUTO_ACTICATE }), false);
+			auto const auto_activate = cache_.get_cfg(build_cfg_key({ OBIS_CLASS_MBUS, OBIS_CLASS_MBUS_AUTO_ACTIVATE }), false);
 			merge_msg(msg, {
 				OBIS_CLASS_MBUS,
-				OBIS_CLASS_MBUS_AUTO_ACTICATE
+				OBIS_CLASS_MBUS_AUTO_ACTIVATE
 				}, make_value(auto_activate));
 
 			//

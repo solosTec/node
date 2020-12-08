@@ -219,11 +219,6 @@ namespace node
 			return watchdog_ != 0u;
 		}
 
-		//std::uint16_t bus::get_watchdog() const
-		//{
-		//	return watchdog_;
-		//}
-
 		boost::asio::ip::tcp::endpoint bus::local_endpoint() const
 		{
 			return socket_.local_endpoint();

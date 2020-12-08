@@ -55,7 +55,7 @@ namespace node
 	bool dump_devices(cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
 
 	/**
-	 * List configuration to console
+	 * Read configuration from database and dump data to console
 	 */
 	bool list_config_data(std::ostream& os, cyng::param_map_t&& cfg, cyng::reader<cyng::object> const& dom);
 

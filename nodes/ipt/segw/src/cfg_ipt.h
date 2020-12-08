@@ -47,6 +47,11 @@ namespace node
 		bool has_ipt_ssl();
 
 		/**
+		 * connecting to the IP-T master could be disabled
+		 */
+		bool is_ipt_enabled() const;
+
+		/**
 		 * extract IP-T configuration
 		 */
 		ipt::redundancy get_ipt_redundancy();

@@ -13,6 +13,7 @@
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
+#include <cyng/table/table_fwd.h>
 
 #include <cyng/compatibility/file_system.hpp>
 
@@ -65,6 +66,12 @@ namespace node
 		void do_read();
 		void do_write();
 		void reset_write_buffer();
+
+		void sig_ins(cyng::store::table const* tbl
+			, cyng::table::key_type const& key
+			, cyng::table::data_type const& data
+			, std::uint64_t gen
+			, boost::uuids::uuid source);
 
 	private:
 		cyng::async::base_task& base_;

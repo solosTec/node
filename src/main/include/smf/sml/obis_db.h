@@ -85,7 +85,7 @@ namespace node
 		OBIS_CODE_DEFINITION(00, B0, 00, 02, 00, 01, CLASS_MBUS_RO_INTERVAL);	//	readout interval in seconds % 3600 (33 36 30 30)
 		OBIS_CODE_DEFINITION(00, B0, 00, 02, 00, 02, CLASS_MBUS_SEARCH_INTERVAL);	//	search interval in seconds % 0 (30)
 		OBIS_CODE_DEFINITION(00, B0, 00, 02, 00, 03, CLASS_MBUS_SEARCH_DEVICE);	//	search device now and by restart	% True(54 72 75 65)
-		OBIS_CODE_DEFINITION(00, B0, 00, 02, 00, 04, CLASS_MBUS_AUTO_ACTICATE);	//	automatic activation of meters     % False(46 61 6C 73 65)
+		OBIS_CODE_DEFINITION(00, B0, 00, 02, 00, 04, CLASS_MBUS_AUTO_ACTIVATE);	//	automatic activation of meters     % False(46 61 6C 73 65)
 		OBIS_CODE_DEFINITION(00, B0, 00, 02, 00, 05, CLASS_MBUS_BITRATE);		//	used baud rates(bitmap) % 82 (38 32)
 
 		//	Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
