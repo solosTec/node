@@ -8,6 +8,7 @@
 #include <cfg_rs485.h>
 #include <segw.h>
 #include <cache.h>
+
 #include <smf/serial/parity.h>
 #include <smf/serial/stopbits.h>
 #include <smf/serial/flow_control.h>

@@ -11,6 +11,8 @@
 #include <bridge.h>
 #include <lmn.h>
 #include <segw.h>
+#include <cfg_rs485.h>
+#include <cfg_redirector.h>
 
 #include <NODE_project_info.h>
 
@@ -562,9 +564,12 @@ namespace node
 				, pwd
 				, get_nms_ep(cmgr));
 
+			//
+			//	RS-485 configuration
+			//
 			if (cmgr.get_cfg(build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_ENABLED }), false)) {
 
-				if (!cmgr.get_cfg(build_cfg_key({ "rs485", "enabled" }), false)) {
+				if (!cfg_rs485(cmgr).is_enabled())	{
 					CYNG_LOG_WARNING(logger, "start RS 485 redirector but hardware port is not enabled");
 				}
 
@@ -577,16 +582,19 @@ namespace node
 
 			//
 			//	create RS485 redirector
-			//	commuication with RS485 hardware port
+			//	communication with RS485 hardware port
 			//
 			redirector::server rs485(mux
 				, logger
 				, cmgr
 				, account
 				, pwd
-				, get_redirctor_ep(cmgr, 2));
+				, get_redirctor_ep(cmgr, cfg_rs485::port_idx));
 
-			if (cmgr.get_cfg(build_cfg_key({ sml::OBIS_ROOT_REDIRECTOR, sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, 2) }, "enabled"), false)) {
+			//
+			//	redirector configuration
+			//
+			if (cfg_redirector(cmgr).is_enabled(source::WIRED_LMN))	{
 				rs485.run();
 			}
 			else {

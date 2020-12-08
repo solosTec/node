@@ -32,6 +32,12 @@ namespace node
 		};
 
 	public:
+
+		/**
+		 * internal port index
+		 */
+		static constexpr std::uint8_t port_idx = static_cast<std::uint8_t>(source::WIRED_LMN);
+
 		cfg_rs485(cache&);
 
 		/**
@@ -106,11 +112,6 @@ namespace node
 		 */
 		bool is_enabled() const;
 		bool set_enabled(cyng::object obj) const;
-
-		/**
-		 * internal port index
-		 */
-		static constexpr std::uint8_t port_idx = static_cast<std::uint8_t>(source::WIRED_LMN);
 
 	private:
 		cache& cache_;

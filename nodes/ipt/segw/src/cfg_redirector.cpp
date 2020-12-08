@@ -6,10 +6,10 @@
  */
 
 #include <cfg_redirector.h>
-#include "segw.h"
-#include "cache.h"
-#include "cfg_rs485.h"
-#include "cfg_wmbus.h"
+#include <segw.h>
+#include <cache.h>
+#include <cfg_rs485.h>
+#include <cfg_wmbus.h>
 
 #include <smf/sml/obis_db.h>
 #include <smf/sml/intrinsics/obis_factory.hpp>
