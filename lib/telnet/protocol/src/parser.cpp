@@ -38,9 +38,9 @@ namespace node
 
 		parser::state parser::put(char c)
 		{
-			switch (static_cast<std::uint8_t>(state_)) {
+			switch (state_) {
 			case STATE_DATA:
-				switch (c) {
+				switch (static_cast<std::uint8_t>(c)) {
 				case TELNET_IAC:
 					return STATE_IAC;
 				case '\r':	//	CR
@@ -55,7 +55,7 @@ namespace node
 				return STATE_DATA;
 
 			case STATE_IAC:
-				switch (c) {
+				switch (static_cast<std::uint8_t>(c)) {
 				case TELNET_SB:	return STATE_SB;
 				case TELNET_WILL: return STATE_WILL;
 				case TELNET_WONT: return STATE_WONT;
@@ -77,7 +77,7 @@ namespace node
 				return STATE_DATA;
 
 			case STATE_SB_DATA:
-				switch (c) {
+				switch (static_cast<std::uint8_t>(c)) {
 				case TELNET_IAC: return STATE_SB_DATA_IAC;
 				default:
 					break;
@@ -85,7 +85,7 @@ namespace node
 				return STATE_DATA;
 
 			case STATE_SB_DATA_IAC:
-				switch (c) {
+				switch (static_cast<std::uint8_t>(c)) {
 				case TELNET_SE: return STATE_DATA;
 				case TELNET_IAC: 
 					//return STATE_SB_DATA;
