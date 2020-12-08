@@ -261,31 +261,31 @@ namespace node
 						//
 						switch (profile_.to_uint64()) {
 						case  sml::CODE_PROFILE_1_MINUTE:
-							messages.push_back(collect_profile_8181C78610FF(gen, trx, channel, source));
+							collect_profile_8181C78610FF(gen, trx, channel, source, messages);
 							break;
 						case sml::CODE_PROFILE_15_MINUTE:
-							messages.push_back(collect_profile_8181C78611FF(gen, trx, channel, source));
+							collect_profile_8181C78611FF(gen, trx, channel, source, messages);
 							break;
 						case sml::CODE_PROFILE_60_MINUTE:
-							messages.push_back(collect_profile_8181C78612FF(gen, trx, channel, source));
+							collect_profile_8181C78612FF(gen, trx, channel, source, messages);
 							break;
 						case sml::CODE_PROFILE_24_HOUR:
-							messages.push_back(collect_profile_8181C78613FF(gen, trx, channel, source));
+							collect_profile_8181C78613FF(gen, trx, channel, source, messages);
 							break;
 						case sml::CODE_PROFILE_LAST_2_HOURS:
-							messages.push_back(collect_profile_8181C78614FF(gen, trx, channel, source));
+							collect_profile_8181C78614FF(gen, trx, channel, source, messages);
 							break;
 						case sml::CODE_PROFILE_LAST_WEEK:
-							//collect_profile_8181C78615FF(tbl_req);
+							collect_profile_8181C78615FF(gen, trx, channel, source, messages);
 							break;
 						case sml::CODE_PROFILE_1_MONTH:
-							//collect_profile_8181C78616FF(tbl_req);
+							collect_profile_8181C78616FF(gen, trx, channel, source, messages);
 							break;
 						case sml::CODE_PROFILE_1_YEAR:
-							//collect_profile_8181C78617FF(tbl_req);
+							collect_profile_8181C78617FF(gen, trx, channel, source, messages);
 							break;
 						case sml::CODE_PROFILE_INITIAL:
-							//collect_profile_8181C78618FF(tbl_req);
+							collect_profile_8181C78618FF(gen, trx, channel, source, messages);
 							break;
 						default:
 							BOOST_ASSERT_MSG(false, "undefined profile");
@@ -304,7 +304,6 @@ namespace node
 							<< " ==> "
 							<< target_
 							<< " has no OBIS codes");
-
 					}
 				}
 				else {
@@ -367,10 +366,11 @@ namespace node
 		return codes;
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78610FF(sml::res_generator& gen
+	void push::collect_profile_8181C78610FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	1 minute
 		std::string const sql = 
 			"SELECT P10.clientID, P10.tsidx, datetime(P10.actTime), status, S10.OBIS, S10.val, S10.type, S10.scaler, S10.unit "
@@ -454,14 +454,14 @@ namespace node
 					//
 					//	build push msg
 					//
-					gen.get_profile_list(*trx++
+					messages.push_back(gen.get_profile_list(*trx++
 						, srv_id
 						, sml::OBIS_PROFILE_1_MINUTE
 						, act_time //	act_time
 						, 0 //	reg_period
 						, std::chrono::system_clock::now() //	val_time
 						, 0		//	status
-						, std::move(period_list));
+						, std::move(period_list)));
 
 					BOOST_ASSERT(period_list.empty());
 				}
@@ -472,23 +472,22 @@ namespace node
 			//
 			//	build push msg
 			//
-			return gen.get_profile_list(*trx++
+			messages.push_back(gen.get_profile_list(*trx++
 				, srv_id
 				, sml::OBIS_PROFILE_1_MINUTE
 				, act_time //	act_time
 				, 0 //	reg_period
 				, std::chrono::system_clock::now() //	val_time
 				, 0		//	status
-				, std::move(period_list));
+				, std::move(period_list)));
 		}
-
-		return cyng::tuple_factory();
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78611FF(sml::res_generator& gen
+	void push::collect_profile_8181C78611FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	15 minutes
 		std::string sql = 
 			"SELECT P11.clientID, P11.tsidx, datetime(P11.actTime), status, S11.OBIS, S11.val, S11.type, S11.scaler, S11.unit "
@@ -573,14 +572,14 @@ namespace node
 					//
 					//	build push msg
 					//
-					gen.get_profile_list(*trx++
+					messages.push_back(gen.get_profile_list(*trx++
 						, cache_.get_srv_id()
 						, sml::OBIS_PROFILE_15_MINUTE
 						, act_time //	act_time
 						, 0 //	reg_period
 						, std::chrono::system_clock::now() //	val_time
 						, 0		//	status
-						, std::move(period_list));
+						, std::move(period_list)));
 
 					BOOST_ASSERT(period_list.empty());
 				}
@@ -591,22 +590,22 @@ namespace node
 			//
 			//	build push msg
 			//
-			return gen.get_profile_list(*trx++
+			messages.push_back(gen.get_profile_list(*trx++
 				, cache_.get_srv_id()
 				, sml::OBIS_PROFILE_15_MINUTE
 				, act_time //	act_time
 				, 0 //	reg_period
 				, std::chrono::system_clock::now() //	val_time
 				, 0		//	status
-				, std::move(period_list));
+				, std::move(period_list)));
 		}
-		return cyng::tuple_factory();
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78612FF(sml::res_generator& gen
+	void push::collect_profile_8181C78612FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	60 minutes
 		std::string sql = 
 			"SELECT P12.clientID, P12.tsidx, datetime(P12.actTime), status, S12.OBIS, S12.val, S12.type, S12.scaler, S12.unit "
@@ -690,14 +689,14 @@ namespace node
 					//
 					//	build push msg
 					//
-					gen.get_profile_list(*trx++
+					messages.push_back(gen.get_profile_list(*trx++
 						, srv_id_
 						, sml::OBIS_PROFILE_60_MINUTE
 						, act_time //	act_time
 						, 0 //	reg_period
 						, std::chrono::system_clock::now() //	val_time
 						, 0		//	status
-						, std::move(period_list));
+						, std::move(period_list)));
 
 					BOOST_ASSERT(period_list.empty());
 				}
@@ -716,22 +715,22 @@ namespace node
 			//
 			//	build push msg
 			//
-			return gen.get_profile_list(*trx++
+			messages.push_back(gen.get_profile_list(*trx++
 				, srv_id_
 				, sml::OBIS_PROFILE_60_MINUTE
 				, act_time //	act_time
 				, 0 //	reg_period
 				, std::chrono::system_clock::now() //	val_time
 				, 0		//	status
-				, std::move(period_list));
+				, std::move(period_list)));
 		}
-		return cyng::tuple_factory();
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78613FF(sml::res_generator& gen
+	void push::collect_profile_8181C78613FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	24 hours
 		std::string sql = 
 			"SELECT P13.clientID, P13.tsidx, datetime(P13.actTime), status, S13.OBIS, S13.val, S13.type, S13.scaler, S13.unit "
@@ -815,14 +814,14 @@ namespace node
 					//
 					//	build push msg
 					//
-					gen.get_profile_list(*trx++
+					messages.push_back(gen.get_profile_list(*trx++
 						, srv_id_
 						, sml::OBIS_PROFILE_24_HOUR
 						, act_time //	act_time
 						, 0 //	reg_period
 						, std::chrono::system_clock::now() //	val_time
 						, 0		//	status
-						, std::move(period_list));
+						, std::move(period_list)));
 
 					BOOST_ASSERT(period_list.empty());
 				}
@@ -841,76 +840,75 @@ namespace node
 			//
 			//	build push msg
 			//
-			return gen.get_profile_list(*trx++
+			messages.push_back(gen.get_profile_list(*trx++
 				, srv_id_
 				, sml::OBIS_PROFILE_24_HOUR
 				, act_time //	act_time
 				, 0 //	reg_period
 				, std::chrono::system_clock::now() //	val_time
 				, 0		//	status
-				, std::move(period_list));
+				, std::move(period_list)));
 		}
-		return cyng::tuple_factory();
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78614FF(sml::res_generator& gen
+	void push::collect_profile_8181C78614FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	last 2 hours
 		std::string sql = 
 			"SELECT P14.clientID, P14.tsidx, datetime(P14.actTime), status, S14.OBIS, S14.val, S14.type, S14.scaler, S14.unit "
 			"FROM TProfile_8181C78614FF P14 INNER JOIN TStorage_8181C78614FF S14 ON P14.clientID = S14.clientID AND P14.tsidx = S14.tsidx "
 			"WHERE P14.clientID = ?;";
 
-		return cyng::tuple_factory();
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78615FF(sml::res_generator& gen
+	void push::collect_profile_8181C78615FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	last week
 		std::string sql = 
 			"SELECT P15.clientID, P15.tsidx, datetime(P15.actTime), status, S15.OBIS, S15.val, S15.type, S15.scaler, S15.unit "
 			"FROM TProfile_8181C78615FF P15 INNER JOIN TStorage_8181C78615FF S15 ON P15.clientID = S15.clientID AND P15.tsidx = S15.tsidx "
 			"WHERE P15.clientID = ?;";
 
-		return cyng::tuple_factory();
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78616FF(sml::res_generator& gen
+	void push::collect_profile_8181C78616FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	1 month
 		std::string sql = 
 			"SELECT P16.clientID, P16.tsidx, datetime(P16.actTime), status, S16.OBIS, S16.val, S16.type, S16.scaler, S16.unit "
 			"FROM TProfile_8181C78616FF P16 INNER JOIN TStorage_8181C78616FF S16 ON P16.clientID = S16.clientID AND P16.tsidx = S16.tsidx "
 			"WHERE P16.clientID = ?;";
 
-		return cyng::tuple_factory();
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78617FF(sml::res_generator& gen
+	void push::collect_profile_8181C78617FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	1 year
 		std::string sql = 
 			"SELECT P17.clientID, P17.tsidx, datetime(P17.actTime), status, S17.OBIS, S17.val, S17.type, S17.scaler, S17.unit "
 			"FROM TProfile_8181C78617FF P17 INNER JOIN TStorage_8181C78617FF S17 ON P17.clientID = S17.clientID AND P17.tsidx = S17.tsidx "
 			"WHERE P17.clientID = ?;";
 
-		return cyng::tuple_factory();
 	}
 
-	cyng::tuple_t push::collect_profile_8181C78618FF(sml::res_generator& gen
+	void push::collect_profile_8181C78618FF(sml::res_generator& gen
 		, sml::trx& trx
 		, std::uint32_t channel
-		, std::uint32_t source)
+		, std::uint32_t source
+		, sml::messages_t& messages)
 	{	//	initial
-		return cyng::tuple_factory();
 	}
 
 	cyng::continuation push::process(std::string target)

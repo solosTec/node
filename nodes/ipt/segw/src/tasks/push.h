@@ -98,15 +98,15 @@ namespace node
 		//
 		//	ToDo: return type has to be a list of messages
 		//
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78610FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78611FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78612FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78613FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78614FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78615FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78616FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78617FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
-		CYNG_ATTR_NODISCARD cyng::tuple_t collect_profile_8181C78618FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source);
+		void collect_profile_8181C78610FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
+		void collect_profile_8181C78611FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
+		void collect_profile_8181C78612FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
+		void collect_profile_8181C78613FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
+		void collect_profile_8181C78614FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
+		void collect_profile_8181C78615FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
+		void collect_profile_8181C78616FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
+		void collect_profile_8181C78617FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
+		void collect_profile_8181C78618FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
 
 	private:
 		cyng::async::base_task& base_;
