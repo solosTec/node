@@ -3,7 +3,7 @@
 
 ## Introduction ##
 
-* Current version is 0.7. Core functions are ready for productive use: 
+* Current version is 0.8. Core functions are ready for productive use: 
   * master 
   * setup 
   * ipt 
@@ -14,7 +14,7 @@
 * Linux (32/64 bit) are supported
 * Windows 7 (64 bit) or higher are supported.
 * Crosscompiling for Raspberry 3 is supported
-* Requires [g++](https://gcc.gnu.org/) >= 4.8 or cl 19.00.24215.1 (this is VS 14.0), [boost](http://www.boost.org/) >= 1.66.0 and [pugixml](https://pugixml.org/) 1.8
+* Requires [g++](https://gcc.gnu.org/) >= 4.8 or cl 19.00.24215.1 (this is VS 14.0), [boost](http://www.boost.org/) >= 1.73.0 and [pugixml](https://pugixml.org/) 1.8
 
 ## How do I get set up? ##
 
@@ -82,7 +82,7 @@ Open _NODE.sln_ with Visual Studio.
 It is recommended to use the latest boost library version. It is best to create them by hand.
 Some hints to build Boost on Linux:
 
-* Download the latest [version](https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.bz2)
+* Download the latest [version](https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2)
 * For unicode support install ICU: (sudo apt install libicu-dev) and call bootstrap with option --with-icu
 * Build the library with b2. Depending on your machine this may take some time. Choose option -j depending on the CPU count.
 * Instruct CMake to use the path to the Boost library specified with the --prefix option
@@ -92,9 +92,9 @@ Some hints to build Boost on Linux:
 #### using Boost ####
 
 ```
-wget -c https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.bz2
-tar -xvjf boost_1_72_0.tar.bz2
-cd boost_1_72_0/
+wget -c https://dl.bintray.com/boostorg/beta/1.75.0/source/boost_1_75_0.tar.bz2 
+tar -xvjf boost_1_75_0.tar.bz2
+cd boost_1_75_0/
 ./bootstrap.sh --prefix=$HOME/projects/install/x64/boost --with-toolset=gcc
 ./b2 --architecture=x86 --address-model=64 install -j2
 ```
