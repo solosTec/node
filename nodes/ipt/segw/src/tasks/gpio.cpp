@@ -5,7 +5,8 @@
  *
  */
 
-#include "gpio.h"
+#include <tasks/gpio.h>
+
 #include <fstream>
 #include <iostream>
 
@@ -13,10 +14,10 @@ namespace node
 {
 	gpio::gpio(cyng::async::base_task* btp
 		, cyng::logging::log_ptr logger
-		, cyng::filesystem::path path)
+		, cyng::filesystem::path p)
 	: base_(*btp) 
 		, logger_(logger)
-		, path_(path)
+		, path_(p)
 		, counter_(5)
 		, ms_(10)
 	{
@@ -25,7 +26,7 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< "> "
-			<< path.generic_string());
+			<< path_.generic_string());
 
 		//
 		//	turn LED off
@@ -108,7 +109,7 @@ namespace node
 		//
 		//	build complete path
 		//
-		auto const p = (path_ / "value").string();
+		auto const p = (path_ / "value").generic_string();
         
 		CYNG_LOG_DEBUG(logger_, "task #"
 			<< base_.get_id()

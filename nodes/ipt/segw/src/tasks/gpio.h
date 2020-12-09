@@ -32,7 +32,7 @@ namespace node
 	public:
 		gpio(cyng::async::base_task* bt
 			, cyng::logging::log_ptr
-			, cyng::filesystem::path path);
+			, cyng::filesystem::path);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -65,7 +65,7 @@ namespace node
 		 * access path.
 		 * example: /sys/class/gpio/gpio50
 		 */
-		cyng::filesystem::path	path_;
+		cyng::filesystem::path	const path_;
 
 		std::size_t counter_;
 		std::chrono::milliseconds ms_;

@@ -11,6 +11,7 @@
 #include <segw.h>
 #include <cfg_rs485.h>
 #include <cfg_wmbus.h>
+#include <cfg_gpio.h>
 
 #include <tasks/gpio.h>
 #include <tasks/obislog.h>
@@ -923,34 +924,25 @@ namespace node
 		//
 		//	start one task for every GPIO
 		//
-		//gpio-path|1|/sys/class/gpio|/sys/class/gpio|15
-		//gpio-vector|1|46 47 50 53|46 47 50 53|15
 
-		auto const gpio_enabled = cache_.get_cfg(build_cfg_key({ "gpio", "enabled" }),
-#if defined(__ARMEL__)
-			true
-#else
-			false
-#endif
-		);
-		auto const gpio_path = cache_.get_cfg<std::string>(build_cfg_key({ "gpio", "path" }), "/sys/class/gpio");
-		auto const gpio_vector = cache_.get_cfg<std::string>(build_cfg_key({ "gpio", "vector" }), "46 47 50 53");
+		cfg_gpio gpio_config(cache_);
 
-		if (gpio_enabled) {
+		if (gpio_config.is_enabled()) {
+
 			//
 			//	Start a GPIO task for every GPIO
 			//
-			auto const svec = cyng::split(gpio_vector, " ");
-			for (auto const& s : svec) {
-				auto const p = cyng::filesystem::make_path(gpio_path) / ("gpio" + s);
-				auto const tid = cyng::async::start_task_detached<gpio>(mux_
+			auto const vec = gpio_config.get_vector();
+			for (auto const pin : vec) {
+				auto const p = gpio_config.get_path(pin);
+				auto const tsk = cyng::async::start_task_detached<gpio>(mux_
 					, logger_
 					, p);
 
 				//
 				//	store task id in cache DB
 				//
-				cache_.set_cfg("gpio-task-" + s, tid);
+				gpio_config.set_task(pin, tsk);
 			}
 		}
 		else {

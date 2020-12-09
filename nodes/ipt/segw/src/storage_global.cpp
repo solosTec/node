@@ -1270,20 +1270,11 @@ namespace node
 								<< gpio_list.size()
 								<< std::endl;
 						}
-						std::stringstream ss;
-						bool initialized{ false };
-						for (auto const gpio : gpio_list) {
-							if (initialized) {
-								ss << ' ';
-							}
-							else {
-								initialized = true;
-							}
-							ss
-								<< gpio
-								;
+
+						std::size_t counter{ 0 };
+						for (std::uint32_t const gpio : gpio_list) {
+							init_config_record(s, build_cfg_key({ "gpio", "pin", std::to_string(++counter) }), cyng::make_object(gpio));
 						}
-						init_config_record(s, build_cfg_key({ "gpio", "vector" }), cyng::make_object(ss.str()));
 
 					}
 					else {

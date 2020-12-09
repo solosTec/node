@@ -11,6 +11,7 @@
 #include <storage.h>
 #include <bridge.h>
 #include <segw.h>
+#include <cfg_gpio.h>
 
 #include <smf/serial/baudrate.h>
 #include <smf/ipt/response.hpp>
@@ -69,7 +70,7 @@ namespace node
 				, account
 				, pwd
 				, accept_all)
-			, task_gpio_(cyng::async::NO_TASK)
+			, task_gpio_(cfg_gpio(cache_).get_task(46))
 			, retries_(cfg_.get_ipt_tcp_connect_retries())
 		{
 

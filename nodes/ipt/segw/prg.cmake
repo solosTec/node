@@ -9,13 +9,6 @@ set (node_ipt_segw_cpp
 	src/storage.cpp
 	src/storage_global.cpp
 	src/cache.cpp
-	src/cfg_ipt.cpp
-	src/cfg_rs485.cpp
-	src/cfg_wmbus.cpp
-	src/cfg_mbus.cpp
-	src/cfg_server.cpp
-	src/cfg_broker.cpp
-	src/cfg_redirector.cpp
 	src/bridge.cpp
 	src/router.cpp
 	src/lmn.cpp
@@ -31,6 +24,16 @@ set (node_ipt_segw_h
 	src/storage.h
 	src/storage_global.h
 	src/cache.h
+	src/bridge.h
+	src/router.h
+	src/lmn.h
+	src/mbus_decoder.h
+	src/profiles.h
+
+)
+
+set (node_ipt_segw_config
+
 	src/cfg_ipt.h
 	src/cfg_rs485.h
 	src/cfg_wmbus.h
@@ -38,12 +41,16 @@ set (node_ipt_segw_h
 	src/cfg_server.h
 	src/cfg_broker.h
 	src/cfg_redirector.h
-	src/bridge.h
-	src/router.h
-	src/lmn.h
-	src/mbus_decoder.h
-	src/profiles.h
+	src/cfg_gpio.h
 
+	src/cfg_ipt.cpp
+	src/cfg_rs485.cpp
+	src/cfg_wmbus.cpp
+	src/cfg_mbus.cpp
+	src/cfg_server.cpp
+	src/cfg_broker.cpp
+	src/cfg_redirector.cpp
+	src/cfg_gpio.cpp
 )
 
 set (node_ipt_segw_shared
@@ -191,6 +198,7 @@ source_group("server" FILES ${node_ipt_sml_server})
 source_group("nms" FILES ${node_ipt_nms_server})
 source_group("redirector" FILES ${node_ipt_redirector_server})
 source_group("messaging" FILES ${node_ipt_segw_msg})
+source_group("config" FILES  ${node_ipt_segw_config})
 
 
 # define the main program
@@ -204,6 +212,7 @@ set (node_ipt_segw
   ${node_ipt_nms_server}
   ${node_ipt_redirector_server}
   ${node_ipt_segw_msg}
+  ${node_ipt_segw_config}
 )
 
 if(WIN32)
