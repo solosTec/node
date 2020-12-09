@@ -17,6 +17,9 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/nil_generator.hpp>
+#ifdef _DEBUG
+#include <boost/uuid/uuid_io.hpp>
+#endif
 
 namespace node 
 {
@@ -273,17 +276,6 @@ namespace node
 		//
 		else if (boost::algorithm::equals(table, "TBridge"))
 		{
-//#ifdef _DEBUG
-			//
-			//	hunting a bug on linux: IP address is NULL
-			//
-			//CYNG_LOG_DEBUG(logger, "Bridge meter "
-			//	<< cyng::io::to_str(key)
-			//	<< " - "
-			//	<< cyng::io::to_str(data));
-
-//#endif
-
 			if (!complete_data_bridge(db, key, data)) {
 
 				CYNG_LOG_WARNING(logger, "IEC device "
@@ -311,7 +303,7 @@ namespace node
 			if (boost::algorithm::equals(table, "_Session"))
 			{
 				//
-				//	mark gateways as online
+				//	mark gateways and meters as online
 				//
 				update_data_online_status(db, key, data, origin);
 			}
@@ -659,30 +651,27 @@ namespace node
 		db.access([&](cyng::store::table* tbl_gw, cyng::store::table* tbl_meter, const cyng::store::table* tbl_ses) {
 
 			//
-			//	[*Session,[2ce46726-6bca-44b6-84ed-0efccb67774f],[00000000-0000-0000-0000-000000000000,2018-03-12 17:56:27.10338240,f51f2ae7,data-store,eaec7649-80d5-4b71-8450-3ee2c7ef4917,94aa40f9-70e8-4c13-987e-3ed542ecf7ab,null,session],1]
-			//	Gateway and Device table share the same table key
+			//	TGateway, TDevice and TMeter table share the same table key
 			//
 			auto rec = tbl_ses->lookup(key);
-			if (rec.empty()) {
-				//	set online state
-				tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
-				tbl_meter->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", 0), origin);
-			}
-			else {
+			if (!rec.empty()) {
+
 				auto const rtag = cyng::value_cast(rec["rtag"], boost::uuids::nil_uuid());
 				auto const state = rtag.is_nil() ? 1 : 2;
 				tbl_gw->modify(cyng::table::key_generator(rec["device"]), cyng::param_factory("online", state), origin);
 
 				//
-				//	update TMeter
+				//	Update TMeter
+				//
+
+				//
+				//	(1) Update all meters that are connected by a gateway.
 				//	Lookup if TMeter has a gateway with this key
 				//	This method is inherently slow.
 				//	ToDo: optimize
 				//
-
-				std::map<cyng::table::key_type, int>	result;
-				auto const gw_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
-				auto const meters = collect_meter_of_gw(tbl_meter, gw_tag);
+				auto const dev_tag = cyng::value_cast(rec["device"], boost::uuids::nil_uuid());
+				auto const meters = collect_meter_of_gw(tbl_meter, dev_tag);
 
 				//
 				//	Update all found meters
@@ -690,6 +679,11 @@ namespace node
 				for (auto const& item : meters) {
 					tbl_meter->modify(item, cyng::param_factory("online", state), origin);
 				}
+
+				//
+				//	(2) Update all meters that are connected directly.
+				//
+				tbl_meter->modify(cyng::table::key_generator(dev_tag), cyng::param_factory("online", state), origin);
 
 			}
 		}	, cyng::store::write_access("TGateway")

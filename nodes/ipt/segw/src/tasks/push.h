@@ -96,7 +96,7 @@ namespace node
 		std::vector<sml::obis> collect_obis_codes(cyng::store::table const* tbl_dm);
 
 		//
-		//	ToDo: return type has to be a list of messages
+		//	collect profile data from database
 		//
 		void collect_profile_8181C78610FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
 		void collect_profile_8181C78611FF(sml::res_generator&, sml::trx&, std::uint32_t channel, std::uint32_t source, sml::messages_t&);
