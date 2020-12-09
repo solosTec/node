@@ -33,6 +33,7 @@
 #include <cyng/sys/port.h>
 
 #include <boost/core/ignore_unused.hpp>
+#include <boost/predef.h>
 
 namespace node
 {
@@ -229,8 +230,12 @@ namespace node
 		if (rs485.is_enabled()) {
 			auto const port = rs485.get_port();
 			if (std::none_of(ports.begin(), ports.end(), [port](std::string const& p) {
+#if BOOST_OS_LINUX		
+				return boost::algorithm::equals(port, "/dev/" + p);
+#else
 				return boost::algorithm::equals(port, p);
-				})) {
+#endif
+			})) {
 
 				CYNG_LOG_ERROR(logger_, "rs485 port "
 					<< port
@@ -248,8 +253,12 @@ namespace node
 		if (wmbus.is_enabled()) {
 			auto const port = wmbus.get_port();
 			if (std::none_of(ports.begin(), ports.end(), [port](std::string const& p) {
+#if BOOST_OS_LINUX		
+				return boost::algorithm::equals(port, "/dev/" + p);
+#else
 				return boost::algorithm::equals(port, p);
-				})) {
+#endif
+			})) {
 
 				CYNG_LOG_ERROR(logger_, "wireless M-Bus port "
 					<< port
