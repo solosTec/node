@@ -8,6 +8,7 @@
 #include <boost/asio.hpp>
 #include "show_ports.h"
 #include <cyng/sys/port.h>
+#include <boost/predef.h>
 
 namespace node 
 {
@@ -27,7 +28,12 @@ namespace node
 
 			boost::asio::serial_port port(io_service);
 			boost::system::error_code ec;
+
+#if BOOST_OS_LINUX		
+			port.open("/dev/" + name, ec);
+#else	
 			port.open(name, ec);
+#endif
 			if (port.is_open()) {
 
 				boost::asio::serial_port_base::character_size databits;
@@ -80,6 +86,8 @@ namespace node
 				os
 					<< "cannot open "
 					<< name
+					<< ": "
+					<< ec.message()
 					<< std::endl
 					;
 			}
