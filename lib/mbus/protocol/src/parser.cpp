@@ -647,7 +647,7 @@ namespace node
 			>> std::setbase(16)
 			>> id;
 
-		return cyng::to_buffer<std::uint32_t>(id);
+		return cyng::to_buffer(id);
 	}
 
 }	//	node
