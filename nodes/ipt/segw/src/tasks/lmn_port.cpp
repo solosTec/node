@@ -160,7 +160,7 @@ namespace node
 					<< receiver_data_.size()
 					<< " receiver");
 
-#ifdef SMF_IO_DEBUG
+//#ifdef SMF_IO_DEBUG
 				cyng::io::hex_dump hd;
 				std::stringstream ss;
 				if (bytes_transferred > 128) {
@@ -169,9 +169,8 @@ namespace node
 				else {
 					hd(ss, buffer_.cbegin(), buffer_.cbegin() + bytes_transferred);
 				}
-				CYNG_LOG_TRACE(logger_, "\n" << ss.str());
-
-#endif
+				CYNG_LOG_TRACE(logger_, "LMN port " << name_  << "\n" << ss.str());
+//#endif
 				//
 				//	post data to receiver 
 				//

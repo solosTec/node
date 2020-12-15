@@ -74,7 +74,7 @@ namespace node
 					}, make_value(addr_2));
 			}
 			catch (std::exception const& ex) {
-				//CYNG_LOG_WARNING(logger_, "get ROOT_CUSTOM_INTERFACE:CUSTOM_IF_IP_ADDRESS_2: " << ex.what());
+				CYNG_LOG_WARNING(logger_, "get ROOT_CUSTOM_INTERFACE:CUSTOM_IF_IP_ADDRESS_2: " << ex.what());
 				merge_msg(msg, {
 					OBIS_ROOT_CUSTOM_INTERFACE,
 					OBIS_CUSTOM_IF_IP_ADDRESS_2

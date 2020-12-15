@@ -29,6 +29,13 @@
 
 namespace node 
 {
+	/**
+	 * Convert a numeric meter id into a buffer of chars.
+	 * Reverse function to header::get_dev_id()
+	 * Example: 0x3105c => 96072000
+	 */
+	cyng::buffer_t to_meter_id(std::uint32_t);
+
 	namespace mbus
 	{
 		/**
@@ -284,6 +291,7 @@ namespace node
 		 */
 		cyng::vector_t to_code(header const&, cyng::buffer_t const&);
 
+
 		/**
 		 * helper class to store the frame of an wireless M-Bus package
 		 */
@@ -297,12 +305,21 @@ namespace node
 
 			void reset();
 
-			std::size_t	size() const;
+			/**
+			 * total size
+			 */
+			std::uint8_t size() const;
 
 			/**
-			 * @return 3 char code
+			 * payload size = total size - 0x09
 			 */
-			std::string get_manufacturer() const;
+			std::uint8_t payload_size() const;
+			std::uint8_t get_c_field() const;
+
+			/**
+			 * @return 2 byte code
+			 */
+			cyng::buffer_t get_manufacturer_code() const;
 			std::uint8_t get_version() const;
 			std::uint8_t get_medium() const;
 			std::uint32_t get_dev_id() const;
@@ -322,17 +339,20 @@ namespace node
 			cyng::buffer_t get_server_id() const;
 
 		private:
+			std::array<char, 11>	data_;
+
 			/**
 			 * packet size without CRC (S, T, R2 Mode)
 			 * packet size with CRC (C Mode)
 			 */
-			std::size_t	packet_size_;
+			//std::uint8_t packet_size_;
 
-			std::array<char, 2>	manufacturer_;
-			std::uint8_t version_;
-			std::uint8_t medium_;
-			std::array<char, 4>	dev_id_;
-			std::uint8_t frame_type_;
+			//std::array<char, 2>	manufacturer_;
+			//std::uint8_t c_field_;
+			//std::uint8_t version_;
+			//std::uint8_t medium_;
+			//std::array<char, 4>	dev_id_;
+			//std::uint8_t frame_type_;
 		};
 
 
@@ -357,7 +377,6 @@ namespace node
 		{
 		public:
 			using parser_callback = std::function<void(header const&, cyng::buffer_t const&)>;
-			//using parser_callback = std::function<void(cyng::vector_t&&)>;
 
 		private:
 			/**
@@ -369,14 +388,15 @@ namespace node
 			enum class state
 			{
 				INVALID_STATE,
-				LENGTH,	//	first byte contains length
-				CTRL_FIELD,
-				MANUFACTURER,
-				DEV_ID,		//	address
-				DEV_VERSION,
-				DEV_TYPE,
-				//STATE_CRC,
-				FRAME_TYPE,
+				HEADER,
+				//LENGTH,	//	first byte contains length
+				//CTRL_FIELD,
+				//MANUFACTURER,
+				//DEV_ID,		//	address
+				//DEV_VERSION,
+				//DEV_TYPE,
+				////STATE_CRC,
+				//FRAME_TYPE,
 				//	0x70: report error
 				//	0x72: long data header
 				//	0x7A: short data header
@@ -428,6 +448,8 @@ namespace node
 				std::size_t size_;
 				cyng::buffer_t data_;
 				frame_data(std::size_t size);
+
+				//	??? use the explicit payload parser instead
 				void decode_main_vif(std::uint8_t);
 				void decode_E0(std::uint8_t);
 				void decode_E1(std::uint8_t);
@@ -440,8 +462,8 @@ namespace node
 			};
 
 			using parser_state_t = boost::variant<error
-				, manufacturer
-				, dev_id
+				//, manufacturer
+				//, dev_id
 				, frame_data>;
 
 			//
@@ -451,8 +473,8 @@ namespace node
 			{
 				state_visitor(parser&, char c);
 				state operator()(error&) const;
-				state operator()(manufacturer&) const;
-				state operator()(dev_id&) const;
+				//state operator()(manufacturer&) const;
+				//state operator()(dev_id&) const;
 				state operator()(frame_data&) const;
 
 				parser& parser_;
@@ -511,8 +533,8 @@ namespace node
 			/**
 			 * handle CTRL field state
 			 */
-			std::pair<state, parser_state_t> ctrl_field(char);
-			std::pair<state, parser_state_t> frame_type(char);
+			//std::pair<state, parser_state_t> ctrl_field(char);
+			//std::pair<state, parser_state_t> frame_type(char);
 
 		private:
 			/**
@@ -539,6 +561,7 @@ namespace node
 			/**
 			 * container for all data from header frame
 			 */
+			std::size_t header_pos_;
 			header header_;
 
 #ifdef _DEBUG

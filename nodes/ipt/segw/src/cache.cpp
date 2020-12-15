@@ -99,6 +99,15 @@ namespace node
 		return r;
 	}
 
+	bool cache::del_cfg(std::string name)
+	{
+		bool r{ false };
+		db_.access([&](cyng::store::table* tbl) {
+			r = tbl->erase(cyng::table::key_generator(name), tag_);
+		}, cyng::store::write_access("_Cfg"));
+		return r;
+	}
+
 	void cache::read_table(std::string const& name, std::function<void(cyng::store::table const*)> f) const
 	{
 		db_.access([f](cyng::store::table const* tbl) {
@@ -379,7 +388,7 @@ namespace node
 			, 32	//	pwd
 			}),
 
-			cyng::table::make_meta_table<1, 8>("_Readout",
+			cyng::table::make_meta_table<1, 9>("_Readout",
 			{ "pk"			//	UUID
 			, "serverID"	//	server/meter ID
 			, "manufacturer"
@@ -387,28 +396,31 @@ namespace node
 			, "medium"
 			, "dev_id"
 			, "frame_type"
+			, "size"
 			, "payload"
 			, "ts"			//	timestamp
 			},
 			{ cyng::TC_UUID			//	pk
 			, cyng::TC_BUFFER		//	serverID
-			, cyng::TC_STRING		//	manufacturer
+			, cyng::TC_BUFFER		//	manufacturer (2 byte code)
 			, cyng::TC_UINT8		//	version
 			, cyng::TC_UINT8		//	medium
 			, cyng::TC_UINT32		//	dev id
 			, cyng::TC_UINT8		//	frame_type
+			, cyng::TC_UINT8		//	size
 			, cyng::TC_BUFFER		//	payload
 			, cyng::TC_TIME_POINT	//	ts
 			},
-			{ 0
-			, 9
-			, 3
-			, 0
-			, 0
-			, 0
-			, 0
-			, 512
-			, 0
+			{ 36	//	pk
+			, 9		//	serverID
+			, 2		//	manufacturer
+			, 0		//	version
+			, 0		//	medium
+			, 0		//	dev_id
+			, 0		//	frame_type
+			, 0		//	size
+			, 512	//	payload
+			, 0		//	ts
 			}),
 
 			cyng::table::make_meta_table<2, 4>("_ReadoutData",

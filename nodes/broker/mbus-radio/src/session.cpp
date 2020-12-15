@@ -54,7 +54,6 @@ namespace node
 		, decoder_(logger
 			, vm_
 			, std::bind(&session::cb_meter_decoded, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
-			//, std::bind(&session::cb_data_decoded, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
 			, std::bind(&session::cb_value_decoded, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)
 		)
 	{
@@ -116,10 +115,10 @@ namespace node
 						<< cyng::bytes_to_str(bytes_transferred));
 
 #ifdef _DEBUG
-					//cyng::io::hex_dump hd;
-					//std::stringstream ss;
-					//hd(ss, buffer_.begin(), buffer_.begin() + bytes_transferred);
-					//CYNG_LOG_TRACE(logger_, "\n" << ss.str());
+					cyng::io::hex_dump hd;
+					std::stringstream ss;
+					hd(ss, buffer_.begin(), buffer_.begin() + bytes_transferred);
+					CYNG_LOG_TRACE(logger_, "do_read\n" << ss.str());
 #endif
 					if (authorized_) {
 						//
@@ -255,10 +254,14 @@ namespace node
 			auto const aes = cache_.lookup_aes(rec.key());
 			CYNG_LOG_DEBUG(logger_, "aes key     : " << cyng::io::to_str(aes));
 
+			auto const manufacturer = h.get_manufacturer_code();
+			BOOST_ASSERT(manufacturer.size() == 2);
+			auto const maker = sml::decode(manufacturer.at(0), manufacturer.at(1));
+
 			cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
 				, ident
 				, h.get_medium()
-				, h.get_manufacturer()
+				, maker
 				, h.get_frame_type()
 				, cyng::io::to_str(rec.convert())
 				, cluster_.tag()));
@@ -277,10 +280,14 @@ namespace node
 
 			auto const str = cyng::io::to_hex(data);
 
+			auto const manufacturer = h.get_manufacturer_code();
+			BOOST_ASSERT(manufacturer.size() == 2);
+			auto const maker = sml::decode(manufacturer.at(0), manufacturer.at(1));
+
 			cluster_.async_run(bus_insert_wMBus_uplink(std::chrono::system_clock::now()
 				, ident
 				, h.get_medium()
-				, h.get_manufacturer()
+				, maker
 				, h.get_frame_type()
 				, str
 				, cluster_.tag()));
@@ -308,6 +315,10 @@ namespace node
 			, meter
 			, tag);
 
+		auto const manufacturer = h.get_manufacturer_code();
+		BOOST_ASSERT(manufacturer.size() == 2);
+		auto const maker = sml::decode(manufacturer.at(0), manufacturer.at(1));
+
 		//
 		//	TMeter
 		//
@@ -318,9 +329,9 @@ namespace node
 			ident,	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
 			meter,	//	meter number (i.e. 16000913) 4 bytes 
 			mc,		//	metering code 
-			h.get_manufacturer(),	//	manufacturer (3 char-code)
+			maker,	//	manufacturer (3 char-code)
 			std::chrono::system_clock::now(),			//	time of manufacture
-			h.get_manufacturer(),	//	meter type
+			"",		//	meter type
 			"",		//	parametrierversion (i.e. 16A098828.pse)
 			"",		//	fabrik nummer (i.e. 06441734)
 			"",		//	ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"

@@ -8,7 +8,8 @@
 #ifndef NODE_IPT_SEGW_CACHE_H
 #define NODE_IPT_SEGW_CACHE_H
 
-#include "segw.h"
+#include <segw.h>
+
 #include <smf/sml/status.h>
 #include <smf/ipt/config.h>
 
@@ -120,6 +121,11 @@ namespace node
 		 * set/insert a configuration value
 		 */
 		bool merge_cfg(std::string name, cyng::object&& obj);
+
+		/**
+		 * remove an entry from the configuration
+		 */
+		bool del_cfg(std::string name);
 
 		void read_table(std::string const&, std::function<void(cyng::store::table const*)>) const;
 		void read_tables(std::string const&, std::string const&, std::function<void(cyng::store::table const*, cyng::store::table const*)>) const;

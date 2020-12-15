@@ -18,6 +18,8 @@
 #include <cyng/value_cast.hpp>
 #include <cyng/numeric_cast.hpp>
 
+#include <iomanip>
+
 #include <boost/core/ignore_unused.hpp>
 #include <boost/predef.h>
 
@@ -208,7 +210,7 @@ namespace node
 			auto const meter = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "meter", std::to_string(idx) }), "");
 			if (meter.empty())	break;
 			try {
-				vec.push_back(std::stoul(meter, nullptr, 0));
+				vec.push_back(std::stoul(meter, nullptr, 10));
 			}
 			catch (std::exception const&) {
 			}
@@ -216,11 +218,79 @@ namespace node
 		return vec;
 	}
 
+	cyng::vector_t cfg_wmbus::get_block_list_vector() const
+	{
+		cyng::vector_t vec;
+		auto const block_list = get_block_list();
+		std::transform(std::begin(block_list), std::end(block_list), std::back_inserter(vec), [](std::uint32_t id) {
+			std::stringstream ss;
+			ss.width(8);
+			ss.fill('0');
+			ss << id;
+			return cyng::make_object(ss.str());
+			});
+		return vec;
+
+	}
+
+	void cfg_wmbus::set_block_list(std::vector<std::uint32_t> const& list) const
+	{
+		//
+		//	remove all existing entries
+		//
+		clear_meter_list();
+
+		//
+		//	add new entries
+		//
+		set_meter_list(list);
+	}
+
+	void cfg_wmbus::set_meter_list(std::vector<std::uint32_t> const& list) const
+	{
+		std::size_t idx{ 0 };
+		for (auto const& id : list) {
+			std::stringstream ss;
+			ss.width(8);
+			ss.fill('0');
+			ss << id;
+			auto const key = build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "meter", std::to_string(++idx) });
+			cache_.merge_cfg(key, cyng::make_object(ss.str()));
+		}
+	}
+
+	void cfg_wmbus::clear_meter_list() const
+	{
+		for (std::size_t idx = 1; ; idx++) {
+			auto const key = build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "meter", std::to_string(idx) });
+			auto const meter = cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS.to_str(), "blocklist", "meter", std::to_string(idx) }), "");
+			if (meter.empty())	break;
+			cache_.del_cfg(key);
+		}
+	}
+
 	bool cfg_wmbus::is_meter_blocked(std::uint32_t id) const
 	{
 		if (is_blocklist_enabled()) {
 
+			auto const vec = get_block_list();
+			auto const pos = std::find(std::begin(vec), std::end(vec), id);
+			if (pos == std::end(vec)) {
 
+				//
+				//	if NOT listed and NOT in drop mode 
+				//	it's BLOCKED
+				//
+				return !is_blocklist_drop_mode();
+			}
+			else {
+
+				//
+				//	if listed and in drop mode
+				//	it's BLOCKED
+				//
+				return is_blocklist_drop_mode();
+			}
 		}
 		return false;
 	}

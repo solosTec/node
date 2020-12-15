@@ -9,18 +9,14 @@
 #define NODE_SEGW_TASK_BROKER_WMBUS_H
 
 #include <NODE_project_info.h>
-#include "../cfg_wmbus.h"
+#include <cfg_wmbus.h>
 
 #include <cyng/log.h>
 #include <cyng/async/mux.h>
 #include <cyng/table/table_fwd.h>
-
+#include <cyng/vm/controller_fwd.h>
 #include <cyng/compatibility/file_system.hpp>
-
-namespace cyng
-{
-	class controller;
-}
+#include <cyng/store/publisher.h>
 
 namespace node
 {
@@ -84,6 +80,7 @@ namespace node
 		/**
 		 * configuration management
 		 */
+		cache& cache_;
 		cfg_wmbus cfg_;
 
 		/**
@@ -104,6 +101,8 @@ namespace node
 		 */
 		read_buffer_t buffer_read_;
 		std::deque<cyng::buffer_t>	buffer_write_;
+
+		typename boost::signals2::connection insert_connection_;
 
 	};
 

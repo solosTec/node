@@ -14,10 +14,15 @@
 #if BOOST_OS_WINDOWS
 #include <boost/asio.hpp>
 #endif
-#include "controller.h"
+
+#include <controller.h>
+
 #include <iostream>
 #include <fstream>
 
+//#ifdef _DEBUG
+//#include <smf/mbus/parser.h>
+//#endif
 
 /**
  * main entry point.
@@ -26,6 +31,11 @@
  */
 int main(int argc, char **argv) 
 {
+
+//#ifdef _DEBUG
+//	auto b = node::to_meter_id(0x3105c);
+//#endif
+
 	
 	//	will contain the path to an optional configuration file
 	std::string config_file;

@@ -29,6 +29,7 @@
 #include <cyng/table/body.hpp>
 #include <cyng/set_cast.h>
 #include <cyng/numeric_cast.hpp>
+#include <cyng/vector_cast.hpp>
 #include <cyng/json.h>
 #include <cyng/dom/algorithm.h>
 #include <cyng/parser/version_parser.h>
@@ -320,7 +321,6 @@ namespace node
 		cyng::param_map_t reader::cmd_merge(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
 		{
 			auto const ports = cyng::to_param_map(dom.get("serial-port"));
-			//auto const version = cyng::to_param_map(dom.get("version"));
 
 			cfg_rs485 rs485(cache_);
 			cfg_wmbus wmbus(cache_);
@@ -514,9 +514,55 @@ namespace node
 							}
 							else {
 								//
-								//	ToDo
+								//	update the parameters enabled, list, and mode
 								//
-								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ToDo"));
+								auto const block_map = cyng::to_param_map(param.second);
+
+								//
+								//	enabled/disbaled
+								//
+								auto pos = block_map.find("enabled");
+								if (pos != block_map.end()) {
+									wmbus.set_blocklist_enabled(pos->second);
+								}
+
+								//
+								//	mode
+								//
+								pos = block_map.find("mode");
+								if (pos != block_map.end()) {
+									auto const mode = cyng::value_cast(pos->second, "");
+									if (boost::algorithm::equals(mode, "drop")) {
+										wmbus.set_blocklist_drop_mode();
+									}
+									else if (boost::algorithm::equals(mode, "accept")) {
+										wmbus.set_blocklist_accept_mode();
+									}
+									else {
+										CYNG_LOG_WARNING(logger_, "undefined block mode: " << mode);
+										cyng::merge(pm, { "serial-port", port.first, param.first, "mode" }, cyng::make_object("error: undefined block mode"));
+
+									}
+								}
+
+								pos = block_map.find("list");
+								if (pos != block_map.end()) {
+									auto const list = cyng::vector_cast<std::string>(pos->second, "");
+									CYNG_LOG_TRACE(logger_, "block list size: " << list.size());
+
+									//
+									//	convert into u32 values
+									//
+									std::vector<std::uint32_t> vec;
+									std::transform(std::begin(list), std::end(list), std::back_inserter(vec), [](std::string id) -> std::uint32_t {
+										try {
+											return static_cast<std::uint32_t>(std::stoul(id, nullptr, 10));
+										}
+										catch (std::exception const&) {}
+										return 0u;
+									});
+									wmbus.set_block_list(vec);
+								}
 							}
 						}
 						else {
@@ -583,9 +629,9 @@ namespace node
 						("baudrate", wmbus.get_baud_rate().value())
 						("broker", broker.get_server_vector(source::WIRELESS_LMN))
 						("blocklist", cyng::param_map_factory
-							("enabled", false)
-							("list", cyng::vector_factory({ "00684279" }))
-							("mode", "drop")
+							("enabled", wmbus.is_blocklist_enabled())
+							("list", wmbus.get_block_list_vector())
+							("mode", (wmbus.is_blocklist_drop_mode() ? "drop" : "accept"))
 							())
 						())
 				))

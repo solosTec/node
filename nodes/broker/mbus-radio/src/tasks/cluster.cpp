@@ -14,6 +14,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/io/serializer.h>
 #include <cyng/vm/generator.h>
+#include <cyng/vm/domain/log_domain.h>
 
 #include <boost/uuid/random_generator.hpp>
 
@@ -39,6 +40,11 @@ namespace node
 			<< " <"
 			<< base_.get_class_name()
 			<< ">");
+
+		//
+		//	log domain
+		//
+		cyng::register_logger(logger_, bus_->vm_);
 
 		//
 		//	init cache

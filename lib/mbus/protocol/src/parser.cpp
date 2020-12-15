@@ -6,12 +6,16 @@
  */ 
 #include <smf/mbus/parser.h>
 #include <smf/mbus/defs.h>
+
 #include <cyng/vm/generator.h>
-#include <cyng/util/slice.hpp>
+//#include <cyng/util/slice.hpp>
+#include <cyng/buffer_cast.h>
+
 #include <iostream>
 #include <sstream>
 #include <ios>
 #include <iomanip>
+
 #include <boost/numeric/conversion/cast.hpp>
 
 namespace node 
@@ -285,8 +289,9 @@ namespace node
 			: cb_(cb)
 			, stream_buffer_()
 			, input_(&stream_buffer_)
-			, stream_state_(state::LENGTH)
+			, stream_state_(state::HEADER)
 			, parser_state_()
+			, header_pos_(0)
 			, header_()
 #ifdef _DEBUG
 			, meter_set_()
@@ -316,10 +321,10 @@ namespace node
 
 		void parser::reset()
 		{
-			stream_state_ = state::LENGTH;
+			stream_state_ = state::HEADER;
 			parser_state_ = error();
+			header_pos_ = 0;
 			header_.reset();
-			//server_id_.fill(0);
 #ifdef _DEBUG
 			std::cout << meter_set_.size() << " meter(s) read" << std::endl;
 			for (auto m : meter_set_) {
@@ -339,49 +344,42 @@ namespace node
 		{
 			switch (stream_state_)
 			{
-			case state::LENGTH:
-				//
-				//	format A (S, T, R2 Mode): without CRC
-				//	format B (C Mode): including CRC
-				//
-				//	T, C1A Mode: max 245 bytes
-				//	C1B Mode: max 241 bytes
-				//	R/S Mode: max 213 bytes
-				//
-				header_.packet_size_ = static_cast<std::size_t>(c) & 0xFF;
-				BOOST_ASSERT_MSG(header_.packet_size_ > 9, "packet size to small");
-				stream_state_ = state::CTRL_FIELD;
-				break;
-			case state::CTRL_FIELD:
-				--header_.packet_size_;
-				std::tie(stream_state_, parser_state_) = ctrl_field(c);
-				break;
-			case state::MANUFACTURER:
-				--header_.packet_size_;
-				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-				if (stream_state_ == state::DEV_ID) {
-					parser_state_ = dev_id();
+			case state::HEADER:
+				header_.data_[header_pos_++] = c;
+				if (header_.data_.size() == header_pos_) {
+
+					//
+					//	reset internal header position
+					//
+					header_pos_ = 0;
+
+					//
+					//	get next state
+					//
+					switch (header_.get_frame_type()) {
+					case FIELD_CI_APL_ERROR:	
+						stream_state_ = state::APL_ERROR;
+						break;
+					case FIELD_CI_HEADER_LONG:
+						stream_state_ = state::HEADER_LONG;
+						break;
+					case FIELD_CI_HEADER_SHORT:
+						stream_state_ = state::HEADER_SHORT;
+						break;
+					case FIELD_CI_HEADER_NO:
+					case FIELD_CI_NULL:
+					default:
+						stream_state_ = state::HEADER_NONE;
+						break;
+					}
+					parser_state_ = frame_data(header_.payload_size());
+
+#ifdef _DEBUG
+					if (meter_set_.find(header_.get_dev_id()) == meter_set_.end()) {
+						meter_set_.emplace(header_.get_dev_id());
+					}
+#endif
 				}
-				break;
-			case state::DEV_ID:
-				--header_.packet_size_;
-				//	address
-				stream_state_ = boost::apply_visitor(state_visitor(*this, c), parser_state_);
-				break;
-			case state::DEV_VERSION:
-				//	Version (or Generation number) 
-				--header_.packet_size_;
-				header_.version_ = static_cast<std::uint8_t>(c);
-				stream_state_ = state::DEV_TYPE;
-				break;
-			case state::DEV_TYPE:
-				//	Device type/Medium
-				--header_.packet_size_;
-				header_.medium_ = static_cast<std::uint8_t>(c);
-				stream_state_ = state::FRAME_TYPE;
-				break;
-			case state::FRAME_TYPE:
-				std::tie(stream_state_, parser_state_) = frame_type(c);
 				break;
 			case state::APL_ERROR:
 			case state::HEADER_LONG:
@@ -395,78 +393,6 @@ namespace node
 			}
 
 			return c;
-		}
-
-		std::pair<parser::state, parser::parser_state_t> parser::ctrl_field(char c)
-		{
-			switch (c) {
-			case CTRL_FIELD_SND_NR:
-				//	0x44 == Indicates message from primary station, function send / no reply(SND - NR)
-				//stream_state_ = state::MANUFACTURER;
-				//parser_state_ = manufacturer();	//	2 bytes
-				return std::make_pair(state::MANUFACTURER, manufacturer());
-
-			//case CTRL_FIELD_SND_IR:
-				//	0x46 == Send manually initiated installation data (Send Installation Request - SND_IR)
-				//	ED300L is sending 10 SND_IR packets after restart
-				//break;
-
-				//case CTRL_FIELD_ACC_NR: 
-					//	0x47 == Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two application data transmissions
-			//case CTRL_FIELD_ACC_DMD:
-				//	0x48 == Access demand to master in order to request new important application data (alerts)
-				//break;
-
-			default:
-				//stream_state_ = state::INVALID_STATE;
-				//	ToDo:
-				//cb_(cyng::generate_invoke("log.msg.error", "w-mbus: unknown control field: ", +c));
-				break;
-			}
-
-			return std::make_pair(state::INVALID_STATE, error());
-		}
-
-		std::pair<parser::state, parser::parser_state_t> parser::frame_type(char c)
-		{
-			//	CI field of SND-NR frame
-			//	0x72, 0x78 or 0x7A expected
-			//	0x72: long data header
-			//	0x7A: short data header
-			//	0x78: no data header
-
-			header_.frame_type_ = static_cast<std::uint8_t>(c);
-			//cb_(cyng::generate_invoke("log.msg.trace", "frame type: ", header_.frame_type_));
-
-			switch (header_.frame_type_) {
-			case FIELD_CI_APL_ERROR:
-				//	RSP_UD telegram
-				return std::make_pair(state::APL_ERROR, frame_data(header_.packet_size_));
-			case FIELD_CI_HEADER_LONG:	//	0x72
-				//	secondary address (8 bytes) + short header
-				//
-				return std::make_pair(state::HEADER_LONG, frame_data(header_.packet_size_));
-			case FIELD_CI_HEADER_SHORT:	//	0x7A
-				//	byte1: counter (EN 13757-)
-				//	byte2: status
-				//	byte3/4: configuration (encryption mode and number of encrypted bytes)
-				//
-				return std::make_pair(state::HEADER_SHORT, frame_data(header_.packet_size_));
-			case FIELD_CI_HEADER_NO:	//	 0x78
-				return std::make_pair(state::HEADER_NONE, frame_data(header_.packet_size_));
-			case FIELD_CI_EXT_DLL_I:	//	0x8C
-				break;
-			case FIELD_CI_NULL:	//	0xFF
-				//cb_(cyng::generate_invoke("log.msg.warning", "unsupported frame type FIELD_CI_NULL", header_.frame_type_));
-				break;
-			case FIELD_CI_MANU_SPEC:	//	0xA0
-				//cb_(cyng::generate_invoke("log.msg.warning", "unsupported frame type FIELD_CI_MANU_SPEC", header_.frame_type_));
-				break;
-			default:
-				BOOST_ASSERT(c == 0x70 || c == 0x72 || c == 0x78 || c == 0x7A || c == 0x7F);
-				break;
-			}
-			return std::make_pair(state::HEADER_NONE, frame_data(header_.packet_size_));
 		}
 
 		void parser::post_processing()
@@ -485,47 +411,6 @@ namespace node
 		parser::state parser::state_visitor::operator()(error&) const
 		{
 			return state::INVALID_STATE;
-		}
-
-		parser::state parser::state_visitor::operator()(manufacturer& v) const
-		{
-			v.data_[v.pos_++] = this->c_;
-			if (v.pos_ == v.data_.size()) {
-
-				this->parser_.header_.manufacturer_ = v.data_;
-				return state::DEV_ID;
-			}
-			return state::MANUFACTURER;
-		}
-
-		parser::state parser::state_visitor::operator()(dev_id& v) const
-		{
-			v.data_[v.pos_++] = this->c_;
-			if (v.pos_ == v.data_.size()) {
-
-				//
-				//	copy data
-				//
-				this->parser_.header_.dev_id_ = v.data_;
-
-#ifdef _DEBUG
-				//this->parser_.cb_(cyng::generate_invoke("log.msg.trace", "device ID", this->parser_.header_.get_dev_id()));
-
-				if (this->parser_.meter_set_.find(this->parser_.header_.get_dev_id()) == this->parser_.meter_set_.end()) {
-					this->parser_.meter_set_.emplace(this->parser_.header_.get_dev_id());
-					std::cout
-						<< "new meter: "
-						<< std::dec
-						<< std::setfill('0')
-						<< std::setw(8)
-						<< this->parser_.header_.get_dev_id()
-						<< std::endl
-						;
-				}
-#endif
-				return state::DEV_VERSION;
-			}
-			return state::DEV_ID;
 		}
 
 		parser::frame_data::frame_data(std::size_t size)
@@ -627,50 +512,45 @@ namespace node
 			if (v.size_ == 0) {
 				//std::cout << "frame with " << v.data_.size() << " bytes complete" << std::endl;
 
-				//parser_.cb_(to_code(this->parser_.header_, v.data_));
 				parser_.cb_(this->parser_.header_, v.data_);
 
-				//parser_.cb_(cyng::generate_invoke("wmbus.push.frame"
-				//	, cyng::buffer_t(this->parser_.server_id_.begin(), this->parser_.server_id_.end())
-				//	, this->parser_.header_.manufacturer_
-				//	, this->parser_.header_.version_
-				//	, this->parser_.header_.medium_
-				//	, this->parser_.header_.dev_id_
-				//	, this->parser_.header_.frame_type_
-				//	, v.data_));
-
-				return state::LENGTH;
+				return state::HEADER;
 			}
 			return state::HEADER_NONE;
 		}
 
 		header::header()
-			: packet_size_(0)
-			, manufacturer_()
-			, version_()
-			, medium_()
-			, dev_id_()
-			, frame_type_()
+			: data_{0}
 		{}
 
-		std::size_t	header::size() const
+		std::uint8_t header::size() const
 		{
-			return packet_size_;
+			return data_.at(0);
 		}
 
-		std::string header::get_manufacturer() const
+		std::uint8_t header::payload_size() const
 		{
-			return node::sml::decode(manufacturer_.at(0), manufacturer_.at(1));
+			return size() - 0x09;
+		}
+
+		std::uint8_t header::get_c_field() const
+		{
+			return data_.at(1);
+		}
+
+		cyng::buffer_t header::get_manufacturer_code() const
+		{
+			return { data_.at(2), data_.at(3) };
 		}
 
 		std::uint8_t header::get_version() const
 		{
-			return version_;
+			return data_.at(8);
 		}
 
 		std::uint8_t header::get_medium() const
 		{
-			return medium_;
+			return data_.at(9);
 		}
 
 		std::uint32_t header::get_dev_id() const
@@ -680,7 +560,8 @@ namespace node
 			//
 			//	get the device ID as u32 value
 			//
-			auto idp = reinterpret_cast<std::uint32_t const*>(dev_id_.data());
+			//auto idp = reinterpret_cast<std::uint32_t const*>(dev_id_.data());
+			auto p = reinterpret_cast<std::uint32_t const*>(&data_.at(4));
 
 			//
 			//	read this value as a hex value
@@ -690,7 +571,7 @@ namespace node
 			ss
 				<< std::setw(8)
 				<< std::setbase(16)
-				<< *idp;
+				<< *p;
 
 			//
 			//	write this value as decimal value
@@ -705,17 +586,12 @@ namespace node
 
 		std::uint8_t header::get_frame_type() const
 		{
-			return frame_type_;
+			return data_.at(10);
 		}
 
 		void header::reset()
 		{
-			packet_size_ = 0;
-			std::fill(std::begin(manufacturer_), std::end(manufacturer_), 0);
-			version_ = 0;
-			medium_ = 0;
-			std::fill(std::begin(dev_id_), std::end(dev_id_), 0);
-			frame_type_ = 0;
+			data_.fill(0);
 		}
 
 		cyng::buffer_t header::get_server_id() const
@@ -724,17 +600,17 @@ namespace node
 			server_id[0] = 1;	//	wireless M-Bus
 
 			//	[1-2] 2 bytes manufacturer ID
-			server_id[1] = manufacturer_[0];
-			server_id[2] = manufacturer_[1];
+			server_id[1] = data_.at(2);
+			server_id[2] = data_.at(3);
 
 			//	[3-6] 4 bytes serial number (reversed)
-			server_id[3] = dev_id_[0];
-			server_id[4] = dev_id_[1];
-			server_id[5] = dev_id_[2];
-			server_id[6] = dev_id_[3];
+			server_id[3] = data_.at(4);
+			server_id[4] = data_.at(5);
+			server_id[5] = data_.at(6);
+			server_id[6] = data_.at(7);
 
-			server_id[7] = version_;
-			server_id[8] = medium_;
+			server_id[7] = data_.at(8);
+			server_id[8] = data_.at(9);
 
 			return cyng::buffer_t(server_id.begin(), server_id.end());
 		}
@@ -742,15 +618,37 @@ namespace node
 		cyng::vector_t to_code(header const& h, cyng::buffer_t const& data)
 		{
 			return cyng::generate_invoke("wmbus.push.frame"
-				, h.get_server_id()
-				, h.get_manufacturer()
-				, h.version_
-				, h.medium_
-				, h.get_dev_id()
-				, h.frame_type_
+				, h.get_server_id()			//	9 bytes
+				, h.get_manufacturer_code()	//	2 bytes
+				, h.get_version()
+				, h.get_medium()
+				, h.get_dev_id()	//	u32
+				, h.get_frame_type()
+				, h.size()
 				, data);
 		}
-
 	}
+
+	cyng::buffer_t to_meter_id(std::uint32_t id)
+	{
+		//	Example: 0x3105c = > 96072000
+
+		std::stringstream ss;
+		ss.fill('0');
+		ss
+			<< std::setw(8)
+			<< std::setbase(10)
+			<< id;
+
+		auto const s = ss.str();
+		BOOST_ASSERT(s.size() == 8);
+
+		ss
+			>> std::setbase(16)
+			>> id;
+
+		return cyng::to_buffer<std::uint32_t>(id);
+	}
+
 }	//	node
 

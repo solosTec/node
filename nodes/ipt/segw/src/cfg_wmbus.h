@@ -107,9 +107,20 @@ namespace node
 		bool set_blocklist_drop_mode() const;
 		bool set_blocklist_accept_mode() const;
 
+		/**
+		 * IF_wMBUS:blocklist:meter:1................: 00684279 (00684279:s)
+		 * IF_wMBUS:blocklist:meter:2................: 12345678 (12345678:s)
+		 * @return a vector with all blocked or allowed meter IDs
+		 */
 		std::vector<std::uint32_t> get_block_list() const;
-		//IF_wMBUS:blocklist:meter:1................: 00684279 (00684279:s)
-		//IF_wMBUS:blocklist:meter:2................: 12345678 (12345678:s)
+
+		/**
+		 * Same as get_block_list() but with a generic vector as result.
+		 */
+		cyng::vector_t get_block_list_vector() const;
+
+		void set_block_list(std::vector<std::uint32_t> const&) const;
+
 		//IF_wMBUS:blocklist:period.................: 30 (30:i64)
 
 		/**
@@ -136,12 +147,12 @@ namespace node
 						|                   +----+-----------+        |
 						|                        |                    |
 						|                        |no                  |
-				 +------v------+            +----v----------+         |
-			+----+ACCEPT mode? |            | DROP mode?    +--+      |
-			|    +------+------+            +---------------+  |      |
+				 +------v-------+           +----v----------+         |
+			+----+ ACCEPT mode? |           | DROP mode?    +--+      |
+			|    +------+-------+           +---------------+  |      |
 			|           |                        |no           |      |
 			|           |yes                +----v---------+   |      |
-			|           +-------------------> send data    <----------+
+			|           +-------------------> send data    <---+------+
 			|                               +---+----------+   |
 			|                                   |              |
 			|                               +---v-----+        |
@@ -150,6 +161,10 @@ namespace node
 		*/
 		bool is_meter_blocked(std::uint32_t) const;
 
+
+	private:
+		void clear_meter_list() const;
+		void set_meter_list(std::vector<std::uint32_t> const&) const;
 
 	private:
 		cache& cache_;
