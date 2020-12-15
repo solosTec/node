@@ -424,7 +424,7 @@ namespace node
 				//res.set(boost::beast::http::field::content_type, "application/octet-stream");
 				res.set(boost::beast::http::field::content_type, "application/force-download");
 				res.set(boost::beast::http::field::content_disposition, "attachment; filename='" + attachment + "'");
-				res.set(boost::beast::http::field::expires, 0);
+				res.set(boost::beast::http::field::expires, "0");
 				res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
 
 				auto const ext = path.extension().string();
