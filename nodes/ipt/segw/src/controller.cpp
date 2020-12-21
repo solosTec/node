@@ -39,6 +39,7 @@
 #include <cyng/async/task/task_builder.hpp>
 #include <cyng/util/split.h>
 #include <cyng/parser/chrono_parser.h>
+#include <cyng/json.h>
 
 #include <crypto/hash/sha1.h>
 
@@ -64,8 +65,12 @@ namespace node
 		, node_name)
 	{}
 
-	cyng::vector_t controller::create_config(std::fstream& fout, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const
+	cyng::vector_t controller::create_config(std::fstream& fout
+		, cyng::filesystem::path&& tmp
+		, cyng::filesystem::path&& cwd
+		, std::string const& type) const
 	{
+		bool const bpl = boost::algorithm::equals(type, "BPL");
 
 		//
 		//	random uint32
@@ -178,7 +183,7 @@ namespace node
 					cyng::param_factory("discover", "5798"),	//	UDP
 					cyng::param_factory("account", "operator"),
 					cyng::param_factory("pwd", "operator"),
-					cyng::param_factory("enabled", true),
+					cyng::param_factory("enabled", bpl ? false : true),
 					cyng::param_factory("accept-all-ids", false)	//	accept only the specified MAC id
 				))
 
@@ -189,14 +194,7 @@ namespace node
 					cyng::param_factory("port", 7261),
 					cyng::param_factory("account", "operator"),
 					cyng::param_factory("pwd", "operator"),
-					cyng::param_factory("enabled", 
-#ifdef _DEBUG
-						true
-#else
-						false
-#endif
-					),
-
+					cyng::param_factory("enabled", bpl ? true : false ),
 					cyng::param_factory("script-path", 
 #if BOOST_OS_LINUX
 						(tmp / "update-script.sh").string()
@@ -208,7 +206,7 @@ namespace node
 
 				//	hardware
 				, cyng::param_factory("hardware", cyng::tuple_factory(
-					cyng::param_factory("manufacturer", "solosTec"),	//	manufacturer (81 81 C7 82 03 FF - OBIS_DATA_MANUFACTURER)
+					cyng::param_factory("manufacturer", bpl ? "PPC" : "solosTec"),	//	manufacturer (81 81 C7 82 03 FF - OBIS_DATA_MANUFACTURER)
 					cyng::param_factory("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
 					cyng::param_factory("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
 					cyng::param_factory("class", "129-129:199.130.83*255"),	//	device class (81 81 C7 82 02 FF - OBIS_DEVICE_CLASS) "2D 2D 2D"
@@ -240,7 +238,7 @@ namespace node
 					//	if task <readout> receives data and there is no data collector/mirror defined, create one
 					cyng::param_factory("autogen-data-collector", true),
 					//	disable collecting/storing meter data
-					cyng::param_factory("generate-profile", true),
+					cyng::param_factory("generate-profile", bpl ? false : true),
 #if BOOST_OS_WINDOWS
 					//	iM871A
 					cyng::param_factory("enabled", false),
@@ -276,7 +274,7 @@ namespace node
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str(), true),	//	install mode
 					cyng::param_factory(sml::OBIS_W_MBUS_INSTALL_MODE.to_str() + "-desc", "W_MBUS_INSTALL_MODE"),
 
-					cyng::param_factory("collector-login", true),		//	send login
+					cyng::param_factory("collector-login", bpl ? false : true),		//	send login
 					cyng::param_factory("broker-enabled", true),		//	startup brokers
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
@@ -328,7 +326,7 @@ namespace node
 #endif
 
 					cyng::param_factory("protocol", "raw"),		//	raw, mbus, iec, sml
-					cyng::param_factory("collector-login", true),		//	broker sends login
+					cyng::param_factory("collector-login", bpl ? false : true),		//	broker sends login
 					cyng::param_factory("broker-enabled", true),		//	startup brokers
 					cyng::param_factory("broker", cyng::vector_factory({
 						//	define multiple broker here
@@ -428,7 +426,7 @@ namespace node
 					cyng::param_factory(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str(), 1u),	//	minutes
 					cyng::param_factory(sml::OBIS_TCP_CONNECT_RETRIES.to_str(), 20u),
 					cyng::param_factory(sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01).to_str(), 0u),	//	has SSL configuration
-					cyng::param_factory("enabled", true)
+					cyng::param_factory("enabled", bpl ? false : true)
 				))
 
 				//	built-in meter
@@ -1062,6 +1060,36 @@ namespace node
 			, accept_all
 			, tag);
 
+	}
+
+	int controller::create_config(std::string const& type) const
+	{
+		std::fstream fout(json_path_, std::ios::trunc | std::ios::out);
+		if (fout.is_open())
+		{
+			std::cout
+				<< "write to file "
+				<< json_path_
+				<< std::endl;
+
+			//
+			//	get default values
+			//
+			auto obj = cyng::make_object(create_config(fout, cyng::filesystem::temp_directory_path(), cyng::filesystem::current_path(), type));
+			cyng::json::write(std::cout, obj);
+			std::cout << std::endl;
+			cyng::json::write(fout, obj);
+
+			return EXIT_SUCCESS;
+		}
+		else
+		{
+			std::cerr
+				<< "unable to open file "
+				<< json_path_
+				<< std::endl;
+		}
+		return EXIT_FAILURE;
 	}
 
 }

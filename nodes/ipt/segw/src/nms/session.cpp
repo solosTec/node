@@ -332,7 +332,7 @@ namespace node
 				("source", tag)
 				("version", protocol_version_)
 				("serial-port", cyng::param_map_factory()())
-				("meter", cyng::param_map_factory()())
+				//("meter", cyng::param_map_factory()())
 				
 				;
 

@@ -26,6 +26,13 @@ namespace node
 			, std::string const& json_path
 			, std::string node_name);
 
+		/**
+		 * create a configuration file with default values.
+		 *
+		 * @return EXIT_FAILURE in case of an error, otherwise EXIT_SUCCESS.
+		 */
+		int create_config(std::string const& type) const;
+
 		int transfer_config() const;
 		int list_config(std::ostream& os) const;
 		int clear_config() const;
@@ -36,7 +43,7 @@ namespace node
 
 	protected:
 		virtual bool start(cyng::async::mux&, cyng::logging::log_ptr, cyng::reader<cyng::object> const& cfg, boost::uuids::uuid tag);
-		virtual cyng::vector_t create_config(std::fstream&, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd) const;
+		cyng::vector_t create_config(std::fstream&, cyng::filesystem::path&& tmp, cyng::filesystem::path&& cwd, std::string const& type) const;
 		virtual int prepare_config_db(cyng::param_map_t&&, cyng::object);
 
 	private:

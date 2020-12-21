@@ -42,7 +42,8 @@ int main(int argc, char **argv)
 	std::uint32_t profile{ 0 };
 	std::string value{ "bool:rs485:enabled:true" };
 	std::string connect{ "demo:demo@segw.ch:26862" };
-	
+	std::string def{ "SMF" };
+
 	//
 	//	generic options
 	//
@@ -53,7 +54,8 @@ int main(int argc, char **argv)
 		("version,v", "print version string")
 		("build,b", "last built timestamp and platform")
 		("config,C", boost::program_options::value<std::string>(&config_file)->default_value(node::get_cfg_name("segw")), "specify the configuration file")
-		("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
+		//("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
+		("default,D", boost::program_options::value<std::string>(&def)->implicit_value("SMF"), "generate a default configuration and exit: SMF, BPL")
 		("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
 		("fs,F", boost::program_options::bool_switch()->default_value(false), "show available drives")
@@ -192,12 +194,15 @@ int main(int argc, char **argv)
 #endif
 
 		try {
-			if (vm["default"].as< bool >())
+
+			if (vm.count("default"))
 			{
 				//	write default configuration
 #ifdef _DEBUG
 				std::cout
-					<< "create default configuration with config index: "
+					<< "create default configuration ["
+					<< def
+					<< "] with config index: "
 					<< config_index
 					<< ", pool size: "
 					<< pool_size 
@@ -205,7 +210,7 @@ int main(int argc, char **argv)
 					<< json_path
 					<< std::endl;
 #endif
-				return ctrl.ctl::create_config();	//	base class method is hidden
+				return ctrl.create_config(def);	//	base class method is hidden
 			}
 
 			if (vm["init"].as< bool >())
