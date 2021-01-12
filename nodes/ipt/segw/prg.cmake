@@ -42,6 +42,7 @@ set (node_ipt_segw_config
 	src/cfg_broker.h
 	src/cfg_redirector.h
 	src/cfg_gpio.h
+	src/cfg_nms.h
 
 	src/cfg_ipt.cpp
 	src/cfg_rs485.cpp
@@ -50,7 +51,9 @@ set (node_ipt_segw_config
 	src/cfg_server.cpp
 	src/cfg_broker.cpp
 	src/cfg_redirector.cpp
-	src/cfg_gpio.cpp
+	src/cfg_gpio.cpp	
+	src/cfg_nms.cpp
+
 )
 
 set (node_ipt_segw_shared
@@ -107,6 +110,8 @@ set (node_ipt_segw_tasks
 	src/tasks/broker.cpp
 	src/tasks/reflux.h
 	src/tasks/reflux.cpp
+	src/tasks/rebind.h
+	src/tasks/rebind.cpp
 )
 	
 set (node_ipt_sml_server

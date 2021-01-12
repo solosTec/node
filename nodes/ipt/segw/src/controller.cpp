@@ -555,7 +555,7 @@ namespace node
 			//	create JSON/NMS server
 			//	server runtime configuration
 			//
-			nms::server nms(mux.get_io_service()
+			nms::server nms(mux
 				, logger
 				, cmgr
 				, account

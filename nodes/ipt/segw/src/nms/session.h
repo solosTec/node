@@ -15,6 +15,7 @@
 #include <cyng/intrinsics/buffer.h>
 #include <cyng/intrinsics/version.h>
 #include <cyng/dom/reader.h>
+#include <cyng/async/mux.h>
 
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -32,14 +33,18 @@ namespace node
 		{
 
 		public:
-			reader(cyng::logging::log_ptr logger
+			reader(cyng::async::mux& mux
+				, cyng::logging::log_ptr logger
 				, cache&
 				, std::string const& account
-				, std::string const& pwd);
+				, std::string const& pwd
+				, std::size_t);
 			cyng::param_map_t run(cyng::param_map_t&&);
 
 		private:
 			cyng::param_map_t cmd_merge(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
+			void cmd_merge_serial(cyng::param_map_t&, cyng::param_map_reader const& dom, cyng::param_map_t);
+			void cmd_merge_nms(cyng::param_map_t&, cyng::param_map_t);
 			cyng::param_map_t cmd_update(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
 			cyng::param_map_t cmd_update_status(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
 			cyng::param_map_t cmd_reboot(std::string const& cmd, boost::uuids::uuid);
@@ -51,6 +56,7 @@ namespace node
 			bool check_credentials(std::string const& cmd, cyng::param_map_t const& credentials);
 
 		private:
+			cyng::async::mux& mux_;
 			cyng::logging::log_ptr logger_;
 			cache& cache_;
 
@@ -59,6 +65,11 @@ namespace node
 			 */
 			std::string const account_;
 			std::string const pwd_;
+
+			/**
+			 * rebind task
+			 */
+			std::size_t const tsk_rebind_;
 
 			boost::uuids::string_generator uuid_gen_;
 			boost::uuids::random_generator_mt19937 uuid_rnd_;
@@ -74,11 +85,13 @@ namespace node
 			using read_buffer_t = std::array<char, NODE::PREFERRED_BUFFER_SIZE>;
 
 		public:
-			session(boost::asio::ip::tcp::socket socket
+			session(cyng::async::mux& mux
+				, boost::asio::ip::tcp::socket socket
 				, cyng::logging::log_ptr
 				, cache&
 				, std::string const& account
-				, std::string const& pwd);
+				, std::string const& pwd
+				, std::size_t);
 			virtual ~session();
 
 			session(session const&) = delete;
@@ -101,11 +114,6 @@ namespace node
 			 * Buffer for incoming data.
 			 */
 			read_buffer_t buffer_;
-
-			/**
-			 * authorization state
-			 */
-			//bool authorized_;
 
 			/**
 			 * temporary data buffer

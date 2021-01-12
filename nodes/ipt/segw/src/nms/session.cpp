@@ -11,6 +11,7 @@
 #include <cfg_wmbus.h>
 #include <cfg_broker.h>
 #include <cfg_redirector.h>
+#include <cfg_nms.h>
 
 #include <smf/cluster/generator.h>
 #include <smf/sml/srv_id_io.h>
@@ -41,14 +42,16 @@ namespace node
 {
 	namespace nms
 	{
-		session::session(boost::asio::ip::tcp::socket socket
+		session::session(cyng::async::mux& mux
+			, boost::asio::ip::tcp::socket socket
 			, cyng::logging::log_ptr logger
 			, cache& cfg
 			, std::string const& account
-			, std::string const& pwd)
+			, std::string const& pwd
+			, std::size_t tsk)
 		: socket_(std::move(socket))
 			, logger_(logger)
-			, reader_(logger, cfg, account, pwd)
+			, reader_(mux, logger, cfg, account, pwd, tsk)
 			, buffer_()
 			, data_()
 			, rx_(0)
@@ -161,15 +164,18 @@ namespace node
 
 		}
 
-
-		reader::reader(cyng::logging::log_ptr logger
+		reader::reader(cyng::async::mux& mux
+			, cyng::logging::log_ptr logger
 			, cache& cfg
 			, std::string const& account
-			, std::string const& pwd)
-		: logger_(logger)
+			, std::string const& pwd
+			, std::size_t tsk)
+		: mux_(mux)
+			, logger_(logger)
 			, cache_(cfg)
 			, account_(account)
 			, pwd_(pwd)
+			, tsk_rebind_(tsk)
 			, uuid_gen_()
 			, uuid_rnd_()
 		{}
@@ -320,22 +326,27 @@ namespace node
 
 		cyng::param_map_t reader::cmd_merge(std::string const& cmd, boost::uuids::uuid tag, cyng::param_map_reader const& dom)
 		{
-			auto const ports = cyng::to_param_map(dom.get("serial-port"));
+			//auto const ports = cyng::to_param_map(dom.get("serial-port"));
 
-			cfg_rs485 rs485(cache_);
-			cfg_wmbus wmbus(cache_);
-			cfg_broker broker(cache_);
 
 			cyng::param_map_t pm = cyng::param_map_factory
 				("command", cmd)
 				("ec", "ok")
 				("source", tag)
 				("version", protocol_version_)
-				("serial-port", cyng::param_map_factory()())
-				//("meter", cyng::param_map_factory()())
-				
+				("serial-port", cyng::param_map_factory()())		
 				;
 
+			cmd_merge_serial(pm, dom, cyng::to_param_map(dom.get("serial-port")));
+			cmd_merge_nms(pm, cyng::to_param_map(dom.get("nms")));
+			return pm;
+		}
+
+		void reader::cmd_merge_serial(cyng::param_map_t& pm, cyng::param_map_reader const& dom, cyng::param_map_t ports)
+		{
+			cfg_rs485 rs485(cache_);
+			cfg_wmbus wmbus(cache_);
+			cfg_broker broker(cache_);
 
 			for (auto const& port : ports) {
 
@@ -472,7 +483,7 @@ namespace node
 							}
 							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
 						}
-						else if (boost::algorithm::equals(param.first, "loop"))	{
+						else if (boost::algorithm::equals(param.first, "loop")) {
 							//
 							//	supported only by RS485
 							//
@@ -560,7 +571,7 @@ namespace node
 										}
 										catch (std::exception const&) {}
 										return 0u;
-									});
+										});
 									wmbus.set_block_list(vec);
 								}
 							}
@@ -582,8 +593,44 @@ namespace node
 					cyng::merge(pm, { "serial-port", port.first }, cyng::make_object("error: unknown hardware port"));
 				}
 			}
+		}
 
-			return pm;
+		void reader::cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t params)
+		{
+			cfg_nms nms(cache_);
+
+			for (auto const& param : params) {
+				if (boost::algorithm::equals(param.first, "enabled")) {
+					auto const enabled = cyng::value_cast(param.second, true);
+					nms.set_enabled(true);
+					if (!enabled)	cyng::merge(pm, { "nms", param.first }, cyng::make_object("warning: connection will be closed"));
+				}
+				else if (boost::algorithm::equals(param.first, "address")) {
+					auto const address = cyng::make_address(cyng::value_cast(param.second, "0.0.0.0"));
+					nms.set_address(address);
+					cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+				}
+				else if (boost::algorithm::equals(param.first, "port")) {
+					auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
+					nms.set_port(port);
+					cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+				}
+				else if (boost::algorithm::equals(param.first, "pwd")) {
+					auto const pwd = cyng::value_cast(param.second, "");
+					nms.set_pwd(pwd);
+				}
+				else if (boost::algorithm::equals(param.first, "user")) {
+					auto const user = cyng::value_cast(param.second, "");
+					nms.set_user(user);
+				}
+				else {
+					cyng::merge(pm, { "nms", param.first }, cyng::make_object("error: unknown NMS attribute"));
+				}
+			}
+
+			if (!params.empty()) {
+				mux_.post(tsk_rebind_, 0, cyng::tuple_factory({ nms.get_ep() }));
+			}
 		}
 
 		cyng::param_map_t reader::cmd_query(std::string const& cmd, boost::uuids::uuid tag)
@@ -595,6 +642,7 @@ namespace node
 			cfg_wmbus const wmbus(cache_);
 			cfg_broker const broker(cache_);
 			cfg_redirector const redirector(cache_);
+			cfg_nms const nms(cache_);
 
 			return cyng::param_map_factory
 				("command", cmd)
@@ -633,6 +681,13 @@ namespace node
 							("list", wmbus.get_block_list_vector())
 							("mode", (wmbus.is_blocklist_drop_mode() ? "drop" : "accept"))
 							())
+						()),
+					cyng::set_factory("nms", cyng::param_map_factory
+						("enabled", nms.is_enabled())	//	this is redundant
+						("address", nms.get_address())
+						("port", nms.get_port())
+						("user", nms.get_user())
+						("pwd", nms.get_pwd())
 						())
 				))
 				;
@@ -719,7 +774,7 @@ namespace node
 			);
 
 			auto const address = cyng::value_cast(dom.get("address"), "localhost");
-			auto const port = cyng::value_cast<std::int64_t>(dom.get("port"), 9009);
+			auto const port = cyng::numeric_cast<std::int16_t>(dom.get("port"), 9009);
 			auto const username = cyng::value_cast(dom.get("user"), "user");
 			auto const password = cyng::value_cast(dom.get("pwd"), "pwd");
 			auto const filename = cyng::value_cast(dom.get("fw-filename"), "fw-filname");

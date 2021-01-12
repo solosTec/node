@@ -20,7 +20,7 @@ namespace node
 		class server
 		{
 		public:
-			server(cyng::io_service_t&
+			server(cyng::async::mux&
 				, cyng::logging::log_ptr
 				, cache& cfg
 				, std::string account
@@ -35,6 +35,7 @@ namespace node
 			void do_accept();
 
 		private:
+			cyng::async::mux& mux_;
 			cyng::logging::log_ptr logger_;
 
 			/**
@@ -50,6 +51,8 @@ namespace node
 
 			boost::asio::ip::tcp::acceptor acceptor_;
 			std::uint64_t session_counter_;
+
+			std::size_t const tsk_rebind_;
 		};
 	}
 }
