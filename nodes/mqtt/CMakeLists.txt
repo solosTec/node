@@ -2,9 +2,9 @@
 include (prg.cmake)
 add_executable(mqtt ${node_mqtt})
 
-target_compile_options(mqtt 
+target_compile_definitions(mqtt 
 	PRIVATE 
-		"-DMQTT_NO_TLS")
+		"MQTT_NO_TLS")
 
 target_include_directories(mqtt 
 	PRIVATE 

@@ -1871,6 +1871,11 @@ namespace node
 		return set_value(std::move(cfg), vec, cyng::make_object(value));
 	}
 
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, boost::asio::ip::address value)
+	{
+		return set_value(std::move(cfg), vec, cyng::make_object(value));
+	}
+
 
 	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, cyng::object obj)
 	{

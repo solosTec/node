@@ -313,9 +313,9 @@ namespace node
 #if defined(NODE_CROSS_COMPILE)
 
 					//	8N1
-					cyng::param_factory("databits", 8),
+					cyng::param_factory("databits", bpl ? 7 : 8),
 					cyng::param_factory("flow-control", "none"),	//	none, software, hardware
-					cyng::param_factory("stopbits", "one"),	//	one, onepointfive, two
+					cyng::param_factory("stopbits", bpl ? "two" : "one"),	//	one, onepointfive, two
 					cyng::param_factory("speed", 9600),		//	initial
 #else
 					//	8N1
@@ -817,9 +817,16 @@ namespace node
 					}
 					std::cout << "failed (" << value << ":chrono:sec)" << std::endl;
 				}
+				else if (boost::algorithm::equals(vec.back(), "ip:address")) {
+					
+					if (node::set_value(cyng::to_param_map(tpl), sub, cyng::make_address(value))) {
+						return EXIT_SUCCESS;
+					}
+					std::cout << "failed (" << value << ":chrono:sec)" << std::endl;
+				}
 				else {
 					std::cout
-						<< "data type not supported - use [bool, u16, u32, s, chrono:min, chrono:sec]"
+						<< "data type not supported - use [bool, u16, u32, s, chrono:min, chrono:sec, ip:address]"
 						<< std::endl;
 				}
 			}

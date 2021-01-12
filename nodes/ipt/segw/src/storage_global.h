@@ -121,6 +121,7 @@ namespace node
 	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const&, std::string value);
 	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const&, std::chrono::minutes value);
 	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const&, std::chrono::seconds value);
+	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const& vec, boost::asio::ip::address value);
 	bool set_value(cyng::param_map_t&& cfg, std::vector<std::string> const&, cyng::object value);
 
 }
