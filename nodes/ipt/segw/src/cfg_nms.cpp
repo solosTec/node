@@ -10,6 +10,7 @@
 #include <smf/sml/obis_db.h>
 
 #include <cyng/compatibility/io_service.h>
+#include <cyng/value_cast.hpp>
 
 #include <boost/core/ignore_unused.hpp>
 #include <boost/predef.h>
