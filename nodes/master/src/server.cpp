@@ -90,6 +90,11 @@ namespace node
 		cache_.set_cfg("max-IEC-records", max_IEC_records);
 		cache_.set_cfg("max-IEC-records-default", max_IEC_records);
 
+		auto max_bridge_records = cyng::numeric_cast<std::uint64_t>(dom.get("max-bridges"), 300);
+		CYNG_LOG_INFO(logger_, "store max. " << max_bridge_records << " TBridge records");
+		cache_.set_cfg("max-bridges", max_bridge_records);
+		cache_.set_cfg("max-bridges-default", max_bridge_records);
+
 		CYNG_LOG_INFO(logger_, "cluster heartbeat " << cyng::to_str(std::chrono::seconds(monitor)));
 		cache_.set_cfg("cluster-heartbeat", std::chrono::seconds(monitor));
 

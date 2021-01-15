@@ -56,54 +56,16 @@ namespace node
 	cyng::continuation rebind::process(boost::asio::ip::tcp::endpoint ep)
 	{
 		acceptor_ = boost::asio::ip::tcp::acceptor(acceptor_.get_executor(), ep);
-		//boost::system::error_code ec;
-		//acceptor_.close(ec);
-		//if (ec) {
-		//	//	error
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> NMS listener cannot be closed: "
-		//		<< ec.message());
-		//}
-		//
-		//acceptor_.open(ep.protocol(), ec);
-		//if (ec) {
-		//	//	error
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> NMS listener cannot open: "
-		//		<< ec.message());
-		//}
 
-		//acceptor_.bind(ep, ec);
-		//if (ec) { 
-		//	//	error
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> NMS listener cannot bind new endpoint"
-		//		<< ep
-		//		<< ": "
-		//		<< ec.message());
-		//}
-		//acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
-		//if (ec) {
-		//	//	error
-		//	CYNG_LOG_WARNING(logger_, "task #"
-		//		<< base_.get_id()
-		//		<< " <"
-		//		<< base_.get_class_name()
-		//		<< "> NMS listener cannot bind new endpoint"
-		//		<< ep
-		//		<< ": "
-		//		<< ec.message());
-		//	return cyng::continuation::TASK_CONTINUE;
-		//}
+		//
+		//	alternative implementation
+		//
+		//	boost::system::error_code ec;
+		//	acceptor_.close(ec);
+		//	acceptor_.open(ep.protocol(), ec);
+		//	acceptor_.bind(ep, ec);
+		//	acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
+		//
 
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()

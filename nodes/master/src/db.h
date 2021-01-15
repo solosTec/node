@@ -272,6 +272,11 @@ namespace node
 		 */
 		std::uint64_t get_max_IEC_records();
 
+		/**
+		 *	read max number of TBridge records
+		 */
+		std::uint64_t get_max_bridge_records();
+
 	public:
 		/**
 		 * global data cache

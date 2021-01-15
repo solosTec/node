@@ -846,6 +846,11 @@ namespace node
 		return get_cfg<std::uint64_t>("max-IEC-records", 600u);
 	}
 
+	std::uint64_t cache::get_max_bridge_records()
+	{
+		return get_cfg<std::uint64_t>("max-bridges", 300u);
+	}
+
 }
 
 

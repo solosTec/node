@@ -257,7 +257,8 @@ namespace node
 			|| boost::algorithm::equals(name, "max-events")
 			|| boost::algorithm::equals(name, "max-LoRa-records")
 			|| boost::algorithm::equals(name, "max-wMBus-records")
-			|| boost::algorithm::equals(name, "max-IEC-records")) {
+			|| boost::algorithm::equals(name, "max-IEC-records")
+			|| boost::algorithm::equals(name, "max-bridges")) {
 
 			//
 			//	convert value to an u64 value

@@ -62,7 +62,8 @@ namespace node
 					cyng::param_factory("max-events", 2000),		//	time series events
 					cyng::param_factory("max-LoRa-records", 500),		//	LoRa uplink records
 					cyng::param_factory("max-wMBus-records", 500),		//	wireless M-Bus uplink records
-					cyng::param_factory("max-IEC-records", 600)		//	IECs uplink records
+					cyng::param_factory("max-IEC-records", 600),		//	IECs uplink records
+					cyng::param_factory("max-bridges", 300)		//	max. entries in TBridge 
 					//cyng::param_factory("auto-gw", true)	//	insert gateways automatically
 				))
 				, cyng::param_factory("cluster", cyng::tuple_factory(
