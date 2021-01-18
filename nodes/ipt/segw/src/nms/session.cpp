@@ -377,40 +377,7 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "broker")) {
 							//  merge port: /dev/ttyAPP0 - broker: [%(("account":"C4vvQP"),("address":"segw.ch"),("port":12001i64),("pwd":"9BLPJfNc"))]
-							auto const vec = cyng::to_vector(param.second);
-							std::uint8_t idx{ 1 };
-							for (auto const& obj : vec) {
-								auto const sender = cyng::to_param_map(obj);
-								for (auto const& p : sender) {
-									CYNG_LOG_TRACE(logger_, "broker: " << p.first << ": " << cyng::io::to_type(p.second));
-									if (boost::algorithm::equals(p.first, "address")) {
-										auto const address = cyng::value_cast(p.second, "");
-										broker.set_address(port.first, idx, address);
-									}
-									else if (boost::algorithm::equals(p.first, "port")) {
-										auto const service = cyng::numeric_cast<std::uint16_t>(p.second, 12000u);
-										broker.set_port(port.first, idx, service);
-									}
-									else if (boost::algorithm::equals(p.first, "account")) {
-										auto const user = cyng::value_cast(p.second, "");
-										broker.set_account(port.first, idx, user);
-									}
-									else if (boost::algorithm::equals(p.first, "pwd")) {
-										auto const pwd = cyng::value_cast(p.second, "");
-										broker.set_pwd(port.first, idx, pwd);
-									}
-									else {
-										CYNG_LOG_WARNING(logger_, "merge port: "
-											<< port.first
-											<< " unknown attribute: "
-											<< p.first
-											<< ": "
-											<< cyng::io::to_type(p.second));
-									}
-								}
-								++idx;
-							}
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implemented-yet"));
+							cmd_merge_broker(pm , dom, port, cyng::to_vector(param.second));
 						}
 						else if (boost::algorithm::equals(param.first, "collector-login")) {
 							//  merge port: /dev/ttyAPP0 - collector-login: true
@@ -451,7 +418,8 @@ namespace node
 						}
 						else if (boost::algorithm::equals(param.first, "listener")) {
 							//  merge port: /dev/ttyAPP0 - listener: %(("address":"0.0.0.0"),("port":7000i64),("timeout":30i64))
-							cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implemented-yet"));
+							cmd_merge_listener(pm, dom, port, cyng::to_param_map(param.second));
+							//cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implemented-yet"));
 						}
 						else if (boost::algorithm::equals(param.first, "parity")) {
 							//  merge port: /dev/ttyAPP0 - parity: "even"
@@ -491,7 +459,8 @@ namespace node
 								//
 								//	ToDo
 								//
-								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ToDo"));
+								//cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ToDo"));
+								cmd_merge_loop(pm, dom, port, cyng::to_param_map(param.second));
 							}
 							else {
 								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: not supported by wirless M-Bus"));
@@ -593,6 +562,88 @@ namespace node
 					cyng::merge(pm, { "serial-port", port.first }, cyng::make_object("error: unknown hardware port"));
 				}
 			}
+		}
+
+		void reader::cmd_merge_loop(cyng::param_map_t& pm, cyng::param_map_reader const& dom, cyng::param_t const& port, cyng::param_map_t params)
+		{
+			for (auto const& param : params) {
+				if (boost::algorithm::equals(param.first, "timeout")) {
+				}
+				else if (boost::algorithm::equals(param.first, "request")) {
+				}
+				else {
+					cyng::merge(pm, { port.first, "loop", param.first }, cyng::make_object("error: unknown loop attribute"));
+				}
+			}
+		}
+
+		void reader::cmd_merge_listener(cyng::param_map_t& pm, cyng::param_map_reader const& dom, cyng::param_t const& port, cyng::param_map_t params)
+		{
+			cfg_redirector redirector(cache_);
+
+			for (auto const& param : params) {
+				if (boost::algorithm::equals(param.first, "account")) {
+					auto const account = cyng::value_cast(param.second, "");
+					redirector.set_account(port.first, account);
+				}
+				else if (boost::algorithm::equals(param.first, "address")) {
+					auto const address = cyng::value_cast(param.second, "");
+					redirector.set_address(port.first, address);
+				}
+				else if (boost::algorithm::equals(param.first, "port")) {
+					auto const service = cyng::numeric_cast<std::uint16_t>(param.second, 6006u);
+					redirector.set_port(port.first, service);
+				}
+				else if (boost::algorithm::equals(param.first, "pwd")) {
+					auto const pwd = cyng::value_cast(param.second, "");
+					redirector.set_pwd(port.first, pwd);
+				}
+				else if (boost::algorithm::equals(param.first, "enabled")) {
+					redirector.set_enabled(port.first, param.second);
+				}
+				else {
+					cyng::merge(pm, { port.first, "listener", param.first }, cyng::make_object("error: unknown listener attribute"));
+				}
+			}
+		}
+
+		void reader::cmd_merge_broker(cyng::param_map_t& pm, cyng::param_map_reader const& dom, cyng::param_t const& port, cyng::vector_t vec)
+		{
+			cfg_broker broker(cache_);
+			std::uint8_t idx{ 1 };
+			for (auto const& obj : vec) {
+				auto const sender = cyng::to_param_map(obj);
+				for (auto const& p : sender) {
+					CYNG_LOG_TRACE(logger_, "broker: " << p.first << ": " << cyng::io::to_type(p.second));
+					if (boost::algorithm::equals(p.first, "address")) {
+						auto const address = cyng::value_cast(p.second, "");
+						broker.set_address(port.first, idx, address);
+					}
+					else if (boost::algorithm::equals(p.first, "port")) {
+						auto const service = cyng::numeric_cast<std::uint16_t>(p.second, 12000u);
+						broker.set_port(port.first, idx, service);
+					}
+					else if (boost::algorithm::equals(p.first, "account")) {
+						auto const user = cyng::value_cast(p.second, "");
+						broker.set_account(port.first, idx, user);
+					}
+					else if (boost::algorithm::equals(p.first, "pwd")) {
+						auto const pwd = cyng::value_cast(p.second, "");
+						broker.set_pwd(port.first, idx, pwd);
+					}
+					else {
+						CYNG_LOG_WARNING(logger_, "merge port: "
+							<< port.first
+							<< " unknown attribute: "
+							<< p.first
+							<< ": "
+							<< cyng::io::to_type(p.second));
+
+					}
+				}
+				++idx;
+			}
+			//cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("not-implemented-yet"));
 		}
 
 		void reader::cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t params)

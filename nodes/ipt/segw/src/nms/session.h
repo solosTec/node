@@ -44,6 +44,9 @@ namespace node
 		private:
 			cyng::param_map_t cmd_merge(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
 			void cmd_merge_serial(cyng::param_map_t&, cyng::param_map_reader const& dom, cyng::param_map_t);
+			void cmd_merge_broker(cyng::param_map_t&, cyng::param_map_reader const& dom, cyng::param_t const& port, cyng::vector_t);
+			void cmd_merge_listener(cyng::param_map_t&, cyng::param_map_reader const& dom, cyng::param_t const& port, cyng::param_map_t);
+			void cmd_merge_loop(cyng::param_map_t&, cyng::param_map_reader const& dom, cyng::param_t const& port, cyng::param_map_t);
 			void cmd_merge_nms(cyng::param_map_t&, cyng::param_map_t);
 			cyng::param_map_t cmd_update(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);
 			cyng::param_map_t cmd_update_status(std::string const& cmd, boost::uuids::uuid, cyng::param_map_reader const& dom);

@@ -148,8 +148,10 @@ namespace node
 					sml::OBIS_ROOT_BROKER,
 					sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
 					sml::make_obis(sml::OBIS_BROKER_PWD, idx) }), "");
-
-				r.emplace_back(account, pwd, address, port);
+				auto const enabled = cache_.get_cfg(build_cfg_key({
+					sml::OBIS_ROOT_BROKER,
+					sml::make_obis(sml::OBIS_ROOT_BROKER, idx) }, "enabled"), true);
+				r.emplace_back(account, pwd, address, port, enabled);
 			}
 		}
 

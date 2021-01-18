@@ -14,11 +14,12 @@ namespace node
 {
 	namespace segw {
 
-		server::server(std::string account, std::string pwd, std::string address, std::uint16_t port)
+		server::server(std::string account, std::string pwd, std::string address, std::uint16_t port, bool enabled)
 			: account_(account)
 			, pwd_(pwd)
 			, address_(address)
 			, port_(port)
+			, enabled_(enabled)
 		{}
 
 		std::string const& server::get_account() const
@@ -41,6 +42,11 @@ namespace node
 			return port_;
 		}
 
+		bool server::is_enabled() const
+		{
+			return enabled_;
+		}
+
 		bool server::empty() const
 		{
 			return (port_ == 0)
@@ -57,6 +63,7 @@ namespace node
 			("port", target.get_port())
 			("account", target.get_account())
 			("pwd", target.get_pwd())
+			("enabled", target.is_enabled())
 			;
 	}
 

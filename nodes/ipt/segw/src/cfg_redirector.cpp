@@ -38,7 +38,7 @@ namespace node
 		default:
 			break;
 		}
-		return segw::server("", "", "", 0);
+		return segw::server("", "", "", 0, false);
 	}
 
 	cyng::object cfg_redirector::get_server_obj(source s) const
@@ -143,7 +143,11 @@ namespace node
 			sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx),
 			sml::make_obis(sml::OBIS_REDIRECTOR_PWD, port_idx) }), "");
 
-		return segw::server(account, pwd, address, port);
+		auto enabled = cache_.get_cfg(build_cfg_key({
+				sml::OBIS_ROOT_REDIRECTOR,
+				sml::make_obis(sml::OBIS_ROOT_REDIRECTOR, port_idx) }, "enabled"), false);
+
+		return segw::server(account, pwd, address, port, enabled);
 	}
 
 	bool cfg_redirector::is_login_required(source s) const
