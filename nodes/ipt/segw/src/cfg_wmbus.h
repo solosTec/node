@@ -47,6 +47,7 @@ namespace node
 		 * @return "8106190700FF:monitor"
 		 */
 		std::chrono::seconds get_monitor() const;
+		bool set_monitor(cyng::object obj);
 
 		/**
 		 * @return "8106190700FF:monitor" capped 

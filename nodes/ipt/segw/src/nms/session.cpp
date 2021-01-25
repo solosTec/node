@@ -457,9 +457,8 @@ namespace node
 							//
 							if (port_id == cfg_rs485::port_idx) {
 								//
-								//	ToDo
+								//	merge loop parameters
 								//
-								//cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ToDo"));
 								cmd_merge_loop(pm, dom, port, cyng::to_param_map(param.second));
 							}
 							else {
@@ -472,17 +471,18 @@ namespace node
 							//
 							if (port_id == cfg_rs485::port_idx) {
 								//
-								//	ToDo
+								//	not supported
 								//
-								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ToDo"));
+								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: not supported by RS-485 interface"));
 
 							}
 							else {
 
 								//
-								//	ToDo: accept
+								//	serial-port/PORT_NAME/max-readout-frequency
+								//	seconds
 								//
-								cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: not supported by wirless M-Bus"));
+								wmbus.set_monitor(param.second);
 							}
 						}
 						else if (boost::algorithm::equals(param.first, "blocklist")) {
@@ -712,7 +712,7 @@ namespace node
 						("protocol", rs485.get_protocol_by_name())
 						("broker", broker.get_server_vector(source::WIRED_LMN))
 						("listener", redirector.get_server_obj(source::WIRED_LMN))	//	could be null
-						("max-readout-frequency", 5)
+						//("max-readout-frequency", 5)
 						("loop", cyng::param_map_factory
 							("timeout", 60)
 							("request", "/?!")
@@ -727,6 +727,7 @@ namespace node
 						("stopbits", serial::to_str(wmbus.get_stopbits()))
 						("baudrate", wmbus.get_baud_rate().value())
 						("broker", broker.get_server_vector(source::WIRELESS_LMN))
+						("max-readout-frequency", wmbus.get_monitor())
 						("blocklist", cyng::param_map_factory
 							("enabled", wmbus.is_blocklist_enabled())
 							("list", wmbus.get_block_list_vector())

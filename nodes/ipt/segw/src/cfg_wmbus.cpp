@@ -61,6 +61,12 @@ namespace node
 	{
 		return cache_.get_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "monitor"), std::chrono::seconds(30));
 	}
+	bool cfg_wmbus::set_monitor(cyng::object obj)
+	{
+		auto const val = cyng::numeric_cast<std::uint32_t>(obj, 8u);
+		return cache_.set_cfg(build_cfg_key({ sml::OBIS_IF_wMBUS }, "monitor"), std::chrono::seconds(val));
+	}
+
 
 	std::chrono::seconds cfg_wmbus::get_delay(std::chrono::seconds cap) const
 	{

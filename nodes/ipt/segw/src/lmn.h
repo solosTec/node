@@ -119,6 +119,8 @@ namespace node
 			, sml::obis code
 			, boost::uuids::uuid pk);
 
+		bool test_frq(std::chrono::seconds max_frq, cyng::buffer_t const& srv_id);
+
 	private:
 		cyng::logging::log_ptr logger_;
 		cyng::async::mux& mux_;
@@ -136,6 +138,11 @@ namespace node
 		std::size_t radio_distributor_;	
 
 		boost::uuids::random_generator_mt19937 uuidgen_;
+
+		/**
+		 * keep book of last entry
+		 */
+		std::map<cyng::buffer_t, std::chrono::system_clock::time_point>	frq_;
 	};
 
 }

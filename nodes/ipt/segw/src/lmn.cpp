@@ -62,6 +62,7 @@ namespace node
 
 		, radio_distributor_(cyng::async::NO_TASK)
 		, uuidgen_()
+		, frq_()
 	{
 		cyng::register_logger(logger_, vm_);
 		vm_.async_run(cyng::generate_invoke("log.msg.info", "log domain is running"));
@@ -496,70 +497,114 @@ namespace node
 		if (!wmbus.is_meter_blocked(dev_id)) {
 
 
-			//
-			//	new readout pk
-			//
-			auto const pk = uuidgen_();
+			//	"max-readout-frequency"
+			auto const max_frq = wmbus.get_monitor();
 
-			//
-			//	generate cb_wmbus_data
-			//
-			//
-			//	"_Readout"
-			//
-			cache_.write_table("_Readout", [&](cyng::store::table* tbl) {
-				if (!tbl->insert(cyng::table::key_generator(pk)
-					, cyng::table::data_generator(srv_id
-						, manufacturer
-						, version
-						, medium
-						, dev_id
-						, frame_type
-						, size
-						, payload
-						, std::chrono::system_clock::now()
-					)
-					, 1u	//	generation
-					, cache_.get_tag())) {
+			//bool do_insert{ true };
+			if (test_frq(max_frq, srv_id)) {
 
-					CYNG_LOG_ERROR(logger_, ctx.get_name()
-						<< " - write into \"_Readout\" table failed");
+				//
+				//	new readout pk
+				//
+				auto const pk = uuidgen_();
+
+				//
+				//	generate cb_wmbus_data
+				//
+				//
+				//	"_Readout"
+				//
+				cache_.write_table("_Readout", [&](cyng::store::table* tbl) {
+
+
+					if (!tbl->insert(cyng::table::key_generator(pk)
+						, cyng::table::data_generator(srv_id
+							, manufacturer
+							, version
+							, medium
+							, dev_id
+							, frame_type
+							, size
+							, payload
+							, std::chrono::system_clock::now()
+						)
+						, 1u	//	generation
+						, cache_.get_tag())) {
+
+						CYNG_LOG_ERROR(logger_, ctx.get_name()
+							<< " - write into \"_Readout\" table failed");
+					}
+					});
+
+
+				//
+				//	get AES key and decrypt content (AES CBC - mode 5)
+				//
+				auto const aes = cache_.get_aes_key(srv_id);
+
+				decoder_.run(pk
+					, srv_id
+					, frame_type	//	frame type
+					, payload
+					, aes);
+
+
+				//
+				// update device table
+				//
+				if (cache_.update_device_table(srv_id
+					, maker
+					, 0u	//	status
+					, version
+					, medium
+					, aes
+					, ctx.tag())) {
+
+					CYNG_LOG_INFO(logger_, "new device: "
+						<< sml::from_server_id(srv_id));
 				}
-			});
+			}
+			else {
+				//	"max-readout-frequency"
+				CYNG_LOG_WARNING(logger_, "device "
+					<< sml::from_server_id(srv_id)
+					<< " has max-readout-frequency of "
+					<< max_frq.count()
+					<< " seconds exceede");
 
-
-			//
-			//	get AES key and decrypt content (AES CBC - mode 5)
-			//
-			auto const aes = cache_.get_aes_key(srv_id);
-
-			decoder_.run(pk
-				, srv_id
-				, frame_type	//	frame type
-				, payload
-				, aes);
-
-
-			//
-			// update device table
-			//
-			if (cache_.update_device_table(srv_id
-				, maker
-				, 0u	//	status
-				, version
-				, medium
-				, aes
-				, ctx.tag())) {
-
-				CYNG_LOG_INFO(logger_, "new device: "
-					<< sml::from_server_id(srv_id));
 			}
 		}
 		else {
+
 			CYNG_LOG_WARNING(logger_, "device "
 				<< sml::from_server_id(srv_id)
 				<< " is blocked" );
 		}
+	}
+
+	bool lmn::test_frq(std::chrono::seconds max_frq, cyng::buffer_t const& srv_id)
+	{
+		if (max_frq.count() != 0) {
+			auto const now = std::chrono::system_clock::now();
+			auto pos = frq_.find(srv_id);
+			if (pos != frq_.end()) {
+				auto const cmp = std::chrono::duration_cast<std::chrono::seconds>(now - pos->second);
+				//	compare
+				if (cmp > max_frq) {
+
+					//	update
+					pos->second = now;
+
+					//	last entry is in range
+					return true;
+				}
+			}
+			else {
+				//	insert
+				frq_.emplace(srv_id, now);
+			}
+		}
+		return true;
 	}
 
 	void lmn::mbus_ack(cyng::context& ctx)
