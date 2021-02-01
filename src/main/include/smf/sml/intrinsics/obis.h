@@ -30,7 +30,7 @@ namespace node
 			enum value_group {
 				VG_MEDIUM = 0,		//	A
 				VG_CHANNEL = 1,		//	B
-				VG_INDICATOR = 2,	//	C - metric
+				VG_INDICATOR = 2,	//	C - metric (physcial value)
 				VG_MODE = 3,		//	D - measurement mode
 				VG_QUANTITY = 4,	//	E - tariff
 				VG_STORAGE = 5		//	F

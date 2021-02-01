@@ -1682,7 +1682,7 @@ namespace node
 						auto srv_id = sml::to_gateway_srv_id(mac);
 						os << "\t- " << cyng::io::to_hex(srv_id);
 					}
-					else if (boost::algorithm::equals(path, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }))) {
+	 				else if (boost::algorithm::equals(path, build_cfg_key({ sml::OBIS_ROOT_NMS, sml::OBIS_NMS_PORT }))) {
 						//	show port number as decimal value
 						os << "\t- " << cyng::numeric_cast<std::uint16_t>(obj, 0) << " (decimal)";
 					}
