@@ -19,13 +19,14 @@ target_link_directories(tsdb
 )
 
 target_link_libraries(tsdb 
-	${Boost_LIBRARIES}
+#	${Boost_LIBRARIES}
 	smf_info 
 	smf_cluster 
 	${CYNG_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 #	Error	LNK1104	cannot open file 'libboost_date_time-vc142-mt-gd-x64-1_74.lib'	tsdb	D:\projects\node\build\nodes\tasks\tsdb\LINK	1	
 #	"$<$<PLATFORM_ID:Windows>:C:/local/boost_1_75_0/lib64-msvc-14.2/libboost_date_time-vc142-mt-x64-1_75.lib>"
+	"C:/local/boost_1_75_0/lib64-msvc-14.2/libboost_date_time-vc142-mt-x64-1_75.lib"
 	"$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};${CMAKE_DL_LIBS};pthread>"
 	$<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 	$<$<AND:$<VERSION_LESS:${CMAKE_CXX_COMPILER_VERSION},9.0>,$<CXX_COMPILER_ID:Clang>>:stdc++fs>   

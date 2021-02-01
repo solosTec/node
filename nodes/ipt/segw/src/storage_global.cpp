@@ -1686,6 +1686,14 @@ namespace node
 						//	show port number as decimal value
 						os << "\t- " << cyng::numeric_cast<std::uint16_t>(obj, 0) << " (decimal)";
 					}
+					else if (boost::algorithm::equals(path, build_cfg_key({ sml::OBIS_ROOT_BROKER }, "900000000001:900000000301" ))) {
+						//	show port number as decimal value
+						os << "\t- " << cyng::numeric_cast<std::uint16_t>(obj, 0) << " (decimal)";
+					}
+					else if (boost::algorithm::equals(path, build_cfg_key({ sml::OBIS_ROOT_BROKER }, "900000000002:900000000301"))) {
+						//	show port number as decimal value
+						os << "\t- " << cyng::numeric_cast<std::uint16_t>(obj, 0) << " (decimal)";
+					}
 					os
 						<< std::endl;
 				}
