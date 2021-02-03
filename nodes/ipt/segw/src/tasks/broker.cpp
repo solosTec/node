@@ -133,7 +133,7 @@ namespace node
 
 	cyng::continuation broker::run()
 	{
-		if (!socket_.is_open()) {
+		if (!buffer_write_.empty() && !socket_.is_open()) {
 
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -260,7 +260,7 @@ namespace node
 		socket_.async_read_some(boost::asio::buffer(buffer_read_.data(), buffer_read_.size()),
 			[this](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
-				if (!ec) {
+				if (!ec && ec != boost::system::errc::broken_pipe) {
 
 					//
 					//	ToDo: forward to serial interface
@@ -312,7 +312,7 @@ namespace node
 			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
 			[this](boost::system::error_code ec, std::size_t bytes_transferred)
 			{
-				if (!ec)
+				if (!ec && ec != boost::system::errc::broken_pipe)
 				{
 					buffer_write_.pop_front();
 					if (!buffer_write_.empty())
@@ -336,6 +336,7 @@ namespace node
 					//
 					//	no more data will be send
 					//
+					buffer_write_.clear();
 					socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
 				}
 		});
