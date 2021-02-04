@@ -50,7 +50,7 @@ namespace smf {
 
 		bool get_resource_limit(startup& st) {
 #if defined(BOOST_OS_LINUX_AVAILABLE)
-			int rc = ::getrlimit(RLIMIT_NOFILE, st.rl_);
+			int rc = ::getrlimit(RLIMIT_NOFILE, &st.rl_);
 			BOOST_ASSERT_MSG(rc == 0, "getrlimit() failed");
 			return rc == 0;
 #else
@@ -59,7 +59,7 @@ namespace smf {
 		}
 		bool set_resource_limit(startup const& st) {
 #if defined(BOOST_OS_LINUX_AVAILABLE)
-			rc = ::setrlimit(RLIMIT_NOFILE, st.rl_);
+			auto rc = ::setrlimit(RLIMIT_NOFILE, &st.rl_);
 			BOOST_ASSERT_MSG(rc == 0, "setrlimit() failed");
 			return rc == 0;
 #else
@@ -77,7 +77,7 @@ namespace smf {
 #ifdef _DEBUG
 			, log_level_str_(cyng::to_string(cyng::severity::LEVEL_TRACE))
 #else
-			, log_level_str_(cyng::to_string(cyng::severity::INFO))
+			, log_level_str_(cyng::to_string(cyng::severity::LEVEL_INFO))
 #endif
 		{
 			BOOST_ASSERT(!node.empty());
