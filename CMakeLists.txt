@@ -77,7 +77,28 @@ endif()
 #
 # detect address model
 #
-#include (cmake/address_model.cmake)
+include (cmake/address_model.cmake)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+
+#
+# find cyng library
+# CYNG_INCLUDE_DIRS CYNG_LIBRARIES
+#
+find_package(CYNG REQUIRED)
+if (CYNG_FOUND)
+    message(STATUS "** CYNG_INCLUDE_DIRS        : ${CYNG_INCLUDE_DIRS}")
+    message(STATUS "** CYNG_LIBRARIES           : ${CYNG_LIBRARIES}")
+    message(STATUS "** cyng_io                  : ${cyng_io}")
+    message(STATUS "** cyng_log                 : ${cyng_log}")
+    message(STATUS "** cyng_obj                 : ${cyng_obj}")
+    message(STATUS "** cyng_store               : ${cyng_store}")
+    message(STATUS "** cyng_sys                 : ${cyng_sys}")
+    message(STATUS "** cyng_task                : ${cyng_task}")
+    message(STATUS "** cyng_vm                  : ${cyng_vm}")
+else()
+    message(FATAL_ERROR "** cyng library not found")
+endif()
 
 #
 #   convert to false/true that can be used in C/C++ code
@@ -119,9 +140,51 @@ include(FetchContent)
 #
 # add libraries
 #
+#
+# add library: smf_config
+#
+include (src/lib/config/lib.cmake)
+add_library(smf_config ${GLOBAL_LIBRARY_TYPE} ${config_lib})
+
+target_include_directories(smf_config
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_config PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
 
 #
-# add library: cyng_obj
+#   debug smf config
+#
+target_compile_definitions(smf_config 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_INFO>
+)
+
+target_link_libraries(smf_config 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
+# add library: smf_cluster
 #
 include (src/lib/cluster/lib.cmake)
 add_library(smf_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
@@ -150,11 +213,11 @@ cxx_alignas
 )
 
 #
-#   debug class object
+#   debug smf cluster
 #
 target_compile_definitions(smf_cluster 
     PRIVATE 
-#        $<$<CONFIG:Debug>:_DEBUG_CLUSTER>
+        $<$<CONFIG:Debug>:_DEBUG_CLUSTER>
 )
 
 target_link_libraries(smf_cluster 
@@ -181,4 +244,15 @@ add_subdirectory(src/nodes/store)
 #
 #add_subdirectory(unit_test)
 
+#
+# generate config file
+#
+configure_file (
+    "${PROJECT_SOURCE_DIR}/include/smf.h.in"
+    "${PROJECT_BINARY_DIR}/include/${PROJECT_NAME}.h"
+)
+configure_file (
+    "${PROJECT_SOURCE_DIR}/include/version.hpp.in"
+    "${PROJECT_SOURCE_DIR}/include/smf/version.hpp"
+)
 

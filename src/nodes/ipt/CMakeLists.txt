@@ -25,6 +25,7 @@ target_include_directories(ipt
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${Boost_INCLUDE_DIRS}
 )
 
 target_link_directories(ipt
@@ -34,7 +35,8 @@ target_link_directories(ipt
 
 target_link_libraries(ipt 
     PRIVATE
-        Boost::program_options
+        ${CYNG_LIBRARIES} 
+        smf_config
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
