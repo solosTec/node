@@ -32,6 +32,9 @@ namespace smf {
 		std::string derive_service_name(std::string node);
 #endif
 
+		/**
+		 * Store generic config/startup data
+		 */
 		struct startup
 		{
 			startup(std::string node);
@@ -87,6 +90,11 @@ namespace smf {
 		bool set_resource_limit(startup const&);
 
 		/**
+		 * get generic options
+		 */
+		boost::program_options::options_description get_generic_options(startup&);
+
+		/**
 		 * set default options
 		 */
 		boost::program_options::options_description get_default_options(startup&);
@@ -106,6 +114,7 @@ namespace smf {
 
 		void print_version_info(std::ostream& os, std::string const& name);
 		void print_build_info(std::ostream& os);
+		void print_net_config(std::ostream& os);
 	}
 }
 

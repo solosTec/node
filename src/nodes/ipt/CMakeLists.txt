@@ -7,7 +7,7 @@ target_compile_features(ipt PRIVATE cxx_std_20)
 
 target_compile_definitions(ipt
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_FRONTEND>
+        $<$<CONFIG:Debug>:_DEBUG_IPT>
 )
 
 #

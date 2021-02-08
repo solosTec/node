@@ -5,9 +5,11 @@ set (mqtt_node)
 
 set (mqtt_cpp
     src/main.cpp
+    src/controller.cpp
 )
     
 set (mqtt_h
+    include/controller.h
 )
 
 

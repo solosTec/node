@@ -228,7 +228,7 @@ target_link_libraries(smf_cluster
 #
 # nodes
 #
-add_subdirectory(src/nodes/frontend)
+add_subdirectory(src/nodes/dash)
 add_subdirectory(src/nodes/imega)
 add_subdirectory(src/nodes/ipt)
 add_subdirectory(src/nodes/lora)

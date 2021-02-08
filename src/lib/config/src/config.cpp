@@ -11,6 +11,8 @@
 #include <cyng/io/ostream.h>
 #include <cyng/log/conv.h>
 #include <cyng/sys/host.h>
+#include <cyng/sys/mac.h>
+#include <cyng/io/ostream.h>
 
 #include <thread>
 #include <filesystem>
@@ -90,6 +92,25 @@ namespace smf {
 			return cyng::to_severity(log_level_str_);
 		}
 
+		boost::program_options::options_description get_generic_options(startup& config) {
+			boost::program_options::options_description generic("Generic options");
+			generic.add_options()
+
+				("help,h", "print usage message")
+				("version,v", "print version string")
+				("build,b", "last built timestamp and platform")
+				("net,N", boost::program_options::bool_switch()->default_value(false), "show local network configuration")
+				("config,C", boost::program_options::value<std::string>(&config.config_file_)->default_value(config.cfg_default_), "specify the configuration file")
+				("log-level,L", boost::program_options::value< std::string >(&config.log_level_str_)->default_value(config.log_level_str_), "log levels are T[RACE], D[EBUG], I[NFO], W[ARNING], E[RROR] and F[ATAL]")
+				("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
+				("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+
+				;
+
+			return generic;
+
+		}
+
 
 		boost::program_options::options_description get_default_options(startup& start) {
 
@@ -129,9 +150,9 @@ namespace smf {
 				return true;
 			}
 
-			if (vars["ip"].as< bool >())	{
-				//	show local IP addresses
-				//return node::show_ip_address(std::cout);
+			if (vars["net"].as< bool >())	{
+				//	print network configuration
+				print_net_config(std::cout);
 				return true;
 			}
 
@@ -245,6 +266,37 @@ namespace smf {
 				<< std::endl
 
 				;
+
+		}
+
+		void print_net_config(std::ostream& os) {
+
+			auto const macs = cyng::sys::get_mac48_adresses();
+
+			//std::string const host = boost::asio::ip::host_name();
+			//os
+			//	<< "host name: "
+			//	<< host
+			//	<< std::endl
+				//<< "effective OS: "
+				//<< cyng::sys::get_os_name()
+				//<< std::endl
+				//;
+
+			if (!macs.empty())
+			{
+				std::cout << macs.size() << " physical address(es)" << std::endl;
+				for (auto const& m : macs) {
+					using cyng::operator<<;
+					std::cout << m;
+					if (cyng::is_private(m)) {
+						std::cout << "\t(private)";
+					}
+					std::cout << std::endl;
+
+				}
+			}
+
 
 		}
 

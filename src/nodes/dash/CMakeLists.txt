@@ -1,11 +1,11 @@
 
 include (node.cmake)
 
-add_executable(frontend ${frontend_node})
+add_executable(dash ${dash_node})
 
-target_compile_features(frontend PRIVATE cxx_std_20)
+target_compile_features(dash PRIVATE cxx_std_20)
 
-target_compile_definitions(frontend
+target_compile_definitions(dash
     PRIVATE 
         $<$<CONFIG:Debug>:_DEBUG_FRONTEND>
 )
@@ -13,28 +13,31 @@ target_compile_definitions(frontend
 #
 # -Wno-psabi for gcc > 7.1
 #
-target_compile_options(frontend 
+target_compile_options(dash 
     PRIVATE 
         $<$<AND:$<VERSION_GREATER_EQUAL:${CMAKE_CXX_COMPILER_VERSION},7.1>,$<CXX_COMPILER_ID:GNU>>:-Wno-psabi>
 )
 
-target_include_directories(frontend
+target_include_directories(dash
     PRIVATE
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${Boost_INCLUDE_DIRS}
 )
 
-target_link_directories(frontend
+target_link_directories(dash
     PRIVATE
         ${Boost_LIBRARY_DIRS}
 )
 
-target_link_libraries(frontend 
+target_link_libraries(dash 
     PRIVATE
-        Boost::program_options
+        ${CYNG_LIBRARIES} 
+        smf_config
+        "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 

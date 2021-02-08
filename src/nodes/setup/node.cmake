@@ -5,9 +5,11 @@ set (setup_node)
 
 set (setup_cpp
     src/main.cpp
+    src/controller.cpp
 )
     
 set (setup_h
+    include/controller.h
 )
 
 

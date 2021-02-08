@@ -5,9 +5,11 @@ set (segw_node)
 
 set (segw_cpp
     src/main.cpp
+    src/controller.cpp
 )
     
 set (segw_h
+    include/controller.h
 )
 
 

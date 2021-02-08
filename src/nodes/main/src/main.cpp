@@ -5,7 +5,7 @@
  *
  */
 
-#include <smf/config.h>
+#include <controller.h>
 
 #include <iostream>
 #include <boost/program_options.hpp>
@@ -24,21 +24,7 @@ int main(int argc, char** argv) {
 	//
 	//	generic options
 	//
-	boost::program_options::options_description generic("Generic options");
-	generic.add_options()
-
-		("help,h", "print usage message")
-		("version,v", "print version string")
-		("build,b", "last built timestamp and platform")
-		("config,C", boost::program_options::value<std::string>(&config.config_file_)->default_value(config.cfg_default_), "specify the configuration file")
-		("log-level,L", boost::program_options::value< std::string >(&config.log_level_str_)->default_value(config.log_level_str_), "log levels are T[RACE], D[EBUG], I[NFO], W[ARNING], E[RROR] and F[ATAL]")
-
-		//("default,D", boost::program_options::bool_switch()->default_value(false), "generate a default configuration and exit")
-		//("ip,N", boost::program_options::bool_switch()->default_value(false), "show local IP address and exit")
-		//("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
-		//("console", boost::program_options::bool_switch()->default_value(false), "log (only) to console")
-
-		;
+	boost::program_options::options_description generic = smf::config::get_generic_options(config);
 
 	//
 	//	cmdline_options contains all generic and node specific options
@@ -68,6 +54,10 @@ int main(int argc, char** argv) {
 		//	RLIMIT_NOFILE (linux only)
 		//
 		smf::config::set_resource_limit(config);
+
+		smf::controller	ctl(config);
+		if (ctl.run_options(vm))	return EXIT_SUCCESS;
+		return ctl.run();
 
 	}
 	catch (std::bad_cast const& e) {
