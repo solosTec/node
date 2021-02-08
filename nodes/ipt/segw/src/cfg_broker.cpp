@@ -151,6 +151,9 @@ namespace node
 				auto const enabled = cache_.get_cfg(build_cfg_key({
 					sml::OBIS_ROOT_BROKER,
 					sml::make_obis(sml::OBIS_ROOT_BROKER, idx) }, "enabled"), true);
+
+				//	ToDo: timeout
+
 				r.emplace_back(account, pwd, address, port, enabled);
 			}
 		}

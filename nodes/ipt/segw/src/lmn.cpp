@@ -303,14 +303,17 @@ namespace node
 		//
 		if (profile) {
 			//
-			//	start receiver
+			//	ToDo: start this parser only if the specified protocol for this
+			//	interface is WIRED M-BUS!
 			//
-			auto const r = cyng::async::start_task_sync<parser_serial>(mux_
-				, logger_
-				, vm_
-				, cache_);
+			//	start receiver and decoder for wired M-Bus data
+			//
+			//auto const r = cyng::async::start_task_sync<parser_serial>(mux_
+			//	, logger_
+			//	, vm_
+			//	, cache_);
 
-			mux_.post(serial_port_, 1u, cyng::tuple_factory(r.first, r.second));
+			//mux_.post(serial_port_, 1u, cyng::tuple_factory(r.first, r.second));
 
 			//
 			//	broker

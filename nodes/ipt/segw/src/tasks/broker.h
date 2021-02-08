@@ -55,6 +55,8 @@ namespace node
 
 
 	private:
+		void reconnect();
+
 		/**
 		 * connect to server
 		 */

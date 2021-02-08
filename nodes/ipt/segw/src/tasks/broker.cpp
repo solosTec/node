@@ -119,6 +119,9 @@ namespace node
 		if (socket_.is_open()) {
 			do_write();
 		}
+		else {
+			reconnect();
+		}
 
 	}
 
@@ -144,29 +147,34 @@ namespace node
 				<< ':'
 				<< port_);
 
-			try {
-
-				boost::asio::ip::tcp::resolver resolver(base_.mux_.get_io_service());
-				auto const endpoints = resolver.resolve(host_, std::to_string(port_));
-				do_connect(endpoints);
-			}
-			catch (std::exception const& ex) {
-
-				CYNG_LOG_WARNING(logger_, "task #"
-					<< base_.get_id()
-					<< " <"
-					<< base_.get_class_name()
-					<< "> "
-					<< ex.what());
-			}
+			reconnect();
 		}
 
 		//
 		//	start/restart timer
 		//
-		base_.suspend(std::chrono::minutes(1));
+		base_.suspend(std::chrono::seconds(12));
 
 		return cyng::continuation::TASK_CONTINUE;
+	}
+
+	void broker::reconnect() {
+		try {
+
+			boost::asio::ip::tcp::resolver resolver(base_.mux_.get_io_service());
+			auto const endpoints = resolver.resolve(host_, std::to_string(port_));
+			do_connect(endpoints);
+		}
+		catch (std::exception const& ex) {
+
+			CYNG_LOG_WARNING(logger_, "task #"
+				<< base_.get_id()
+				<< " <"
+				<< base_.get_class_name()
+				<< "> "
+				<< ex.what());
+		}
+
 	}
 
 	void broker::stop(bool shutdown)

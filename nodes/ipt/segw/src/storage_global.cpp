@@ -927,6 +927,13 @@ namespace node
 								sml::OBIS_ROOT_BROKER,
 								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
 								sml::make_obis(sml::OBIS_BROKER_PWD, idx) }), reader.get("pwd"));
+
+							auto const timeout = cyng::numeric_cast<std::uint32_t>(reader.get("timeout"), 12u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_TIMEOUT, idx) }), cyng::make_object(std::chrono::seconds(timeout)));
+
 						}
 					}
 					else if (boost::algorithm::equals(param.first, "collector-login")) {
@@ -1085,6 +1092,13 @@ namespace node
 								sml::OBIS_ROOT_BROKER,
 								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
 								sml::make_obis(sml::OBIS_BROKER_PWD, idx) }), reader.get("pwd"));
+
+							auto const timeout = cyng::numeric_cast<std::uint32_t>(reader.get("timeout"), 12u);
+							init_config_record(s, build_cfg_key({
+								sml::OBIS_ROOT_BROKER,
+								sml::make_obis(sml::OBIS_ROOT_BROKER, port_idx),
+								sml::make_obis(sml::OBIS_BROKER_TIMEOUT, idx) }), cyng::make_object(std::chrono::seconds(timeout)));
+
 						}
 					}
 					else if (boost::algorithm::equals(param.first, "collector-login")) {
