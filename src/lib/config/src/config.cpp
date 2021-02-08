@@ -206,6 +206,10 @@ namespace smf {
 				<< cyng::sys::get_processor_description()
 				<< std::endl
 
+#if defined(__ARMEL__)
+				<< "ARMEL          : yes"
+				<< std::endl
+#endif
 				<< "system         : "
 				<< smf_SYSTEM_NAME
 				<< " v"

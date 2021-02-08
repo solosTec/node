@@ -1,6 +1,6 @@
 #
 #
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.13)
 
                                                      
 #	                                     
@@ -29,11 +29,14 @@ project(smf
 	LANGUAGES CXX C
 )
 
-
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
+    math(EXPR "${PROJECT_NAME}_VERSION_NUMERAL" "${PROJECT_VERSION_MAJOR}*100000+${PROJECT_VERSION_MINOR}*1000+${PROJECT_VERSION_PATCH}" OUTPUT_FORMAT DECIMAL)
+    message(STATUS "** Version numeral    : ${${PROJECT_NAME}_VERSION_NUMERAL}")
+
     message(STATUS "** Compiler           : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")
+
 
     # Let's ensure -std=c++xx instead of -std=g++xx
     set(CMAKE_CXX_EXTENSIONS OFF)
@@ -140,6 +143,7 @@ include(FetchContent)
 #
 # add libraries
 #
+
 #
 # add library: smf_config
 #
@@ -226,6 +230,49 @@ target_link_libraries(smf_cluster
 )
 
 #
+# add library: smf_obis
+#
+include (src/lib/obis/lib.cmake)
+add_library(smf_obis ${GLOBAL_LIBRARY_TYPE} ${obis_lib})
+
+target_include_directories(smf_obis
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_obis PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug smf obis
+#
+target_compile_definitions(smf_obis 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_OBIS>
+)
+
+target_link_libraries(smf_obis 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # nodes
 #
 add_subdirectory(src/nodes/dash)
@@ -240,9 +287,14 @@ add_subdirectory(src/nodes/setup)
 add_subdirectory(src/nodes/store)
 
 #
+# tools
+#
+add_subdirectory(src/tools/obis)
+
+#
 # unit tests
 #
-#add_subdirectory(unit_test)
+add_subdirectory(unit_test)
 
 #
 # generate config file
@@ -255,4 +307,95 @@ configure_file (
     "${PROJECT_SOURCE_DIR}/include/version.hpp.in"
     "${PROJECT_SOURCE_DIR}/include/smf/version.hpp"
 )
+
+#
+# install
+#
+
+set(SMF_TARGET_LIST smf_cluster smf_config dash imega ipt segw store lora main modem setup mqtt)
+
+install(TARGETS ${SMF_TARGET_LIST}
+    EXPORT SMFTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib/static
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+)
+
+#
+# Packaging
+# see https://cliutils.gitlab.io/modern-cmake/chapters/install/installing.html
+#
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY AnyNewerVersion
+)
+
+export(EXPORT SMFTargets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
+    NAMESPACE SMF::
+)
+
+set(ConfigPackageLocation lib/cmake/smf)
+
+install(
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
+    DESTINATION
+        ${ConfigPackageLocation}
+    COMPONENT
+        Devel
+)
+
+
+#
+# CPack configuration
+#
+set(CPACK_PACKAGE_VERSION ${VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_NAME} - Smart Metering Framework")
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION_TWEAK ${PROJECT_VERSION_TWEAK})
+set(CPACK_PACKAGE_CONTACT "info@solostec.ch")
+set(CPACK_PACKAGE_VENDOR "solosTec")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF library")
+#set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+#set(CPACK_PACKAGE_ICON ${PROJECT_SOURCE_DIR}/logo.ico)
+
+if(UNIX)
+
+    if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+        if(EXISTS "/etc/issue")
+            file(READ "/etc/issue" LINUX_ISSUE)
+
+            if(LINUX_ISSUE MATCHES "SUSE")
+                #set(CPACK_PACKAGING_INSTALL_PREFIX "/opt")
+                set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+                set(CPACK_GENERATOR "RPM")
+            endif(LINUX_ISSUE MATCHES "SUSE")
+
+            if(LINUX_ISSUE MATCHES "Ubuntu")
+                set(CPACK_GENERATOR "DEB")
+            endif(LINUX_ISSUE MATCHES "Ubuntu")
+
+        endif(EXISTS "/etc/issue")
+    endif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+elseif(WIN32)
+
+	set(CPACK_GENERATOR "NSIS64")
+	set(CPACK_NSIS_MUI_ICON ${PROJECT_SOURCE_DIR}/logo.ico)
+	set(CPACK_NSIS_MUI_UNIICON ${PROJECT_SOURCE_DIR}/logo.ico)
+	#set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vcredist_x86.exe\\\" /q:a'")
+	set(CPACK_NSIS_MODIFY_PATH ON)
+	set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.solostec.com")
+
+endif()
 

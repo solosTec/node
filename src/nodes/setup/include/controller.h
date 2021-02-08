@@ -22,6 +22,9 @@
 			, std::filesystem::path&& cwd) override;
 		void print_configuration(std::ostream&) override;
 
+	private:
+		cyng::param_t create_cluster_spec();
+
 
 	};
 }
