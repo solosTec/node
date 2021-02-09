@@ -136,7 +136,7 @@ namespace node
 
 	cyng::continuation broker::run()
 	{
-		if (!buffer_write_.empty() && !socket_.is_open()) {
+		if (/*!buffer_write_.empty() &&*/ !socket_.is_open()) {
 
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
@@ -346,6 +346,7 @@ namespace node
 					//
 					buffer_write_.clear();
 					socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+					socket_.close(ec);
 				}
 		});
 	}
