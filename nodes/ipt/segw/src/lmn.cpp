@@ -484,6 +484,7 @@ namespace node
 			<< " - data: "
 			<< cyng::io::to_hex(payload));
 
+#ifdef _DEBUG
 		if (boost::algorithm::equals(sml::from_server_id(srv_id), "01-e61e-79426800-02-0e")) {
 
 			//
@@ -492,6 +493,7 @@ namespace node
 			CYNG_LOG_DEBUG(logger_, ctx.get_name()
 				<< "\n\n GAS METER 01-e61e-79426800-02-0e\n\n");
 		}
+#endif
 		
 		//
 		//	check block list
@@ -503,7 +505,6 @@ namespace node
 			//	"max-readout-frequency"
 			auto const max_frq = wmbus.get_monitor();
 
-			//bool do_insert{ true };
 			if (test_frq(max_frq, srv_id)) {
 
 				//
@@ -573,7 +574,7 @@ namespace node
 					<< sml::from_server_id(srv_id)
 					<< " has max-readout-frequency of "
 					<< max_frq.count()
-					<< " seconds exceede");
+					<< " seconds exceeded");
 
 			}
 		}
@@ -591,16 +592,29 @@ namespace node
 			auto const now = std::chrono::system_clock::now();
 			auto pos = frq_.find(srv_id);
 			if (pos != frq_.end()) {
-				auto const cmp = std::chrono::duration_cast<std::chrono::seconds>(now - pos->second);
-				//	compare
-				if (cmp > max_frq) {
 
-					//	update
-					pos->second = now;
+				auto const cmp = std::chrono::duration_cast<std::chrono::seconds>(now - pos->second);
+
+				//	update
+				pos->second = now;
+
+				//	compare
+				if (cmp < max_frq) {
+
+					CYNG_LOG_TRACE(logger_, "check frequency of "
+						<< sml::from_server_id(srv_id)
+						<< " - "
+						<< cyng::to_str(cmp) 
+						<< " of "
+						<< cyng::to_str(max_frq)
+						<< " are left");
+
 
 					//	last entry is in range
 					return true;
 				}
+				//	too soon
+				return false;
 			}
 			else {
 				//	insert

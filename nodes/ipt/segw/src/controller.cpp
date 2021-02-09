@@ -234,7 +234,7 @@ namespace node
 				//	stty -F /dev/ttyAPP0 115200 
 				//	cat /dev/ttyAPP0 | hexdump 
 				, cyng::param_factory("wireless-LMN", cyng::tuple_factory(
-					cyng::param_factory("monitor", rnd_monitor()),	//	seconds
+					cyng::param_factory("monitor", 0),	//	0 seconds == no max frequency
 					//	if task <readout> receives data and there is no data collector/mirror defined, create one
 					cyng::param_factory("autogen-data-collector", true),
 					//	disable collecting/storing meter data

@@ -136,7 +136,7 @@ namespace node
 
 	cyng::continuation broker::run()
 	{
-		if (/*!buffer_write_.empty() &&*/ !socket_.is_open()) {
+		if (!socket_.is_open()) {
 
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
