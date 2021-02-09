@@ -1,4 +1,4 @@
-	// 393 OBIS codes (2358 Bytes)
+	// 511 OBIS codes (3066 Bytes)
 
 	// #1
 	// Abstract objects
@@ -63,56 +63,174 @@
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 02, ff, SERVER_ID_1_3);	// Identifikationsnummer 1.3
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 03, ff, SERVER_ID_1_4);	// Identifikationsnummer 1.4
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 09, ff, DEVICE_ID);	// encode profiles
+	OBIS_CODE_DEFINITION(01, 00, 00, 01, 00, ff, REG_MD_RESET_COUNTER);	// MD reset counter
+	OBIS_CODE_DEFINITION(01, 00, 00, 01, 02, ff, REG_MD_RESET_TIMESTAMP);	// MD reset timestamp
 	OBIS_CODE_DEFINITION(01, 00, 00, 02, 00, ff, SOFTWARE_ID);	// binary
+	OBIS_CODE_DEFINITION(01, 00, 00, 02, 01, ff, REG_PARAMETERS_SCHEME_ID);	// Parameters scheme ID
+	OBIS_CODE_DEFINITION(01, 00, 00, 02, 02, ff, REG_TARIFF);	// Tariff program ID
+	OBIS_CODE_DEFINITION(01, 00, 00, 03, 00, ff, REG_ACTIVE_ENERGY_METER_CONSTANT);	// Active energy meter constant
+	OBIS_CODE_DEFINITION(01, 00, 00, 04, 02, ff, REG_CURRENT_TRANSFORMER);	// Current transformer
+	OBIS_CODE_DEFINITION(01, 00, 00, 04, 03, ff, REG_VOLTAGE_TRANSFORMER);	// Voltage transformer
+	OBIS_CODE_DEFINITION(01, 00, 00, 08, 00, ff, REG_DEMAN_PERIOD);	// Demand period
+	OBIS_CODE_DEFINITION(01, 00, 00, 08, 04, ff, REG_LOAD_PROFILE_PERIOD);	// Load profile period
+	OBIS_CODE_DEFINITION(01, 00, 00, 09, 01, ff, REG_CURRENT_TIME);	// Current time(hh:mm:ss)
+	OBIS_CODE_DEFINITION(01, 00, 00, 09, 02, ff, REG_DATE);	// Date(YY.MM.DD or DD.MM.YY)
+	OBIS_CODE_DEFINITION(01, 00, 00, 09, 04, ff, REG_DATE_TIME);	// Date and Time(YYMMDDhhmmss)
 	OBIS_CODE_DEFINITION(01, 00, 00, 09, 0b, 00, CURRENT_UTC);	// readout time in UTC
-	OBIS_CODE_DEFINITION(01, 00, 01, 06, 00, ff, REG_POS_ACT_MAX_DEMAND_NO_TARIFF);	// 1.6.0 - Positive active maximum demand (A+) total [kW]
-	OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, ff, REG_POS_AE_NO_TARIFF);	// 1.8.0 - Zählwerk pos. Wirkenergie,	tariflos - Positive active energy (A+) total [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 01, 08, 01, ff, REG_POS_AE_T1);	// 1.8.1 - Zählwerk pos. Wirkenergie, Tarif 1 - Positive active energy (A+) in tariff T1 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 01, 08, 02, ff, REG_POS_AE_T2);	// 1.8.2 - Zählwerk pos. Wirkenergie, Tarif 2 - Positive active energy (A+) in tariff T2 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 01, 08, 03, ff, REG_POS_AE_T3);	// 1.8.3 - Zählwerk pos. Wirkenergie, Tarif 3 - Positive active energy (A+) in tariff T3 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 01, 08, 04, ff, REG_POS_AE_T4);	// 1.8.4 - Zählwerk pos. Wirkenergie, Tarif 4 - Positive active energy (A+) in tariff T4 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 02, 06, 00, ff, REG_NEG_ACT_MAX_DEMAND_NO_TARIFF);	// 2.6.0 - Negative active maximum demand (A-) total [kW]
-	OBIS_CODE_DEFINITION(01, 00, 02, 08, 00, ff, REG_NEG_AE_NO_TARIFF);	// 2.8.0 - Zählwerk neg. Wirkenergie, tariflos - Negative active energy (A+) total [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 02, 08, 01, ff, REG_NEG_AE_T1);	// 2.8.1 - Zählwerk neg. Wirkenergie, Tarif 1 - Negative active energy (A+) in tariff T1 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 02, 08, 02, ff, REG_NEG_AE_T2);	// 2.8.2 - Zählwerk neg. Wirkenergie, Tarif 2 - Negative active energy (A+) in tariff T2 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 02, 08, 03, ff, REG_NEG_AE_T3);	// 2.8.3 - Zählwerk neg. Wirkenergie, Tarif 3 - Negative active energy (A+) in tariff T3 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 02, 08, 04, ff, REG_NEG_AE_T4);	// 2.8.4 - Zählwerk neg. Wirkenergie, Tarif 4 - Negative active energy (A+) in tariff T4 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 03, 06, 00, ff, REG_POS_REACT_MAX_DEMAND_NO_TARIFF);	// 3.6.0 - Positive reactive maximum demand (Q+) total [kvar]
-	OBIS_CODE_DEFINITION(01, 00, 03, 08, 00, ff, REG_POS_RE_NO_TARIFF);	// 3.8.0 - Positive reactive energy (Q+) total [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 03, 08, 01, ff, REG_POS_RE_NO_T1);	// 3.8.1 - Positive reactive energy (Q+) in tariff T1 [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 03, 08, 02, ff, REG_POS_RE_NO_T2);	// 3.8.2 - Positive reactive energy (Q+) in tariff T2 [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 03, 08, 03, ff, REG_POS_RE_NO_T3);	// 3.8.3 - Positive reactive energy (Q+) in tariff T3 [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 03, 08, 04, ff, REG_POS_RE_NO_T4);	// 3.8.4 - Positive reactive energy (Q+) in tariff T4 [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 04, 06, 00, ff, REG_NEG_REACT_MAX_DEMAND_NO_TARIFF);	// 4.6.0 - Negative reactive maximum demand (Q-) total [kvar]
-	OBIS_CODE_DEFINITION(01, 00, 04, 08, 00, ff, REG_NEG_RE_NO_TARIFF);	// 4.8.0 - Negative reactive energy (Q-) total [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 04, 08, 01, ff, REG_NEG_RE_NO_T1);	// 4.8.1 - Negative reactive energy (Q-) in tariff T1 [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 04, 08, 02, ff, REG_NEG_RE_NO_T2);	// 4.8.2 - Negative reactive energy (Q-) in tariff T2 [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 04, 08, 03, ff, REG_NEG_RE_NO_T3);	// 4.8.3 - Negative reactive energy (Q-) in tariff T3 [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 04, 08, 04, ff, REG_NEG_RE_NO_T4);	// 4.8.4 - Negative reactive energy (Q-) in tariff T4 [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 05, 08, 00, ff, REG_IMP_IND_RE_NO_TARIFF);	// 5.8.0 - Imported inductive reactive energy in 1-st quadrant (Q1) total [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 06, 08, 00, ff, REG_IMP_CAP_RE_NO_TARIFF);	// 6.8.0 - Imported capacitive reactive energy in 2-nd quadrant (Q2) total [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 07, 08, 00, ff, REG_EXP_IND_RE_NO_TARIFF);	// 7.8.0 - Exported inductive reactive energy in 3-rd quadrant (Q3) total [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 08, 08, 00, ff, REG_EXP_CAP_RE_NO_TARIFF);	// 8.8.0 - Exported capacitive reactive energy in 4-th quadrant (Q4) total [kvarh]
-	OBIS_CODE_DEFINITION(01, 00, 09, 08, 00, ff, REG_APPARENT_E_NO_TARIFF);	// 9.8.0 - Apparent energy (S+) total [kVAh]
-	OBIS_CODE_DEFINITION(01, 00, 0f, 07, 00, ff, REG_CUR_POS_AE);	// 15.7.0 - Aktuelle positive Wirkleistung, Betrag
-	OBIS_CODE_DEFINITION(01, 00, 0f, 08, 00, ff, REG_ABS_AE_NO_TARIFF);	// 15.8.0 - Absolute active energy (A+) total [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 0f, 08, 01, ff, REG_ABS_AE_T1);	// 15.8.1 - Absolute active energy (A+) in tariff T1 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 0f, 08, 02, ff, REG_ABS_AE_T2);	// 15.8.2 - Absolute active energy (A+) in tariff T2 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 0f, 08, 03, ff, REG_ABS_AE_T3);	// 15.8.3 - Absolute active energy (A+) in tariff T3 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 0f, 08, 04, ff, REG_ABS_AE_T4);	// 15.8.4 - Absolute active energy (A+) in tariff T4 [kWh]
-	OBIS_CODE_DEFINITION(01, 00, 10, 07, 00, ff, REG_CUR_AP);
-	OBIS_CODE_DEFINITION(01, 00, 1f, 07, 00, ff, REG_CURRENT_L1);	// Strom L1
-	OBIS_CODE_DEFINITION(01, 00, 20, 07, 00, ff, REG_VOLTAGE_L1);	// Spannung L1
-	OBIS_CODE_DEFINITION(01, 00, 24, 07, 00, ff, REG_NEG_REACTIVE_INST_POWER_L1);	// Negative reactive instantaneous power (Q-) in phase L1 [kvar]
-	OBIS_CODE_DEFINITION(01, 00, 33, 07, 00, ff, REG_CURRENT_L2);	// Strom L2
-	OBIS_CODE_DEFINITION(01, 00, 34, 07, 00, ff, REG_VOLTAGE_L2);	// Spannung L2
-	OBIS_CODE_DEFINITION(01, 00, 44, 07, 00, ff, REG_NEG_REACTIVE_INST_POWER_L2);	// Negative reactive instantaneous power (Q-) in phase L2 [kvar]
-	OBIS_CODE_DEFINITION(01, 00, 47, 07, 00, ff, REG_CURRENT_L3);	// Strom L3
-	OBIS_CODE_DEFINITION(01, 00, 48, 07, 00, ff, REG_VOLTAGE_L3);	// Spannung L3 
-	OBIS_CODE_DEFINITION(01, 00, 60, 32, 03, 03, REG_VOLTAGE_MIN);	// Spannungsminimum
-	OBIS_CODE_DEFINITION(01, 00, 60, 32, 03, 04, REG_VOLTAGE_MAX);	// Spannungsmaximum
-	OBIS_CODE_DEFINITION(01, 00, 64, 07, 00, ff, REG_NEG_REACTIVE_INST_POWER_L3);	// Negative reactive instantaneous power (Q-) in phase L3 [kvar]
-	// #109
+	OBIS_CODE_DEFINITION(01, 00, 01, 02, 00, ff, REG_PACMD);	// Positive active cumulative maximum demand(A + ) total
+	OBIS_CODE_DEFINITION(01, 00, 01, 04, 00, ff, REG_PADCDP);	// Positive active demand in a current demand period(A + )
+	OBIS_CODE_DEFINITION(01, 00, 01, 05, 00, ff, REG_PADLCDP);	// Positive active demand in the last completed demand period(A + )
+	OBIS_CODE_DEFINITION(01, 00, 01, 06, 00, ff, REG_PAMD);	// Positive active maximum demand(A + ) total
+	OBIS_CODE_DEFINITION(01, 00, 01, 07, 00, ff, REG_PAIP);	// Positive active instantaneous power(A + )
+	OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, ff, REG_PAE);	// Positive active energy(A + )
+	OBIS_CODE_DEFINITION(01, 00, 02, 02, 00, ff, REG_NACMD);	// Negative active cumulative maximum demand(A - ) total
+	OBIS_CODE_DEFINITION(01, 00, 02, 04, 00, ff, REG_NADCDP);	// Negative active demand in a current demand period(A - )
+	OBIS_CODE_DEFINITION(01, 00, 02, 05, 00, ff, REG_NADLCDP);	// Negative active demand in the last completed demand period(A - )
+	OBIS_CODE_DEFINITION(01, 00, 02, 06, 00, ff, REG_NAMD);	// Negative active maximum demand(A - ) total
+	OBIS_CODE_DEFINITION(01, 00, 02, 07, 00, ff, REG_NAIP);	// Negative active instantaneous power(A - )
+	OBIS_CODE_DEFINITION(01, 00, 02, 08, 00, ff, REG_NAE);	// Negative active energy(A + ) total
+	OBIS_CODE_DEFINITION(01, 00, 03, 02, 00, ff, REG_PRCMD);	// Positive reactive cumulative maximum demand(Q + ) total
+	OBIS_CODE_DEFINITION(01, 00, 03, 04, 00, ff, REG_PRDCDP);	// Positive reactive demand in a current demand period(Q + )
+	OBIS_CODE_DEFINITION(01, 00, 03, 05, 00, ff, REG_RDLCDP);	// Positive reactive demand in the last completed demand period(Q + )
+	OBIS_CODE_DEFINITION(01, 00, 03, 06, 00, ff, REG_PRMD);	// Positive reactive maximum demand(Q + ) total
+	OBIS_CODE_DEFINITION(01, 00, 03, 07, 00, ff, REG_PRIP);	// Positive reactive instantaneous power(Q + )
+	OBIS_CODE_DEFINITION(01, 00, 03, 08, 00, ff, REG_PRE);	// Positive reactive energy(Q + ) total
+	OBIS_CODE_DEFINITION(01, 00, 04, 02, 00, ff, REG_NRCMD);	// Negative reactive cumulative maximum demand(Q - ) total
+	OBIS_CODE_DEFINITION(01, 00, 04, 04, 00, ff, REG_NRDCDP);	// Negative reactive demand in a current demand period(Q - )
+	OBIS_CODE_DEFINITION(01, 00, 04, 05, 00, ff, REG_NRDLCDP);	// Negative reactive demand in the last completed demand period(Q - )
+	OBIS_CODE_DEFINITION(01, 00, 04, 06, 00, ff, REG_NRMD);	// Negative reactive maximum demand(Q - ) total
+	OBIS_CODE_DEFINITION(01, 00, 04, 07, 00, ff, REG_NRIP);	// Negative reactive instantaneous power(Q - )
+	OBIS_CODE_DEFINITION(01, 00, 04, 08, 00, ff, REG_NRE);	// Negative reactive energy(Q - ) total
+	OBIS_CODE_DEFINITION(01, 00, 05, 02, 00, ff, REG_RCMDQ1);	// Reactive cumulative maximum demand in Q1(Q1) total
+	OBIS_CODE_DEFINITION(01, 00, 05, 04, 00, ff, REG_RDCDPQ1);	// Reactive demand in a current demand period in Q1(Q1)
+	OBIS_CODE_DEFINITION(01, 00, 05, 05, 00, ff, REG_RDLCDPQ1);	// Reactive demand in the last completed demand period in Q1(Q1)
+	OBIS_CODE_DEFINITION(01, 00, 05, 06, 00, ff, REG_RMDQ1);	// Reactive maximum demand in Q1(Q1) total
+	OBIS_CODE_DEFINITION(01, 00, 05, 08, 00, ff, REG_IIRE);	// Imported inductive reactive energy in 1 - st quadrant(Q1) total
+	OBIS_CODE_DEFINITION(01, 00, 06, 02, 00, ff, REG_RCMDQ2);	// Reactive cumulative maximum demand in Q2(Q2) total
+	OBIS_CODE_DEFINITION(01, 00, 06, 04, 00, ff, REG_RDCDPQ2);	// Reactive demand in a current demand period in Q2(Q2)
+	OBIS_CODE_DEFINITION(01, 00, 06, 05, 00, ff, REG_RDLCDPQ2);	// Reactive demand in the last completed demand period in Q2(Q2)
+	OBIS_CODE_DEFINITION(01, 00, 06, 06, 00, ff, REG_RMDQ2);	// Reactive maximum demand in Q2(Q2) total
+	OBIS_CODE_DEFINITION(01, 00, 06, 08, 00, ff, REG_ICRE);	// Imported capacitive reactive energy in 2 - nd quadrant(Q2) total
+	OBIS_CODE_DEFINITION(01, 00, 07, 02, 00, ff, REG_RCMDQ3);	// Reactive cumulative maximum demand in Q3(Q3) total
+	OBIS_CODE_DEFINITION(01, 00, 07, 04, 00, ff, REG_RDCDPQ3);	// Reactive demand in a current demand period in Q3(Q3)
+	OBIS_CODE_DEFINITION(01, 00, 07, 05, 00, ff, REG_RDLCDPQ3);	// Reactive demand in the last completed demand period in Q3(Q3)
+	OBIS_CODE_DEFINITION(01, 00, 07, 06, 00, ff, REG_RMDQ3);	// Reactive maximum demand in Q3(Q3) total
+	OBIS_CODE_DEFINITION(01, 00, 07, 08, 00, ff, REG_EIRE);	// Exported inductive reactive energy in 3 - rd quadrant(Q3) total
+	OBIS_CODE_DEFINITION(01, 00, 08, 02, 00, ff, REG_RCMDQ4);	// Reactive cumulative maximum demand in Q4(Q4) total
+	OBIS_CODE_DEFINITION(01, 00, 08, 04, 00, ff, REG_RDCDPQ4);	// Reactive demand in a current demand period in Q4(Q4)
+	OBIS_CODE_DEFINITION(01, 00, 08, 05, 00, ff, REG_RDLCDPQ4);	// Reactive demand in the last completed demand period in Q4(Q4)
+	OBIS_CODE_DEFINITION(01, 00, 08, 06, 00, ff, REG_RMDQ4);	// Reactive maximum demand in Q4(Q4) total
+	OBIS_CODE_DEFINITION(01, 00, 08, 08, 00, ff, REG_ECRE);	// Exported capacitive reactive energy in 4 - th quadrant(Q4) total
+	OBIS_CODE_DEFINITION(01, 00, 09, 02, 00, ff, REG_RCMDT);	// Apparent cumulative maximum demand(S + ) total
+	OBIS_CODE_DEFINITION(01, 00, 09, 04, 00, ff, REG_RDCDPT);	// Apparent demand in a current demand period(S + )
+	OBIS_CODE_DEFINITION(01, 00, 09, 05, 00, ff, REG_ADLCDP);	// Apparent demand in the last completed demand period(S + )
+	OBIS_CODE_DEFINITION(01, 00, 09, 06, 00, ff, REG_AMDT);	// Apparent maximum demand(S + ) total
+	OBIS_CODE_DEFINITION(01, 00, 09, 07, 00, ff, REG_AIP);	// Apparent instantaneous power(S + )
+	OBIS_CODE_DEFINITION(01, 00, 09, 08, 00, ff, REG_AE);	// Apparent energy(S + ) total
+	OBIS_CODE_DEFINITION(01, 00, 0b, 06, 00, ff, REG_MC);	// Maximum current(I max)
+	OBIS_CODE_DEFINITION(01, 00, 0b, 07, 00, ff, REG_IC);	// Instantaneous current(I)
+	OBIS_CODE_DEFINITION(01, 00, 0c, 07, 00, ff, REG_IV);	// Instantaneous voltage(U)
+	OBIS_CODE_DEFINITION(01, 00, 0d, 07, 00, ff, REG_IPF);	// Instantaneous power factor
+	OBIS_CODE_DEFINITION(01, 00, 0e, 07, 00, ff, REG_FREQ);	// Frequency
+	OBIS_CODE_DEFINITION(01, 00, 0f, 02, 00, ff, REG_AACMD);	// Absolute active cumulative maximum demand(| A | ) total
+	OBIS_CODE_DEFINITION(01, 00, 0f, 04, 00, ff, REG_AADCDP);	// Absolute active demand in a current demand period(| A | )
+	OBIS_CODE_DEFINITION(01, 00, 0f, 05, 00, ff, REG_AADLCDP);	// Absolute active demand in the last completed demand period(| A | )
+	OBIS_CODE_DEFINITION(01, 00, 0f, 06, 00, ff, REG_AAMD);	// Absolute active maximum demand(| A | ) total
+	OBIS_CODE_DEFINITION(01, 00, 0f, 07, 00, ff, REG_AAIP);	// Absolute active instantaneous power(| A | )
+	OBIS_CODE_DEFINITION(01, 00, 0f, 08, 00, ff, REG_AAE);	// Absolute active energy(A + ) total
+	OBIS_CODE_DEFINITION(01, 00, 10, 07, 00, ff, REG_SIP);	// Sum active instantaneous power(A + -A - )
+	OBIS_CODE_DEFINITION(01, 00, 10, 08, 00, ff, REG_SAE);	// Sum active energy without reverse blockade(A + -A - ) total
+	OBIS_CODE_DEFINITION(01, 00, 15, 07, 00, ff, REG_PAIPL1);	// Positive active instantaneous power(A + ) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 15, 08, 00, ff, REG_PAEL1);	// Positive active energy(A + ) in phase L1 total
+	OBIS_CODE_DEFINITION(01, 00, 16, 07, 00, ff, REG_NAIPL1);	// Negative active instantaneous power(A - ) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 16, 08, 00, ff, REG_NAEL1T);	// Negative active energy(A - ) in phase L1 total
+	OBIS_CODE_DEFINITION(01, 00, 17, 07, 00, ff, REG_PRIPL1);	// Positive reactive instantaneous power(Q + ) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 18, 07, 00, ff, REG_NRIPL1);	// Negative reactive instantaneous power(Q - ) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 1d, 07, 00, ff, REG_AIPL1);	// Apparent instantaneous power(S + ) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 1f, 06, 00, ff, REG_MCL1);	// Maximum current(I max) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 1f, 07, 00, ff, REG_ICL1);	// Instantaneous current(I) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 20, 07, 00, ff, REG_IVL1);	// Instantaneous voltage(U) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 21, 07, 00, ff, REG_IPFL1);	// Instantaneous power factor in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 23, 07, 00, ff, REG_AAIPL1);	// Absolute active instantaneous power(| A | ) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 23, 08, 00, ff, REG_AAEL1);	// Absolute active energy(| A | ) in phase L1 total
+	OBIS_CODE_DEFINITION(01, 00, 24, 07, 00, ff, REG_SIPL1);	// Sum active instantaneous power(A + -A - ) in phase L1
+	OBIS_CODE_DEFINITION(01, 00, 29, 07, 00, ff, REG_PAIPL2);	// Positive active instantaneous power(A + ) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 29, 08, 00, ff, REG_PAEL2);	// Positive active energy(A + ) in phase L2 total
+	OBIS_CODE_DEFINITION(01, 00, 2a, 07, 00, ff, REG_NAIPL2);	// Negative active instantaneous power(A - ) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 2a, 08, 00, ff, REG_NAEL2T);	// Negative active energy(A - ) in phase L2 total
+	OBIS_CODE_DEFINITION(01, 00, 2b, 07, 00, ff, REG_PRIPL2);	// Positive reactive instantaneous power(Q + ) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 2c, 07, 00, ff, REG_NRIPL2);	// Negative reactive instantaneous power(Q - ) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 31, 07, 00, ff, REG_AIPL2);	// Apparent instantaneous power(S + ) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 33, 06, 00, ff, REG_MCL2);	// Maximum current(I max) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 33, 07, 00, ff, REG_ICL2);	// Instantaneous current(I) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 34, 07, 00, ff, REG_IVL2);	// Instantaneous voltage(U) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 35, 07, 00, ff, REG_IPFL2);	// Instantaneous power factor in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 37, 07, 00, ff, REG_AAIPL2);	// Absolute active instantaneous power(| A | ) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 37, 08, 00, ff, REG_AAEL2);	// Absolute active energy(| A | ) in phase L2 total
+	OBIS_CODE_DEFINITION(01, 00, 38, 07, 00, ff, REG_SIPL2);	// Sum active instantaneous power(A + -A - ) in phase L2
+	OBIS_CODE_DEFINITION(01, 00, 3d, 07, 00, ff, REG_PAIPL3);	// Positive active instantaneous power(A + ) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 3d, 08, 00, ff, REG_PAEL1T);	// Positive active energy(A + ) in phase L3 total
+	OBIS_CODE_DEFINITION(01, 00, 3d, 61, 00, ff, REG_FATAL_ERROR_METER_STATUS);	// Fatal error meter status
+	OBIS_CODE_DEFINITION(01, 00, 3e, 07, 00, ff, REG_NAIPL3);	// Negative active instantaneous power(A - ) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 3e, 08, 00, ff, REG_NAEL3T);	// Negative active energy(A - ) in phase L3 total
+	OBIS_CODE_DEFINITION(01, 00, 3f, 07, 00, ff, REG_PRIPL3);	// Positive reactive instantaneous power(Q + ) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 40, 07, 00, ff, REG_NRIPL3);	// Negative reactive instantaneous power(Q - ) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 45, 07, 00, ff, REG_AIPL3);	// Apparent instantaneous power(S + ) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 47, 06, 00, ff, REG_MCL3);	// Maximum current(I max) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 47, 07, 00, ff, REG_ICL3);	// Instantaneous current(I) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 48, 07, 00, ff, REG_IVL3);	// Instantaneous voltage(U) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 49, 07, 00, ff, REG_IPFL3);	// Instantaneous power factor in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 4b, 07, 00, ff, REG_AAIPL3);	// Absolute active instantaneous power(| A | ) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 4b, 08, 00, ff, REG_AAEL3);	// Absolute active energy(| A | ) in phase L3 total
+	OBIS_CODE_DEFINITION(01, 00, 4c, 07, 00, ff, REG_SIPL3);	// Sum active instantaneous power(A + -A - ) in phase L3
+	OBIS_CODE_DEFINITION(01, 00, 5b, 06, 00, ff, REG_MCN);	// Maximum current(I max) in neutral
+	OBIS_CODE_DEFINITION(01, 00, 5b, 07, 00, ff, REG_ICN);	// Instantaneous current(I) in neutral
+	OBIS_CODE_DEFINITION(01, 00, 60, 01, 00, ff, REG_SERIAL_NUMBER);	// Meter serial number
+	OBIS_CODE_DEFINITION(01, 00, 60, 01, 02, ff, REG_PARAMETERS_FILE_CODE);	// Parameters file code
+	OBIS_CODE_DEFINITION(01, 00, 60, 01, 04, ff, REG_PARAMETERS_CHECK_SUM);	// Parameters check sum
+	OBIS_CODE_DEFINITION(01, 00, 60, 01, 05, ff, REG_FIRMWARE_BUILD_DATE);	// Firmware built date
+	OBIS_CODE_DEFINITION(01, 00, 60, 01, 06, ff, REG_FIRMWARE_CHECK_SUM);	// Firmware check sum
+	OBIS_CODE_DEFINITION(01, 00, 60, 02, 00, ff, REG_EVT_PARAM_CHANGED_COUNTER);	// Event parameters change
+	OBIS_CODE_DEFINITION(01, 00, 60, 02, 01, ff, REG_EVT_PARAM_CHANGED_TIMESTAMP);	// Event parameters change
+	OBIS_CODE_DEFINITION(01, 00, 60, 06, 00, ff, REG_POWER_DOWN_TIME_COUNTER);	// Power down time counter
+	OBIS_CODE_DEFINITION(01, 00, 60, 06, 01, ff, REG_BATTERY_REMAINING_CAPACITY);	// Battery remaining capacity
+	OBIS_CODE_DEFINITION(01, 00, 60, 07, 00, ff, REG_EVT_POWER_DOWN_COUNTER);	// Event power down
+	OBIS_CODE_DEFINITION(01, 00, 60, 07, 0a, ff, REG_EVT_POWER_DOWN_TIMESTAMP);	// Event power down
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 01, ff, REG_EVT_1);	// Event terminal cover opened
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 02, ff, REG_EVT_2);	// Event terminal cover opened
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 03, ff, REG_EVT_3);	// Event main cover opened - counter
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 04, ff, REG_EVT_4);	// Event main cover opened 
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 05, ff, REG_EVT_5);	// Event magnetic field detection start - counter
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 06, ff, REG_EVT_6);	// Event magnetic field detection start
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 07, ff, REG_EVT_7);	// Event reverse power flow
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 08, ff, REG_EVT_8);	// Event reverse power flow
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 0d, ff, REG_EVT_13);	// Event power up
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 0e, ff, REG_EVT_14);	// Event power up
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 0f, ff, REG_EVT_15);	// Event RTC(Real Time Clock) set
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 10, ff, REG_EVT_16);	// Event RTC(Real Time Clock) set
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 15, ff, REG_EVT_21);	// Event terminal cover closed
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 16, ff, REG_EVT_22);	// Event terminal cover closed
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 17, ff, REG_EVT_23);	// Event main cover closed
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 18, ff, REG_EVT_24);	// Event main cover closed
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 19, ff, REG_EVT_25);	// Event log - book 1 erased
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 1a, ff, REG_EVT_26);	// Event log - book 1 erased
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 1b, ff, REG_EVT_27);	// Event fraud start
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 1c, ff, REG_EVT_28);	// Event fraud start
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 1d, ff, REG_EVT_29);	// Event fraud stop
+	OBIS_CODE_DEFINITION(01, 00, 60, 33, 1e, ff, REG_EVT_30);	// Event fraud stop
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 01, ff, REG_TAMPER_ENERGY_1);	// Tamper 1 energy
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 02, ff, REG_TAMPER_ENERGY_2);	// Tamper 2 energy
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 03, ff, REG_TAMPER_ENERGY_3);	// Tamper 3 energy
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 04, ff, REG_TAMPER_ENERGY_4);	// Tamper 4 energy
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 05, ff, REG_TAMPER_TIME_1);	// Tamper 1 time counter register
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 06, ff, REG_TAMPER_TIME_2);	// Tamper 2 time counter register
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 07, ff, REG_TAMPER_TIME_3);	// Tamper 3 time counter register
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 09, ff, REG_TAMPER_TIME_4);	// Tamper 4 time counter register
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 0a, ff, REG_TAMPER_TIME_5);	// Tamper 5 time counter register
+	OBIS_CODE_DEFINITION(01, 00, 60, 35, 0b, ff, REG_TAMPER_ENERGY_5);	// Tamper 5 energy
+	OBIS_CODE_DEFINITION(01, 00, 60, 57, 00, ff, REG_ACTIVE_TARFIFF);	// Active tariff
+	OBIS_CODE_DEFINITION(01, 00, 60, 60, 09, ff, REG_FRAUD_FLAG);	// Fraud flag
+	// #227
 	// next group
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 00, ACT_SENSOR_TIME);	// actSensorTime - current UTC time
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 01, TZ_OFFSET);	// u16 - offset to actual time zone in minutes (-720 .. +720)
@@ -368,7 +486,7 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 12, ATTENTION_END_LIMIT_BEFORE_START);
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	// range is empty - not the profile
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 14, ATTENTION_MISSING_CLOSE_MSG);
-	// #363
+	// #481
 	// next group
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 00, ff, ROOT_BROKER);	// 90 00 00 00 00 NN - broker list
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 01, ff, BROKER_LOGIN);
@@ -378,7 +496,7 @@
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 05, ff, BROKER_PWD);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 06, ff, BROKER_TIMEOUT);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, a0, ff, BROKER_BLOCKLIST);
-	// #371
+	// #489
 	// next group
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 00, ff, ROOT_SERIAL);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 01, ff, SERIAL_NAME);	// example: /dev/ttyAPP0
@@ -388,7 +506,7 @@
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 05, ff, SERIAL_STOPBITS);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 06, ff, SERIAL_SPEED);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 07, ff, SERIAL_TASK);	// LMN port task
-	// #379
+	// #497
 	// next group
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 00, ff, ROOT_NMS);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 01, ff, NMS_ADDRESS);
@@ -396,7 +514,7 @@
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 03, ff, NMS_USER);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 04, ff, NMS_PWD);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 05, ff, NMS_ENABLED);
-	// #385
+	// #503
 	// next group
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 00, ff, ROOT_REDIRECTOR);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 01, ff, REDIRECTOR_LOGIN);
@@ -404,7 +522,7 @@
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 03, ff, REDIRECTOR_SERVICE);	// u16 - port
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 04, ff, REDIRECTOR_USER);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 05, ff, REDIRECTOR_PWD);
-	// #391
+	// #509
 	// next group
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	// current data set
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 04, LIST_SERVICES);
