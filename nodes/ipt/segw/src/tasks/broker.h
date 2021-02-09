@@ -42,7 +42,8 @@ namespace node
 			, std::string account
 			, std::string pwd
 			, std::string address
-			, std::uint16_t port);
+			, std::uint16_t port
+			, bool wireless);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -92,6 +93,8 @@ namespace node
 		std::string const pwd_;
 		std::string const host_;
 		std::uint16_t const port_;
+
+		bool const wireless_;
 
 		/**
 		 * connection socket

@@ -288,7 +288,8 @@ namespace node
 				, node.get_account()
 				, node.get_pwd()
 				, node.get_address()
-				, node.get_port());
+				, node.get_port()
+				, true);	//	wireless
 			//	broker are observers of table "_Readout"
 			//mux_.post(radio_distributor_, 1u, cyng::tuple_factory(r.first, r.second));
 		}
@@ -326,7 +327,8 @@ namespace node
 					, node.get_account()
 					, node.get_pwd()
 					, node.get_address()
-					, node.get_port());
+					, node.get_port()
+					, false);	//	not wireless
 
 				//	use signals instead of "_Readout" callbacks
 				mux_.post(serial_port_, 1u, cyng::tuple_factory(r.first, r.second));

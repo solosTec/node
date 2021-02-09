@@ -27,7 +27,8 @@ namespace node
 		, std::string account
 		, std::string pwd
 		, std::string host
-		, std::uint16_t port)
+		, std::uint16_t port
+		, bool wireless)
 	: base_(*btp) 
 		, logger_(logger)
 		, cache_(cfg)
@@ -36,6 +37,7 @@ namespace node
 		, pwd_(pwd)
 		, host_(host)
 		, port_(port)
+		, wireless_(wireless)
 		, socket_(base_.mux_.get_io_service())
 		, buffer_read_()
 		, buffer_write_()
@@ -52,7 +54,9 @@ namespace node
 			<< '@'
 			<< host_
 			<< ':'
-			<< port_);
+			<< port_
+			<< " - "
+			<< (wireless_ ? "wireless" : "wired"));
 
 		//
 		//	login message
@@ -67,6 +71,11 @@ namespace node
 		, std::uint64_t gen
 		, boost::uuids::uuid source)
 	{
+		//
+		//	only wireless data will be transmitted
+		//
+		if (!wireless_)	return;
+
 		CYNG_LOG_INFO(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
@@ -200,6 +209,11 @@ namespace node
 
 	cyng::continuation broker::process(cyng::buffer_t data, std::size_t msg_counter)
 	{
+		//
+		//	only wired data will be processes
+		//
+		if (wireless_)	cyng::continuation::TASK_CONTINUE;
+
 		CYNG_LOG_TRACE(logger_, "task #"
 			<< base_.get_id()
 			<< " <"
