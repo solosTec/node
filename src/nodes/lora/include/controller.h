@@ -23,8 +23,8 @@
 		void print_configuration(std::ostream&) override;
 
 	private:
+		cyng::param_t create_server_spec(std::filesystem::path const& cwd);
 		cyng::param_t create_cluster_spec();
-
 
 	};
 }

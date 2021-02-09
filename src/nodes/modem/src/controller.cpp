@@ -39,13 +39,7 @@ namespace smf {
 				cyng::make_param("tag", get_random_tag()),
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
-				cyng::make_param("server", cyng::make_tuple(
-					cyng::make_param("address", "0.0.0.0"),
-					cyng::make_param("service", "26862"),
-					cyng::make_param("sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
-					cyng::make_param("watchdog", 30),	//	for IP-T connection (minutes)
-					cyng::make_param("timeout", 10)		//	connection timeout in seconds
-				)),
+				create_server_spec(),
 				create_cluster_spec()
 			)
 		});
@@ -53,6 +47,16 @@ namespace smf {
 	void controller::print_configuration(std::ostream& os) {
 		os << "ToDo" << std::endl;
 	}
+	cyng::param_t controller::create_server_spec() {
+		return cyng::make_param("server", cyng::make_tuple(
+			cyng::make_param("address", "0.0.0.0"),
+			cyng::make_param("service", "26862"),
+			cyng::make_param("sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
+			cyng::make_param("watchdog", 30),	//	for IP-T connection (minutes)
+			cyng::make_param("timeout", 10)		//	connection timeout in seconds
+		));
+	}
+
 	cyng::param_t controller::create_cluster_spec() {
 		return cyng::make_param("cluster", cyng::make_tuple(
 			cyng::make_param("host", "127.0.0.1"),

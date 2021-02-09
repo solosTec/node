@@ -22,6 +22,10 @@
 			, std::filesystem::path&& cwd) override;
 		void print_configuration(std::ostream&) override;
 
+	private:
+		cyng::param_t create_server_spec();
+		cyng::param_t create_session_spec(std::filesystem::path const& tmp);
+		cyng::param_t create_cluster_spec();
 
 	};
 }

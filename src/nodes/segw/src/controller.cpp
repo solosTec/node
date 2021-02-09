@@ -64,10 +64,10 @@ namespace smf {
 				//	stty -F /dev/ttyAPP0  -echo -echoe -echok
 				//	stty -F /dev/ttyAPP0 115200 
 				//	cat /dev/ttyAPP0 | hexdump 
-				create_segw_wireless_spec(),
+				create_wireless_spec(),
 
 				//	RS-485
-				create_segw_rs485_spec(),
+				create_rs485_spec(),
 
 				//	GPIO
 				create_gpio_spec(),
@@ -88,7 +88,7 @@ namespace smf {
 		os << "ToDo" << std::endl;
 	}
 
-	cyng::param_t controller::create_segw_wireless_spec() const {
+	cyng::param_t controller::create_wireless_spec() const {
 		return cyng::make_param("LMN-wireless", cyng::tuple_factory(
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
@@ -102,7 +102,7 @@ namespace smf {
 			cyng::make_param("parity", "none"),	//	none, odd, even
 			cyng::make_param("flow-control", "none"),	//	none, software, hardware
 			cyng::make_param("stopbits", "one"),	//	one, onepointfive, two
-			cyng::make_param("speed", 57600)	//	0xE100
+			cyng::make_param("speed", 57600),	//	0xE100
 
 #else
 
@@ -113,14 +113,54 @@ namespace smf {
 			cyng::make_param("parity", "none"),	//	none, odd, even
 			cyng::make_param("flow-control", "none"),	//	none, software, hardware
 			cyng::make_param("stopbits", "one"),	//	one, onepointfive, two
-			cyng::make_param("speed", 115200)
+			cyng::make_param("speed", 115200),
 
 #endif
+			cyng::make_param("broker-enabled", false),
+			cyng::make_param("broker-login", false),
+			create_wireless_broker(),
+			create_wireless_block_list()
 
 		));
 	}
 
-	cyng::param_t controller::create_segw_rs485_spec() const {
+	cyng::param_t controller::create_wireless_block_list() const {
+		return cyng::make_param("blocklist", cyng::param_map_factory
+#ifdef _DEBUG
+			("enabled", true)
+			("list", cyng::make_vector({ "00684279", "12345678" }))
+#else
+			("enabled", false)
+			("list", cyng::vector_factory())
+#endif
+			("mode", "drop")	//	or accept
+			("period", 30)	//	seconds
+			.operator cyng::param_map_t()
+		);
+	}
+
+	cyng::param_t controller::create_wireless_broker() const {
+		return cyng::make_param("broker", cyng::make_vector({
+			//	define multiple broker here
+			cyng::param_map_factory("address", "segw.ch")("port", 12001).operator cyng::param_map_t()
+		}));
+	}
+
+	cyng::param_t controller::create_rs485_broker() const {
+		return cyng::make_param("broker", cyng::make_vector({
+			//	define multiple broker here
+			cyng::param_map_factory("address", "segw.ch")("port", 12002).operator cyng::param_map_t()
+			}));
+	}
+
+	cyng::param_t controller::create_rs485_listener() const {
+		return cyng::make_param("listener", cyng::tuple_factory(
+			cyng::make_param("address", "0.0.0.0"),
+			cyng::make_param("port", 6006)
+		));
+	}
+
+	cyng::param_t controller::create_rs485_spec() const {
 		return cyng::make_param("LMN-RS485", cyng::tuple_factory(
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
@@ -146,9 +186,13 @@ namespace smf {
 			cyng::make_param("speed", 9600),		//	initial
 
 #endif
-			cyng::make_param("protocol", "raw")		//	raw, mbus, iec, sml
-
-
+			cyng::make_param("protocol", "raw"),		//	raw, mbus, iec, sml
+			cyng::make_param("broker-enabled", false),
+			cyng::make_param("broker-login", false),
+			create_rs485_broker(),
+			cyng::make_param("listener-login", false),		//	request login
+			cyng::make_param("listener-enabled", false),	//	start rs485 server
+			create_rs485_listener()
 		));
 	}
 

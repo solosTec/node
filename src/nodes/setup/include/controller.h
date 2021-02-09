@@ -25,6 +25,5 @@
 	private:
 		cyng::param_t create_cluster_spec();
 
-
 	};
 }

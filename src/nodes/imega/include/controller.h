@@ -23,6 +23,7 @@
 		void print_configuration(std::ostream&) override;
 
 	private:
+		cyng::param_t create_server_spec();
 		cyng::param_t create_cluster_spec();
 
 	};

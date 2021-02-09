@@ -39,19 +39,27 @@ namespace smf {
 				cyng::make_param("tag", get_random_tag()),
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
-				cyng::make_param("server", cyng::make_tuple(
-					cyng::make_param("address", "0.0.0.0"),
-					cyng::make_param("service", "9000"),
-					cyng::make_param("auto-answer", true),	//	accept incoming calls automatically
-					cyng::make_param("guard-time", 1000),	//	milliseconds
-					cyng::make_param("timeout", 12)		//	connection timeout
-				)),
+				create_server_spec(cwd),
 				create_cluster_spec()
 			)
 		});
 	}
 	void controller::print_configuration(std::ostream& os) {
 		os << "ToDo" << std::endl;
+	}
+
+	cyng::param_t controller::create_server_spec(std::filesystem::path const& cwd) {
+		return cyng::make_param("server", cyng::make_tuple(
+			cyng::make_param("address", "0.0.0.0"),
+			cyng::make_param("service", "8443"),
+			cyng::make_param("timeout", "15"),	//	seconds
+			cyng::make_param("max-upload-size", 1024 * 1024 * 10),	//	10 MB
+			cyng::make_param("document-root", (cwd / "htdocs").string()),
+			cyng::make_param("tls-pwd", "test"),
+			cyng::make_param("tls-certificate-chain", "fullchain.cert"),
+			cyng::make_param("tls-private-key", "privkey.key"),
+			cyng::make_param("tls-dh", "dh4096.dh")	//	diffie-hellman
+			));
 	}
 
 	cyng::param_t controller::create_cluster_spec() {
