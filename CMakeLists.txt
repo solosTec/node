@@ -92,6 +92,7 @@ find_package(CYNG REQUIRED)
 if (CYNG_FOUND)
     message(STATUS "** CYNG_INCLUDE_DIRS        : ${CYNG_INCLUDE_DIRS}")
     message(STATUS "** CYNG_LIBRARIES           : ${CYNG_LIBRARIES}")
+    message(STATUS "** cyng_db                  : ${cyng_db}")
     message(STATUS "** cyng_io                  : ${cyng_io}")
     message(STATUS "** cyng_log                 : ${cyng_log}")
     message(STATUS "** cyng_obj                 : ${cyng_obj}")
@@ -184,6 +185,7 @@ target_compile_definitions(smf_config
 
 target_link_libraries(smf_config 
     PRIVATE 
+#        cyng_io
         Boost::boost 
 )
 

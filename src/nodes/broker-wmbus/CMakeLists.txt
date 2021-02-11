@@ -7,7 +7,7 @@ target_compile_features(broker-wmbus PRIVATE cxx_std_20)
 
 target_compile_definitions(broker-wmbus
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_FRONTEND>
+        $<$<CONFIG:Debug>:_DEBUG_BROKER_WMBUS>
 )
 
 #
@@ -35,9 +35,8 @@ target_link_directories(broker-wmbus
 
 target_link_libraries(broker-wmbus 
     PRIVATE
-        ${CYNG_LIBRARIES} 
-#        Boost::program_options
         smf_config
+        ${CYNG_LIBRARIES} 
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

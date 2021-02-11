@@ -27,10 +27,10 @@ if(CYNG_PKG_FOUND)
        
 endif(CYNG_PKG_FOUND)
 
-set(CYNG_LIBS "cyng_io;cyng_log;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm")
-#if(WIN32)
-#	list(APPEND CYNG_LIB_LIST "cyng_scm")
-#endif()
+set(CYNG_LIBS "cyng_db;cyng_io;cyng_log;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm")
+if(WIN32)
+	list(APPEND CYNG_LIBS "cyng_scm")
+endif()
 
 if(NOT CYNG_FOUND)
 
@@ -107,7 +107,7 @@ if(NOT CYNG_FOUND)
 	#
 	foreach(__CYNG_LIB ${CYNG_LIBS})
 
-		message(STATUS "** hint : ninjalib${CYNG_LIB}")
+		message(STATUS "** hint : lib${__CYNG_LIB}")
 		find_library("${__CYNG_LIB}" ${__CYNG_LIB}
 			NAMES
 				${__CYNG_BUILD}
