@@ -1,0 +1,12 @@
+REM
+REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM restart master service
+REM	created : ${_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo restart service smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo off
+sc stop smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc start smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo on

@@ -1,0 +1,18 @@
+REM
+REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM install dash service
+REM	created : ${_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo create service smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo off
+sc create smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\dash.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF dash server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR} "Dash (HTTPS) Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc failure smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+REM
+REM Add a dependency to SMF master service.
+REM Modify or remove this dependency if SMF master is running on a different node.
+REM
+sc config smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo on

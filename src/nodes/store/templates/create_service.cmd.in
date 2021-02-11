@@ -1,0 +1,18 @@
+REM
+REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM install store service
+REM	created : ${_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo create service smf_store_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo off
+sc create smf_store_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\store.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\store_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF store server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description smf_store_v${${PROJECT_NAME}_VERSION_MAJOR} "Store Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc failure smf_store_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+REM
+REM Add a dependency to IP-T master service.
+REM Modify or remove this dependency if IP-T master is running on a different node.
+REM
+sc config smf_store_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_ipt_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo on

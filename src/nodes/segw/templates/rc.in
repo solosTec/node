@@ -1,0 +1,42 @@
+#include "NODE_project_info.h"
+#define APSTUDIO_READONLY_SYMBOLS
+#include "winres.h"
+#undef APSTUDIO_READONLY_SYMBOLS
+
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION ${${PROJECT_NAME}_VERSION_MAJOR},${${PROJECT_NAME}_VERSION_MINOR},0,${${PROJECT_NAME}_VERSION_PATCH}
+ PRODUCTVERSION ${${PROJECT_NAME}_VERSION_MAJOR},${${PROJECT_NAME}_VERSION_MINOR},0,${${PROJECT_NAME}_VERSION_PATCH}
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040004b0"
+        BEGIN
+            VALUE "CompanyName", "solosTec"
+            VALUE "FileDescription", "smart energy gateway"
+            VALUE "FileVersion", "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.0.${${PROJECT_NAME}_VERSION_PATCH}"
+            VALUE "InternalName", "smf.ipt.segw"
+            VALUE "LegalCopyright", "Copyright (C) ${${PROJECT_NAME}_COPYRIGHT_YEAR} solosTec"
+            VALUE "OriginalFilename", "segw.exe"
+            VALUE "ProductName", "${PROJECT_NAME}"
+            VALUE "ProductVersion", "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.0.${${PROJECT_NAME}_VERSION_PATCH}"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x400, 1200
+    END
+END
+
+IDI_ICON1               ICON                    "${PROJECT_SOURCE_DIR}\\src\\main\\resources\\logo.ico"

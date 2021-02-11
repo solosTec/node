@@ -12,9 +12,27 @@ set (main_h
     include/controller.h
 )
 
+if(WIN32)
+    set(main_assets
+		templates/create_service.cmd.in
+		templates/delete_service.cmd.in
+		templates/restart_service.cmd.in
+		templates/windows.cgf.in
+    )
+else()
+    set(main_assets
+		templates/unit.in
+		templates/linux.cgf.in
+    )
+endif()
+
+
+source_group("main-assets" FILES ${main_assets})
+
 
 set (main_node
   ${main_cpp}
   ${main_h}
+  ${main_assets}
 )
 

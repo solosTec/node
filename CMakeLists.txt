@@ -20,6 +20,12 @@ cmake_minimum_required (VERSION 3.13)
 #	   ****      ***  ***  ***  **       
 #	              ***  ***  ***  **      
 #	                                     
+
+#
+# get time stamp of this build
+# produce variables _THIS_YEAR and _TWEAK_ID
+#
+include (cmake/time_stamp.cmake)
                                      
 #
 # set project name/properties
