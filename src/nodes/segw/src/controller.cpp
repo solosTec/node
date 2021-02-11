@@ -44,6 +44,7 @@ namespace smf {
 				cyng::make_param("tag", get_random_tag()),
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
+				cyng::make_param("generate-profile", false),
 
 				//	SQLite3
 				create_db_spec(cwd),
@@ -58,16 +59,8 @@ namespace smf {
 				//	NMS server
 				create_nms_server_spec(tmp),
 
-
-				//	wireless M-Bus
-				//	stty -F /dev/ttyAPP0 raw
-				//	stty -F /dev/ttyAPP0  -echo -echoe -echok
-				//	stty -F /dev/ttyAPP0 115200 
-				//	cat /dev/ttyAPP0 | hexdump 
-				create_wireless_spec(),
-
-				//	RS-485
-				create_rs485_spec(),
+				//	array of all available serial ports
+				create_lmn_spec(),
 
 				//	GPIO
 				create_gpio_spec(),
@@ -76,11 +69,7 @@ namespace smf {
 				create_hardware_spec(),
 
 				//	virtual meter
-				cyng::make_param("virtual-meter", cyng::tuple_factory(
-					cyng::make_param("enabled", false),
-					cyng::make_param("server", "01-d81c-10000001-3c-02"),	//	1CD8
-					cyng::make_param("interval", 26000)	//	seconds
-				))
+				create_virtual_meter_spec()
 			)
 		});
 	}
@@ -88,8 +77,25 @@ namespace smf {
 		os << "ToDo" << std::endl;
 	}
 
-	cyng::param_t controller::create_wireless_spec() const {
-		return cyng::make_param("LMN-wireless", cyng::tuple_factory(
+	cyng::param_t controller::create_virtual_meter_spec() const {
+		return cyng::make_param("virtual-meter", cyng::tuple_factory(
+			cyng::make_param("enabled", false),
+			cyng::make_param("server", "01-d81c-10000001-3c-02"),	//	1CD8
+			cyng::make_param("interval", 26000)	//	seconds
+		));
+	}
+
+	cyng::tuple_t controller::create_wireless_spec() const {
+
+		//	wireless M-Bus
+		//	stty -F /dev/ttyAPP0 raw
+		//	stty -F /dev/ttyAPP0  -echo -echoe -echok
+		//	stty -F /dev/ttyAPP0 115200 
+		//	cat /dev/ttyAPP0 | hexdump 
+
+		return cyng::make_tuple(
+
+			cyng::make_param("type", "wireless"),
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
 
@@ -121,7 +127,7 @@ namespace smf {
 			create_wireless_broker(),
 			create_wireless_block_list()
 
-		));
+		);
 	}
 
 	cyng::param_t controller::create_wireless_block_list() const {
@@ -160,8 +166,10 @@ namespace smf {
 		));
 	}
 
-	cyng::param_t controller::create_rs485_spec() const {
-		return cyng::make_param("LMN-RS485", cyng::tuple_factory(
+	cyng::tuple_t controller::create_rs485_spec() const {
+		return cyng::make_tuple(
+
+			cyng::make_param("type", "RS-485"),
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
 			cyng::make_param("enabled", false),
@@ -193,7 +201,7 @@ namespace smf {
 			cyng::make_param("listener-login", false),		//	request login
 			cyng::make_param("listener-enabled", false),	//	start rs485 server
 			create_rs485_listener()
-		));
+		);
 	}
 
 	cyng::param_t controller::create_gpio_spec() const {
@@ -269,7 +277,7 @@ namespace smf {
 		));
 	}
 
-	cyng::param_t controller::create_db_spec(std::filesystem::path const& cwd) {
+	cyng::param_t controller::create_db_spec(std::filesystem::path const& cwd) const {
 		return cyng::make_param("DB", cyng::make_tuple(
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
 			cyng::make_param("file-name", "/usr/local/etc/smf/segw.database"),
@@ -282,7 +290,7 @@ namespace smf {
 		));
 	}
 
-	cyng::param_t controller::create_ipt_spec(std::string const& hostname) {
+	cyng::param_t controller::create_ipt_spec(std::string const& hostname)  const {
 
 		return cyng::make_param("ipt", cyng::make_vector({
 
@@ -332,13 +340,21 @@ namespace smf {
 		));
 	}
 
-	cyng::param_t controller::create_ipt_params() {
+	cyng::param_t controller::create_ipt_params() const {
 		return cyng::make_param("ipt-param", cyng::tuple_factory(
 			//cyng::make_param(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str(), 1u),	//	minutes
 			//cyng::make_param(sml::OBIS_TCP_CONNECT_RETRIES.to_str(), 20u),
 			//cyng::make_param(sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01).to_str(), 0u),	//	has SSL configuration
 			cyng::make_param("enabled", true)
 		));
+	}
+
+	cyng::param_t controller::create_lmn_spec() const {
+		//	list of all serial ports
+		return cyng::make_param("lmn", cyng::make_vector({
+			create_wireless_spec(),
+			create_rs485_spec()
+			}));
 	}
 
 }

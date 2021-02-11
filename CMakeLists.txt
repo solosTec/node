@@ -275,6 +275,8 @@ target_link_libraries(smf_obis
 #
 # nodes
 #
+add_subdirectory(src/nodes/broker-iec)
+add_subdirectory(src/nodes/broker-wmbus)
 add_subdirectory(src/nodes/dash)
 add_subdirectory(src/nodes/imega)
 add_subdirectory(src/nodes/ipt)

@@ -23,19 +23,21 @@
 		void print_configuration(std::ostream&) override;
 
 	private:
-		cyng::param_t create_wireless_spec() const;
+		cyng::tuple_t create_wireless_spec() const;
+		cyng::tuple_t create_rs485_spec() const;
 		cyng::param_t create_wireless_broker() const;
 		cyng::param_t create_wireless_block_list() const;
-		cyng::param_t create_rs485_spec() const;
 		cyng::param_t create_rs485_broker() const;
 		cyng::param_t create_rs485_listener() const;
 		cyng::param_t create_gpio_spec() const;
 		cyng::param_t create_hardware_spec() const;
 		cyng::param_t create_nms_server_spec(std::filesystem::path const&) const;
 		cyng::param_t create_sml_server_spec() const;
-		cyng::param_t create_db_spec(std::filesystem::path const&);
-		cyng::param_t create_ipt_spec(std::string const& hostname);
-		cyng::param_t create_ipt_params();
+		cyng::param_t create_db_spec(std::filesystem::path const&) const;
+		cyng::param_t create_ipt_spec(std::string const& hostname) const;
+		cyng::param_t create_ipt_params() const;
+		cyng::param_t create_virtual_meter_spec() const;
+		cyng::param_t create_lmn_spec() const;
 
 	};
 }
