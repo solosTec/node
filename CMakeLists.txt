@@ -326,8 +326,16 @@ configure_file (
 #
 # install
 #
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
+        DESTINATION "include" # target directory
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h"
+        PATTERN "*hpp"
+)
 
 set(SMF_TARGET_LIST smf_cluster smf_config dash imega ipt segw store lora main modem setup mqtt)
+
+message(STATUS "** Target list              : ${SMF_TARGET_LIST}")
 
 install(TARGETS ${SMF_TARGET_LIST}
     EXPORT SMFTargets
@@ -381,8 +389,8 @@ set(CPACK_PACKAGE_CONTACT "info@solostec.ch")
 set(CPACK_PACKAGE_VENDOR "solosTec")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
 set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF library")
-#set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
-#set(CPACK_PACKAGE_ICON ${PROJECT_SOURCE_DIR}/logo.ico)
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_ICON ${PROJECT_SOURCE_DIR}/assets/logo.ico)
 
 if(UNIX)
 
@@ -406,8 +414,8 @@ if(UNIX)
 elseif(WIN32)
 
 	set(CPACK_GENERATOR "NSIS64")
-	set(CPACK_NSIS_MUI_ICON ${PROJECT_SOURCE_DIR}/logo.ico)
-	set(CPACK_NSIS_MUI_UNIICON ${PROJECT_SOURCE_DIR}/logo.ico)
+	set(CPACK_NSIS_MUI_ICON ${PROJECT_SOURCE_DIR}\\assets\\logo.ico)
+	set(CPACK_NSIS_MUI_UNIICON ${PROJECT_SOURCE_DIR}\\assets\\logo.ico)
 	#set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vcredist_x86.exe\\\" /q:a'")
 	set(CPACK_NSIS_MODIFY_PATH ON)
 	set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.solostec.com")
