@@ -38,6 +38,11 @@ project(smf
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
+    #
+    # guard against in-source builds and bad build-type strings
+    #
+    include(cmake/safeguards.cmake)
+
     math(EXPR "${PROJECT_NAME}_VERSION_NUMERAL" "${PROJECT_VERSION_MAJOR}*100000+${PROJECT_VERSION_MINOR}*1000+${PROJECT_VERSION_PATCH}" OUTPUT_FORMAT DECIMAL)
     message(STATUS "** Version numeral    : ${${PROJECT_NAME}_VERSION_NUMERAL}")
 
@@ -60,7 +65,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
         message(STATUS "Doxygen not found, not building docs")
     endif()
 
-    if (WIN32)
+    if (MSVC)
         message(STATUS "Use static libraries")
         set(GLOBAL_LIBRARY_TYPE STATIC)
         #set(Boost_USE_STATIC_LIBS ON)
@@ -69,7 +74,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
         add_compile_options("/bigobj")
         message(STATUS "** compile definitions: ${CMAKE_CXX_FLAGS}")
 
-    else()
+    elseif(CMAKE_COMPILER_IS_GNUCXX)
         set(GLOBAL_LIBRARY_TYPE SHARED)
     endif()
 
