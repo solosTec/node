@@ -137,7 +137,7 @@ namespace smf {
 			("list", cyng::make_vector({ "00684279", "12345678" }))
 #else
 			("enabled", false)
-			("list", cyng::vector_factory())
+			("list", cyng::make_vector({}))
 #endif
 			("mode", "drop")	//	or accept
 			("period", 30)	//	seconds
@@ -227,7 +227,7 @@ namespace smf {
 #else
 			cyng::make_param("manufacturer", "solosTec"),
 #endif
-			cyng::make_param("model", "virtual.gateway"),	//	Typenschlüssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
+			cyng::make_param("model", "virtual.gateway"),	//	Typenschlï¿½ssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
 			//cyng::make_param("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
 			cyng::make_param("class", "129-129:199.130.83*255")	//	device class (81 81 C7 82 02 FF - OBIS_DEVICE_CLASS) "2D 2D 2D"
 			//cyng::make_param("adapter", cyng::tuple_factory(
