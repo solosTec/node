@@ -5,7 +5,7 @@
  *
  */
 
-#include <smf/obis/defs.h>
+//#include <smf/obis/defs.h>
 #include <cyng/obj/intrinsics/obis.h>
 #include <cyng/obj/intrinsics/edis.h>
 #include <cyng/obj/tag.hpp>
@@ -15,6 +15,9 @@
 #include <map>
 #include <fstream>
 #include <iomanip>
+
+#define DEFINE_OBIS(p1, p2, p3, p4, p5, p6)	\
+	cyng::obis(0x##p1, 0x##p2, 0x##p3, 0x##p4, 0x##p5, 0x##p6)
 
  /**
   * internal class to describe an OBIS code
@@ -711,6 +714,19 @@ int main(int argc, char** argv) {
 
 	std::ofstream ofs(__OUTPUT_PATH, std::ios::trunc);
 	if (ofs.is_open()) {
+
+		std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+		std::time_t start_time = std::chrono::system_clock::to_time_t(now);
+		char buffer[100];
+		struct tm buf;
+		errno_t err = localtime_s(&buf, &start_time);
+		if (std::strftime(buffer, sizeof(buffer), "%F %H:%M:%S", &buf)) {
+			ofs 
+				<< "\t// generated at " 
+				<< buffer 
+				<< std::endl
+				;
+		}
 
 		ofs
 			<< "\t// "

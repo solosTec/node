@@ -10,6 +10,7 @@ set (obis_cpp
 set (obis_h
     ${CMAKE_BINARY_DIR}/include/smf.h
     include/smf/obis/defs.h   
+    include/smf/obis/defs.ipp
 )
 
 

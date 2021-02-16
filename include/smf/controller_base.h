@@ -8,10 +8,16 @@
 #define SMF_CONFIG_CONTROLLER_BASE_H
 
 #include <smf/config.h>
+
 #include <cyng/obj/intrinsics/container.h>
+#include <cyng/log/logger.h>
 
 #include <filesystem>
 #include <boost/uuid/uuid.hpp>
+
+namespace cyng {
+	class controller;
+}
 
 namespace smf {
 	namespace config {
@@ -21,15 +27,21 @@ namespace smf {
 		public:
 			controller_base(startup const&);
 
-			bool run_options(boost::program_options::variables_map&);
+			virtual bool run_options(boost::program_options::variables_map&);
 
-			virtual int run() = 0;
+			/**
+			 * Prepare a default environment and call the derived run() method
+			 */
+			virtual int run();
 
 		protected:
 			virtual cyng::vector_t create_default_config(std::chrono::system_clock::time_point&&
 				, std::filesystem::path&& tmp
 				, std::filesystem::path&& cwd) = 0;
-			virtual void print_configuration(std::ostream&) = 0;
+			virtual void print_configuration(std::ostream&);
+
+			virtual void run(cyng::controller&, cyng::logger, cyng::object const& cfg) = 0;
+
 
 			void write_config(cyng::vector_t&&);
 
@@ -37,6 +49,9 @@ namespace smf {
 			 * generate a random UUID without requiring system entropy
 			 */
 			boost::uuids::uuid get_random_tag() const;
+
+		protected:
+			cyng::object read_config_section(std::string const& json_path, std::size_t config_index);
 
 		protected:
 			startup const& config_;

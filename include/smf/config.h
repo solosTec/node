@@ -24,6 +24,11 @@ namespace smf {
 		 */
 		std::string derive_cfg_file_name(std::string node);
 
+		/**
+		 * Takes the node name and derives a default path to the .json config file
+		 */
+		std::string derive_json_cfg_file_name(std::string node);
+
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
 		/**
 		 * Build a clean service name with an uppercase first character.
@@ -77,10 +82,22 @@ namespace smf {
 
 #if defined(BOOST_OS_LINUX_AVAILABLE)
 			struct rlimit rl_;
+			bool log_syslog_;
 #endif
 
 			std::string log_level_str_;
 
+			/**
+			 * start console logger
+			 */
+			bool log_console_;
+			bool log_file_;
+			std::string log_file_path_;
+			std::uint64_t log_file_size_;
+
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+			bool log_eventlog_;
+#endif
 		};
 
 		/**
@@ -115,6 +132,7 @@ namespace smf {
 		void print_version_info(std::ostream& os, std::string const& name);
 		void print_build_info(std::ostream& os);
 		void print_net_config(std::ostream& os);
+
 	}
 }
 

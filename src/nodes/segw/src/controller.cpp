@@ -6,12 +6,16 @@
  */
 
 #include <controller.h>
+#include <storage_functions.h>
+
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
+#include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/sys/locale.h>
 #include <cyng/sys/host.h>
+#include <cyng/task/controller.h>
 
 #include <locale>
 #include <iostream>
@@ -24,8 +28,31 @@ namespace smf {
 		: controller_base(config)
 	{}
 
-	int controller::run() {
-		return EXIT_SUCCESS;
+	bool controller::run_options(boost::program_options::variables_map& vars) {
+
+		//
+		//	
+		//
+		if (vars["init"].as< bool >())	{
+			//	initialize database
+			init_storage(read_config_section(config_.json_path_, config_.config_index_));
+			return true;
+		}
+		if (vars["transfer"].as< bool >())	{
+			//	transfer JSON configuration into database
+			transfer_config(read_config_section(config_.json_path_, config_.config_index_));
+			return true;
+		}
+		if (vars["clear"].as< bool >())	{
+			//	clear configuration from database
+			clear_config(read_config_section(config_.json_path_, config_.config_index_));
+			return true;
+		}
+
+		//
+		//	call base classe
+		//
+		return controller_base::run_options(vars);
 	}
 
 	cyng::vector_t controller::create_default_config(std::chrono::system_clock::time_point&& now
@@ -72,9 +99,6 @@ namespace smf {
 				create_virtual_meter_spec()
 			)
 		});
-	}
-	void controller::print_configuration(std::ostream& os) {
-		os << "ToDo" << std::endl;
 	}
 
 	cyng::param_t controller::create_virtual_meter_spec() const {
@@ -284,15 +308,15 @@ namespace smf {
 #else
 			cyng::make_param("file-name", (cwd / "segw.database").string()),
 #endif
-			cyng::make_param("busy-timeout", 12),		//	seconds
-			cyng::make_param("watchdog", 30),		//	for database connection
-			cyng::make_param("pool-size", 1)		//	no pooling for SQLite
+			cyng::make_param("busy-timeout", 12),			//	seconds
+			cyng::make_param("watchdog", 30),				//	for database connection
+			cyng::make_param("connection-type", "SQLite")	//	file based
 		));
 	}
 
 	cyng::param_t controller::create_ipt_spec(std::string const& hostname)  const {
 
-		return cyng::make_param("ipt", cyng::make_vector({
+		return cyng::make_param("ipt-config", cyng::make_vector({
 
 		//
 		//	redundancy I
@@ -356,5 +380,30 @@ namespace smf {
 			create_rs485_spec()
 			}));
 	}
+
+	void controller::init_storage(cyng::object&& cfg) {
+
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+		if (s.is_alive())	smf::init_storage(s);
+	}
+
+	void controller::transfer_config(cyng::object&& cfg) {
+		auto const reader = cyng::make_reader(cfg);
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+		if (s.is_alive())	smf::transfer_config(s, std::move(cfg));
+	}
+
+	void controller::clear_config(cyng::object&& cfg) {
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+		if (s.is_alive())	smf::clear_config(s);
+	}
+
+
+	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg) {
+
+	}
+
 
 }

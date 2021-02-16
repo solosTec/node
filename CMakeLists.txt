@@ -85,6 +85,23 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     TEST_BIG_ENDIAN(${PROJECT_NAME}_BIG_ENDIAN)
     message(STATUS "** big endian         : ${${PROJECT_NAME}_BIG_ENDIAN}")
 
+    #
+    #   get an uppercase project name
+    #
+    string(TOUPPER ${PROJECT_NAME} CAPITAL_NAME)
+
+    #
+    # manage unit test: CYNG_UNIT_TEST
+    # default is OFF
+    #
+    if(NOT DEFINED ${CAPITAL_NAME}_UNIT_TEST)
+	    set(${CAPITAL_NAME}_UNIT_TEST OFF CACHE BOOL "build unit test")
+    endif()
+
+    if(NOT DEFINED ${CAPITAL_NAME}_BUILD_TOOLS)
+	    set(${CAPITAL_NAME}_BUILD_TOOLS OFF CACHE BOOL "build developer tools")
+    endif()
+
 endif()
 
 
@@ -111,6 +128,7 @@ if (CYNG_FOUND)
     message(STATUS "** cyng_sys                 : ${cyng_sys}")
     message(STATUS "** cyng_task                : ${cyng_task}")
     message(STATUS "** cyng_vm                  : ${cyng_vm}")
+    message(STATUS "** cyng_sqlite3             : ${cyng_sqlite3}")
 else()
     message(FATAL_ERROR "** cyng library not found")
 endif()
@@ -286,6 +304,49 @@ target_link_libraries(smf_obis
 )
 
 #
+# add library: smf_ipt
+#
+include (src/lib/ipt/protocol/lib.cmake)
+add_library(smf_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_lib})
+
+target_include_directories(smf_ipt
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_ipt PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug ipt protocol
+#
+target_compile_definitions(smf_ipt 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_IPT>
+)
+
+target_link_libraries(smf_ipt 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # nodes
 #
 add_subdirectory(src/nodes/broker-iec)
@@ -303,13 +364,26 @@ add_subdirectory(src/nodes/store)
 
 #
 # tools
+# call CMake with -DSMF_BUILD_TOOLS:BOOL=TRUE to generate unit tests 
 #
-add_subdirectory(src/tools/obis)
+if(${CAPITAL_NAME}_BUILD_TOOLS)
+
+    add_subdirectory(src/tools/obis)
+
+endif()
 
 #
 # unit tests
 #
-add_subdirectory(unit_test)
+#
+# unit tests
+# call CMake with -DSMF_UNIT_TEST:BOOL=TRUE to generate unit tests 
+#
+if(${CAPITAL_NAME}_UNIT_TEST)
+
+    add_subdirectory(unit_test)
+
+endif()
 
 #
 # generate config file
@@ -392,26 +466,25 @@ set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF library")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_ICON ${PROJECT_SOURCE_DIR}/assets/logo.ico)
 
-if(UNIX)
+#if(UNIX)
 
-    if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-        if(EXISTS "/etc/issue")
-            file(READ "/etc/issue" LINUX_ISSUE)
+#    if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+#        if(EXISTS "/etc/issue")
+#            file(READ "/etc/issue" LINUX_ISSUE)
 
-            if(LINUX_ISSUE MATCHES "SUSE")
-                #set(CPACK_PACKAGING_INSTALL_PREFIX "/opt")
-                set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-                set(CPACK_GENERATOR "RPM")
-            endif(LINUX_ISSUE MATCHES "SUSE")
+#            if(LINUX_ISSUE MATCHES "SUSE")
+#                set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+#                set(CPACK_GENERATOR "RPM")
+#            endif(LINUX_ISSUE MATCHES "SUSE")
 
-            if(LINUX_ISSUE MATCHES "Ubuntu")
-                set(CPACK_GENERATOR "DEB")
-            endif(LINUX_ISSUE MATCHES "Ubuntu")
+#            if(LINUX_ISSUE MATCHES "Ubuntu")
+#                set(CPACK_GENERATOR "DEB")
+#            endif(LINUX_ISSUE MATCHES "Ubuntu")
 
-        endif(EXISTS "/etc/issue")
-    endif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+#        endif(EXISTS "/etc/issue")
+#    endif(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
-elseif(WIN32)
+if(WIN32)
 
 	set(CPACK_GENERATOR "NSIS64")
 	set(CPACK_NSIS_MUI_ICON ${PROJECT_SOURCE_DIR}\\assets\\logo.ico)
@@ -419,6 +492,8 @@ elseif(WIN32)
 	#set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vcredist_x86.exe\\\" /q:a'")
 	set(CPACK_NSIS_MODIFY_PATH ON)
 	set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.solostec.com")
-
+else()
+    set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+	set(CPACK_GENERATOR "DEB")
 endif()
 

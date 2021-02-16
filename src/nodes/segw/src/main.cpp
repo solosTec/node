@@ -25,6 +25,12 @@ int main(int argc, char** argv) {
 	//	generic options
 	//
 	boost::program_options::options_description generic = smf::config::get_generic_options(config);
+	generic.add_options()
+		("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
+		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
+		("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")
+		;
+
 
 	//
 	//	cmdline_options contains all generic and node specific options
@@ -57,7 +63,7 @@ int main(int argc, char** argv) {
 
 		smf::controller	ctl(config);
 		if (ctl.run_options(vm))	return EXIT_SUCCESS;
-		return ctl.run();
+		return ctl.controller_base::run();
 
 	}
 	catch (std::bad_cast const& e) {

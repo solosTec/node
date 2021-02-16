@@ -14,13 +14,13 @@
 	{
 	public:
 		controller(config::startup const&);
-		virtual int run() override;
 
 	protected:
 		cyng::vector_t create_default_config(std::chrono::system_clock::time_point&& now
 			, std::filesystem::path&& tmp
 			, std::filesystem::path&& cwd) override;
-		void print_configuration(std::ostream&) override;
+
+		void run(cyng::controller&, cyng::logger, cyng::object const& cfg) override;
 
 	private:
 		cyng::param_t create_server_spec(std::filesystem::path const& cwd);

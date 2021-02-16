@@ -6,10 +6,14 @@ set (segw_node)
 set (segw_cpp
     src/main.cpp
     src/controller.cpp
+    src/storage.cpp
+    src/storage_functions.cpp
 )
     
 set (segw_h
     include/controller.h
+    include/storage.h
+    include/storage_functions.h
 )
 
 if(WIN32)

@@ -21,10 +21,6 @@ namespace smf {
 		: controller_base(config)
 	{}
 
-	int controller::run() {
-		return EXIT_SUCCESS;
-	}
-
 	cyng::vector_t controller::create_default_config(std::chrono::system_clock::time_point&& now
 		, std::filesystem::path&& tmp
 		, std::filesystem::path&& cwd) {
@@ -63,8 +59,8 @@ namespace smf {
 			)
 		});
 	}
-	void controller::print_configuration(std::ostream& os) {
-		os << "ToDo" << std::endl;
+	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg) {
+
 	}
 	cyng::param_t controller::create_cluster_spec() {
 		return cyng::make_param("cluster", cyng::make_tuple(

@@ -5,8 +5,16 @@
  *
  */
 
-#include <smf/controller_base.h>
+#ifndef SMF_SEGW_CONTROLLER_H
+#define SMF_SEGW_CONTROLLER_H
 
+#include <smf/controller_base.h>
+#include <cyng/db/session.h>
+#include <cyng/log/logger.h>
+
+namespace cyng {
+	class controller;
+}
 
  namespace smf {
 
@@ -14,13 +22,14 @@
 	{
 	public:
 		controller(config::startup const&);
-		virtual int run() override;
+		virtual bool run_options(boost::program_options::variables_map&) override;
 
 	protected:
 		cyng::vector_t create_default_config(std::chrono::system_clock::time_point&& now
 			, std::filesystem::path&& tmp
 			, std::filesystem::path&& cwd) override;
-		void print_configuration(std::ostream&) override;
+
+		void run(cyng::controller&, cyng::logger, cyng::object const& cfg) override;
 
 	private:
 		cyng::tuple_t create_wireless_spec() const;
@@ -39,5 +48,14 @@
 		cyng::param_t create_virtual_meter_spec() const;
 		cyng::param_t create_lmn_spec() const;
 
+		void init_storage(cyng::object&&);
+		void transfer_config(cyng::object&&);
+		void clear_config(cyng::object&&);
+
+		//void transfer_config(cyng::db::session&);
+		//void clear_config(cyng::db::session&);
+
 	};
 }
+
+#endif
