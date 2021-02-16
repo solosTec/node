@@ -6,6 +6,8 @@ set (ipt_lib)
 set (ipt_cpp
     src/lib/ipt/protocol/src/scramble_key.cpp
     src/lib/ipt/protocol/src/scramble_key_format.cpp
+    src/lib/ipt/protocol/src/codes.cpp
+    src/lib/ipt/protocol/src/header.cpp
 )
     
 set (ipt_h
@@ -14,6 +16,8 @@ set (ipt_h
     include/smf/ipt/scramble_key.h
     include/smf/ipt/scramble_key_format.h
     include/smf/ipt/scramble_key_io.hpp
+    include/smf/ipt/codes.h
+    include/smf/ipt/header.h
 )
 
 

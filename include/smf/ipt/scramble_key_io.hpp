@@ -8,11 +8,14 @@
 #define SMF_IPT_SCRAMBLE_KEY_IO_HPP
 
 #include <smf/ipt/scramble_key.h>
+
 #include <ios>
 #include <ostream>
 #include <istream>
-#include <boost/io/ios_state.hpp>
 #include <locale>
+#include <algorithm>
+
+#include <boost/io/ios_state.hpp>
 
 namespace smf
 {
