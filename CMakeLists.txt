@@ -347,6 +347,92 @@ target_link_libraries(smf_ipt
 )
 
 #
+# add library: smf_ipt_bus
+#
+include (src/lib/ipt/bus/lib.cmake)
+add_library(smf_ipt_bus ${GLOBAL_LIBRARY_TYPE} ${ipt_bus})
+
+target_include_directories(smf_ipt_bus
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_ipt_bus PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug ipt bus
+#
+target_compile_definitions(smf_ipt_bus 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_IPT>
+)
+
+target_link_libraries(smf_ipt_bus 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
+# add library: smf_serial_bus
+#
+include (src/lib/serial/bus/lib.cmake)
+add_library(smf_serial_bus ${GLOBAL_LIBRARY_TYPE} ${serial_bus})
+
+target_include_directories(smf_serial_bus
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_serial_bus PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug serial bus
+#
+target_compile_definitions(smf_serial_bus 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_SERIAL>
+)
+
+target_link_libraries(smf_serial_bus 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # nodes
 #
 add_subdirectory(src/nodes/broker-iec)

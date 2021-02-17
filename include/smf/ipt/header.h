@@ -39,6 +39,10 @@ namespace smf
 		 */
 		header to_header(cyng::buffer_t const& src);
 
+		constexpr bool has_data(header const& h) {
+			return h.length_ != HEADER_SIZE;
+		}
+
 		/**
 		 *	@return message size in bytes without header
 		 */
@@ -98,7 +102,7 @@ namespace smf
 		std::uint16_t arity(command_t);
 
 	}	//	ipt
-}	//	node
+}
 
 #pragma pack( pop )	//	reset packing alignment
 

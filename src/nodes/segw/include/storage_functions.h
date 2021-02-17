@@ -29,10 +29,12 @@
 	  * Precondition: Table "TCfg" must exist.
 	  */
 	 void transfer_config(cyng::db::session&, cyng::object&& cfg);
-	 void transfer_ipt(cyng::db::session&, cyng::vector_t&& vec);
-	 void transfer_sml(cyng::db::session&, cyng::param_map_t&& pmap);
-	 void transfer_nms(cyng::db::session&, cyng::param_map_t&& pmap);
-	 void transfer_lnm(cyng::db::session&, cyng::vector_t&& vec);
+	 void transfer_ipt_config(cyng::db::statement_ptr stmt, cyng::vector_t&& vec);
+	 void transfer_ipt_params(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap);
+	 void transfer_sml(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap);
+	 void transfer_nms(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap);
+	 void transfer_lnm(cyng::db::statement_ptr stmt, cyng::vector_t&& vec);
+	 void transfer_gpio(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap);
 
 	 /**
 	  * Clear table "TCfg"
@@ -41,7 +43,7 @@
 	  */
 	 void clear_config(cyng::db::session&);
 
-	 bool insert_config_record(cyng::db::session& s, std::string key, cyng::object obj, std::string desc);
+	 bool insert_config_record(cyng::db::statement_ptr stmt, std::string key, cyng::object obj, std::string desc);
 }
 
 #endif

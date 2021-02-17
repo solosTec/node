@@ -7,6 +7,7 @@
 
 #include <controller.h>
 #include <storage_functions.h>
+#include <smf/obis/defs.h>
 
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
@@ -366,9 +367,9 @@ namespace smf {
 
 	cyng::param_t controller::create_ipt_params() const {
 		return cyng::make_param("ipt-param", cyng::tuple_factory(
-			//cyng::make_param(sml::OBIS_TCP_WAIT_TO_RECONNECT.to_str(), 1u),	//	minutes
-			//cyng::make_param(sml::OBIS_TCP_CONNECT_RETRIES.to_str(), 20u),
-			//cyng::make_param(sml::make_obis(0x00, 0x80, 0x80, 0x00, 0x03, 0x01).to_str(), 0u),	//	has SSL configuration
+			cyng::make_param(OBIS_TCP_WAIT_TO_RECONNECT, 1u),	//	minutes
+			cyng::make_param(OBIS_TCP_CONNECT_RETRIES, 20u),
+			cyng::make_param(OBIS_HAS_SSL_CONFIG, 0u),	//	has SSL configuration
 			cyng::make_param("enabled", true)
 		));
 	}
