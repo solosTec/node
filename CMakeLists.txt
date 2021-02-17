@@ -229,6 +229,7 @@ target_include_directories(smf_cluster
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
@@ -256,6 +257,49 @@ target_compile_definitions(smf_cluster
 )
 
 target_link_libraries(smf_cluster 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
+# add library: smf_http
+#
+include (src/lib/http/lib.cmake)
+add_library(smf_http ${GLOBAL_LIBRARY_TYPE} ${http_lib})
+
+target_include_directories(smf_http
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_http PRIVATE 
+    cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug smf http
+#
+target_compile_definitions(smf_http 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_HTTP>
+)
+
+target_link_libraries(smf_http 
     PRIVATE 
         Boost::boost 
 )

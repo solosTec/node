@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/string_generator.hpp>
 #include <boost/asio.hpp>
 
 namespace smf {
@@ -29,6 +30,7 @@ namespace smf {
 
 		controller_base::controller_base(startup const& config)
 			: config_(config)
+			, uidgen_()
 		{}
 
 		bool controller_base::run_options(boost::program_options::variables_map& vars) {
@@ -93,25 +95,7 @@ namespace smf {
 		}
 
 		boost::uuids::uuid controller_base::get_random_tag() const {
-			boost::uuids::uuid u;
-			int pos = 0;
-			auto const start = std::chrono::system_clock::now();
-			for (boost::uuids::uuid::iterator it = u.begin(), end = u.end(); it != end; ++it, ++pos) {
-
-				unsigned long random_value{ 0 };
-				std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now() - start;
-				if (pos == sizeof(unsigned long)) {
-					random_value = static_cast<unsigned long>(elapsed_seconds.count() * 4294967296.0);
-					pos = 0;
-				}
-
-				// static_cast gets rid of warnings of converting unsigned long to boost::uint8_t
-				*it = static_cast<boost::uuids::uuid::value_type>((random_value >> (pos * 8)) & 0xFF);
-			}
-
-			boost::uuids::detail::set_uuid_random_vv(u);
-			return u;
-
+			return uidgen_();
 		}
 
 		int controller_base::run() {
@@ -145,6 +129,7 @@ namespace smf {
 					//	start application
 					//
 					auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
+
 					//std::cout << cfg << std::endl;
 					BOOST_ASSERT_MSG(cfg, "no configiration data");
 					BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
@@ -161,6 +146,14 @@ namespace smf {
 					//
 					cyng::logger logger(ctl.create_channel<cyng::log>());
 
+					//
+					//	log level
+					//
+					logger.set_level(config_.get_log_level());
+
+					//
+					//	set appender
+					//
  					if (config_.log_console_) {
 						//	enable console logging
 						logger.start_console_logger();
@@ -190,9 +183,14 @@ namespace smf {
 							CYNG_LOG_INFO(logger, "shutdown " << config_.node_ << " - uptime: " << uptime);
 							logger.stop();
 
-							ctl.get_ctx().get_executor().context().stop();
-							//ctl.get_registry().shutdown();
-							//ctl.stop();
+							//
+							//	stop all running tasks
+							//	and stops the IO context.
+							//
+							ctl.shutdown();
+							std::this_thread::sleep_for(std::chrono::seconds(1));
+							std::this_thread::sleep_for(std::chrono::seconds(1));
+							std::this_thread::sleep_for(std::chrono::seconds(1));
 						});
 
 					CYNG_LOG_INFO(logger, "startup " << config_.node_);
@@ -206,6 +204,9 @@ namespace smf {
 					//	wait for pending requests
 					//
 					ctl.stop();
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+					std::this_thread::sleep_for(std::chrono::seconds(1));
 				}
 
 				return EXIT_SUCCESS;
@@ -223,7 +224,7 @@ namespace smf {
 
 			auto const obj = cyng::json::parse_file(json_path);
 			if (obj) {
-				auto const vec = cyng::container_cast<cyng::vector_t>(obj);
+				auto vec = cyng::container_cast<cyng::vector_t>(obj);
 				if (config_index < vec.size()) {
 					return vec.at(config_index);
 				}

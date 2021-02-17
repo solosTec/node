@@ -11,9 +11,11 @@
 
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/log/logger.h>
+#include <cyng/obj/tag.hpp>
 
 #include <filesystem>
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 namespace cyng {
 	class controller;
@@ -50,11 +52,13 @@ namespace smf {
 			 */
 			boost::uuids::uuid get_random_tag() const;
 
-		protected:
 			cyng::object read_config_section(std::string const& json_path, std::size_t config_index);
 
 		protected:
 			startup const& config_;
+
+		private:
+			mutable boost::uuids::random_generator_mt19937 uidgen_;
 
 		};
 	}

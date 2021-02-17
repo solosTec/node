@@ -4,9 +4,11 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
+#ifndef SMF_IPT_CONTROLLER_H
+#define SMF_IPT_CONTROLLER_H
 
 #include <smf/controller_base.h>
-
+#include <smf/cluster/config.h>
 
  namespace smf {
 
@@ -25,5 +27,11 @@
 		cyng::param_t create_server_spec();
 		cyng::param_t create_cluster_spec();
 
+		void join_cluster(cyng::controller&
+			, cyng::logger
+			, boost::uuids::uuid
+			, toggle);
 	};
 }
+
+#endif

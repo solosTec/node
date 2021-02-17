@@ -12,6 +12,11 @@ set (ipt_h
   include/controller.h
 )
 
+set (ipt_tasks
+  include/tasks/cluster.h
+  src/tasks/cluster.cpp
+)
+
 if(WIN32)
     set(ipt_assets
 		templates/create_service.cmd.in
@@ -28,10 +33,12 @@ endif()
 
 
 source_group("ipt-assets" FILES ${ipt_assets})
+source_group("ipt-tasks" FILES ${ipt_tasks})
 
 set (ipt_node
   ${ipt_cpp}
   ${ipt_h}
   ${ipt_assets}
+  ${ipt_tasks}
 )
 

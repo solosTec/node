@@ -4,10 +4,12 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
+#ifndef SMF_HTTP_H
+#define SMF_HTTP_H
 
-#include <smf/cluster.h>
 
 namespace smf {
 
 }
 
+#endif
