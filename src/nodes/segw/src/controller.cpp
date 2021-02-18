@@ -7,6 +7,8 @@
 
 #include <controller.h>
 #include <storage_functions.h>
+#include <tasks/bridge.h>
+
 #include <smf/obis/defs.h>
 
 #include <cyng/obj/intrinsics/container.h>
@@ -402,8 +404,14 @@ namespace smf {
 	}
 
 
-	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg) {
+	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
 
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+
+		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge",  logger, s);
+		BOOST_ASSERT(channel->is_open());
+		channel->dispatch("start", cyng::make_tuple());
 	}
 
 

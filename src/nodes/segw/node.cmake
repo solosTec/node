@@ -30,14 +30,20 @@ else()
     )
 endif()
 
+set (segw_tasks
+    include/tasks/bridge.h
+    src/tasks/bridge.cpp
+)
+
 
 source_group("segw-assets" FILES ${segw_assets})
-
+source_group("tasks" FILES ${segw_tasks})
 
 
 set (segw_node
   ${segw_cpp}
   ${segw_h}
   ${segw_assets}
+  ${segw_tasks}
 )
 

@@ -557,14 +557,8 @@ namespace smf {
 	bool insert_config_record(cyng::db::statement_ptr stmt, std::string key, cyng::object obj, std::string desc)
 	{
 		//
-		//	ToDo: use already prepared statements
+		//	use already prepared statements
 		//
-		//auto const m = get_table_cfg();
-		//auto const sql = cyng::sql::insert(db.get_dialect(), m).bind_values(m)();
-
-		//auto stmt = db.create_statement();
-		//std::pair<int, bool> r = stmt->prepare(sql);
-		//if (r.second) {
 
 		auto const val = cyng::make_object(cyng::to_string(obj));
 
@@ -578,7 +572,6 @@ namespace smf {
 			return true;
 		}
 
-		//}
 		return false;
 	}
 

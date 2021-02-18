@@ -33,7 +33,7 @@ endif()
 
 
 source_group("ipt-assets" FILES ${ipt_assets})
-source_group("ipt-tasks" FILES ${ipt_tasks})
+source_group("tasks" FILES ${ipt_tasks})
 
 set (ipt_node
   ${ipt_cpp}
