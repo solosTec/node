@@ -14,7 +14,7 @@ namespace smf {
 
 	namespace ipt {
 
-		namespace {
+		namespace details {
 
 			/**
 			 *	iota() as iterator
@@ -83,7 +83,7 @@ namespace smf {
 		class scrambler
 		{
 		public:
-			using index_type = circular_counter< std::size_t, 0, N - 1 >;
+			using index_type = details::circular_counter< std::size_t, 0, N - 1 >;
 			using key_type = std::array< T, N >;
 
 		public:

@@ -582,37 +582,22 @@ install(
 #
 # CPack configuration
 #
-set(CPACK_PACKAGE_VERSION ${VERSION})
+set(CPACK_PROJECT_NAME ${PROJECT_NAME})
+set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+
+set(CPACK_PACKAGE_RELEASE "Hummingbird")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_NAME} - Smart Metering Framework")
-set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION_TWEAK ${PROJECT_VERSION_TWEAK})
 set(CPACK_PACKAGE_CONTACT "info@solostec.ch")
 set(CPACK_PACKAGE_VENDOR "solosTec")
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
-set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF library")
+set(CPACK_PACKAGE_HOMEPAGE_URL "solostec.ch")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PROJECT_NAME}-${CPACK_PROJECT_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
+
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_ICON ${PROJECT_SOURCE_DIR}/assets/logo.ico)
-
-#if(UNIX)
-
-#    if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-#        if(EXISTS "/etc/issue")
-#            file(READ "/etc/issue" LINUX_ISSUE)
-
-#            if(LINUX_ISSUE MATCHES "SUSE")
-#                set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-#                set(CPACK_GENERATOR "RPM")
-#            endif(LINUX_ISSUE MATCHES "SUSE")
-
-#            if(LINUX_ISSUE MATCHES "Ubuntu")
-#                set(CPACK_GENERATOR "DEB")
-#            endif(LINUX_ISSUE MATCHES "Ubuntu")
-
-#        endif(EXISTS "/etc/issue")
-#    endif(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 if(WIN32)
 
@@ -623,7 +608,27 @@ if(WIN32)
 	set(CPACK_NSIS_MODIFY_PATH ON)
 	set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.solostec.com")
 else()
+
     set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-	set(CPACK_GENERATOR "DEB")
+
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
+        OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    message(STATUS "** LSB release                  : ${LSB_RELEASE_ID_SHORT}")
+
+    if (${LSB_RELEASE_ID_SHORT} STREQUAL "openSUSE")
+        message(STATUS "** Generator                    : RPM")
+        set(CPACK_GENERATOR "RPM")
+        set(CPACK_SOURCE_GENERATOR "RPM")
+        set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF framework")
+    else()    
+        message(STATUS "** Generator                    : DEB")
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "Boost")
+        set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+	    set(CPACK_GENERATOR "DEB")
+        set(CPACK_SOURCE_GENERATOR "DEB")
+    endif()    
 endif()
 
