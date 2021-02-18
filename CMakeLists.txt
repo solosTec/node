@@ -591,8 +591,9 @@ set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION_TWEAK ${PROJECT_VERSION_TWEAK})
 set(CPACK_PACKAGE_CONTACT "info@solostec.ch")
 set(CPACK_PACKAGE_VENDOR "solosTec")
+set(CPACK_PACKAGE_HOMEPAGE_URL "solostec.ch")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
-set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF library")
+set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF framework")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_ICON ${PROJECT_SOURCE_DIR}/assets/logo.ico)
 
@@ -623,7 +624,25 @@ if(WIN32)
 	set(CPACK_NSIS_MODIFY_PATH ON)
 	set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.solostec.com")
 else()
+
     set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-	set(CPACK_GENERATOR "DEB")
+
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
+        OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    message(STATUS "** LSB release                  : ${LSB_RELEASE_ID_SHORT}")
+
+    if (${LSB_RELEASE_ID_SHORT} STREQUAL "openSUSE")
+        set(CPACK_GENERATOR "RPM")
+        set(CPACK_SOURCE_GENERATOR "RPM")
+        message(STATUS "** Generator                    : RPM")
+    else()    
+        message(STATUS "** Generator                    : DEB")
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "Boost")
+	    set(CPACK_GENERATOR "DEB")
+        set(CPACK_SOURCE_GENERATOR "DEB")
+    endif()    
 endif()
 
