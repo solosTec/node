@@ -5,11 +5,13 @@ set (config_lib)
 
 set (config_cpp
     src/lib/config/src/config.cpp
+    src/lib/config/src/controller_base.cpp
 )
     
 set (config_h
     ${CMAKE_BINARY_DIR}/include/smf.h
-    include/smf/config.h
+    include/smf/config.h    
+    include/smf/controller_base.h
 )
 
 

@@ -35,11 +35,44 @@ target_link_directories(imega
 
 target_link_libraries(imega 
     PRIVATE
-        ${CYNG_LIBRARIES} 
         smf_config
+        ${CYNG_LIBRARIES} 
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
+
+if(UNIX)
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"
+		    "${PROJECT_BINARY_DIR}/config/imega_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/unit.in"
+		    "${PROJECT_BINARY_DIR}/config/imega.service")
+
+else()
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/windows.cgf.in"
+		    "${PROJECT_BINARY_DIR}/config/imega_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/create_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/imega_create_service.cmd")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/delete_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/imega_delete_service.cmd")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/restart_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/imega_restart_service.cmd")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"
+		    "${PROJECT_BINARY_DIR}/imega.rc")
+
+endif()
+
 
 
 

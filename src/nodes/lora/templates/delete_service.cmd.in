@@ -1,0 +1,12 @@
+REM
+REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM delete lora service
+REM	created : ${_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo delete service smf_lora_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo off
+sc stop smf_lora_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc delete smf_lora_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo on

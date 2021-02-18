@@ -7,7 +7,7 @@ target_compile_features(ipt PRIVATE cxx_std_20)
 
 target_compile_definitions(ipt
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_FRONTEND>
+        $<$<CONFIG:Debug>:_DEBUG_IPT>
 )
 
 #
@@ -37,9 +37,40 @@ target_link_libraries(ipt
     PRIVATE
         ${CYNG_LIBRARIES} 
         smf_config
+        smf_cluster
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
+if(UNIX)
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"
+		    "${PROJECT_BINARY_DIR}/config/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/unit.in"
+		    "${PROJECT_BINARY_DIR}/config/ipt.service")
+
+else()
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/windows.cgf.in"
+		    "${PROJECT_BINARY_DIR}/config/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/create_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/ipt_create_service.cmd")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/delete_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/ipt_delete_service.cmd")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/restart_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/ipt_restart_service.cmd")
+
+#    configure_file (
+#		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"
+#		    "${PROJECT_BINARY_DIR}/ipt.rc")
+
+endif()
 

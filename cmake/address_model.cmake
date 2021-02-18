@@ -18,3 +18,10 @@ else()
 
 endif()
 
+cmake_host_system_information(RESULT _HOST_NUMBER_OF_PHYSICAL_CORES QUERY NUMBER_OF_PHYSICAL_CORES)
+
+if (${_HOST_NUMBER_OF_PHYSICAL_CORES} LESS 4) 
+	set(${PROJECT_NAME}_POOL_SIZE 4)
+else()
+	set(${PROJECT_NAME}_POOL_SIZE 4)
+endif()

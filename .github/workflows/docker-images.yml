@@ -1,0 +1,20 @@
+name: Start Docker Build on CircleCi
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+      - name: Start complete build
+        shell: bash
+        run: |
+          echo '{"branch":"${{ steps.extract_branch.outputs.branch }}", "start_at":"node"}'
+          curl -u ${{secrets.GITHUB2CIRCLECITOKEN}}: -X POST https://circleci.com/api/v2/project/gh/solosTec/segw-build/pipeline --header "Content-Type: application/json" -d '{ "parameters": { "branch":"${{ steps.extract_branch.outputs.branch }}", "start_at":"node"}}'

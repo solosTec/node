@@ -1,0 +1,12 @@
+#
+#	startup configuration for @PROJECT_NAME@ dash node
+#	created : ${_NOW_UTC}
+#	platform: @CMAKE_SYSTEM@
+#
+[service]
+enabled = false
+name = smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
+
+[setup]
+json = $ENV{ProgramData}\solosTec\SMF\dash_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+pool-size = ${${PROJECT_NAME}_POOL_SIZE}

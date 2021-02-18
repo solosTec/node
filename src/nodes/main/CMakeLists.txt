@@ -41,5 +41,35 @@ target_link_libraries(main
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
+if(UNIX)
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"
+		    "${PROJECT_BINARY_DIR}/config/main_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/unit.in"
+		    "${PROJECT_BINARY_DIR}/config/main.service")
+
+else()
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/windows.cgf.in"
+		    "${PROJECT_BINARY_DIR}/config/main_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/create_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/main_create_service.cmd")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/delete_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/main_delete_service.cmd")
+
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/restart_service.cmd.in"
+		    "${PROJECT_BINARY_DIR}/config/main_restart_service.cmd")
+
+#    configure_file (
+#		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"
+#		    "${PROJECT_BINARY_DIR}/main.rc")
+
+endif()
 

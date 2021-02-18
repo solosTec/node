@@ -7,9 +7,7 @@
 #ifndef SMF_CLUSTER_H
 #define SMF_CLUSTER_H
 
-
-namespace smf {
-
-}
+#include <smf/cluster/config.h>
+#include <smf/cluster/bus.h>
 
 #endif

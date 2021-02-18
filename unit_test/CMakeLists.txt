@@ -3,14 +3,7 @@ find_package(Boost 1.75 REQUIRED COMPONENTS unit_test_framework)
 
 add_executable(unit_test 
     main.cpp
-    src/test_core.cpp
-    src/test_task.cpp
-    src/test_io.cpp
-    src/test_vm.cpp
-    src/test_store.cpp
-    src/test_log.cpp
-    src/demo_task.cpp
-    src/demo_task_ref.cpp)
+    src/test_config.cpp)
 
 target_compile_features(unit_test PRIVATE cxx_std_20)
 
@@ -46,12 +39,8 @@ target_link_directories(unit_test
 
 target_link_libraries(unit_test 
     PRIVATE
-        cyng_obj
-        cyng_task
-        cyng_io
-        cyng_vm
-        cyng_log
-        cyng_store
+        ${CYNG_LIBRARIES} 
+        smf_config
         "$<$<PLATFORM_ID:Linux>:pthread>"
         "$<$<PLATFORM_ID:Windows>:odbc32>"
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"

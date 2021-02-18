@@ -6,6 +6,7 @@
  */
 
 #include <smf/cluster.h>
+
 namespace smf {
 
 }
