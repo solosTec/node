@@ -52,11 +52,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # Let's ensure -std=c++xx instead of -std=g++xx
     set(CMAKE_CXX_EXTENSIONS OFF)
 
-    set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-    set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-    include(CPack)
-
-
     # Docs only available if this is the main app
     find_package(Doxygen)
     if(Doxygen_FOUND)
@@ -636,3 +631,4 @@ else()
     endif()    
 endif()
 
+include(CPack)
