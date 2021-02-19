@@ -10,6 +10,11 @@
 
 #include <cyng/task/channel.h>
 #include <cyng/log/record.h>
+#include <cyng/db/storage.h>
+
+#ifdef _DEBUG_SEGW
+#include <iostream>
+#endif
 
 namespace smf {
 
@@ -89,19 +94,44 @@ namespace smf {
 	}
 
 	void bridge::init_data_cache() {
-		std::vector< cyng::meta_sql > ms = get_sql_meta_data();
-		cache_.create_table(cyng::meta_store("demo-1"
-			, {
-				cyng::column("id", cyng::TC_INT64),
-				cyng::column("name", cyng::TC_STRING),
-				cyng::column("age", cyng::TC_TIME_POINT)
-			}
-		, 1));
 
+		auto const data = get_store_meta_data();
+		for (auto const& m : data) {
+
+			CYNG_LOG_TRACE(logger_, "create table: " << m.get_name());
+			cache_.create_table(m);
+		}
 	}
 
 	void bridge::load_config_data() {
 
+		//
+		//	Preload cache with configuration data.
+		//	Preload must be done before we connect to the cache. Otherwise
+		//	we would receive our own changes.
+		//
+		load_configuration();
+		//load_devices_mbus();
+		//load_data_collectors();
+		//load_data_mirror();
+		//load_iec_devices();
+		//load_privileges();
+
 	}
 
+	void bridge::load_configuration() {
+
+		cache_.access([&](cyng::table* cfg) {
+
+			cyng::db::storage s(db_);
+			s.loop(get_table_cfg(), [&](cyng::record const& rec)->bool {
+
+#ifdef _DEBUG_SEGW
+				CYNG_LOG_DEBUG(logger_, rec.to_tuple());
+#endif
+				return true;
+			});
+
+		}, cyng::access::write("cfg"));
+	}
 }

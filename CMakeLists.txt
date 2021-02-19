@@ -152,9 +152,9 @@ find_package(Boost 1.75
 # note: https://github.com/chriskohlhoff/asio/issues/585
 add_compile_definitions(BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE BOOST_BIND_NO_PLACEHOLDERS BOOST_SPIRIT_UNICODE BOOST_MPL_LIMIT_LIST_SIZE=50)
 
-message(STATUS "** Boost Version    : ${Boost_VERSION}")
-message(STATUS "** Boost Include    : ${Boost_INCLUDE_DIRS}")
-message(STATUS "** Boost Path       : ${Boost_LIBRARY_DIRS}")
+message(STATUS "** Boost Version                : ${Boost_VERSION}")
+message(STATUS "** Boost Include                : ${Boost_INCLUDE_DIRS}")
+message(STATUS "** Boost Path                   : ${Boost_LIBRARY_DIRS}")
 	
 message(STATUS "** Boost_LIBRARIES              : ${Boost_LIBRARIES}")
 message(STATUS "** Boost_THREAD_LIBRARY         : ${Boost_THREAD_LIBRARY}")
@@ -537,9 +537,9 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
         PATTERN "*hpp"
 )
 
-set(SMF_TARGET_LIST smf_cluster smf_config dash imega ipt segw store lora main modem setup mqtt)
+set(SMF_TARGET_LIST smf_cluster smf_config smf_http smf_ipt smf_ipt_bus smf_obis smf_serial_bus dash imega ipt segw store lora main modem setup mqtt)
 
-message(STATUS "** Target list              : ${SMF_TARGET_LIST}")
+message(STATUS "** Target list                  : ${SMF_TARGET_LIST}")
 
 install(TARGETS ${SMF_TARGET_LIST}
     EXPORT SMFTargets
@@ -624,11 +624,15 @@ else()
         set(CPACK_SOURCE_GENERATOR "RPM")
         set(CPACK_RPM_PACKAGE_DESCRIPTION "SMF framework")
     else()    
+
+#   https://cmake.org/cmake/help/v3.13/cpack_gen/deb.html
+
         message(STATUS "** Generator                    : DEB")
-        set(CPACK_DEBIAN_PACKAGE_DEPENDS "Boost")
-        set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 	    set(CPACK_GENERATOR "DEB")
         set(CPACK_SOURCE_GENERATOR "DEB")
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "Boost")
+        set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+        set(CPACK_DEBIAN_COMPRESSION_TYPE "gzip")
     endif()    
 endif()
 

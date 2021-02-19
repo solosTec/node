@@ -7,7 +7,7 @@ target_compile_features(segw PRIVATE cxx_std_20)
 
 target_compile_definitions(segw
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_FRONTEND>
+        $<$<CONFIG:Debug>:_DEBUG_SEGW>
         $<IF:$<BOOL:${CMAKE_CROSSCOMPILING}>,__CROSS_PLATFORM,__NATIVE_PLATFORM>
 )
 

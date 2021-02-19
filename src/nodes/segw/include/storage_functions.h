@@ -14,8 +14,14 @@
 
  namespace smf {
 
+	 std::vector< cyng::meta_store > get_store_meta_data();
 	 std::vector< cyng::meta_sql > get_sql_meta_data();
+
+	 cyng::meta_store get_store_cfg();
+	 cyng::meta_store get_store_oplog();
+
 	 cyng::meta_sql get_table_cfg();
+	 cyng::meta_sql get_table_oplog();
 
 	 /**
 	  * create all tables defined in get_sql_meta_data()

@@ -46,6 +46,8 @@ namespace smf {
 		 void init_data_cache();
 		 void load_config_data();
 
+		 void load_configuration();
+
 	 private:
 		 signatures_t sigs_;
 		 std::weak_ptr<cyng::channel> channel_;

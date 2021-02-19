@@ -23,41 +23,61 @@
 
 namespace smf {
 
-	cyng::meta_sql get_table_cfg() {
+	cyng::meta_store get_store_cfg() {
 
-		return cyng::meta_sql("TCfg"
+		return cyng::meta_store("cfg"
 			, {
-				cyng::column_sql("path", cyng::TC_STRING, 128),	//	path, '/' separated values
-				cyng::column_sql("val", cyng::TC_STRING, 256),	//	value
-				cyng::column_sql("def", cyng::TC_STRING, 256),	//	default value
-				cyng::column_sql("type", cyng::TC_UINT32, 0),	//	data type code (default)
-				cyng::column_sql("desc", cyng::TC_STRING, 256)	//	optional description
+				cyng::column_sql("path", cyng::TC_STRING),	//	path, '/' separated values
+				cyng::column_sql("val", cyng::TC_STRING),	//	value
+				cyng::column_sql("def", cyng::TC_STRING),	//	default value
+				cyng::column_sql("type", cyng::TC_UINT32),	//	data type code (default)
+				cyng::column_sql("desc", cyng::TC_STRING)	//	optional description
 			}
 		, 1);
+	}
+
+	cyng::meta_sql get_table_cfg() {
+
+		return cyng::to_sql(get_store_cfg(), { 128, 256, 256, 0, 256 });
+	}
+
+	cyng::meta_store get_store_oplog() {
+
+		return cyng::meta_store("opLog"
+			, {
+				cyng::column_sql("id", cyng::TC_INT64),
+				cyng::column_sql("actTime", cyng::TC_TIME_POINT),
+				cyng::column_sql("age", cyng::TC_TIME_POINT),
+				cyng::column_sql("regPeriod", cyng::TC_UINT32),		//	register period
+				cyng::column_sql("valTime", cyng::TC_TIME_POINT),	//	val time
+				cyng::column_sql("status", cyng::TC_UINT64),			//	status word
+				cyng::column_sql("event", cyng::TC_UINT32),			//	event code
+				cyng::column_sql("peer", cyng::TC_BUFFER),			//	peer address
+				cyng::column_sql("utc", cyng::TC_TIME_POINT),		//	UTC time
+				cyng::column_sql("serverId", cyng::TC_BUFFER),		//	server ID (meter)
+				cyng::column_sql("target", cyng::TC_STRING),		//	target name
+				cyng::column_sql("pushNr", cyng::TC_UINT8),			//	operation number
+				cyng::column_sql("details", cyng::TC_STRING)		//	description (DATA_PUSH_DETAILS)
+			}
+		, 1);
+	}
+
+	cyng::meta_sql get_table_oplog() {
+		return cyng::to_sql(get_store_oplog(), { 0, 0, 0, 0, 0, 0, 0, 13, 0, 23, 64, 0, 128 });
+	}
+
+	std::vector< cyng::meta_store > get_store_meta_data() {
+		return {
+			get_store_cfg(),
+			get_store_oplog()
+		};
 	}
 
 	std::vector< cyng::meta_sql > get_sql_meta_data() {
 
 		return {
 			get_table_cfg(),
-
-			cyng::meta_sql("TOpLog"
-				, {
-					cyng::column_sql("id", cyng::TC_INT64, 0),
-					cyng::column_sql("actTime", cyng::TC_TIME_POINT, 0),
-					cyng::column_sql("age", cyng::TC_TIME_POINT, 0),
-					cyng::column_sql("regPeriod", cyng::TC_UINT32, 0),		//	register period
-					cyng::column_sql("valTime", cyng::TC_TIME_POINT, 0),	//	val time
-					cyng::column_sql("status", cyng::TC_UINT64, 0),			//	status word
-					cyng::column_sql("event", cyng::TC_UINT32, 0),			//	event code
-					cyng::column_sql("peer", cyng::TC_BUFFER, 13),			//	peer address
-					cyng::column_sql("utc", cyng::TC_TIME_POINT, 0),		//	UTC time
-					cyng::column_sql("serverId", cyng::TC_BUFFER, 23),		//	server ID (meter)
-					cyng::column_sql("target", cyng::TC_STRING, 64),		//	target name
-					cyng::column_sql("pushNr", cyng::TC_UINT8, 0),			//	operation number
-					cyng::column_sql("details", cyng::TC_STRING, 128)		//	description (DATA_PUSH_DETAILS)
-				}
-			, 1),
+			get_table_oplog(),
 
 			cyng::meta_sql("TMeter"
 				, {
@@ -563,6 +583,7 @@ namespace smf {
 		auto const val = cyng::make_object(cyng::to_string(obj));
 
 		stmt->push(cyng::make_object(key), 128);	//	pk
+		stmt->push(cyng::make_object(1), 0);	//	gen
 		stmt->push(val, 256);	//	val
 		stmt->push(val, 256);	//	def
 		stmt->push(cyng::make_object(obj.rtti().tag()), 0);	//	type
