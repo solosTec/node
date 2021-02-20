@@ -62,6 +62,7 @@ if(NOT CYNG_FOUND)
             cyng.h
          HINTS
 			"${PROJECT_SOURCE_DIR}/../cyng/build/include"
+			"${PROJECT_SOURCE_DIR}/../cyng/v5te/include"
             "${PROJECT_SOURCE_DIR}/../cyng/build/x64/include"
             "${PROJECT_SOURCE_DIR}/../cyng/build/v5te/include"
         PATHS
