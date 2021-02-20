@@ -531,6 +531,7 @@ configure_file (
 if(${PROJECT_NAME}_CROSS_COMPILE)
 
 	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
+    message(STATUS "** cross compile project    : ${OECP_NAME}")
 
 	configure_file (
 		  "opkg/control.in"
