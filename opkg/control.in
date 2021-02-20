@@ -1,0 +1,10 @@
+Source: ${OECP_NAME}
+Section: lib
+Priority: optional
+Maintainer: solosTec <info@solostec.ch>
+Version: ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}
+Package: ${OECP_NAME}
+Architecture: armel
+Installed-Size: 17334272
+Description: OECP package for ${PROJECT_NAME}
+

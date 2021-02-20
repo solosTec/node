@@ -523,6 +523,30 @@ configure_file (
 )
 
 #
+# GeneratING OPKG files requires the OPKG tools (https://git.yoctoproject.org/cgit/cgit.cgi/opkg-utils)
+# fakeroot opkg/opkg-tools/opkg-buildpackage
+# Install with: opkg --force-space install /tmp/oecp-smf_0.x_armel.ipk
+#
+
+if(${PROJECT_NAME}_CROSS_COMPILE)
+
+	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
+
+	configure_file (
+		  "opkg/control.in"
+		  "${PROJECT_BINARY_DIR}/opkg/control")
+
+	configure_file (
+		  "opkg/postinst.in"
+		  "${PROJECT_BINARY_DIR}/opkg/postinst")
+
+	configure_file (
+		  "opkg/rules.in"
+		  "${PROJECT_BINARY_DIR}/opkg/rules")
+
+endif()
+
+#
 # install
 #
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
