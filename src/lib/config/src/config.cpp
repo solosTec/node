@@ -30,7 +30,7 @@ namespace smf {
 			BOOST_ASSERT(!node.empty());
 
 #if defined(BOOST_OS_LINUX_AVAILABLE)
-			return "/opt/smf/" + node + "_" + smf_VERSION_SUFFIX + ".cfg";
+			return "/opt/smf/" + node + "_" + SMF_VERSION_NAME + ".cfg";
 #else
 			return node + "_" + SMF_VERSION_NAME + ".cfg";
 #endif
@@ -38,7 +38,7 @@ namespace smf {
 
 		std::string derive_json_cfg_file_name(std::string node) {
 #if defined(BOOST_OS_LINUX_AVAILABLE)
-			return "/usr/local/etc/" + node + "_" + smf_VERSION_SUFFIX + ".json";
+			return "/usr/local/etc/" + node + "_" + SMF_VERSION_NAME + ".json";
 #else
 			return node + "_" + SMF_VERSION_NAME + ".json";
 #endif
