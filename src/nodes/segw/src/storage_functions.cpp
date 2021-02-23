@@ -21,43 +21,55 @@
 
 #include <iostream>
 
+#include<boost/core/ignore_unused.hpp>
+#include <boost/uuid/string_generator.hpp>
+
 namespace smf {
 
 	cyng::meta_store get_store_cfg() {
 
 		return cyng::meta_store("cfg"
 			, {
-				cyng::column_sql("path", cyng::TC_STRING),	//	path, '/' separated values
-				cyng::column_sql("val", cyng::TC_STRING),	//	value
-				cyng::column_sql("def", cyng::TC_STRING),	//	default value
-				cyng::column_sql("type", cyng::TC_UINT32),	//	data type code (default)
-				cyng::column_sql("desc", cyng::TC_STRING)	//	optional description
+				cyng::column("path", cyng::TC_STRING),	//	path, '/' separated values
+				cyng::column("val", cyng::TC_NULL)	//	value (data type may vary)
+				//cyng::column("def", cyng::TC_STRING),	//	default value
+				//cyng::column("type", cyng::TC_UINT16),	//	data type code (default)
+				//cyng::column("desc", cyng::TC_STRING)	//	optional description
 			}
 		, 1);
 	}
 
 	cyng::meta_sql get_table_cfg() {
 
-		return cyng::to_sql(get_store_cfg(), { 128, 256, 256, 0, 256 });
+		return cyng::meta_sql("TCfg"
+			, {
+				cyng::column_sql("path", cyng::TC_STRING, 128),	//	path, '/' separated values
+				//	generation
+				cyng::column_sql("val", cyng::TC_STRING, 256),	//	value
+				cyng::column_sql("def", cyng::TC_STRING, 256),	//	default value
+				cyng::column_sql("type", cyng::TC_UINT16, 0),	//	data type code (default)
+				cyng::column_sql("desc", cyng::TC_STRING, 256)	//	optional description
+			}
+		, 1);
 	}
 
 	cyng::meta_store get_store_oplog() {
 
 		return cyng::meta_store("opLog"
 			, {
-				cyng::column_sql("id", cyng::TC_INT64),
-				cyng::column_sql("actTime", cyng::TC_TIME_POINT),
-				cyng::column_sql("age", cyng::TC_TIME_POINT),
-				cyng::column_sql("regPeriod", cyng::TC_UINT32),		//	register period
-				cyng::column_sql("valTime", cyng::TC_TIME_POINT),	//	val time
-				cyng::column_sql("status", cyng::TC_UINT64),			//	status word
-				cyng::column_sql("event", cyng::TC_UINT32),			//	event code
-				cyng::column_sql("peer", cyng::TC_BUFFER),			//	peer address
-				cyng::column_sql("utc", cyng::TC_TIME_POINT),		//	UTC time
-				cyng::column_sql("serverId", cyng::TC_BUFFER),		//	server ID (meter)
-				cyng::column_sql("target", cyng::TC_STRING),		//	target name
-				cyng::column_sql("pushNr", cyng::TC_UINT8),			//	operation number
-				cyng::column_sql("details", cyng::TC_STRING)		//	description (DATA_PUSH_DETAILS)
+				cyng::column("id", cyng::TC_INT64),
+				cyng::column("actTime", cyng::TC_TIME_POINT),
+				cyng::column("age", cyng::TC_TIME_POINT),
+				cyng::column("regPeriod", cyng::TC_UINT32),		//	register period
+				cyng::column("valTime", cyng::TC_TIME_POINT),	//	val time
+				cyng::column("status", cyng::TC_UINT64),		//	status word
+				cyng::column("event", cyng::TC_UINT32),			//	event code
+				cyng::column("peer", cyng::TC_BUFFER),			//	peer address
+				cyng::column("utc", cyng::TC_TIME_POINT),		//	UTC time
+				cyng::column("serverId", cyng::TC_BUFFER),		//	server ID (meter)
+				cyng::column("target", cyng::TC_STRING),		//	target name
+				cyng::column("pushNr", cyng::TC_UINT8),			//	operation number
+				cyng::column("details", cyng::TC_STRING)		//	description (DATA_PUSH_DETAILS)
 			}
 		, 1);
 	}
@@ -150,7 +162,9 @@ namespace smf {
 
 			return true;
 		}
-		catch(std::exception const& ex)	{}
+		catch(std::exception const& ex)	{
+			boost::ignore_unused(ex);
+		}
 		return false;
 	}
 
@@ -173,6 +187,7 @@ namespace smf {
 		std::pair<int, bool> const r = stmt->prepare(sql);
 		if (r.second) {
 
+
 			//
 			//	transfer some global entries
 			//		
@@ -191,10 +206,34 @@ namespace smf {
 				, reader["generate-profile"].get()
 				, "generate profiles");
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "tag")
-				, reader["tag"].get()
-				, "unique app id");
+			auto const obj = reader["tag"].get();
+			if (is_of_type<cyng::TC_STRING>(obj)) {
+				auto const str = cyng::value_cast(obj, "00000000-0000-0000-0000-000000000000");
+				if (str.size() == 36 && str.at(8) == '-' && str.at(13) == '-' && str.at(18) == '-' && str.at(23) == '-') {
+
+					//
+					//	convert string into UUID
+					//
+					boost::uuids::string_generator sgen;
+					insert_config_record(stmt
+						, cyng::to_path('/', "tag")
+						, cyng::make_object(sgen(str))
+						, "unique app id");
+				}
+				else {
+#ifdef _DEBUG_SEGW
+					std::cerr
+						<< "**warning: invalid tag: "
+						<< str
+						<< std::endl;
+#endif
+				}
+			}
+
+			//
+			//	transfer network/server configuration
+			//
+			transfer_net(stmt, cyng::container_cast<cyng::param_map_t>(reader["net"].get()));
 
 			//
 			//	transfer IP-T configuration
@@ -233,6 +272,30 @@ namespace smf {
 				<< "**error: prepare statement failed"
 				<< std::endl;
 		}
+	}
+
+	void transfer_net(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap) {
+
+		insert_config_record(stmt
+			, cyng::to_path('/', "net", "mac")
+			, cyng::make_object(cyng::find_value(pmap, std::string("mac"), std::string()))
+			, "HAN MAC");
+
+		insert_config_record(stmt
+			, cyng::to_path('/', OBIS_SERVER_ID)
+			, cyng::make_object(cyng::find_value(pmap, cyng::to_str(OBIS_SERVER_ID), std::string()))
+			, "Server ID");
+
+		auto const vec = cyng::vector_cast<std::string>(cyng::find(pmap, "local-links"), std::string("0000::0000:0000:0000:0000"));
+		std::size_t counter{ 0 };
+		for (auto link : vec) {
+
+			insert_config_record(stmt
+				, cyng::to_path('/', "net", "local-link", std::to_string(++counter))
+				, cyng::make_object(link)
+				, "local link (computed)");
+		}
+
 	}
 
 	void transfer_ipt_config(cyng::db::statement_ptr stmt, cyng::vector_t&& vec) {
@@ -583,7 +646,7 @@ namespace smf {
 		auto const val = cyng::make_object(cyng::to_string(obj));
 
 		stmt->push(cyng::make_object(key), 128);	//	pk
-		stmt->push(cyng::make_object(1), 0);	//	gen
+		//stmt->push(cyng::make_object(1), 0);	//	gen
 		stmt->push(val, 256);	//	val
 		stmt->push(val, 256);	//	def
 		stmt->push(cyng::make_object(obj.rtti().tag()), 0);	//	type

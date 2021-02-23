@@ -8,6 +8,7 @@
 #define SMF_SEGW_TASK_BRIDGE_H
 
 #include <storage_functions.h>
+#include <cfg.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -48,13 +49,15 @@ namespace smf {
 
 		 void load_configuration();
 
+		 void init_lmn_ports();
+
 	 private:
 		 signatures_t sigs_;
 		 std::weak_ptr<cyng::channel> channel_;
 		 cyng::logger logger_;
 		 cyng::db::session db_;
 		 cyng::store cache_;
-
+		 cfg cfg_;
 	 };
 }
 

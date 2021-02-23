@@ -216,7 +216,7 @@ target_link_libraries(smf_config
 #
 # add library: smf_cluster
 #
-include (src/lib/cluster/lib.cmake)
+include (src/lib/cluster/protocol/lib.cmake)
 add_library(smf_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
 
 target_include_directories(smf_cluster
@@ -252,6 +252,49 @@ target_compile_definitions(smf_cluster
 )
 
 target_link_libraries(smf_cluster 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
+# add library: smf_cluster_bus
+#
+include (src/lib/cluster/bus/lib.cmake)
+add_library(smf_cluster_bus ${GLOBAL_LIBRARY_TYPE} ${cluster_bus})
+
+target_include_directories(smf_cluster_bus
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_cluster_bus PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug smf cluster bus
+#
+target_compile_definitions(smf_cluster_bus 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_CLUSTER>
+)
+
+target_link_libraries(smf_cluster_bus 
     PRIVATE 
         Boost::boost 
 )
@@ -557,7 +600,7 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
         PATTERN "*hpp"
 )
 
-set(SMF_TARGET_LIST smf_cluster smf_config smf_http smf_ipt smf_ipt_bus smf_obis smf_serial_bus dash imega ipt segw store lora main modem setup mqtt)
+set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_http smf_ipt smf_ipt_bus smf_obis smf_serial_bus dash imega ipt segw store lora main modem setup mqtt)
 
 message(STATUS "** Target list                  : ${SMF_TARGET_LIST}")
 

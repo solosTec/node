@@ -17,6 +17,7 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 
+
 namespace smf {
 	namespace http
 	{
@@ -90,7 +91,17 @@ namespace smf {
             };
 
 		public:
-			session(boost::asio::ip::tcp::socket&& socket, cyng::logger, std::string);
+            //  callback for websockets
+            using ws_cb = std::function<void(boost::asio::ip::tcp::socket&&, boost::beast::http::request<boost::beast::http::string_body>)>;
+
+			session(boost::asio::ip::tcp::socket&& socket
+                , cyng::logger
+                , std::string
+                , std::uint64_t const max_upload_size
+                , std::string const nickname
+                , std::chrono::seconds const timeout
+                , ws_cb
+            );
 
             /**
              * start session
@@ -140,6 +151,10 @@ namespace smf {
             boost::beast::flat_buffer buffer_;
             cyng::logger logger_;
             std::string const doc_root_;
+            std::uint64_t const max_upload_size_;
+            std::string const nickname_;
+            std::chrono::seconds const timeout_;
+            ws_cb ws_cb_;
             queue queue_;
 
             // The parser is stored in an optional container so we can

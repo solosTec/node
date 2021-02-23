@@ -122,8 +122,6 @@ namespace smf {
 					//
 					cyng::controller ctl(config_.pool_size_);
 
-					//ctl.get_ctx().get_executor().context();
-
 					//
 					//	read configuration file
 					//	start application
@@ -187,7 +185,8 @@ namespace smf {
 							//	stop all running tasks
 							//	and stops the IO context.
 							//
-							ctl.shutdown();
+							//ctl.shutdown();
+							ctl.get_registry().shutdown();
 							std::this_thread::sleep_for(std::chrono::seconds(1));
 							std::this_thread::sleep_for(std::chrono::seconds(1));
 							std::this_thread::sleep_for(std::chrono::seconds(1));

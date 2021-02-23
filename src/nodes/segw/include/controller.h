@@ -47,6 +47,7 @@ namespace cyng {
 		cyng::param_t create_ipt_params() const;
 		cyng::param_t create_virtual_meter_spec() const;
 		cyng::param_t create_lmn_spec() const;
+		cyng::param_t create_server_id() const;
 
 		void init_storage(cyng::object&&);
 		void transfer_config(cyng::object&&);

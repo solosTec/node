@@ -32,7 +32,7 @@ namespace smf {
 #if defined(BOOST_OS_LINUX_AVAILABLE)
 			return "/opt/smf/" + node + "_" + smf_VERSION_SUFFIX + ".cfg";
 #else
-			return node + "_" + smf_VERSION_SUFFIX + ".cfg";
+			return node + "_" + SMF_VERSION_NAME + ".cfg";
 #endif
 		}
 
@@ -40,7 +40,7 @@ namespace smf {
 #if defined(BOOST_OS_LINUX_AVAILABLE)
 			return "/usr/local/etc/" + node + "_" + smf_VERSION_SUFFIX + ".json";
 #else
-			return node + "_" + smf_VERSION_SUFFIX + ".json";
+			return node + "_" + SMF_VERSION_NAME + ".json";
 #endif
 		}
 
@@ -52,7 +52,7 @@ namespace smf {
 				node.at(0) = std::toupper(node.at(0));
 			}
 #ifdef _DEBUG
-			return std::string("smf") + node + "D" + smf_VERSION_SUFFIX;
+			return std::string("smf") + node + "D" + SMF_VERSION_NAME;
 #else
 			return std::string("smf") + node;
 #endif
@@ -134,7 +134,7 @@ namespace smf {
 		boost::program_options::options_description get_default_options(startup& start) {
 
 			auto const current_path = std::filesystem::current_path();
-			auto const json_path_default = (current_path / (start.node_ + "_" + smf_VERSION_SUFFIX + ".json")).string();
+			auto const json_path_default = (current_path / (start.node_ + "_" + SMF_VERSION_NAME + ".json")).string();
 			//	don't use more than 8 threads
 			std::size_t const pool_size = std::min<std::size_t>(std::thread::hardware_concurrency(), 4) * 2ul;
 
@@ -212,7 +212,7 @@ namespace smf {
 			os
 				<< name
 				<< " SMF v"
-				<< smf_VERSION
+				<< SMF_VERSION
 				<< std::endl
 				<< "Copyright (C) 2012-"
 				<< cyng::sys::get_build_year()
@@ -228,7 +228,7 @@ namespace smf {
 				<< "build info     : "
 				<< std::endl
 				<< "processor      : "
-				<< smf_SYSTEM_PROCESSOR
+				<< SMF_SYSTEM_PROCESSOR
 				<< std::endl
 				<< "               : "
 				<< cyng::sys::get_processor_description()
@@ -239,9 +239,9 @@ namespace smf {
 				<< std::endl
 #endif
 				<< "system         : "
-				<< smf_SYSTEM_NAME
+				<< SMF_SYSTEM_NAME
 				<< " v"
-				<< smf_SYSTEM_VERSION
+				<< SMF_SYSTEM_VERSION
 				<< std::endl
 
 				<< "based on cyng  : "

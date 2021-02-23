@@ -6,10 +6,14 @@
  */
 
 #include <smf/http/session.h>
+#include <smf/http/ws.h>
 #include <smf/http/url.h>
 #include <smf/http/mime_type.h>
+#include <smf.h>
 
 #include <cyng/log/record.h>
+
+#include <algorithm>
 
 #include <boost/beast/websocket.hpp>
 #include <boost/algorithm/string.hpp>
@@ -66,11 +70,21 @@ namespace smf {
         }
 
 
-        session::session(boost::asio::ip::tcp::socket&& socket, cyng::logger logger, std::string doc_root)
+        session::session(boost::asio::ip::tcp::socket&& socket
+            , cyng::logger logger
+            , std::string doc_root
+            , std::uint64_t const max_upload_size
+            , std::string const nickname
+            , std::chrono::seconds const timeout
+            , ws_cb cb)
         : stream_(std::move(socket))
             , buffer_()
             , logger_(logger)
             , doc_root_(doc_root)
+            , max_upload_size_(max_upload_size)
+            , nickname_(nickname)
+            , timeout_(timeout)
+            , ws_cb_(cb)
             , queue_(*this)
             , parser_()
         {
@@ -97,10 +111,11 @@ namespace smf {
 
             // Apply a reasonable limit to the allowed size
             // of the body in bytes to prevent abuse.
-            parser_->body_limit(10000);
+            parser_->body_limit(std::max<std::uint64_t>(max_upload_size_, 10000UL));
+            
 
             // Set the timeout.
-            stream_.expires_after(std::chrono::seconds(30));
+            stream_.expires_after(std::max(timeout_, std::chrono::seconds(30)));
 
             // Read a request using the parser-oriented interface
             boost::beast::http::async_read(
@@ -134,11 +149,12 @@ namespace smf {
             // See if it is a WebSocket Upgrade
             if (boost::beast::websocket::is_upgrade(parser_->get()))
             {
-                BOOST_ASSERT_MSG(false, "ToDo: implement");
+                //BOOST_ASSERT_MSG(false, "ToDo: implement");
                 // Create a websocket session, transferring ownership
                 // of both the socket and the HTTP request.
-                //std::make_shared<websocket_session>(
-                //    stream_.release_socket())->do_accept(parser_->release());
+                //std::make_shared<ws>(
+                //    stream_.release_socket(), logger_)->do_accept(parser_->release());
+                ws_cb_(stream_.release_socket(), parser_->release());
                 return;
             }
 
@@ -316,7 +332,7 @@ namespace smf {
         {
             CYNG_LOG_WARNING(logger_, "400 - bad request: " << why);
             boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::bad_request, version };
-            //res.set(boost::beast::http::field::server, NODE::version_string);
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
             res.set(boost::beast::http::field::content_type, "text/html");
             res.keep_alive(keep_alive);
             res.body() = why;
@@ -352,7 +368,7 @@ namespace smf {
                 ;
 
             boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::not_found, version };
-            //res.set(boost::beast::http::field::server, NODE::version_string);
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
             res.set(boost::beast::http::field::content_type, "text/html");
             res.keep_alive(keep_alive);
             res.body() = body;
@@ -367,7 +383,7 @@ namespace smf {
         {
             CYNG_LOG_WARNING(logger_, "500 - server error: " << ec);
             boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::internal_server_error, version };
-            //res.set(boost::beast::http::field::server, NODE::version_string);
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
             res.set(boost::beast::http::field::content_type, "text/html");
             res.keep_alive(keep_alive);
             res.body() = "An error occurred: '" + ec.message() + "'";
@@ -382,7 +398,7 @@ namespace smf {
         {
             CYNG_LOG_WARNING(logger_, "301 - moved permanently: " << target);
             boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::moved_permanently, version };
-            //res.set(boost::beast::http::field::server, NODE::version_string);
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
             res.set(boost::beast::http::field::content_type, "text/html");
             res.set(boost::beast::http::field::location, "https://" + host + target);
             res.keep_alive(keep_alive);
@@ -397,7 +413,7 @@ namespace smf {
             , std::uint64_t size)
         {
             boost::beast::http::response<boost::beast::http::empty_body> res{ boost::beast::http::status::ok, version };
-            //res.set(boost::beast::http::field::server, NODE::version_string);
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
             res.set(boost::beast::http::field::content_type, mime_type(path));
             res.content_length(size);
             res.keep_alive(keep_alive);
@@ -414,9 +430,9 @@ namespace smf {
                 std::piecewise_construct,
                 std::make_tuple(std::move(body)),
                 std::make_tuple(boost::beast::http::status::ok, version) };
-            //res.set(boost::beast::http::field::server, NODE::version_string);
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
             res.set(boost::beast::http::field::content_type, mime_type(path));
-            //res.insert("X-ServerNickName", nickname_);
+            res.insert("X-ServerNickName", nickname_);
             res.content_length(size);
             res.keep_alive(keep_alive);
             return res;

@@ -79,8 +79,6 @@ namespace smf {
 		auto const reader = cyng::make_reader(cfg);
 		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
 
-		//auto cluster_vec = cluster::read_config(cyng::vector_t const& vec);
-
 	
 		toggle cluster_cfg(read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get())));
 

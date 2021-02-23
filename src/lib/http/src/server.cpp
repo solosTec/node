@@ -14,13 +14,15 @@ namespace smf
 {
 	namespace http
 	{
-		server::server(boost::asio::io_context& ioc, cyng::logger logger, std::string doc_root)
+		server::server(boost::asio::io_context& ioc, cyng::logger logger, accept_cb cb)
 		: ioc_(ioc)
 			, acceptor_(boost::asio::make_strand(ioc))
             , logger_(logger)
-			, doc_root_(doc_root)
+            , cb_(cb)
             , is_running_(false)
-		{}
+		{  
+            BOOST_ASSERT(cb);
+        }
 
 		bool server::start(boost::asio::ip::tcp::endpoint ep) {
 
@@ -97,20 +99,16 @@ namespace smf
                 //
                 is_running_.exchange(false);
             }
-            else
-            {
+            else {
                 // Create the http session and run it
-                std::make_shared<session>(
-                    std::move(socket),
-                    logger_,
-                    doc_root_)->run();
+                cb_(std::move(socket));
             }
 
             // Accept another connection
             do_accept();
         }
 
-        void server::close() {
+        void server::stop() {
             if (is_running_) {
                 boost::system::error_code ec;
                 acceptor_.cancel(ec);

@@ -18,7 +18,9 @@
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/sys/locale.h>
 #include <cyng/sys/host.h>
+#include <cyng/sys/mac.h>
 #include <cyng/task/controller.h>
+#include <cyng/io/io_buffer.h>
 
 #include <locale>
 #include <iostream>
@@ -76,6 +78,8 @@ namespace smf {
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
 				cyng::make_param("generate-profile", false),
 
+				create_server_id(),
+
 				//	SQLite3
 				create_db_spec(cwd),
 
@@ -102,6 +106,45 @@ namespace smf {
 				create_virtual_meter_spec()
 			)
 		});
+	}
+
+	cyng::param_t controller::create_server_id() const {
+
+		//	get adapter data
+		//
+		auto macs = cyng::sys::get_mac48_adresses();
+
+		//
+		//	get local link addresses
+		//
+		std::vector<boost::asio::ip::address> local_links;
+		std::transform(std::begin(macs), std::end(macs), std::back_inserter(local_links), [](cyng::mac48 const& mac)->boost::asio::ip::address {
+			return mac.to_link_local();
+		});
+
+		if (macs.empty()) {
+			//	random private MAC
+			macs.push_back(cyng::generate_random_mac48());
+		}
+
+		//	smf_CROSSCOMPILING = true
+		//	__NATIVE_PLATFORM
+#if defined(__CROSS_PLATFORM)
+		auto srv_mac = macs.back();	//	eth2
+#else
+		auto srv_mac = macs.front();
+#endif
+
+		//	build a server ID
+		auto tmp = cyng::to_buffer(srv_mac);
+		tmp.insert(tmp.begin(), 0x05);
+
+		return cyng::make_param("net", cyng::tuple_factory(
+			cyng::make_param("mac", srv_mac),
+			cyng::make_param("nics", macs),
+			cyng::make_param(cyng::to_str(OBIS_SERVER_ID), cyng::io::to_hex(tmp)),
+			cyng::make_param("local-links", local_links)
+		));
 	}
 
 	cyng::param_t controller::create_virtual_meter_spec() const {

@@ -6,7 +6,7 @@
  */
 
 #include <smf/controller_base.h>
-
+#include <smf/cluster/config.h>
 
  namespace smf {
 
@@ -25,5 +25,19 @@
 		cyng::param_t create_server_spec(std::filesystem::path const& root);
 		cyng::param_t create_cluster_spec();
 
+		void join_cluster(cyng::controller&
+			, cyng::logger
+			, boost::uuids::uuid
+			, toggle);
+
+		void start_listener(cyng::controller&
+			, cyng::logger
+			, boost::uuids::uuid
+			, std::string const& address
+			, std::uint16_t port
+			, std::string const& document_root
+			, std::uint64_t max_upload_size
+			, std::string const& nickname
+			, std::chrono::seconds timeout);
 	};
 }

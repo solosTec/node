@@ -39,21 +39,24 @@ namespace smf {
 		class server
 		{
 		public:
-			server(boost::asio::io_context& ioc, cyng::logger, std::string);
+			using accept_cb = std::function<void(boost::asio::ip::tcp::socket&&)>;
+
+		public:
+			server(boost::asio::io_context& ioc, cyng::logger, accept_cb);
 
 			bool start(boost::asio::ip::tcp::endpoint ep);
+			void stop();
 
 		private:
 			void run();
 			void do_accept();
 			void on_accept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket);
-			void close();
 
 		private:
 			boost::asio::io_context& ioc_;
 			boost::asio::ip::tcp::acceptor acceptor_;
 			cyng::logger logger_;
-			std::string const doc_root_;
+			accept_cb cb_;
 
 			/**
 			 *	set to true when the server is listening for new connections
