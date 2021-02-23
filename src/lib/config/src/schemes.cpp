@@ -29,9 +29,9 @@ namespace smf {
 				}
 			, 1);
 		}
-		cyng::meta_sql get_table_cluster() {
-			return cyng::to_sql(get_store_cluster(), { 36, 0, 32, 0, 0, 0, 0, 0 });
-		}
+		//cyng::meta_sql get_table_cluster() {
+		//	return cyng::to_sql(get_store_cluster(), { 36, 0, 32, 0, 0, 0, 0, 0 });
+		//}
 
 		cyng::meta_store get_store_device() {
 

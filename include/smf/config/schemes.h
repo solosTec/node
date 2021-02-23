@@ -13,12 +13,16 @@
 namespace smf {
 	namespace config {
 
-		cyng::meta_store get_store_cluster();
-		cyng::meta_sql get_table_cluster();
 
+		/**
+		 * device/TDevice
+		 */
 		cyng::meta_store get_store_device();
 		cyng::meta_sql get_table_device();
 
+		/**
+		 * loRaDevice/TLoRaDevice
+		 */
 		cyng::meta_store get_store_lora();
 		cyng::meta_sql get_table_lora();
 
@@ -26,6 +30,11 @@ namespace smf {
 		//	store only schemes
 		//
 		cyng::meta_store get_store_target();
+
+		/**
+		 * cluster/TCluster
+		 */
+		cyng::meta_store get_store_cluster();
 	}
 }
 

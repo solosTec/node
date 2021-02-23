@@ -5,12 +5,14 @@ set (ipt_bus)
 
 set (ipt_bus_cpp
     src/lib/ipt/bus/src/config.cpp
+    src/lib/ipt/bus/src/bus.cpp
 )
     
 set (ipt_bus_h
     include/smf.h
     include/smf/ipt.h    
     include/smf/ipt/config.h    
+    include/smf/ipt/bus.h
 )
 
 

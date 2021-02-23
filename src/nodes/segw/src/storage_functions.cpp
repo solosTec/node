@@ -207,7 +207,7 @@ namespace smf {
 				, "generate profiles");
 
 			auto const obj = reader["tag"].get();
-			if (is_of_type<cyng::TC_STRING>(obj)) {
+			if (cyng::is_of_type<cyng::TC_STRING>(obj)) {
 				auto const str = cyng::value_cast(obj, "00000000-0000-0000-0000-000000000000");
 				if (str.size() == 36 && str.at(8) == '-' && str.at(13) == '-' && str.at(18) == '-' && str.at(23) == '-') {
 
