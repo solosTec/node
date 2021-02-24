@@ -7,19 +7,19 @@
 #ifndef SMF_SEGW_TASK_BRIDGE_H
 #define SMF_SEGW_TASK_BRIDGE_H
 
-#include <storage_functions.h>
 #include <cfg.h>
+#include <storage_functions.h>
+#include <config/cfg_lmn.h>
+
+#include <smf/ipt/bus.h>
+#include <smf/ipt/config.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 #include <cyng/store/db.h>
+#include <cyng/vm/mesh.h>
+#include <cyng/task/task_fwd.h>
 
-namespace cyng {
-	template <typename T >
-	class task;
-
-	class channel;
-}
 namespace smf {
 
 	 /**
@@ -37,8 +37,10 @@ namespace smf {
 
 	 public:
 		 bridge(std::weak_ptr<cyng::channel>
-			 , cyng::logger
-			 , cyng::db::session);
+			, cyng::controller& ctl
+			, cyng::logger
+			, cyng::db::session
+			, ipt::toggle::server_vec_t const&);
 
 	 private:
 		 void stop(cyng::eod);
@@ -49,15 +51,26 @@ namespace smf {
 
 		 void load_configuration();
 
+		 void init_gpio();
+
 		 void init_lmn_ports();
+		 void init_lmn_port(lmn_type);
+
+		 void init_ipt_bus();
+
+		 void init_broker_clients();
+		 void init_broker_clients(lmn_type);
 
 	 private:
 		 signatures_t sigs_;
 		 std::weak_ptr<cyng::channel> channel_;
+		 cyng::controller& ctl_;
 		 cyng::logger logger_;
 		 cyng::db::session db_;
 		 cyng::store cache_;
 		 cfg cfg_;
+		 cyng::mesh fabric_;
+		 ipt::bus	bus_;
 	 };
 }
 

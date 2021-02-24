@@ -32,11 +32,11 @@ namespace cyng {
 		void run(cyng::controller&, cyng::logger, cyng::object const& cfg) override;
 
 	private:
-		cyng::tuple_t create_wireless_spec() const;
-		cyng::tuple_t create_rs485_spec() const;
-		cyng::param_t create_wireless_broker() const;
+		cyng::tuple_t create_wireless_spec(std::string const& hostname) const;
+		cyng::tuple_t create_rs485_spec(std::string const& hostname) const;
+		cyng::param_t create_wireless_broker(std::string const& hostname) const;
 		cyng::param_t create_wireless_block_list() const;
-		cyng::param_t create_rs485_broker() const;
+		cyng::param_t create_rs485_broker(std::string const& hostname) const;
 		cyng::param_t create_rs485_listener() const;
 		cyng::param_t create_gpio_spec() const;
 		cyng::param_t create_hardware_spec() const;
@@ -44,9 +44,10 @@ namespace cyng {
 		cyng::param_t create_sml_server_spec() const;
 		cyng::param_t create_db_spec(std::filesystem::path const&) const;
 		cyng::param_t create_ipt_spec(std::string const& hostname) const;
+		cyng::param_t create_ipt_config(std::string const& hostname) const;
 		cyng::param_t create_ipt_params() const;
 		cyng::param_t create_virtual_meter_spec() const;
-		cyng::param_t create_lmn_spec() const;
+		cyng::param_t create_lmn_spec(std::string const& hostname) const;
 		cyng::param_t create_server_id() const;
 
 		void init_storage(cyng::object&&);

@@ -10,6 +10,8 @@
 #include <cstring>
 #include <array>
 
+#include <boost/assert.hpp>
+
 namespace smf {
 
 	namespace ipt {

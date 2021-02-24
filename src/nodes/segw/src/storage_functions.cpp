@@ -21,8 +21,9 @@
 
 #include <iostream>
 
-#include<boost/core/ignore_unused.hpp>
+#include <boost/core/ignore_unused.hpp>
 #include <boost/uuid/string_generator.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace smf {
 
@@ -238,12 +239,12 @@ namespace smf {
 			//
 			//	transfer IP-T configuration
 			//
-			transfer_ipt_config(stmt, cyng::container_cast<cyng::vector_t>(reader["ipt-config"].get()));
+			transfer_ipt_config(stmt, cyng::container_cast<cyng::vector_t>(reader["ipt"]["config"].get()));
 
 			//
 			//	transfer IP-T parameter
 			//
-			transfer_ipt_params(stmt, cyng::container_cast<cyng::param_map_t>(reader["ipt-param"].get()));
+			transfer_ipt_params(stmt, cyng::container_cast<cyng::param_map_t>(reader["ipt"]["param"].get()));
 
 			//
 			//	transfer SML server configuration
@@ -512,109 +513,151 @@ namespace smf {
 			// 
 			//std::cout << "LMN: " << cfg << std::endl;
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"enabled")
-				, cyng::make_object(cyng::find_value(cfg, std::string("enabled"), true))
-				, "LMN enabled");
+			auto const pmap = cyng::container_cast<cyng::param_map_t>(cfg);
+			for (auto const& param : pmap) {
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"port")
-				, cyng::make_object(cyng::find_value(cfg, std::string("port"), std::string("")))
-				, "serial interface name");
+				if (boost::algorithm::equals(param.first, "databits")) {
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"type")
-				, cyng::make_object(cyng::find_value(cfg, std::string("type"), std::string("")))
-				, "interface type");
+					auto const databits = cyng::numeric_cast<std::uint8_t>(cyng::find(cfg, param.first), 8);
+					insert_config_record(stmt
+						, cyng::to_path('/', "lmn", std::to_string(counter),param.first)
+						, cyng::make_object(databits)
+						, "databits (7, 8)");
+				}
+				else if (boost::algorithm::equals(param.first, "speed")) {
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"parity")
-				, cyng::make_object(cyng::find_value(cfg, std::string("parity"), std::string("")))
-				, "parity (none, even, odd)");
+					auto const speed = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, param.first), 2400);
+					insert_config_record(stmt
+						, cyng::to_path('/', "lmn", std::to_string(counter), param.first)
+						, cyng::make_object(speed)
+						, "speed in bauds (" + std::to_string(speed) + ")");
+				}
+				else if (boost::algorithm::equals(param.first, "broker-timeout")) {
+					auto const reconnect = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, param.first), 12);
+					insert_config_record(stmt
+						, cyng::to_path('/', "lmn", std::to_string(counter), param.first)
+						, cyng::make_object(std::chrono::seconds(reconnect))
+						, "reconnect time in seconds (" + std::to_string(reconnect) + ")");
+				}
+				else if (boost::algorithm::equals(param.first, "broker")) {
 
-			auto const databits = cyng::numeric_cast<std::uint8_t>(cyng::find(cfg, std::string("databits")), 8);
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"databits")
-				, cyng::make_object(databits)
-				, "databits (7, 8)");
+					//
+					//	multiple broker possible
+					//
+					auto const vec = cyng::container_cast<cyng::vector_t>(param.second);
+					std::size_t broker_index{ 0 };
+					for (auto const& obj : vec) {
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"flow-control")
-				, cyng::make_object(cyng::find_value(cfg, std::string("flow-control"), std::string("none")))
-				, "parity (none, software, hardware)");
+						auto const broker = cyng::container_cast<cyng::param_map_t>(obj);
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"stopbits")
-				, cyng::make_object(cyng::find_value(cfg, std::string("stopbits"), std::string("one")))
-				, "stopbits (one, onepointfive, two)");
+						auto pos = broker.find("address");
+						if (pos != broker.end()) {
+							insert_config_record(stmt
+								, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), pos->first)
+								, pos->second
+								, "broker address");
+						}
 
-			auto const speed = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, std::string("speed")), 2400);
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"speed")
-				, cyng::make_object(speed)
-				, "speed in bauds (" + std::to_string(speed) + ")");
+						pos = broker.find("port");
+						if (pos != broker.end()) {
+							auto const broker_port = cyng::numeric_cast<std::uint16_t>(pos->second, 12000 + broker_index);
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"protocol")
-				, cyng::make_object(cyng::find_value(cfg, std::string("protocol"), std::string("raw")))
-				, "protocol (raw, any, IEC:62056, wM-Bus:EN13757-4, SML, ...)");
+							insert_config_record(stmt
+								, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), pos->first)
+								, cyng::make_object(broker_port)
+								, "broker port " + std::to_string(broker_port));
+						}
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"HCI")
-				, cyng::make_object(cyng::find_value(cfg, std::string("HCI"), std::string("")))
-				, "Host control interface (CP210x)");
+						pos = broker.find("account");
+						if (pos != broker.end()) {
+							insert_config_record(stmt
+								, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), pos->first)
+								, pos->second
+								, "login name");
+						}
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"broker-enabled")
-				, cyng::make_object(cyng::find_value(cfg, std::string("broker-enabled"), false))
-				, "data broker (client)");
+						pos = broker.find("pwd");
+						if (pos != broker.end()) {
+							insert_config_record(stmt
+								, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), pos->first)
+								, pos->second
+								, "login password");
+						}
 
-			insert_config_record(stmt
-				, cyng::to_path('/', "lmn",
-					std::to_string(counter),
-					"broker-login")
-				, cyng::make_object(cyng::find_value(cfg, std::string("broker-login"), false))
-				, "data broker login (client)");
+						broker_index++;
+					}
 
+					insert_config_record(stmt
+						, cyng::to_path('/', "broker", std::to_string(counter), "count")
+						, cyng::make_object(broker_index)
+						, "broker count");
+
+				}
+				else if (boost::algorithm::equals(param.first, "blocklist")) {
+
+					//	FixMe: incomplete
+					auto const broker = cyng::container_cast<cyng::param_map_t>(param.second);
+
+					auto pos = broker.find("enabled");
+					if (pos != broker.end()) {
+						insert_config_record(stmt
+							, cyng::to_path('/', "blocklist", std::to_string(counter), pos->first)
+							, pos->second
+							, "enable/disable blocklist");
+					}
+					pos = broker.find("mode");
+					if (pos != broker.end()) {
+						insert_config_record(stmt
+							, cyng::to_path('/', "blocklist", std::to_string(counter), pos->first)
+							, pos->second
+							, "drop mode (drop/accept)");
+					}
+					pos = broker.find("period");
+					if (pos != broker.end()) {
+						auto const period = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, param.first), 30);
+						insert_config_record(stmt
+							, cyng::to_path('/', "blocklist", std::to_string(counter), pos->first)
+							, cyng::make_object(std::chrono::seconds(period))
+							, "period in seconds");
+					}
+				}
+				else {
+					insert_config_record(stmt
+						, cyng::to_path('/', "lmn", std::to_string(counter), param.first)
+						, cyng::find(cfg, param.first)
+						, param.first);
+				}
+			}
+
+			//
+			//	next LMN
+			//
 			counter++;
 		}
+
+		insert_config_record(stmt
+			, cyng::to_path('/', "lmn", "count")
+			, cyng::make_object(counter)
+			, "LMN count");
+
 	}
 
 	void transfer_gpio(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap) {
 		std::cout << "GPIO: " << pmap << std::endl;
 
 		insert_config_record(stmt
-			, cyng::to_path('/', "gpio",
-				"enabled")
-			, cyng::make_object(cyng::find_value(pmap, std::string("enabled"), true))
+			, cyng::to_path('/', "gpio", "enabled")
+			, cyng::find(pmap, std::string("enabled"))
 			, "GPIO enabled");
 
+		//
+		//	treat as filesystem path
+		//
+		std::filesystem::path p = cyng::find_value(pmap, "path", "/sys/class/gpio");
 		insert_config_record(stmt
 			, cyng::to_path('/', "gpio",
 				"path")
-			, cyng::make_object(cyng::find_value(pmap, std::string("path"), std::string("/sys/class/gpio")))
+			, cyng::make_object(std::move(p))
 			, "virtual path");
 
 		auto const vec = cyng::vector_cast<std::int64_t>(cyng::find(pmap, "list"), 0);

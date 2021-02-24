@@ -6,12 +6,15 @@
  */
 
 #include <smf/ipt/bus.h>
+#include <cyng/vm/mesh.h>
 
 namespace smf
 {
 	namespace ipt
 	{
-		bus::bus()
+		bus::bus(cyng::mesh& mesh, toggle::server_vec_t const& tgl)
+			: mesh_(mesh)
+			, tgl_(tgl)
 		{}
 
 	}	//	ipt

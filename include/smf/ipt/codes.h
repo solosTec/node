@@ -17,7 +17,7 @@ namespace smf {
 		/**
 		 *	Definition of all IP-T processor instructions
 		 */
-		enum class code : std::uint16_t {
+		enum class code : command_t {
 
 			//	transport
 			//	transport - push channel open

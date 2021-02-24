@@ -10,6 +10,7 @@
 #include <tasks/bridge.h>
 
 #include <smf/obis/defs.h>
+#include <smf/ipt/config.h>
 
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
@@ -21,6 +22,7 @@
 #include <cyng/sys/mac.h>
 #include <cyng/task/controller.h>
 #include <cyng/io/io_buffer.h>
+#include <cyng/log/record.h>
 
 #include <locale>
 #include <iostream>
@@ -85,7 +87,6 @@ namespace smf {
 
 				//	IP-T client
 				create_ipt_spec(hostname),
-				create_ipt_params(),
 
 				//	SML server
 				create_sml_server_spec(),
@@ -94,7 +95,8 @@ namespace smf {
 				create_nms_server_spec(tmp),
 
 				//	array of all available serial ports
-				create_lmn_spec(),
+				//	with broker
+				create_lmn_spec(hostname),
 
 				//	GPIO
 				create_gpio_spec(),
@@ -155,7 +157,7 @@ namespace smf {
 		));
 	}
 
-	cyng::tuple_t controller::create_wireless_spec() const {
+	cyng::tuple_t controller::create_wireless_spec(std::string const& hostname) const {
 
 		//	wireless M-Bus
 		//	stty -F /dev/ttyAPP0 raw
@@ -165,7 +167,7 @@ namespace smf {
 
 		return cyng::make_tuple(
 
-			cyng::make_param("type", "wireless"),
+			cyng::make_param("type", "wireless M-Bus"),
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
 
@@ -192,9 +194,11 @@ namespace smf {
 			cyng::make_param("speed", 115200),
 
 #endif
+			cyng::make_param("protocol", "wM-Bus:EN13757-4"),		//	raw, mbus, iec, sml
 			cyng::make_param("broker-enabled", false),
 			cyng::make_param("broker-login", false),
-			create_wireless_broker(),
+			cyng::make_param("broker-timeout", 12),	//	seconds
+			create_wireless_broker(hostname),
 			create_wireless_block_list()
 
 		);
@@ -215,17 +219,25 @@ namespace smf {
 		);
 	}
 
-	cyng::param_t controller::create_wireless_broker() const {
+	cyng::param_t controller::create_wireless_broker(std::string const& hostname) const {
 		return cyng::make_param("broker", cyng::make_vector({
 			//	define multiple broker here
-			cyng::param_map_factory("address", "segw.ch")("port", 12001).operator cyng::param_map_t()
+			cyng::param_map_factory("address", "segw.ch")
+				("port", 12001)
+				("account", hostname)
+				("pwd", "wM-Bus")
+			.operator cyng::param_map_t()
 		}));
 	}
 
-	cyng::param_t controller::create_rs485_broker() const {
+	cyng::param_t controller::create_rs485_broker(std::string const& hostname) const {
 		return cyng::make_param("broker", cyng::make_vector({
 			//	define multiple broker here
-			cyng::param_map_factory("address", "segw.ch")("port", 12002).operator cyng::param_map_t()
+			cyng::param_map_factory("address", "segw.ch")
+				("port", 12002)
+				("account", hostname)
+				("pwd", "rs485")
+			.operator cyng::param_map_t()
 			}));
 	}
 
@@ -236,7 +248,7 @@ namespace smf {
 		));
 	}
 
-	cyng::tuple_t controller::create_rs485_spec() const {
+	cyng::tuple_t controller::create_rs485_spec(std::string const& hostname) const {
 		return cyng::make_tuple(
 
 			cyng::make_param("type", "RS-485"),
@@ -267,7 +279,8 @@ namespace smf {
 			cyng::make_param("protocol", "raw"),		//	raw, mbus, iec, sml
 			cyng::make_param("broker-enabled", false),
 			cyng::make_param("broker-login", false),
-			create_rs485_broker(),
+			cyng::make_param("broker-reconnect", 12),	//	seconds
+			create_rs485_broker(hostname),
 			cyng::make_param("listener-login", false),		//	request login
 			cyng::make_param("listener-enabled", false),	//	start rs485 server
 			create_rs485_listener()
@@ -362,7 +375,15 @@ namespace smf {
 
 	cyng::param_t controller::create_ipt_spec(std::string const& hostname)  const {
 
-		return cyng::make_param("ipt-config", cyng::make_vector({
+		return cyng::make_param("ipt", cyng::make_tuple(
+			create_ipt_config(hostname),
+			create_ipt_params()
+		));
+	}
+
+	cyng::param_t controller::create_ipt_config(std::string const& hostname)  const {
+
+		return cyng::make_param("config", cyng::make_vector({
 
 		//
 		//	redundancy I
@@ -411,7 +432,7 @@ namespace smf {
 	}
 
 	cyng::param_t controller::create_ipt_params() const {
-		return cyng::make_param("ipt-param", cyng::tuple_factory(
+		return cyng::make_param("param", cyng::tuple_factory(
 			cyng::make_param(OBIS_TCP_WAIT_TO_RECONNECT, 1u),	//	minutes
 			cyng::make_param(OBIS_TCP_CONNECT_RETRIES, 20u),
 			cyng::make_param(OBIS_HAS_SSL_CONFIG, 0u),	//	has SSL configuration
@@ -419,11 +440,11 @@ namespace smf {
 		));
 	}
 
-	cyng::param_t controller::create_lmn_spec() const {
+	cyng::param_t controller::create_lmn_spec(std::string const& hostname) const {
 		//	list of all serial ports
 		return cyng::make_param("lmn", cyng::make_vector({
-			create_wireless_spec(),
-			create_rs485_spec()
+			create_wireless_spec(hostname),
+			create_rs485_spec(hostname)
 			}));
 	}
 
@@ -452,7 +473,12 @@ namespace smf {
 		auto const reader = cyng::make_reader(std::move(cfg));
 		auto s = cyng::db::create_db_session(reader.get("DB"));
 
-		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge",  logger, s);
+		auto const ipt_cfg = cyng::container_cast<cyng::vector_t>(reader["ipt"]["config"].get());
+		auto const tgl = ipt::read_config(ipt_cfg);
+		BOOST_ASSERT(!tgl.empty());
+		CYNG_LOG_INFO(logger, tgl.size() << " ip-t server configured");
+
+		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, tgl);
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("start", cyng::make_tuple());
 	}
