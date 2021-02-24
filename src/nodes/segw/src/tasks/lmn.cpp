@@ -12,6 +12,8 @@
 
 #ifdef _DEBUG_SEGW
 #include <iostream>
+#include <sstream>
+#include <cyng/io/hex_dump.hpp>
 #endif
 
 
@@ -25,14 +27,17 @@ namespace smf {
 	: sigs_{
 		std::bind(&lmn::stop, this, std::placeholders::_1),
 		std::bind(&lmn::open, this),
+		std::bind(&lmn::do_write, this, std::placeholders::_1)
 	}	, channel_(wp)
 		, logger_(logger)
 		, cfg_(c, type)
 		, port_(ctl.get_ctx())
+		, buffer_{ 0 }
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("open", 1);
+			sp->set_channel_name("write", 2);
 		}
 
 		CYNG_LOG_INFO(logger_, "LMN " << cfg_.get_port() << " ready");
@@ -57,6 +62,15 @@ namespace smf {
 				//	set options
 				//
 				set_options(port);
+
+				//
+				//	ToDo: update status.word
+				//
+
+				//
+				//	start reading
+				//
+				do_read();
 
 			}
 			else {
@@ -101,5 +115,50 @@ namespace smf {
 
 		}
 	}
+
+	void lmn::do_read() {
+
+		port_.async_read_some(boost::asio::buffer(buffer_), [this](boost::system::error_code ec, std::size_t bytes_transferred) {
+
+			if (!ec) {
+				CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] received " << bytes_transferred << " bytes");
+
+#ifdef _DEBUG_SEGW
+				std::stringstream ss;
+				cyng::io::hex_dump<8> hd;
+				hd(ss, std::begin(buffer_), std::begin(buffer_) + bytes_transferred);
+				CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] received:\n" << ss.str());
+
+#endif
+
+				//
+				//	ToDo: post data to receiver 
+				//
+
+				//
+				//	continue reading
+				//
+				do_read();
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] connection closed: " << ec.message());
+
+			}
+		});
+
+	}
+
+	void lmn::do_write(cyng::buffer_t data) {
+
+		boost::system::error_code ec;
+		boost::asio::write(port_, boost::asio::buffer(data, data.size()), ec);
+		if (!ec) {
+			CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] sent " << data.size() << " bytes");
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] write failed: " << ec.message());
+		}
+	}
+
 
 }

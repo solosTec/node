@@ -44,6 +44,11 @@
 	 std::ostream& operator<<(std::ostream& os, target const&);
 
 	 /**
+	  * Convert to an parameter map
+	  */
+	 cyng::param_map_t to_param_map(target const& srv);
+
+	 /**
 	  * list of all broker (for one serial port)
 	  */
 	 using target_vec = std::vector<target>;
@@ -104,8 +109,13 @@
 		 std::string get_account(std::size_t idx) const;
 		 std::string get_pwd(std::size_t idx) const;
 
-		 target get_broker(std::size_t idx) const;
-		 target_vec get_broker_list() const;
+		 target get_target(std::size_t idx) const;
+		 target_vec get_all_targets() const;
+
+		 /**
+		  * same as get_all_targets()
+		  */
+		 cyng::vector_t get_target_vector() const;
 
 	 private:
 		 cfg& cfg_;

@@ -45,10 +45,15 @@
 
 	 /**
 	  * Clear table "TCfg"
-	  *
-	  * @return count of affected rows.
 	  */
 	 void clear_config(cyng::db::session&);
+	 void list_config(cyng::db::session&);
+
+	 /**
+	  * split string by "/" and return the first section
+	  * by default
+	  */
+	 std::string get_section(std::string, std::size_t = 0);
 
 	 bool insert_config_record(cyng::db::statement_ptr stmt, std::string key, cyng::object obj, std::string desc);
 }

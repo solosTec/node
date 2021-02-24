@@ -14,6 +14,8 @@
 
 #include <config/cfg_gpio.h>
 #include <config/cfg_broker.h>
+#include <config/cfg_nms.h>
+#include <config/cfg_sml.h>
 
 #include <smf/obis/defs.h>
 
@@ -46,6 +48,8 @@ namespace smf {
 		, cfg_(logger, cache_)
 		, fabric_(ctl)
 		, bus_(fabric_, tgl)
+		, nms_(ctl, cfg_, logger)
+		, sml_(ctl, cfg_, logger)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -94,11 +98,13 @@ namespace smf {
 		//	SML server
 		//
 		CYNG_LOG_INFO(logger_, "initialize: SML server");
+		init_sml_server();
 
 		//
 		//	NMS server
 		//
 		CYNG_LOG_INFO(logger_, "initialize: NMS server");
+		init_nms_server();
 
 		//
 		//	LMN - open serial ports
@@ -213,17 +219,6 @@ namespace smf {
 
 		}, cyng::access::write("cfg"));
 
-		//
-		//	debug
-		//
-		//cache_.access([&](cyng::table* cfg) {
-		//	cfg->loop([](cyng::record const& rec, std::size_t idx)->bool {
-		//		std::cout << rec.to_tuple() << std::endl;
-		//		return true;
-		//		});
-		//}, cyng::access::write("cfg"));
-		//cfg_lmn clmn(cfg_, lmn::WIRELESS);
-		//std::cerr << clmn.get_port() << std::endl;
 	}
 
 	void bridge::init_lmn_ports() {
@@ -242,6 +237,14 @@ namespace smf {
 			auto channel = ctl_.create_named_channel_with_ref<lmn>(port, ctl_, logger_, cfg_, type);
 			BOOST_ASSERT(channel->is_open());
 			channel->dispatch("open", cyng::make_tuple());
+
+			if (boost::algorithm::equals(cfg.get_hci(), "CP210x")) {
+
+				BOOST_ASSERT(type == lmn_type::WIRELESS);
+
+				channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
+			}
+			
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "LMN [" << port << "] is not enabled" );
@@ -276,11 +279,11 @@ namespace smf {
 
 			auto const size = cfg.size();
 			CYNG_LOG_INFO(logger_, size << " broker \"" << name << "\" configured for [" << port << "]");
-			auto const vec = cfg.get_broker_list();
+			auto const vec = cfg.get_all_targets();
 			for (auto const& trg : vec) {
 
 				//
-				//	FixMe: add login required
+				//	start broker with addition information like timeout and login
 				//
 				auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, trg, timeout, login);
 				BOOST_ASSERT(channel->is_open());
@@ -312,6 +315,32 @@ namespace smf {
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "GPIO [" << p << "] is not enabled");
+		}
+	}
+
+	void bridge::init_sml_server() {
+		cfg_sml cfg(cfg_);
+		if (cfg.is_enabled()) {
+			auto const ep = cfg.get_ep();
+			CYNG_LOG_INFO(logger_, "start SML server " << ep);
+			sml_.start(ep);
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "SML is not enabled");
+		}
+
+	}
+
+	void bridge::init_nms_server() {
+		cfg_nms cfg(cfg_);
+		if (cfg.is_enabled()) {
+			auto const ep = cfg.get_ep();
+			CYNG_LOG_INFO(logger_, "start NMS server " << ep);
+			nms_.start(ep);
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "NMS is not enabled");
 		}
 	}
 

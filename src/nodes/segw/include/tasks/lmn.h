@@ -28,7 +28,8 @@ namespace smf {
 
 		 using signatures_t = std::tuple<
 			 std::function<void(cyng::eod)>,
-			 std::function<void()>
+			 std::function<void()>,
+			 std::function<void(cyng::buffer_t)>
 		 >;
 
 	 public:
@@ -43,6 +44,8 @@ namespace smf {
 		 void open();
 
 		 void set_options(std::string const&);
+		 void do_read();
+		 void do_write(cyng::buffer_t);
 
 	 private:
 		 signatures_t sigs_;
@@ -54,6 +57,11 @@ namespace smf {
 		  * serial port
 		  */
 		 boost::asio::serial_port port_;
+
+		 /**
+		  * input buffer
+		  */
+		 std::array<char, 1024> buffer_;
 
 	 };
 }

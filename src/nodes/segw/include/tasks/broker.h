@@ -19,6 +19,7 @@ namespace smf {
 
 	/**
 	 * connect to MDM system
+	 * https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/example/cpp03/timeouts/async_tcp_client.cpp
 	 */
 	class broker
 	{

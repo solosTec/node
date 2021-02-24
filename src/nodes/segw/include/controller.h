@@ -53,9 +53,7 @@ namespace cyng {
 		void init_storage(cyng::object&&);
 		void transfer_config(cyng::object&&);
 		void clear_config(cyng::object&&);
-
-		//void transfer_config(cyng::db::session&);
-		//void clear_config(cyng::db::session&);
+		void list_config(cyng::object&&);
 
 	};
 }

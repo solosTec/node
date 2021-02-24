@@ -62,6 +62,19 @@
 		  */
 		 std::string get_type() const;
 
+		 /**
+		  * expected protocol 
+		  */
+		 std::string get_protocol() const;
+
+		 /**
+		  * Currently only CP210x supported.
+		  * 
+		  * @return name of an optional HCI adapter
+		  */
+		 std::string get_hci() const;
+		 static cyng::buffer_t get_hci_init_seq();
+
 	 private:
 		 cfg& cfg_;
 		 lmn_type const type_;

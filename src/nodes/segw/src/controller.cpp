@@ -55,6 +55,11 @@ namespace smf {
 			clear_config(read_config_section(config_.json_path_, config_.config_index_));
 			return true;
 		}
+		if (vars["list"].as< bool >()) {
+			//	show database configuration
+			list_config(read_config_section(config_.json_path_, config_.config_index_));
+			return true;
+		}
 
 		//
 		//	call base classe
@@ -347,8 +352,8 @@ namespace smf {
 
 		return cyng::make_param("sml", cyng::make_tuple(
 			cyng::make_param("address", "0.0.0.0"),
-			cyng::make_param("service", "7259"),
-			cyng::make_param("discover", "5798"),	//	UDP
+			cyng::make_param("port", 7259),
+			cyng::make_param("discover", 5798),	//	UDP
 			cyng::make_param("account", "operator"),
 			cyng::make_param("pwd", "operator"),
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
@@ -467,6 +472,11 @@ namespace smf {
 		if (s.is_alive())	smf::clear_config(s);
 	}
 
+	void controller::list_config(cyng::object&& cfg) {
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+		if (s.is_alive())	smf::list_config(s);
+	}
 
 	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
 

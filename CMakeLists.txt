@@ -66,7 +66,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
         #set(Boost_USE_STATIC_LIBS ON)
         # target is Windows 10
 	    add_compile_definitions(_WIN32_WINNT=0x0A00 _SCL_SECURE_NO_WARNINGS WIN32_LEAN_AND_MEAN)
-        add_compile_options("/bigobj")
+        add_compile_options(/bigobj)
+        add_compile_options(/MP)
         message(STATUS "** compile definitions: ${CMAKE_CXX_FLAGS}")
 
     elseif(CMAKE_COMPILER_IS_GNUCXX)

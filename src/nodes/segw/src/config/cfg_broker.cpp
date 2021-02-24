@@ -6,6 +6,7 @@
  */
 
 #include <config/cfg_broker.h>
+#include <cyng/obj/container_factory.hpp>
 
 namespace smf {
 
@@ -65,7 +66,7 @@ namespace smf {
 		return cfg_.get_value(cyng::to_path('/', "broker", get_path_id(), std::to_string(idx), "pwd"), "");
 	}
 
-	target cfg_broker::get_broker(std::size_t idx) const {
+	target cfg_broker::get_target(std::size_t idx) const {
 		return target(
 			get_account(idx),
 			get_pwd(idx),
@@ -74,14 +75,26 @@ namespace smf {
 		);
 	}
 
-	target_vec cfg_broker::get_broker_list() const {
+	target_vec cfg_broker::get_all_targets() const {
 		target_vec r;
 
 		for (std::size_t idx = 0; idx < size(); ++idx) {
-			r.push_back(get_broker(idx));
+			r.push_back(get_target(idx));
 		}
 		return r;
 	}
+
+	cyng::vector_t cfg_broker::get_target_vector() const {
+
+		cyng::vector_t vec;
+		auto const brokers = get_all_targets();
+		std::transform(std::begin(brokers), std::end(brokers), std::back_inserter(vec), [](target const& srv) {
+			return cyng::make_object(to_param_map(srv));
+		});
+		return vec;
+
+	}
+
 
 	target::target(std::string account
 		, std::string pwd
@@ -126,5 +139,15 @@ namespace smf {
 			;
 		return os;
 	}
+
+	cyng::param_map_t to_param_map(target const& srv) {
+		return cyng::param_map_factory
+			("address", srv.get_address())
+			("port", srv.get_port())
+			("account", srv.get_account())
+			("pwd", srv.get_pwd())
+			;
+	}
+
 
 }

@@ -18,6 +18,8 @@
 #include <cyng/obj/vector_cast.hpp>
 #include <cyng/io/ostream.h>
 #include <cyng/db/details/statement_interface.h>
+#include <cyng/db/storage.h>
+#include <cyng/parse/string.h>
 
 #include <iostream>
 
@@ -403,93 +405,83 @@ namespace smf {
 	}
 
 	void transfer_sml(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap) {
-		//std::cout << "SML: " << pmap << std::endl;
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "sml",
-				"enabled")
-			, cyng::make_object(cyng::find_value(pmap, std::string("enabled"), true))
-			, "SML enabled");
+		for (auto const& param : pmap) {
+			if (boost::algorithm::equals(param.first, "address")) {
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "sml",
-				"address")
-			, cyng::make_object(cyng::find_value(pmap, std::string("address"), std::string("0.0.0.0")))
-			, "SML bind address");
+				boost::system::error_code ec;
+				auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"), ec);
+				insert_config_record(stmt
+					, cyng::to_path('/', "sml", param.first)
+					, cyng::make_object(address)
+					, "SML bind address");
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "sml",
-				"service")
-			, cyng::make_object(cyng::find_value(pmap, std::string("service"), std::string("7259")))
-			, "SML service port");
+			}
+			else if (boost::algorithm::equals(param.first, "port")) {
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "sml",
-				"discover")
-			, cyng::make_object(cyng::find_value(pmap, std::string("discover"), std::string("5798")))
-			, "SML discover port");
+				auto const sml_port = cyng::numeric_cast<std::uint16_t>(param.second, 7259);
+				insert_config_record(stmt
+					, cyng::to_path('/', "sml", param.first)
+					, cyng::make_object(sml_port)
+					, "SML listener port (" + std::to_string(sml_port) + ")");
+			}
+			else if (boost::algorithm::equals(param.first, "discover")) {
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "sml",
-				"account")
-			, cyng::make_object(cyng::find_value(pmap, std::string("account"), std::string("")))
-			, "SML login name");
+				auto const sml_discover = cyng::numeric_cast<std::uint16_t>(param.second, 5798);
+				insert_config_record(stmt
+					, cyng::to_path('/', "sml", param.first)
+					, cyng::make_object(sml_discover)
+					, "SML discovery port (" + std::to_string(sml_discover) + ")");
+			}
+			else {
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "sml",
-				"pwd")
-			, cyng::make_object(cyng::find_value(pmap, std::string("pwd"), std::string("")))
-			, "SML login password");
+				insert_config_record(stmt
+					, cyng::to_path('/', "sml", param.first)
+					, param.second
+					, "SML: " + param.first);
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "sml",
-				"accept-all-ids")
-			, cyng::make_object(cyng::find_value(pmap, std::string("accept-all-ids"), false))
-			, "check server IDs");
-
+			}
+		}
 	}
 
 	void transfer_nms(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap) {
-		//std::cout << "NMS: " << pmap << std::endl;
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "nms",
-				"enabled")
-			, cyng::make_object(cyng::find_value(pmap, std::string("enabled"), true))
-			, "NMS enabled");
+		for (auto const& param : pmap) {
+			if (boost::algorithm::equals(param.first, "address")) {
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "nms",
-				"address")
-			, cyng::make_object(cyng::find_value(pmap, std::string("address"), std::string("0.0.0.0")))
-			, "NMS bind address");
+				boost::system::error_code ec;
+				auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"), ec);
+				insert_config_record(stmt
+					, cyng::to_path('/', "nms",	param.first)
+					, cyng::make_object(address)
+					, "NMS bind address");
 
-		auto const nms_port = cyng::numeric_cast<std::uint16_t>(cyng::find(pmap, std::string("port")), 7261);
-		insert_config_record(stmt
-			, cyng::to_path('/', "nms",
-				"port")
-			, cyng::make_object(nms_port)
-			, "NMS listener port (" + std::to_string(nms_port) + ")");
+			}
+			else if (boost::algorithm::equals(param.first, "port")) {
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "nms",
-				"account")
-			, cyng::make_object(cyng::find_value(pmap, std::string("account"), std::string("")))
-			, "NMS login name");
+				auto const nms_port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
+				insert_config_record(stmt
+					, cyng::to_path('/', "nms", param.first)
+					, cyng::make_object(nms_port)
+					, "NMS listener port (" + std::to_string(nms_port) + ")");
+			}
+			else if (boost::algorithm::equals(param.first, "script-path")) {
 
-		insert_config_record(stmt
-			, cyng::to_path('/', "nms",
-				"pwd")
-			, cyng::make_object(cyng::find_value(pmap, std::string("pwd"), std::string("")))
-			, "NMS login password");
+				std::filesystem::path const script_path = cyng::find_value(pmap, param.first, std::string(""));
+				insert_config_record(stmt
+					, cyng::to_path('/', "nms", param.first)
+					, cyng::make_object(script_path)
+					, "path to update script");
+			}
+			else {
 
-		std::filesystem::path const script_path =  cyng::find_value(pmap, std::string("script-path"), std::string(""));
-		insert_config_record(stmt
-			, cyng::to_path('/', "nms",
-				"script-path")
-			, cyng::make_object(script_path)
-			, "path to update script");
+				insert_config_record(stmt
+					, cyng::to_path('/', "nms", param.first)
+					, param.second
+					, "NMS: " + param.first);
 
+			}
+		}
 	}
 
 	void transfer_lnm(cyng::db::statement_ptr stmt, cyng::vector_t&& vec) {
@@ -621,6 +613,12 @@ namespace smf {
 							, "period in seconds");
 					}
 				}
+				else if (boost::algorithm::equals(param.first, "listener")) {
+					//
+					//	ToDo: implement
+					//	%(("address":0.0.0.0),("port":6006))|%(("address":0.0.0.0),("port":6006))
+					//
+				}
 				else {
 					insert_config_record(stmt
 						, cyng::to_path('/', "lmn", std::to_string(counter), param.first)
@@ -678,6 +676,109 @@ namespace smf {
 		auto const m = get_table_cfg();
 		auto const sql = cyng::sql::remove(db.get_dialect(), m)();
 		db.execute(sql);
+	}
+
+	std::string get_section(std::string path, std::size_t idx) {
+
+		auto const vec = cyng::split(path, "/");
+		return (idx < vec.size())
+			? vec.at(idx)
+			: path
+			;
+	}
+
+	void list_config(cyng::db::session& db) {
+		BOOST_ASSERT(db.is_alive());
+
+		auto const ms = get_table_cfg();
+		auto const sql = cyng::sql::select(db.get_dialect()).all(ms, false).from(ms).order_by("path")();
+		auto stmt = db.create_statement();
+		stmt->prepare(sql);
+
+		//cyng::column_sql("path", cyng::TC_STRING, 128),	//	path, '/' separated values
+		////	generation
+		//cyng::column_sql("val", cyng::TC_STRING, 256),	//	value
+		//cyng::column_sql("def", cyng::TC_STRING, 256),	//	default value
+		//cyng::column_sql("type", cyng::TC_UINT16, 0),	//	data type code (default)
+		//cyng::column_sql("desc", cyng::TC_STRING, 256)	//	optional description
+
+		//
+		//	read all results
+		//
+		std::string section{ "000000000000" };
+
+		while (auto res = stmt->get_result()) {
+			auto const rec = cyng::to_record(ms, res);
+			//std::cout << rec.to_tuple() << std::endl;
+			auto const path = rec.value("path", "");
+			auto const val = rec.value("val", "");
+			auto const def = rec.value("def", "");
+			auto const type = rec.value("type", static_cast<std::uint16_t>(0));
+			auto const desc = rec.value("desc", "");
+			auto const obj = cyng::restore(val, type);
+
+			//	ToDo:
+			//auto const opath = sml::translate_obis_path(path);
+
+			//
+			//	insert split lines between sections
+			//
+			auto const this_section = get_section(path);
+			if (!boost::algorithm::equals(section, this_section)) {
+
+				//
+				//	update 
+				//
+				section = this_section;
+
+				std::cout
+					<< std::string(42, '-')
+					<< "  ["
+					<< section
+					<< ']'
+					<< std::endl;
+			}
+
+			std::cout
+				<< std::setfill('.')
+				<< std::setw(42)
+				<< std::left
+				<< path
+				<< ": "
+				;
+
+			//
+			//	list value (optional default value)
+			//
+			if (boost::algorithm::equals(val, def)) {
+				std::cout << val;
+			}
+			else {
+				std::cout
+					<< '['
+					<< val
+					<< '/'
+					<< def
+					<< ']'
+					;
+			}
+
+			std::cout
+				<< " ("
+				<< obj
+				<< ':'
+				<< obj.rtti().type_name()
+				<< ") - "
+				<< desc
+				;
+
+
+			//
+			//	complete
+			//
+			std::cout << std::endl;
+
+		}
 	}
 
 	bool insert_config_record(cyng::db::statement_ptr stmt, std::string key, cyng::object obj, std::string desc)

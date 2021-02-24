@@ -48,16 +48,37 @@ set (segw_config
     include/config/cfg_lmn.h
     include/config/cfg_broker.h
     include/config/cfg_gpio.h
+    include/config/cfg_nms.h
+    include/config/cfg_sml.h
     src/config/cfg_ipt.cpp
     src/config/cfg_lmn.cpp
     src/config/cfg_broker.cpp
     src/config/cfg_gpio.cpp
+    src/config/cfg_nms.cpp
+    src/config/cfg_sml.cpp
 )
 
+set (segw_sml
+    include/sml/server.h
+    include/sml/session.h
+    src/sml/server.cpp
+    src/sml/session.cpp
+)
+
+set (segw_nms
+    include/nms/server.h
+    include/nms/session.h
+    include/nms/reader.h
+    src/nms/server.cpp
+    src/nms/session.cpp
+    src/nms/reader.cpp
+)
 
 source_group("segw-assets" FILES ${segw_assets})
 source_group("tasks" FILES ${segw_tasks})
 source_group("config" FILES ${segw_config})
+source_group("sml" FILES ${segw_sml})
+source_group("nms" FILES ${segw_nms})
 
 
 set (segw_node
@@ -66,5 +87,7 @@ set (segw_node
   ${segw_assets}
   ${segw_tasks}
   ${segw_config}
+  ${segw_sml}
+  ${segw_nms}
 )
 

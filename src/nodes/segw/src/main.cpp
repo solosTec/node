@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
 		("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
 		("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")
+		("list,l", boost::program_options::bool_switch()->default_value(false), "list configuration from database")
 		;
 
 

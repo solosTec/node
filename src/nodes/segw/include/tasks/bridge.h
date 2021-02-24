@@ -10,6 +10,8 @@
 #include <cfg.h>
 #include <storage_functions.h>
 #include <config/cfg_lmn.h>
+#include <sml/server.h>
+#include <nms/server.h>
 
 #include <smf/ipt/bus.h>
 #include <smf/ipt/config.h>
@@ -22,56 +24,61 @@
 
 namespace smf {
 
-	 /**
-	  * manage segw lifetime
-	  */
-	 class bridge
-	 {
-		 template <typename T >
-		 friend class cyng::task;
+	/**
+	 * manage segw lifetime
+	 */
+	class bridge
+	{
+		template <typename T >
+		friend class cyng::task;
 
-		 using signatures_t = std::tuple<
-			 std::function<void(cyng::eod)>,
-			 std::function<void()>
-		 >;
+		using signatures_t = std::tuple<
+			std::function<void(cyng::eod)>,
+			std::function<void()>
+		>;
 
-	 public:
-		 bridge(std::weak_ptr<cyng::channel>
+	public:
+		bridge(std::weak_ptr<cyng::channel>
 			, cyng::controller& ctl
 			, cyng::logger
 			, cyng::db::session
 			, ipt::toggle::server_vec_t const&);
 
-	 private:
-		 void stop(cyng::eod);
-		 void start();
+	private:
+		void stop(cyng::eod);
+		void start();
 
-		 void init_data_cache();
-		 void load_config_data();
+		void init_data_cache();
+		void load_config_data();
 
-		 void load_configuration();
+		void load_configuration();
 
-		 void init_gpio();
+		void init_gpio();
 
-		 void init_lmn_ports();
-		 void init_lmn_port(lmn_type);
+		void init_sml_server();
+		void init_nms_server();
 
-		 void init_ipt_bus();
+		void init_lmn_ports();
+		void init_lmn_port(lmn_type);
 
-		 void init_broker_clients();
-		 void init_broker_clients(lmn_type);
+		void init_ipt_bus();
 
-	 private:
-		 signatures_t sigs_;
-		 std::weak_ptr<cyng::channel> channel_;
-		 cyng::controller& ctl_;
-		 cyng::logger logger_;
-		 cyng::db::session db_;
-		 cyng::store cache_;
-		 cfg cfg_;
-		 cyng::mesh fabric_;
-		 ipt::bus	bus_;
-	 };
+		void init_broker_clients();
+		void init_broker_clients(lmn_type);
+
+	private:
+		signatures_t sigs_;
+		std::weak_ptr<cyng::channel> channel_;
+		cyng::controller& ctl_;
+		cyng::logger logger_;
+		cyng::db::session db_;
+		cyng::store cache_;
+		cfg cfg_;
+		cyng::mesh fabric_;
+		ipt::bus	bus_;
+		nms::server	nms_;
+		sml::server	sml_;
+	};
 }
 
 #endif
