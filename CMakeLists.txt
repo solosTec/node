@@ -179,12 +179,12 @@ if(OPENSSL_FOUND)
 
     add_definitions(-D${PROJECT_NAME}_SSL_INSTALLED)
 
-#	message(STATUS "** openSSL Found         : ${OPENSSL_FOUND}")
-    message(STATUS "** openSSL Version       : ${OPENSSL_VERSION}")
-    message(STATUS "** openSSL Include       : ${OPENSSL_INCLUDE_DIR}")
-    message(STATUS "** openSSL crypto library: ${OPENSSL_CRYPTO_LIBRARY}")
-    message(STATUS "** openSSL SSL library   : ${OPENSSL_SSL_LIBRARY}")
-    message(STATUS "** openSSL Libraries     : ${OPENSSL_LIBRARIES}")
+#	message(STATUS "** openSSL Found                : ${OPENSSL_FOUND}")
+    message(STATUS "** openSSL Version              : ${OPENSSL_VERSION}")
+    message(STATUS "** openSSL Include              : ${OPENSSL_INCLUDE_DIR}")
+    message(STATUS "** openSSL crypto library       : ${OPENSSL_CRYPTO_LIBRARY}")
+    message(STATUS "** openSSL SSL library          : ${OPENSSL_SSL_LIBRARY}")
+    message(STATUS "** openSSL Libraries            : ${OPENSSL_LIBRARIES}")
 
     set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
 #
@@ -457,6 +457,51 @@ target_compile_definitions(smf_mbus
 )
 
 target_link_libraries(smf_mbus 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
+# add library: smf_iec
+#
+include (src/lib/iec/protocol/lib.cmake)
+add_library(smf_iec ${GLOBAL_LIBRARY_TYPE} ${iec_lib})
+
+target_include_directories(smf_iec
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+        ${CRYPTO_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_iec PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug mbus protocol
+#
+target_compile_definitions(smf_iec 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_IEC>
+)
+
+target_link_libraries(smf_iec 
     PRIVATE 
         Boost::boost 
 )
