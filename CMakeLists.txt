@@ -126,7 +126,19 @@ if (CYNG_FOUND)
     message(STATUS "** cyng_vm                  : ${cyng_vm}")
     message(STATUS "** cyng_sqlite3             : ${cyng_sqlite3}")
 else()
-    message(FATAL_ERROR "** cyng library not found")
+    message(FATAL_ERROR "** CYNG library not found")
+endif()
+
+#
+# find crypto library
+# -DCRYPT_ROOT:path=...
+#
+find_package(CRYPTO REQUIRED)
+if (CRYPTO_FOUND)
+    message(STATUS "** CRYPTO_INCLUDE_DIRS      : ${CRYPTO_INCLUDE_DIRS}")
+    message(STATUS "** CRYPTO_LIBRARIES         : ${CRYPTO_LIBRARIES}")
+else()
+    message(FATAL_ERROR "** CYRPTO library not found")
 endif()
 
 #
@@ -161,6 +173,24 @@ message(STATUS "** Boost_RANDOM_LIBRARY         : ${Boost_RANDOM_LIBRARY}")
 message(STATUS "** Boost_REGEX_LIBRARY          : ${Boost_REGEX_LIBRARY}")
 message(STATUS "** Boost_UNIT_TEST_FRAMEWORK    : ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
 
+message(STATUS "** Search openSSL   : ${OPENSSL_ROOT_DIR}")
+find_package(OpenSSL 1.0.2 REQUIRED)
+if(OPENSSL_FOUND)
+
+    add_definitions(-D${PROJECT_NAME}_SSL_INSTALLED)
+
+#	message(STATUS "** openSSL Found         : ${OPENSSL_FOUND}")
+    message(STATUS "** openSSL Version       : ${OPENSSL_VERSION}")
+    message(STATUS "** openSSL Include       : ${OPENSSL_INCLUDE_DIR}")
+    message(STATUS "** openSSL crypto library: ${OPENSSL_CRYPTO_LIBRARY}")
+    message(STATUS "** openSSL SSL library   : ${OPENSSL_SSL_LIBRARY}")
+    message(STATUS "** openSSL Libraries     : ${OPENSSL_LIBRARIES}")
+
+    set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
+#
+else()
+        set(${PROJECT_NAME}_SSL_VERSION "unknown")
+endif()
 
 # FetchContent added in CMake 3.11, downloads during the configure step
 include(FetchContent)
@@ -382,6 +412,51 @@ target_compile_definitions(smf_obis
 )
 
 target_link_libraries(smf_obis 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
+# add library: smf_mbus
+#
+include (src/lib/mbus/protocol/lib.cmake)
+add_library(smf_mbus ${GLOBAL_LIBRARY_TYPE} ${mbus_lib})
+
+target_include_directories(smf_mbus
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+        ${CRYPTO_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_mbus PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug mbus protocol
+#
+target_compile_definitions(smf_mbus 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_MBUS>
+)
+
+target_link_libraries(smf_mbus 
     PRIVATE 
         Boost::boost 
 )

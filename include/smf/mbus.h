@@ -7,9 +7,6 @@
 #ifndef SMF_MBUS_H
 #define SMF_MBUS_H
 
-
-namespace smf {
-
-}
+#include <smf/mbus/units.h>
 
 #endif

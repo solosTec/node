@@ -108,7 +108,7 @@ if(NOT CYNG_FOUND)
 	#
 	foreach(__CYNG_LIB ${CYNG_LIBS})
 
-		message(STATUS "** hint : lib${__CYNG_LIB}")
+		#message(STATUS "** hint : lib${__CYNG_LIB}")
 		find_library("${__CYNG_LIB}" ${__CYNG_LIB}
 			NAMES
 				${__CYNG_BUILD}
@@ -120,7 +120,7 @@ if(NOT CYNG_FOUND)
 			DOC 
 				"CYNG libraries"
 		)
-		message(STATUS "** found : ${${__CYNG_LIB}}")
+		#message(STATUS "** found : ${${__CYNG_LIB}}")
 		list(APPEND CYNG_LIBRARIES ${${__CYNG_LIB}})
 #		message(STATUS "** CYNG_LIBRARIES    : ${CYNG_LIBRARIES}")
 
@@ -135,8 +135,8 @@ if(NOT CYNG_FOUND)
     
 
 	if (CYNG_INCLUDE_DIRS AND CYNG_LIBRARIES)
-		message(STATUS "** CYNG_LIBRARIES    : ${CYNG_LIBRARIES}")
-		message(STATUS "** CYNG_INCLUDE_DIRS : ${CYNG_INCLUDE_DIRS}")
+		message(STATUS "** CYNG_LIBRARIES        : ${CYNG_LIBRARIES}")
+		message(STATUS "** CYNG_INCLUDE_DIRS     : ${CYNG_INCLUDE_DIRS}")
 		set(CYNG_FOUND ON)
 	endif()
     
