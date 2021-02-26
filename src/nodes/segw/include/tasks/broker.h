@@ -50,7 +50,7 @@ namespace smf {
 		void check_deadline();
 		void handle_connect(const boost::system::error_code& ec,
 			boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-		void start_read();
+		void do_read();
 		void handle_read(const boost::system::error_code& ec, std::size_t n);
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);

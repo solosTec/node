@@ -7,9 +7,7 @@
 #ifndef SMF_HCI_H
 #define SMF_HCI_H
 
-
-namespace smf {
-
-}
+#include <smf/hci/parser.h>
+#include <smf/hci/msg.h>
 
 #endif

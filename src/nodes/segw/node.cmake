@@ -37,10 +37,12 @@ set (segw_tasks
     include/tasks/lmn.h
     include/tasks/gpio.h
     include/tasks/broker.h
+    include/tasks/CP210x.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
     src/tasks/broker.cpp
+    src/tasks/CP210x.cpp
 )
 
 set (segw_config

@@ -134,6 +134,9 @@ namespace smf {
 				//
 				//	ToDo: post data to receiver 
 				//
+				auto sp = channel_.lock();
+				//if (sp)	sp->dispatch("", );
+
 
 				//
 				//	continue reading

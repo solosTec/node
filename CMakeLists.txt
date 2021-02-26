@@ -494,7 +494,7 @@ cxx_alignas
 )
 
 #
-#   debug mbus protocol
+#   debug iec protocol
 #
 target_compile_definitions(smf_iec 
     PRIVATE 
@@ -502,6 +502,51 @@ target_compile_definitions(smf_iec
 )
 
 target_link_libraries(smf_iec 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
+# add library: smf_hci
+#
+include (src/lib/hci/protocol/lib.cmake)
+add_library(smf_hci ${GLOBAL_LIBRARY_TYPE} ${hci_lib})
+
+target_include_directories(smf_hci
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+        ${CRYPTO_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_hci PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug hci protocol
+#
+target_compile_definitions(smf_hci 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_HCI>
+)
+
+target_link_libraries(smf_hci 
     PRIVATE 
         Boost::boost 
 )

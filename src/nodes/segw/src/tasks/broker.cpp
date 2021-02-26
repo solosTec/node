@@ -188,14 +188,14 @@ namespace smf {
 			}
 
 			// Start the input actor.
-			start_read();
+			do_read();
 
 			// Start the heartbeat actor.
 			do_write();
 		}
 	}
 
-	void broker::start_read()
+	void broker::do_read()
 	{
 		// Set a deadline for the read operation.
 		deadline_.expires_after(timeout_);
@@ -223,7 +223,7 @@ namespace smf {
 				CYNG_LOG_DEBUG(logger_, "broker [" << target_ << "] received " << line);
 			}
 
-			start_read();
+			do_read();
 		}
 		else
 		{
