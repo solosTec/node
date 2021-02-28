@@ -135,9 +135,11 @@ if(NOT CYNG_FOUND)
     
 
 	if (CYNG_INCLUDE_DIRS AND CYNG_LIBRARIES)
+		set(CYNG_FOUND ON)
+		set(CYNG_SQLITE3 "CYNG_INCLUDE_DIR_BUILD/../sqlite3")
 		message(STATUS "** CYNG_LIBRARIES        : ${CYNG_LIBRARIES}")
 		message(STATUS "** CYNG_INCLUDE_DIRS     : ${CYNG_INCLUDE_DIRS}")
-		set(CYNG_FOUND ON)
+		message(STATUS "** CYNG_SQLITE3          : ${CYNG_SQLITE3}")
 	endif()
     
 endif(NOT CYNG_FOUND)
