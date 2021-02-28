@@ -13,17 +13,24 @@ clean:
 	rm -f build-stamp
 	rm -rf $(INSTALLDIR)
 
+        smf_config
+        smf_ipt
+        smf_ipt_bus
+        smf_serial_bus
+        smf_hci
+
 install: build
 	install -d $(INSTALLDIR)/usr/local/lib
 #	install -m 755 @PROJECT_BINARY_DIR@/lib*.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib/ipt/protocol/libsmf_protocol_ipt.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib/ipt/bus/libsmf_bus_ipt.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib/mbus/protocol/libsmf_protocol_mbus.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib/hci/protocol/libsmf_protocol_hci.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib/info/libsmf_info.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib/sml/protocol/libsmf_protocol_sml.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib/sml/bus/libsmf_bus_sml.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/lib/serial/bus/libsmf_bus_serial.so $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_config.so $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_ipt.so $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_ipt_bus.so $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_serial_bus.so $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_hci.so $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_mbus.so $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_iec.so $(INSTALLDIR)/usr/local/lib
+#	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml.so $(INSTALLDIR)/usr/local/lib
+#	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml_bus.so $(INSTALLDIR)/usr/local/lib
 
 	install -m 755 @__cyng_async@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @__cyng_csv@ $(INSTALLDIR)/usr/local/lib
