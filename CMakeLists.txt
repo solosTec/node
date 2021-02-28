@@ -143,6 +143,7 @@ endif()
 
 #
 #   convert to false/true that can be used in C/C++ code
+#	smf_CROSSCOMPILING = true
 #
 string(TOLOWER ${CMAKE_CROSSCOMPILING} ${PROJECT_NAME}_CROSSCOMPILING)
 
@@ -736,8 +737,9 @@ configure_file (
 # fakeroot opkg/opkg-tools/opkg-buildpackage
 # Install with: opkg --force-space install /tmp/oecp-smf_0.x_armel.ipk
 #
+message(STATUS "** CMAKE_CROSSCOMPILING         : ${CMAKE_CROSSCOMPILING}")
 
-if(${PROJECT_NAME}_CROSS_COMPILE)
+if(${CMAKE_CROSSCOMPILING})
 
 	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
     message(STATUS "** cross compile project    : ${OECP_NAME}")
