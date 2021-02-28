@@ -13,12 +13,6 @@ clean:
 	rm -f build-stamp
 	rm -rf $(INSTALLDIR)
 
-        smf_config
-        smf_ipt
-        smf_ipt_bus
-        smf_serial_bus
-        smf_hci
-
 install: build
 	install -d $(INSTALLDIR)/usr/local/lib
 #	install -m 755 @PROJECT_BINARY_DIR@/lib*.so $(INSTALLDIR)/usr/local/lib
