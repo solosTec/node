@@ -11,6 +11,7 @@
 #include <tasks/lmn.h>
 #include <tasks/gpio.h>
 #include <tasks/broker.h>
+#include <tasks/CP210x.h>
 
 #include <config/cfg_gpio.h>
 #include <config/cfg_broker.h>
@@ -107,12 +108,6 @@ namespace smf {
 		init_nms_server();
 
 		//
-		//	LMN - open serial ports
-		//
-		CYNG_LOG_INFO(logger_, "initialize: LMN ports");
-		init_lmn_ports();
-
-		//
 		//	virtual meter
 		//
 		CYNG_LOG_INFO(logger_, "initialize: virtual meter");
@@ -130,6 +125,12 @@ namespace smf {
 		CYNG_LOG_INFO(logger_, "initialize: broker clients");
 		init_broker_clients();
 
+		//
+		//	LMN - open serial ports
+		//	"let the data come in"
+		//
+		CYNG_LOG_INFO(logger_, "initialize: LMN ports");
+		init_lmn_ports();
 	}
 
 	void bridge::init_data_cache() {
@@ -242,6 +243,14 @@ namespace smf {
 
 				BOOST_ASSERT(type == lmn_type::WIRELESS);
 
+				//
+				//	start CP210x parser
+				//
+				auto hci = ctl_.create_named_channel_with_ref<CP210x>("CP210x", logger_);
+
+				//
+				//	init CP210x
+				//
 				channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
 			}
 			
