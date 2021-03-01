@@ -17,6 +17,7 @@
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/sys/filesystem.h>
 #include <cyng/parse/string.h>
+#include <cyng/obj/algorithm/merge.h>
 
 #include <filesystem>
 #include <fstream>
@@ -133,11 +134,58 @@ namespace smf {
 				("serial-port", cyng::param_map_factory()())
 				;
 
-			//cmd_merge_serial(pm, dom, cyng::to_param_map(dom.get("serial-port")));
-			//cmd_merge_nms(pm, cyng::to_param_map(dom.get("nms")));
+			cmd_merge_serial(pmap, cyng::container_cast<cyng::param_map_t>(dom["serial-port"].get()));
+			cmd_merge_nms(pmap, cyng::container_cast<cyng::param_map_t>(dom["nms"].get()));
 
 			return pmap;
 		}
+
+		void reader::cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t&& params) {
+
+			cfg_nms cfg(cfg_);
+			CYNG_LOG_DEBUG(logger_, "[NMS] " << params);
+
+			for (auto const& param : params) {
+				if (boost::algorithm::equals(param.first, "enabled")) {
+					auto const enabled = cyng::value_cast(param.second, true);
+					//nms.set_enabled(true);
+					if (!enabled)	cyng::merge(pm, { "nms", param.first }, cyng::make_object("warning: connection will be closed"));
+				}
+				else if (boost::algorithm::equals(param.first, "address")) {
+					boost::system::error_code ec;
+					auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"), ec);
+					//nms.set_address(address);
+					cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+				}
+				else if (boost::algorithm::equals(param.first, "port")) {
+					auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
+					//nms.set_port(port);
+					cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+				}
+				else if (boost::algorithm::equals(param.first, "pwd")) {
+					auto const pwd = cyng::value_cast(param.second, "");
+					//nms.set_pwd(pwd);
+				}
+				else if (boost::algorithm::equals(param.first, "user")) {
+					auto const user = cyng::value_cast(param.second, "");
+					//nms.set_user(user);
+				}
+				else {
+					cyng::merge(pm, { "nms", param.first }, cyng::make_object("error: unknown NMS attribute"));
+				}
+			}
+
+			//
+			//	ToDo: rebind
+			//	mux_.post(tsk_rebind_, 0, cyng::tuple_factory({ nms.get_ep() }));
+			//
+
+		}
+
+		void reader::cmd_merge_serial(cyng::param_map_t& pm, cyng::param_map_t&& params) {
+
+		}
+
 
 		cyng::param_map_t reader::cmd_query(std::string const& cmd, boost::uuids::uuid tag) {
 

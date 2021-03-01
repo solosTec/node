@@ -38,6 +38,9 @@ namespace smf {
 			cyng::param_map_t cmd_version(std::string const& cmd, boost::uuids::uuid);
 			cyng::param_map_t cmd_cm(std::string const& cmd, boost::uuids::uuid, pmap_reader const& dom);
 
+			void cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t&& params);
+			void cmd_merge_serial(cyng::param_map_t& pm, cyng::param_map_t&& params);
+
 		private:
 			cyng::logger logger_;
 			cfg& cfg_;
