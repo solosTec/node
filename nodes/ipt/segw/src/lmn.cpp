@@ -11,6 +11,7 @@
 #include <cache.h>
 #include <cfg_rs485.h>
 #include <cfg_wmbus.h>
+#include <cfg_gpio.h>
 
 #include <tasks/lmn_port.h>
 #include <tasks/parser_serial.h>
@@ -344,6 +345,7 @@ namespace node
 
 		CYNG_LOG_INFO(logger_, "LMN wireless is running on port: " << cfg.get_port());
 
+		//
 		return cyng::async::start_task_sync<lmn_port>(mux_
 			, logger_
 			, cfg.get_monitor()
@@ -354,7 +356,8 @@ namespace node
 			, cfg.get_stopbits()		//	[s] stopbits
 			, cfg.get_baud_rate()		//	[u32] speed
 			, status_receiver			//	receive status change
-			, std::move(init));			//	initialization message
+			, std::move(init)
+			, cfg_gpio(cache_).get_task(50));			//	initialization message
 	}
 
 	std::pair<std::size_t, bool> lmn::start_lmn_port_wired(std::size_t status_receiver)
@@ -373,7 +376,8 @@ namespace node
 			, cfg.get_stopbits()		//	[s] stopbits
 			, cfg.get_baud_rate()		//	[u32] speed
 			, status_receiver			//	receive status change
-			, cyng::make_buffer({}));	//	no initialization data
+			, cyng::make_buffer({})		//	no initialization data
+			, cfg_gpio(cache_).get_task(53));
 
 		if (r.second) {
 

@@ -27,7 +27,8 @@ namespace node
 		, boost::asio::serial_port_base::stop_bits stopbits
 		, boost::asio::serial_port_base::baud_rate speed
 		, std::size_t receiver_status
-		, cyng::buffer_t&& init)
+		, cyng::buffer_t&& init
+		, std::size_t gpio)
 	: base_(*btp) 
 		, logger_(logger)
 		, port_(btp->mux_.get_io_service())
@@ -41,6 +42,7 @@ namespace node
 		, receiver_data_()
 		, receiver_status_(receiver_status)
 		, init_(std::move(init))
+		, gpio_(gpio)
 		, buffer_()
 		, msg_counter_(0u)
 	{
@@ -178,6 +180,20 @@ namespace node
 					base_.mux_.post(tsk, 0u, cyng::tuple_factory(cyng::buffer_t(buffer_.cbegin(), buffer_.cbegin() + bytes_transferred), msg_counter_));
 				}
 				if (receiver_status_ != cyng::async::NO_TASK)	base_.mux_.post(receiver_status_, 0u, cyng::tuple_factory(buffer_.size(), msg_counter_));
+
+				//
+				//	GPIO LED
+				//
+				if (cyng::async::NO_TASK != gpio_) {
+					//	 process(std::uint32_t, std::size_t)
+					//	 periodic timer in milliseconds and counter
+					if (bytes_transferred > 64) {
+						base_.mux_.post(gpio_, 1, cyng::tuple_factory(static_cast<std::uint32_t>(1), static_cast<std::size_t>(50)));
+					}
+					else {
+						base_.mux_.post(gpio_, 1, cyng::tuple_factory(static_cast<std::uint32_t>(2), static_cast<std::size_t>(25)));
+					}
+				}
 
 				//
 				//	update message counter

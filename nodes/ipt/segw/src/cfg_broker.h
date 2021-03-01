@@ -9,7 +9,6 @@
 #define NODE_BROKER_SEGW_CONFIG_H
 
 #include <cfg_server.h>
-#include <cfg_server.h>
 #include "segw.h"
  
 namespace node

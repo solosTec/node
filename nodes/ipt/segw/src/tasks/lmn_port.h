@@ -50,7 +50,8 @@ namespace node
 			, boost::asio::serial_port_base::stop_bits stopbits
 			, boost::asio::serial_port_base::baud_rate speed
 			, std::size_t receiver_status
-			, cyng::buffer_t&& init);
+			, cyng::buffer_t&& init
+			, std::size_t gpio);
 
 		cyng::continuation run();
 		void stop(bool shutdown);
@@ -113,6 +114,7 @@ namespace node
 		cyng::async::task_list_t receiver_data_;
 		std::size_t const receiver_status_;
 		cyng::buffer_t init_;
+		std::size_t const gpio_;	//	task ID
 
 		/**
 		 * Buffer for incoming data.
