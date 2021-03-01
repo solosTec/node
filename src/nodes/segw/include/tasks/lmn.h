@@ -29,7 +29,8 @@ namespace smf {
 		 using signatures_t = std::tuple<
 			 std::function<void(cyng::eod)>,
 			 std::function<void()>,
-			 std::function<void(cyng::buffer_t)>
+			 std::function<void(cyng::buffer_t)>,
+			 std::function<void(std::string)>
 		 >;
 
 	 public:
@@ -42,6 +43,7 @@ namespace smf {
 	 private:
 		 void stop(cyng::eod);
 		 void open();
+		 void reset_target_channels(std::string);
 
 		 void set_options(std::string const&);
 		 void do_read();
@@ -50,6 +52,7 @@ namespace smf {
 	 private:
 		 signatures_t sigs_;
 		 std::weak_ptr<cyng::channel> channel_;
+		 cyng::controller& ctl_;
 		 cyng::logger logger_;
 		 cfg_lmn cfg_;
 
@@ -62,6 +65,8 @@ namespace smf {
 		  * input buffer
 		  */
 		 std::array<char, 1024> buffer_;
+
+		 std::vector<cyng::channel_ptr>	targets_;
 
 	 };
 }

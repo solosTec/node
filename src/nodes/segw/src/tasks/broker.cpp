@@ -31,6 +31,7 @@ namespace smf {
 		std::bind(&broker::stop, this, std::placeholders::_1),
 		std::bind(&broker::send, this, std::placeholders::_1),
 		std::bind(&broker::start, this),
+		std::bind(&broker::receive, this, std::placeholders::_1)
 	}	, channel_(wp)
 		, ctl_(ctl)
 		, logger_(logger)
@@ -67,6 +68,10 @@ namespace smf {
 	void broker::send(cyng::buffer_t data) {
 		CYNG_LOG_INFO(logger_, "broker: transmit " << data.size() << " bytes to " << target_ );
 
+	}
+
+	void broker::receive(cyng::buffer_t data) {
+		CYNG_LOG_INFO(logger_, "broker: received " << data.size() << " bytes");
 	}
 
 	void broker::start() {

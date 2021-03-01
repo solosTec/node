@@ -117,8 +117,8 @@ namespace smf
 		}
 
 		parser::state parser::state_fcs(char c) {
-			msg_.time_stamp_.push_back(c);
-			if (msg_.time_stamp_.size() == 2) {
+			msg_.fcs_.push_back(c);
+			if (msg_.fcs_.size() >= 2) {
 				cb_(msg_);	//	complete
 				return state::SOF;
 			}

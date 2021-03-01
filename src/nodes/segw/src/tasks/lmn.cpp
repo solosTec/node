@@ -27,17 +27,21 @@ namespace smf {
 	: sigs_{
 		std::bind(&lmn::stop, this, std::placeholders::_1),
 		std::bind(&lmn::open, this),
-		std::bind(&lmn::do_write, this, std::placeholders::_1)
+		std::bind(&lmn::do_write, this, std::placeholders::_1),
+		std::bind(&lmn::reset_target_channels, this, std::placeholders::_1)
 	}	, channel_(wp)
+		, ctl_(ctl)
 		, logger_(logger)
 		, cfg_(c, type)
 		, port_(ctl.get_ctx())
 		, buffer_{ 0 }
+		, targets_()
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("open", 1);
 			sp->set_channel_name("write", 2);
+			sp->set_channel_name("reset-target-channels", 3);
 		}
 
 		CYNG_LOG_INFO(logger_, "LMN " << cfg_.get_port() << " ready");
@@ -45,6 +49,7 @@ namespace smf {
 
 	void lmn::stop(cyng::eod) {
 		CYNG_LOG_INFO(logger_, "LMN stop");
+		targets_.clear();
 		boost::system::error_code ec;
 		port_.close(ec);
 	}
@@ -116,6 +121,11 @@ namespace smf {
 		}
 	}
 
+	void lmn::reset_target_channels(std::string name) {
+		targets_ = ctl_.get_registry().lookup(name);
+		CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] targets x " << targets_.size() << " " << name);
+	}
+
 	void lmn::do_read() {
 
 		port_.async_read_some(boost::asio::buffer(buffer_), [this](boost::system::error_code ec, std::size_t bytes_transferred) {
@@ -132,10 +142,12 @@ namespace smf {
 #endif
 
 				//
-				//	ToDo: post data to receiver 
+				//	post data to receiver 
 				//
-				auto sp = channel_.lock();
-				//if (sp)	sp->dispatch("", );
+				CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] dispatch to " << targets_.size() << " target(s)");
+				for (auto chp : targets_) {
+					chp->dispatch("receive", cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) + bytes_transferred)));
+				}
 
 
 				//

@@ -44,7 +44,7 @@ namespace smf
 		/**
 		 * parse incoming raw data
 		 */
-		void parse(cyng::buffer_t);
+		void receive(cyng::buffer_t);
 
 	private:
 		signatures_t sigs_;

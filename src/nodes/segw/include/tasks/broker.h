@@ -29,7 +29,8 @@ namespace smf {
 		using signatures_t = std::tuple<
 			std::function<void(cyng::eod)>,
 			std::function<void(cyng::buffer_t)>,
-			std::function<void()>
+			std::function<void()>,
+			std::function<void(cyng::buffer_t)>
 		>;
 
 	public:
@@ -44,6 +45,10 @@ namespace smf {
 		void stop(cyng::eod);
 		void send(cyng::buffer_t);
 		void start();
+		/**
+		 * parse incoming raw data
+		 */
+		void receive(cyng::buffer_t);
 
 		void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
 		void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);

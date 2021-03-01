@@ -250,10 +250,11 @@ namespace smf {
 		auto const port = cfg.get_port();
 
 		if (cfg.is_enabled()) {
+
 			CYNG_LOG_INFO(logger_, "init LMN [" << port << "]");
 			auto channel = ctl_.create_named_channel_with_ref<lmn>(port, ctl_, logger_, cfg_, type);
 			BOOST_ASSERT(channel->is_open());
-			channel->dispatch("open", cyng::make_tuple());
+
 
 			if (boost::algorithm::equals(cfg.get_hci(), "CP210x")) {
 
@@ -267,9 +268,19 @@ namespace smf {
 				//
 				//	init CP210x
 				//
+				channel->dispatch("reset-target-channels", cyng::make_tuple("CP210x"));
+				channel->dispatch("open", cyng::make_tuple());
 				channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
 			}
-			
+			else {
+
+				//
+				//	open serial port
+				//
+				channel->dispatch("reset-target-channels", cyng::make_tuple("broker"));
+				channel->dispatch("open", cyng::make_tuple());
+			}
+
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "LMN [" << port << "] is not enabled" );

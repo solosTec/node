@@ -16,14 +16,14 @@ namespace smf
 		, cyng::logger logger)
 		: sigs_{
 			std::bind(&CP210x::stop, this, std::placeholders::_1),
-			std::bind(&CP210x::parse, this, std::placeholders::_1)
+			std::bind(&CP210x::receive, this, std::placeholders::_1)
 	}, channel_(wp)
 		, logger_(logger)
 		, parser_(std::bind(&CP210x::put, this, std::placeholders::_1))
 	{
 		auto sp = channel_.lock();
 		if (sp) {
-			sp->set_channel_name("parse", 1);
+			sp->set_channel_name("receive", 1);
 		}
 
 		CYNG_LOG_INFO(logger_, "CP210x ready");
@@ -37,7 +37,7 @@ namespace smf
 		CYNG_LOG_DEBUG(logger_, "CP210x received " << msg);
 	}
 
-	void CP210x::parse(cyng::buffer_t data) {
+	void CP210x::receive(cyng::buffer_t data) {
 		parser_.read(std::begin(data), std::end(data));
 	}
 

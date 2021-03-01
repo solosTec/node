@@ -71,8 +71,11 @@ namespace smf
 		std::ostream& operator<<(std::ostream& os, msg const& m) {
 			os
 				<< "\""
-				<< m.get_length()
-				<< " bytes"
+				<< +m.get_length()
+				<< " bytes, ep: "
+				<< +m.header_ctrl_ep_	//!<	Control and Enpoint field
+				<< ", id: "
+				<< +m.header_msg_id_	//!<	message ID field
 				<< "\":hci"
 				;
 			return os;
