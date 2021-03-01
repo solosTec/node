@@ -803,4 +803,33 @@ namespace smf {
 		return false;
 	}
 
+	bool insert_config_record(cyng::db::statement_ptr stmt, cyng::object const& key, cyng::object obj) {
+
+		auto const val = cyng::make_object(cyng::to_string(obj));
+
+		stmt->push(key, 128);	//	pk
+		stmt->push(val, 256);	//	val
+		stmt->push(val, 256);	//	def
+		stmt->push(cyng::make_object(obj.rtti().tag()), 0);	//	type
+		stmt->push(cyng::make_object(obj.rtti().type_name()), 256);	//	desc
+		if (stmt->execute()) {
+			stmt->clear();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool update_config_record(cyng::db::statement_ptr stmt, cyng::object const& key, cyng::object obj)
+	{
+		auto const val = cyng::make_object(cyng::to_string(obj));
+		stmt->push(val, 256);	//	val
+		stmt->push(key, 128);	//	pk
+		if (stmt->execute()) {
+			stmt->clear();
+			return true;
+		}
+		return false;
+	}
+
 }

@@ -5,13 +5,12 @@
  *
  */
 
-#include <storage_functions.h>
-
 #include <tasks/bridge.h>
 #include <tasks/lmn.h>
 #include <tasks/gpio.h>
 #include <tasks/broker.h>
 #include <tasks/CP210x.h>
+#include <tasks/persistence.h>
 
 #include <config/cfg_gpio.h>
 #include <config/cfg_broker.h>
@@ -45,6 +44,7 @@ namespace smf {
 		, ctl_(ctl)
 		, logger_(logger)
 		, db_(db)
+		, storage_(db_)
 		, cache_()
 		, cfg_(logger, cache_)
 		, fabric_(ctl)
@@ -80,15 +80,16 @@ namespace smf {
 		load_config_data();
 
 		//
+		//	connect database to data cache
+		//
+		CYNG_LOG_INFO(logger_, "initialize: persistent data");
+		init_cache_persistence();
+
+		//
 		//	GPIO
 		//
 		CYNG_LOG_INFO(logger_, "initialize: GPIO");
 		init_gpio();
-
-		//
-		//	connect database to data cache
-		//
-		CYNG_LOG_INFO(logger_, "initialize: persistent data");
 
 		//
 		//	router for SML data
@@ -158,6 +159,21 @@ namespace smf {
 		//load_iec_devices();
 		//load_privileges();
 
+	}
+
+	void bridge::init_cache_persistence() {
+
+		//
+		//	connect database to cache
+		//
+		auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", logger_, cache_, storage_);
+		BOOST_ASSERT(channel->is_open());
+		//channel->dispatch("connect", cyng::make_tuple());
+
+		//
+		//	test
+		//
+		//cfg_.set_obj("language-code", cyng::make_object("en-GB"));
 	}
 
 	void bridge::load_configuration() {

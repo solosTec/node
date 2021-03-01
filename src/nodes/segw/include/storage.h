@@ -19,6 +19,9 @@
 	 public:
 		 storage(cyng::db::session);
 
+		 bool cfg_insert(cyng::object const&, cyng::object const&);
+		 bool cfg_update(cyng::object const&, cyng::object const&);
+
 	 private:
 		 cyng::db::session db_;
 	 };

@@ -9,6 +9,7 @@
 
 #include <cfg.h>
 #include <storage_functions.h>
+#include <storage.h>
 #include <config/cfg_lmn.h>
 #include <sml/server.h>
 #include <nms/server.h>
@@ -50,6 +51,7 @@ namespace smf {
 
 		void init_data_cache();
 		void load_config_data();
+		void init_cache_persistence();
 
 		void load_configuration();
 
@@ -72,6 +74,7 @@ namespace smf {
 		cyng::controller& ctl_;
 		cyng::logger logger_;
 		cyng::db::session db_;
+		storage storage_;
 		cyng::store cache_;
 		cfg cfg_;
 		cyng::mesh fabric_;
