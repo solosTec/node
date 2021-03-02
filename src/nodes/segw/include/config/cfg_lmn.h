@@ -23,7 +23,7 @@
 	 };
 
 	 /**
-	  * Takes the name and lookup for the LMN type
+	  * Takes the name of a serial port and lookup for the LMN type
 	  */
 	 lmn_type lookup_by_name(cfg& c, std::string const& name);
 
@@ -85,6 +85,12 @@
 		  * expected protocol 
 		  */
 		 std::string get_protocol() const;
+
+		 /**
+		  * @see cfg_broker.cpp
+		  */
+		 std::string get_task_name() const;
+
 
 		 /**
 		  * Currently only CP210x supported.

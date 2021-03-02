@@ -158,7 +158,9 @@ namespace smf {
 		return cyng::make_param("virtual-meter", cyng::tuple_factory(
 			cyng::make_param("enabled", false),
 			cyng::make_param("server", "01-d81c-10000001-3c-02"),	//	1CD8
-			cyng::make_param("interval", 26000)	//	seconds
+			cyng::make_param("port-index", 1),	//	0 = wireless, 1 = wired
+			cyng::make_param("protocol", "iec"),	//	wired => IEC
+			cyng::make_param("interval", 26000)	//	seconds push interval
 		));
 	}
 

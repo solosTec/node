@@ -32,10 +32,10 @@ namespace smf
 	{
 		auto sp = channel_.lock();
 		if (sp) {
-			sp->set_channel_name("insert", 1);
-			sp->set_channel_name("modify", 2);
-			sp->set_channel_name("remove", 3);
-			sp->set_channel_name("clear", 4);
+			sp->set_channel_name("db.insert", 1);
+			sp->set_channel_name("db.modify", 2);
+			sp->set_channel_name("db.remove", 3);
+			sp->set_channel_name("db.clear", 4);
 			//sp->set_channel_name("connect", 5);
 		}
 

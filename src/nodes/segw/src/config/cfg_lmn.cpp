@@ -6,54 +6,49 @@
  */
 
 #include <config/cfg_lmn.h>
+#include <config/cfg_broker.h>
 
 namespace smf {
 
 	namespace {
 		std::string port_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "port");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "port");
 		}
 		std::string enabled_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "enabled");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "enabled");
 		}
 		std::string speed_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "speed");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "speed");
 		}
 		std::string parity_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "parity");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "parity");
 		}
 		std::string flow_control_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "flow-control");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "flow-control");
 		}
 		std::string stopbits_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "stopbits");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "stopbits");
 		}
 		std::string databits_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "databits");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "databits");
 		}
 		std::string broker_enabled_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "broker-enabled");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-enabled");
 		}
 		std::string broker_login_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "broker-login");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-login");
 		}
 		std::string broker_timeout_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "broker-timeout");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-timeout");
 		}
-		//std::string listener_enabled_path(std::uint8_t idx) {
-		//	return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "listener-enabled");
-		//}
-		//std::string listener_login_path(std::uint8_t idx) {
-		//	return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "listener-login");
-		//}
 		std::string type_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "type");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "type");
 		}
 		std::string protocol_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "protocol");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "protocol");
 		}
 		std::string HCI_path(std::uint8_t idx) {
-			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "HCI");
+			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "HCI");
 		}
 	}
 
@@ -75,6 +70,10 @@ namespace smf {
 		: cfg_(c)
 		, type_(lookup_by_name(c, name))
 	{}
+
+	std::string cfg_lmn::get_task_name() const {
+		return cfg_broker(cfg_, type_).get_task_name();
+	}
 
 
 	std::string cfg_lmn::get_path_id() const {

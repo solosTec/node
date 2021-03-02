@@ -123,7 +123,7 @@ namespace smf {
 
 	void lmn::reset_target_channels(std::string name) {
 		targets_ = ctl_.get_registry().lookup(name);
-		CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] targets x " << targets_.size() << " " << name);
+		CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] has " << targets_.size() << " x target(s) " << name);
 	}
 
 	void lmn::do_read() {
@@ -145,8 +145,8 @@ namespace smf {
 				//	post data to receiver 
 				//
 				CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] dispatch to " << targets_.size() << " target(s)");
-				for (auto chp : targets_) {
-					chp->dispatch("receive", cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) + bytes_transferred)));
+				for (auto target : targets_) {
+					target->dispatch("receive", cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) + bytes_transferred)));
 				}
 
 

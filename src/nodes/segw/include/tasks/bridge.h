@@ -57,9 +57,14 @@ namespace smf {
 
 		void init_gpio();
 
+		void init_virtual_meter();
+
 		void init_sml_server();
 		void init_nms_server();
 
+		/**
+		 * start reading from serial ports
+		 */
 		void init_lmn_ports();
 		void init_lmn_port(lmn_type);
 

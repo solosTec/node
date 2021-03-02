@@ -9,6 +9,7 @@
 #include <smf/obis/defs.h>
 #include <smf/ipt/config.h>
 #include <smf/ipt/scramble_key_format.h>
+#include <cfg.h>
 
 #include <cyng/sql/sql.hpp>
 #include <cyng/obj/algorithm/reader.hpp>
@@ -195,17 +196,17 @@ namespace smf {
 			//	transfer some global entries
 			//		
 			insert_config_record(stmt
-				, cyng::to_path('/', "country-code")
+				, cyng::to_path(cfg::sep, "country-code")
 				, reader["country-code"].get()
 				, "country code");
 
 			insert_config_record(stmt
-				, cyng::to_path('/', "language-code")
+				, cyng::to_path(cfg::sep, "language-code")
 				, reader["language-code"].get()
 				, "language code");
 
 			insert_config_record(stmt
-				, cyng::to_path('/', "generate-profile")
+				, cyng::to_path(cfg::sep, "generate-profile")
 				, reader["generate-profile"].get()
 				, "generate profiles");
 
@@ -219,7 +220,7 @@ namespace smf {
 					//
 					boost::uuids::string_generator sgen;
 					insert_config_record(stmt
-						, cyng::to_path('/', "tag")
+						, cyng::to_path(cfg::sep, "tag")
 						, cyng::make_object(sgen(str))
 						, "unique app id");
 				}
@@ -268,6 +269,12 @@ namespace smf {
 			//	transfer GPIO configuration
 			//
 			transfer_gpio(stmt, cyng::container_cast<cyng::param_map_t>(reader["gpio"].get()));
+
+			//
+			//	transfer virtual meter configuration
+			//
+			transfer_vmeter(stmt, cyng::container_cast<cyng::param_map_t>(reader["virtual-meter"].get()));
+
 		}
 		else {
 
@@ -280,12 +287,12 @@ namespace smf {
 	void transfer_net(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap) {
 
 		insert_config_record(stmt
-			, cyng::to_path('/', "net", "mac")
+			, cyng::to_path(cfg::sep, "net", "mac")
 			, cyng::make_object(cyng::find_value(pmap, std::string("mac"), std::string()))
 			, "HAN MAC");
 
 		insert_config_record(stmt
-			, cyng::to_path('/', OBIS_SERVER_ID)
+			, cyng::to_path(cfg::sep, OBIS_SERVER_ID)
 			, cyng::make_object(cyng::find_value(pmap, cyng::to_str(OBIS_SERVER_ID), std::string()))
 			, "Server ID");
 
@@ -294,7 +301,7 @@ namespace smf {
 		for (auto link : vec) {
 
 			insert_config_record(stmt
-				, cyng::to_path('/', "net", "local-link", std::to_string(++counter))
+				, cyng::to_path(cfg::sep, "net", "local-link", std::to_string(++counter))
 				, cyng::make_object(link)
 				, "local link (computed)");
 		}
@@ -317,49 +324,49 @@ namespace smf {
 			auto const srv = ipt::read_config(cyng::container_cast<cyng::param_map_t>(cfg));
 
 			insert_config_record(stmt
-				, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+				, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 					cyng::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 					cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, idx))
 				, cyng::make_object(srv.host_)
 				, "IP-T server address");
 
 			insert_config_record(stmt
-				, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+				, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 					cyng::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 					cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, idx))
 				, cyng::make_object(srv.service_)
 				, "IP-T server target port");
 
 			insert_config_record(stmt
-				, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+				, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 					cyng::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 					cyng::make_obis(0x81, 0x49, 0x19, 0x07, 0x00, idx))
 				, cyng::make_object(static_cast<std::uint16_t>(0u))
 				, "IP-T server source port");
 
 			insert_config_record(stmt
-				, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+				, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 					cyng::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 					cyng::make_obis(0x81, 0x49, 0x63, 0x3C, 0x01, idx))
 				, cyng::make_object(srv.account_)
 				, "login account");
 
 			insert_config_record(stmt
-				, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+				, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 					cyng::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 					cyng::make_obis(0x81, 0x49, 0x63, 0x3C, 0x02, idx))
 				, cyng::make_object(srv.pwd_)
 				, "login password");
 
 			insert_config_record(stmt
-				, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+				, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 					cyng::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 					cyng::make_obis(0x81, 0x49, 0x63, 0x3C, 0x03, idx))
 				, cyng::make_object(srv.scrambled_)
 				, "scrambled login");
 
 			insert_config_record(stmt
-				, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+				, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 					cyng::make_obis(0x81, 0x49, 0x0D, 0x07, 0x00, idx),
 					"sk")
 				, cyng::make_object(ipt::to_string(srv.sk_))
@@ -374,7 +381,7 @@ namespace smf {
 
 		//cyng::make_param("enabled", true)
 		insert_config_record(stmt
-			, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+			, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 				"enabled")
 			, cyng::make_object(cyng::find_value(pmap, std::string("enabled"), true))
 			, "IP-T enabled");
@@ -382,7 +389,7 @@ namespace smf {
 		//cyng::make_param(OBIS_TCP_WAIT_TO_RECONNECT, 1u),	//	minutes
 		auto const tcp_wait_to_reconnect = cyng::numeric_cast<std::uint32_t>(cyng::find(pmap, cyng::to_str(OBIS_TCP_WAIT_TO_RECONNECT)), 1u);
 		insert_config_record(stmt
-			, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+			, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 				OBIS_TCP_WAIT_TO_RECONNECT)
 			, cyng::make_object(std::chrono::seconds(tcp_wait_to_reconnect))
 			, "reconnect timer (seconds)");
@@ -390,7 +397,7 @@ namespace smf {
 		//cyng::make_param(OBIS_TCP_CONNECT_RETRIES, 20u),
 		auto const obis_tcp_connect_retries = cyng::numeric_cast<std::uint32_t>(cyng::find(pmap, cyng::to_str(OBIS_TCP_CONNECT_RETRIES)), 20u);
 		insert_config_record(stmt
-			, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+			, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 				OBIS_TCP_CONNECT_RETRIES)
 			, cyng::make_object(obis_tcp_connect_retries)
 			, "reconnect counter");
@@ -398,7 +405,7 @@ namespace smf {
 		//cyng::make_param(OBIS_HAS_SSL_CONFIG, 0u),	//	has SSL configuration
 		auto const obis_has_ssl_config = cyng::value_cast(cyng::find(pmap, cyng::to_str(OBIS_HAS_SSL_CONFIG)), false);
 		insert_config_record(stmt
-			, cyng::to_path('/', OBIS_ROOT_IPT_PARAM,
+			, cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM,
 				OBIS_ROOT_IPT_PARAM)
 			, cyng::make_object(obis_has_ssl_config)
 			, "SSL support");
@@ -412,7 +419,7 @@ namespace smf {
 				boost::system::error_code ec;
 				auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"), ec);
 				insert_config_record(stmt
-					, cyng::to_path('/', "sml", param.first)
+					, cyng::to_path(cfg::sep, "sml", param.first)
 					, cyng::make_object(address)
 					, "SML bind address");
 
@@ -421,7 +428,7 @@ namespace smf {
 
 				auto const sml_port = cyng::numeric_cast<std::uint16_t>(param.second, 7259);
 				insert_config_record(stmt
-					, cyng::to_path('/', "sml", param.first)
+					, cyng::to_path(cfg::sep, "sml", param.first)
 					, cyng::make_object(sml_port)
 					, "SML listener port (" + std::to_string(sml_port) + ")");
 			}
@@ -429,14 +436,14 @@ namespace smf {
 
 				auto const sml_discover = cyng::numeric_cast<std::uint16_t>(param.second, 5798);
 				insert_config_record(stmt
-					, cyng::to_path('/', "sml", param.first)
+					, cyng::to_path(cfg::sep, "sml", param.first)
 					, cyng::make_object(sml_discover)
 					, "SML discovery port (" + std::to_string(sml_discover) + ")");
 			}
 			else {
 
 				insert_config_record(stmt
-					, cyng::to_path('/', "sml", param.first)
+					, cyng::to_path(cfg::sep, "sml", param.first)
 					, param.second
 					, "SML: " + param.first);
 
@@ -452,7 +459,7 @@ namespace smf {
 				boost::system::error_code ec;
 				auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"), ec);
 				insert_config_record(stmt
-					, cyng::to_path('/', "nms",	param.first)
+					, cyng::to_path(cfg::sep, "nms",	param.first)
 					, cyng::make_object(address)
 					, "NMS bind address");
 
@@ -461,7 +468,7 @@ namespace smf {
 
 				auto const nms_port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
 				insert_config_record(stmt
-					, cyng::to_path('/', "nms", param.first)
+					, cyng::to_path(cfg::sep, "nms", param.first)
 					, cyng::make_object(nms_port)
 					, "NMS listener port (" + std::to_string(nms_port) + ")");
 			}
@@ -469,14 +476,14 @@ namespace smf {
 
 				std::filesystem::path const script_path = cyng::find_value(pmap, param.first, std::string(""));
 				insert_config_record(stmt
-					, cyng::to_path('/', "nms", param.first)
+					, cyng::to_path(cfg::sep, "nms", param.first)
 					, cyng::make_object(script_path)
 					, "path to update script");
 			}
 			else {
 
 				insert_config_record(stmt
-					, cyng::to_path('/', "nms", param.first)
+					, cyng::to_path(cfg::sep, "nms", param.first)
 					, param.second
 					, "NMS: " + param.first);
 
@@ -512,7 +519,7 @@ namespace smf {
 
 					auto const databits = cyng::numeric_cast<std::uint8_t>(cyng::find(cfg, param.first), 8);
 					insert_config_record(stmt
-						, cyng::to_path('/', "lmn", std::to_string(counter),param.first)
+						, cyng::to_path(cfg::sep, "lmn", std::to_string(counter),param.first)
 						, cyng::make_object(databits)
 						, "databits (7, 8)");
 				}
@@ -520,14 +527,14 @@ namespace smf {
 
 					auto const speed = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, param.first), 2400);
 					insert_config_record(stmt
-						, cyng::to_path('/', "lmn", std::to_string(counter), param.first)
+						, cyng::to_path(cfg::sep, "lmn", std::to_string(counter), param.first)
 						, cyng::make_object(speed)
 						, "speed in bauds (" + std::to_string(speed) + ")");
 				}
 				else if (boost::algorithm::equals(param.first, "broker-timeout")) {
 					auto const reconnect = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, param.first), 12);
 					insert_config_record(stmt
-						, cyng::to_path('/', "lmn", std::to_string(counter), param.first)
+						, cyng::to_path(cfg::sep, "lmn", std::to_string(counter), param.first)
 						, cyng::make_object(std::chrono::seconds(reconnect))
 						, "reconnect time in seconds (" + std::to_string(reconnect) + ")");
 				}
@@ -554,7 +561,7 @@ namespace smf {
 				}
 				else {
 					insert_config_record(stmt
-						, cyng::to_path('/', "lmn", std::to_string(counter), param.first)
+						, cyng::to_path(cfg::sep, "lmn", std::to_string(counter), param.first)
 						, cyng::find(cfg, param.first)
 						, param.first);
 				}
@@ -567,7 +574,7 @@ namespace smf {
 		}
 
 		insert_config_record(stmt
-			, cyng::to_path('/', "lmn", "count")
+			, cyng::to_path(cfg::sep, "lmn", "count")
 			, cyng::make_object(counter)
 			, "LMN count");
 
@@ -583,7 +590,7 @@ namespace smf {
 				std::size_t idx{ 0 };
 				for (auto const& meter : list) {
 					insert_config_record(stmt
-						, cyng::to_path('/', "blocklist", std::to_string(counter), "meter", idx)
+						, cyng::to_path(cfg::sep, "blocklist", std::to_string(counter), "meter", idx)
 						, cyng::make_object(meter)
 						, "meter: " + meter);
 					idx++;
@@ -591,7 +598,7 @@ namespace smf {
 
 				BOOST_ASSERT(idx == list.size());
 				insert_config_record(stmt
-					, cyng::to_path('/', "blocklist", std::to_string(counter), "size")
+					, cyng::to_path(cfg::sep, "blocklist", std::to_string(counter), "size")
 					, cyng::make_object(idx)
 					, "blocklist size");
 
@@ -599,13 +606,13 @@ namespace smf {
 			else if (boost::algorithm::equals(param.first, "period")) {
 				auto const period = std::chrono::seconds(cyng::numeric_cast<std::uint32_t>(param.second, 30));
 				insert_config_record(stmt
-					, cyng::to_path('/', "blocklist", std::to_string(counter), param.first)
+					, cyng::to_path(cfg::sep, "blocklist", std::to_string(counter), param.first)
 					, cyng::make_object(period)
 					, "blocklist: " + param.first);
 			}
 			else {
 				insert_config_record(stmt
-					, cyng::to_path('/', "blocklist", std::to_string(counter), param.first)
+					, cyng::to_path(cfg::sep, "blocklist", std::to_string(counter), param.first)
 					, param.second
 					, "blocklist: " + param.first);
 
@@ -621,7 +628,7 @@ namespace smf {
 
 				auto const listener_port = cyng::numeric_cast<std::uint16_t>(listener.second, 6006);
 				insert_config_record(stmt
-					, cyng::to_path('/', "listener", std::to_string(counter), listener.first)
+					, cyng::to_path(cfg::sep, "listener", std::to_string(counter), listener.first)
 					, cyng::make_object(listener_port)
 					, "listener port " + std::to_string(listener_port));
 			}
@@ -629,13 +636,13 @@ namespace smf {
 				boost::system::error_code ec;
 				auto const address = boost::asio::ip::make_address(cyng::value_cast(listener.second, "0.0.0.0"), ec);
 				insert_config_record(stmt
-					, cyng::to_path('/', "listener", std::to_string(counter), listener.first)
+					, cyng::to_path(cfg::sep, "listener", std::to_string(counter), listener.first)
 					, cyng::make_object(address)
 					, "listener bind address " + address.to_string());
 			}
 			else {
 				insert_config_record(stmt
-					, cyng::to_path('/', "listener", std::to_string(counter), listener.first)
+					, cyng::to_path(cfg::sep, "listener", std::to_string(counter), listener.first)
 					, listener.second
 					, "listener: " + listener.first);
 			}
@@ -654,13 +661,13 @@ namespace smf {
 
 					auto const broker_port = cyng::numeric_cast<std::uint16_t>(broker.second, 12000 + broker_index);
 					insert_config_record(stmt
-						, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), broker.first)
+						, cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), broker.first)
 						, cyng::make_object(broker_port)
 						, "broker port " + std::to_string(broker_port));
 				}
 				else {
 					insert_config_record(stmt
-						, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), broker.first)
+						, cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), broker.first)
 						, broker.second
 						, "broker: " + broker.first);
 				}
@@ -670,7 +677,7 @@ namespace smf {
 		}
 
 		insert_config_record(stmt
-			, cyng::to_path('/', "broker", std::to_string(counter), "count")
+			, cyng::to_path(cfg::sep, "broker", std::to_string(counter), "count")
 			, cyng::make_object(broker_index)
 			, "broker count");
 
@@ -681,7 +688,7 @@ namespace smf {
 		std::cout << "GPIO: " << pmap << std::endl;
 
 		insert_config_record(stmt
-			, cyng::to_path('/', "gpio", "enabled")
+			, cyng::to_path(cfg::sep, "gpio", "enabled")
 			, cyng::find(pmap, std::string("enabled"))
 			, "GPIO enabled");
 
@@ -690,7 +697,7 @@ namespace smf {
 		//
 		std::filesystem::path p = cyng::find_value(pmap, "path", "/sys/class/gpio");
 		insert_config_record(stmt
-			, cyng::to_path('/', "gpio",
+			, cyng::to_path(cfg::sep, "gpio",
 				"path")
 			, cyng::make_object(std::move(p))
 			, "virtual path");
@@ -700,12 +707,39 @@ namespace smf {
 		for (auto pin : vec) {
 
 			insert_config_record(stmt
-				, cyng::to_path('/', "gpio", "pin", std::to_string(++counter))
+				, cyng::to_path(cfg::sep, "gpio", "pin", std::to_string(++counter))
 				, cyng::make_object(pin)
 				, "GPIO pin");
 		}
 	}
 
+	void transfer_vmeter(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap) {
+
+		for (auto const& param : pmap) {
+			if (boost::algorithm::equals(param.first, "interval")) {
+
+				auto const interval = cyng::numeric_cast<std::uint32_t>(param.second, 26000);
+				insert_config_record(stmt
+					, cyng::to_path(cfg::sep, "vmeter", param.first)
+					, cyng::make_object(std::chrono::seconds(interval))
+					, "virtual meter interval (sec) " + std::to_string(interval));
+			}
+			else if (boost::algorithm::equals(param.first, "port-index")) {
+
+				auto const index = cyng::numeric_cast<std::size_t>(param.second, 1);
+				insert_config_record(stmt
+					, cyng::to_path(cfg::sep, "vmeter", param.first)
+					, cyng::make_object(index)
+					, "virtual meter port index " + std::to_string(index));
+			}
+			else {
+				insert_config_record(stmt
+					, cyng::to_path(cfg::sep, "vmeter", param.first)
+					, param.second
+					, "virtual meter: " + param.first);
+			}
+		}
+	}
 
 	void clear_config(cyng::db::session& db) {
 		BOOST_ASSERT(db.is_alive());

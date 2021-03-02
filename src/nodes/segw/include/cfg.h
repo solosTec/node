@@ -23,6 +23,7 @@ namespace smf {
 	class cfg
 	{
 		friend class bridge;
+
 	public:
 		cfg(cyng::logger, cyng::store&);
 
@@ -67,6 +68,11 @@ namespace smf {
 		}
 
 		bool set_value(std::string name, cyng::object obj);
+
+		/**
+		 * the separator character
+		 */
+		constexpr static char sep = '/';
 
 	private:
 		cyng::logger logger_;

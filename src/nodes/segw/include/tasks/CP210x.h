@@ -24,14 +24,14 @@ namespace smf
 
 		using signatures_t = std::tuple<
 			std::function<void(cyng::eod)>,
-			std::function<void(cyng::buffer_t)>
+			std::function<void(cyng::buffer_t)>,
+			std::function<void(std::string)>
 		>;
 
 	public:
 		CP210x(std::weak_ptr<cyng::channel>
+			, cyng::controller& ctl
 			, cyng::logger);
-
-
 
 	private:
 		void stop(cyng::eod);
@@ -46,9 +46,16 @@ namespace smf
 		 */
 		void receive(cyng::buffer_t);
 
+		/**
+		 * reset target channels
+		 */
+		void reset_target_channels(std::string);
+
+
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
+		cyng::controller& ctl_;
 
 		/**
 		 * global logger
@@ -56,6 +63,8 @@ namespace smf
 		cyng::logger logger_;
 
 		hci::parser parser_;
+
+		std::vector<cyng::channel_ptr>	targets_;
 
 	};
 

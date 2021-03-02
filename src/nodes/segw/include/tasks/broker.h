@@ -43,10 +43,9 @@ namespace smf {
 
 	private:
 		void stop(cyng::eod);
-		void send(cyng::buffer_t);
 		void start();
 		/**
-		 * parse incoming raw data
+		 * incoming raw data from serial interface
 		 */
 		void receive(cyng::buffer_t);
 

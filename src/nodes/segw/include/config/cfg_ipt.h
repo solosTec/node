@@ -17,6 +17,9 @@
 		 cfg_ipt(cfg&);
 		 cfg_ipt(cfg_ipt&) = default;
 
+		 bool is_enabled() const;
+
+		 static const std::string root;
 	 private:
 		 cfg& cfg_;
 	 };

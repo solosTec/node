@@ -16,6 +16,8 @@
 #include <config/cfg_broker.h>
 #include <config/cfg_nms.h>
 #include <config/cfg_sml.h>
+#include <config/cfg_vmeter.h>
+#include <config/cfg_ipt.h>
 
 #include <smf/obis/defs.h>
 
@@ -112,6 +114,7 @@ namespace smf {
 		//	virtual meter
 		//
 		CYNG_LOG_INFO(logger_, "initialize: virtual meter");
+		init_virtual_meter();
 
 		//
 		//	IP-T client
@@ -263,7 +266,7 @@ namespace smf {
 				//
 				//	start CP210x parser
 				//
-				auto hci = ctl_.create_named_channel_with_ref<CP210x>("CP210x", logger_);
+				auto hci = ctl_.create_named_channel_with_ref<CP210x>("CP210x", ctl_, logger_);
 
 				//
 				//	init CP210x
@@ -271,13 +274,19 @@ namespace smf {
 				channel->dispatch("reset-target-channels", cyng::make_tuple("CP210x"));
 				channel->dispatch("open", cyng::make_tuple());
 				channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
+
+				//
+				//	CP210x will forward incoming data to broker
+				//
+				//cfg.
+				hci->dispatch("reset-target-channels", cyng::make_tuple(cfg.get_task_name()));
 			}
 			else {
 
 				//
 				//	open serial port
 				//
-				channel->dispatch("reset-target-channels", cyng::make_tuple("broker"));
+				channel->dispatch("reset-target-channels", cyng::make_tuple(cfg.get_task_name()));
 				channel->dispatch("open", cyng::make_tuple());
 			}
 
@@ -288,7 +297,16 @@ namespace smf {
 	}
 
 	void bridge::init_ipt_bus() {
-		//bus_
+		cfg_ipt cfg(cfg_);
+		if (cfg.is_enabled()) {
+			//
+			//	ToDo: start IP-T bus
+			//
+			//bus_
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "IP-T client is not enabled");
+		}
 	}
 
 	void bridge::init_broker_clients() {
@@ -352,6 +370,23 @@ namespace smf {
 		else {
 			CYNG_LOG_WARNING(logger_, "GPIO [" << p << "] is not enabled");
 		}
+	}
+
+	void bridge::init_virtual_meter() {
+		cfg_vmeter cfg(cfg_);
+		auto srv = cfg.get_server();
+		if (cfg.is_enabled()) {
+
+			CYNG_LOG_INFO(logger_, "start virtual meter [" << srv << "]");
+			//
+			//	ToDo:
+			//
+
+		}
+		else {
+			CYNG_LOG_TRACE(logger_, "virtual meter [" << srv << "] is not enabled");
+		}
+
 	}
 
 	void bridge::init_sml_server() {

@@ -29,7 +29,7 @@ namespace smf {
 		, bool login)
 	: sigs_{
 		std::bind(&broker::stop, this, std::placeholders::_1),
-		std::bind(&broker::send, this, std::placeholders::_1),
+		std::bind(&broker::receive, this, std::placeholders::_1),
 		std::bind(&broker::start, this),
 		std::bind(&broker::receive, this, std::placeholders::_1)
 	}	, channel_(wp)
@@ -46,7 +46,7 @@ namespace smf {
 	{
 		auto sp = channel_.lock();
 		if (sp) {
-			sp->set_channel_name("send", 1);
+			sp->set_channel_name("receive", 1);
 			sp->set_channel_name("start", 2);
 		}
 
@@ -65,13 +65,10 @@ namespace smf {
 		heartbeat_timer_.cancel();
 	}
 
-	void broker::send(cyng::buffer_t data) {
-		CYNG_LOG_INFO(logger_, "broker: transmit " << data.size() << " bytes to " << target_ );
-
-	}
-
 	void broker::receive(cyng::buffer_t data) {
-		CYNG_LOG_INFO(logger_, "broker: received " << data.size() << " bytes");
+		CYNG_LOG_INFO(logger_, "broker: transmit " << data.size() << " bytes to " << target_);
+		buffer_write_.emplace_back(data);
+		do_write();
 	}
 
 	void broker::start() {
@@ -79,7 +76,7 @@ namespace smf {
 
 		buffer_write_.clear();
 
-#ifdef _DEBUG
+#ifdef __DEBUG
 		//	test with an HTTP server
 		buffer_write_.emplace_back(cyng::make_buffer("GET / HTTP/1.1"));
 		buffer_write_.emplace_back(cyng::make_buffer("\r\n"));
@@ -89,6 +86,7 @@ namespace smf {
 		buffer_write_.emplace_back(cyng::make_buffer("\r\n\r\n"));
 #endif
 
+		stopped_ = false;
 		boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
 		connect(r.resolve(target_.get_address(), std::to_string(target_.get_port())));
 	}
@@ -110,7 +108,7 @@ namespace smf {
 		if (endpoint_iter != endpoints_.end())	{
 			CYNG_LOG_TRACE(logger_, "broker [" << target_ << "] trying " << endpoint_iter->endpoint() << "...");
 
-			// Set a deadline for the connect operation.
+			//	Set a deadline for the connect operation.
 			deadline_.expires_after(timeout_);
 
 			// Start the asynchronous connect operation.
@@ -121,6 +119,9 @@ namespace smf {
 		else {
 			// There are no more endpoints to try. Shut down the client.
 			stop(cyng::eod());
+			auto sp = channel_.lock();
+			if (sp)	sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple());
+
 		}
 	}
 
@@ -235,6 +236,8 @@ namespace smf {
 			CYNG_LOG_ERROR(logger_, "broker [" << target_ << "] on receive: " << ec.message());
 
 			stop(cyng::eod());
+			auto sp = channel_.lock();
+			if (sp)	sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple());
 		}
 	}
 
@@ -269,6 +272,8 @@ namespace smf {
 			CYNG_LOG_ERROR(logger_, "broker [" << target_ << "] on heartbeat: " << ec.message());
 
 			stop(cyng::eod());
+			auto sp = channel_.lock();
+			if (sp)	sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple());
 		}
 	}
 }
