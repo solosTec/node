@@ -9,68 +9,161 @@
 
 namespace smf {
 
+	namespace {
+		std::string port_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "port");
+		}
+		std::string enabled_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "enabled");
+		}
+		std::string speed_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "speed");
+		}
+		std::string parity_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "parity");
+		}
+		std::string flow_control_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "flow-control");
+		}
+		std::string stopbits_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "stopbits");
+		}
+		std::string databits_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "databits");
+		}
+		std::string broker_enabled_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "broker-enabled");
+		}
+		std::string broker_login_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "broker-login");
+		}
+		std::string broker_timeout_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "broker-timeout");
+		}
+		//std::string listener_enabled_path(std::uint8_t idx) {
+		//	return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "listener-enabled");
+		//}
+		//std::string listener_login_path(std::uint8_t idx) {
+		//	return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "listener-login");
+		//}
+		std::string type_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "type");
+		}
+		std::string protocol_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "protocol");
+		}
+		std::string HCI_path(std::uint8_t idx) {
+			return cyng::to_path('/', cfg_lmn::root, std::to_string(idx), "HCI");
+		}
+	}
+
+	lmn_type lookup_by_name(cfg& c, std::string const& name) {
+
+		for (std::uint8_t idx = 0; idx < 4; idx++) {
+			auto const port = c.get_value(port_path(idx), "");
+			if (boost::algorithm::equals(port, name))	return static_cast<lmn_type>(idx);
+		}
+		return lmn_type::OTHER;
+	}
+
 	cfg_lmn::cfg_lmn(cfg& c, lmn_type type)
 		: cfg_(c)
 		, type_(type)
 	{}
 
-	std::uint8_t cfg_lmn::get_index() const {
-		return static_cast<std::uint8_t>(type_);
-	}
+	cfg_lmn::cfg_lmn(cfg& c, std::string name)
+		: cfg_(c)
+		, type_(lookup_by_name(c, name))
+	{}
+
+
 	std::string cfg_lmn::get_path_id() const {
 		return std::to_string(get_index());
 	}
 
 	std::string cfg_lmn::get_port() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "port"), "");
+		return cfg_.get_value(port_path(get_index()), "");
 	}
 
 	bool cfg_lmn::is_enabled() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "enabled"), true);
+		return cfg_.get_value(enabled_path(get_index()), true);
 	}
+
+	bool cfg_lmn::set_enabled(bool b) const {
+		return cfg_.set_value(enabled_path(get_index()), b);
+	}
+
+	bool cfg_lmn::set_baud_rate(std::uint32_t val) const {
+		return cfg_.set_value(speed_path(get_index()), val);
+	}
+
+	bool cfg_lmn::set_parity(std::string val) const {
+		return cfg_.set_value(parity_path(get_index()), val);
+	}
+
+	bool cfg_lmn::set_flow_control(std::string val) const {
+		return cfg_.set_value(flow_control_path(get_index()), val);
+	}
+
+	bool cfg_lmn::set_stopbits(std::string val) const {
+		return cfg_.set_value(stopbits_path(get_index()), val);
+	}
+
+	bool cfg_lmn::set_databits(std::uint8_t val) const {
+		return cfg_.set_value(databits_path(get_index()), val);
+	}
+
+	bool cfg_lmn::set_protocol(std::string val) const {
+		return cfg_.set_value(protocol_path(get_index()), val);
+	}
+
 
 	boost::asio::serial_port_base::baud_rate cfg_lmn::get_baud_rate() const {
 		return boost::asio::serial_port_base::baud_rate(
-			cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "speed"), static_cast<std::uint32_t>(2400))
+			cfg_.get_value(speed_path(get_index()), static_cast<std::uint32_t>(2400))
 		);
 	}
 
 	boost::asio::serial_port_base::parity cfg_lmn::get_parity() const {
-		return serial::to_parity(cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "parity"), "none"));
+		return serial::to_parity(cfg_.get_value(parity_path(get_index()), "none"));
 	}
 
 	boost::asio::serial_port_base::flow_control cfg_lmn::get_flow_control() const {
-		return serial::to_flow_control(cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "flow-control"), "none"));
+		return serial::to_flow_control(cfg_.get_value(flow_control_path(get_index()), "none"));
 	}
 
 	boost::asio::serial_port_base::stop_bits cfg_lmn::get_stopbits() const {
-		return serial::to_stopbits(cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "stopbits"), "one"));
+		return serial::to_stopbits(cfg_.get_value(stopbits_path(get_index()), "one"));
 	}
 
 	boost::asio::serial_port_base::character_size cfg_lmn::get_databits() const {
 		return boost::asio::serial_port_base::character_size(
-			cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "databits"), static_cast<std::uint8_t>(8))
+			cfg_.get_value(databits_path(get_index()), static_cast<std::uint8_t>(8))
 		);
 	}
 
 	bool cfg_lmn::is_broker_enabled() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "broker-enabled"), false);
+		return cfg_.get_value(broker_enabled_path(get_index()), false);
 	}
 
 	bool cfg_lmn::has_broker_login() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "broker-login"), false);
+		return cfg_.get_value(broker_login_path(get_index()), false);
+	}
+
+	std::chrono::seconds cfg_lmn::get_broker_timeout() const {
+		return cfg_.get_value(broker_timeout_path(get_index()), std::chrono::seconds(12));
 	}
 
 	std::string cfg_lmn::get_type() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "type"), "");
+		return cfg_.get_value(type_path(get_index()), "");
 	}
 
 	std::string cfg_lmn::get_protocol() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "protocol"), "auto");
+		return cfg_.get_value(protocol_path(get_index()), "auto");
 	}
 
 	std::string cfg_lmn::get_hci() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "HCI"), "none");
+		return cfg_.get_value(HCI_path(get_index()), "none");
 	}
 
 	cyng::buffer_t cfg_lmn::get_hci_init_seq() {

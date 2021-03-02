@@ -7,8 +7,9 @@
 
 #include <nms/reader.h>
 #include <config/cfg_nms.h>
-#include <config/cfg_lmn.h>
 #include <config/cfg_broker.h>
+#include <config/cfg_listener.h>
+#include <config/cfg_blocklist.h>
 
 #include <cyng/log/record.h>
 #include <cyng/io/ostream.h>
@@ -33,7 +34,7 @@ namespace smf {
 			, sgen_()
 		{}
 
-		cyng::param_map_t reader::run(cyng::param_map_t&& pmap) {
+		cyng::param_map_t reader::run(cyng::param_map_t&& pmap, std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind) {
 
 			auto const dom = cyng::make_reader(pmap);
 			auto const cmd = cyng::value_cast(dom.get("command"), "");
@@ -61,7 +62,7 @@ namespace smf {
 				|| boost::algorithm::equals(cmd, "serial-set")
 				|| boost::algorithm::equals(cmd, "setserial")
 				|| boost::algorithm::equals(cmd, "set-serial")) {
-				return cmd_merge(cmd, tag, dom);
+				return cmd_merge(cmd, tag, dom, rebind);
 			}
 			else if (boost::algorithm::equals(cmd, "query")
 				|| boost::algorithm::equals(cmd, "serialget")
@@ -124,7 +125,7 @@ namespace smf {
 
 		}
 
-		cyng::param_map_t reader::cmd_merge(std::string const& cmd, boost::uuids::uuid tag, pmap_reader const& dom) {
+		cyng::param_map_t reader::cmd_merge(std::string const& cmd, boost::uuids::uuid tag, pmap_reader const& dom, std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind) {
 
 			cyng::param_map_t pmap = cyng::param_map_factory
 				("command", cmd)
@@ -135,40 +136,43 @@ namespace smf {
 				;
 
 			cmd_merge_serial(pmap, cyng::container_cast<cyng::param_map_t>(dom["serial-port"].get()));
-			cmd_merge_nms(pmap, cyng::container_cast<cyng::param_map_t>(dom["nms"].get()));
+			cmd_merge_nms(pmap, cyng::container_cast<cyng::param_map_t>(dom["nms"].get()), rebind);
 
 			return pmap;
 		}
 
-		void reader::cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t&& params) {
+		void reader::cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t&& params, std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind) {
 
 			cfg_nms cfg(cfg_);
-			CYNG_LOG_DEBUG(logger_, "[NMS] " << params);
+			//CYNG_LOG_DEBUG(logger_, "[NMS] " << params);
 
+			bool rebind_required = false;
 			for (auto const& param : params) {
 				if (boost::algorithm::equals(param.first, "enabled")) {
 					auto const enabled = cyng::value_cast(param.second, true);
-					//nms.set_enabled(true);
+					cfg.set_enabled(enabled);
 					if (!enabled)	cyng::merge(pm, { "nms", param.first }, cyng::make_object("warning: connection will be closed"));
 				}
 				else if (boost::algorithm::equals(param.first, "address")) {
 					boost::system::error_code ec;
 					auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"), ec);
-					//nms.set_address(address);
+					cfg.set_address(address);
 					cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+					rebind_required = true;
 				}
 				else if (boost::algorithm::equals(param.first, "port")) {
 					auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
-					//nms.set_port(port);
+					cfg.set_port(port);
 					cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+					rebind_required = true;
 				}
 				else if (boost::algorithm::equals(param.first, "pwd")) {
 					auto const pwd = cyng::value_cast(param.second, "");
-					//nms.set_pwd(pwd);
+					cfg.set_pwd(pwd);
 				}
 				else if (boost::algorithm::equals(param.first, "user")) {
 					auto const user = cyng::value_cast(param.second, "");
-					//nms.set_user(user);
+					cfg.set_account(user);
 				}
 				else {
 					cyng::merge(pm, { "nms", param.first }, cyng::make_object("error: unknown NMS attribute"));
@@ -176,16 +180,108 @@ namespace smf {
 			}
 
 			//
-			//	ToDo: rebind
-			//	mux_.post(tsk_rebind_, 0, cyng::tuple_factory({ nms.get_ep() }));
+			//	rebind
+			//
+			if (rebind_required && rebind) {
+				rebind(cfg.get_ep());
+			}
+
+		}
+
+		void reader::cmd_merge_serial(cyng::param_map_t& pm, cyng::param_map_t&& ports) {
+
+			for (auto const& port : ports) {
+				CYNG_LOG_DEBUG(logger_, "[NMS] merge port " << port.first << " = " << port.second);
+				cfg_lmn cfg(cfg_, port.first);
+
+
+				auto const port_pmap = cyng::container_cast<cyng::param_map_t>(port.second);
+				for (auto const& param : port_pmap) {
+					if (boost::algorithm::equals(param.first, "enabled")) {
+						auto const enabled = cyng::value_cast(param.second, true);
+						cfg.set_enabled(enabled);
+						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+					}
+					else if (boost::algorithm::equals(param.first, "parity")) {
+						auto const parity = cyng::value_cast(param.second, "none");
+						cfg.set_parity(parity);
+						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+					}
+					else if (boost::algorithm::equals(param.first, "databits")) {
+						auto const databits = cyng::numeric_cast<std::uint8_t>(param.second, 8);
+						cfg.set_databits(databits);
+						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+					}
+					else if (boost::algorithm::equals(param.first, "flow-control")) {
+						auto const flow_control = cyng::value_cast(param.second, "none");
+						cfg.set_flow_control(flow_control);
+						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+					}
+					else if (boost::algorithm::equals(param.first, "stopbits")) {
+						auto const stopbits = cyng::value_cast(param.second, "one");
+						cfg.set_stopbits(stopbits);
+						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+					}
+					else if (boost::algorithm::equals(param.first, "baudrate")) {
+						auto const baudrate = cyng::numeric_cast<std::uint32_t>(param.second, 2400);
+						cfg.set_baud_rate(baudrate);
+						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+					}
+					else if (boost::algorithm::equals(param.first, "protocol")) {
+						auto const protocol = cyng::value_cast(param.second, "auto");
+						cfg.set_protocol(protocol);
+						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("ok"));
+					}
+					else if (boost::algorithm::equals(param.first, "broker")) {
+						cmd_merge_broker(pm, cfg.get_lmn_type(), cyng::container_cast<cyng::vector_t>(param.second));
+					}
+					else if (boost::algorithm::equals(param.first, "listener")) {
+					}
+					else {
+						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: unknown attribute"));
+					}
+				}
+			}
+		}
+
+		void reader::cmd_merge_broker(cyng::param_map_t& pm, lmn_type type, cyng::vector_t&& vec) {
+
+			cfg_broker cfg(cfg_, type);
+
+			//
+			//	ToDo: remove old entries
 			//
 
+			std::size_t idx{ 1 };	//	broker index
+			for (auto const& obj : vec) {
+				auto const pmap = cyng::container_cast<cyng::param_map_t>(obj);
+				for (auto const& broker : pmap) {
+					if (boost::algorithm::equals(broker.first, "address")) {
+						auto const address = cyng::value_cast(broker.second, "");
+						cfg.set_address(idx, address);
+					}
+					else if (boost::algorithm::equals(broker.first, "port")) {
+						auto const port = cyng::numeric_cast<std::uint16_t>(broker.second, 12000u);
+						cfg.set_port(idx, port);
+					}
+					else if (boost::algorithm::equals(broker.first, "account")) {
+						auto const account = cyng::value_cast(broker.second, "");
+						cfg.set_account(idx, account);
+					}
+					else if (boost::algorithm::equals(broker.first, "pwd")) {
+						auto const pwd = cyng::value_cast(broker.second, "");
+						cfg.set_pwd(idx, pwd);
+					}
+					else {
+						CYNG_LOG_WARNING(logger_, "[NMS] unknown broker attribute: " << broker.first);
+					}
+				}
+				idx++;
+			}
+
+			BOOST_ASSERT(idx == vec.size());
+			cfg.set_size(idx);
 		}
-
-		void reader::cmd_merge_serial(cyng::param_map_t& pm, cyng::param_map_t&& params) {
-
-		}
-
 
 		cyng::param_map_t reader::cmd_query(std::string const& cmd, boost::uuids::uuid tag) {
 
@@ -194,6 +290,10 @@ namespace smf {
 			cfg_nms cfg(cfg_);
 			cfg_broker wmbus_broker(cfg_, lmn_type::WIRELESS);
 			cfg_broker rs485_broker(cfg_, lmn_type::WIRED);
+			//cfg_listener wmbus_listener(cfg_, lmn_type::WIRELESS);
+			cfg_listener rs485_listener(cfg_, lmn_type::WIRED);
+			cfg_blocklist wmbus_blocklist(cfg_, lmn_type::WIRELESS);
+			//cfg_blocklist rs485_blocklist(cfg_, lmn_type::WIRED);
 
 			return cyng::param_map_factory
 				("command", cmd)
@@ -211,7 +311,11 @@ namespace smf {
 						("baudrate", rs485.get_baud_rate().value())
 						("protocol", rs485.get_protocol())
 						("broker", rs485_broker.get_target_vector())
-				//		("listener", redirector.get_server_obj(source::WIRED_LMN))	//	could be null
+						("listener", cyng::param_map_factory
+							("enabled", rs485_listener.is_enabled())
+							("address", rs485_listener.get_address())
+							("port", rs485_listener.get_port())
+							())
 						("loop", cyng::param_map_factory
 							("timeout", 60)
 							("request", "/?!")
@@ -225,13 +329,14 @@ namespace smf {
 						("flow-control", serial::to_str(wmbus.get_flow_control()))
 						("stopbits", serial::to_str(wmbus.get_stopbits()))
 						("baudrate", wmbus.get_baud_rate().value())
+						("protocol", wmbus.get_protocol())
 						("broker", wmbus_broker.get_target_vector())
-				//		("max-readout-frequency", wmbus.get_monitor())
-				//		("blocklist", cyng::param_map_factory
-				//			("enabled", wmbus.is_blocklist_enabled())
-				//			("list", wmbus.get_block_list_vector())
-				//			("mode", (wmbus.is_blocklist_drop_mode() ? "drop" : "accept"))
-				//			())
+						("blocklist", cyng::param_map_factory
+							("enabled", wmbus_blocklist.is_enabled())
+							("mode", wmbus_blocklist.get_mode())
+							("list", wmbus_blocklist.get_list())
+							()
+						)
 						()),
 					cyng::make_param("nms", cyng::param_map_factory
 						("enabled", true)	//	this is redundant
@@ -240,6 +345,7 @@ namespace smf {
 						("port", cfg.get_port())
 						("user", cfg.get_account())
 						("pwd", cfg.get_pwd())
+						("debug", cfg.is_debug())
 						())
 				))
 				;

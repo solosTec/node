@@ -61,6 +61,13 @@ namespace smf {
 		 */
 		bool set_obj(std::string name, cyng::object&& obj);
 
+		template <typename T >
+		bool set_value(std::string name, T value) {
+			return set_obj(name, cyng::make_object(std::move(value)));
+		}
+
+		bool set_value(std::string name, cyng::object obj);
+
 	private:
 		cyng::logger logger_;
 		cyng::store& cache_;

@@ -15,12 +15,21 @@
 
 namespace smf {
 
+	namespace {
+		std::string enabled_path() {
+			return cyng::to_path('/', cfg_gpio::root, "enabled");
+		}
+		std::string pin_path(std::size_t idx) {
+			return cyng::to_path('/', cfg_gpio::root, "pin", std::to_string(idx));
+		}
+	}
+
 	cfg_gpio::cfg_gpio(cfg& c)
 		: cfg_(c)
 	{}
 
 	bool cfg_gpio::is_enabled() const {
-		return cfg_.get_value(cyng::to_path('/', "gpio", "enabled"), true);
+		return cfg_.get_value(enabled_path(), true);
 	}
 
 	/**
@@ -29,7 +38,7 @@ namespace smf {
 	std::vector<std::uint32_t> cfg_gpio::get_pins() const {
 		std::vector<std::uint32_t> vec;
 		for (std::size_t idx = 1; ; idx++) {
-			auto const pin = cyng::numeric_cast<std::uint32_t>(cfg_.get_obj(cyng::to_path('/', "gpio", "pin", std::to_string(idx))), 0u);
+			auto const pin = cyng::numeric_cast<std::uint32_t>(cfg_.get_obj(pin_path(idx)), 0u);
 			if (pin == 0u)	break;
 			vec.push_back(pin);
 		}

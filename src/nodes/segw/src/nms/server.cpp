@@ -41,7 +41,12 @@ namespace smf {
 				if (!ec) {
 					CYNG_LOG_INFO(logger_, "[NMS] new session " << socket.remote_endpoint());
 
-					auto sp = std::shared_ptr<session>(new session(std::move(socket), cfg_, logger_), [this](session* s) {
+					auto sp = std::shared_ptr<session>(new session(
+						std::move(socket), 
+						cfg_, 
+						logger_,
+						std::bind(&server::rebind, this, std::placeholders::_1)
+					), [this](session* s) {
 
 						//
 						//	update session counter
@@ -78,9 +83,16 @@ namespace smf {
 				}
 			});
 		}
+
 		void server::stop() {
 			acceptor_.cancel();
 			acceptor_.close();
+		}
+
+		void server::rebind(boost::asio::ip::tcp::endpoint ep) {
+
+			acceptor_ = boost::asio::ip::tcp::acceptor(acceptor_.get_executor(), ep);
+
 		}
 
 	}

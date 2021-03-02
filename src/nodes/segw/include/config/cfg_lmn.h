@@ -22,16 +22,28 @@
 		 OTHER = 0,
 	 };
 
+	 /**
+	  * Takes the name and lookup for the LMN type
+	  */
+	 lmn_type lookup_by_name(cfg& c, std::string const& name);
+
 	 class cfg_lmn
 	 {
 	 public:
 		 cfg_lmn(cfg&, lmn_type);
+		 cfg_lmn(cfg&, std::string);
 		 cfg_lmn(cfg_lmn&) = default;
 
 		 /**
 		  * numerical value of the specified LMN enum type
 		  */
-		 std::uint8_t get_index() const;
+		 constexpr std::uint8_t get_index() const {
+			 return static_cast<std::uint8_t>(type_);
+		 }
+
+		 /**
+		  * LMN type as numerical string
+		  */
 		 std::string get_path_id() const;
 
 		 /**
@@ -46,7 +58,6 @@
 		  * @return "rs485:enabled"
 		  */
 		 bool is_enabled() const;
-		 //bool set_enabled(cyng::object obj) const;
 
 		 boost::asio::serial_port_base::baud_rate get_baud_rate() const;
 		 boost::asio::serial_port_base::parity get_parity() const;
@@ -54,13 +65,21 @@
 		 boost::asio::serial_port_base::stop_bits get_stopbits() const;
 		 boost::asio::serial_port_base::character_size get_databits() const;
 
+		 //
+		 //	broker
+		 //
 		 bool is_broker_enabled() const;
 		 bool has_broker_login() const;
+		 std::chrono::seconds get_broker_timeout() const;
 
 		 /**
 		  * configured type name
+		  * @return a textual description of this port type
 		  */
 		 std::string get_type() const;
+		 constexpr lmn_type get_lmn_type() const {
+			 return type_;
+		 }
 
 		 /**
 		  * expected protocol 
@@ -74,6 +93,18 @@
 		  */
 		 std::string get_hci() const;
 		 static cyng::buffer_t get_hci_init_seq();
+
+
+		 bool set_enabled(bool) const;
+		 bool set_baud_rate(std::uint32_t) const;
+		 bool set_parity(std::string) const;
+		 bool set_flow_control(std::string) const;
+		 bool set_stopbits(std::string) const;
+		 bool set_databits(std::uint8_t) const;
+
+		 bool set_protocol(std::string) const;
+
+		 constexpr static char root[] = "lmn";
 
 	 private:
 		 cfg& cfg_;

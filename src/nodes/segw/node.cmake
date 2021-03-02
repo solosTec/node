@@ -8,14 +8,12 @@ set (segw_cpp
     src/controller.cpp
     src/storage.cpp
     src/storage_functions.cpp
-    src/cfg.cpp
 )
     
 set (segw_h
     include/controller.h
     include/storage.h
     include/storage_functions.h
-    include/cfg.h
 )
 
 if(WIN32)
@@ -48,15 +46,21 @@ set (segw_tasks
 )
 
 set (segw_config
+    include/cfg.h
     include/config/cfg_ipt.h
     include/config/cfg_lmn.h
     include/config/cfg_broker.h
+    include/config/cfg_listener.h
+    include/config/cfg_blocklist.h
     include/config/cfg_gpio.h
     include/config/cfg_nms.h
     include/config/cfg_sml.h
+    src/cfg.cpp
     src/config/cfg_ipt.cpp
     src/config/cfg_lmn.cpp
     src/config/cfg_broker.cpp
+    src/config/cfg_listener.cpp
+    src/config/cfg_blocklist.cpp
     src/config/cfg_gpio.cpp
     src/config/cfg_nms.cpp
     src/config/cfg_sml.cpp

@@ -536,88 +536,21 @@ namespace smf {
 					//
 					//	multiple broker possible
 					//
-					auto const vec = cyng::container_cast<cyng::vector_t>(param.second);
-					std::size_t broker_index{ 0 };
-					for (auto const& obj : vec) {
-
-						auto const broker = cyng::container_cast<cyng::param_map_t>(obj);
-
-						auto pos = broker.find("address");
-						if (pos != broker.end()) {
-							insert_config_record(stmt
-								, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), pos->first)
-								, pos->second
-								, "broker address");
-						}
-
-						pos = broker.find("port");
-						if (pos != broker.end()) {
-							auto const broker_port = cyng::numeric_cast<std::uint16_t>(pos->second, 12000 + broker_index);
-
-							insert_config_record(stmt
-								, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), pos->first)
-								, cyng::make_object(broker_port)
-								, "broker port " + std::to_string(broker_port));
-						}
-
-						pos = broker.find("account");
-						if (pos != broker.end()) {
-							insert_config_record(stmt
-								, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), pos->first)
-								, pos->second
-								, "login name");
-						}
-
-						pos = broker.find("pwd");
-						if (pos != broker.end()) {
-							insert_config_record(stmt
-								, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), pos->first)
-								, pos->second
-								, "login password");
-						}
-
-						broker_index++;
-					}
-
-					insert_config_record(stmt
-						, cyng::to_path('/', "broker", std::to_string(counter), "count")
-						, cyng::make_object(broker_index)
-						, "broker count");
-
+					transfer_broker(stmt, counter, cyng::container_cast<cyng::vector_t>(param.second));
 				}
 				else if (boost::algorithm::equals(param.first, "blocklist")) {
 
-					//	FixMe: incomplete
-					auto const broker = cyng::container_cast<cyng::param_map_t>(param.second);
+					//	enabled, mode, period, list[]
+					transfer_blocklist(stmt, counter, cyng::container_cast<cyng::param_map_t>(param.second));
 
-					auto pos = broker.find("enabled");
-					if (pos != broker.end()) {
-						insert_config_record(stmt
-							, cyng::to_path('/', "blocklist", std::to_string(counter), pos->first)
-							, pos->second
-							, "enable/disable blocklist");
-					}
-					pos = broker.find("mode");
-					if (pos != broker.end()) {
-						insert_config_record(stmt
-							, cyng::to_path('/', "blocklist", std::to_string(counter), pos->first)
-							, pos->second
-							, "drop mode (drop/accept)");
-					}
-					pos = broker.find("period");
-					if (pos != broker.end()) {
-						auto const period = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, param.first), 30);
-						insert_config_record(stmt
-							, cyng::to_path('/', "blocklist", std::to_string(counter), pos->first)
-							, cyng::make_object(std::chrono::seconds(period))
-							, "period in seconds");
-					}
 				}
 				else if (boost::algorithm::equals(param.first, "listener")) {
+
 					//
-					//	ToDo: implement
-					//	%(("address":0.0.0.0),("port":6006))|%(("address":0.0.0.0),("port":6006))
+					//	One listener allowed
 					//
+					transfer_listener(stmt, counter, cyng::container_cast<cyng::param_map_t>(param.second));
+
 				}
 				else {
 					insert_config_record(stmt
@@ -637,6 +570,110 @@ namespace smf {
 			, cyng::to_path('/', "lmn", "count")
 			, cyng::make_object(counter)
 			, "LMN count");
+
+	}
+
+	void transfer_blocklist(cyng::db::statement_ptr stmt, std::size_t counter, cyng::param_map_t&& pmap) {
+		//auto const broker = cyng::container_cast<cyng::param_map_t>(param.second);
+
+		for (auto const& param : pmap) {
+			if (boost::algorithm::equals(param.first, "list")) {
+
+				auto const list = cyng::vector_cast<std::string>(param.second, "");
+				std::size_t idx{ 0 };
+				for (auto const& meter : list) {
+					insert_config_record(stmt
+						, cyng::to_path('/', "blocklist", std::to_string(counter), "meter", idx)
+						, cyng::make_object(meter)
+						, "meter: " + meter);
+					idx++;
+				}
+
+				BOOST_ASSERT(idx == list.size());
+				insert_config_record(stmt
+					, cyng::to_path('/', "blocklist", std::to_string(counter), "size")
+					, cyng::make_object(idx)
+					, "blocklist size");
+
+			}
+			else if (boost::algorithm::equals(param.first, "period")) {
+				auto const period = std::chrono::seconds(cyng::numeric_cast<std::uint32_t>(param.second, 30));
+				insert_config_record(stmt
+					, cyng::to_path('/', "blocklist", std::to_string(counter), param.first)
+					, cyng::make_object(period)
+					, "blocklist: " + param.first);
+			}
+			else {
+				insert_config_record(stmt
+					, cyng::to_path('/', "blocklist", std::to_string(counter), param.first)
+					, param.second
+					, "blocklist: " + param.first);
+
+			}
+		}
+	}
+
+	void transfer_listener(cyng::db::statement_ptr stmt, std::size_t counter, cyng::param_map_t&& pmap) {
+		//	%(("address":0.0.0.0),("port":6006))|%(("address":0.0.0.0),("port":6006))
+
+		for (auto const& listener : pmap) {
+			if (boost::algorithm::equals(listener.first, "port")) {
+
+				auto const listener_port = cyng::numeric_cast<std::uint16_t>(listener.second, 6006);
+				insert_config_record(stmt
+					, cyng::to_path('/', "listener", std::to_string(counter), listener.first)
+					, cyng::make_object(listener_port)
+					, "listener port " + std::to_string(listener_port));
+			}
+			else if (boost::algorithm::equals(listener.first, "address")) {
+				boost::system::error_code ec;
+				auto const address = boost::asio::ip::make_address(cyng::value_cast(listener.second, "0.0.0.0"), ec);
+				insert_config_record(stmt
+					, cyng::to_path('/', "listener", std::to_string(counter), listener.first)
+					, cyng::make_object(address)
+					, "listener bind address " + address.to_string());
+			}
+			else {
+				insert_config_record(stmt
+					, cyng::to_path('/', "listener", std::to_string(counter), listener.first)
+					, listener.second
+					, "listener: " + listener.first);
+			}
+		}
+	}
+
+	void transfer_broker(cyng::db::statement_ptr stmt, std::size_t counter, cyng::vector_t&& vec) {
+
+		std::size_t broker_index{ 0 };
+		for (auto const& obj : vec) {
+
+			auto const pmap = cyng::container_cast<cyng::param_map_t>(obj);
+
+			for (auto const& broker : pmap) {
+				if (boost::algorithm::equals(broker.first, "port")) {
+
+					auto const broker_port = cyng::numeric_cast<std::uint16_t>(broker.second, 12000 + broker_index);
+					insert_config_record(stmt
+						, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), broker.first)
+						, cyng::make_object(broker_port)
+						, "broker port " + std::to_string(broker_port));
+				}
+				else {
+					insert_config_record(stmt
+						, cyng::to_path('/', "broker", std::to_string(counter), std::to_string(broker_index), broker.first)
+						, broker.second
+						, "broker: " + broker.first);
+				}
+			}
+
+			broker_index++;
+		}
+
+		insert_config_record(stmt
+			, cyng::to_path('/', "broker", std::to_string(counter), "count")
+			, cyng::make_object(broker_index)
+			, "broker count");
+
 
 	}
 

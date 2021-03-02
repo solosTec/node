@@ -249,7 +249,9 @@ namespace smf {
 	cyng::param_t controller::create_rs485_listener() const {
 		return cyng::make_param("listener", cyng::tuple_factory(
 			cyng::make_param("address", "0.0.0.0"),
-			cyng::make_param("port", 6006)
+			cyng::make_param("port", 6006),
+			cyng::make_param("login", false),		//	request login
+			cyng::make_param("enabled", false)	//	start rs485 server
 		));
 	}
 
@@ -286,8 +288,6 @@ namespace smf {
 			cyng::make_param("broker-login", false),
 			cyng::make_param("broker-reconnect", 12),	//	seconds
 			create_rs485_broker(hostname),
-			cyng::make_param("listener-login", false),		//	request login
-			cyng::make_param("listener-enabled", false),	//	start rs485 server
 			create_rs485_listener()
 		);
 	}
@@ -344,7 +344,13 @@ namespace smf {
 #else
 				(tmp / "update-script.cmd").string()
 #endif
-			)
+			),
+#ifdef _DEBUG
+			cyng::make_param("debug", true)
+#else
+			cyng::make_param("debug", false)
+#endif
+
 		));
 
 	}

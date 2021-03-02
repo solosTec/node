@@ -62,7 +62,10 @@
 		 /**
 		  * numerical value of the specified LMN enum type
 		  */
-		 std::uint8_t get_index() const;
+		 constexpr std::uint8_t get_index() const {
+			 return static_cast<std::uint8_t>(type_);
+		 }
+
 		 std::string get_path_id() const;
 
 		 bool is_enabled() const;
@@ -116,6 +119,16 @@
 		  * same as get_all_targets()
 		  */
 		 cyng::vector_t get_target_vector() const;
+
+
+		 bool set_address(std::size_t idx, std::string) const;
+		 bool set_port(std::size_t idx, std::uint16_t) const;
+		 bool set_account(std::size_t idx, std::string) const;
+		 bool set_pwd(std::size_t idx, std::string) const;
+
+		 bool set_size(std::size_t size) const;
+
+		 constexpr static char root[] = "broker";
 
 	 private:
 		 cfg& cfg_;

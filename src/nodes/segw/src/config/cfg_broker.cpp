@@ -6,64 +6,82 @@
  */
 
 #include <config/cfg_broker.h>
+#include <config/cfg_lmn.h>
+
 #include <cyng/obj/container_factory.hpp>
 
 namespace smf {
+
 
 	cfg_broker::cfg_broker(cfg& c, lmn_type type)
 		: cfg_(c)
 		, type_(type)
 	{}
 
-	std::uint8_t cfg_broker::get_index() const {
-		return static_cast<std::uint8_t>(type_);
-	}
 	std::string cfg_broker::get_path_id() const {
 		return std::to_string(get_index());
 	}
 
 	bool cfg_broker::is_enabled() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "broker-enabled"), false);
+		return cfg_lmn(cfg_, type_).is_broker_enabled();
 	}
+
 	bool cfg_broker::has_login() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "broker-login"), false);
+		return cfg_lmn(cfg_, type_).has_broker_login();
 	}
 
 	bool cfg_broker::is_lmn_enabled() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "enabled"), false);
+		return cfg_lmn(cfg_, type_).is_enabled();
 	}
 
 	std::chrono::seconds cfg_broker::get_timeout() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "broker-timeout"), std::chrono::seconds(12));
+		return cfg_lmn(cfg_, type_).get_broker_timeout();
 	}
 
-
 	std::string cfg_broker::get_port() const {
-		return cfg_.get_value(cyng::to_path('/', "lmn", get_path_id(), "port"), "");
+		return cfg_lmn(cfg_, type_).get_port();
 	}
 
 	std::string cfg_broker::get_task_name() const {
 		return "broker@" + get_port();
 	}
 
+	namespace {
+		std::string count_path(std::uint8_t type) {
+			return cyng::to_path('/', cfg_broker::root, std::to_string(type), "count");
+		}
+		std::string address_path(std::uint8_t type, std::size_t idx) {
+			return cyng::to_path('/', cfg_broker::root, std::to_string(type), idx, "address");
+		}
+		std::string port_path(std::uint8_t type, std::size_t idx) {
+			return cyng::to_path('/', cfg_broker::root, std::to_string(type), idx, "port");
+		}
+		std::string account_path(std::uint8_t type, std::size_t idx) {
+			return cyng::to_path('/', cfg_broker::root, std::to_string(type), idx, "account");
+		}
+		std::string pwd_path(std::uint8_t type, std::size_t idx) {
+			return cyng::to_path('/', cfg_broker::root, std::to_string(type), idx, "pwd");
+		}
+	}
+
 	std::size_t cfg_broker::size() const {
-		return cfg_.get_value(cyng::to_path('/', "broker", get_path_id(), "count"), static_cast<std::size_t>(0));
+		return cfg_.get_value(count_path(get_index()), static_cast<std::size_t>(0));
 	}
 
 	std::string cfg_broker::get_address(std::size_t idx) const {
-		return cfg_.get_value(cyng::to_path('/', "broker", get_path_id(), std::to_string(idx), "address"), "");
+		return cfg_.get_value(address_path(get_index(), idx), "");
 	}
 
 	std::uint16_t cfg_broker::get_port(std::size_t idx) const {
-		return cfg_.get_value(cyng::to_path('/', "broker", get_path_id(), std::to_string(idx), "port"), static_cast<std::uint16_t>(12000));
+		return cfg_.get_value(port_path(get_index(), idx), static_cast<std::uint16_t>(12000));
 	}
 
 	std::string cfg_broker::get_account(std::size_t idx) const {
-		return cfg_.get_value(cyng::to_path('/', "broker", get_path_id(), std::to_string(idx), "account"), "");
+		return cfg_.get_value(account_path(get_index(), idx), "");
 	}
 
 	std::string cfg_broker::get_pwd(std::size_t idx) const {
-		return cfg_.get_value(cyng::to_path('/', "broker", get_path_id(), std::to_string(idx), "pwd"), "");
+		return cfg_.get_value(pwd_path(get_index(), idx), "");
 	}
 
 	target cfg_broker::get_target(std::size_t idx) const {
@@ -93,6 +111,26 @@ namespace smf {
 		});
 		return vec;
 
+	}
+
+	bool cfg_broker::set_address(std::size_t idx, std::string address) const {
+		return cfg_.set_value(address_path(get_index(), idx), address);
+	}
+
+	bool cfg_broker::set_port(std::size_t idx, std::uint16_t port) const {
+		return cfg_.set_value(port_path(get_index(), idx), port);
+	}
+
+	bool cfg_broker::set_account(std::size_t idx, std::string account) const {
+		return cfg_.set_value(account_path(get_index(), idx), account);
+	}
+
+	bool cfg_broker::set_pwd(std::size_t idx, std::string pwd) const {
+		return cfg_.set_value(pwd_path(get_index(), idx), pwd);
+	}
+
+	bool cfg_broker::set_size(std::size_t size) const {
+		return cfg_.set_value(count_path(get_index()), size);
 	}
 
 

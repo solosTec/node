@@ -10,21 +10,20 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/log/record.h>
 #include <cyng/io/ostream.h>
-//#include <cyng/io/serializer/json.hpp>
 #include <cyng/io/serialize.h>
 
 namespace smf {
 	namespace nms {
 
-		session::session(boost::asio::ip::tcp::socket socket, cfg& c, cyng::logger logger)
+		session::session(boost::asio::ip::tcp::socket socket, cfg& c, cyng::logger logger, std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind)
 			: socket_(std::move(socket))
 			, logger_(logger)
 			, buffer_{ 0 }
 			, reader_(c, logger)
-			, parser_([this](cyng::object&& obj) {
+			, parser_([this, rebind](cyng::object&& obj) {
 
 				CYNG_LOG_TRACE(logger_, "[NMS] session [" << socket_.remote_endpoint() << "] parsed " << obj);
-				send_response(reader_.run(cyng::container_cast<cyng::param_map_t>(std::move(obj))));
+				send_response(reader_.run(cyng::container_cast<cyng::param_map_t>(std::move(obj)), rebind));
 
 			})
 		{}

@@ -49,4 +49,8 @@ namespace smf {
 		return r;
 	}
 
+	bool cfg::set_value(std::string name, cyng::object obj) {
+		return set_obj(name, std::move(obj));
+	}
+
 }

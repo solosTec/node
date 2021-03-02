@@ -22,7 +22,7 @@ namespace smf {
 		class session : public std::enable_shared_from_this<session>
 		{
 		public:
-			session(boost::asio::ip::tcp::socket socket, cfg&, cyng::logger);
+			session(boost::asio::ip::tcp::socket socket, cfg&, cyng::logger, std::function<void(boost::asio::ip::tcp::endpoint ep)>);
 
 			void start();
 

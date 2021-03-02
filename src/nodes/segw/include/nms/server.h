@@ -24,6 +24,7 @@ namespace smf {
 
 		private:
 			void do_accept();
+			void rebind(boost::asio::ip::tcp::endpoint ep);
 
 		private:
 			cfg& cfg_;

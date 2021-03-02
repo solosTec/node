@@ -24,9 +24,18 @@
 		 std::string get_account() const;
 		 std::string get_pwd() const;
 		 bool is_enabled() const;
+		 bool is_debug() const;
 
 		 std::filesystem::path get_script_path() const;
 
+		 bool set_address(boost::asio::ip::address) const;
+		 bool set_port(std::uint16_t port) const;
+		 bool set_account(std::string) const;
+		 bool set_pwd(std::string) const;
+		 bool set_enabled(bool) const;
+		 bool set_debug(bool) const;
+
+		 constexpr static char root[] = "nms";
 	 private:
 		 cfg& cfg_;
 	 };

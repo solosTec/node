@@ -8,6 +8,7 @@
 #define SMF_SEGW_NMS_READER_H
 
 #include <cfg.h>
+#include <config/cfg_lmn.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/version.h>
@@ -27,19 +28,20 @@ namespace smf {
 		public:
 			reader(cfg& c, cyng::logger);
 
-			cyng::param_map_t run(cyng::param_map_t&&);
+			cyng::param_map_t run(cyng::param_map_t&&, std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind);
 
 
 		private:
-			cyng::param_map_t cmd_merge(std::string const& cmd, boost::uuids::uuid, pmap_reader const& dom);
+			cyng::param_map_t cmd_merge(std::string const& cmd, boost::uuids::uuid, pmap_reader const& dom, std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind);
 			cyng::param_map_t cmd_query(std::string const& cmd, boost::uuids::uuid);
 			cyng::param_map_t cmd_update(std::string const& cmd, boost::uuids::uuid, pmap_reader const& dom);
 			cyng::param_map_t cmd_update_status(std::string const& cmd, boost::uuids::uuid, pmap_reader const& dom);
 			cyng::param_map_t cmd_version(std::string const& cmd, boost::uuids::uuid);
 			cyng::param_map_t cmd_cm(std::string const& cmd, boost::uuids::uuid, pmap_reader const& dom);
 
-			void cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t&& params);
+			void cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t&& params, std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind);
 			void cmd_merge_serial(cyng::param_map_t& pm, cyng::param_map_t&& params);
+			void cmd_merge_broker(cyng::param_map_t& pm, lmn_type, cyng::vector_t&&);
 
 		private:
 			cyng::logger logger_;

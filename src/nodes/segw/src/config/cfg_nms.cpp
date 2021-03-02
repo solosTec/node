@@ -14,6 +14,30 @@
 
 namespace smf {
 
+	namespace {
+		std::string address_path() {
+			return cyng::to_path('/', cfg_nms::root, "address");
+		}
+		std::string port_path() {
+			return cyng::to_path('/', cfg_nms::root, "port");
+		}
+		std::string account_path() {
+			return cyng::to_path('/', cfg_nms::root, "account");
+		}
+		std::string pwd_path() {
+			return cyng::to_path('/', cfg_nms::root, "pwd");
+		}
+		std::string enabled_path() {
+			return cyng::to_path('/', cfg_nms::root, "enabled");
+		}
+		std::string debug_path() {
+			return cyng::to_path('/', cfg_nms::root, "debug");
+		}
+		std::string script_path() {
+			return cyng::to_path('/', cfg_nms::root, "script-path");
+		}
+	}
+
 	cfg_nms::cfg_nms(cfg& c)
 		: cfg_(c)
 	{}
@@ -30,27 +54,55 @@ namespace smf {
 	}
 
 	boost::asio::ip::address cfg_nms::get_address() const {
-		return cfg_.get_value(cyng::to_path('/', "nms", "address"), boost::asio::ip::address());
+		return cfg_.get_value(address_path(), boost::asio::ip::address());
+	}
+
+	bool cfg_nms::set_address(boost::asio::ip::address address) const {
+		return cfg_.set_value(address_path(), address);
 	}
 
 	std::uint16_t cfg_nms::get_port() const {
-		return cfg_.get_value(cyng::to_path('/', "nms", "port"), static_cast<std::uint16_t>(7261));
+		return cfg_.get_value(port_path(), static_cast<std::uint16_t>(7261));
+	}
+
+	bool cfg_nms::set_port(std::uint16_t port) const {
+		return cfg_.set_value(port_path(), port);
 	}
 
 	std::string cfg_nms::get_account() const {
-		return cfg_.get_value(cyng::to_path('/', "nms", "account"), "");
+		return cfg_.get_value(account_path(), "");
+	}
+
+	bool cfg_nms::set_account(std::string account) const {
+		return cfg_.set_value(account_path(), account);
 	}
 
 	std::string cfg_nms::get_pwd() const {
-		return cfg_.get_value(cyng::to_path('/', "nms", "pwd"), "");
+		return cfg_.get_value(pwd_path(), "");
+	}
+
+	bool cfg_nms::set_pwd(std::string pwd) const {
+		return cfg_.set_value(pwd_path(), pwd);
 	}
 
 	bool cfg_nms::is_enabled() const {
-		return cfg_.get_value(cyng::to_path('/', "nms", "enabled"), false);
+		return cfg_.get_value(enabled_path(), false);
+	}
+
+	bool cfg_nms::set_enabled(bool b) const {
+		return cfg_.set_value(enabled_path(), b);
+	}
+
+	bool cfg_nms::is_debug() const {
+		return cfg_.get_value(debug_path(), false);
+	}
+
+	bool cfg_nms::set_debug(bool b) const {
+		return cfg_.set_value(debug_path(), b);
 	}
 
 	std::filesystem::path cfg_nms::get_script_path() const {
-		return cfg_.get_value(cyng::to_path('/', "nms", "script-path"), std::filesystem::temp_directory_path());
+		return cfg_.get_value(script_path(), std::filesystem::temp_directory_path());
 	}
 
 }

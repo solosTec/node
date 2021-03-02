@@ -31,6 +31,7 @@
 
 		 static std::string get_name(std::uint32_t pin);
 
+		 constexpr static char root[] = "gpio";
 	 private:
 		 cfg& cfg_;
 	 };
