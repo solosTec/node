@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")
 		("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")
 		("list,l", boost::program_options::bool_switch()->default_value(false), "list configuration from database")
+		("set-value", boost::program_options::value<std::vector<std::string >>()->multitoken()->composing(), "set configuration value: \"path\" \"value\" \"type\"")
+		//("connect", boost::program_options::value<std::string>(&connect), "test connection to IP-T server: usr:pwd@host:port")
 		;
 
 

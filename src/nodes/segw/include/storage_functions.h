@@ -53,6 +53,7 @@
 	  */
 	 void clear_config(cyng::db::session&);
 	 void list_config(cyng::db::session&);
+	 bool set_config_value(cyng::db::session&, std::string const& path, std::string const& value, std::string const& type);
 
 	 /**
 	  * split string by "/" and return the first section

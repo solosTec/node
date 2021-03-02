@@ -278,7 +278,6 @@ namespace smf {
 				//
 				//	CP210x will forward incoming data to broker
 				//
-				//cfg.
 				hci->dispatch("reset-target-channels", cyng::make_tuple(cfg.get_task_name()));
 			}
 			else {

@@ -60,6 +60,19 @@ namespace smf {
 			list_config(read_config_section(config_.json_path_, config_.config_index_));
 			return true;
 		}
+		if (vars.count("set-value") != 0) {
+			auto vec = vars["set-value"].as<std::vector<std::string>>();
+			if (vec.size() == 3) {
+				//	set configuration value
+				set_config_value(read_config_section(config_.json_path_, config_.config_index_), vec.at(0), vec.at(1), vec.at(2));
+			}
+			else {
+				std::cerr
+					<< "set-value requires 3 parameters: \"path\" \"value\" \"type\""
+					<< std::endl; 
+			}
+			return true;
+		}
 
 		//
 		//	call base classe
@@ -484,6 +497,20 @@ namespace smf {
 		auto const reader = cyng::make_reader(std::move(cfg));
 		auto s = cyng::db::create_db_session(reader.get("DB"));
 		if (s.is_alive())	smf::list_config(s);
+	}
+
+	void controller::set_config_value(cyng::object&& cfg
+		, std::string const& path
+		, std::string const& value
+		, std::string const& type) {
+
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+		if (s.is_alive()) {
+			if (smf::set_config_value(s, path, value, type)) {
+				std::cout << path << " := " << value << " (" << type << ")" << std::endl;
+			}
+		}
 	}
 
 	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {

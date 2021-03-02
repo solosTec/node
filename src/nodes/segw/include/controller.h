@@ -54,7 +54,7 @@ namespace cyng {
 		void transfer_config(cyng::object&&);
 		void clear_config(cyng::object&&);
 		void list_config(cyng::object&&);
-
+		void set_config_value(cyng::object&&, std::string const& path, std::string const& value, std::string const& type);
 	};
 }
 
