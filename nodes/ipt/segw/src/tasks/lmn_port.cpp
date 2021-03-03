@@ -230,7 +230,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set parity "
 				<< serial::to_str(parity_));
 
@@ -239,7 +239,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set data bits "
 				<< +databits_.value());
 
@@ -248,7 +248,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set stopbits "
 				<< serial::to_str(stopbits_));
 
@@ -257,7 +257,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set baud rate "
 				<< baud_rate_.value());
 
@@ -266,7 +266,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set flow control "
 				<< serial::to_str(flow_control_));
 
@@ -277,7 +277,7 @@ namespace node
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set options failed "
 				<< ex.what());
 		}
@@ -314,7 +314,7 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
-					<< base_.get_class_name()
+					<< name_
 					<< "> receiver task #"
 					<< tsk
 					<< " already inserted");
@@ -325,7 +325,7 @@ namespace node
 				CYNG_LOG_INFO(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
-					<< base_.get_class_name()
+					<< name_
 					<< "> receiver task #"
 					<< tsk
 					<< " added - "
@@ -341,7 +341,7 @@ namespace node
 				CYNG_LOG_INFO(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
-					<< base_.get_class_name()
+					<< name_
 					<< "> receiver task #"
 					<< tsk
 					<< " removed - "
@@ -352,7 +352,7 @@ namespace node
 				CYNG_LOG_WARNING(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
-					<< base_.get_class_name()
+					<< name_
 					<< "> cannot remove receiver task #"
 					<< tsk
 					<< " - not found");
@@ -381,7 +381,7 @@ namespace node
 				CYNG_LOG_INFO(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
-					<< base_.get_class_name()
+					<< name_
 					<< "> set stopbits "
 					<< +databits_.value());
 			}
@@ -389,7 +389,7 @@ namespace node
 				CYNG_LOG_ERROR(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
-					<< base_.get_class_name()
+					<< name_
 					<< "> set databits to "
 					<< val
 					<< " failed: "
@@ -403,7 +403,7 @@ namespace node
 				CYNG_LOG_INFO(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
-					<< base_.get_class_name()
+					<< name_
 					<< "> set baud rate "
 					<< baud_rate_.value());
 			}
@@ -411,7 +411,7 @@ namespace node
 				CYNG_LOG_ERROR(logger_, "task #"
 					<< base_.get_id()
 					<< " <"
-					<< base_.get_class_name()
+					<< name_
 					<< "> set baud rate to "
 					<< val
 					<< " failed: "
@@ -423,7 +423,7 @@ namespace node
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> "
 				<< name_
 				<< " - unknown option "
@@ -451,7 +451,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set flow control "
 				<< serial::to_str(flow_control_));
 			break;
@@ -461,7 +461,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set stopbits "
 				<< serial::to_str(stopbits_));
 			break;
@@ -471,7 +471,7 @@ namespace node
 			CYNG_LOG_INFO(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> set parity "
 				<< serial::to_str(parity_));
 			break;
@@ -479,7 +479,7 @@ namespace node
 			CYNG_LOG_WARNING(logger_, "task #"
 				<< base_.get_id()
 				<< " <"
-				<< base_.get_class_name()
+				<< name_
 				<< "> "
 				<< name_
 				<< " - unknown option "
