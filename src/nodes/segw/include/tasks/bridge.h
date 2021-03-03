@@ -43,7 +43,7 @@ namespace smf {
 			, cyng::controller& ctl
 			, cyng::logger
 			, cyng::db::session
-			, ipt::toggle::server_vec_t const&);
+			, ipt::toggle::server_vec_t&&);
 
 	private:
 		void stop(cyng::eod);

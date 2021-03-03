@@ -44,7 +44,10 @@ namespace smf
 			} state_;
 
 		public:
-			parser(scramble_key const&);
+			using command_cb = std::function<void(header const&, cyng::buffer_t&&)>;
+			using data_cb = std::function<void(cyng::buffer_t&&)>;
+
+			parser(scramble_key const&, command_cb, data_cb);
 
 			/**
 			 * parse the specified range
@@ -77,7 +80,7 @@ namespace smf
 			void reset(scramble_key const&);
 
 			/**
-			 * Clear internal state and all callback function
+			 * Clear internal state and all callback functions
 			 */
 			void clear();
 
@@ -87,7 +90,7 @@ namespace smf
 			 * parser state.
 			 * Implements the state machine
 			 */
-			void put(char c);
+			char put(char c);
 
 			/**
 			 * Probe if parsing is completed and
@@ -99,10 +102,12 @@ namespace smf
 			state state_esc(char c);
 			state state_header(char c);
 			state state_data(char c);
-			void read_command();
 
 		private:
 			scramble_key def_sk_;	//!<	system wide default scramble key
+
+			command_cb	command_complete_;
+			data_cb	transmit_;
 
 			/**
 			 * Decrypting data stream

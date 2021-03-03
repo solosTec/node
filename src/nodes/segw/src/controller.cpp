@@ -519,11 +519,11 @@ namespace smf {
 		auto s = cyng::db::create_db_session(reader.get("DB"));
 
 		auto const ipt_cfg = cyng::container_cast<cyng::vector_t>(reader["ipt"]["config"].get());
-		auto const tgl = ipt::read_config(ipt_cfg);
+		auto tgl = ipt::read_config(ipt_cfg);
 		BOOST_ASSERT(!tgl.empty());
 		CYNG_LOG_INFO(logger, tgl.size() << " ip-t server configured");
 
-		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, tgl);
+		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, std::move(tgl));
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("start", cyng::make_tuple());
 	}

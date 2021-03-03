@@ -13,6 +13,10 @@
 #include <smf/ipt/header.h>
 #include <smf/ipt/codes.h>
 
+#include <cyng/obj/buffer_cast.hpp>
+
+#include <deque>
+
 #include <boost/asio.hpp>
 
 namespace smf {
@@ -26,94 +30,188 @@ namespace smf {
 			using seq_generator = details::circular_counter< std::uint8_t, 1, 0xff >;
 
 		public:
-			serializer(boost::asio::ip::tcp::socket& s
-				, scramble_key const&);
+			serializer(scramble_key const&);
 
-		private:
-			//void set_sk(cyng::context& ctx);
-			//void reset(cyng::context& ctx);
-			//void push_seq(cyng::context& ctx);
-			//void transfer_data(cyng::context& ctx);
-
-			void req_login_public(std::string const& name
+			[[nodiscard]]
+			cyng::buffer_t req_login_public(std::string const& name
 				, std::string const& pwd);
 
-			//void req_login_scrambled(cyng::context& ctx);
-			//void res_login_public(cyng::context& ctx);
-			//void res_login_scrambled(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_login_scrambled(std::string const& name
+				, std::string const& pwd
+				, scramble_key const sk);
 
-			//void req_open_push_channel(cyng::context& ctx);
-			//void res_open_push_channel(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_login_public(response_t res
+				, std::uint16_t watchdog
+				, std::string redirect);
 
-			//void req_close_push_channel(cyng::context& ctx);
-			//void res_close_push_channel(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_login_scrambled(response_t res
+				, std::uint16_t watchdog
+				, std::string redirect);
 
-			//void req_transfer_push_data(cyng::context& ctx);
-			//void res_transfer_push_data(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_watchdog(sequence_t seq);
 
-			//void req_open_connection(cyng::context& ctx);
-			//void res_open_connection(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_watchdog(sequence_t seq);
 
-			//void req_close_connection(cyng::context& ctx);
-			//void res_close_connection(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_open_push_channel(std::string,		//	[0] push target
+				std::string,		//	[1] account
+				std::string,		//	[2] number
+				std::string,		//	[3] version
+				std::string,		//	[4] device id
+				std::uint16_t);		//	[5] timeout
 
-			//void req_protocol_version(cyng::context& ctx);
-			//void res_protocol_version(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_open_push_channel(sequence_t,		//	[0] ipt seq
+				response_t,			//	[1] response value
+				std::uint32_t,		//	[2] channel
+				std::uint32_t,		//	[3] source
+				std::uint16_t,		//	[4] packet size
+				std::uint8_t,		//	[5] window size
+				std::uint8_t,		//	[6] status
+				std::uint32_t);		//	[7] count
 
-			//void req_software_version(cyng::context& ctx);
-			//void res_software_version(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_close_push_channel(std::uint32_t channel);
 
-			//void req_device_id(cyng::context& ctx);
-			//void res_device_id(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_close_push_channel(sequence_t const seq,
+				response_t const res,
+				std::uint32_t const channel);
 
-			//void req_network_status(cyng::context& ctx);
-			//void res_network_status(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_transfer_push_data(std::uint32_t,	//	[0] channel
+				std::uint32_t,		//	[1] source
+				std::uint8_t,		//	[2] status
+				std::uint8_t,		//	[3] block
+				cyng::buffer_t&& data);
 
-			//void req_ip_statistics(cyng::context& ctx);
-			//void res_ip_statistics(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_transfer_push_data(sequence_t,		//	[0] ipt seq
+				response_t,		//	[1] response value
+				std::uint32_t,		//	[2] channel
+				std::uint32_t,		//	[3] source
+				std::uint8_t,		//	[4] status
+				std::uint8_t);		//	[5] block
 
-			//void req_device_auth(cyng::context& ctx);
-			//void res_device_auth(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_open_connection(std::string number);
 
-			//void req_device_time(cyng::context& ctx);
-			//void res_device_time(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_open_connection(sequence_t seq
+				, response_t res);
 
-			//void req_push_target_namelist(cyng::context& ctx);
-			//void res_push_target_namelist(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_close_connection();
 
-			//void req_push_target_echo(cyng::context& ctx);
-			//void res_push_target_echo(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_close_connection(sequence_t seq,
+				response_t res);
 
-			//void req_traceroute(cyng::context& ctx);
-			//void res_traceroute(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_protocol_version();
 
-			//void req_maintenance(cyng::context& ctx);
-			//void res_maintenance(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_protocol_version(sequence_t seq,
+				response_t res);
 
-			//void req_logout(cyng::context& ctx);
-			//void res_logout(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_software_version();
 
-			//void req_register_push_target(cyng::context& ctx);
-			//void res_register_push_target(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_software_version(sequence_t seq
+				, std::string ver);
 
-			//void req_deregister_push_target(cyng::context& ctx);
-			//void res_deregister_push_target(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_device_id();
 
-			//void req_watchdog(cyng::context& ctx);
-			//void res_watchdog(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_device_id(sequence_t seq
+				, std::string id);
 
-			//void req_multi_ctrl_public_login(cyng::context& ctx);
-			//void res_multi_ctrl_public_login(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t req_network_status();
 
-			//void res_unknown_command(cyng::context& ctx);
+			[[nodiscard]]
+			cyng::buffer_t res_network_status(sequence_t seq,
+				std::uint8_t dev,
+				std::uint32_t stat_1,
+				std::uint32_t stat_2,
+				std::uint32_t stat_3,
+				std::uint32_t stat_4,
+				std::uint32_t stat_5,
+				std::string imsi,
+				std::string imei);
 
-			void write_header(code cmd, sequence_t seq, std::size_t length);
+			[[nodiscard]]
+			cyng::buffer_t req_ip_statistics();
+
+			[[nodiscard]]
+			cyng::buffer_t res_ip_statistics(sequence_t seq,
+				response_t res,
+				std::uint64_t rx,
+				std::uint64_t sx);
+
+			[[nodiscard]]
+			cyng::buffer_t req_device_auth();
+
+			[[nodiscard]]
+			cyng::buffer_t res_device_auth(sequence_t seq,
+				std::string account,
+				std::string password,
+				std::string number,
+				std::string description);
+
+			[[nodiscard]]
+			cyng::buffer_t req_device_time();
+
+			[[nodiscard]]
+			cyng::buffer_t res_device_time(sequence_t seq);
+
+			[[nodiscard]]
+			cyng::buffer_t req_register_push_target(std::string target,
+				std::uint16_t p_size,
+				std::uint8_t w_size);
+
+			[[nodiscard]]
+			cyng::buffer_t res_register_push_target(sequence_t seq,
+				response_t res,
+				std::uint32_t channel);
+
+			[[nodiscard]]
+			cyng::buffer_t req_deregister_push_target(std::string target);
+
+			[[nodiscard]]
+			cyng::buffer_t res_deregister_push_target(sequence_t seq,
+				response_t res,
+				std::string target);
+
+			[[nodiscard]]
+			cyng::buffer_t res_unknown_command(sequence_t seq,
+				command_t cmd);
 
 			/**
-			 * Write a bunch of data scrambled to output stream.
+			 * set new scramble key
 			 */
-			void put(const char* p, std::size_t size);
-			void put(char c);
+			void set_sk(scramble_key const& key);
+
+			/**
+			 * @return last sequence id
+			 */
+			sequence_t push_seq();
+
+			/**
+			 * take a buffer and scramble it's content
+			 * @see append()
+			 */
+			cyng::buffer_t scramble(cyng::buffer_t&& data);
+
+		private:
+			void write_header(code cmd, sequence_t seq, std::size_t length);
 
 			/**
 			 * Append a '\0' value to terminate string
@@ -121,12 +219,21 @@ namespace smf {
 			void write(std::string const&);
 			void write(scramble_key::key_type const&);
 
+			/**
+			 * append numeric value using the scramble key
+			 */
 			template <typename T >
 			void write_numeric(T v)
 			{
 				static_assert(std::is_arithmetic<T>::value, "arithmetic type required");
-				put(reinterpret_cast<const char*>(&v), sizeof(T));
+				append(cyng::to_buffer_be(v));
 			}
+
+			/**
+			 * append data to buffer using the scramble key.
+			 * To duplicate all ESC characters use method write().
+			 */
+			void append(cyng::buffer_t&& data);
 
 			/**
 			 * Send data escaped over the wire.
@@ -135,10 +242,16 @@ namespace smf {
 			 */
 			void write(cyng::buffer_t const& data);
 
+			void reset();
+
+			/**
+			 * Combine alle single buffers into one
+			 */
+			cyng::buffer_t merge();
 
 		private:
-			boost::asio::streambuf buffer_;
-			std::ostream ostream_;
+			std::deque<cyng::buffer_t>	buffer_;
+
 
 			/**
 			 * produces consecutive sequence numbers

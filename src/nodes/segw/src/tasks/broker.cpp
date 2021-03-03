@@ -39,6 +39,7 @@ namespace smf {
 		, timeout_(timeout)
 		, login_(login)
 		, stopped_(false)
+		, endpoints_()
 		, socket_(ctl.get_ctx())
 		, deadline_(ctl.get_ctx())
 		, heartbeat_timer_(ctl.get_ctx())
@@ -78,12 +79,12 @@ namespace smf {
 
 #ifdef __DEBUG
 		//	test with an HTTP server
-		buffer_write_.emplace_back(cyng::make_buffer("GET / HTTP/1.1"));
-		buffer_write_.emplace_back(cyng::make_buffer("\r\n"));
-		buffer_write_.emplace_back(cyng::make_buffer("Host: "));
-		buffer_write_.emplace_back(cyng::make_buffer(target_.get_address()));
-		buffer_write_.emplace_back(cyng::make_buffer("\r\n"));
-		buffer_write_.emplace_back(cyng::make_buffer("\r\n\r\n"));
+		write_buffer_.emplace_back(cyng::make_buffer("GET / HTTP/1.1"));
+		write_buffer_.emplace_back(cyng::make_buffer("\r\n"));
+		write_buffer_.emplace_back(cyng::make_buffer("Host: "));
+		write_buffer_.emplace_back(cyng::make_buffer(target_.get_address()));
+		write_buffer_.emplace_back(cyng::make_buffer("\r\n"));
+		write_buffer_.emplace_back(cyng::make_buffer("\r\n\r\n"));
 #endif
 
 		stopped_ = false;

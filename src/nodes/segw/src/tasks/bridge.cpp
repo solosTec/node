@@ -38,7 +38,7 @@ namespace smf {
 		, cyng::controller& ctl
 		, cyng::logger logger
 		, cyng::db::session db
-		, ipt::toggle::server_vec_t const& tgl)
+		, ipt::toggle::server_vec_t&& tgl)
 	: sigs_{
 		std::bind(&bridge::stop, this, std::placeholders::_1),
 		std::bind(&bridge::start, this),
@@ -50,7 +50,7 @@ namespace smf {
 		, cache_()
 		, cfg_(logger, cache_)
 		, fabric_(ctl)
-		, bus_(fabric_, tgl)
+		, bus_(fabric_, logger, std::move(tgl))
 		, nms_(ctl, cfg_, logger)
 		, sml_(ctl, cfg_, logger)
 	{
@@ -64,6 +64,9 @@ namespace smf {
 
 	void bridge::stop(cyng::eod) {
 		CYNG_LOG_INFO(logger_, "segw stop");
+		nms_.stop();
+		sml_.stop();
+		//bus_.stop();
 	}
 
 	void bridge::start() {
@@ -299,9 +302,9 @@ namespace smf {
 		cfg_ipt cfg(cfg_);
 		if (cfg.is_enabled()) {
 			//
-			//	ToDo: start IP-T bus
+			//	start IP-T bus
 			//
-			//bus_
+			bus_.start();
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "IP-T client is not enabled");
