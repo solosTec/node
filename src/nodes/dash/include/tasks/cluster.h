@@ -11,6 +11,7 @@
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
+#include <cyng/task/task_fwd.h>
 
 #include <tuple>
 #include <functional>
@@ -19,12 +20,6 @@
 
 #include <boost/uuid/uuid.hpp>
 
-namespace cyng {
-	template <typename T >
-	class task;
-
-	class channel;
-}
 namespace smf {
 
 	class cluster

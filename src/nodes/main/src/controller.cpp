@@ -6,11 +6,17 @@
  */
 
 #include <controller.h>
+#include <tasks/server.h>
+
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/sys/locale.h>
+#include <cyng/log/record.h>
+#include <cyng/obj/algorithm/reader.hpp>
+#include <cyng/obj/numeric_cast.hpp>
+#include <cyng/task/controller.h>
 
 #include <locale>
 #include <iostream>
@@ -47,7 +53,7 @@ namespace smf {
 			cyng::make_param("account", "root"),
 			cyng::make_param("pwd", "NODE_PWD"),
 			cyng::make_param("salt", "NODE_SALT"),
-			cyng::make_param("monitor", 57)	//	seconds
+			cyng::make_param("monitor", 58)	//	seconds
 		));
 	}
 
@@ -76,7 +82,34 @@ namespace smf {
 		));
 	}
 
-	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg) {
+	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
+
+#if _DEBUG_MAIN
+		CYNG_LOG_INFO(logger, cfg);
+#endif
+		auto const reader = cyng::make_reader(cfg);
+		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+
+		auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
+		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 7701);
+		auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
+
+		auto const account = cyng::value_cast(reader["cluster"]["account"].get(), "root");
+		auto const pwd = cyng::value_cast(reader["cluster"]["pwd"].get(), "");
+		auto const salt = cyng::value_cast(reader["cluster"]["salt"].get(), "");
+		auto const monitor = cyng::numeric_cast<std::uint32_t>(reader["cluster"]["monitor"].get(), 58);	//	seconds
+
+		auto channel = ctl.create_named_channel_with_ref<server>("main"
+			, ctl
+			, tag
+			, logger
+			, account
+			, pwd
+			, salt
+			, std::chrono::seconds(monitor));
+		BOOST_ASSERT(channel->is_open());
+
+		channel->dispatch("start", cyng::make_tuple(ep));
 
 	}
 

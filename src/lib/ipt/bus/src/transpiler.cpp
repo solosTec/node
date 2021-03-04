@@ -10,6 +10,7 @@
 
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/buffer_cast.hpp>
+#include <cyng/vm/generator.hpp>
 
 namespace smf
 {
@@ -22,8 +23,10 @@ namespace smf
 			//	redirect
 			auto res = cyng::to_numeric_be<response_t>(data);
 			auto wd = cyng::to_numeric_be<std::uint16_t>(data, sizeof(response_t));
+			auto redirect = cyng::to_string_nil(data, sizeof(response_t)+ sizeof(wd));
 
-			return cyng::make_deque(wd, res, 2, "ipt.res.login", cyng::op::INVOKE);
+			return cyng::generate_invoke("ipt.res.login", redirect, wd, res);
+			//return cyng::make_deque(redirect, wd, res, 3, "ipt.res.login", cyng::op::INVOKE);
 		}
 
 		cyng::deque_t ctrl_res_login_scrambled(cyng::buffer_t&& data) {

@@ -26,13 +26,19 @@ else()
     )
 endif()
 
+set (main_tasks
+  include/tasks/server.h
+  src/tasks/server.cpp
+)
 
 source_group("main-assets" FILES ${main_assets})
+source_group("tasks" FILES ${main_tasks})
 
 
 set (main_node
   ${main_cpp}
   ${main_h}
   ${main_assets}
+  ${main_tasks}
 )
 
