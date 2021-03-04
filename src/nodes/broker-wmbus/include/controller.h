@@ -6,7 +6,7 @@
  */
 
 #include <smf/controller_base.h>
-
+#include <smf/cluster/config.h>
 
  namespace smf {
 
@@ -21,6 +21,12 @@
 			, std::filesystem::path&& cwd) override;
 
 		void run(cyng::controller&, cyng::logger, cyng::object const& cfg) override;
+
+	private:
+		void join_cluster(cyng::controller& ctl
+			, cyng::logger logger
+			, boost::uuids::uuid tag
+			, toggle::server_vec_t&& tgl);
 
 	private:
 		cyng::param_t create_server_spec(std::filesystem::path const& cwd);

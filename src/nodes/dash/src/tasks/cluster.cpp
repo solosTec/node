@@ -1,3 +1,9 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2021 Sylko Olzscher
+ *
+ */
 #include <tasks/cluster.h>
 #include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
@@ -8,20 +14,22 @@
 namespace smf {
 
 	cluster::cluster(cyng::channel_weak wp
+		, cyng::controller& ctl
 		, boost::uuids::uuid tag
 		, cyng::logger logger
-		, toggle cluster_cfg)
+		, toggle::server_vec_t&& cfg)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&cluster::status_check, this, std::placeholders::_1),
 		std::bind(&cluster::login, this, std::placeholders::_1),
-		//std::bind(&cluster::demo3, this, std::placeholders::_1),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
 	}
 		, channel_(wp)
+		, ctl_(ctl)
 		, tag_(tag)
 		, logger_(logger)
-		, bus_(logger, cluster_cfg, wp)
+		, fabric_(ctl)
+		, bus_(fabric_, logger, std::move(cfg))
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -55,10 +63,6 @@ namespace smf {
 		//
 		bus_.start();
 
-		//
-		//	startup HTTP server
-		//
-
 	}
 
 	void cluster::status_check(int n)
@@ -78,17 +82,7 @@ namespace smf {
 		if (success) {
 			CYNG_LOG_INFO(logger_, "start HTTP server");
 
-			//
-			//	ToDo: start HTTP server
-			//
 		}
-	}
-
-	void cluster::demo3(int n)
-	{
-#ifdef _DEBUG_IPT
-		std::cout << "cluster::demo3(" << n << ")" << std::endl;
-#endif
 	}
 
 }

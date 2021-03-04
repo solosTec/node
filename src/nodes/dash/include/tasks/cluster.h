@@ -12,6 +12,7 @@
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
+#include <cyng/vm/mesh.h>
 
 #include <tuple>
 #include <functional>
@@ -31,29 +32,30 @@ namespace smf {
 			std::function<void(void)>,
 			std::function<void(int)>,
 			std::function<void(int, std::string, float)>,
-			//std::function<void(int)>,
 			std::function<void(cyng::eod)>
 		>;
 
 	public:
 		cluster(std::weak_ptr<cyng::channel>
+			, cyng::controller&
 			, boost::uuids::uuid tag
 			, cyng::logger
-			, toggle cluster_cfg);
+			, toggle::server_vec_t&&);
 		~cluster();
 
 		void connect();
 		void status_check(int);
 		void login(bool);	//	login callback
-		void demo3(int);
 
 		void stop(cyng::eod);
 
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
+		cyng::controller& ctl_;
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
+		cyng::mesh fabric_;
 		bus	bus_;
 	};
 

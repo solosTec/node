@@ -28,7 +28,7 @@
 		void join_cluster(cyng::controller&
 			, cyng::logger
 			, boost::uuids::uuid
-			, toggle);
+			, toggle::server_vec_t&&);
 
 		void start_listener(cyng::controller&
 			, cyng::logger

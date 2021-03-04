@@ -39,7 +39,7 @@ namespace smf {
 		~server();
 
 		void start(boost::asio::ip::tcp::endpoint ep);
-
+		void do_accept();
 		void stop(cyng::eod);
 
 	private:

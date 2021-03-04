@@ -53,14 +53,16 @@ namespace smf {
 		));
 	}
 	cyng::param_t controller::create_cluster_spec() {
-		return cyng::make_param("cluster", cyng::make_tuple(
-			cyng::make_param("host", "127.0.0.1"),
-			cyng::make_param("service", "7701"),
-			cyng::make_param("account", "root"),
-			cyng::make_param("pwd", "NODE_PWD"),
-			cyng::make_param("salt", "NODE_SALT"),
-			//cyng::make_param("monitor", rnd_monitor()),	//	seconds
-			cyng::make_param("group", 0)	//	customer ID
+		return cyng::make_param("cluster", cyng::make_vector({
+			cyng::make_tuple(
+				cyng::make_param("host", "127.0.0.1"),
+				cyng::make_param("service", "7701"),
+				cyng::make_param("account", "root"),
+				cyng::make_param("pwd", "NODE_PWD"),
+				cyng::make_param("salt", "NODE_SALT"),
+				//cyng::make_param("monitor", rnd_monitor()),	//	seconds
+				cyng::make_param("group", 0))	//	customer ID
+			}
 		));
 	}
 

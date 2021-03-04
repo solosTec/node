@@ -8,9 +8,14 @@
 #include <controller.h>
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/sys/locale.h>
+#include <cyng/io/ostream.h>
+#include <cyng/obj/algorithm/reader.hpp>
+#include <cyng/log/record.h>
+#include <cyng/task/controller.h>
 
 #include <locale>
 #include <iostream>
@@ -42,8 +47,39 @@ namespace smf {
 		});
 	}
 
-	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg) {
+	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
+#if _DEBUG_BROKER_IEC
+		CYNG_LOG_INFO(logger, cfg);
+#endif
+		auto const reader = cyng::make_reader(cfg);
+		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
 
+
+		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
+		BOOST_ASSERT(!tgl.empty());
+		if (tgl.empty()) {
+			CYNG_LOG_FATAL(logger, "no cluster data configured");
+		}
+
+		//
+		//	connect to cluster
+		//
+		join_cluster(ctl
+			, logger
+			, tag
+			, std::move(tgl));
+
+	}
+
+	void controller::join_cluster(cyng::controller& ctl
+		, cyng::logger logger
+		, boost::uuids::uuid tag
+		, toggle::server_vec_t&& tgl) {
+
+		//auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, logger, std::move(tgl));
+		//BOOST_ASSERT(channel->is_open());
+		//channel->dispatch("connect", cyng::make_tuple());
+		//channel->dispatch("status_check", cyng::make_tuple(1));
 	}
 
 	cyng::param_t controller::create_server_spec(std::filesystem::path const& cwd) {
@@ -54,14 +90,16 @@ namespace smf {
 	}
 
 	cyng::param_t controller::create_cluster_spec() {
-		return cyng::make_param("cluster", cyng::make_tuple(
-			cyng::make_param("host", "127.0.0.1"),
-			cyng::make_param("service", "7701"),
-			cyng::make_param("account", "root"),
-			cyng::make_param("pwd", "NODE_PWD"),
-			cyng::make_param("salt", "NODE_SALT"),
-			//cyng::make_param("monitor", rnd_monitor()),	//	seconds
-			cyng::make_param("group", 0)	//	customer ID
+		return cyng::make_param("cluster", cyng::make_vector({
+			cyng::make_tuple(
+				cyng::make_param("host", "127.0.0.1"),
+				cyng::make_param("service", "7701"),
+				cyng::make_param("account", "root"),
+				cyng::make_param("pwd", "NODE_PWD"),
+				cyng::make_param("salt", "NODE_SALT"),
+				//cyng::make_param("monitor", rnd_monitor()),	//	seconds
+				cyng::make_param("group", 0))	//	customer ID
+			}
 		));
 	}
 

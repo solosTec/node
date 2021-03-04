@@ -515,7 +515,7 @@ namespace smf {
 
 	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
 
-		auto const reader = cyng::make_reader(std::move(cfg));
+		auto const reader = cyng::make_reader(cfg);
 		auto s = cyng::db::create_db_session(reader.get("DB"));
 
 		auto const ipt_cfg = cyng::container_cast<cyng::vector_t>(reader["ipt"]["config"].get());

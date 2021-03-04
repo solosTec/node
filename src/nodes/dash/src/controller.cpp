@@ -38,7 +38,11 @@ namespace smf {
 		auto const reader = cyng::make_reader(cfg);
 		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
 
-		toggle cluster_cfg(read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get())));
+		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
+		BOOST_ASSERT(!tgl.empty());
+		if (tgl.empty()) {
+			CYNG_LOG_FATAL(logger, "no cluster data configured");
+		}
 
 		//
 		//	connect to cluster
@@ -46,9 +50,7 @@ namespace smf {
 		join_cluster(ctl
 			, logger
 			, tag
-			, cluster_cfg);
-
-		//auto const pmap = cyng::container_cast<cyng::param_map_t>(reader["server"].get());
+			, std::move(tgl));
 
 		auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
 		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 8080);
@@ -110,9 +112,9 @@ namespace smf {
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
-		, toggle cluster_cfg) {
+		, toggle::server_vec_t&& cfg) {
 
-		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", tag, logger, cluster_cfg);
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, logger, std::move(cfg));
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
 		channel->dispatch("status_check", cyng::make_tuple(1));
@@ -150,14 +152,16 @@ namespace smf {
 	}
 
 	cyng::param_t controller::create_cluster_spec() {
-		return cyng::make_param("cluster", cyng::make_tuple(
-			cyng::make_param("host", "127.0.0.1"),
-			cyng::make_param("service", "7701"),
-			cyng::make_param("account", "root"),
-			cyng::make_param("pwd", "NODE_PWD"),
-			cyng::make_param("salt", "NODE_SALT"),
-			//cyng::make_param("monitor", rnd_monitor()),	//	seconds
-			cyng::make_param("group", 0)	//	customer ID
+		return cyng::make_param("cluster", cyng::make_vector({
+			cyng::make_tuple(
+				cyng::make_param("host", "127.0.0.1"),
+				cyng::make_param("service", "7701"),
+				cyng::make_param("account", "root"),
+				cyng::make_param("pwd", "NODE_PWD"),
+				cyng::make_param("salt", "NODE_SALT"),
+				//cyng::make_param("monitor", rnd_monitor()),	//	seconds
+				cyng::make_param("group", 0))	//	customer ID
+			}
 		));
 	}
 

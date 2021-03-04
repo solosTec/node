@@ -80,7 +80,11 @@ namespace smf {
 		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
 
 	
-		toggle cluster_cfg(read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get())));
+		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
+		BOOST_ASSERT(!tgl.empty());
+		if (tgl.empty()) {
+			CYNG_LOG_FATAL(logger, "no cluster data configured");
+		}
 
 		//
 		//	connect to cluster
@@ -88,17 +92,15 @@ namespace smf {
 		join_cluster(ctl
 			, logger
 			, tag
-			, cluster_cfg);
-		//	, cyng::to_tuple(cfg.get("server"))
-		//	, log_sml);
+			, std::move(tgl));
 	}
 
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
-		, toggle cluster_cfg) {
+		, toggle::server_vec_t&& tgl) {
 
-		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", tag, logger, cluster_cfg);
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, logger, std::move(tgl));
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
 		channel->dispatch("status_check", cyng::make_tuple(1));
