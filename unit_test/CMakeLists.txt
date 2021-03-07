@@ -1,16 +1,23 @@
 # Dependencies
 find_package(Boost 1.75 REQUIRED COMPONENTS unit_test_framework)
 
+source_group("test-assets" 
+    FILES 
+        unit_test/assets/smf--SML-202012T071425-power@solostec8bbb6264-bc4a4b92.sml) 
+
 add_executable(unit_test 
     main.cpp
-    src/test_config.cpp)
+    src/test_config.cpp
+    src/test_sml.cpp
+    ${test-assets}
+)
 
 target_compile_features(unit_test PRIVATE cxx_std_20)
 
 target_compile_definitions(unit_test
     PRIVATE 
         BOOST_TEST_DYN_LINK 
-        BOOST_ASIO_HAS_MOVE 
+        BOOST_ASIO_HAS_MOVE
         $<$<CONFIG:Debug>:_DEBUG_OBJECT>
 )
 
@@ -41,6 +48,7 @@ target_link_libraries(unit_test
     PRIVATE
         ${CYNG_LIBRARIES} 
         smf_config
+        smf_sml
         "$<$<PLATFORM_ID:Linux>:pthread>"
         "$<$<PLATFORM_ID:Windows>:odbc32>"
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"

@@ -50,7 +50,6 @@ namespace smf
 							//
 							this->put(c);
 						});
-
 				}
 
 			private:

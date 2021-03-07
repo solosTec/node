@@ -553,6 +553,49 @@ target_link_libraries(smf_hci
 )
 
 #
+# add library: smf_sml
+#
+include (src/lib/sml/protocol/lib.cmake)
+add_library(smf_sml ${GLOBAL_LIBRARY_TYPE} ${sml_lib})
+
+target_include_directories(smf_sml
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_sml PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug SML protocol
+#
+target_compile_definitions(smf_sml 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_SML>
+)
+
+target_link_libraries(smf_sml 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # add library: smf_ipt
 #
 include (src/lib/ipt/protocol/lib.cmake)

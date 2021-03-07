@@ -117,6 +117,7 @@ namespace smf {
             void handle_get_head_request(boost::beast::http::request<boost::beast::http::string_body>&&, std::string const&, bool);
             //void handle_head_request(boost::beast::http::request<boost::beast::http::string_body>&&, std::string const&);
             void handle_post_request(boost::beast::http::request<boost::beast::http::string_body>&&, std::string const&);
+            void handle_options_request(boost::beast::http::request<boost::beast::http::string_body>&& req);
 
             boost::beast::http::response<boost::beast::http::string_body> send_bad_request(std::uint32_t version
                 , bool keep_alive
@@ -145,6 +146,10 @@ namespace smf {
                 , boost::beast::http::file_body::value_type&&
                 , std::string const& path
                 , std::uint64_t size);        
+
+            boost::beast::http::response<boost::beast::http::string_body> send_204(std::uint32_t version
+                , bool
+                , std::string options);
 
 		private:
             boost::beast::tcp_stream stream_;

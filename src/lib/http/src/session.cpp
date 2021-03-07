@@ -234,6 +234,9 @@ namespace smf {
             case boost::beast::http::verb::post:
                 handle_post_request(std::move(req), target);
                 break;
+            case boost::beast::http::verb::options:
+                handle_options_request(std::move(req));
+                break;
             default:
                 return queue_(send_bad_request(req.version()
                     , req.keep_alive()
@@ -326,6 +329,16 @@ namespace smf {
 
         }
 
+        void session::handle_options_request(boost::beast::http::request<boost::beast::http::string_body>&& req) {
+            //  https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS
+            //  204 - no content
+            queue_(send_204(req.version()
+                , req.keep_alive()
+                , "OPTIONS, GET, HEAD, POST" ));
+
+        }
+
+
         boost::beast::http::response<boost::beast::http::string_body> session::send_bad_request(std::uint32_t version
             , bool keep_alive
             , std::string const& why)
@@ -404,6 +417,18 @@ namespace smf {
             res.keep_alive(keep_alive);
             res.body() = "301 - moved permanently";
             res.prepare_payload();
+            return res;
+        }
+
+        boost::beast::http::response<boost::beast::http::string_body> session::send_204(std::uint32_t version
+            , bool keep_alive
+            , std::string options) {
+
+            CYNG_LOG_TRACE(logger_, "204 - no content");
+            boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::moved_permanently, version };
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
+            res.set(boost::beast::http::field::allow, options);
+            res.keep_alive(keep_alive);
             return res;
         }
 
