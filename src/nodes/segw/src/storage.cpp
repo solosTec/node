@@ -10,6 +10,7 @@
 
 #include <cyng/sql/sql.hpp>
 #include <cyng/db/details/statement_interface.h>
+#include <cyng/task/controller.h>
 
 namespace smf {
 
@@ -32,10 +33,10 @@ namespace smf {
 
 		auto stmt = db_.create_statement();
 		std::pair<int, bool> const r = stmt->prepare(sql);
-		if (r.second) {
-			return insert_config_record(stmt, key, obj);
-		}
-		return false;
+		return (r.second)
+			? insert_config_record(stmt, key, obj)
+			: false
+			;
 	}
 
 	bool storage::cfg_update(cyng::object const& key, cyng::object const& obj) {
@@ -54,10 +55,31 @@ namespace smf {
 
 		auto stmt = db_.create_statement();
 		std::pair<int, bool> const r = stmt->prepare(sql);
-		if (r.second) {
-			return update_config_record(stmt, key, obj);
-		}
-		return false;
+		return (r.second)
+			? update_config_record(stmt, key, obj)
+			: false
+			;
+	}
+
+	bool storage::cfg_remove(cyng::object const& key) {
+		//
+		//	start transaction
+		//
+		cyng::db::transaction	trx(db_);
+
+		//
+		//	prepare statement
+		//
+		auto const m = get_table_cfg();
+		//auto const sql = cyng::sql::remove(db_.get_dialect(), m)()
+		auto const sql = "DELETE FROM TCfg WHERE path = ?";
+
+		auto stmt = db_.create_statement();
+		std::pair<int, bool> const r = stmt->prepare(sql);
+		return (r.second)
+			? remove_config_record(stmt, key)
+			: false
+			;
 	}
 
 }

@@ -28,19 +28,19 @@ namespace smf {
 
 	namespace {
 		std::string enabled_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_blocklist::root, std::to_string(type), "enabled");
+			return cyng::to_path(cfg::sep, cfg_blocklist::root, std::to_string(type), "enabled");
 		}
 		std::string mode_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_blocklist::root, std::to_string(type), "mode");
+			return cyng::to_path(cfg::sep, cfg_blocklist::root, std::to_string(type), "mode");
 		}
 		std::string list_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_blocklist::root, std::to_string(type), "list");
+			return cyng::to_path(cfg::sep, cfg_blocklist::root, std::to_string(type), "list");
 		}
 		std::string size_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_blocklist::root, std::to_string(type), "size");
+			return cyng::to_path(cfg::sep, cfg_blocklist::root, std::to_string(type), "size");
 		}
 		std::string meter_path(std::uint8_t type, std::size_t idx) {
-			return cyng::to_path('/', cfg_blocklist::root, std::to_string(type), "meter", idx);
+			return cyng::to_path(cfg::sep, cfg_blocklist::root, std::to_string(type), "meter", idx);
 		}
 	}
 

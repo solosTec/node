@@ -8,12 +8,14 @@ set (segw_cpp
     src/controller.cpp
     src/storage.cpp
     src/storage_functions.cpp
+    src/distributor.cpp
 )
     
 set (segw_h
     include/controller.h
     include/storage.h
     include/storage_functions.h
+    include/distributor.h
 )
 
 if(WIN32)

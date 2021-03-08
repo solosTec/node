@@ -17,10 +17,10 @@ namespace smf {
 
 	namespace {
 		std::string enabled_path() {
-			return cyng::to_path('/', cfg_gpio::root, "enabled");
+			return cyng::to_path(cfg::sep, cfg_gpio::root, "enabled");
 		}
 		std::string pin_path(std::size_t idx) {
-			return cyng::to_path('/', cfg_gpio::root, "pin", std::to_string(idx));
+			return cyng::to_path(cfg::sep, cfg_gpio::root, "pin", std::to_string(idx));
 		}
 	}
 

@@ -15,8 +15,9 @@
 namespace smf
 {
 	persistence::persistence(std::weak_ptr<cyng::channel> wp
+		, cyng::controller& ctl
 		, cyng::logger logger
-		, cyng::store& cache
+		, cfg& config
 		, storage& s)
 		: sigs_{
 			std::bind(&persistence::stop, this, std::placeholders::_1),
@@ -24,11 +25,12 @@ namespace smf
 			std::bind(&persistence::modify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5),
 			std::bind(&persistence::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2)
-			//std::bind(&persistence::connect, this)
-	}, channel_(wp)
+		}
+		, channel_(wp)
 		, logger_(logger)
-		, cache_(cache)
+		, cfg_(config)
 		, storage_(s)
+		, distributor_(ctl, config)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -36,7 +38,6 @@ namespace smf
 			sp->set_channel_name("db.modify", 2);
 			sp->set_channel_name("db.remove", 3);
 			sp->set_channel_name("db.clear", 4);
-			//sp->set_channel_name("connect", 5);
 		}
 
 		connect();
@@ -49,7 +50,7 @@ namespace smf
 
 	void persistence::connect() {
 
-		cache_.connect("cfg", cyng::slot(channel_));
+		cfg_.get_cache().connect("cfg", cyng::slot(channel_));
 		CYNG_LOG_INFO(logger_, "persistence connected");
 	}
 
@@ -79,8 +80,10 @@ namespace smf
 		, boost::uuids::uuid) {
 
 		if (boost::algorithm::equals(tbl->meta().get_name(), "cfg")) {
+			BOOST_ASSERT(key.size() == 1);
 			CYNG_LOG_TRACE(logger_, key.at(0) << " = " << attr.second);
 			storage_.cfg_update(key.at(0), attr.second);
+			distributor_.update(cyng::to_string(key.at(0)), attr.second);
 		}
 		else {
 			// use default mechanism
@@ -97,6 +100,14 @@ namespace smf
 		, boost::uuids::uuid) {
 
 		CYNG_LOG_TRACE(logger_, "remove " << tbl->meta().get_name());
+		if (boost::algorithm::equals(tbl->meta().get_name(), "cfg")) {
+			CYNG_LOG_TRACE(logger_, "remove config entry: " << key.at(0));
+			storage_.cfg_remove(key.at(0));
+		}
+		else {
+			// use default mechanism
+			CYNG_LOG_TRACE(logger_, "modify " << tbl->meta().get_name());
+		}
 
 	}
 

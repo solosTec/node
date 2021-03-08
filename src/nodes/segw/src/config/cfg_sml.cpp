@@ -32,27 +32,27 @@ namespace smf {
 	}
 
 	boost::asio::ip::address cfg_sml::get_address() const {
-		return cfg_.get_value(cyng::to_path('/', "sml", "address"), boost::asio::ip::address());
+		return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "address"), boost::asio::ip::address());
 	}
 
 	std::uint16_t cfg_sml::get_port() const {
-		return cfg_.get_value(cyng::to_path('/', "sml", "port"), static_cast<std::uint16_t>(7259));
+		return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "port"), static_cast<std::uint16_t>(7259));
 	}
 
 	std::uint16_t cfg_sml::get_discovery_port() const {
-		return cfg_.get_value(cyng::to_path('/', "sml", "discover"), static_cast<std::uint16_t>(5798));
+		return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "discover"), static_cast<std::uint16_t>(5798));
 	}
 
 	std::string cfg_sml::get_account() const {
-		return cfg_.get_value(cyng::to_path('/', "sml", "account"), "");
+		return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "account"), "");
 	}
 
 	std::string cfg_sml::get_pwd() const {
-		return cfg_.get_value(cyng::to_path('/', "sml", "pwd"), "");
+		return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "pwd"), "");
 	}
 
 	bool cfg_sml::is_enabled() const {
-		return cfg_.get_value(cyng::to_path('/', "sml", "enabled"), false);
+		return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "enabled"), false);
 	}
 
 }

@@ -8,6 +8,7 @@
 #define SMF_SEGW_TASK_PERSISTENCE_H
 
 #include <cfg.h>
+#include <distributor.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/store/db.h>
@@ -44,13 +45,13 @@ namespace smf {
 				, boost::uuids::uuid)>,
 			std::function<void(cyng::table const*
 				, boost::uuids::uuid)>
-			//std::function<void()>	//	connect
 		>;
 
 	public:
 		persistence(std::weak_ptr<cyng::channel>
+			, cyng::controller& ctl
 			, cyng::logger
-			, cyng::store&
+			, cfg&
 			, storage&);
 
 	private:
@@ -90,8 +91,9 @@ namespace smf {
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
 		cyng::logger logger_;
-		cyng::store& cache_;
+		cfg& cfg_;
 		storage& storage_;
+		distributor distributor_;
 	};
 }
 

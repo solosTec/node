@@ -16,25 +16,25 @@ namespace smf {
 
 	namespace {
 		std::string address_path() {
-			return cyng::to_path('/', cfg_nms::root, "address");
+			return cyng::to_path(cfg::sep, cfg_nms::root, "address");
 		}
 		std::string port_path() {
-			return cyng::to_path('/', cfg_nms::root, "port");
+			return cyng::to_path(cfg::sep, cfg_nms::root, "port");
 		}
 		std::string account_path() {
-			return cyng::to_path('/', cfg_nms::root, "account");
+			return cyng::to_path(cfg::sep, cfg_nms::root, "account");
 		}
 		std::string pwd_path() {
-			return cyng::to_path('/', cfg_nms::root, "pwd");
+			return cyng::to_path(cfg::sep, cfg_nms::root, "pwd");
 		}
 		std::string enabled_path() {
-			return cyng::to_path('/', cfg_nms::root, "enabled");
+			return cyng::to_path(cfg::sep, cfg_nms::root, "enabled");
 		}
 		std::string debug_path() {
-			return cyng::to_path('/', cfg_nms::root, "debug");
+			return cyng::to_path(cfg::sep, cfg_nms::root, "debug");
 		}
 		std::string script_path() {
-			return cyng::to_path('/', cfg_nms::root, "script-path");
+			return cyng::to_path(cfg::sep, cfg_nms::root, "script-path");
 		}
 	}
 

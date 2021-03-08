@@ -947,4 +947,14 @@ namespace smf {
 		return false;
 	}
 
+	bool remove_config_record(cyng::db::statement_ptr stmt, cyng::object const& key)
+	{
+		stmt->push(key, 128);	//	pk
+		if (stmt->execute()) {
+			stmt->clear();
+			return true;
+		}
+		return false;
+	}
+
 }

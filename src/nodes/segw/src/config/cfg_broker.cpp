@@ -48,19 +48,19 @@ namespace smf {
 
 	namespace {
 		std::string count_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_broker::root, std::to_string(type), "count");
+			return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), "count");
 		}
 		std::string address_path(std::uint8_t type, std::size_t idx) {
-			return cyng::to_path('/', cfg_broker::root, std::to_string(type), idx, "address");
+			return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "address");
 		}
 		std::string port_path(std::uint8_t type, std::size_t idx) {
-			return cyng::to_path('/', cfg_broker::root, std::to_string(type), idx, "port");
+			return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "port");
 		}
 		std::string account_path(std::uint8_t type, std::size_t idx) {
-			return cyng::to_path('/', cfg_broker::root, std::to_string(type), idx, "account");
+			return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "account");
 		}
 		std::string pwd_path(std::uint8_t type, std::size_t idx) {
-			return cyng::to_path('/', cfg_broker::root, std::to_string(type), idx, "pwd");
+			return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "pwd");
 		}
 	}
 

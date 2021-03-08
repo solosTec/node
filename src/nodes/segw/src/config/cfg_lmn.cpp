@@ -5,57 +5,55 @@
  *
  */
 
-#include <config/cfg_lmn.h>
 #include <config/cfg_broker.h>
 
 namespace smf {
 
-	namespace {
-		std::string port_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "port");
-		}
-		std::string enabled_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "enabled");
-		}
-		std::string speed_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "speed");
-		}
-		std::string parity_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "parity");
-		}
-		std::string flow_control_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "flow-control");
-		}
-		std::string stopbits_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "stopbits");
-		}
-		std::string databits_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "databits");
-		}
-		std::string broker_enabled_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-enabled");
-		}
-		std::string broker_login_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-login");
-		}
-		std::string broker_timeout_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-timeout");
-		}
-		std::string type_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "type");
-		}
-		std::string protocol_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "protocol");
-		}
-		std::string HCI_path(std::uint8_t idx) {
-			return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "HCI");
-		}
+	std::string cfg_lmn::port_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "port");
 	}
+	std::string cfg_lmn::enabled_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "enabled");
+	}
+	std::string cfg_lmn::speed_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "speed");
+	}
+	std::string cfg_lmn::parity_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "parity");
+	}
+	std::string cfg_lmn::flow_control_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "flow-control");
+	}
+	std::string cfg_lmn::stopbits_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "stopbits");
+	}
+	std::string cfg_lmn::databits_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "databits");
+	}
+	std::string cfg_lmn::broker_enabled_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-enabled");
+	}
+	std::string cfg_lmn::broker_login_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-login");
+	}
+	std::string cfg_lmn::broker_timeout_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-timeout");
+	}
+	std::string cfg_lmn::type_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "type");
+	}
+	std::string cfg_lmn::protocol_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "protocol");
+	}
+	std::string cfg_lmn::HCI_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "HCI");
+	}
+
 
 	lmn_type lookup_by_name(cfg& c, std::string const& name) {
 
 		for (std::uint8_t idx = 0; idx < 4; idx++) {
-			auto const port = c.get_value(port_path(idx), "");
+			auto const port = c.get_value(cfg_lmn::port_path(idx), "");
 			if (boost::algorithm::equals(port, name))	return static_cast<lmn_type>(idx);
 		}
 		return lmn_type::OTHER;

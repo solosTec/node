@@ -28,16 +28,16 @@ namespace smf {
 
 	namespace {
 		std::string address_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_listener::root, std::to_string(type), "address");
+			return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "address");
 		}
 		std::string port_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_listener::root, std::to_string(type), "port");
+			return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "port");
 		}
 		std::string enabled_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_listener::root, std::to_string(type), "enabled");
+			return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "enabled");
 		}
 		std::string login_path(std::uint8_t type) {
-			return cyng::to_path('/', cfg_listener::root, std::to_string(type), "login");
+			return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "login");
 		}
 	}
 

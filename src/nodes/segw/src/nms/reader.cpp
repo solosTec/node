@@ -279,7 +279,7 @@ namespace smf {
 				idx++;
 			}
 
-			BOOST_ASSERT(idx == vec.size());
+			BOOST_ASSERT(idx - 1 == vec.size());
 			cfg.set_size(idx);
 		}
 

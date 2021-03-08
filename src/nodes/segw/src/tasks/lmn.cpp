@@ -24,11 +24,16 @@ namespace smf {
 		, cyng::logger logger
 		, cfg& c
 		, lmn_type type)
-	: sigs_{
-		std::bind(&lmn::stop, this, std::placeholders::_1),
-		std::bind(&lmn::open, this),
-		std::bind(&lmn::do_write, this, std::placeholders::_1),
-		std::bind(&lmn::reset_target_channels, this, std::placeholders::_1)
+		: sigs_{
+			std::bind(&lmn::stop, this, std::placeholders::_1),
+			std::bind(&lmn::open, this),
+			std::bind(&lmn::do_write, this, std::placeholders::_1),
+			std::bind(&lmn::reset_target_channels, this, std::placeholders::_1),
+			std::bind(&lmn::set_baud_rate, this, std::placeholders::_1),	//	4
+			std::bind(&lmn::set_parity, this, std::placeholders::_1),		//	5
+			std::bind(&lmn::set_flow_control, this, std::placeholders::_1),	//	6
+			std::bind(&lmn::set_stopbits, this, std::placeholders::_1),		//	7
+			std::bind(&lmn::set_databits, this, std::placeholders::_1)		//	8
 	}	, channel_(wp)
 		, ctl_(ctl)
 		, logger_(logger)
@@ -42,6 +47,11 @@ namespace smf {
 			sp->set_channel_name("open", 1);
 			sp->set_channel_name("write", 2);
 			sp->set_channel_name("reset-target-channels", 3);
+			sp->set_channel_name("set-baud-rate", 4);
+			sp->set_channel_name("set-parity", 5);
+			sp->set_channel_name("set-flow-control", 6);
+			sp->set_channel_name("set-stopbits", 7);
+			sp->set_channel_name("set-databits", 8);
 		}
 
 		CYNG_LOG_INFO(logger_, "LMN " << cfg_.get_port() << " ready");
@@ -175,5 +185,95 @@ namespace smf {
 		}
 	}
 
+	void lmn::set_baud_rate(std::uint32_t val) {
+
+		//
+		//	set value
+		//
+		boost::system::error_code ec;
+		port_.set_option(boost::asio::serial_port_base::baud_rate(val), ec);
+		if (!ec) {
+
+			//
+			//	get value and compare
+			//
+			boost::asio::serial_port_base::baud_rate baud_rate;
+			port_.get_option(baud_rate, ec);
+			CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] new baudrate " << val << "/" << baud_rate.value());
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set baudrate " << val << " failed: " << ec.message());
+		}
+	}
+
+	void lmn::set_parity(std::string val) {
+
+		//
+		//	set value
+		//
+		boost::system::error_code ec;
+		port_.set_option(serial::to_parity(val), ec);
+
+		//
+		//	get value and compare
+		//
+		boost::asio::serial_port_base::parity parity;
+		port_.get_option(parity, ec);
+		CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] new parity " << val << "/" << serial::to_str(parity));
+	}
+
+	void lmn::set_flow_control(std::string val) {
+
+		//
+		//	set value
+		//
+		boost::system::error_code ec;
+		port_.set_option(serial::to_flow_control(val), ec);
+
+		//
+		//	get value and compare
+		//
+		boost::asio::serial_port_base::flow_control flow_control;
+		port_.get_option(flow_control, ec);
+
+		CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] new flow control " << val << "/" << serial::to_str(flow_control));
+	}
+
+	void lmn::set_stopbits(std::string val) {
+
+		//
+		//	set value
+		//
+		boost::system::error_code ec;
+		port_.set_option(serial::to_stopbits(val), ec);
+
+		//
+		//	get value and compare
+		//
+		boost::asio::serial_port_base::stop_bits stopbits;
+		port_.get_option(stopbits);
+
+		CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new stopbits " << val << "/" << serial::to_str(stopbits));
+
+	}
+	void lmn::set_databits(std::uint8_t val) {
+		//
+		//	set value
+		//
+		boost::system::error_code ec;
+		port_.set_option(boost::asio::serial_port_base::character_size(val), ec);
+		if (!ec) {
+
+			//
+			//	get value and compare
+			//
+			boost::asio::serial_port_base::character_size databits;
+			port_.get_option(databits, ec);
+			CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new databits " << +val << "/" << +databits.value());
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set databits " << +val << " failed: " << ec.message());
+		}
+	}
 
 }

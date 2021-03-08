@@ -64,6 +64,7 @@
 	 bool insert_config_record(cyng::db::statement_ptr stmt, std::string key, cyng::object obj, std::string desc);
 	 bool insert_config_record(cyng::db::statement_ptr stmt, cyng::object const&, cyng::object obj);
 	 bool update_config_record(cyng::db::statement_ptr stmt, cyng::object const& key, cyng::object obj);
+	 bool remove_config_record(cyng::db::statement_ptr stmt, cyng::object const& key);
  }
 
 #endif

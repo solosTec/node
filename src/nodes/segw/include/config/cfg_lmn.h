@@ -22,6 +22,10 @@
 		 OTHER = 0,
 	 };
 
+	 constexpr std::uint8_t get_index(lmn_type type) {
+		 return static_cast<std::uint8_t>(type);
+	 }
+
 	 /**
 	  * Takes the name of a serial port and lookup for the LMN type
 	  */
@@ -112,10 +116,25 @@
 
 		 constexpr static char root[] = "lmn";
 
+		 static std::string port_path(std::uint8_t idx);
+		 static std::string enabled_path(std::uint8_t idx);
+		 static std::string speed_path(std::uint8_t idx);
+		 static std::string parity_path(std::uint8_t idx);
+		 static std::string flow_control_path(std::uint8_t idx);
+		 static std::string stopbits_path(std::uint8_t idx);
+		 static std::string databits_path(std::uint8_t idx);
+		 static std::string broker_enabled_path(std::uint8_t idx);
+		 static std::string broker_login_path(std::uint8_t idx);
+		 static std::string broker_timeout_path(std::uint8_t idx);
+		 static std::string type_path(std::uint8_t idx);
+		 static std::string protocol_path(std::uint8_t idx);
+		 static std::string HCI_path(std::uint8_t idx);
+
 	 private:
 		 cfg& cfg_;
 		 lmn_type const type_;
 	 };
+
 }
 
 #endif

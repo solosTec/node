@@ -172,14 +172,8 @@ namespace smf {
 		//
 		//	connect database to cache
 		//
-		auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", logger_, cache_, storage_);
+		auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", ctl_, logger_, cfg_, storage_);
 		BOOST_ASSERT(channel->is_open());
-		//channel->dispatch("connect", cyng::make_tuple());
-
-		//
-		//	test
-		//
-		//cfg_.set_obj("language-code", cyng::make_object("en-GB"));
 	}
 
 	void bridge::load_configuration() {

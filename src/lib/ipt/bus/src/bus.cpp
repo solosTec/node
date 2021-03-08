@@ -154,9 +154,6 @@ namespace smf
 						tgl_.get().pwd_));
 
 				}
-				//serializer_.
-				//	buffer_write_.emplace_back(cyng::make_buffer(target_.get_login_sequence()));
-				//	buffer_write_.emplace_back(cyng::make_buffer("\r\n"));
 
 				// Start the input actor.
 				do_read();
@@ -268,6 +265,7 @@ namespace smf
 			auto instructions = gen_instructions(h, std::move(body));
 		}
 		void bus::transmit(cyng::buffer_t&& data) {
+			CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] transmit " << data.size() << " bytes");
 
 		}
 

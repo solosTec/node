@@ -27,6 +27,10 @@ namespace smf {
 	public:
 		cfg(cyng::logger, cyng::store&);
 
+		inline cyng::store& get_cache() {
+			return cache_;
+		}
+
 		/**
 		 * @return itentity/source tag
 		 */
