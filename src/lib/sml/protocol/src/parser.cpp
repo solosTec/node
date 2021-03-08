@@ -23,7 +23,9 @@ namespace smf {
 		parser::parser()
 			: tokenizer_(std::bind(&parser::next, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
 			, stack_()
-		{}
+		{
+			//std::cout << cyng::make_object(cyng::make_buffer("hell\ao")) << std::endl;;
+		}
 
 		void parser::next(sml_type type, std::size_t size, cyng::buffer_t data) {
 
@@ -31,7 +33,7 @@ namespace smf {
 
 			case sml_type::BINARY:
 				BOOST_ASSERT(size == data.size());
-				push(cyng::make_object(data));
+				push(cyng::make_object(std::move(data)));
 				break;
 			case sml_type::BOOLEAN:
 				BOOST_ASSERT(data.size() == 1);
@@ -63,6 +65,7 @@ namespace smf {
 				push(cyng::make_object());
 				break;
 			case sml_type::EOM:
+				finalize();
 				break;
 
 			default:
@@ -93,21 +96,27 @@ namespace smf {
 
 				}
 			}
+			else {
+#ifdef _DEBUG_SML
+				std::cout << "empty " << std::string(2 * stack_.size(), '.') << ": " << cyng::io::to_typed(obj) << std::endl;
+#endif
+
+			}
 		}
 
 		void parser::push_integer(cyng::buffer_t const& data) {
 			switch (data.size()) {
 			case 1:
-				push(cyng::make_object(cyng::to_numeric_be<std::int8_t>(data)));
+				push(cyng::make_object(cyng::to_numeric_le<std::int8_t>(data)));
 				break;
 			case 2:
-				push(cyng::make_object(cyng::to_numeric_be<std::int16_t>(data)));
+				push(cyng::make_object(cyng::to_numeric_le<std::int16_t>(data)));
 				break;
 			case 3: case 4:
-				push(cyng::make_object(cyng::to_numeric_be<std::int32_t>(data)));
+				push(cyng::make_object(cyng::to_numeric_le<std::int32_t>(data)));
 				break;
 			case 5: case 6: case 7: case 8:
-				push(cyng::make_object(cyng::to_numeric_be<std::int64_t>(data)));
+				push(cyng::make_object(cyng::to_numeric_le<std::int64_t>(data)));
 				break;
 			default:
 				BOOST_ASSERT_MSG(false, "invalid length for data type INTEGER");
@@ -118,16 +127,16 @@ namespace smf {
 		void parser::push_unsigned(cyng::buffer_t const& data) {
 			switch (data.size()) {
 			case 1:
-				push(cyng::make_object(cyng::to_numeric_be<std::uint8_t>(data)));
+				push(cyng::make_object(cyng::to_numeric_le<std::uint8_t>(data)));
 				break;
 			case 2:
-				push(cyng::make_object(cyng::to_numeric_be<std::uint16_t>(data)));
+				push(cyng::make_object(cyng::to_numeric_le<std::uint16_t>(data)));
 				break;
 			case 3: case 4:
-				push(cyng::make_object(cyng::to_numeric_be<std::uint32_t>(data)));
+				push(cyng::make_object(cyng::to_numeric_le<std::uint32_t>(data)));
 				break;
 			case 5: case 6: case 7: case 8:
-				push(cyng::make_object(cyng::to_numeric_be<std::uint64_t>(data)));
+				push(cyng::make_object(cyng::to_numeric_le<std::uint64_t>(data)));
 				break;
 			default:
 				BOOST_ASSERT_MSG(false, "invalid length for data type UNSIGNED");
@@ -135,6 +144,19 @@ namespace smf {
 			}
 		}
 
+		void parser::finalize() {
+			//BOOST_ASSERT(stack_.size() == 1);
+			if (!stack_.empty()) {
+#ifdef _DEBUG_SML
+				std::cout << "msg complete " << stack_.top().values_.size() << std::endl;
+#endif
+				stack_.pop();
+			}
+		}
+
+		//
+		//	list
+		//
 		parser::list::list(std::size_t size)
 			: size_(size)
 			, values_()

@@ -9,6 +9,7 @@
 
 #include <cyng/obj/intrinsics/buffer.h>
 #include <smf/sml.h>
+#include <smf/sml/crc16.h>
 
 #include <iterator>
 #include <type_traits>
@@ -38,8 +39,7 @@ namespace smf {
 				START,
 				LENGTH,	//!<	check MSB
 				LIST,	//!< different handling of length
-				DATA,
-				EOM
+				DATA
 			} state_;
 
 		public:
@@ -86,6 +86,11 @@ namespace smf {
 			std::size_t length_;
 			sml_type type_;
 			cyng::buffer_t data_;
+
+			/**
+			 *	CRC designated by CCITT
+			 */
+			std::uint16_t	crc_;
 
 		};
 	}

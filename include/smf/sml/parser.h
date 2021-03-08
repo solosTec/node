@@ -8,6 +8,7 @@
 #define SMF_SML_PARSER_H
 
 #include <smf/sml/tokenizer.h>
+#include <smf/sml/crc16.h>
 
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/object.h>
@@ -70,6 +71,8 @@ namespace smf {
 			void push_integer(cyng::buffer_t const&);
 			void push_unsigned(cyng::buffer_t const&);
 
+			void finalize();
+
 
 		private:
 			tokenizer	tokenizer_;
@@ -78,6 +81,7 @@ namespace smf {
 			 * Collect nested data
 			 */
 			std::stack<list>	stack_;
+
 
 		};
 

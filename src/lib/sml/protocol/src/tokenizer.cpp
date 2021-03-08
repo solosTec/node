@@ -15,6 +15,7 @@ namespace smf {
 			, length_(0)
 			, type_(sml_type::UNKNOWN)
 			, data_()
+			, crc_(crc_init())
 		{}
 
 		void tokenizer::put(char c) {
@@ -32,17 +33,11 @@ namespace smf {
 			case state::DATA:
 				state_ = state_data(c);
 				break;
-			case state::EOM:
-#ifdef _DEBUG_SML
-				if (length_ == 1)	std::cout << "EOM" << std::endl;
-#endif
-				cb_(sml_type::EOM, data_.size(), data_);
-				state_ = state::START;
-				break;
 			default:
 				BOOST_ASSERT_MSG(false, "illegal parser state");
 				break;
 			}
+			crc_ = crc_update(crc_, c);
 		}
 
 		tokenizer::state tokenizer::start(char c) {
@@ -52,8 +47,12 @@ namespace smf {
 
 			switch (c) {
 			case 0:
+				crc_ = crc_finalize(crc_);
+#ifdef _DEBUG_SML
+				std::cout << "EOM: " << crc_ << std::endl;
+#endif
 				cb_(sml_type::EOM, data_.size(), data_);
-				return state::EOM;
+				return state::START;
 			case 1:
 				cb_(sml_type::OPTIONAL, data_.size(), data_);
 				return state_;
@@ -98,19 +97,18 @@ namespace smf {
 					//	empty list as empty tuple
 #ifdef _DEBUG_SML
 					std::cout << "{empty}" << std::endl;
-					cb_(sml_type::LIST, 0, data_);
-
 #endif
+					cb_(sml_type::LIST, 0, data_);
 				}
 				else if ((c & 0x80) == 0x80) {
 					//	more length data
 					return state::LIST;
 				}
 #ifdef _DEBUG_SML
-				std::cout << "list [" << length_ - 1 << "]" << std::endl;
+				std::cout << "list [" << length_ << "]" << std::endl;
 #endif
 				data_.push_back(c);
-				cb_(sml_type::LIST, length_ - 1, data_);
+				cb_(sml_type::LIST, length_, data_);
 				break;
 			case sml_type::OPTIONAL:
 				BOOST_ASSERT_MSG(false, "invalid type");
