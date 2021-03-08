@@ -5,9 +5,11 @@
  *
  */
 
+#include <smf.h>
 #include <smf/ipt/bus.h>
 #include <smf/ipt/codes.h>
 #include <smf/ipt/transpiler.h>
+#include <smf/ipt/response.hpp>
 
 #include <cyng/vm/mesh.h>
 #include <cyng/log/record.h>
@@ -19,15 +21,14 @@ namespace smf
 {
 	namespace ipt
 	{
-		bus::bus(cyng::mesh& mesh, cyng::logger logger, toggle::server_vec_t&& tgl)
+		bus::bus(boost::asio::io_context& ctx, cyng::logger logger, toggle::server_vec_t&& tgl)
 			: state_(state::INITIAL)
-			, mesh_(mesh)
 			, logger_(logger)
 			, tgl_(std::move(tgl))
 			, stopped_(false)
 			, endpoints_()
-			, socket_(mesh_.get_ctl().get_ctx())
-			, deadline_(mesh_.get_ctl().get_ctx())
+			, socket_(ctx)
+			, deadline_(ctx)
 			, serializer_(tgl_.get().sk_)
 			, parser_(tgl_.get().sk_
 				, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), std::bind(&bus::transmit, this, std::placeholders::_1))
@@ -53,7 +54,7 @@ namespace smf
 			//
 			//	connect to IP-T server
 			//
-			boost::asio::ip::tcp::resolver r(mesh_.get_ctl().get_ctx());
+			boost::asio::ip::tcp::resolver r(socket_.get_executor());
 			connect(r.resolve(tgl_.get().host_, tgl_.get().service_));
 
 		}
@@ -66,6 +67,7 @@ namespace smf
 			boost::system::error_code ignored_ec;
 			socket_.close(ignored_ec);
 			deadline_.cancel();
+			state_ = state::INITIAL;
 			//heartbeat_timer_.cancel();
 
 		}
@@ -262,12 +264,150 @@ namespace smf
 
 		void bus::cmd_complete(header const& h, cyng::buffer_t&& body) {
 			CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] cmd " << command_name(h.command_));	
-			auto instructions = gen_instructions(h, std::move(body));
+
+			//auto instructions = gen_instructions(h, std::move(body));
+
+			switch (to_code(h.command_)) {
+			case code::TP_REQ_OPEN_PUSH_CHANNEL:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::TP_RES_OPEN_PUSH_CHANNEL:
+				break;
+			case code::TP_REQ_CLOSE_PUSH_CHANNEL:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::TP_RES_CLOSE_PUSH_CHANNEL:
+				break;
+			case code::TP_REQ_PUSHDATA_TRANSFER:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::TP_RES_PUSHDATA_TRANSFER:
+				break;
+			case code::TP_REQ_OPEN_CONNECTION:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::TP_RES_OPEN_CONNECTION:
+				break;
+			case code::TP_REQ_CLOSE_CONNECTION:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::TP_RES_CLOSE_CONNECTION:
+				break;
+			//	open stream channel
+			//TP_REQ_OPEN_STREAM_CHANNEL = 0x9006,
+			//TP_RES_OPEN_STREAM_CHANNEL = 0x1006,
+
+			//	close stream channel
+			//TP_REQ_CLOSE_STREAM_CHANNEL = 0x9007,
+			//TP_RES_CLOSE_STREAM_CHANNEL = 0x1007,
+
+			//	stream channel data transfer
+			//TP_REQ_STREAMDATA_TRANSFER = 0x9008,
+			//TP_RES_STREAMDATA_TRANSFER = 0x1008,
+
+			case code::APP_REQ_PROTOCOL_VERSION:
+				buffer_write_.push_back(serializer_.res_protocol_version(h.sequence_, 1));
+				break;
+			case code::APP_REQ_SOFTWARE_VERSION:
+				buffer_write_.push_back(serializer_.res_software_version(h.sequence_, SMF_VERSION_NAME));
+				break;
+			case code::APP_REQ_DEVICE_IDENTIFIER:
+				buffer_write_.push_back(serializer_.res_device_id(h.sequence_, "deviceID"));
+				break;
+			case code::APP_REQ_NETWORK_STATUS:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::APP_REQ_IP_STATISTICS:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::APP_REQ_DEVICE_AUTHENTIFICATION:
+				break;
+			case code::APP_REQ_DEVICE_TIME:
+				buffer_write_.push_back(serializer_.res_device_time(h.sequence_));
+				break;
+			case code::APP_REQ_PUSH_TARGET_NAMELIST:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::APP_REQ_PUSH_TARGET_ECHO:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::APP_REQ_TRACEROUTE:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+
+			case code::CTRL_REQ_LOGIN_PUBLIC:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::CTRL_REQ_LOGIN_SCRAMBLED:
+				//scrambler_ = def_sk_.key();
+				break;
+			case code::CTRL_RES_LOGIN_PUBLIC:
+				res_login(std::move(body));
+				break;
+			case code::CTRL_RES_LOGIN_SCRAMBLED:
+				res_login(std::move(body));
+				break;
+
+			case code::CTRL_REQ_LOGOUT:
+				break;
+			case code::CTRL_RES_LOGOUT:
+				break;
+
+			case code::CTRL_REQ_REGISTER_TARGET:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::CTRL_RES_REGISTER_TARGET:
+				break;
+			case code::CTRL_REQ_DEREGISTER_TARGET:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				break;
+			case code::CTRL_RES_DEREGISTER_TARGET:
+				break;
+
+				//	stream source register
+				//CTRL_REQ_REGISTER_STREAM_SOURCE = 0xC00B,
+				//CTRL_RES_REGISTER_STREAM_SOURCE = 0x400B,
+
+				//	stream source deregister
+				//CTRL_REQ_DEREGISTER_STREAM_SOURCE = 0xC00C,
+				//CTRL_RES_DEREGISTER_STREAM_SOURCE = 0x400C,
+
+			case code::UNKNOWN:
+				break;
+
+			default:
+				break;
+			}
+
+			if (!buffer_write_.empty())	do_write();
 		}
+
 		void bus::transmit(cyng::buffer_t&& data) {
 			CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] transmit " << data.size() << " bytes");
 
 		}
+
+		void bus::res_login(cyng::buffer_t&& data) {
+			auto const [res, watchdog, redirect] = ctrl_res_login(std::move(data));
+			auto r = make_login_response(res);
+			if (r.is_success()) {
+
+				CYNG_LOG_INFO(logger_, "ipt [" << tgl_.get() << "] " << r.get_response_name());
+
+				//
+				//	update state
+				//
+				state_ = state::AUTHORIZED;
+
+				//
+				//	ToDo: set watchdog
+				//
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "ipt [" << tgl_.get() << "] login failed: " << r.get_response_name());
+			}
+		}
+
 
 	}	//	ipt
 }

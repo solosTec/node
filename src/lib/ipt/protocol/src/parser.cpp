@@ -54,11 +54,11 @@ namespace smf
 			return state_;
 		}
 		parser::state parser::state_esc(char c) {
-			if (c == ESCAPE_SIGN) {
-				buffer_.push_back(c);
-				return state::STREAM;
-			}
-			return state::HEADER;
+			buffer_.push_back(c);
+			return (c == ESCAPE_SIGN)
+				? state::STREAM
+				: state::HEADER
+				;
 		}
 		parser::state parser::state_header(char c) {
 			buffer_.push_back(c);
@@ -81,9 +81,7 @@ namespace smf
 					//	command complete
 					//
 					command_complete_(header_, std::move(buffer_));
-
-					buffer_.reserve(HEADER_SIZE);
-					return state::HEADER;
+					return state::STREAM;
 				}
 			}
 			return state_;
@@ -98,8 +96,7 @@ namespace smf
 				//
 				command_complete_(header_, std::move(buffer_));
 				buffer_.clear();
-				buffer_.reserve(HEADER_SIZE);
-				return state::HEADER;
+				return state::STREAM;
 			}
 			return state_;
 		}

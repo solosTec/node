@@ -10,6 +10,7 @@
 #include <cfg.h>
 #include <storage_functions.h>
 #include <storage.h>
+#include <router.h>
 #include <config/cfg_lmn.h>
 #include <sml/server.h>
 #include <nms/server.h>
@@ -83,6 +84,7 @@ namespace smf {
 		cyng::store cache_;
 		cfg cfg_;
 		cyng::mesh fabric_;
+		router	router_;	//	SML router
 		ipt::bus	bus_;
 		nms::server	nms_;
 		sml::server	sml_;

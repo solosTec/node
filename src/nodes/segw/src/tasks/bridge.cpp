@@ -50,7 +50,8 @@ namespace smf {
 		, cache_()
 		, cfg_(logger, cache_)
 		, fabric_(ctl)
-		, bus_(fabric_, logger, std::move(tgl))
+		, router_(ctl, cfg_)
+		, bus_(ctl.get_ctx(), logger, std::move(tgl))
 		, nms_(ctl, cfg_, logger)
 		, sml_(ctl, cfg_, logger)
 	{

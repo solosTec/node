@@ -12,11 +12,6 @@
 #include <smf/ipt/parser.h>
 
 #include <cyng/log/logger.h>
-#include <cyng/vm/mesh.h>
-
-namespace cyng {
-	class mesh;
-}
 
 namespace smf
 {
@@ -32,7 +27,9 @@ namespace smf
 			} state_;
 
 		public:
-			bus(cyng::mesh& mesh, cyng::logger, toggle::server_vec_t&&);
+			bus(boost::asio::io_context& ctx
+				, cyng::logger
+				, toggle::server_vec_t&&);
 			void start();
 			void stop();
 
@@ -50,8 +47,9 @@ namespace smf
 			void cmd_complete(header const&, cyng::buffer_t&&);
 			void transmit(cyng::buffer_t&&);
 
+			void res_login(cyng::buffer_t&&);
+
 		private:
-			cyng::mesh& mesh_;
 			cyng::logger logger_;
 			toggle tgl_;
 			bool stopped_;
@@ -60,8 +58,6 @@ namespace smf
 			boost::asio::steady_timer deadline_;
 			serializer	serializer_;
 			parser	parser_;
-			//std::function<void(void)>	demo_;
-			//cyng::vm_proxy vm_;
 			std::deque<cyng::buffer_t>	buffer_write_;
 			std::array<char, 2048>	input_buffer_;
 

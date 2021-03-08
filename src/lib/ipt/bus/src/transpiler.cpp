@@ -16,29 +16,28 @@ namespace smf
 {
 	namespace ipt
 	{
-		cyng::deque_t ctrl_res_login_public(cyng::buffer_t&& data) {
+		std::tuple<response_t, std::uint16_t, std::string> ctrl_res_login(cyng::buffer_t&& data) {
 
 			//	response
 			//	watchdog
 			//	redirect
-			auto res = cyng::to_numeric_be<response_t>(data);
-			auto wd = cyng::to_numeric_be<std::uint16_t>(data, sizeof(response_t));
-			auto redirect = cyng::to_string_nil(data, sizeof(response_t)+ sizeof(wd));
-
-			return cyng::generate_invoke("ipt.res.login", redirect, wd, res);
-			//return cyng::make_deque(redirect, wd, res, 3, "ipt.res.login", cyng::op::INVOKE);
+			return {
+				cyng::to_numeric_be<response_t>(data),
+				cyng::to_numeric_be<std::uint16_t>(data, sizeof(response_t)),
+				cyng::to_string_nil(data, sizeof(response_t) + sizeof(std::uint16_t))
+			};
 		}
 
-		cyng::deque_t ctrl_res_login_scrambled(cyng::buffer_t&& data) {
-			auto res = cyng::to_numeric_be<response_t>(data);
-			auto wd = cyng::to_numeric_be<std::uint16_t>(data, sizeof(response_t));
+		//cyng::deque_t ctrl_res_login_scrambled(cyng::buffer_t&& data) {
+		//	auto res = cyng::to_numeric_be<response_t>(data);
+		//	auto wd = cyng::to_numeric_be<std::uint16_t>(data, sizeof(response_t));
 
-			//
-			//	ToDo: set new scramble key
-			//
+		//	//
+		//	//	ToDo: set new scramble key
+		//	//
 
-			return cyng::make_deque(wd, res, 2, "ipt.res.login", cyng::op::INVOKE);
-		}
+		//	return cyng::make_deque(wd, res, 2, "ipt.res.login", cyng::op::INVOKE);
+		//}
 
 		cyng::deque_t gen_instructions(header const& h, cyng::buffer_t&& data) {
 
@@ -103,10 +102,11 @@ namespace smf
 				//scrambler_ = def_sk_.key();
 				break;
 			case code::CTRL_RES_LOGIN_PUBLIC:
-				return ctrl_res_login_public(std::move(data));
+				//return ctrl_res_login_public(std::move(data));
+				break;
 			case code::CTRL_RES_LOGIN_SCRAMBLED:
-				return ctrl_res_login_scrambled(std::move(data));
-
+				//return ctrl_res_login_scrambled(std::move(data));
+				break;
 			case code::CTRL_REQ_LOGOUT:
 				break;
 			case code::CTRL_RES_LOGOUT:

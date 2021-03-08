@@ -157,6 +157,10 @@ namespace smf {
 		 */
 		const char* command_name(std::uint16_t);
 
+		constexpr code to_code(command_t cmd) {
+			return static_cast<code>(cmd);
+		}
+
 	}	//	ipt
 }	
 
