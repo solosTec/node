@@ -174,6 +174,7 @@ namespace smf {
 		//
 		auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", ctl_, logger_, cfg_, storage_);
 		BOOST_ASSERT(channel->is_open());
+		channel->dispatch("power-return", cyng::make_tuple());
 	}
 
 	void bridge::load_configuration() {

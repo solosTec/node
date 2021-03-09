@@ -7,6 +7,8 @@
 #ifndef SMF_SEGW_CFG_H
 #define SMF_SEGW_CFG_H
 
+#include <smf/sml/status.h>
+
 #include <cyng/log/logger.h>
 #include <cyng/store/db.h>
 #include <cyng/obj/intrinsics/buffer.h>
@@ -74,6 +76,11 @@ namespace smf {
 		bool set_value(std::string name, cyng::object obj);
 
 		/**
+		 * @return SML status word
+		 */
+		sml::status_word_t get_status_word() const;
+
+		/**
 		 * the separator character
 		 */
 		constexpr static char sep = '/';
@@ -91,6 +98,11 @@ namespace smf {
 		 * server id
 		 */
 		cyng::buffer_t id_;
+
+		/**
+		 * OBIS log status
+		 */
+		sml::status_word_t status_word_;
 
 	};
 }

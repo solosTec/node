@@ -15,7 +15,7 @@ namespace smf {
 		const char* command_name(std::uint16_t c)
 		{
 
-			switch (static_cast<code>(c)) {
+			switch (to_code(c)) {
 
 			case code::TP_REQ_OPEN_PUSH_CHANNEL:	return "TP_REQ_OPEN_PUSH_CHANNEL";
 			case code::TP_RES_OPEN_PUSH_CHANNEL:	return "TP_RES_OPEN_PUSH_CHANNEL";

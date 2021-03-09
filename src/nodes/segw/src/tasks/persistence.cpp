@@ -7,6 +7,8 @@
 
 #include <tasks/persistence.h>
 #include <storage.h>
+#include <smf/obis/defs.h>
+#include <smf/sml/event.h>
 
 #include <cyng/log/record.h>
 
@@ -24,7 +26,8 @@ namespace smf
 			std::bind(&persistence::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5),
 			std::bind(&persistence::modify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5),
 			std::bind(&persistence::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-			std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2)
+			std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2),
+			std::bind(&persistence::power_return, this)
 		}
 		, channel_(wp)
 		, logger_(logger)
@@ -38,6 +41,7 @@ namespace smf
 			sp->set_channel_name("db.modify", 2);
 			sp->set_channel_name("db.remove", 3);
 			sp->set_channel_name("db.clear", 4);
+			sp->set_channel_name("power-return", 5);
 		}
 
 		connect();
@@ -52,6 +56,17 @@ namespace smf
 
 		cfg_.get_cache().connect("cfg", cyng::slot(channel_));
 		CYNG_LOG_INFO(logger_, "persistence connected");
+	}
+
+	void persistence::power_return() {
+	
+		storage_.generate_op_log(cfg_.get_status_word()
+			, sml::LOG_CODE_09	//	0x00100023 - power return
+			, OBIS_PEER_SCM		//	source is SCM
+			, cfg_.get_srv_id()	//	server ID
+			, ""	//	target
+			, 0		//	nr
+			, "power return");	//	description
 	}
 
 	void persistence::insert(cyng::table const* tbl

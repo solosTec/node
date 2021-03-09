@@ -44,7 +44,8 @@ namespace smf {
 				, cyng::key_t
 				, boost::uuids::uuid)>,
 			std::function<void(cyng::table const*
-				, boost::uuids::uuid)>
+				, boost::uuids::uuid)>,
+			std::function<void()>	//	power_return
 		>;
 
 	public:
@@ -57,6 +58,11 @@ namespace smf {
 	private:
 		void stop(cyng::eod);
 		void connect();
+
+		/**
+		 * place power return message into OBIS log
+		 */
+		void power_return();
 
 		void insert(cyng::table const*
 			, cyng::key_t

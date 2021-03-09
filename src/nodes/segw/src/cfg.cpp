@@ -21,6 +21,7 @@ namespace smf {
 		, cache_(cache)
 		, tag_(boost::uuids::nil_uuid())
 		, id_({0x05, 0x00, 0x00 , 0x00 , 0x00 , 0x00 , 0x00 })
+		, status_word_(sml::get_initial_value())
 	{}
 
 	boost::uuids::uuid cfg::get_tag() const {
@@ -51,6 +52,10 @@ namespace smf {
 
 	bool cfg::set_value(std::string name, cyng::object obj) {
 		return set_obj(name, std::move(obj));
+	}
+
+	sml::status_word_t cfg::get_status_word() const {
+		return status_word_;
 	}
 
 }
