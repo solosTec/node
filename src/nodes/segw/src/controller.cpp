@@ -10,7 +10,7 @@
 #include <tasks/bridge.h>
 
 #include <smf/obis/defs.h>
-#include <smf/ipt/config.h>
+//#include <smf/ipt/config.h>
 
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
@@ -23,6 +23,7 @@
 #include <cyng/task/controller.h>
 #include <cyng/io/io_buffer.h>
 #include <cyng/log/record.h>
+#include <cyng/rnd/rnd.hpp>
 
 #include <locale>
 #include <iostream>
@@ -323,6 +324,16 @@ namespace smf {
 	}
 
 	cyng::param_t controller::create_hardware_spec() const {
+
+		//
+		//	generate a random serial number with a length of
+		//	8 characters
+		//
+		auto rnd_sn = cyng::crypto::make_rnd_num();
+		std::stringstream sn_ss(rnd_sn(8));
+		std::uint32_t sn{ 0 };
+		sn_ss >> sn;
+
 		return cyng::make_param("hardware", cyng::tuple_factory(
 			//	manufacturer (81 81 C7 82 03 FF - OBIS_DATA_MANUFACTURER)
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
@@ -331,7 +342,7 @@ namespace smf {
 			cyng::make_param("manufacturer", "solosTec"),
 #endif
 			cyng::make_param("model", "virtual.gateway"),	//	Typenschl�ssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
-			//cyng::make_param("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
+			cyng::make_param("serial", sn),	//	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
 			cyng::make_param("class", "129-129:199.130.83*255")	//	device class (81 81 C7 82 02 FF - OBIS_DEVICE_CLASS) "2D 2D 2D"
 			//cyng::make_param("adapter", cyng::tuple_factory(
 			//	cyng::make_param(sml::OBIS_W_MBUS_ADAPTER_MANUFACTURER.to_str(), "RC1180-MBUS3"),	//	manufacturer (81 06 00 00 01 00)
@@ -518,12 +529,12 @@ namespace smf {
 		auto const reader = cyng::make_reader(cfg);
 		auto s = cyng::db::create_db_session(reader.get("DB"));
 
-		auto const ipt_cfg = cyng::container_cast<cyng::vector_t>(reader["ipt"]["config"].get());
-		auto tgl = ipt::read_config(ipt_cfg);
-		BOOST_ASSERT(!tgl.empty());
-		CYNG_LOG_INFO(logger, tgl.size() << " ip-t server configured");
+		//auto const ipt_cfg = cyng::container_cast<cyng::vector_t>(reader["ipt"]["config"].get());
+		//auto tgl = ipt::read_config(ipt_cfg);
+		//BOOST_ASSERT(!tgl.empty());
+		//CYNG_LOG_INFO(logger, tgl.size() << " ip-t server configured");
 
-		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, std::move(tgl));
+		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s);
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("start", cyng::make_tuple());
 	}

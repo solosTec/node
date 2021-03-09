@@ -60,6 +60,7 @@ set (segw_config
     include/config/cfg_nms.h
     include/config/cfg_sml.h
     include/config/cfg_vmeter.h
+    include/config/cfg_hardware.h
     src/cfg.cpp
     src/config/cfg_ipt.cpp
     src/config/cfg_lmn.cpp
@@ -70,6 +71,7 @@ set (segw_config
     src/config/cfg_nms.cpp
     src/config/cfg_sml.cpp
     src/config/cfg_vmeter.cpp
+    src/config/cfg_hardware.cpp
 )
 
 set (segw_sml

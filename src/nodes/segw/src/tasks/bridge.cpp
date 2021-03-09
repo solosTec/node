@@ -17,7 +17,7 @@
 #include <config/cfg_nms.h>
 #include <config/cfg_sml.h>
 #include <config/cfg_vmeter.h>
-#include <config/cfg_ipt.h>
+//#include <config/cfg_ipt.h>
 
 #include <smf/obis/defs.h>
 
@@ -37,8 +37,7 @@ namespace smf {
 	bridge::bridge(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, cyng::logger logger
-		, cyng::db::session db
-		, ipt::toggle::server_vec_t&& tgl)
+		, cyng::db::session db)
 	: sigs_{
 		std::bind(&bridge::stop, this, std::placeholders::_1),
 		std::bind(&bridge::start, this),
@@ -50,8 +49,8 @@ namespace smf {
 		, cache_()
 		, cfg_(logger, cache_)
 		, fabric_(ctl)
-		, router_(ctl, cfg_)
-		, bus_(ctl.get_ctx(), logger, std::move(tgl))
+		, router_(ctl, cfg_, logger)
+		//, bus_(ctl.get_ctx(), logger, std::move(tgl))
 		, nms_(ctl, cfg_, logger)
 		, sml_(ctl, cfg_, logger)
 	{
@@ -124,7 +123,7 @@ namespace smf {
 		//	IP-T client
 		//	connect to IP-T server
 		//
-		CYNG_LOG_INFO(logger_, "initialize: IP-T client");
+		//CYNG_LOG_INFO(logger_, "initialize: IP-T client");
 		init_ipt_bus();
 
 		//
@@ -294,16 +293,17 @@ namespace smf {
 	}
 
 	void bridge::init_ipt_bus() {
-		cfg_ipt cfg(cfg_);
-		if (cfg.is_enabled()) {
-			//
-			//	start IP-T bus
-			//
-			bus_.start();
-		}
-		else {
-			CYNG_LOG_WARNING(logger_, "IP-T client is not enabled");
-		}
+		router_.start();
+		//cfg_ipt cfg(cfg_);
+		//if (cfg.is_enabled()) {
+		//	//
+		//	//	start IP-T bus
+		//	//
+		//	//bus_.start();
+		//}
+		//else {
+		//	CYNG_LOG_WARNING(logger_, "IP-T client is not enabled");
+		//}
 	}
 
 	void bridge::init_broker_clients() {

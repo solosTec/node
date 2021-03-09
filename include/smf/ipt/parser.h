@@ -25,6 +25,35 @@ namespace smf
 {
 	namespace ipt	
 	{
+		/** @brief state engine
+		 * 
+		 * @code
+			   +---------->
+			   |          |
+			   |  +----+  <--------+---+
+			   |  |    |  |        |   |
+			   |  |  +-v--v-----+  |   |
+			   |  |  |  STREAM  |  |   |
+			   |  |  +-+--+-----+  |   |
+			   |  |    |  |        |   |
+			   |  +----+  | ESC    |   |
+			ESC|          |        |   |
+			   |     +----v-----+  |   |
+			   +-----+  ESC     |  |   |
+					 +----+-----+  |   |
+						  |        |   |
+						  |        |   |
+					 +----v-----+  |   |
+					 |  HEADER  +--+   |
+					 +----+-----+      |
+						  |            |
+						  |            |
+					 +----v------+     |
+					 |  BODY     +-----+
+					 +-----------+
+		 * @endcode
+		 *
+		 */
 		class parser
 		{
 			using scrambler_t = scrambler<char, scramble_key::SIZE::value>;

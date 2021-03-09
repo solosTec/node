@@ -38,6 +38,7 @@
 	 void transfer_config(cyng::db::session&, cyng::object&& cfg);
 	 void transfer_ipt_config(cyng::db::statement_ptr stmt, cyng::vector_t&& vec);
 	 void transfer_ipt_params(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap);
+	 void transfer_hardware(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap);
 	 void transfer_sml(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap);
 	 void transfer_nms(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap);
 	 void transfer_lnm(cyng::db::statement_ptr stmt, cyng::vector_t&& vec);

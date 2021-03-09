@@ -15,7 +15,6 @@
 #include <sml/server.h>
 #include <nms/server.h>
 
-#include <smf/ipt/bus.h>
 #include <smf/ipt/config.h>
 
 #include <cyng/obj/intrinsics/eod.h>
@@ -43,8 +42,7 @@ namespace smf {
 		bridge(std::weak_ptr<cyng::channel>
 			, cyng::controller& ctl
 			, cyng::logger
-			, cyng::db::session
-			, ipt::toggle::server_vec_t&&);
+			, cyng::db::session);
 
 	private:
 		void stop(cyng::eod);
@@ -85,7 +83,7 @@ namespace smf {
 		cfg cfg_;
 		cyng::mesh fabric_;
 		router	router_;	//	SML router
-		ipt::bus	bus_;
+		//ipt::bus	bus_;
 		nms::server	nms_;
 		sml::server	sml_;
 	};

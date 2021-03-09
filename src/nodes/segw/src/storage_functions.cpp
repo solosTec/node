@@ -251,6 +251,11 @@ namespace smf {
 			transfer_ipt_params(stmt, cyng::container_cast<cyng::param_map_t>(reader["ipt"]["param"].get()));
 
 			//
+			//	transfer hardware configuration
+			//
+			transfer_hardware(stmt, cyng::container_cast<cyng::param_map_t>(reader["hardware"].get()));
+
+			//
 			//	transfer SML server configuration
 			//	%(("accept-all-ids":false),("account":operator),("address":0.0.0.0),("discover":5798),("enabled":true),("pwd":operator),("service":7259))
 			//
@@ -410,6 +415,26 @@ namespace smf {
 				OBIS_ROOT_IPT_PARAM)
 			, cyng::make_object(obis_has_ssl_config)
 			, "SSL support");
+	}
+
+	void transfer_hardware(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap) {
+
+		for (auto const& param : pmap) {
+			if (boost::algorithm::equals(param.first, "serial")) {
+				auto const serial_number = cyng::numeric_cast<std::uint32_t>(param.second, 10000000u);
+				insert_config_record(stmt
+					, cyng::to_path(cfg::sep, "hw", param.first)
+					, cyng::make_object(serial_number)
+					, "serial number " + std::to_string(serial_number));
+			}
+			else {
+
+				insert_config_record(stmt
+					, cyng::to_path(cfg::sep, "hw", param.first)
+					, param.second
+					, "hardware: " + param.first);
+			}
+		}
 	}
 
 	void transfer_sml(cyng::db::statement_ptr stmt, cyng::param_map_t&& pmap) {

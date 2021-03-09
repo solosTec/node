@@ -21,30 +21,27 @@ namespace smf
 {
 	namespace ipt
 	{
-		bus::bus(boost::asio::io_context& ctx, cyng::logger logger, toggle::server_vec_t&& tgl)
-			: state_(state::INITIAL)
+		bus::bus(boost::asio::io_context& ctx
+			, cyng::logger logger
+			, toggle::server_vec_t&& tgl
+			, std::string model
+			, parser::command_cb cb_cmd
+			, parser::data_cb cb_stream)
+		: state_(state::INITIAL)
 			, logger_(logger)
 			, tgl_(std::move(tgl))
+			, model_(model)
+			, cb_cmd_(cb_cmd)
 			, stopped_(false)
 			, endpoints_()
 			, socket_(ctx)
 			, deadline_(ctx)
 			, serializer_(tgl_.get().sk_)
 			, parser_(tgl_.get().sk_
-				, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), std::bind(&bus::transmit, this, std::placeholders::_1))
-			//, demo_(std::bind(&bus::start, this))
-			//, vm_(mesh_.create_proxy(demo_))
+				, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), cb_stream)
 			, buffer_write_()
 			, input_buffer_()
-		{
-			//std::function<void(void)> f = std::bind(&bus::start, this);	//	ok
-			//std::function<void(int)> f = [this](int i) {	//	ok
-			//	
-			//};
-			//using namespace cyng;
-			//auto vm = mesh_.create_proxy(demo_, f);	//	ok
-			//auto vm = mesh_.create_proxy(std::move(f));	//	ok
-		}
+		{}
 
 		void bus::start() {
 			BOOST_ASSERT(state_ == state::INITIAL);
@@ -268,43 +265,27 @@ namespace smf
 			//auto instructions = gen_instructions(h, std::move(body));
 
 			switch (to_code(h.command_)) {
-			case code::TP_REQ_OPEN_PUSH_CHANNEL:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
-				break;
 			case code::TP_RES_OPEN_PUSH_CHANNEL:
-				break;
-			case code::TP_REQ_CLOSE_PUSH_CHANNEL:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				cb_cmd_(h, std::move(body));
 				break;
 			case code::TP_RES_CLOSE_PUSH_CHANNEL:
-				break;
-			case code::TP_REQ_PUSHDATA_TRANSFER:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				cb_cmd_(h, std::move(body));
 				break;
 			case code::TP_RES_PUSHDATA_TRANSFER:
+				cb_cmd_(h, std::move(body));
 				break;
 			case code::TP_REQ_OPEN_CONNECTION:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				cb_cmd_(h, std::move(body));
 				break;
 			case code::TP_RES_OPEN_CONNECTION:
+				cb_cmd_(h, std::move(body));
 				break;
 			case code::TP_REQ_CLOSE_CONNECTION:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				cb_cmd_(h, std::move(body));
 				break;
 			case code::TP_RES_CLOSE_CONNECTION:
+				cb_cmd_(h, std::move(body));
 				break;
-			//	open stream channel
-			//TP_REQ_OPEN_STREAM_CHANNEL = 0x9006,
-			//TP_RES_OPEN_STREAM_CHANNEL = 0x1006,
-
-			//	close stream channel
-			//TP_REQ_CLOSE_STREAM_CHANNEL = 0x9007,
-			//TP_RES_CLOSE_STREAM_CHANNEL = 0x1007,
-
-			//	stream channel data transfer
-			//TP_REQ_STREAMDATA_TRANSFER = 0x9008,
-			//TP_RES_STREAMDATA_TRANSFER = 0x1008,
-
 			case code::APP_REQ_PROTOCOL_VERSION:
 				buffer_write_.push_back(serializer_.res_protocol_version(h.sequence_, 1));
 				break;
@@ -312,34 +293,17 @@ namespace smf
 				buffer_write_.push_back(serializer_.res_software_version(h.sequence_, SMF_VERSION_NAME));
 				break;
 			case code::APP_REQ_DEVICE_IDENTIFIER:
-				buffer_write_.push_back(serializer_.res_device_id(h.sequence_, "deviceID"));
-				break;
-			case code::APP_REQ_NETWORK_STATUS:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
-				break;
-			case code::APP_REQ_IP_STATISTICS:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				buffer_write_.push_back(serializer_.res_device_id(h.sequence_, model_));
 				break;
 			case code::APP_REQ_DEVICE_AUTHENTIFICATION:
+				buffer_write_.push_back(serializer_.res_device_auth(h.sequence_
+					, tgl_.get().account_
+					, tgl_.get().pwd_
+					, tgl_.get().account_	//	number
+					, model_));
 				break;
 			case code::APP_REQ_DEVICE_TIME:
 				buffer_write_.push_back(serializer_.res_device_time(h.sequence_));
-				break;
-			case code::APP_REQ_PUSH_TARGET_NAMELIST:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
-				break;
-			case code::APP_REQ_PUSH_TARGET_ECHO:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
-				break;
-			case code::APP_REQ_TRACEROUTE:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
-				break;
-
-			case code::CTRL_REQ_LOGIN_PUBLIC:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
-				break;
-			case code::CTRL_REQ_LOGIN_SCRAMBLED:
-				//scrambler_ = def_sk_.key();
 				break;
 			case code::CTRL_RES_LOGIN_PUBLIC:
 				res_login(std::move(body));
@@ -348,43 +312,31 @@ namespace smf
 				res_login(std::move(body));
 				break;
 
-			case code::CTRL_REQ_LOGOUT:
-				break;
-			case code::CTRL_RES_LOGOUT:
-				break;
+			//case code::CTRL_REQ_LOGOUT:
+			//	break;
+			//case code::CTRL_RES_LOGOUT:
+			//	break;
 
 			case code::CTRL_REQ_REGISTER_TARGET:
 				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
 				break;
 			case code::CTRL_RES_REGISTER_TARGET:
+				cb_cmd_(h, std::move(body));
 				break;
 			case code::CTRL_REQ_DEREGISTER_TARGET:
 				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
 				break;
 			case code::CTRL_RES_DEREGISTER_TARGET:
+				cb_cmd_(h, std::move(body));
 				break;
-
-				//	stream source register
-				//CTRL_REQ_REGISTER_STREAM_SOURCE = 0xC00B,
-				//CTRL_RES_REGISTER_STREAM_SOURCE = 0x400B,
-
-				//	stream source deregister
-				//CTRL_REQ_DEREGISTER_STREAM_SOURCE = 0xC00C,
-				//CTRL_RES_DEREGISTER_STREAM_SOURCE = 0x400C,
 
 			case code::UNKNOWN:
-				break;
-
 			default:
+				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
 				break;
 			}
 
 			if (!buffer_write_.empty())	do_write();
-		}
-
-		void bus::transmit(cyng::buffer_t&& data) {
-			CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] transmit " << data.size() << " bytes");
-
 		}
 
 		void bus::res_login(cyng::buffer_t&& data) {
