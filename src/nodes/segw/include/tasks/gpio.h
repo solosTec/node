@@ -69,6 +69,7 @@ namespace smf
 		std::chrono::milliseconds ms_;
 	};
 
+	bool switch_gpio(std::filesystem::path, bool);
 }
 
 #endif

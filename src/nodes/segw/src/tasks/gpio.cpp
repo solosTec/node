@@ -93,15 +93,20 @@ namespace smf
         
 		CYNG_LOG_DEBUG(logger_, "GPIO [" << path_ << "] ready" << (on ? " on" : " off"));
         
+		if (switch_gpio(p, on))	return true;
 
+		CYNG_LOG_WARNING(logger_, "cannot open GPIO [" << p << "]");
+		return false;
+	}
+
+	bool switch_gpio(std::filesystem::path p, bool on) {
 		std::fstream ifs(p, std::ios_base::in | std::ios_base::out);
 		if (ifs.is_open()) {
 			ifs << (on ? 1 : 0);
 			return true;
 		}
-
-		CYNG_LOG_ERROR(logger_, "cannot open GPIO [" << path_ << "]");
 		return false;
+
 	}
 }
 

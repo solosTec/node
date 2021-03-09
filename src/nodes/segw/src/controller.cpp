@@ -8,6 +8,7 @@
 #include <controller.h>
 #include <storage_functions.h>
 #include <tasks/bridge.h>
+#include <tasks/gpio.h>
 
 #include <smf/obis/defs.h>
 //#include <smf/ipt/config.h>
@@ -29,6 +30,7 @@
 #include <iostream>
 
 #include <boost/predef.h>
+#include <boost/algorithm/string.hpp>
 
 namespace smf {
 
@@ -74,7 +76,19 @@ namespace smf {
 			}
 			return true;
 		}
-
+		if (vars.count("switch-gpio") != 0) {
+			auto vec = vars["switch-gpio"].as<std::vector<std::string>>();
+			if (vec.size() == 2) {
+				//	switch GPIO/LED
+				switch_gpio(read_config_section(config_.json_path_, config_.config_index_), vec.at(0), vec.at(1));
+			}
+			else {
+				std::cerr
+					<< "switch-gpio requires 2 parameters: \"number\" [on|off]"
+					<< std::endl;
+			}
+			return true;
+		}
 		//
 		//	call base classe
 		//
@@ -524,15 +538,23 @@ namespace smf {
 		}
 	}
 
+	void controller::switch_gpio(cyng::object&& cfg
+		, std::string const& number
+		, std::string const& state) {
+
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto const path = std::filesystem::path(cyng::value_cast(reader["gpio"]["path"].get(), "/")) / ("gpio" + number) / "value";
+		std::cout << "system path: [" << path.generic_string() << "]" << std::endl;
+		if (!smf::switch_gpio(path, boost::algorithm::equals(state, "on"))) {
+			std::cerr 
+				<< "cannot open GPIO [" << path.generic_string() << "]" << std::endl;
+		}
+	}
+
 	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
 
 		auto const reader = cyng::make_reader(cfg);
 		auto s = cyng::db::create_db_session(reader.get("DB"));
-
-		//auto const ipt_cfg = cyng::container_cast<cyng::vector_t>(reader["ipt"]["config"].get());
-		//auto tgl = ipt::read_config(ipt_cfg);
-		//BOOST_ASSERT(!tgl.empty());
-		//CYNG_LOG_INFO(logger, tgl.size() << " ip-t server configured");
 
 		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s);
 		BOOST_ASSERT(channel->is_open());
