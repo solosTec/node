@@ -539,11 +539,24 @@ namespace smf {
 	}
 
 	void controller::switch_gpio(cyng::object&& cfg
-		, std::string const& number
+		, std::string const& str
 		, std::string const& state) {
 
 		auto const reader = cyng::make_reader(std::move(cfg));
-		auto const path = std::filesystem::path(cyng::value_cast(reader["gpio"]["path"].get(), "/")) / ("gpio" + number) / "value";
+
+		//
+		//	convert special values
+		//
+		auto const number = [](std::string const& str) -> std::string {
+			if (boost::algorithm::equals(str, "mbus"))	return "50";
+			else if (boost::algorithm::equals(str, "wmbus"))	return "50";
+			else if (boost::algorithm::equals(str, "rs485"))	return "53";
+			else if (boost::algorithm::equals(str, "RS-485"))	return "53";
+			else if (boost::algorithm::equals(str, "ether"))	return "46";
+			else return str;
+		};
+
+		auto const path = std::filesystem::path(cyng::value_cast(reader["gpio"]["path"].get(), "/")) / ("gpio" + number(str)) / "value";
 		std::cout << "system path: [" << path.generic_string() << "]" << std::endl;
 		if (!smf::switch_gpio(path, boost::algorithm::equals(state, "on"))) {
 			std::cerr 
