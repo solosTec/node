@@ -34,6 +34,7 @@ install: build
 	install -m 755 @cyng_rnd@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @cyng_sql@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @cyng_sqlite3@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @cyng_store@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @cyng_sys@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @cyng_task@ $(INSTALLDIR)/usr/local/lib
 	install -m 755 @cyng_vm@ $(INSTALLDIR)/usr/local/lib
