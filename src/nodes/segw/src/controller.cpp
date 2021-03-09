@@ -520,8 +520,16 @@ namespace smf {
 
 	void controller::list_config(cyng::object&& cfg) {
 		auto const reader = cyng::make_reader(std::move(cfg));
+
+		std::cout
+			<< "open database file ["
+			<< cyng::value_cast(reader["DB"]["file-name"].get(), "")
+			<< "]"
+			<< std::endl
+			;
+
 		auto s = cyng::db::create_db_session(reader.get("DB"));
-		if (s.is_alive())	smf::list_config(s);
+		if (s.is_alive()) smf::list_config(s);
 	}
 
 	void controller::set_config_value(cyng::object&& cfg
@@ -530,6 +538,14 @@ namespace smf {
 		, std::string const& type) {
 
 		auto const reader = cyng::make_reader(std::move(cfg));
+
+		std::cout
+			<< "open database file ["
+			<< cyng::value_cast(reader["DB"]["file-name"].get(), "")
+			<< "]"
+			<< std::endl
+			;
+
 		auto s = cyng::db::create_db_session(reader.get("DB"));
 		if (s.is_alive()) {
 			if (smf::set_config_value(s, path, value, type)) {
