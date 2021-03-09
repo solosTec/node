@@ -487,7 +487,11 @@ namespace smf {
 			cyng::make_param(OBIS_TCP_WAIT_TO_RECONNECT, 1u),	//	minutes
 			cyng::make_param(OBIS_TCP_CONNECT_RETRIES, 20u),
 			cyng::make_param(OBIS_HAS_SSL_CONFIG, 0u),	//	has SSL configuration
+#if defined(__ARMEL__)
+			cyng::make_param("enabled", false)
+#else			
 			cyng::make_param("enabled", true)
+#endif
 		));
 	}
 

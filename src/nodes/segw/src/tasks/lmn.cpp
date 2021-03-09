@@ -103,23 +103,23 @@ namespace smf {
 		try {
 			auto const parity = cfg_.get_parity();
 			port_.set_option(parity);	// default none
-			CYNG_LOG_DEBUG(logger_, "[" << port << "] parity: " << serial::to_str(parity));
+			CYNG_LOG_INFO(logger_, "[" << port << "] parity: " << serial::to_str(parity));
 
 			auto const databits = cfg_.get_databits();
 			port_.set_option(databits);
-			CYNG_LOG_DEBUG(logger_, "[" << port << "] databits: " << +databits.value());
+			CYNG_LOG_INFO(logger_, "[" << port << "] databits: " << +databits.value());
 
 			auto const stopbits = cfg_.get_stopbits();
 			port_.set_option(stopbits);
-			CYNG_LOG_DEBUG(logger_, "[" << port << "] stopbits: " << serial::to_str(stopbits));
+			CYNG_LOG_INFO(logger_, "[" << port << "] stopbits: " << serial::to_str(stopbits));
 
 			auto const baud_rate = cfg_.get_baud_rate();
 			port_.set_option(baud_rate);
-			CYNG_LOG_DEBUG(logger_, "[" << port << "] baud-rate: " << baud_rate.value());
+			CYNG_LOG_INFO(logger_, "[" << port << "] baud-rate: " << baud_rate.value());
 
 			auto const flow_control = cfg_.get_flow_control();
 			port_.set_option(flow_control);
-			CYNG_LOG_DEBUG(logger_, "[" << port << "] flow-control: " << serial::to_str(flow_control));
+			CYNG_LOG_INFO(logger_, "[" << port << "] flow-control: " << serial::to_str(flow_control));
 		}
 		catch (std::exception const& ex) {
 

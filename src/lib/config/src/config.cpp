@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include <boost/assert.hpp>
+#include <boost/predef.h>
 
 namespace smf {
 	namespace config {
@@ -30,7 +31,11 @@ namespace smf {
 			BOOST_ASSERT(!node.empty());
 
 #if defined(BOOST_OS_LINUX_AVAILABLE)
+#if defined(__ARMEL__)
+			return "/usr/local/etc/" + node + "_" + SMF_VERSION_NAME + ".cfg";
+#else 
 			return "/opt/smf/" + node + "_" + SMF_VERSION_NAME + ".cfg";
+#endif
 #else
 			return node + "_" + SMF_VERSION_NAME + ".cfg";
 #endif
@@ -38,7 +43,11 @@ namespace smf {
 
 		std::string derive_json_cfg_file_name(std::string node) {
 #if defined(BOOST_OS_LINUX_AVAILABLE)
+#if defined(__ARMEL__)
+			return "/usr/local/etc/smf/" + node + "_" + SMF_VERSION_NAME + ".json";
+#else 
 			return "/usr/local/etc/" + node + "_" + SMF_VERSION_NAME + ".json";
+#endif
 #else
 			return node + "_" + SMF_VERSION_NAME + ".json";
 #endif
