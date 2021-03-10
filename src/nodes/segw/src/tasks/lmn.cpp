@@ -178,7 +178,7 @@ namespace smf {
 		boost::system::error_code ec;
 		boost::asio::write(port_, boost::asio::buffer(data, data.size()), ec);
 		if (!ec) {
-			CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] sent " << data.size() << " bytes");
+			CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] sent " << data.size() << " bytes");
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] write failed: " << ec.message());

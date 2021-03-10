@@ -11,6 +11,8 @@ string(TIMESTAMP _THIS_YEAR "%Y")
 string(TIMESTAMP _TWEAK_ID "%j")	# day of the year
 math(EXPR _TWEAK_ID "((${_THIS_YEAR} - 2021) * 1000) + ${_TWEAK_ID}")
 
+string(TIMESTAMP VERSION_TIMESTAMP "%s")	# seconds since 1970-01-01 00:00:00 UTC
+
 #
 #	get a UTC timestamp
 #	use this information instead of __DATE__ and __TIME__ macros 

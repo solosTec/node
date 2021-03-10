@@ -1,9 +1,10 @@
 #pragma once
 
 //
-//  smf_VERSION % 100 is the patch level
-//  smf_VERSION / 100 % 1000 is the minor version
-//  smf_VERSION / 100000 is the major version
+//  SMF_VERSION % 100 is the patch level
+//  SMF_VERSION / 100 % 1000 is the minor version
+//  SMF_VERSION / 100000 is the major version
 //
 
-#define smf_VERSION 9000
+#define SMF_VERSION 9000
+#define SMF_TIMESTAMP  1615370393
