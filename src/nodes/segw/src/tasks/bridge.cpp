@@ -52,7 +52,12 @@ namespace smf {
 		, router_(ctl, cfg_, logger)
 		, nms_(ctl, cfg_, logger)
 		, sml_(ctl, cfg_, logger)
-		, rdr_{ { {ctl, cfg_, logger}, {ctl, cfg_, logger} } }
+		, rdr_{ { 
+				//	the array index is repeated in the LMN type.
+				//	don't change this.
+			{ctl, cfg_, logger, lmn_type::WIRELESS}, 
+			{ctl, cfg_, logger, lmn_type::WIRED} 
+			} }
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -303,16 +308,6 @@ namespace smf {
 
 	void bridge::init_ipt_bus() {
 		router_.start();
-		//cfg_ipt cfg(cfg_);
-		//if (cfg.is_enabled()) {
-		//	//
-		//	//	start IP-T bus
-		//	//
-		//	//bus_.start();
-		//}
-		//else {
-		//	CYNG_LOG_WARNING(logger_, "IP-T client is not enabled");
-		//}
 	}
 
 	void bridge::init_broker_clients() {

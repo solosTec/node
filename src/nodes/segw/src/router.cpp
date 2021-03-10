@@ -30,13 +30,23 @@ namespace smf {
 			//
 			cfg_hardware hw_cfg(cfg_);
 			CYNG_LOG_INFO(logger_, "initialize: IP-T client as " << hw_cfg.get_model());
-			bus_ = std::make_unique<ipt::bus>(ctl_.get_ctx()
-				, logger_
-				, ipt_cfg.get_toggle()
-				, hw_cfg.get_model()
-				, std::bind(&router::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2)
-				, std::bind(&router::ipt_stream, this, std::placeholders::_1));
-			bus_->start();
+			try {
+				bus_ = std::make_unique<ipt::bus>(ctl_.get_ctx()
+					, logger_
+					, ipt_cfg.get_toggle()
+					, hw_cfg.get_model()
+					, std::bind(&router::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2)
+					, std::bind(&router::ipt_stream, this, std::placeholders::_1));
+				bus_->start();
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_ERROR(logger_, "start IP-T client failed " << ex.what());
+				bus_.reset();
+			}
+
+			//
+			//	start OBIS log
+			//
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "IP-T client not enabled");

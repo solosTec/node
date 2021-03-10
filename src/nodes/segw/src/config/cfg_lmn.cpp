@@ -5,6 +5,7 @@
  *
  */
 
+#include <config/cfg_lmn.h>
 #include <config/cfg_broker.h>
 
 namespace smf {
