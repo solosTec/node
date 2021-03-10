@@ -21,7 +21,7 @@ namespace smf {
 		: controller_base(config)
 	{}
 
-	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg) {
+	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg, std::string const& node_name) {
 
 	}
 

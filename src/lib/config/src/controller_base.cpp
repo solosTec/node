@@ -197,7 +197,7 @@ namespace smf {
 					//
 					//	startup application
 					//
-					run(ctl, logger, cfg);
+					run(ctl, logger, cfg, config_.node_);
 
 					//
 					//	wait for pending requests

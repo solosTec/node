@@ -5,20 +5,30 @@
  *
  */
 #include <session.h>
+#include <tasks/server.h>
+
 #include <cyng/log/record.h>
 #include <cyng/io/serialize.h>
+#include <cyng/vm/vm.h>
 
 #include <iostream>
 
 namespace smf {
 
-	session::session(boost::asio::ip::tcp::socket socket, cyng::logger logger)
+	session::session(boost::asio::ip::tcp::socket socket, server* srv, cyng::logger logger)
 	: socket_(std::move(socket))
 		, logger_(logger)
+		, vm_()
 		, parser_([this](cyng::object&& obj) {
 			CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
+			vm_.load(std::move(obj));
 		})
-	{}
+	{
+		vm_ = init_vm(srv);
+		vm_.set_channel_name("pty.connect", 0);
+		vm_.set_channel_name("cluster.login", 1);
+
+	}
 
 	session::~session()
 	{
@@ -67,6 +77,19 @@ namespace smf {
 
 		});
 	}
+
+	cyng::vm_proxy session::init_vm(server* srv) {
+		std::function<void(std::string)> f1 = std::bind(&server::pty_connect, srv, std::placeholders::_1);
+		std::function<void(std::string, std::string, cyng::pid, std::string)> f2 
+			= std::bind(&session::cluster_login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+		return srv->fabric_.create_proxy(f1, f2);
+	}
+
+	void session::cluster_login(std::string name, std::string pwd, cyng::pid n, std::string node) {
+		CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] cluster login " << name << ":" << pwd << "@" << node << " #" << n.get_internal_value());
+
+	}
+
 }
 
 

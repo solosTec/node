@@ -17,6 +17,7 @@ namespace smf {
 	cluster::cluster(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, boost::uuids::uuid tag
+		, std::string const& node_name
 		, cyng::logger logger
 		, toggle::server_vec_t&& tgl)
 	: sigs_{ 
@@ -30,7 +31,7 @@ namespace smf {
 		, tag_(tag)
 		, logger_(logger)
 		, fabric_(ctl)
-		, bus_(fabric_, logger, std::move(tgl))
+		, bus_(fabric_, logger, std::move(tgl), node_name)
 	{
 		auto sp = channel_.lock();
 		if (sp) {

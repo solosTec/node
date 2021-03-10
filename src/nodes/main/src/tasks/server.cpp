@@ -36,6 +36,7 @@ namespace smf {
 		, monitor_(monitor)
 		, acceptor_(ctl.get_ctx())
 		, session_counter_{ 0 }
+		, fabric_(ctl)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -81,8 +82,12 @@ namespace smf {
 			if (!ec) {
 				CYNG_LOG_INFO(logger_, "new session " << socket.remote_endpoint());
 
+				//std::function<void(std::string)> f = std::bind(&server::pty_connect, this, std::placeholders::_1);
+				//auto vm = fabric_.create_proxy(f);	//	ok
+
 				auto sp = std::shared_ptr<session>(new session(
 					std::move(socket),
+					this,
 					logger_
 				), [this](session* s) {
 
@@ -120,6 +125,10 @@ namespace smf {
 				CYNG_LOG_WARNING(logger_, "server stopped: " << ec.message());
 			}
 		});
+	}
+
+	void server::pty_connect(std::string msisdn) {
+		CYNG_LOG_INFO(logger_, "pty connect " << msisdn);
 	}
 
 }

@@ -42,7 +42,7 @@ namespace smf {
 				, std::filesystem::path&& cwd) = 0;
 			virtual void print_configuration(std::ostream&);
 
-			virtual void run(cyng::controller&, cyng::logger, cyng::object const& cfg) = 0;
+			virtual void run(cyng::controller&, cyng::logger, cyng::object const& cfg, std::string const& node_name) = 0;
 
 
 			void write_config(cyng::vector_t&&);

@@ -11,12 +11,13 @@
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
 #include <cyng/task/controller.h>
-
+#include <cyng/vm/mesh.h>
 
 #include <boost/uuid/uuid.hpp>
 
 namespace smf {
 
+	class session;
 	class server
 	{
 		template <typename T >
@@ -26,6 +27,8 @@ namespace smf {
 			std::function<void(boost::asio::ip::tcp::endpoint ep)>,
 			std::function<void(cyng::eod)>
 		>;
+
+		friend class session;
 
 	public:
 		server(std::weak_ptr<cyng::channel>
@@ -43,6 +46,9 @@ namespace smf {
 		void stop(cyng::eod);
 
 	private:
+		void pty_connect(std::string msisdn);
+
+	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
 		boost::uuids::uuid const tag_;
@@ -56,6 +62,7 @@ namespace smf {
 		boost::asio::ip::tcp::acceptor acceptor_;
 		std::uint64_t session_counter_;
 
+		cyng::mesh fabric_;
 	};
 
 }

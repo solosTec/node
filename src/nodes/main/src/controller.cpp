@@ -82,7 +82,7 @@ namespace smf {
 		));
 	}
 
-	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
+	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
 
 #if _DEBUG_MAIN
 		CYNG_LOG_INFO(logger, cfg);

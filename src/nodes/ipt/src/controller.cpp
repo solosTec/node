@@ -71,7 +71,7 @@ namespace smf {
 		));
 	}
 
-	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
+	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
 
 #if _DEBUG_IPT
 		CYNG_LOG_INFO(logger, cfg);
@@ -92,15 +92,17 @@ namespace smf {
 		join_cluster(ctl
 			, logger
 			, tag
+			, node_name
 			, std::move(tgl));
 	}
 
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
+		, std::string const& node_name
 		, toggle::server_vec_t&& tgl) {
 
-		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, logger, std::move(tgl));
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl));
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
 		channel->dispatch("status_check", cyng::make_tuple(1));

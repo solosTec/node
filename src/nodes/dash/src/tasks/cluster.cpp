@@ -16,6 +16,7 @@ namespace smf {
 	cluster::cluster(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, boost::uuids::uuid tag
+		, std::string const& node_name
 		, cyng::logger logger
 		, toggle::server_vec_t&& cfg)
 	: sigs_{ 
@@ -29,7 +30,7 @@ namespace smf {
 		, tag_(tag)
 		, logger_(logger)
 		, fabric_(ctl)
-		, bus_(fabric_, logger, std::move(cfg))
+		, bus_(fabric_, logger, std::move(cfg), node_name)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -70,6 +71,9 @@ namespace smf {
 		auto sp = channel_.lock();
 		if (sp) {
 			CYNG_LOG_TRACE(logger_, "status_check(" << tag_ << ", " << n << ")");
+			//
+			//	ToDo: status check
+			//
 			sp->suspend(std::chrono::seconds(30), "status_check", cyng::make_tuple(n + 1));
 		}
 		else {

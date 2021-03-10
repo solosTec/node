@@ -39,6 +39,7 @@ namespace smf {
 		cluster(std::weak_ptr<cyng::channel>
 			, cyng::controller&
 			, boost::uuids::uuid tag
+			, std::string const& node_name
 			, cyng::logger
 			, toggle::server_vec_t&&);
 		~cluster();

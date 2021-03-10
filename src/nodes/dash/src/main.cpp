@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 
 		smf::controller	ctl(config);
 		if (ctl.run_options(vm))	return EXIT_SUCCESS;
-				return ctl.controller_base::run();
+		return ctl.controller_base::run();
 
 	}
 	catch (std::bad_cast const& e) {

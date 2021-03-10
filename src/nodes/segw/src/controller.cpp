@@ -584,7 +584,7 @@ namespace smf {
 		}
 	}
 
-	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg) {
+	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
 
 		auto const reader = cyng::make_reader(cfg);
 		auto s = cyng::db::create_db_session(reader.get("DB"));
