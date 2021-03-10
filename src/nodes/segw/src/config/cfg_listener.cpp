@@ -26,6 +26,10 @@ namespace smf {
 		return cfg_lmn(cfg_, type_).is_enabled();
 	}
 
+	std::string cfg_listener::get_port_name() const {
+		return cfg_lmn(cfg_, type_).get_port();
+	}
+
 	namespace {
 		std::string address_path(std::uint8_t type) {
 			return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "address");
@@ -41,12 +45,16 @@ namespace smf {
 		}
 	}
 
-	std::string cfg_listener::get_address() const {
-		return cfg_.get_value(address_path(get_index()), "");
+	boost::asio::ip::address cfg_listener::get_address() const {
+		return cfg_.get_value(address_path(get_index()), boost::asio::ip::address());
 	}
 
 	std::uint16_t cfg_listener::get_port() const {
 		return cfg_.get_value(port_path(get_index()), static_cast<std::uint16_t>(12000));
+	}
+
+	boost::asio::ip::tcp::endpoint cfg_listener::get_ep() const {
+		return { get_address(), get_port() };
 	}
 
 	bool cfg_listener::is_enabled() const {
@@ -71,6 +79,17 @@ namespace smf {
 
 	bool cfg_listener::set_enabled(bool b) const {
 		return cfg_.set_value(enabled_path(get_index()), b);
+	}
+
+	std::ostream& operator<<(std::ostream& os, cfg_listener const& cfg) {
+		os 
+			<< cfg.get_port_name()
+			<< '@'
+			<< cfg.get_address()
+			<< ':'
+			<< cfg.get_port()
+			;
+		return os;
 	}
 
 }

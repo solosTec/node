@@ -17,7 +17,7 @@
 #include <config/cfg_nms.h>
 #include <config/cfg_sml.h>
 #include <config/cfg_vmeter.h>
-//#include <config/cfg_ipt.h>
+#include <config/cfg_listener.h>
 
 #include <smf/obis/defs.h>
 
@@ -50,9 +50,9 @@ namespace smf {
 		, cfg_(logger, cache_)
 		, fabric_(ctl)
 		, router_(ctl, cfg_, logger)
-		//, bus_(ctl.get_ctx(), logger, std::move(tgl))
 		, nms_(ctl, cfg_, logger)
 		, sml_(ctl, cfg_, logger)
+		, rdr_{ { {ctl, cfg_, logger}, {ctl, cfg_, logger} } }
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -138,6 +138,14 @@ namespace smf {
 		//
 		CYNG_LOG_INFO(logger_, "initialize: LMN ports");
 		init_lmn_ports();
+
+		//
+		//	RDR - redirector
+		//	start listening 
+		//
+		CYNG_LOG_INFO(logger_, "initialize: LMN ports");
+		init_redirectors();
+
 	}
 
 	void bridge::init_data_cache() {
@@ -410,6 +418,28 @@ namespace smf {
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "NMS is not enabled");
+		}
+	}
+
+	void bridge::init_redirectors() {
+
+		init_redirector(lmn_type::WIRELESS);
+		init_redirector(lmn_type::WIRED);
+
+	}
+
+	void bridge::init_redirector(lmn_type type) {
+		cfg_listener cfg(cfg_, type);
+		if (cfg.is_enabled()) {
+			CYNG_LOG_INFO(logger_, "start listener for port [" << cfg.get_port_name() << "] " << cfg);
+			if (!cfg.is_lmn_enabled()) {
+				CYNG_LOG_WARNING(logger_, "LMN for [" << cfg.get_port_name() << "] is not running. This redirector will never submit any data");
+			}
+			rdr_.at(get_index(type)).start(cfg.get_ep());
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] is not enabled");
+
 		}
 	}
 

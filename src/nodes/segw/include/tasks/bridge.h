@@ -14,6 +14,7 @@
 #include <config/cfg_lmn.h>
 #include <sml/server.h>
 #include <nms/server.h>
+#include <redirector/server.h>
 
 #include <smf/ipt/config.h>
 
@@ -72,6 +73,9 @@ namespace smf {
 		void init_broker_clients();
 		void init_broker_clients(lmn_type);
 
+		void init_redirectors();
+		void init_redirector(lmn_type);
+
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
@@ -86,6 +90,8 @@ namespace smf {
 		//ipt::bus	bus_;
 		nms::server	nms_;
 		sml::server	sml_;
+		std::array<rdr::server, 2>	rdr_;
+
 	};
 }
 

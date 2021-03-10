@@ -90,11 +90,20 @@ set (segw_nms
     src/nms/reader.cpp
 )
 
+set (segw_redirector
+    include/redirector/server.h
+    include/redirector/session.h
+    src/redirector/server.cpp
+    src/redirector/session.cpp
+)
+
+
 source_group("segw-assets" FILES ${segw_assets})
 source_group("tasks" FILES ${segw_tasks})
 source_group("config" FILES ${segw_config})
 source_group("sml" FILES ${segw_sml})
 source_group("nms" FILES ${segw_nms})
+source_group("redirector" FILES ${segw_redirector})
 
 
 set (segw_node
@@ -105,5 +114,6 @@ set (segw_node
   ${segw_config}
   ${segw_sml}
   ${segw_nms}
+  ${segw_redirector}
 )
 

@@ -32,13 +32,20 @@
 		 bool has_login() const;
 
 		 /**
+		  * @return name of physical/serial port
+		  */
+		 std::string get_port_name() const;
+
+		 /**
 		  * A broker without an active LMN is virtually useless.
 		  * This method helps to detect such a misconfiguration.
 		  */
 		 bool is_lmn_enabled() const;
 
-		 std::string get_address() const;
+		 boost::asio::ip::address get_address() const;
 		 std::uint16_t get_port() const;
+
+		 boost::asio::ip::tcp::endpoint get_ep() const;
 
 		 bool set_address(std::string) const;
 		 bool set_port(std::uint16_t) const;
@@ -52,6 +59,12 @@
 		 cfg& cfg_;
 		 lmn_type const type_;
 	 };
+
+	 /**
+	  * debug helper
+	  */
+	 std::ostream& operator<<(std::ostream& os, cfg_listener const&);
+
 }
 
 #endif

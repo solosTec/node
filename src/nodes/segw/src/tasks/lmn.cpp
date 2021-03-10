@@ -141,7 +141,7 @@ namespace smf {
 		port_.async_read_some(boost::asio::buffer(buffer_), [this](boost::system::error_code ec, std::size_t bytes_transferred) {
 
 			if (!ec) {
-				CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] received " << bytes_transferred << " bytes");
+				CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] received " << bytes_transferred << " bytes");
 
 #ifdef _DEBUG_SEGW
 				std::stringstream ss;
