@@ -51,7 +51,8 @@ namespace smf {
 
 		void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
 		void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-		void check_deadline();
+		//void check_deadline();
+		void check_connection_state();
 		void handle_connect(const boost::system::error_code& ec,
 			boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
 		void do_read();
@@ -72,7 +73,7 @@ namespace smf {
 		boost::asio::ip::tcp::resolver::results_type endpoints_;
 		boost::asio::ip::tcp::socket socket_;
 		std::string input_buffer_;
-		boost::asio::steady_timer deadline_;
+		//boost::asio::steady_timer deadline_;
 		boost::asio::steady_timer heartbeat_timer_;
 
 		std::deque<cyng::buffer_t>	buffer_write_;

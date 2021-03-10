@@ -41,7 +41,7 @@ namespace smf {
 		, stopped_(false)
 		, endpoints_()
 		, socket_(ctl.get_ctx())
-		, deadline_(ctl.get_ctx())
+		//, deadline_(ctl.get_ctx())
 		, heartbeat_timer_(ctl.get_ctx())
 		, buffer_write_()
 	{
@@ -62,7 +62,7 @@ namespace smf {
 		stopped_ = true;
 		boost::system::error_code ignored_ec;
 		socket_.close(ignored_ec);
-		deadline_.cancel();
+		//deadline_.cancel();
 		heartbeat_timer_.cancel();
 	}
 
@@ -101,7 +101,7 @@ namespace smf {
 		// Start the deadline actor. You will note that we're not setting any
 		// particular deadline here. Instead, the connect and input actors will
 		// update the deadline prior to each asynchronous operation.
-		deadline_.async_wait(std::bind(&broker::check_deadline, this));
+		//deadline_.async_wait(std::bind(&broker::check_deadline, this));
 	}
 
 	void broker::start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
@@ -110,7 +110,7 @@ namespace smf {
 			CYNG_LOG_TRACE(logger_, "broker [" << target_ << "] trying " << endpoint_iter->endpoint() << "...");
 
 			//	Set a deadline for the connect operation.
-			deadline_.expires_after(timeout_);
+			//deadline_.expires_after(timeout_);
 
 			// Start the asynchronous connect operation.
 			socket_.async_connect(endpoint_iter->endpoint(),
@@ -126,29 +126,36 @@ namespace smf {
 		}
 	}
 
-	void broker::check_deadline()
-	{
-		if (stopped_)	return;
+	//void broker::check_deadline()
+	//{
+	//	if (stopped_)	return;
 
-		// Check whether the deadline has passed. We compare the deadline against
-		// the current time since a new asynchronous operation may have moved the
-		// deadline before this actor had a chance to run.
-		if (deadline_.expiry() <= boost::asio::steady_timer::clock_type::now())
-		{
-			CYNG_LOG_INFO(logger_, "broker [" << target_ << "] deadline expired");
+	//	// Check whether the deadline has passed. We compare the deadline against
+	//	// the current time since a new asynchronous operation may have moved the
+	//	// deadline before this actor had a chance to run.
+	//	if (deadline_.expiry() <= boost::asio::steady_timer::clock_type::now())
+	//	{
+	//		CYNG_LOG_INFO(logger_, "broker [" << target_ << "] deadline expired");
 
-			// The deadline has passed. The socket is closed so that any outstanding
-			// asynchronous operations are cancelled.
-			socket_.close();
+	//		// The deadline has passed. The socket is closed so that any outstanding
+	//		// asynchronous operations are cancelled.
+	//		socket_.close();
 
-			// There is no longer an active deadline. The expiry is set to the
-			// maximum time point so that the actor takes no action until a new
-			// deadline is set.
-			deadline_.expires_at(boost::asio::steady_timer::time_point::max());
+	//		// There is no longer an active deadline. The expiry is set to the
+	//		// maximum time point so that the actor takes no action until a new
+	//		// deadline is set.
+	//		deadline_.expires_at(boost::asio::steady_timer::time_point::max());
+	//	}
+
+	//	// Put the actor back to sleep.
+	//	deadline_.async_wait(std::bind(&broker::check_deadline, this));
+	//}
+
+	void broker::check_connection_state() {
+		CYNG_LOG_DEBUG(logger_, "broker [" << target_ << "] check connection state");
+		if (!socket_.is_open()) {
+			start();
 		}
-
-		// Put the actor back to sleep.
-		deadline_.async_wait(std::bind(&broker::check_deadline, this));
 	}
 
 	void broker::handle_connect(const boost::system::error_code& ec,
@@ -205,7 +212,7 @@ namespace smf {
 	void broker::do_read()
 	{
 		// Set a deadline for the read operation.
-		deadline_.expires_after(timeout_);
+		//deadline_.expires_after(timeout_);
 
 		// Start an asynchronous operation to read a newline-delimited message.
 		boost::asio::async_read_until(socket_,
@@ -264,9 +271,9 @@ namespace smf {
 			}
 			else {
 
-				// Wait 10 seconds before sending the next heartbeat.
+				//	Wait 10 seconds before sending the next heartbeat.
 				heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
-				heartbeat_timer_.async_wait(std::bind(&broker::do_write, this));
+				heartbeat_timer_.async_wait(std::bind(&broker::check_connection_state, this));
 			}
 		}
 		else	{
