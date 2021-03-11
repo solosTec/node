@@ -30,7 +30,7 @@ namespace smf {
 		, tag_(tag)
 		, logger_(logger)
 		, fabric_(ctl)
-		, bus_(fabric_, logger, std::move(cfg), node_name)
+		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name)
 	{
 		auto sp = channel_.lock();
 		if (sp) {

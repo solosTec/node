@@ -20,10 +20,11 @@ namespace smf
 		class bus
 		{
 			enum class state {
-				INITIAL,
+				START,
 				CONNECTED,
 				AUTHORIZED,
-				LINKED
+				LINKED,
+				STOPPED,
 			} state_;
 
 		public:
@@ -37,15 +38,19 @@ namespace smf
 			void stop();
 
 		private:
+			constexpr bool is_stopped() const {
+				return state_ == state::STOPPED;
+			}
+			void reset();
 			void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
 			void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-			void handle_connect(const boost::system::error_code& ec,
+			void handle_connect(boost::system::error_code const& ec,
 				boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-			void check_deadline();
+			void check_deadline(boost::system::error_code const&);
 			void do_read();
 			void do_write();
-			void handle_read(const boost::system::error_code& ec, std::size_t n);
-			void handle_write(const boost::system::error_code& ec);
+			void handle_read(boost::system::error_code const& ec, std::size_t n);
+			void handle_write(boost::system::error_code const& ec);
 
 			void cmd_complete(header const&, cyng::buffer_t&&);
 
@@ -60,7 +65,7 @@ namespace smf
 			bool stopped_;
 			boost::asio::ip::tcp::resolver::results_type endpoints_;
 			boost::asio::ip::tcp::socket socket_;
-			boost::asio::steady_timer deadline_;
+			boost::asio::steady_timer timer_;
 			serializer	serializer_;
 			parser	parser_;
 			std::deque<cyng::buffer_t>	buffer_write_;

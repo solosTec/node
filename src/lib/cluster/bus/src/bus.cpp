@@ -12,81 +12,96 @@
 #include <cyng/vm/generator.hpp>
 #include <cyng/sys/process.h>
 
+#include <boost/bind.hpp>
+
 namespace smf {
 
-	bus::bus(cyng::mesh& mesh
+	bus::bus(boost::asio::io_context& ctx
 		, cyng::logger logger
 		, toggle::server_vec_t&& tgl
 		, std::string const& node_name)
-	: fabric_(mesh)
+	: state_(state::START)
+		, ctx_(ctx)
 		, logger_(logger)
 		, tgl_(std::move(tgl))
 		, node_name_(node_name)
-		, stopped_(false)
 		, endpoints_()
-		, socket_(mesh.get_ctl().get_ctx())
-		, reconnect_timer_(mesh.get_ctl().get_ctx())
-		, deadline_(mesh.get_ctl().get_ctx())
+		, socket_(ctx_)
+		, timer_(ctx_)
 		, buffer_write_()
 		, input_buffer_()
 	{}
 
 	void bus::start() {
+
 		auto const srv = tgl_.get();
 		CYNG_LOG_INFO(logger_, "[cluster] connect(" << srv << ")");
+		state_ = state::START;
 
 		//
 		//	connect to cluster
 		//
-		boost::asio::ip::tcp::resolver r(fabric_.get_ctl().get_ctx());
+		boost::asio::ip::tcp::resolver r(ctx_);
 		connect(r.resolve(srv.host_, srv.service_));
-
-		// Start the deadline actor. You will note that we're not setting any
-		// particular deadline here. Instead, the connect and input actors will
-		// update the deadline prior to each asynchronous operation.
-		deadline_.async_wait(std::bind(&bus::check_deadline, this));
-
-	}
-
-	void bus::check_deadline() {
-
-		if (stopped_)	return;
-		// Check whether the deadline has passed. We compare the deadline against
-		// the current time since a new asynchronous operation may have moved the
-		// deadline before this actor had a chance to run.
-		if (deadline_.expiry() <= boost::asio::steady_timer::clock_type::now())
-		{
-			// The deadline has passed. The socket is closed so that any outstanding
-			// asynchronous operations are cancelled.
-			socket_.close();
-			CYNG_LOG_TRACE(logger_, "[cluster] deadline expired - close socket");
-
-			// There is no longer an active deadline. The expiry is set to the
-			// maximum time point so that the actor takes no action until a new
-			// deadline is set.
-			deadline_.expires_at(boost::asio::steady_timer::time_point::max());
-		}
-
-		// Put the actor back to sleep.
-		deadline_.async_wait(std::bind(&bus::check_deadline, this));
 
 	}
 
 	void bus::stop() {
 		CYNG_LOG_INFO(logger_, "[cluster] " << tgl_.get() << " stop");
 
-		stopped_ = true;
+		reset();
+		state_ = state::STOPPED;
+	}
+
+	void bus::reset() {
+
 		boost::system::error_code ignored_ec;
 		socket_.close(ignored_ec);
-		reconnect_timer_.cancel();
-		deadline_.cancel();
+		state_ = state::START;
+		timer_.cancel();
+	}
+
+	void bus::check_deadline(const boost::system::error_code& ec) {
+		if (is_stopped())	return;
+		CYNG_LOG_TRACE(logger_, "[cluster] check deadline " << ec);
+
+		if (!ec) {
+			switch (state_) {
+			case state::START:
+				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: start");
+				start();
+				break;
+			case state::CONNECTED:
+				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: connected");
+				break;
+			case state::WAIT:
+				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: waiting");
+				start();
+				break;
+			default:
+				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: other");
+				BOOST_ASSERT_MSG(false, "invalid state");
+				break;
+			}
+		}
+		else {
+			CYNG_LOG_TRACE(logger_, "[cluster] check deadline timer cancelled");
+		}
 	}
 
 	void bus::connect(boost::asio::ip::tcp::resolver::results_type endpoints) {
 
+		state_ = state::WAIT;
+
 		// Start the connect actor.
 		endpoints_ = endpoints;
 		start_connect(endpoints_.begin());
+
+		// Start the deadline actor. You will note that we're not setting any
+		// particular deadline here. Instead, the connect and input actors will
+		// update the deadline prior to each asynchronous operation.
+		timer_.async_wait(boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error));
+
 	}
 
 	void bus::start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
@@ -94,7 +109,7 @@ namespace smf {
 			CYNG_LOG_TRACE(logger_, "[cluster] trying " << endpoint_iter->endpoint() << "...");
 
 			// Set a deadline for the connect operation.
-			deadline_.expires_after(std::chrono::seconds(50));
+			timer_.expires_after(std::chrono::seconds(60));
 
 			// Start the asynchronous connect operation.
 			socket_.async_connect(endpoint_iter->endpoint(),
@@ -106,7 +121,7 @@ namespace smf {
 			//
 			// There are no more endpoints to try. Shut down the client.
 			//
-			stop();
+			reset();
 
 			//
 			//	alter connection endpoint
@@ -117,8 +132,8 @@ namespace smf {
 			//
 			//	reconnect after 20 seconds
 			//
-			reconnect_timer_.expires_after(boost::asio::chrono::seconds(20));
-			reconnect_timer_.async_wait(std::bind(&bus::start, this));
+			timer_.expires_after(boost::asio::chrono::seconds(20));
+			timer_.async_wait(boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error));
 
 		}
 	}
@@ -126,7 +141,7 @@ namespace smf {
 	void bus::handle_connect(const boost::system::error_code& ec,
 		boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
 
-		if (stopped_)	return;
+		if (is_stopped())	return;
 
 		// The async_connect() function automatically opens the socket at the start
 		// of the asynchronous operation. If the socket is closed at this time then
@@ -156,6 +171,7 @@ namespace smf {
 		else
 		{
 			CYNG_LOG_INFO(logger_, "[cluster] " << tgl_.get() << " connected to " << endpoint_iter->endpoint());
+			state_ = state::CONNECTED;
 
 			//
 			//	send login sequence
@@ -181,7 +197,6 @@ namespace smf {
 		//
 		//	connect was successful
 		//
-		deadline_.cancel();
 
 		// Start an asynchronous operation to read a newline-delimited message.
 		socket_.async_read_some(boost::asio::buffer(input_buffer_), std::bind(&bus::handle_read, this,
@@ -190,7 +205,7 @@ namespace smf {
 
 	void bus::do_write()
 	{
-		if (stopped_)	return;
+		if (is_stopped())	return;
 
 		// Start an asynchronous operation to send a heartbeat message.
 		boost::asio::async_write(socket_,
@@ -200,7 +215,7 @@ namespace smf {
 
 	void bus::handle_read(const boost::system::error_code& ec, std::size_t n)
 	{
-		if (stopped_)	return;
+		if (is_stopped())	return;
 
 		if (!ec)
 		{
@@ -213,27 +228,25 @@ namespace smf {
 			//
 			do_read();
 		}
-		else if (ec == boost::asio::error::connection_reset) {
-			//	connection reset by peer
-			CYNG_LOG_WARNING(logger_, "[cluster] read " << ec << ": reconnect in 10 seconds");
-
-			//
-			//	reconnect after 10 seconds
-			//
-			reconnect_timer_.expires_after(boost::asio::chrono::seconds(10));
-			reconnect_timer_.async_wait(std::bind(&bus::start, this));
-
-		}
 		else
 		{
 			CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " read " << ec.value() << ": " << ec.message());
-			stop();
+			reset();
+
+			//
+			//	reconnect after 10/20 seconds
+			//
+			timer_.expires_after((ec == boost::asio::error::connection_reset)
+				? boost::asio::chrono::seconds(10)
+				: boost::asio::chrono::seconds(20));
+			timer_.async_wait(boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error));
+
 		}
 	}
 
 	void bus::handle_write(const boost::system::error_code& ec)
 	{
-		if (stopped_)	return;
+		if (is_stopped())	return;
 
 		if (!ec) {
 
@@ -251,7 +264,7 @@ namespace smf {
 		else {
 			CYNG_LOG_ERROR(logger_, "[cluster] " << tgl_.get() << " on heartbeat: " << ec.message());
 
-			stop();
+			reset();
 			//auto sp = channel_.lock();
 			//if (sp)	sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple());
 		}
