@@ -26,13 +26,19 @@ else()
     )
 endif()
 
+set (setup_tasks
+  include/tasks/cluster.h
+  src/tasks/cluster.cpp
+)
 
 source_group("setup-assets" FILES ${setup_assets})
+source_group("tasks" FILES ${setup_tasks})
 
 
 set (setup_node
   ${setup_cpp}
   ${setup_h}
   ${setup_assets}
+  ${setup_tasks}
 )
 

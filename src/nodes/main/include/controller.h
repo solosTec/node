@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef SMF_MAIN_CONTROLLER_H
+#define SMF_MAIN_CONTROLLER_H
+
 #include <smf/controller_base.h>
 
 
@@ -31,3 +34,5 @@
 
 	};
 }
+
+#endif

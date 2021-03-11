@@ -26,13 +26,21 @@ else()
     )
 endif()
 
+set (broker-wmbus_tasks
+  include/tasks/cluster.h
+  include/tasks/wmbus_server.h
+  src/tasks/cluster.cpp
+  src/tasks/wmbus_server.cpp
+)
 
 source_group("broker-wmbus-assets" FILES ${broker-wmbus_assets})
+source_group("tasks" FILES ${broker-wmbus_tasks})
 
 
 set (broker-wmbus_node
   ${broker-wmbus_cpp}
   ${broker-wmbus_h}
   ${broker-wmbus_assets}
+  ${broker-wmbus_tasks}
 )
 

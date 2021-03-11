@@ -18,6 +18,7 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/websocket.hpp>
+#include <boost/uuid/uuid.hpp>
 
 namespace smf {
 	namespace http {
@@ -32,7 +33,9 @@ namespace smf {
 
         public:
             // Take ownership of the socket
-            explicit ws(boost::asio::ip::tcp::socket&& socket, cyng::logger);
+            explicit ws(boost::asio::ip::tcp::socket&& socket
+                , cyng::logger
+                , std::function<void(std::string)>);
 
             // Start the asynchronous accept operation
             template<class Body, class Allocator>
@@ -86,6 +89,7 @@ namespace smf {
             void on_write(boost::beast::error_code ec,
                 std::size_t bytes_transferred);
 
+            std::function<void(std::string)> on_msg_;
         private:
             cyng::logger logger_;
         };

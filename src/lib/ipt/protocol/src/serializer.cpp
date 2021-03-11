@@ -8,15 +8,6 @@
 #include <smf/ipt/serializer.h>
 
 
-//#include <cyng/vm/generator.h>
-//#include <cyng/value_cast.hpp>
-//#include <cyng/io/serializer.h>
-//#include <cyng/buffer_cast.h>
-//
-//#ifdef SMF_IO_DEBUG
-//#include <cyng/io/hex_dump.hpp>
-//#endif
-//#include <cyng/tuple_cast.hpp>
 #include <iterator>
 #include <algorithm>
 

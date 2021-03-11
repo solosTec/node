@@ -4,7 +4,6 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-
 #include <tasks/cluster.h>
 #include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
@@ -19,11 +18,10 @@ namespace smf {
 		, boost::uuids::uuid tag
 		, std::string const& node_name
 		, cyng::logger logger
-		, toggle::server_vec_t&& tgl)
+		, toggle::server_vec_t&& cfg)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&cluster::status_check, this, std::placeholders::_1),
-		//std::bind(&cluster::login, this, std::placeholders::_1),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
 	}
 		, channel_(wp)
@@ -31,7 +29,7 @@ namespace smf {
 		, tag_(tag)
 		, logger_(logger)
 		, fabric_(ctl)
-		, bus_(ctl.get_ctx(), logger, std::move(tgl), node_name, tag, this)
+		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -59,7 +57,11 @@ namespace smf {
 
 	void cluster::connect()
 	{
+		//
+		//	join cluster
+		//
 		bus_.start();
+
 	}
 
 	void cluster::status_check(int n)
@@ -67,13 +69,15 @@ namespace smf {
 		auto sp = channel_.lock();
 		if (sp) {
 			CYNG_LOG_TRACE(logger_, "status_check(" << tag_ << ", " << n << ")");
+			//
+			//	ToDo: status check
+			//
 			sp->suspend(std::chrono::seconds(30), "status_check", cyng::make_tuple(n + 1));
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "status_check(" << tag_ << ", " << n << ")");
 		}
 	}
-
 
 	//
 	//	bus interface
@@ -83,10 +87,10 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "start IP-T server");
+			CYNG_LOG_INFO(logger_, "start HTTP server");
 
 			//
-			//	ToDo: start IP-T server
+			//	ToDo: start HTTP server
 			//
 		}
 

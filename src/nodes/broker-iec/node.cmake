@@ -26,12 +26,18 @@ else()
     )
 endif()
 
+set (broker-iec_tasks
+  include/tasks/cluster.h
+  src/tasks/cluster.cpp
+)
 
 source_group("broker-iec-assets" FILES ${broker-iec_assets})
+source_group("tasks" FILES ${broker-iec_tasks})
 
 set (broker-iec_node
   ${broker-iec_cpp}
   ${broker-iec_h}
   ${broker-iec_assets}
+  ${broker-iec_tasks}
 )
 

@@ -5,8 +5,11 @@
  *
  */
 
-#include <smf/controller_base.h>
+#ifndef SMF_SETUP_CONTROLLER_H
+#define SMF_SETUP_CONTROLLER_H
 
+#include <smf/controller_base.h>
+#include <smf/cluster/config.h>
 
  namespace smf {
 
@@ -27,5 +30,13 @@
 	private:
 		cyng::param_t create_cluster_spec();
 
+		void join_cluster(cyng::controller&
+			, cyng::logger
+			, boost::uuids::uuid
+			, std::string const& node_name
+			, toggle::server_vec_t&&);
+
 	};
 }
+
+#endif

@@ -6,11 +6,19 @@
  */
 
 #include <controller.h>
+#include <tasks/cluster.h>
+
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/container_cast.hpp>
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/sys/locale.h>
+#include <cyng/io/ostream.h>
+#include <cyng/obj/algorithm/reader.hpp>
+#include <cyng/log/record.h>
+#include <cyng/task/controller.h>
 
 #include <locale>
 #include <iostream>
@@ -59,9 +67,43 @@ namespace smf {
 			)
 		});
 	}
-	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg, std::string const& node_name) {
+
+	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
+#if _DEBUG_DASH
+		CYNG_LOG_INFO(logger, cfg);
+#endif
+		auto const reader = cyng::make_reader(cfg);
+		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+
+		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
+		BOOST_ASSERT(!tgl.empty());
+		if (tgl.empty()) {
+			CYNG_LOG_FATAL(logger, "no cluster data configured");
+		}
+
+		//
+		//	connect to cluster
+		//
+		join_cluster(ctl
+			, logger
+			, tag
+			, node_name
+			, std::move(tgl));
 
 	}
+
+	void controller::join_cluster(cyng::controller& ctl
+		, cyng::logger logger
+		, boost::uuids::uuid tag
+		, std::string const& node_name
+		, toggle::server_vec_t&& cfg) {
+
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(cfg));
+		BOOST_ASSERT(channel->is_open());
+		channel->dispatch("connect", cyng::make_tuple());
+		channel->dispatch("status_check", cyng::make_tuple(1));
+	}
+
 	cyng::param_t controller::create_cluster_spec() {
 		return cyng::make_param("cluster", cyng::make_vector({
 			cyng::make_tuple(

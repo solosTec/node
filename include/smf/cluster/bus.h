@@ -11,11 +11,23 @@
 #include <smf/cluster/config.h>
 
 #include <cyng/log/logger.h>
-//#include <cyng/vm/mesh.h>
+#include <cyng/io/parser/parser.h>
 #include <cyng/obj/intrinsics/buffer.h>
+#include <cyng/vm/proxy.h>
+#include <cyng/vm/vm_fwd.h>
 
 namespace smf
 {
+	/**
+	 * The bus interface defines the requirements of any kind of cluster
+	 * member that acts as a client.
+	 */
+	class bus_interface {
+	public:
+		virtual cyng::mesh* get_fabric() = 0;
+		virtual void on_login(bool) = 0;
+	};
+
 	/**
 	 * The TCP/IP behaviour is modelled after the async_tcp_client.cpp" example
 	 * in the asio C++11 example folder (libs/asio/example/cpp11/timeouts/async_tcp_client.cpp)
@@ -32,7 +44,9 @@ namespace smf
 		bus(boost::asio::io_context& ctx
 			, cyng::logger
 			, toggle::server_vec_t&& cfg
-			, std::string const& node_name);
+			, std::string const& node_name
+			, boost::uuids::uuid tag
+			, bus_interface* bip);
 
 		void start();
 		void stop();
@@ -52,11 +66,16 @@ namespace smf
 		constexpr bool is_stopped() const {
 			return state_ == state::STOPPED;
 		}
+
+		cyng::vm_proxy init_vm(bus_interface*);
+
 	private:
 		boost::asio::io_context& ctx_;
 		cyng::logger logger_;
 		toggle const tgl_;
 		std::string const node_name_;
+		boost::uuids::uuid const tag_;
+		bus_interface* bip_;
 
 		//bool stopped_;
 		boost::asio::ip::tcp::resolver::results_type endpoints_;
@@ -64,6 +83,8 @@ namespace smf
 		boost::asio::steady_timer timer_;
 		std::deque<cyng::buffer_t>	buffer_write_;
 		std::array<char, 2048>	input_buffer_;
+		cyng::vm_proxy	vm_;
+		cyng::io::parser parser_;
 	};
 }
 

@@ -6,6 +6,8 @@
  */
 
 #include <controller.h>
+#include <tasks/cluster.h>
+
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/container_cast.hpp>
@@ -67,6 +69,7 @@ namespace smf {
 		join_cluster(ctl
 			, logger
 			, tag
+			, node_name
 			, std::move(tgl));
 
 	}
@@ -74,12 +77,13 @@ namespace smf {
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
+		, std::string const& node_name
 		, toggle::server_vec_t&& tgl) {
 
-		//auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, logger, std::move(tgl));
-		//BOOST_ASSERT(channel->is_open());
-		//channel->dispatch("connect", cyng::make_tuple());
-		//channel->dispatch("status_check", cyng::make_tuple(1));
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl));
+		BOOST_ASSERT(channel->is_open());
+		channel->dispatch("connect", cyng::make_tuple());
+		channel->dispatch("status_check", cyng::make_tuple(1));
 	}
 
 	cyng::param_t controller::create_server_spec(std::filesystem::path const& cwd) {
@@ -97,7 +101,6 @@ namespace smf {
 				cyng::make_param("account", "root"),
 				cyng::make_param("pwd", "NODE_PWD"),
 				cyng::make_param("salt", "NODE_SALT"),
-				//cyng::make_param("monitor", rnd_monitor()),	//	seconds
 				cyng::make_param("group", 0))	//	customer ID
 			}
 		));

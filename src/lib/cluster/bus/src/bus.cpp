@@ -11,6 +11,9 @@
 #include <cyng/vm/linearize.hpp>
 #include <cyng/vm/generator.hpp>
 #include <cyng/sys/process.h>
+#include <cyng/io/serialize.h>
+#include <cyng/vm/mesh.h>
+#include <cyng/vm/vm.h>
 
 #include <boost/bind.hpp>
 
@@ -19,18 +22,37 @@ namespace smf {
 	bus::bus(boost::asio::io_context& ctx
 		, cyng::logger logger
 		, toggle::server_vec_t&& tgl
-		, std::string const& node_name)
+		, std::string const& node_name
+		, boost::uuids::uuid tag
+		, bus_interface* bip)
 	: state_(state::START)
 		, ctx_(ctx)
 		, logger_(logger)
 		, tgl_(std::move(tgl))
 		, node_name_(node_name)
+		, tag_(tag)
+		, bip_(bip)
 		, endpoints_()
 		, socket_(ctx_)
 		, timer_(ctx_)
 		, buffer_write_()
 		, input_buffer_()
-	{}
+		, vm_()
+		, parser_([this](cyng::object&& obj) {
+			CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
+			vm_.load(std::move(obj));
+		})
+	{
+		vm_ = init_vm(bip);
+		vm_.set_channel_name("cluster.res.login", 0);
+	}
+
+	cyng::vm_proxy bus::init_vm(bus_interface* bip) {
+
+		std::function<void(bool)> f1 = std::bind(&bus_interface::on_login, bip, std::placeholders::_1);
+		return bip->get_fabric()->create_proxy(f1);
+
+	}
 
 	void bus::start() {
 
@@ -177,11 +199,12 @@ namespace smf {
 			//	send login sequence
 			//
 			auto cfg = tgl_.get();
-			buffer_write_ = cyng::serialize_invoke("cluster.login"
-				, cfg.pwd_
+			buffer_write_ = cyng::serialize_invoke("cluster.req.login"
 				, cfg.account_
+				, cfg.pwd_
 				, cyng::sys::get_process_id()
-				, node_name_);
+				, node_name_
+				, tag_);
 
 			// Start the input actor.
 			do_read();
@@ -213,15 +236,18 @@ namespace smf {
 			std::bind(&bus::handle_write, this, std::placeholders::_1));
 	}
 
-	void bus::handle_read(const boost::system::error_code& ec, std::size_t n)
+	void bus::handle_read(const boost::system::error_code& ec, std::size_t bytes_transferred)
 	{
 		if (is_stopped())	return;
 
 		if (!ec)
 		{
-			CYNG_LOG_DEBUG(logger_, "[cluster] " << tgl_.get() << " received " << n << " bytes");
+			CYNG_LOG_DEBUG(logger_, "[cluster] " << tgl_.get() << " received " << bytes_transferred << " bytes");
 
-			//parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
+			//
+			//	let parse it
+			//
+			parser_.read(input_buffer_.begin(), input_buffer_.begin() + bytes_transferred);
 
 			//
 			//	continue reading

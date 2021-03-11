@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef SMF_BROKER_IEC_CONTROLLER_H
+#define SMF_BROKER_IEC_CONTROLLER_H
+
 #include <smf/controller_base.h>
 #include <smf/cluster/config.h>
 
@@ -14,12 +17,12 @@
 	{
 	public:
 		controller(config::startup const&);
-		//virtual int run() override;
 
 	protected:
 		cyng::vector_t create_default_config(std::chrono::system_clock::time_point&& now
 			, std::filesystem::path&& tmp
 			, std::filesystem::path&& cwd) override;
+
 		void run(cyng::controller&
 			, cyng::logger
 			, cyng::object const& cfg
@@ -29,6 +32,7 @@
 		void join_cluster(cyng::controller& ctl
 			, cyng::logger logger
 			, boost::uuids::uuid tag
+			, std::string const& node_name
 			, toggle::server_vec_t&& tgl);
 
 	private:
@@ -38,3 +42,5 @@
 
 	};
 }
+
+#endif

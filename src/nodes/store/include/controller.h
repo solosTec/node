@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef SMF_STORE_CONTROLLER_H
+#define SMF_STORE_CONTROLLER_H
+
 #include <smf/controller_base.h>
 
 
@@ -26,3 +29,5 @@
 
 	};
 }
+
+#endif

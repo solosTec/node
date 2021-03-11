@@ -10,6 +10,9 @@
 #include <cyng/log/record.h>
 #include <cyng/io/serialize.h>
 #include <cyng/vm/vm.h>
+#include <cyng/vm/linearize.hpp>
+#include <cyng/vm/generator.hpp>
+#include <cyng/vm/mesh.h>
 
 #include <iostream>
 
@@ -18,6 +21,8 @@ namespace smf {
 	session::session(boost::asio::ip::tcp::socket socket, server* srv, cyng::logger logger)
 	: socket_(std::move(socket))
 		, logger_(logger)
+		, buffer_()
+		, buffer_write_()
 		, vm_()
 		, parser_([this](cyng::object&& obj) {
 			CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
@@ -25,9 +30,8 @@ namespace smf {
 		})
 	{
 		vm_ = init_vm(srv);
-		vm_.set_channel_name("pty.connect", 0);
-		vm_.set_channel_name("cluster.login", 1);
-
+		vm_.set_channel_name("cluster.req.login", 0);
+		vm_.set_channel_name("pty.connect", 1);
 	}
 
 	session::~session()
@@ -72,21 +76,73 @@ namespace smf {
 					do_read();
 				}
 				else {
-					CYNG_LOG_WARNING(logger_, "session stopped: " << ec.message());
+					CYNG_LOG_WARNING(logger_, "[session] read: " << ec.message());
 				}
 
 		});
 	}
 
 	cyng::vm_proxy session::init_vm(server* srv) {
-		std::function<void(std::string)> f1 = std::bind(&server::pty_connect, srv, std::placeholders::_1);
-		std::function<void(std::string, std::string, cyng::pid, std::string)> f2 
-			= std::bind(&session::cluster_login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+
+		std::function<void(std::string, std::string, cyng::pid, std::string, boost::uuids::uuid)> f1
+			= std::bind(&session::cluster_login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+
+		std::function<void(std::string)> f2 = std::bind(&server::pty_connect, srv, std::placeholders::_1);
 		return srv->fabric_.create_proxy(f1, f2);
 	}
 
-	void session::cluster_login(std::string name, std::string pwd, cyng::pid n, std::string node) {
-		CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] cluster login " << name << ":" << pwd << "@" << node << " #" << n.get_internal_value());
+	void session::do_write()
+	{
+		//if (is_stopped())	return;
+
+		// Start an asynchronous operation to send a heartbeat message.
+		boost::asio::async_write(socket_,
+			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
+			std::bind(&session::handle_write, this, std::placeholders::_1));
+	}
+
+	void session::handle_write(const boost::system::error_code& ec)
+	{
+		//if (is_stopped())	return;
+
+		if (!ec) {
+
+			buffer_write_.pop_front();
+			if (!buffer_write_.empty()) {
+				do_write();
+			}
+			else {
+
+				// Wait 10 seconds before sending the next heartbeat.
+				//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
+				//heartbeat_timer_.async_wait(std::bind(&bus::do_write, this));
+			}
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "[session] write: " << ec.message());
+
+			//reset();
+		}
+	}
+
+	void session::cluster_login(std::string name, std::string pwd, cyng::pid n, std::string node, boost::uuids::uuid tag) {
+		CYNG_LOG_INFO(logger_, "session [" 
+			<< socket_.remote_endpoint() 
+			<< "] cluster login " 
+			<< name << ":" 
+			<< pwd 
+			<< "@" << node 
+			<< " #" << n.get_internal_value());
+
+		//
+		//	ToDo: check credentials
+		//
+
+		//
+		//	send response
+		//
+		buffer_write_ = cyng::serialize_invoke("cluster.res.login", true);
+		do_write();
 
 	}
 

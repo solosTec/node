@@ -23,7 +23,7 @@
 
 namespace smf {
 
-	class cluster
+	class cluster : private bus_interface
 	{
 		template <typename T >
 		friend class cyng::task;
@@ -31,7 +31,7 @@ namespace smf {
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
 			std::function<void(int)>,
-			std::function<void(int, std::string, float)>,
+			//std::function<void(int, std::string, float)>,
 			std::function<void(cyng::eod)>
 		>;
 
@@ -46,9 +46,15 @@ namespace smf {
 
 		void connect();
 		void status_check(int);
-		void login(bool);	//	login callback
 
 		void stop(cyng::eod);
+
+	private:
+		//
+		//	bus interface
+		//
+		virtual cyng::mesh* get_fabric() override;
+		virtual void on_login(bool) override;
 
 	private:
 		signatures_t sigs_;

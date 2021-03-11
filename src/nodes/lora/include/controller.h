@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef SMF_LORA_CONTROLLER_H
+#define SMF_LORA_CONTROLLER_H
+
 #include <smf/controller_base.h>
 
 
@@ -30,3 +33,5 @@
 
 	};
 }
+
+#endif

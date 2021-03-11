@@ -1,4 +1,4 @@
-#include <tasks/http_server.h>
+#include <http_server.h>
 
 #include <smf/http/session.h>
 #include <smf/http/ws.h>
@@ -11,34 +11,31 @@
 
 namespace smf {
 
-	http_server::http_server(cyng::channel_weak wp
-		, boost::asio::io_context& ioc
+	http_server::http_server(boost::asio::io_context& ioc
 		, boost::uuids::uuid tag
 		, cyng::logger logger
 		, std::string const& document_root
 		, std::uint64_t max_upload_size
 		, std::string const& nickname
-		, std::chrono::seconds timeout)
-		: sigs_{
-			std::bind(&http_server::stop, this, std::placeholders::_1),
-			std::bind(&http_server::listen, this, std::placeholders::_1),
-	}
-	, channel_(wp)
-		, tag_(tag)
+		, std::chrono::seconds timeout
+		, blocklist_type&& blocklist)
+	: tag_(tag)
 		, logger_(logger)
 		, document_root_(document_root)
 		, max_upload_size_(max_upload_size)
 		, nickname_(nickname)
 		, timeout_(timeout)
+		, blocklist_(blocklist.begin(), blocklist.end())
 		, server_(ioc, logger, std::bind(&http_server::accept, this, std::placeholders::_1))
+		, parser_([this](cyng::object&& obj) {
+
+			CYNG_LOG_TRACE(logger_, "[HTTP] ws parsed " << obj);
+			//send_response(reader_.run(cyng::container_cast<cyng::param_map_t>(std::move(obj)), rebind));
+
+		})
+		, uidgen_()
 	{
-		auto sp = channel_.lock();
-		if (sp) {
-			sp->set_channel_name("listen", 1);
-		}
-
-		CYNG_LOG_INFO(logger_, "http server " << tag << " started");
-
+		CYNG_LOG_INFO(logger_, "[HTTP] server " << tag << " started");
 	}
 
 	http_server::~http_server()
@@ -66,6 +63,20 @@ namespace smf {
 
 		CYNG_LOG_INFO(logger_, "accept (" << s.remote_endpoint() << ")");
 
+		//
+		//	check blocklist
+		//
+		auto const pos = blocklist_.find(s.remote_endpoint().address());
+		if (pos != blocklist_.end()) {
+
+			CYNG_LOG_WARNING(logger_, "address ["
+				<< s.remote_endpoint()
+				<< "] is blocked");
+			s.close();
+
+			return;
+		}
+
 		std::make_shared<http::session>(
 			std::move(s),
 			logger_,
@@ -79,9 +90,21 @@ namespace smf {
 	void http_server::upgrade(boost::asio::ip::tcp::socket s
 		, boost::beast::http::request<boost::beast::http::string_body> req) {
 
-		CYNG_LOG_TRACE(logger_, "ws (" << s.remote_endpoint() << ")");
-		std::make_shared<http::ws>(std::move(s), logger_)->do_accept(std::move(req));
+		CYNG_LOG_INFO(logger_, "new ws (" << s.remote_endpoint() << ")");
+		std::make_shared<http::ws>(std::move(s)
+			, logger_
+			, std::bind(&http_server::on_msg, this, uidgen_(), std::placeholders::_1))->do_accept(std::move(req));
 	}
+
+	void http_server::on_msg(boost::uuids::uuid tag, std::string msg) {
+
+		//
+		//	JSON parser
+		//
+		CYNG_LOG_TRACE(logger_, "ws (" << tag << ") received " << msg);
+		parser_.read(msg.begin(), msg.end());
+	}
+
 }
 
 

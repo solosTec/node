@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef SMF_MQTT_CONTROLLER_H
+#define SMF_MQTT_CONTROLLER_H
+
 #include <smf/controller_base.h>
 
 
@@ -30,3 +33,5 @@
 
 	};
 }
+
+#endif

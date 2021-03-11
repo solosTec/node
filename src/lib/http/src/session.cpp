@@ -131,7 +131,7 @@ namespace smf {
 
             //  timeout
             if (ec == boost::asio::error::operation_aborted) {
-                CYNG_LOG_WARNING(logger_, "read timeout" << ec);
+                CYNG_LOG_WARNING(logger_, "HTTP read timeout " << ec << ": " << ec.message());
                 return;
             }
 
@@ -142,7 +142,7 @@ namespace smf {
 
             if (ec) {
                 //return fail(ec, "read");
-                CYNG_LOG_WARNING(logger_, "read" << ec);
+                CYNG_LOG_WARNING(logger_, "HTTP read " << ec << ": " << ec.message());
                 return;
             }
 
@@ -178,8 +178,7 @@ namespace smf {
             boost::ignore_unused(bytes_transferred);
 
             if (ec) {
-                //return fail(ec, "write");
-                CYNG_LOG_ERROR(logger_, "write" << ec);
+                CYNG_LOG_WARNING(logger_, "HTTP write " << ec << ": " << ec.message());
                 return;
             }
 

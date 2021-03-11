@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef SMF_BROKER_WMBUS_CONTROLLER_H
+#define SMF_BROKER_WMBUS_CONTROLLER_H
+
 #include <smf/controller_base.h>
 #include <smf/cluster/config.h>
 
@@ -38,3 +41,5 @@
 
 	};
 }
+
+#endif

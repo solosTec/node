@@ -4,11 +4,10 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_DASH_TASK_CLUSTER_H
-#define SMF_DASH_TASK_CLUSTER_H
+#ifndef SMF_SETUP_TASK_CLUSTER_H
+#define SMF_SETUP_TASK_CLUSTER_H
 
 #include <smf/cluster/bus.h>
-#include <http_server.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -31,7 +30,7 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
-			std::function<void(boost::asio::ip::tcp::endpoint)>,
+			std::function<void(int)>,
 			std::function<void(cyng::eod)>
 		>;
 
@@ -41,19 +40,15 @@ namespace smf {
 			, boost::uuids::uuid tag
 			, std::string const& node_name
 			, cyng::logger
-			, toggle::server_vec_t&&
-			, std::string const& document_root
-			, std::uint64_t max_upload_size
-			, std::string const& nickname
-			, std::chrono::seconds timeout
-			, http_server::blocklist_type&&);
+			, toggle::server_vec_t&&);
 		~cluster();
+
+		void connect();
+		void status_check(int);
 
 		void stop(cyng::eod);
 
 	private:
-		void connect();
-
 		//
 		//	bus interface
 		//
@@ -68,7 +63,6 @@ namespace smf {
 		cyng::logger logger_;
 		cyng::mesh fabric_;
 		bus	bus_;
-		http_server http_server_;
 	};
 
 }
