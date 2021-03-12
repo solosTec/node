@@ -221,7 +221,7 @@ namespace smf {
 			os
 				<< name
 				<< " SMF v"
-				<< SMF_VERSION
+				<< SMF_VERSION_TAG
 				<< std::endl
 				<< "Copyright (C) 2012-"
 				<< cyng::sys::get_build_year()

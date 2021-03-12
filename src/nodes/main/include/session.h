@@ -10,7 +10,6 @@
 #include <cyng/log/logger.h>
 #include <cyng/io/parser/parser.h>
 #include <cyng/vm/proxy.h>
-//#include <cyng/vm/mesh.h>
 #include <cyng/obj/intrinsics/pid.h>
 
 #include <memory>
@@ -34,7 +33,19 @@ namespace smf {
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);
 
-		void cluster_login(std::string, std::string, cyng::pid, std::string node, boost::uuids::uuid tag);
+		void cluster_login(std::string
+			, std::string
+			, cyng::pid
+			, std::string node
+			, boost::uuids::uuid tag
+			, cyng::version v);
+
+		void db_req_subscribe(std::string, boost::uuids::uuid tag);
+		void db_req_insert(std::string);
+		void db_req_update(std::string);
+		void db_req_remove(std::string);
+		void db_req_clear(std::string);
+
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logger logger_;

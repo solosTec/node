@@ -86,13 +86,17 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "start HTTP server");
+			CYNG_LOG_INFO(logger_, "joined the cluster successfully");
 
 			//
-			//	ToDo: start HTTP server
+			//	Subscribe tables
 			//
+			bus_.req_subscribe("TDevice");
+
 		}
-
+		else {
+			CYNG_LOG_ERROR(logger_, "joining the cluster failed");
+		}
 	}
 
 }

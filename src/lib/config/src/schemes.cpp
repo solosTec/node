@@ -21,10 +21,10 @@ namespace smf {
 					cyng::column("tag", cyng::TC_UUID),
 					cyng::column("class", cyng::TC_STRING),
 					cyng::column("loginTime", cyng::TC_TIME_POINT),	//	last login time
-					cyng::column("version", cyng::TC_VERSION),		//	register period
+					cyng::column("version", cyng::TC_VERSION),		//	>= 0.9
 					cyng::column("clients", cyng::TC_UINT64),		//	clients
 					cyng::column("ping", cyng::TC_MICRO_SECOND),	//	ping time
-					cyng::column("ep", cyng::TC_IP_TCP_ENDPOINT),	//	
+					cyng::column("ep", cyng::TC_IP_TCP_ENDPOINT),	//	seen from main node
 					cyng::column("pid", cyng::TC_PID)				//	local process ID
 				}
 			, 1);

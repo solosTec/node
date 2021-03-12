@@ -51,6 +51,22 @@ namespace smf
 		void start();
 		void stop();
 
+		//
+		//	cluster client functions
+		//
+		void req_subscribe(std::string table_name);
+		void req_db_insert(std::string const& table_name
+			, cyng::vector_t const& key
+			, cyng::vector_t const&
+			, std::uint64_t generation);
+		void req_db_update(std::string const&
+			, cyng::vector_t const&
+			, cyng::vector_t const&
+			, std::uint64_t generation);
+		void req_db_remove(std::string const&
+			, cyng::vector_t const&);
+		void req_db_clear(std::string const&);
+
 	private:
 		void reset();
 		void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
@@ -67,7 +83,11 @@ namespace smf
 			return state_ == state::STOPPED;
 		}
 
+		/**
+		 * insert external functions
+		 */
 		cyng::vm_proxy init_vm(bus_interface*);
+
 
 	private:
 		boost::asio::io_context& ctx_;
@@ -77,7 +97,6 @@ namespace smf
 		boost::uuids::uuid const tag_;
 		bus_interface* bip_;
 
-		//bool stopped_;
 		boost::asio::ip::tcp::resolver::results_type endpoints_;
 		boost::asio::ip::tcp::socket socket_;
 		boost::asio::steady_timer timer_;

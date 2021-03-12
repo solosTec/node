@@ -6,6 +6,7 @@
  */
 
 #include <smf/cluster/bus.h>
+#include <smf.h>
 
 #include <cyng/log/record.h>
 #include <cyng/vm/linearize.hpp>
@@ -14,6 +15,7 @@
 #include <cyng/io/serialize.h>
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
+#include <cyng/obj/algorithm/add.hpp>
 
 #include <boost/bind.hpp>
 
@@ -204,7 +206,8 @@ namespace smf {
 				, cfg.pwd_
 				, cyng::sys::get_process_id()
 				, node_name_
-				, tag_);
+				, tag_
+				, cyng::version(SMF_VERSION_MAJOR, SMF_VERSION_MINOR));
 
 			// Start the input actor.
 			do_read();
@@ -295,6 +298,38 @@ namespace smf {
 			//if (sp)	sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple());
 		}
 	}
+
+	void bus::req_subscribe(std::string table_name) {
+
+		cyng::add(buffer_write_, cyng::serialize_invoke("db.req.subscribe"
+			, table_name
+			, tag_));
+		do_write();
+	}
+
+	void bus::req_db_insert(std::string const& table_name
+		, cyng::vector_t const& key
+		, cyng::vector_t const&
+		, std::uint64_t generation) {
+
+	}
+
+	void bus::req_db_update(std::string const& table_name
+		, cyng::vector_t const&
+		, cyng::vector_t const&
+		, std::uint64_t generation) {
+
+	}
+
+	void bus::req_db_remove(std::string const& table_name
+		, cyng::vector_t const&) {
+
+	}
+
+	void bus::req_db_clear(std::string const& table_name) {
+
+	}
+
 
 }
 
