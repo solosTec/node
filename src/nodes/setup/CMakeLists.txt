@@ -26,10 +26,13 @@ target_include_directories(setup
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${Boost_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
+        ${CRYPTO_INCLUDE_DIRS}
 )
 
 target_link_directories(setup
     PRIVATE
+        ${CRYPTO_LIBRARIES}
         ${Boost_LIBRARY_DIRS}
 )
 
@@ -37,9 +40,11 @@ target_link_libraries(setup
     PRIVATE
 #        Boost::program_options
         ${CYNG_LIBRARIES} 
+        ${CRYPTO_LIBRARIES}
         smf_config
         smf_cluster
         smf_cluster_bus
+        ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

@@ -28,7 +28,13 @@ endif()
 
 set (setup_tasks
   include/tasks/cluster.h
+  include/tasks/storage_db.h
+  include/tasks/storage_json.h
+  include/tasks/storage_xml.h
   src/tasks/cluster.cpp
+  src/tasks/storage_db.cpp
+  src/tasks/storage_json.cpp
+  src/tasks/storage_xml.cpp
 )
 
 source_group("setup-assets" FILES ${setup_assets})

@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 	//
 	//	generic options
 	//
-	boost::program_options::options_description generic = smf::config::get_generic_options(config);
+	auto generic = smf::config::get_generic_options(config);
 	generic.add_options()
 		("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")
 		("transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")

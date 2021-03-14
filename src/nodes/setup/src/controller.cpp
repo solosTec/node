@@ -7,6 +7,10 @@
 
 #include <controller.h>
 #include <tasks/cluster.h>
+#include <tasks/storage_xml.h>
+#include <tasks/storage_json.h>
+#include <tasks/storage_db.h>
+
 
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
@@ -22,6 +26,8 @@
 
 #include <locale>
 #include <iostream>
+
+#include <boost/algorithm/string.hpp>
 
 namespace smf {
 
@@ -44,10 +50,10 @@ namespace smf {
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
 
-				cyng::make_param("input", "DB"),	//	options are XML, JSON, DB
+				cyng::make_param("storage", "DB"),	//	options are XML, JSON, DB
 
 				cyng::make_param("DB", cyng::make_tuple(
-					cyng::make_param("type", "SQLite"),
+					cyng::make_param("connection-type", "SQLite"),
 					cyng::make_param("file-name", (cwd / "setup.database").string()),
 					cyng::make_param("busy-timeout", 12),		//	seconds
 					cyng::make_param("watchdog", 30),		//	for database connection
@@ -75,11 +81,27 @@ namespace smf {
 		auto const reader = cyng::make_reader(cfg);
 		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
 
+		auto const storage_type = cyng::value_cast(reader["storage"].get(), "DB");
+		CYNG_LOG_INFO(logger, "storage type is " << storage_type);
+
+		auto channel = start_data_store(ctl
+			, logger
+			, tag
+			, storage_type
+			, cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
+
+		//
+		//	channel required
+		//
+		if (!channel)	return;
+		channel->dispatch("open", cyng::make_tuple());
+
 		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
 		BOOST_ASSERT(!tgl.empty());
 		if (tgl.empty()) {
 			CYNG_LOG_FATAL(logger, "no cluster data configured");
 		}
+
 
 		//
 		//	connect to cluster
@@ -92,6 +114,29 @@ namespace smf {
 
 	}
 
+	cyng::channel_ptr controller::start_data_store(cyng::controller& ctl
+		, cyng::logger logger
+		, boost::uuids::uuid tag
+		, std::string const& storage_type
+		, cyng::param_map_t&& cfg) {
+
+		if (boost::algorithm::equals(storage_type, "DB")) {
+			return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, tag, logger, std::move(cfg));
+		}
+		else if (boost::algorithm::equals(storage_type, "XML")) {
+			CYNG_LOG_ERROR(logger, "XML data storage not available");
+			return ctl.create_named_channel_with_ref<storage_xml>("storage", ctl, tag, logger, std::move(cfg));
+		}
+		else if (boost::algorithm::equals(storage_type, "JSON")) {
+			CYNG_LOG_ERROR(logger, "JSON data storage not available");
+			return ctl.create_named_channel_with_ref<storage_json>("storage", ctl, tag, logger, std::move(cfg));
+		}
+
+		CYNG_LOG_FATAL(logger, "no data storage configured");
+
+		return cyng::channel_ptr();
+	}
+
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
@@ -101,7 +146,6 @@ namespace smf {
 		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(cfg));
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
-		channel->dispatch("status_check", cyng::make_tuple(1));
 	}
 
 	cyng::param_t controller::create_cluster_spec() {
@@ -116,6 +160,53 @@ namespace smf {
 				cyng::make_param("group", 0))	//	customer ID
 			}
 		));
+	}
+
+	bool controller::run_options(boost::program_options::variables_map& vars) {
+
+		//
+		//	
+		//
+		if (vars["init"].as< bool >()) {
+			//	initialize database
+			init_storage(read_config_section(config_.json_path_, config_.config_index_));
+			return true;
+		}
+
+		auto const user = vars["user"].as< std::string >();
+		if (!user.empty())	{
+			//	generate a set of default access rights
+			generate_access_rights(read_config_section(config_.json_path_, config_.config_index_), user);
+			return true;
+		}
+
+		auto const dev_count = vars["gen-devices"].as< std::uint32_t >();
+		if (dev_count != 0) {
+			//	generate a random set of device configuration
+			generate_random_devs(read_config_section(config_.json_path_, config_.config_index_), dev_count);
+			return true;
+		}
+
+		return false;
+	}
+
+	void controller::generate_access_rights(cyng::object&& cfg, std::string const& user) {
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+		if (s.is_alive())	smf::generate_access_rights(s, user);	//	see task/storage_db.h
+
+	}
+	void controller::init_storage(cyng::object&& cfg) {
+
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+		if (s.is_alive())	smf::init_storage(s);	//	see task/storage_db.h
+	}
+	void controller::generate_random_devs(cyng::object&& cfg, std::uint32_t count) {
+
+		auto const reader = cyng::make_reader(std::move(cfg));
+		auto s = cyng::db::create_db_session(reader.get("DB"));
+		if (s.is_alive())	smf::generate_random_devs(s, count);	//	see task/storage_db.h
 	}
 
 }

@@ -17,6 +17,7 @@
 	{
 	public:
 		controller(config::startup const&);
+		virtual bool run_options(boost::program_options::variables_map&) override;
 
 	protected:
 		cyng::vector_t create_default_config(std::chrono::system_clock::time_point&& now
@@ -30,12 +31,21 @@
 	private:
 		cyng::param_t create_cluster_spec();
 
+		cyng::channel_ptr start_data_store(cyng::controller& ctl
+			, cyng::logger logger
+			, boost::uuids::uuid
+			, std::string const& storage_type
+			, cyng::param_map_t&&);
+
 		void join_cluster(cyng::controller&
 			, cyng::logger
 			, boost::uuids::uuid
 			, std::string const& node_name
 			, toggle::server_vec_t&&);
 
+		void init_storage(cyng::object&&);
+		void generate_access_rights(cyng::object&& cfg, std::string const& user);
+		void generate_random_devs(cyng::object&& cfg, std::uint32_t count);
 	};
 }
 

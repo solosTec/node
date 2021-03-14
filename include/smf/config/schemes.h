@@ -26,6 +26,12 @@ namespace smf {
 		cyng::meta_store get_store_lora();
 		cyng::meta_sql get_table_lora();
 
+		/**
+		 * guiUser/TGuiUser
+		 */
+		cyng::meta_store get_store_gui_user();
+		cyng::meta_sql get_table_gui_user();
+
 		//
 		//	store only schemes
 		//
@@ -35,6 +41,16 @@ namespace smf {
 		 * cluster/TCluster
 		 */
 		cyng::meta_store get_store_cluster();
+
+		/**
+		 * container to store meta data of in-memory tables
+		 */
+		using store_map = std::map<std::string, cyng::meta_store>;
+
+		/**
+		 * container to store meta data of SQL tables
+		 */
+		using sql_map = std::map<std::string, cyng::meta_sql>;
 	}
 }
 

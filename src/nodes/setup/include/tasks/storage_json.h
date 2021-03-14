@@ -4,15 +4,13 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_SETUP_TASK_CLUSTER_H
-#define SMF_SETUP_TASK_CLUSTER_H
+#ifndef SMF_SETUP_TASK_STORAGE_JSON_H
+#define SMF_SETUP_TASK_STORAGE_JSON_H
 
-#include <smf/cluster/bus.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
-#include <cyng/vm/mesh.h>
 
 #include <tuple>
 #include <functional>
@@ -23,37 +21,29 @@
 
 namespace smf {
 
-	class cluster : private bus_interface
+	class storage_json
 	{
 		template <typename T >
 		friend class cyng::task;
 
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
-			std::function<void(int)>,
 			std::function<void(cyng::eod)>
 		>;
 
 	public:
-		cluster(std::weak_ptr<cyng::channel>
+		storage_json(std::weak_ptr<cyng::channel>
 			, cyng::controller&
 			, boost::uuids::uuid tag
-			, std::string const& node_name
-			, cyng::logger
-			, toggle::server_vec_t&&);
-		~cluster();
+			, cyng::logger logger
+			, cyng::param_map_t&& cfg);
+		~storage_json();
 
-		void connect();
-		void load_data(int);
 
 		void stop(cyng::eod);
 
 	private:
-		//
-		//	bus interface
-		//
-		virtual cyng::mesh* get_fabric() override;
-		virtual void on_login(bool) override;
+		void open();
 
 	private:
 		signatures_t sigs_;
@@ -61,8 +51,6 @@ namespace smf {
 		cyng::controller& ctl_;
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
-		cyng::mesh fabric_;
-		bus	bus_;
 	};
 
 }

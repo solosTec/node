@@ -8,7 +8,6 @@
 #include <smf/config/schemes.h>
 #include <smf.h>
 
-
 #include <boost/assert.hpp>
 
 namespace smf {
@@ -72,7 +71,23 @@ namespace smf {
 
 		}
 		cyng::meta_sql get_table_lora() {
-			return cyng::to_sql(get_store_device(), { 36, 0, 64, 32, 0, 0, 0, 0 });
+			return cyng::to_sql(get_store_lora(), { 36, 0, 64, 32, 0, 0, 0, 0 });
+		}
+
+		cyng::meta_store get_store_gui_user() {
+			return cyng::meta_store("guiUser"
+				, {
+					cyng::column("tag", cyng::TC_UUID),
+					cyng::column("name", cyng::TC_STRING),
+					cyng::column("pwd", cyng::TC_DIGEST_SHA1),	// SHA1 hash
+					cyng::column("lastAccess", cyng::TC_TIME_POINT),
+					cyng::column("rights", cyng::TC_STRING)	//	access rights (JSON)
+				}
+			, 1);
+
+		}
+		cyng::meta_sql get_table_gui_user() {
+			return cyng::to_sql(get_store_gui_user(), { 36, 32, 40, 0, 4096 });
 		}
 
 		cyng::meta_store get_store_target() {
