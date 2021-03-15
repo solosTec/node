@@ -281,8 +281,6 @@ namespace smf
 				CYNG_LOG_ERROR(logger_, "ipt [" << tgl_.get() << "] on heartbeat: " << ec.message());
 
 				reset();
-				//auto sp = channel_.lock();
-				//if (sp)	sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple());
 			}
 		}
 

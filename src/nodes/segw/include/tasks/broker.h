@@ -29,9 +29,15 @@ namespace smf {
 		using signatures_t = std::tuple<
 			std::function<void(cyng::eod)>,
 			std::function<void(cyng::buffer_t)>,
-			std::function<void()>,
-			std::function<void(cyng::buffer_t)>
+			std::function<void()>
 		>;
+
+		enum class state {
+			START,
+			WAIT,
+			CONNECTED,
+			STOPPED,
+		} state_;
 
 	public:
 		broker(std::weak_ptr<cyng::channel>
@@ -44,6 +50,7 @@ namespace smf {
 	private:
 		void stop(cyng::eod);
 		void start();
+
 		/**
 		 * incoming raw data from serial interface
 		 */
@@ -51,14 +58,22 @@ namespace smf {
 
 		void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
 		void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-		//void check_deadline();
-		void check_connection_state();
 		void handle_connect(const boost::system::error_code& ec,
 			boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
 		void do_read();
 		void handle_read(const boost::system::error_code& ec, std::size_t n);
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);
+		void check_deadline(const boost::system::error_code& ec);
+
+		constexpr bool is_stopped() const {
+			return state_ == state::STOPPED;
+		}
+		constexpr bool is_connected() const {
+			return state_ == state::CONNECTED;
+		}
+
+		void reset();
 
 	private:
 		signatures_t sigs_;
@@ -69,12 +84,10 @@ namespace smf {
 		std::chrono::seconds const timeout_;
 		bool const login_;
 
-		bool stopped_;
 		boost::asio::ip::tcp::resolver::results_type endpoints_;
 		boost::asio::ip::tcp::socket socket_;
 		std::string input_buffer_;
-		//boost::asio::steady_timer deadline_;
-		boost::asio::steady_timer heartbeat_timer_;
+		boost::asio::steady_timer timer_;
 
 		std::deque<cyng::buffer_t>	buffer_write_;
 
