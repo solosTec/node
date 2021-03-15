@@ -676,6 +676,14 @@ target_compile_definitions(smf_ipt_bus
         $<$<CONFIG:Debug>:_DEBUG_IPT>
 )
 
+#
+# -Wno-psabi for gcc > 6.0 && gcc < 7.1
+#
+target_compile_options(smf_ipt_bus 
+    PRIVATE 
+        $<$<AND:$<VERSION_GREATER_EQUAL:${CMAKE_CXX_COMPILER_VERSION},7.0>,$<CXX_COMPILER_ID:GNU>>:-Wno-psabi>
+)
+
 target_link_libraries(smf_ipt_bus 
     PRIVATE 
         Boost::boost 

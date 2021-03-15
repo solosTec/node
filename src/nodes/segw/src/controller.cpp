@@ -323,6 +323,7 @@ namespace smf {
 	}
 
 	cyng::param_t controller::create_gpio_spec() const {
+		//	available pins are 46, 47, 50, 53, 64, 68
 		return cyng::make_param("gpio", cyng::param_map_factory
 		("enabled",
 #if defined(__ARMEL__)

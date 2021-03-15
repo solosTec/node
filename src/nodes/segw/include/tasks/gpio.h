@@ -25,7 +25,8 @@ namespace smf
 		using signatures_t = std::tuple<
 			std::function<void(cyng::eod)>,
 			std::function<bool(bool)>,	//	turn
-			std::function<void(std::chrono::milliseconds, std::size_t)>	//	flashing
+			std::function<void(std::chrono::milliseconds, std::size_t)>,	//	flashing
+			std::function<void(std::chrono::milliseconds)>	//	blinking
 		>;
 
 		enum class state {

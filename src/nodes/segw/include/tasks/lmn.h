@@ -36,7 +36,8 @@ namespace smf {
 			std::function<void(std::string)>,		//	set_parity
 			std::function<void(std::string)>,		//	set_flow_control
 			std::function<void(std::string)>,		//	set_stopbits
-			std::function<void(std::uint8_t)>		//	set_databits
+			std::function<void(std::uint8_t)>,		//	set_databits
+			std::function<void()>					//	statistics
 		>;
 
 	public:
@@ -64,6 +65,10 @@ namespace smf {
 		void set_stopbits(std::string);
 		void set_databits(std::uint8_t);
 
+		void update_statistics();
+
+		void flash_led(std::chrono::milliseconds, std::size_t);
+
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
@@ -85,6 +90,7 @@ namespace smf {
 		std::vector<cyng::channel_ptr>	targets_;
 		std::vector<cyng::channel_ptr> gpio_;
 
+		std::size_t accumulated_bytes_;
 	};
 }
 

@@ -21,11 +21,12 @@ namespace smf
 		, sigs_{
 			std::bind(&gpio::stop, this, std::placeholders::_1),	//	0
 			std::bind(&gpio::turn, this, std::placeholders::_1),	//	1
-			std::bind(&gpio::flashing, this, std::placeholders::_1, std::placeholders::_2)	//	2
+			std::bind(&gpio::flashing, this, std::placeholders::_1, std::placeholders::_2),	//	2
+			std::bind(&gpio::blinking, this, std::placeholders::_1)	//	3
 		}	
 		, channel_(wp)
 		, logger_(logger)
-		, path_(p)
+		, path_(p / "value")
 	{
 		CYNG_LOG_INFO(logger_, "GPIO [" << path_ << "] ready");
 
@@ -33,6 +34,7 @@ namespace smf
 		if (sp) {
 			sp->set_channel_name("turn", 1);
 			sp->set_channel_name("flashing", 2);
+			sp->set_channel_name("blinking", 3);
 		}
 
 		//
@@ -52,6 +54,8 @@ namespace smf
 	 */
 	void gpio::flashing(std::chrono::milliseconds ms, std::size_t counter)
 	{
+		// CYNG_LOG_TRACE(logger_, "GPIO [" << path_ << "] flashing " << counter);
+
 		//
 		//	complete
 		//
@@ -65,23 +69,25 @@ namespace smf
 	}
 
 	void gpio::blinking(std::chrono::milliseconds ms) {
-		auto sp = channel_.lock();
+
 		flip_gpio(path_);
+		auto sp = channel_.lock();
 		if (sp)	sp->suspend(ms, 3, cyng::make_tuple(ms));
 	}
 
 	bool gpio::turn(bool on)
-	{
+	{ 
 		//
-		//	build complete path
+		//	stop active timer
 		//
-		auto const p = (path_ / "value").generic_string();
-        
-		CYNG_LOG_DEBUG(logger_, "GPIO [" << path_ << "] ready" << (on ? " on" : " off"));
-        
-		if (switch_gpio(p, on))	return true;
+		auto sp = channel_.lock();
+		if (sp)	sp->cancel_timer();
 
-		CYNG_LOG_WARNING(logger_, "cannot open GPIO [" << p << "]");
+		// CYNG_LOG_TRACE(logger_, "turn GPIO [" << path_ << "] " << (on ? "on" : "off"));
+        
+		if (switch_gpio(path_, on))	return true;
+
+		CYNG_LOG_WARNING(logger_, "cannot open GPIO [" << path_ << "]");
 		return false;
 	}
 

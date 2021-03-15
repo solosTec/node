@@ -33,8 +33,10 @@ namespace smf {
 			std::bind(&lmn::set_parity, this, std::placeholders::_1),		//	5
 			std::bind(&lmn::set_flow_control, this, std::placeholders::_1),	//	6
 			std::bind(&lmn::set_stopbits, this, std::placeholders::_1),		//	7
-			std::bind(&lmn::set_databits, this, std::placeholders::_1)		//	8
-	}	, channel_(wp)
+			std::bind(&lmn::set_databits, this, std::placeholders::_1),		//	8
+			std::bind(&lmn::update_statistics, this)	//	9
+		}	
+		, channel_(wp)
 		, ctl_(ctl)
 		, logger_(logger)
 		, cfg_(c, type)
@@ -43,6 +45,7 @@ namespace smf {
 		, buffer_{ 0 }
 		, targets_()
 		, gpio_()
+		, accumulated_bytes_{0}
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -54,6 +57,7 @@ namespace smf {
 			sp->set_channel_name("set-flow-control", 6);
 			sp->set_channel_name("set-stopbits", 7);
 			sp->set_channel_name("set-databits", 8);
+			sp->set_channel_name("update-statistics", 9);
 		}
 
 		CYNG_LOG_INFO(logger_, "LMN " << cfg_.get_port() << " ready");
@@ -140,13 +144,51 @@ namespace smf {
 		//
 		//	GPIOs
 		//
+		auto const gpio_channel = cfg_gpio::get_name(cfg_.get_lmn_type());
+		auto gpios = ctl_.get_registry().lookup(gpio_channel);
 		if (gpio_cfg_.is_enabled()) {
 			
-			auto const gpio_channel = cfg_gpio::get_name(cfg_.get_lmn_type());
-			gpio_ = ctl_.get_registry().lookup(gpio_channel);
+			gpio_ = gpios;
 
 			CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] has " << gpio_.size() << " x gpios(s) " << gpio_channel);
 
+			//
+			//	start statistics
+			//
+			auto sp = channel_.lock();
+			if (sp)	sp->suspend(std::chrono::seconds(1), 9, cyng::make_tuple());
+		}
+
+		//
+		// silence GPIOs (stop blinking)
+		//
+		for(auto channel: gpios)	{
+			CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] turn off " << gpio_channel);
+			channel->dispatch("turn", cyng::make_tuple(false));
+		}
+	}
+
+	void lmn::update_statistics()	{
+		if (accumulated_bytes_ > 0)	{
+			CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] update statistics: " << accumulated_bytes_);
+			if (accumulated_bytes_ < 128)	{
+				flash_led(std::chrono::milliseconds(500), 2);
+			}
+			else if (accumulated_bytes_ < 512)	{
+				flash_led(std::chrono::milliseconds(250), 4);
+			}
+			else {
+				flash_led(std::chrono::milliseconds(125), 8);
+			}
+			accumulated_bytes_ = 0;
+		}
+		auto sp = channel_.lock();
+		if (sp)	sp->suspend(std::chrono::seconds(1), 9, cyng::make_tuple());
+	}
+
+	void lmn::flash_led(std::chrono::milliseconds ms, std::size_t count)	{
+		for(auto channel: gpio_)	{
+			channel->dispatch("flashing", cyng::make_tuple(ms, count));
 		}
 	}
 
@@ -155,7 +197,14 @@ namespace smf {
 		port_.async_read_some(boost::asio::buffer(buffer_), [this](boost::system::error_code ec, std::size_t bytes_transferred) {
 
 			if (!ec) {
-				CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] received " << bytes_transferred << " bytes");
+				accumulated_bytes_ += bytes_transferred;
+				CYNG_LOG_TRACE(logger_, "[" 
+				<< cfg_.get_port() 
+				<< "] received " 
+				<< bytes_transferred 
+				<< " / "
+				<< accumulated_bytes_
+				<< " bytes");
 
 #ifdef _DEBUG_SEGW
 				std::stringstream ss;
