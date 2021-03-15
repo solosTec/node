@@ -25,8 +25,14 @@ namespace smf
 		using signatures_t = std::tuple<
 			std::function<void(cyng::eod)>,
 			std::function<bool(bool)>,	//	turn
-			std::function<void(std::uint32_t, std::size_t)>	//	flashing
+			std::function<void(std::chrono::milliseconds, std::size_t)>	//	flashing
 		>;
+
+		enum class state {
+			OFF,
+			FLASHING,
+			BLINKING,
+		} state_;
 
 	public:
 		gpio(std::weak_ptr<cyng::channel>
@@ -48,7 +54,13 @@ namespace smf
 		 * @brief slot [1] - periodic timer in milliseconds and counter
 		 *
 		 */
-		void flashing(std::uint32_t, std::size_t);
+		void flashing(std::chrono::milliseconds, std::size_t);
+
+		/**
+		 * @brief slot [2] - permanent blinking
+		 *
+		 */
+		void blinking(std::chrono::milliseconds);
 
 	private:
 		signatures_t sigs_;
@@ -65,11 +77,22 @@ namespace smf
 		 */
 		std::filesystem::path	const path_;
 
-		std::size_t counter_;
-		std::chrono::milliseconds ms_;
 	};
 
-	bool switch_gpio(std::filesystem::path, bool);
+	/**
+	 * Set GPIO to the specified state
+	 */
+	bool switch_gpio(std::filesystem::path, bool state);
+
+	/**
+	 * @return true if GPIO is on
+	 */
+	bool is_gpio_on(std::filesystem::path);
+
+	/**
+	 * flip status of specified GPIO path
+	 */
+	void flip_gpio(std::filesystem::path);
 }
 
 #endif

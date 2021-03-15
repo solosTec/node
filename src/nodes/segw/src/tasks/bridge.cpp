@@ -365,6 +365,7 @@ namespace smf {
 				auto const name = cfg_gpio::get_name(pin);
 				CYNG_LOG_INFO(logger_, "init GPIO [" << name << "]");
 				auto channel = ctl_.create_named_channel_with_ref<gpio>(name, logger_, sp);
+				channel->dispatch("flashing", cyng::make_tuple(std::chrono::milliseconds(500)));
 			}
 		}
 		else {
