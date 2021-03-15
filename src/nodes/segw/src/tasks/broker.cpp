@@ -145,29 +145,29 @@ namespace smf {
 
 	void broker::check_deadline(const boost::system::error_code& ec) {
 		if (is_stopped())	return;
-		CYNG_LOG_TRACE(logger_, "[cluster] check deadline " << ec);
+		CYNG_LOG_TRACE(logger_, "[broker] check deadline " << ec);
 
 		if (!ec) {
 			switch (state_) {
 			case state::START:
-				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: start");
+				CYNG_LOG_TRACE(logger_, "[broker] check deadline: start");
 				start();
 				break;
 			case state::CONNECTED:
-				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: connected");
+				CYNG_LOG_TRACE(logger_, "[broker] check deadline: connected");
 				break;
 			case state::WAIT:
-				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: waiting");
+				CYNG_LOG_TRACE(logger_, "[broker] check deadline: waiting");
 				start();
 				break;
 			default:
-				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: other");
+				CYNG_LOG_TRACE(logger_, "[broker] check deadline: other");
 				BOOST_ASSERT_MSG(false, "invalid state");
 				break;
 			}
 		}
 		else {
-			CYNG_LOG_TRACE(logger_, "[cluster] check deadline timer cancelled");
+			CYNG_LOG_TRACE(logger_, "[broker] check deadline timer cancelled");
 		}
 	}
 

@@ -73,6 +73,9 @@ namespace smf {
 		void init_broker_clients();
 		void init_broker_clients(lmn_type);
 
+		void init_filter();
+		void init_filter(lmn_type);
+
 		void init_redirectors();
 		void init_redirector(lmn_type);
 

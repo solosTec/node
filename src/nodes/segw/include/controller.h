@@ -41,6 +41,7 @@ namespace cyng {
 		cyng::param_t create_wireless_block_list() const;
 		cyng::param_t create_rs485_broker(std::string const& hostname) const;
 		cyng::param_t create_rs485_listener() const;
+		cyng::param_t create_rs485_block_list() const;
 		cyng::param_t create_gpio_spec() const;
 		cyng::param_t create_hardware_spec() const;
 		cyng::param_t create_nms_server_spec(std::filesystem::path const&) const;

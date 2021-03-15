@@ -23,11 +23,11 @@ namespace smf
 				: data_{ 0 }
 			{}
 
-			cyng::buffer_t header::get_manufacturer_code() const
+			std::pair<char, char> header::get_manufacturer_code() const
 			{
 				return { 
-					static_cast<cyng::buffer_t::value_type>(data_.at(2)),
-					static_cast<cyng::buffer_t::value_type>(data_.at(3)) 
+					static_cast<char>(data_.at(2)),
+					static_cast<char>(data_.at(3))
 				};
 			}
 
@@ -38,8 +38,7 @@ namespace smf
 				//
 				//	get the device ID as u32 value
 				//
-				std::uint32_t raw{ 0 };
-				std::memcpy(&raw, &data_.at(4), sizeof(id));
+				std::memcpy(&id, &data_.at(4), sizeof(id));
 
 				//
 				//	read this value as a hex value
@@ -49,7 +48,7 @@ namespace smf
 				ss
 					<< std::setw(8)
 					<< std::setbase(16)
-					<< raw;
+					<< id;
 
 				//
 				//	write this value as decimal value

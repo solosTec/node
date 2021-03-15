@@ -636,6 +636,14 @@ namespace smf {
 					, cyng::make_object(period)
 					, "blocklist: " + param.first);
 			}
+			else if (boost::algorithm::equals(param.first, "mode")) {
+				auto mode = cyng::value_cast(param.second, "DROP");
+				std::transform(mode.begin(), mode.end(), mode.begin(), ::toupper);
+				insert_config_record(stmt
+					, cyng::to_path(cfg::sep, "blocklist", std::to_string(counter), param.first)
+					, cyng::make_object(mode)
+					, "mode: " + mode);
+			}
 			else {
 				insert_config_record(stmt
 					, cyng::to_path(cfg::sep, "blocklist", std::to_string(counter), param.first)

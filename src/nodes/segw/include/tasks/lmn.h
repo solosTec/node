@@ -31,7 +31,7 @@ namespace smf {
 			std::function<void(cyng::eod)>,
 			std::function<void()>,
 			std::function<void(cyng::buffer_t)>,
-			std::function<void(std::string)>,
+			std::function<void(std::string)>,		//	reset_target_channels
 			std::function<void(std::uint32_t)>,		//	set_baud_rate
 			std::function<void(std::string)>,		//	set_parity
 			std::function<void(std::string)>,		//	set_flow_control

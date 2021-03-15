@@ -36,7 +36,19 @@
 
 		 bool is_enabled() const;
 		 std::string get_mode() const;
+		 bool is_drop_mode() const;
 		 std::vector<std::string> get_list() const;
+
+		 /**
+		  * all readings from one meter that are faster then this
+		  * value will be dopped.
+		  * A value of 0 means that no filter will be applied.
+		  */
+		 std::chrono::seconds get_max_frequency() const;
+		 bool is_max_frequency_enabled() const;
+
+		 std::string get_task_name() const;
+
 		 std::size_t size() const;
 
 		 bool set_enabled(bool) const;

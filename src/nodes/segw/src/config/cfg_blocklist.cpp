@@ -7,6 +7,7 @@
 
 #include <config/cfg_blocklist.h>
 #include <config/cfg_lmn.h>
+#include <config/cfg_broker.h>
 
 #include <cyng/obj/container_factory.hpp>
 
@@ -42,6 +43,9 @@ namespace smf {
 		std::string meter_path(std::uint8_t type, std::size_t idx) {
 			return cyng::to_path(cfg::sep, cfg_blocklist::root, std::to_string(type), "meter", idx);
 		}
+		std::string period_path(std::size_t type) {
+			return cyng::to_path(cfg::sep, cfg_blocklist::root, std::to_string(type), "period");
+		}
 	}
 
 	bool cfg_blocklist::is_enabled() const {
@@ -52,6 +56,10 @@ namespace smf {
 		return cfg_.get_value(mode_path(get_index()), "DROP");
 	}
 
+	bool cfg_blocklist::is_drop_mode() const {
+		return boost::algorithm::equals("DROP", get_mode());
+	}
+
 	std::vector<std::string> cfg_blocklist::get_list() const {
 
 		std::vector<std::string> list;
@@ -60,6 +68,18 @@ namespace smf {
 			if (!meter.empty())	list.push_back(meter);
 		}
 		return list;
+	}
+
+	std::chrono::seconds cfg_blocklist::get_max_frequency() const {
+		return cfg_.get_value(period_path(get_index()), std::chrono::seconds(10));
+	}
+
+	bool cfg_blocklist::is_max_frequency_enabled() const {
+		return get_max_frequency().count() > 0;
+	}
+
+	std::string cfg_blocklist::get_task_name() const {
+		return "filter@" + cfg_broker(cfg_, type_).get_port();
 	}
 
 	std::size_t cfg_blocklist::size() const {

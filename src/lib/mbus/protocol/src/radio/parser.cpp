@@ -9,6 +9,8 @@
 
 #include <boost/assert.hpp>
 
+#include <iostream>
+
 namespace smf
 {
 	namespace mbus
@@ -39,11 +41,13 @@ namespace smf
 			}
 
 			parser::state parser::state_header(char c) {
+				BOOST_ASSERT(pos_ < header::size());
 				header_.data_[pos_++] = c;
 				if (pos_ == header::size()) {
 					pos_ = 0;
 					payload_.clear();
 					payload_.reserve(header_.payload_size());
+					payload_.push_back(c);	//	application type (CI)
 					return state::DATA;
 				}
 				return state_;
@@ -51,7 +55,9 @@ namespace smf
 
 			parser::state parser::state_data(char c) {
 				payload_.push_back(c);
+				BOOST_ASSERT(payload_.back() == c);
 				if (payload_.size() == header_.payload_size()) {
+					BOOST_ASSERT(header_.get_frame_type() == payload_.at(0));
 					cb_(header_, payload_);
 					return state::HEADER;
 				}

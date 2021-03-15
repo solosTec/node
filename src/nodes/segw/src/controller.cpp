@@ -285,6 +285,12 @@ namespace smf {
 		));
 	}
 
+	cyng::param_t controller::create_rs485_block_list() const {
+		return cyng::make_param("blocklist", cyng::tuple_factory(
+			cyng::make_param("enabled", false)	//	no block list
+		));
+	}
+
 	cyng::tuple_t controller::create_rs485_spec(std::string const& hostname) const {
 		return cyng::make_tuple(
 
@@ -318,7 +324,8 @@ namespace smf {
 			cyng::make_param("broker-login", false),
 			cyng::make_param("broker-reconnect", 12),	//	seconds
 			create_rs485_broker(hostname),
-			create_rs485_listener()
+			create_rs485_listener(),
+			create_rs485_block_list()
 		);
 	}
 
@@ -333,7 +340,7 @@ namespace smf {
 #endif
 		)
 			("path", "/sys/class/gpio")
-			("list", cyng::make_vector({ 46, 47, 50, 53 }))
+			("list", cyng::make_vector({ 46, 47, 50, 53 }))	//	, 64, 68
 			()
 		);
 	}

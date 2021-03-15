@@ -207,11 +207,10 @@ namespace smf {
 				<< " bytes");
 
 #ifdef _DEBUG_SEGW
-				std::stringstream ss;
-				cyng::io::hex_dump<8> hd;
-				hd(ss, std::begin(buffer_), std::begin(buffer_) + bytes_transferred);
-				CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] received:\n" << ss.str());
-
+				//std::stringstream ss;
+				//cyng::io::hex_dump<8> hd;
+				//hd(ss, std::begin(buffer_), std::begin(buffer_) + bytes_transferred);
+				//CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] received:\n" << ss.str());
 #endif
 
 				//

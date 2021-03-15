@@ -59,7 +59,7 @@ namespace smf
 				 * payload size = total size - 0x09
 				 */
 				constexpr std::uint8_t payload_size() const noexcept {
-					return static_cast<std::uint8_t>(size() - 0x09);
+					return static_cast<std::uint8_t>(total_size() - 0x0A);
 				}
 
 				/**
@@ -72,7 +72,7 @@ namespace smf
 				/**
 				 * @return 2 byte code
 				 */
-				cyng::buffer_t get_manufacturer_code() const;
+				std::pair<char, char> get_manufacturer_code() const;
 
 				constexpr std::uint8_t get_version() const noexcept {
 					return data_.at(8);

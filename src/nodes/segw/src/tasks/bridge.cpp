@@ -11,6 +11,7 @@
 #include <tasks/broker.h>
 #include <tasks/CP210x.h>
 #include <tasks/persistence.h>
+#include <tasks/filter.h>
 
 #include <config/cfg_gpio.h>
 #include <config/cfg_broker.h>
@@ -18,6 +19,7 @@
 #include <config/cfg_sml.h>
 #include <config/cfg_vmeter.h>
 #include <config/cfg_listener.h>
+#include <config/cfg_blocklist.h>
 
 #include <smf/obis/defs.h>
 
@@ -102,11 +104,6 @@ namespace smf {
 		init_gpio();
 
 		//
-		//	router for SML data
-		//
-		CYNG_LOG_INFO(logger_, "initialize: SML router");
-
-		//
 		//	SML server
 		//
 		CYNG_LOG_INFO(logger_, "initialize: SML server");
@@ -128,6 +125,7 @@ namespace smf {
 		//	IP-T client
 		//	connect to IP-T server
 		//
+		CYNG_LOG_INFO(logger_, "initialize: SML router");
 		init_ipt_bus();
 
 		//
@@ -135,6 +133,12 @@ namespace smf {
 		//
 		CYNG_LOG_INFO(logger_, "initialize: broker clients");
 		init_broker_clients();
+
+		//
+		//	filter (wireless M-Bus)
+		//
+		CYNG_LOG_INFO(logger_, "initialize: filter");
+		init_filter();
 
 		//
 		//	LMN - open serial ports
@@ -170,7 +174,7 @@ namespace smf {
 		//	we would receive our own changes.
 		//
 		load_configuration();
-		auto tpl = cfg_.get_obj("language-code");
+		//auto tpl = cfg_.get_obj("language-code");
 		//load_devices_mbus();
 		//load_data_collectors();
 		//load_data_mirror();
@@ -268,6 +272,7 @@ namespace smf {
 			auto channel = ctl_.create_named_channel_with_ref<lmn>(port, ctl_, logger_, cfg_, type);
 			BOOST_ASSERT(channel->is_open());
 
+			cfg_blocklist blocklist(cfg_, type);
 
 			if (boost::algorithm::equals(cfg.get_hci(), "CP210x")) {
 
@@ -286,16 +291,19 @@ namespace smf {
 				channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
 
 				//
-				//	CP210x will forward incoming data to broker
+				//	CP210x will forward incoming data to filter
 				//
-				hci->dispatch("reset-target-channels", cyng::make_tuple(cfg.get_task_name()));
+				
+				hci->dispatch("reset-target-channels", cyng::make_tuple(blocklist.get_task_name()));
+				//hci->dispatch("reset-target-channels", cyng::make_tuple(cfg.get_task_name()));
 			}
 			else {
 
 				//
 				//	open serial port
 				//
-				channel->dispatch("reset-target-channels", cyng::make_tuple(cfg.get_task_name()));
+				//channel->dispatch("reset-target-channels", cyng::make_tuple(cfg.get_task_name()));
+				channel->dispatch("reset-target-channels", cyng::make_tuple(blocklist.get_task_name()));
 				channel->dispatch("open", cyng::make_tuple());
 			}
 
@@ -348,6 +356,29 @@ namespace smf {
 		else {
 			CYNG_LOG_WARNING(logger_, "broker for [" << port << "] is not enabled");
 		}
+	}
+
+	void bridge::init_filter() {
+		//
+		//	only wireless M-Bus data are filtered
+		//
+		init_filter(lmn_type::WIRELESS);
+	}
+
+	void bridge::init_filter(lmn_type type) {
+
+		cfg_blocklist cfg(cfg_, type);
+		CYNG_LOG_TRACE(logger_, "create filter [" << cfg.get_task_name() << "]");
+
+		auto channel = ctl_.create_named_channel_with_ref<filter>(cfg.get_task_name(), ctl_, logger_, cfg_, type);
+		BOOST_ASSERT(channel->is_open());
+
+		//
+		//	broker tasks are target channels
+		//
+		cfg_broker broker_cfg(cfg_, type);
+		channel->dispatch("reset-target-channels", cyng::make_tuple(broker_cfg.get_task_name()));
+
 	}
 
 	void bridge::init_gpio() {
