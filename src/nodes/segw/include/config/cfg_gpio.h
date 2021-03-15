@@ -8,6 +8,8 @@
 #define SMF_SEGW_CONFIG_GPIO_H
 
 #include <cfg.h>
+#include <config/cfg_lmn.h>
+
 #include <vector>
 #include <filesystem>
 
@@ -30,6 +32,8 @@
 		 std::filesystem::path get_path(std::uint32_t pin) const;
 
 		 static std::string get_name(std::uint32_t pin);
+		 static std::string get_name(lmn_type);
+		 static std::uint32_t get_pin(lmn_type);
 
 		 constexpr static char root[] = "gpio";
 	 private:

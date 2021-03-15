@@ -9,6 +9,7 @@
 
 #include <cfg.h>
 #include <config/cfg_lmn.h>
+#include <config/cfg_gpio.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -69,6 +70,7 @@ namespace smf {
 		cyng::controller& ctl_;
 		cyng::logger logger_;
 		cfg_lmn cfg_;
+		cfg_gpio gpio_cfg_;
 
 		/**
 		 * serial port
@@ -81,6 +83,7 @@ namespace smf {
 		std::array<char, 1024> buffer_;
 
 		std::vector<cyng::channel_ptr>	targets_;
+		std::vector<cyng::channel_ptr> gpio_;
 
 	};
 }

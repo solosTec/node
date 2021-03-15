@@ -38,9 +38,11 @@ namespace smf {
 		, ctl_(ctl)
 		, logger_(logger)
 		, cfg_(c, type)
+		, gpio_cfg_(c)
 		, port_(ctl.get_ctx())
 		, buffer_{ 0 }
 		, targets_()
+		, gpio_()
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -134,6 +136,18 @@ namespace smf {
 	void lmn::reset_target_channels(std::string name) {
 		targets_ = ctl_.get_registry().lookup(name);
 		CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] has " << targets_.size() << " x target(s) " << name);
+
+		//
+		//	GPIOs
+		//
+		if (gpio_cfg_.is_enabled()) {
+			
+			auto const gpio_channel = cfg_gpio::get_name(cfg_.get_lmn_type());
+			gpio_ = ctl_.get_registry().lookup(gpio_channel);
+
+			CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] has " << gpio_.size() << " x gpios(s) " << gpio_channel);
+
+		}
 	}
 
 	void lmn::do_read() {

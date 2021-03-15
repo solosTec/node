@@ -57,4 +57,19 @@ namespace smf {
 		return "gpio" + std::to_string(pin);
 	}
 
+	std::uint32_t cfg_gpio::get_pin(lmn_type type) {
+		switch (type) {
+		case lmn_type::WIRELESS:	50u;
+		case lmn_type::WIRED:	return 53u;
+		case lmn_type::ETHERNET:	return 47u;
+		default:
+			break;
+		}
+		return 46u;
+	}
+
+	std::string cfg_gpio::get_name(lmn_type type) {
+		return get_name(get_pin(type));
+	}
+
 }

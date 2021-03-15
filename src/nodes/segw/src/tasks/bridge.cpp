@@ -128,7 +128,6 @@ namespace smf {
 		//	IP-T client
 		//	connect to IP-T server
 		//
-		//CYNG_LOG_INFO(logger_, "initialize: IP-T client");
 		init_ipt_bus();
 
 		//

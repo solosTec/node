@@ -81,7 +81,7 @@ namespace smf {
 	}
 
 	void broker::start() {
-		CYNG_LOG_INFO(logger_, "[broker] start(" << target_ << ")");
+		CYNG_LOG_INFO(logger_, "[broker] start " << target_);
 
 		state_ = state::START;
 		buffer_write_.clear();

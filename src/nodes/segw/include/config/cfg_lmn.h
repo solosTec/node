@@ -16,8 +16,8 @@
  namespace smf {
 	
 	 enum class lmn_type : std::uint8_t {
-		 WIRELESS = 0,	//	IF_wMBUS
-		 WIRED = 1,		//	rs485
+		 WIRELESS = 0,	//	IF_wMBUS (GPIO 50)
+		 WIRED = 1,		//	rs485 (GPIO 53)
 		 ETHERNET,
 		 OTHER = 0,
 	 };
