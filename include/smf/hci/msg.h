@@ -69,7 +69,7 @@ namespace smf
 			std::int16_t get_crc() const;
 
 		private:
-			std::uint8_t header_ctrl_ep_;	//!<	Control and Enpoint field
+			std::uint8_t header_ctrl_ep_;	//!<	Control and Endpoint field
 			std::uint8_t header_msg_id_;	//!<	message ID field
 			std::uint8_t header_length_;	//!<	length in bytes
 

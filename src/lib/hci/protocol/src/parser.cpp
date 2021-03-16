@@ -23,7 +23,7 @@ namespace smf
 			case state::SOF:
 				state_ = state_sof(c);
 				break;
-			case state::HEADER_CTRL_EP:			//!<	Control and Enpoint field
+			case state::HEADER_CTRL_EP:			//!<	Control and Endpoint field
 				state_ = state_header_ctl_ep(c);
 				break;
 			case state::HEADER_MSG_ID:

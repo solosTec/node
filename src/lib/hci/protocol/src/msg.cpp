@@ -45,7 +45,7 @@ namespace smf
 		}
 
 		bool msg::is_complete() const {
-			return get_length() == payload_.size();
+			return get_length() + 1 == payload_.size();
 		}
 
 		double msg::get_dBm() const {
@@ -73,7 +73,7 @@ namespace smf
 				<< "\""
 				<< +m.get_length()
 				<< " bytes, ep: "
-				<< +m.header_ctrl_ep_	//!<	Control and Enpoint field
+				<< +m.header_ctrl_ep_	//!<	Control and Endpoint field
 				<< ", id: "
 				<< +m.header_msg_id_	//!<	message ID field
 				<< "\":hci"

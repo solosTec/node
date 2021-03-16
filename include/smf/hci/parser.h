@@ -35,7 +35,7 @@ namespace smf
 			enum class state
 			{
 				SOF,					//!<	SOF Field (Start Of Frame = 0xA5)
-				HEADER_CTRL_EP,			//!<	Control and Enpoint field
+				HEADER_CTRL_EP,			//!<	Control and Endpoint field
 				HEADER_MSG_ID,			//!<	message ID field
 				HEADER_LENGTH,			//!<	length in bytes
 				PAYLOAD,				//!<	wireless M-Bus data

@@ -66,6 +66,7 @@ namespace smf
 
 		/**
 		 * Update the crc value with new data.
+		 * 16 bit CRC CITT polynomial G(x) = 1 + x^5 + x^12 + x^16
 		 *
 		 * @param crc      The current crc value.
 		 * @param c        single character
