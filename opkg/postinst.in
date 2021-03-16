@@ -47,6 +47,29 @@ ln -s /usr/local/lib/libboost_system.so 			/usr/local/lib/libboost_system.so.1.7
 
 echo "${PROJECT_NAME} library (SMF project) is installed"
 
+# create lib links in /usr/lib/ /usr/local/lib/
+libfiles=$(find /usr/local/lib/ -name '*')
+for libfile in ${libfiles}; do
+	tmpfilename="/usr/lib/$(basename ${libfile})"
+	if [ ! -f ${tmpfilename} ]; then
+		ln -s ${libfile} ${tmpfilename}
+	fi
+done
+
+echo "${PROJECT_NAME} shared libraries available"
+
+echo "${PROJECT_NAME} create default configuration"
+/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -D
+
+echo "${PROJECT_NAME} initialize database"
+/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -I
+
+echo "${PROJECT_NAME} remove previous configuration"
+/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg --clear
+
+echo "${PROJECT_NAME} load default configuration into database"
+/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -T
+
 systemctl daemon-reload
 #systemctl start segw
 

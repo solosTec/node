@@ -70,10 +70,10 @@ namespace smf
 				}
 
 				/**
-				 * payload size = total size - 0x0A
+				 * payload size = total size - 0x09
 				 */
 				constexpr std::uint8_t payload_size() const noexcept {
-					return static_cast<std::uint8_t>(total_size() - 0x0A);
+					return static_cast<std::uint8_t>(total_size() - 0x09);
 				}
 
 				/**

@@ -74,7 +74,18 @@ namespace smf {
 		std::weak_ptr<cyng::channel> channel_;
 		cyng::controller& ctl_;
 		cyng::logger logger_;
+
+		/**
+		 * @brief LMN configuration
+		 * 
+		 */
+
 		cfg_lmn cfg_;
+
+		/**
+		 * @brief GPIO configuration
+		 * 
+		 */
 		cfg_gpio gpio_cfg_;
 
 		/**

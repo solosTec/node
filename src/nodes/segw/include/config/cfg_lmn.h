@@ -62,6 +62,15 @@
 		  * @return "rs485:enabled"
 		  */
 		 bool is_enabled() const;
+		 
+		 /**
+		  * @brief check if incoming data from serial port should be
+		  * hex-dumped in log file.
+		  * 
+		  * @return true 
+		  * @return false 
+		  */
+		 bool is_hex_dump() const;
 
 		 boost::asio::serial_port_base::baud_rate get_baud_rate() const;
 		 boost::asio::serial_port_base::parity get_parity() const;
@@ -129,6 +138,7 @@
 		 static std::string type_path(std::uint8_t idx);
 		 static std::string protocol_path(std::uint8_t idx);
 		 static std::string HCI_path(std::uint8_t idx);
+		 static std::string hex_dump_path(std::uint8_t idx) ;
 
 	 private:
 		 cfg& cfg_;

@@ -233,6 +233,7 @@ namespace smf {
 			cyng::make_param("broker-enabled", false),
 			cyng::make_param("broker-login", false),
 			cyng::make_param("broker-timeout", 12),	//	seconds
+			cyng::make_param("hex-dump", false),
 			create_wireless_broker(hostname),
 			create_wireless_block_list()
 
@@ -323,6 +324,7 @@ namespace smf {
 			cyng::make_param("broker-enabled", false),
 			cyng::make_param("broker-login", false),
 			cyng::make_param("broker-reconnect", 12),	//	seconds
+			cyng::make_param("hex-dump", false),
 			create_rs485_broker(hostname),
 			create_rs485_listener(),
 			create_rs485_block_list()

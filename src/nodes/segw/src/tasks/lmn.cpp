@@ -10,11 +10,9 @@
 #include <cyng/log/record.h>
 #include <cyng/task/controller.h>
 
-#ifdef _DEBUG_SEGW
 #include <iostream>
 #include <sstream>
 #include <cyng/io/hex_dump.hpp>
-#endif
 
 
 namespace smf {
@@ -206,12 +204,17 @@ namespace smf {
 				<< accumulated_bytes_
 				<< " bytes");
 
-#ifdef _DEBUG_SEGW
-				//std::stringstream ss;
-				//cyng::io::hex_dump<8> hd;
-				//hd(ss, std::begin(buffer_), std::begin(buffer_) + bytes_transferred);
-				//CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] received:\n" << ss.str());
-#endif
+				if (cfg_.is_hex_dump())	{
+					std::stringstream ss;
+					cyng::io::hex_dump<8> hd;
+					hd(ss, std::begin(buffer_), std::begin(buffer_) + bytes_transferred);
+					CYNG_LOG_TRACE(logger_, "[" 
+						<< cfg_.get_port() 
+						<< "] received "
+						<< bytes_transferred
+						<< " bytes:\n" 
+						<< ss.str());
+				}
 
 				//
 				//	post data to receiver 

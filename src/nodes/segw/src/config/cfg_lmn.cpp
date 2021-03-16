@@ -49,6 +49,9 @@ namespace smf {
 	std::string cfg_lmn::HCI_path(std::uint8_t idx) {
 		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "HCI");
 	}
+	std::string cfg_lmn::hex_dump_path(std::uint8_t idx) {
+		return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "hex-dump");
+	}
 
 
 	lmn_type lookup_by_name(cfg& c, std::string const& name) {
@@ -85,6 +88,10 @@ namespace smf {
 
 	bool cfg_lmn::is_enabled() const {
 		return cfg_.get_value(enabled_path(get_index()), true);
+	}
+
+	bool cfg_lmn::is_hex_dump() const {
+		return cfg_.get_value(hex_dump_path(get_index()), false);
 	}
 
 	bool cfg_lmn::set_enabled(bool b) const {
