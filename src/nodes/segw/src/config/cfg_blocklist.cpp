@@ -55,11 +55,11 @@ namespace smf {
 	}
 
 	std::string cfg_blocklist::get_mode() const {
-		return cfg_.get_value(mode_path(get_index()), "DROP");
+		return cfg_.get_value(mode_path(get_index()), "drop");
 	}
 
 	bool cfg_blocklist::is_drop_mode() const {
-		return boost::algorithm::equals("DROP", get_mode());
+		return boost::algorithm::equals("drop", get_mode());
 	}
 
 	std::vector<std::string> cfg_blocklist::get_list() const {
@@ -82,10 +82,14 @@ namespace smf {
 		return list;
 	}
 
-	bool cfg_blocklist::is_listed(std::uint32_t id) const {
-		std::string s = mbus::dev_id_to_str(id);
+	bool cfg_blocklist::is_listed(std::string id) const {
 		auto const list = get_set();
-		return list.contains(s);
+
+#ifdef _MSC_VER
+		return list.contains(id);
+#else
+		return list.count(id) > 0;
+#endif
 	}
 
 

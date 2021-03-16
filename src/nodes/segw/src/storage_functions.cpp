@@ -637,8 +637,8 @@ namespace smf {
 					, "blocklist: " + param.first);
 			}
 			else if (boost::algorithm::equals(param.first, "mode")) {
-				auto mode = cyng::value_cast(param.second, "DROP");
-				std::transform(mode.begin(), mode.end(), mode.begin(), ::toupper);
+				auto mode = cyng::value_cast(param.second, "drop");
+				std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower);
 				insert_config_record(stmt
 					, cyng::to_path(cfg::sep, "blocklist", std::to_string(counter), param.first)
 					, cyng::make_object(mode)

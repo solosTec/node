@@ -39,7 +39,7 @@ namespace smf
 		, cfg_blocklist_(config, type)
 		, parser_([this](mbus::radio::header const& h, cyng::buffer_t const& data) {
 			auto const flag_id = h.get_manufacturer_code();
-			CYNG_LOG_TRACE(logger_, "[filter] meter: " << h.get_dev_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+			CYNG_LOG_TRACE(logger_, "[filter] meter: " << h.get_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
 #ifdef _DEBUG_SEGW
 			//std::stringstream ss;
 			//cyng::io::hex_dump<8> hd;
@@ -49,6 +49,7 @@ namespace smf
 			this->check(h, data);
 		})
 		, targets_()
+		, access_times_()
 	{
 
 		//channel_.lock()->get_name()
@@ -101,9 +102,107 @@ namespace smf
 		CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "] has " << targets_.size() << " x target(s): " << name);
 	}
 
-	void filter::check(mbus::radio::header const& h, cyng::buffer_t const& data) {
+	void filter::check(mbus::radio::header const& h, cyng::buffer_t const& payload) {
 
+		auto const id = h.get_id();
+		if (cfg_blocklist_.is_listed(id)) {
+			if (!cfg_blocklist_.is_drop_mode()) {
+
+				//
+				// not blocked
+				//	passthrough
+				//
+				if (check_frequency(id)) {
+					auto const data = mbus::radio::restore_data(h, payload);
+					for (auto target : targets_) {
+						target->dispatch("receive", cyng::make_tuple(data));
+					}
+				}
+			}
+			else {
+				//	drop meter
+				CYNG_LOG_WARNING(logger_, "[" << cfg_blocklist_.get_task_name() << "] blocks meter " << h.get_dev_id());
+			}
+		}
+		else {
+			if (cfg_blocklist_.is_drop_mode()) {
+				//
+				//	accept mode and listed
+				//	passthrough
+				//
+				if (check_frequency(id)) {
+					auto const data = mbus::radio::restore_data(h, payload);
+					for (auto target : targets_) {
+						target->dispatch("receive", cyng::make_tuple(data));
+					}
+				}
+			}
+			else {
+				//	drop meter
+				CYNG_LOG_WARNING(logger_, "[" << cfg_blocklist_.get_task_name() << "] doesn't accept meter " << h.get_dev_id());
+			}
+		}
 	}
+
+	bool filter::check_frequency(std::string const& id) {
+
+		//
+		//	check if frequency test is enabled
+		//
+		if (!cfg_blocklist_.is_max_frequency_enabled())	return true;
+
+		//
+		//	search meter id
+		//
+		auto pos = access_times_.find(id);
+		if (pos != access_times_.end()) {
+
+			auto const delta = cfg_blocklist_.get_max_frequency();
+
+			//
+			//	calculate the elapsed time sind last access
+			//
+			auto const elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - pos->second);
+			CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() 
+				<< "] elapsed time of meter " 
+				<< id 
+				<< " since last access is " 
+				<< elapsed.count() 
+				<< " seconds"
+				<< " (min = "
+				<< delta.count()
+				<< ")");
+
+
+			if (elapsed < delta) {
+
+				auto const remaining = std::chrono::duration_cast<std::chrono::seconds>(delta - elapsed);
+
+				CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name()
+					<< "] meter "
+					<< id
+					<< " has "
+					<< remaining.count()
+					<< " seconds to wait");
+				//
+				//	to fast
+				//
+				return false;
+			}
+
+			//
+			//	update access times
+			//
+			pos->second = std::chrono::system_clock::now();
+			return true;
+		}
+
+		access_times_.emplace(id, std::chrono::system_clock::now());
+		CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] add meter " << id << " to access times list (" << access_times_.size() << ")");
+		return true;
+		
+	}
+
 
 }
 

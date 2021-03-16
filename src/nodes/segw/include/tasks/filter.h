@@ -50,6 +50,7 @@ namespace smf
 		void reset_target_channels(std::string);
 
 		void check(mbus::radio::header const& h, cyng::buffer_t const& data);
+		bool check_frequency(std::string const& id);
 
 	private:
 		signatures_t sigs_;
@@ -69,7 +70,12 @@ namespace smf
 		 */
 		mbus::radio::parser parser_;
 
+		/**
+		 * broker list
+		 */
 		std::vector<cyng::channel_ptr>	targets_;
+
+		std::map<std::string, std::chrono::system_clock::time_point>	access_times_;
 
 	};
 }

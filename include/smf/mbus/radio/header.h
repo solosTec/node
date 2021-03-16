@@ -96,6 +96,7 @@ namespace smf
 					return data_.at(9);
 				}
 
+				std::string get_id() const;
 				std::uint32_t get_dev_id() const;
 
 				constexpr std::uint8_t get_frame_type() const noexcept {

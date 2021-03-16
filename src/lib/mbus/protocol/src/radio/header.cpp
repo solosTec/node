@@ -31,8 +31,7 @@ namespace smf
 				};
 			}
 
-			std::uint32_t header::get_dev_id() const
-			{
+			std::string header::get_id() const {
 				std::uint32_t id{ 0 };
 
 				//
@@ -50,14 +49,14 @@ namespace smf
 					<< std::setbase(16)
 					<< id;
 
-				//
-				//	write this value as decimal value
-				//
-				ss
-					>> std::setbase(10)
-					>> id
-					;
+				return ss.str();
+			}
 
+			std::uint32_t header::get_dev_id() const
+			{
+				std::uint32_t id{ 0 };
+				std::stringstream ss(get_id());
+				ss >> id;
 				return id;
 			}
 
@@ -67,7 +66,7 @@ namespace smf
 			}
 
 			cyng::buffer_t restore_data(header const& h, cyng::buffer_t const& payload) {
-				cyng::buffer_t res(&h.data_[0], &h.data_[header::size() - 2]);	//	without frame type
+				cyng::buffer_t res(&h.data_[0], &h.data_[header::size() - 1]);	//	without frame type
 				res.insert(res.begin(), payload.begin(), payload.end());
 				return res;
 			}

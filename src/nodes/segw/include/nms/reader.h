@@ -42,6 +42,8 @@ namespace smf {
 			void cmd_merge_nms(cyng::param_map_t& pm, cyng::param_map_t&& params, std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind);
 			void cmd_merge_serial(cyng::param_map_t& pm, cyng::param_map_t&& params);
 			void cmd_merge_broker(cyng::param_map_t& pm, lmn_type, cyng::vector_t&&);
+			void cmd_merge_blocklist(cyng::param_map_t& pm, lmn_type, cyng::param_map_t&& params);
+			void cmd_merge_listener(cyng::param_map_t& pm, lmn_type, cyng::param_map_t&& params);
 
 		private:
 			cyng::logger logger_;

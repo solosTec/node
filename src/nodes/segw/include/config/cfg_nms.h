@@ -26,6 +26,11 @@
 		 bool is_enabled() const;
 		 bool is_debug() const;
 
+		 /**
+		  * check username and password
+		  */
+		 bool check_credentials(std::string const&, std::string const&);
+
 		 std::filesystem::path get_script_path() const;
 
 		 bool set_address(boost::asio::ip::address) const;

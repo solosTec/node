@@ -44,7 +44,7 @@
 		 /**
 		  * Lookup if device id is part of the list
 		  */
-		 bool is_listed(std::uint32_t) const;
+		 bool is_listed(std::string) const;
 
 		 /**
 		  * all readings from one meter that are faster then this

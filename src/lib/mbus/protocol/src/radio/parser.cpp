@@ -46,8 +46,12 @@ namespace smf
 				if (pos_ == header::size()) {
 					pos_ = 0;
 					payload_.clear();
-					payload_.reserve(header_.payload_size());
 					payload_.push_back(c);	//	application type (CI)
+					if (header_.payload_size() < 3) {
+						cb_(header_, payload_);
+						return state::HEADER;
+					}
+					payload_.reserve(header_.payload_size());
 					return state::DATA;
 				}
 				return state_;
@@ -57,7 +61,12 @@ namespace smf
 				payload_.push_back(c);
 				BOOST_ASSERT(payload_.back() == c);
 				if (payload_.size() == header_.payload_size()) {
-					BOOST_ASSERT(header_.get_frame_type() == payload_.at(0));
+					BOOST_ASSERT(!payload_.empty());
+#ifdef _DEBUG
+					auto const fth = header_.get_frame_type();
+					auto const ftp = payload_.at(0);
+					BOOST_ASSERT(fth == ftp);
+#endif
 					cb_(header_, payload_);
 					return state::HEADER;
 				}

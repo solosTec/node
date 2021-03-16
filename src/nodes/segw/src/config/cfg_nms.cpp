@@ -105,4 +105,9 @@ namespace smf {
 		return cfg_.get_value(script_path(), std::filesystem::temp_directory_path());
 	}
 
+	bool cfg_nms::check_credentials(std::string const& user, std::string const& pwd) {
+		return boost::algorithm::equals(user, get_account())
+			&& boost::algorithm::equals(pwd, get_pwd());
+	}
+
 }

@@ -16,6 +16,7 @@
 #include <cyng/parse/version.h>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/numeric_cast.hpp>
+#include <cyng/obj/vector_cast.hpp>
 #include <cyng/sys/filesystem.h>
 #include <cyng/parse/string.h>
 #include <cyng/obj/algorithm/merge.h>
@@ -53,9 +54,32 @@ namespace smf {
 				<< "]");
 
 			//
-			//	ToDo: check credentials
+			//	check credentials
 			//
-			//auto const credentials = cyng::to_param_map(dom.get("credentials"));
+			auto const user = cyng::value_cast(dom["credentials"]["user"].get(), "");
+			auto const pwd = cyng::value_cast(dom["credentials"]["pwd"].get(), "");
+			if (user.empty()) {
+				CYNG_LOG_WARNING(logger_, "no user not specified");
+				return cyng::param_map_factory
+					("command", cmd)
+					("ec", "missing credentials")
+					("version", protocol_version_)
+					("source", tag)
+					;
+			}
+
+			cfg_nms nms_cfg(cfg_);
+			if (!nms_cfg.check_credentials(user, pwd)) {
+
+				CYNG_LOG_WARNING(logger_, "unknown account or invalid password");
+				return cyng::param_map_factory
+					("command", cmd)
+					("ec", "invalid credentials")
+					("version", protocol_version_)
+					("source", tag)
+					;
+
+			}
 
 			if (boost::algorithm::equals(cmd, "merge")
 				|| boost::algorithm::equals(cmd, "serialset")
@@ -163,6 +187,9 @@ namespace smf {
 				else if (boost::algorithm::equals(param.first, "port")) {
 					auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
 					cfg.set_port(port);
+					if (port < 1024) {
+						CYNG_LOG_WARNING(logger_, "[NMS] with privileged port: " << port);
+					}
 					cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
 					rebind_required = true;
 				}
@@ -236,10 +263,71 @@ namespace smf {
 						cmd_merge_broker(pm, cfg.get_lmn_type(), cyng::container_cast<cyng::vector_t>(param.second));
 					}
 					else if (boost::algorithm::equals(param.first, "listener")) {
+						cmd_merge_listener(pm, cfg.get_lmn_type(), cyng::container_cast<cyng::param_map_t>(param.second));
+					}
+					else if (boost::algorithm::equals(param.first, "blocklist")) {
+						cmd_merge_blocklist(pm, cfg.get_lmn_type(), cyng::container_cast<cyng::param_map_t>(param.second));
 					}
 					else {
 						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: unknown attribute"));
 					}
+				}
+			}
+		}
+
+		void reader::cmd_merge_listener(cyng::param_map_t& pm, lmn_type type, cyng::param_map_t&& params) {
+			cfg_listener cfg(cfg_, type);
+			for (auto const& param : params) {
+				if (boost::algorithm::equals(param.first, "enabled")) {
+					auto const enabled = cyng::value_cast(param.second, true);
+					cfg.set_enabled(enabled);
+				}
+				else if (boost::algorithm::equals(param.first, "account")) {
+					auto const account = cyng::value_cast(param.second, "");
+				}
+				else if (boost::algorithm::equals(param.first, "address")) {
+					auto const address = cyng::value_cast(param.second, "");
+					cfg.set_address(address);
+				}
+				else if (boost::algorithm::equals(param.first, "port")) {
+					auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 6006u);
+					if (port < 1024) {
+						cyng::merge(pm, { "nms", "listener", param.first }, cyng::make_object("warning: privileged port configured"));
+						CYNG_LOG_WARNING(logger_, "[NMS] listener with privileged port: " << port);
+					}
+					cfg.set_port(port);
+				}
+				else if (boost::algorithm::equals(param.first, "pwd")) {
+					auto const pwd = cyng::value_cast(param.second, "");
+				}
+				else {
+					cyng::merge(pm, { "nms", "listener", param.first }, cyng::make_object("error: unknown NMS/listener attribute"));
+					CYNG_LOG_WARNING(logger_, "[NMS] unknown listener attribute: " << param.first);
+				}
+			}
+		}
+
+		void reader::cmd_merge_blocklist(cyng::param_map_t& pm, lmn_type type, cyng::param_map_t&& params) {
+
+			cfg_blocklist cfg(cfg_, type);
+
+			for (auto const& param : params) {
+				if (boost::algorithm::equals(param.first, "enabled")) {
+					auto const enabled = cyng::value_cast(param.second, true);
+					cfg.set_enabled(enabled);
+				}
+				else if (boost::algorithm::equals(param.first, "list")) {
+					auto const list = cyng::vector_cast<std::string>(param.second, "00000000");
+					cfg.set_list(list);
+					CYNG_LOG_TRACE(logger_, "[NMS] " << list.size() << " meters in blocklist");
+				}
+				else if (boost::algorithm::equals(param.first, "mode")) {
+					auto const mode = cyng::value_cast(param.second, "drop");
+					cfg.set_mode(mode);
+				}
+				else {
+					cyng::merge(pm, { "nms", "blocklist", param.first }, cyng::make_object("error: unknown NMS/blocklist attribute"));
+					CYNG_LOG_WARNING(logger_, "[NMS] unknown blocklist attribute: " << param.first);
 				}
 			}
 		}
@@ -263,6 +351,10 @@ namespace smf {
 					else if (boost::algorithm::equals(broker.first, "port")) {
 						auto const port = cyng::numeric_cast<std::uint16_t>(broker.second, 12000u);
 						cfg.set_port(idx, port);
+						if (port < 1024) {
+							cyng::merge(pm, { "nms", "broker", broker.first }, cyng::make_object("warning: privileged port configured"));
+							CYNG_LOG_WARNING(logger_, "[NMS] broker with privileged port: " << port);
+						}
 					}
 					else if (boost::algorithm::equals(broker.first, "account")) {
 						auto const account = cyng::value_cast(broker.second, "");
