@@ -49,6 +49,8 @@ namespace smf
 		void receive(cyng::buffer_t);
 		void reset_target_channels(std::string);
 
+		void check(mbus::radio::header const& h, cyng::buffer_t const& data);
+
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;

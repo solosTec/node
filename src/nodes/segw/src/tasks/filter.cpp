@@ -41,13 +41,13 @@ namespace smf
 			auto const flag_id = h.get_manufacturer_code();
 			CYNG_LOG_TRACE(logger_, "[filter] meter: " << h.get_dev_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
 #ifdef _DEBUG_SEGW
-			std::stringstream ss;
-			cyng::io::hex_dump<8> hd;
-			hd(ss, std::begin(data), std::end(data));
-			CYNG_LOG_DEBUG(logger_, "[" << h.get_dev_id() << "] " << data.size() << " bytes:\n" << ss.str());
+			//std::stringstream ss;
+			//cyng::io::hex_dump<8> hd;
+			//hd(ss, std::begin(data), std::end(data));
+			//CYNG_LOG_DEBUG(logger_, "[" << h.get_dev_id() << "] " << data.size() << " bytes:\n" << ss.str());
 #endif
-
-			})
+			this->check(h, data);
+		})
 		, targets_()
 	{
 
@@ -99,6 +99,10 @@ namespace smf
 	void filter::reset_target_channels(std::string name) {
 		targets_ = ctl_.get_registry().lookup(name);
 		CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "] has " << targets_.size() << " x target(s): " << name);
+	}
+
+	void filter::check(mbus::radio::header const& h, cyng::buffer_t const& data) {
+
 	}
 
 }

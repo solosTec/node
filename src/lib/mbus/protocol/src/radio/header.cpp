@@ -65,7 +65,24 @@ namespace smf
 			{
 				data_.fill(0);
 			}
+
+			cyng::buffer_t restore_data(header const& h, cyng::buffer_t const& payload) {
+				cyng::buffer_t res(&h.data_[0], &h.data_[header::size() - 2]);	//	without frame type
+				res.insert(res.begin(), payload.begin(), payload.end());
+				return res;
+			}
 		}
+
+		std::string dev_id_to_str(std::uint32_t id) {
+			std::stringstream ss;
+			ss.fill('0');
+			ss
+				<< std::setw(8)
+				<< id
+				;
+			return ss.str();
+		}
+
 	}
 }
 

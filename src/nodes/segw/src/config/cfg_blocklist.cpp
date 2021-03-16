@@ -9,6 +9,8 @@
 #include <config/cfg_lmn.h>
 #include <config/cfg_broker.h>
 
+#include <smf/mbus/radio/header.h>
+
 #include <cyng/obj/container_factory.hpp>
 
 namespace smf {
@@ -69,6 +71,23 @@ namespace smf {
 		}
 		return list;
 	}
+
+	std::set<std::string> cfg_blocklist::get_set() const {
+
+		std::set<std::string> list;
+		for (std::size_t idx = 0; idx < size(); ++idx) {
+			auto const meter = cfg_.get_value(meter_path(get_index(), idx), "");
+			if (!meter.empty())	list.insert(meter);
+		}
+		return list;
+	}
+
+	bool cfg_blocklist::is_listed(std::uint32_t id) const {
+		std::string s = mbus::dev_id_to_str(id);
+		auto const list = get_set();
+		return list.contains(s);
+	}
+
 
 	std::chrono::seconds cfg_blocklist::get_max_frequency() const {
 		return cfg_.get_value(period_path(get_index()), std::chrono::seconds(10));

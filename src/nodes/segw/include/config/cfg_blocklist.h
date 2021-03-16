@@ -9,6 +9,7 @@
 
 #include <config/cfg_lmn.h>
 #include <vector>
+#include <set>
 #include <ostream>
 
  namespace smf {
@@ -38,6 +39,12 @@
 		 std::string get_mode() const;
 		 bool is_drop_mode() const;
 		 std::vector<std::string> get_list() const;
+		 std::set<std::string> get_set() const;
+
+		 /**
+		  * Lookup if device id is part of the list
+		  */
+		 bool is_listed(std::uint32_t) const;
 
 		 /**
 		  * all readings from one meter that are faster then this

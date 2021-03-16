@@ -16,9 +16,22 @@ namespace smf
 {
 	namespace mbus	
 	{
+		/**
+		 * Convert a device id into a string.
+		 * Example: 684279 => "00684279"
+		 */
+		std::string dev_id_to_str(std::uint32_t);
+
 		namespace radio
 		{
 			class parser;
+			class header;
+
+			/**
+			 * Takes header data and payload and restores the original (unparsed) message
+			 */
+			cyng::buffer_t restore_data(header const&, cyng::buffer_t const&);
+
 
 			/**
 			 * [0] - total size (length field excluded)
@@ -32,6 +45,7 @@ namespace smf
 			class header
 			{
 				friend class parser;
+				friend cyng::buffer_t restore_data(header const&, cyng::buffer_t const&);
 
 				using value_type = std::uint8_t;
 				using SIZE = std::integral_constant<std::size_t, 11>;
@@ -56,7 +70,7 @@ namespace smf
 				}
 
 				/**
-				 * payload size = total size - 0x09
+				 * payload size = total size - 0x0A
 				 */
 				constexpr std::uint8_t payload_size() const noexcept {
 					return static_cast<std::uint8_t>(total_size() - 0x0A);
@@ -122,6 +136,7 @@ namespace smf
 			private:
 				data_type	data_;
 			};
+
 		}
 
 	}
