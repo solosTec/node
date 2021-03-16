@@ -627,6 +627,11 @@ namespace node
 				frq_.emplace(srv_id, now);
 			}
 		}
+		else {
+			CYNG_LOG_TRACE(logger_, "check frequency is off: "
+				<< max_frq);
+
+		}
 		return true;
 	}
 
