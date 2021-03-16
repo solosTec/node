@@ -605,7 +605,7 @@ namespace node
 				pos->second = now;
 
 				//	compare
-				if (cmp < max_frq) {
+				if (cmp > max_frq) {
 
 					CYNG_LOG_TRACE(logger_, "check frequency of "
 						<< sml::from_server_id(srv_id)

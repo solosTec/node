@@ -727,7 +727,7 @@ namespace node
 						("stopbits", serial::to_str(wmbus.get_stopbits()))
 						("baudrate", wmbus.get_baud_rate().value())
 						("broker", broker.get_server_vector(source::WIRELESS_LMN))
-						("max-readout-frequency", wmbus.get_monitor())
+						("max-readout-frequency", wmbus.get_monitor().count())
 						("blocklist", cyng::param_map_factory
 							("enabled", wmbus.is_blocklist_enabled())
 							("list", wmbus.get_block_list_vector())
