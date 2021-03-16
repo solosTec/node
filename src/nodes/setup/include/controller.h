@@ -31,17 +31,13 @@
 	private:
 		cyng::param_t create_cluster_spec();
 
-		cyng::channel_ptr start_data_store(cyng::controller& ctl
-			, cyng::logger logger
-			, boost::uuids::uuid
-			, std::string const& storage_type
-			, cyng::param_map_t&&);
-
 		void join_cluster(cyng::controller&
 			, cyng::logger
 			, boost::uuids::uuid
 			, std::string const& node_name
-			, toggle::server_vec_t&&);
+			, toggle::server_vec_t&&
+			, std::string storage_type
+			, cyng::param_map_t&&);
 
 		void init_storage(cyng::object&&);
 		void generate_access_rights(cyng::object&& cfg, std::string const& user);

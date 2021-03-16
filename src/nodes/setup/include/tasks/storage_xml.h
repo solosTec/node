@@ -11,6 +11,7 @@
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
+#include <cyng/store/db.h>
 
 #include <tuple>
 #include <functional>
@@ -35,6 +36,7 @@ namespace smf {
 		storage_xml(std::weak_ptr<cyng::channel>
 			, cyng::controller&
 			, boost::uuids::uuid tag
+			, cyng::store& cache
 			, cyng::logger logger
 			, cyng::param_map_t&& cfg);
 		~storage_xml();
@@ -51,6 +53,7 @@ namespace smf {
 		cyng::controller& ctl_;
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
+		cyng::store& store_;
 	};
 
 }

@@ -13,6 +13,7 @@
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
 #include <cyng/vm/mesh.h>
+#include <cyng/store/db.h>
 
 #include <tuple>
 #include <functional>
@@ -30,21 +31,22 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
-			std::function<void(int)>,
+			//std::function<void(int)>,
 			std::function<void(cyng::eod)>
 		>;
 
 	public:
-		cluster(std::weak_ptr<cyng::channel>
+		cluster(cyng::channel_weak
 			, cyng::controller&
 			, boost::uuids::uuid tag
 			, std::string const& node_name
 			, cyng::logger
-			, toggle::server_vec_t&&);
+			, toggle::server_vec_t&&
+			, std::string storage_type
+			, cyng::param_map_t&& cfg_db);
 		~cluster();
 
 		void connect();
-		void load_data(int);
 
 		void stop(cyng::eod);
 
@@ -57,13 +59,23 @@ namespace smf {
 
 	private:
 		signatures_t sigs_;
-		std::weak_ptr<cyng::channel> channel_;
+		cyng::channel_weak channel_;	//	self
 		cyng::controller& ctl_;
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
 		cyng::mesh fabric_;
 		bus	bus_;
+		cyng::store store_;
+		cyng::channel_ptr storage_;
 	};
+
+	cyng::channel_ptr start_data_store(cyng::controller& ctl
+		, cyng::logger logger
+		, boost::uuids::uuid
+		, cyng::store& cache
+		, std::string const& storage_type
+		, cyng::param_map_t&&);
+
 
 }
 

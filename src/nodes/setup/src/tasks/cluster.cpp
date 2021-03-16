@@ -5,6 +5,10 @@
  *
  */
 #include <tasks/cluster.h>
+#include <tasks/storage_xml.h>
+#include <tasks/storage_json.h>
+#include <tasks/storage_db.h>
+
 #include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
@@ -18,27 +22,33 @@ namespace smf {
 		, boost::uuids::uuid tag
 		, std::string const& node_name
 		, cyng::logger logger
-		, toggle::server_vec_t&& cfg)
+		, toggle::server_vec_t&& cfg
+		, std::string storage_type
+		, cyng::param_map_t&& cfg_db)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
-		std::bind(&cluster::load_data, this, std::placeholders::_1),
-		std::bind(&cluster::stop, this, std::placeholders::_1),
-	}
+		std::bind(&cluster::stop, this, std::placeholders::_1)
+		}
 		, channel_(wp)
 		, ctl_(ctl)
 		, tag_(tag)
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
+		, store_()
+		, storage_(start_data_store(ctl
+			, logger
+			, tag
+			, store_
+			, storage_type
+			, std::move(cfg_db)))
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("connect", 0);
-			sp->set_channel_name("load-data", 1);
+
+			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
-
-		CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
-
 	}
 
 	cluster::~cluster()
@@ -58,25 +68,15 @@ namespace smf {
 	void cluster::connect()
 	{
 		//
+		//	connect to database
+		//
+		storage_->dispatch("open", cyng::make_tuple());
+
+		//
 		//	join cluster
 		//
 		bus_.start();
 
-	}
-
-	void cluster::load_data(int n)
-	{
-		auto sp = channel_.lock();
-		if (sp) {
-			CYNG_LOG_TRACE(logger_, "load_data(" << tag_ << ", " << n << ")");
-			//
-			//	ToDo: status check
-			//
-			sp->suspend(std::chrono::seconds(30), "load_data", cyng::make_tuple(n + 1));
-		}
-		else {
-			CYNG_LOG_ERROR(logger_, "load_data(" << tag_ << ", " << n << ")");
-		}
 	}
 
 	//
@@ -89,9 +89,37 @@ namespace smf {
 		if (success) {
 			CYNG_LOG_INFO(logger_, "cluster join complete");
 
+			bus_.req_subscribe("TDevice");
+
 		}
 
 	}
+
+	cyng::channel_ptr start_data_store(cyng::controller& ctl
+		, cyng::logger logger
+		, boost::uuids::uuid tag
+		, cyng::store& cache
+		, std::string const& storage_type
+		, cyng::param_map_t&& cfg) {
+
+		if (boost::algorithm::equals(storage_type, "DB")) {
+			return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, tag, cache, logger, std::move(cfg));
+		}
+		else if (boost::algorithm::equals(storage_type, "XML")) {
+			CYNG_LOG_ERROR(logger, "XML data storage not available");
+			return ctl.create_named_channel_with_ref<storage_xml>("storage", ctl, tag, cache, logger, std::move(cfg));
+		}
+		else if (boost::algorithm::equals(storage_type, "JSON")) {
+			CYNG_LOG_ERROR(logger, "JSON data storage not available");
+			return ctl.create_named_channel_with_ref<storage_json>("storage", ctl, tag, cache, logger, std::move(cfg));
+		}
+
+		CYNG_LOG_FATAL(logger, "no data storage configured");
+
+		return cyng::channel_ptr();
+	}
+
+
 
 }
 

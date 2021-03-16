@@ -7,8 +7,8 @@
 
 #include <controller.h>
 #include <tasks/cluster.h>
-#include <tasks/storage_xml.h>
-#include <tasks/storage_json.h>
+//#include <tasks/storage_xml.h>
+//#include <tasks/storage_json.h>
 #include <tasks/storage_db.h>
 
 
@@ -75,7 +75,7 @@ namespace smf {
 	}
 
 	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
-#if _DEBUG_DASH
+#if _DEBUG_SETUP
 		CYNG_LOG_INFO(logger, cfg);
 #endif
 		auto const reader = cyng::make_reader(cfg);
@@ -84,17 +84,17 @@ namespace smf {
 		auto const storage_type = cyng::value_cast(reader["storage"].get(), "DB");
 		CYNG_LOG_INFO(logger, "storage type is " << storage_type);
 
-		auto channel = start_data_store(ctl
-			, logger
-			, tag
-			, storage_type
-			, cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
+		//auto channel = start_data_store(ctl
+		//	, logger
+		//	, tag
+		//	, storage_type
+		//	, cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
 
-		//
-		//	channel required
-		//
-		if (!channel)	return;
-		channel->dispatch("open", cyng::make_tuple());
+		////
+		////	channel required
+		////
+		//if (!channel)	return;
+		//channel->dispatch("open", cyng::make_tuple());
 
 		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
 		BOOST_ASSERT(!tgl.empty());
@@ -110,40 +110,50 @@ namespace smf {
 			, logger
 			, tag
 			, node_name
-			, std::move(tgl));
-
+			, std::move(tgl)
+			, storage_type
+			, cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
 	}
 
-	cyng::channel_ptr controller::start_data_store(cyng::controller& ctl
-		, cyng::logger logger
-		, boost::uuids::uuid tag
-		, std::string const& storage_type
-		, cyng::param_map_t&& cfg) {
+	//cyng::channel_ptr controller::start_data_store(cyng::controller& ctl
+	//	, cyng::logger logger
+	//	, boost::uuids::uuid tag
+	//	, std::string const& storage_type
+	//	, cyng::param_map_t&& cfg) {
 
-		if (boost::algorithm::equals(storage_type, "DB")) {
-			return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, tag, logger, std::move(cfg));
-		}
-		else if (boost::algorithm::equals(storage_type, "XML")) {
-			CYNG_LOG_ERROR(logger, "XML data storage not available");
-			return ctl.create_named_channel_with_ref<storage_xml>("storage", ctl, tag, logger, std::move(cfg));
-		}
-		else if (boost::algorithm::equals(storage_type, "JSON")) {
-			CYNG_LOG_ERROR(logger, "JSON data storage not available");
-			return ctl.create_named_channel_with_ref<storage_json>("storage", ctl, tag, logger, std::move(cfg));
-		}
+	//	if (boost::algorithm::equals(storage_type, "DB")) {
+	//		return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, tag, logger, std::move(cfg));
+	//	}
+	//	else if (boost::algorithm::equals(storage_type, "XML")) {
+	//		CYNG_LOG_ERROR(logger, "XML data storage not available");
+	//		return ctl.create_named_channel_with_ref<storage_xml>("storage", ctl, tag, logger, std::move(cfg));
+	//	}
+	//	else if (boost::algorithm::equals(storage_type, "JSON")) {
+	//		CYNG_LOG_ERROR(logger, "JSON data storage not available");
+	//		return ctl.create_named_channel_with_ref<storage_json>("storage", ctl, tag, logger, std::move(cfg));
+	//	}
 
-		CYNG_LOG_FATAL(logger, "no data storage configured");
+	//	CYNG_LOG_FATAL(logger, "no data storage configured");
 
-		return cyng::channel_ptr();
-	}
+	//	return cyng::channel_ptr();
+	//}
 
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
 		, std::string const& node_name
-		, toggle::server_vec_t&& cfg) {
+		, toggle::server_vec_t&& cfg_cluster
+		, std::string storage_type
+		, cyng::param_map_t&& cfg_db) {
 
-		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(cfg));
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster"
+			, ctl
+			, tag
+			, node_name
+			, logger
+			, std::move(cfg_cluster)
+			, storage_type
+			, std::move(cfg_db));
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
 	}

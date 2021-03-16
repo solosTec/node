@@ -16,6 +16,7 @@ namespace smf {
 	storage_json::storage_json(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, boost::uuids::uuid tag
+		, cyng::store& cache
 		, cyng::logger logger
 		, cyng::param_map_t&& cfg)
 	: sigs_{
@@ -26,13 +27,13 @@ namespace smf {
 		, ctl_(ctl)
 		, tag_(tag)
 		, logger_(logger)
+		, store_(cache)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("open", 0);
+			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
-
-		CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
 
 	}
 

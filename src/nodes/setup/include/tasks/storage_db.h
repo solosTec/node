@@ -38,6 +38,7 @@ namespace smf {
 		storage_db(std::weak_ptr<cyng::channel>
 			, cyng::controller&
 			, boost::uuids::uuid tag
+			, cyng::store& cache
 			, cyng::logger logger
 			, cyng::param_map_t&& cfg);
 		~storage_db();
@@ -59,7 +60,7 @@ namespace smf {
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
 		cyng::db::session db_;
-		cyng::store store_;
+		cyng::store& store_;
 
 		config::store_map store_map_;
 

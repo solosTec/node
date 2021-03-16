@@ -28,6 +28,7 @@ namespace smf {
 	storage_db::storage_db(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, boost::uuids::uuid tag
+		, cyng::store& cache
 		, cyng::logger logger
 		, cyng::param_map_t&& cfg)
 	: sigs_{ 
@@ -39,17 +40,15 @@ namespace smf {
 		, tag_(tag)
 		, logger_(logger)
 		, db_(cyng::db::create_db_session(cfg))
-		, store_()
+		, store_(cache)
 		, store_map_()
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("open", 0);
 			//sp->set_channel_name("load-data", 1);
+			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
-
-		CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
-
 	}
 
 	storage_db::~storage_db()
@@ -75,9 +74,10 @@ namespace smf {
 	}
 
 	void storage_db::init_store() {
-		init_store(config::get_store_device());
-		init_store(config::get_store_lora());
-		init_store(config::get_store_gui_user());
+		auto const tbl_vec = get_sql_meta_data();
+		for (auto const& ms : tbl_vec) {
+			init_store(cyng::to_mem(ms));
+		}
 	}
 
 	void storage_db::init_store(cyng::meta_store m) {
@@ -105,28 +105,31 @@ namespace smf {
 		//	get in-memory meta data
 		//
 		auto const m = cyng::to_mem(ms);
-		CYNG_LOG_INFO(logger_, "load table [" << ms.get_name() << "/" << m.get_name() << "]");
+		CYNG_LOG_INFO(logger_, "[storage] load table [" << ms.get_name() << "/" << m.get_name() << "]");
 
 		store_.access([&](cyng::table* tbl) {
 
 			cyng::db::storage s(db_);
 			s.loop(ms, [&](cyng::record const& rec)->bool {
 
+				CYNG_LOG_TRACE(logger_, "[storage] load " << rec.to_string());
 				tbl->insert(rec.key()
 					, rec.data()
 					, rec.get_generation()
 					, tag_);
+
 				return true;
 			});
 		}, cyng::access::write(m.get_name()));
 
-		//CYNG_LOG_INFO(logger_, "table [" << m.get_name() << " holds " << store_.size(m.get_name()) << " entries");
+		CYNG_LOG_INFO(logger_, "table [" << m.get_name() << "] holds " << store_.size(m.get_name()) << " entries");
 
 	}
 
 	void storage_db::stop(cyng::eod)
 	{
-		CYNG_LOG_WARNING(logger_, "stop storage_db task(" << tag_ << ")");
+		db_.close();
+		CYNG_LOG_WARNING(logger_, "[storage] stopped");
 	}
 
 
