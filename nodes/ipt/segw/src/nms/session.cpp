@@ -132,6 +132,7 @@ namespace node
 			//
 			//	insert new record into "_wMBusUplink" table
 			//	
+			CYNG_LOG_TRACE(logger_, "NMS session received " << std::string(data.begin(), data.end()));
 			parser_.read(data.begin(), data.end());
 
 			//
