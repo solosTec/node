@@ -6,9 +6,12 @@
  */
 
 #include <controller.h>
+#include <tasks/cluster.h>
+
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/container_cast.hpp>
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/sys/locale.h>
@@ -62,24 +65,43 @@ namespace smf {
 			CYNG_LOG_FATAL(logger, "no cluster data configured");
 		}
 
+		auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
+		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["service"].get(), 12002);
+		auto const client_login = (reader["client"]["login"].get(), false);
+
 		//
 		//	connect to cluster
 		//
 		join_cluster(ctl
 			, logger
 			, tag
-			, std::move(tgl));
+			, node_name
+			, std::move(tgl)
+			, address
+			, port
+			, client_login);
 	}
 
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
-		, toggle::server_vec_t&& tgl) {
+		, std::string const& node_name
+		, toggle::server_vec_t&& tgl
+		, std::string const& address
+		, std::uint16_t port
+		, bool client_login) {
 
-		//auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, logger, std::move(tgl));
-		//BOOST_ASSERT(channel->is_open());
-		//channel->dispatch("connect", cyng::make_tuple());
-		//channel->dispatch("status_check", cyng::make_tuple(1));
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster"
+			, ctl
+			, tag
+			, node_name
+			, logger
+			, std::move(tgl));
+
+		auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
+		channel->dispatch("connect", cyng::make_tuple());
+		channel->dispatch("listen", cyng::make_tuple(ep));
+
 	}
 
 	cyng::param_t controller::create_server_spec(std::filesystem::path const& cwd) {

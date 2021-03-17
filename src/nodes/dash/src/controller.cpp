@@ -74,57 +74,8 @@ namespace smf {
 			, timeout
 			, std::move(blocklist));
 
-
-		//
-		//	start HTTP server
-		//
-		//start_listener(ctl
-		//	, logger
-		//	, tag
-		//	, address
-		//	, port
-		//	, document_root
-		//	, max_upload_size
-		//	, nickname
-		//	, timeout);
-			
+		
 	}
-
-	//void controller::start_listener(cyng::controller& ctl
-	//	, cyng::logger logger
-	//	, boost::uuids::uuid tag
-	//	, std::string const& address
-	//	, std::uint16_t port
-	//	, std::string const& document_root
-	//	, std::uint64_t max_upload_size
-	//	, std::string const& nickname
-	//	, std::chrono::seconds timeout
-	//, std::vector<>) {
-
-	//	if (!std::filesystem::exists(document_root)) {
-	//		CYNG_LOG_ERROR(logger, "document root [" << document_root << "] does not exists");
-	//	}
-
-	//	//
-	//	//	create http server task
-	//	//
-	//	auto channel = ctl.create_named_channel_with_ref<http_server>("http"
-	//		, ctl.get_ctx()
-	//		, tag
-	//		, logger
-	//		, document_root
-	//		, max_upload_size
-	//		, nickname
-	//		, timeout);
-	//	BOOST_ASSERT(channel->is_open());
-
-	//	//
-	//	//	start listening
-	//	//	
-	//	auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-	//	channel->dispatch("listen", cyng::make_tuple(ep));
-
-	//}
 
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger

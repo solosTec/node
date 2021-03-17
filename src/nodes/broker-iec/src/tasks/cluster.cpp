@@ -35,10 +35,8 @@ namespace smf {
 		if (sp) {
 			sp->set_channel_name("connect", 0);
 			sp->set_channel_name("status_check", 1);
+			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
-
-		CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
-
 	}
 
 	cluster::~cluster()

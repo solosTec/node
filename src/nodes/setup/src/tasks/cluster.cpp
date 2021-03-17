@@ -46,7 +46,6 @@ namespace smf {
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("connect", 0);
-
 			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
 	}

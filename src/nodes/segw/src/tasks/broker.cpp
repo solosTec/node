@@ -206,6 +206,10 @@ namespace smf {
 			CYNG_LOG_INFO(logger_, "[broker] " << target_ << " connected to " << endpoint_iter->endpoint());
 			state_ = state::CONNECTED;
 
+
+			// Start the input actor.
+			do_read();
+
 			if (login_) {
 
 				//
@@ -213,13 +217,10 @@ namespace smf {
 				//
 				buffer_write_.emplace_back(cyng::make_buffer(target_.get_login_sequence()));
 				buffer_write_.emplace_back(cyng::make_buffer("\r\n"));
+
+				// Start the heartbeat actor.
+				do_write();
 			}
-
-			// Start the input actor.
-			do_read();
-
-			// Start the heartbeat actor.
-			do_write();
 		}
 	}
 
@@ -269,6 +270,8 @@ namespace smf {
 	void broker::do_write()
 	{
 		if (is_stopped())	return;
+
+		BOOST_ASSERT(!buffer_write_.empty());
 
 		// Start an asynchronous operation to send a heartbeat message.
 		boost::asio::async_write(socket_,

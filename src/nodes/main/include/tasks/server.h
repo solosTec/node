@@ -41,11 +41,11 @@ namespace smf {
 			, std::chrono::seconds monitor);
 		~server();
 
+	private:
 		void start(boost::asio::ip::tcp::endpoint ep);
 		void do_accept();
 		void stop(cyng::eod);
 
-	private:
 		void pty_connect(std::string msisdn);
 
 	private:

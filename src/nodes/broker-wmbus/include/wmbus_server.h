@@ -7,8 +7,6 @@
 #ifndef SMF_TASK_WMBUS_SERVER_H
 #define SMF_TASK_WMBUS_SERVER_H
 
-//#include <smf/http/server.h>
-
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 
@@ -19,27 +17,14 @@
 
 #include <boost/uuid/uuid.hpp>
 
-namespace cyng {
-	template <typename T >
-	class task;
-
-	class channel;
-}
 namespace smf {
 
 	class wmbus_server
 	{
-		template <typename T >
-		friend class cyng::task;
-
-		using signatures_t = std::tuple<
-			std::function<void(cyng::eod)>,
-			std::function<void(boost::asio::ip::tcp::endpoint)>
-		>;
+		using blocklist_type = std::vector<boost::asio::ip::address>;
 
 	public:
-		wmbus_server(std::weak_ptr<cyng::channel>
-			, boost::asio::io_context&
+		wmbus_server(boost::asio::io_context&
 			, boost::uuids::uuid tag
 			, cyng::logger);
 		~wmbus_server();
@@ -51,14 +36,15 @@ namespace smf {
 		/**
 		 * incoming connection
 		 */
-		void accept(boost::asio::ip::tcp::socket&&);
+		//void accept(boost::asio::ip::tcp::socket&&);
+		void do_accept();
 
 
 	private:
-		signatures_t sigs_;
-		std::weak_ptr<cyng::channel> channel_;
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
+		boost::asio::ip::tcp::acceptor acceptor_;
+		std::uint64_t session_counter_;
 
 	};
 

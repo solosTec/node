@@ -21,7 +21,7 @@ namespace smf {
 		, toggle::server_vec_t&& cfg)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
-		std::bind(&cluster::status_check, this, std::placeholders::_1),
+		std::bind(&wmbus_server::listen, &server_, std::placeholders::_1),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
 	}
 		, channel_(wp)
@@ -30,14 +30,15 @@ namespace smf {
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
+		, server_(ctl.get_ctx(), tag, logger)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("connect", 0);
-			sp->set_channel_name("status_check", 1);
+			sp->set_channel_name("listen", 1);	//	wmbus_server
+			CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
 		}
 
-		CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
 
 	}
 
@@ -64,21 +65,6 @@ namespace smf {
 
 	}
 
-	void cluster::status_check(int n)
-	{
-		auto sp = channel_.lock();
-		if (sp) {
-			CYNG_LOG_TRACE(logger_, "status_check(" << tag_ << ", " << n << ")");
-			//
-			//	ToDo: status check
-			//
-			sp->suspend(std::chrono::seconds(30), "status_check", cyng::make_tuple(n + 1));
-		}
-		else {
-			CYNG_LOG_ERROR(logger_, "status_check(" << tag_ << ", " << n << ")");
-		}
-	}
-
 	//
 	//	bus interface
 	//
@@ -87,10 +73,10 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "start HTTP server");
+			CYNG_LOG_INFO(logger_, "cluster join complete");
 
 			//
-			//	ToDo: start HTTP server
+			//	ToDo: start server
 			//
 		}
 

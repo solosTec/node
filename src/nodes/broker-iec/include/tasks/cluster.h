@@ -31,7 +31,6 @@ namespace smf {
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
 			std::function<void(int)>,
-			//std::function<void(int, std::string, float)>,
 			std::function<void(cyng::eod)>
 		>;
 

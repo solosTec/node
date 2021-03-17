@@ -32,7 +32,11 @@
 		void join_cluster(cyng::controller& ctl
 			, cyng::logger logger
 			, boost::uuids::uuid tag
-			, toggle::server_vec_t&& tgl);
+			, std::string const& node_name
+			, toggle::server_vec_t&& tgl
+			, std::string const& address
+			, std::uint16_t port
+			, bool client_login);
 
 	private:
 		cyng::param_t create_server_spec(std::filesystem::path const& cwd);

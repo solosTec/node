@@ -8,6 +8,7 @@
 #define SMF_BROKER_WMBUS_TASK_CLUSTER_H
 
 #include <smf/cluster/bus.h>
+#include <wmbus_server.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -30,8 +31,7 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
-			std::function<void(int)>,
-			//std::function<void(int, std::string, float)>,
+			std::function<void(boost::asio::ip::tcp::endpoint)>,
 			std::function<void(cyng::eod)>
 		>;
 
@@ -45,7 +45,7 @@ namespace smf {
 		~cluster();
 
 		void connect();
-		void status_check(int);
+		//void status_check(int);
 
 		void stop(cyng::eod);
 
@@ -64,6 +64,7 @@ namespace smf {
 		cyng::logger logger_;
 		cyng::mesh fabric_;
 		bus	bus_;
+		wmbus_server server_;
 	};
 
 }

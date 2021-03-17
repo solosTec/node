@@ -83,7 +83,7 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "start IP-T server");
+			CYNG_LOG_INFO(logger_, "cluster join complete");
 
 			//
 			//	ToDo: start IP-T server

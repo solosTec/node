@@ -86,7 +86,7 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "joined the cluster successfully");
+			CYNG_LOG_INFO(logger_, "cluster join complete");
 
 			//
 			//	Subscribe tables

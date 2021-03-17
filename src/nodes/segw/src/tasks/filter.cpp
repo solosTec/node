@@ -117,9 +117,8 @@ namespace smf
 				//	passthrough
 				//
 				if (check_frequency(id)) {
-					auto const data = mbus::radio::restore_data(h, payload);
 					for (auto target : targets_) {
-						target->dispatch("receive", cyng::make_tuple(data));
+						target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, payload)));
 					}
 				}
 			}
@@ -135,9 +134,8 @@ namespace smf
 				//	passthrough
 				//
 				if (check_frequency(id)) {
-					auto const data = mbus::radio::restore_data(h, payload);
 					for (auto target : targets_) {
-						target->dispatch("receive", cyng::make_tuple(data));
+						target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, payload)));
 					}
 				}
 			}

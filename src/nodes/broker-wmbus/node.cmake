@@ -6,10 +6,14 @@ set (broker-wmbus_node)
 set (broker-wmbus_cpp
     src/main.cpp
     src/controller.cpp
+    src/wmbus_server.cpp
+    src/wmbus_session.cpp
 )
     
 set (broker-wmbus_h
     include/controller.h
+    include/wmbus_server.h
+    include/wmbus_session.h
 )
 
 if(WIN32)
@@ -28,9 +32,7 @@ endif()
 
 set (broker-wmbus_tasks
   include/tasks/cluster.h
-  include/tasks/wmbus_server.h
   src/tasks/cluster.cpp
-  src/tasks/wmbus_server.cpp
 )
 
 source_group("broker-wmbus-assets" FILES ${broker-wmbus_assets})
