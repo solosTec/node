@@ -244,10 +244,12 @@ namespace smf {
 
 		BOOST_ASSERT(!buffer_write_.empty());
 
-		// Start an asynchronous operation to send a heartbeat message.
+		//
+		//	write actually data to socket
+		//
 		boost::asio::async_write(socket_,
 			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-			std::bind(&bus::handle_write, this, std::placeholders::_1));
+			cyng::expose_dispatcher(vm_).wrap(std::bind(&bus::handle_write, this, std::placeholders::_1)));
 	}
 
 	void bus::handle_read(const boost::system::error_code& ec, std::size_t bytes_transferred)
@@ -312,10 +314,15 @@ namespace smf {
 
 	void bus::req_subscribe(std::string table_name) {
 
-		cyng::add(buffer_write_, cyng::serialize_invoke("db.req.subscribe"
+		auto const deq = cyng::serialize_invoke("db.req.subscribe"
 			, table_name
-			, tag_));
-		do_write();
+			, tag_);
+
+		cyng::exec(vm_, [=]() {
+			bool const b = buffer_write_.empty();
+			cyng::add(buffer_write_, deq);
+			if (b)	do_write();
+		});
 	}
 
 	void bus::req_db_insert(std::string const& table_name

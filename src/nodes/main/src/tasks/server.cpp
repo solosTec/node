@@ -87,9 +87,6 @@ namespace smf {
 			if (!ec) {
 				CYNG_LOG_INFO(logger_, "new session " << socket.remote_endpoint());
 
-				//std::function<void(std::string)> f = std::bind(&server::pty_connect, this, std::placeholders::_1);
-				//auto vm = fabric_.create_proxy(f);	//	ok
-
 				auto sp = std::shared_ptr<session>(new session(
 					std::move(socket),
 					this,

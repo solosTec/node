@@ -109,20 +109,21 @@ namespace smf {
 
 	void session::do_write()
 	{
-		//if (is_stopped())	return;
+		BOOST_ASSERT(!buffer_write_.empty());
 
-		// Start an asynchronous operation to send a heartbeat message.
+		//
+		//	write actually data to socket
+		//
 		boost::asio::async_write(socket_,
 			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-			std::bind(&session::handle_write, this, std::placeholders::_1));
+			cyng::expose_dispatcher(vm_).wrap(std::bind(&session::handle_write, this, std::placeholders::_1)));
 	}
 
 	void session::handle_write(const boost::system::error_code& ec)
 	{
-		//if (is_stopped())	return;
-
 		if (!ec) {
 
+			BOOST_ASSERT(!buffer_write_.empty());
 			buffer_write_.pop_front();
 			if (!buffer_write_.empty()) {
 				do_write();
@@ -151,15 +152,17 @@ namespace smf {
 		//
 
 		//
-		//	ToDo: insert into cluster table
+		//	insert into cluster table
 		//
+		srvp_->cache_.insert_cluster_member(tag, node, v, socket_.remote_endpoint(), n);
 
 		//
 		//	send response
 		//
-		buffer_write_ = cyng::serialize_invoke("cluster.res.login", true);
-
-		do_write();
+		cyng::exec(vm_, [this]() {
+			buffer_write_ = cyng::serialize_invoke("cluster.res.login", true);
+			do_write();
+		});
 
 	}
 
@@ -207,29 +210,19 @@ namespace smf {
 			<< tbl->meta().get_name()
 			<< "]");
 
-#ifdef _DEBUG
-		//auto const deq = cyng::serialize_invoke("db.res.subscribe"
-		//	, tbl->meta().get_name()
-		//	, key);
-		//	//, data
-		//	//, gen
-		//	//, source);
-		//for (auto const& obj : deq) {
-		//	CYNG_LOG_TRACE(sp_->logger_, "debug forward ["
-		//		<< obj
-		//		<< "]");
-
-		//}
-#endif
-
-
-		cyng::add(sp_->buffer_write_, cyng::serialize_invoke("db.res.subscribe"
+		auto const deq = cyng::serialize_invoke("db.res.subscribe"
 			, tbl->meta().get_name()
 			, key
 			, data
 			, gen
-			, source));
-		sp_->do_write();
+			, source);
+
+		cyng::exec(sp_->vm_, [=]() {
+			bool const b = sp_->buffer_write_.empty();
+			cyng::add(sp_->buffer_write_, deq);
+			if (b)	sp_->do_write();
+		});
+
 
 		return true;
 	}
@@ -273,11 +266,15 @@ namespace smf {
 			<< "] "
 			<< (trx ? "start" : "commit"));
 
-		//cyng::add(sp_->buffer_write_, cyng::serialize_invoke("db.res.trx"
-		//	, tbl->meta().get_name()
-		//	, trx));
+		auto const deq = cyng::serialize_invoke("db.res.trx"
+			, tbl->meta().get_name()
+			, trx);
 
-		//sp_->do_write();
+		cyng::exec(sp_->vm_, [=]() {
+			bool const b = sp_->buffer_write_.empty();
+			cyng::add(sp_->buffer_write_, deq);
+			if (b)	sp_->do_write();
+		});
 
 		return true;
 	}

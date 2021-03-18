@@ -13,6 +13,8 @@
 
 #include <cyng/log/logger.h>
 
+#include <boost/uuid/random_generator.hpp>
+
 namespace smf {
 
 	class db
@@ -27,6 +29,14 @@ namespace smf {
 		 */
 		void init(cyng::param_map_t const&);
 
+		/**
+		 * Add a new cluster node into table "cluster"
+		 */
+		bool insert_cluster_member(boost::uuids::uuid
+			, std::string class_name
+			, cyng::version
+			, boost::asio::ip::tcp::endpoint
+			, cyng::pid);
 
 	private:
 		void set_start_values(cyng::param_map_t const& session_cfg);
@@ -36,7 +46,7 @@ namespace smf {
 		cyng::logger logger_;
 		cfg cfg_;	
 		config::store_map store_map_;
-		
+		boost::uuids::random_generator uuid_gen_;
 	};
 
 	/**

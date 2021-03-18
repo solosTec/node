@@ -115,7 +115,7 @@ namespace smf {
 	void cluster::db_res_trx(std::string table_name
 		, bool trx) {
 
-		CYNG_LOG_TRACE(logger_, "cluster trx: "
+		CYNG_LOG_INFO(logger_, "cluster trx: "
 			<< table_name
 			<< (trx ? " start" : " commit"));
 	}

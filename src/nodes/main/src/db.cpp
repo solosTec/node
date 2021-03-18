@@ -10,10 +10,7 @@
 
 #include <cyng/log/record.h>
 #include <cyng/io/ostream.h>
-
-#ifdef _DEBUG_MAIN
-#include <boost/uuid/random_generator.hpp>
-#endif
+#include <cyng/sys/process.h>
 
 namespace smf {
 
@@ -22,6 +19,7 @@ namespace smf {
 		, logger_(logger)
 		, cfg_(cache, tag)
 		, store_map_()
+		, uuid_gen_()
 	{}
 
 	db::~db()
@@ -50,9 +48,8 @@ namespace smf {
 		//
 		//	insert test device
 		//
-		boost::uuids::random_generator_mt19937 uidgen;
 		cache_.insert("device"
-			, cyng::key_generator(uidgen())
+			, cyng::key_generator(uuid_gen_())
 			, cyng::data_generator("name", "pwd", "msisdn", "descr", "id", "vFirmware", true, std::chrono::system_clock::now(), 6)
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
@@ -67,12 +64,45 @@ namespace smf {
 		cfg_.set_value("boost-version", SMF_BOOST_VERSION);
 		cfg_.set_value("ssl-version", SMF_OPEN_SSL_VERSION);
 
+		//
+		//	load session configuration from config file
+		//
 		for (auto const& param : session_cfg) {
 			CYNG_LOG_TRACE(logger_, "session configuration " << param.first << ": " << param.second);
 			cfg_.set_value(param.first, param.second);
 
 		}
+
+		//
+		//	main node as cluster member
+		//
+		insert_cluster_member(cfg_.get_tag()
+			, "main"
+			, cyng::version(SMF_VERSION_MAJOR, SMF_VERSION_MINOR)
+			, boost::asio::ip::tcp::endpoint()
+			, cyng::sys::get_process_id());
+
 	}
+
+	bool db::insert_cluster_member(boost::uuids::uuid tag
+		, std::string class_name
+		, cyng::version v
+		, boost::asio::ip::tcp::endpoint ep
+		, cyng::pid pid) {
+
+		return cache_.insert("cluster"
+			, cyng::key_generator(tag)
+			, cyng::data_generator(class_name
+				, std::chrono::system_clock::now()
+				, v
+				, static_cast<std::uint64_t>(0)
+				, std::chrono::microseconds(0)
+				, ep
+				, pid)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+	}
+
 
 	std::vector< cyng::meta_store > get_store_meta_data() {
 		return {
