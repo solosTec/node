@@ -47,12 +47,18 @@ namespace smf {
 	{
 		vm_ = init_vm(bip);
 		vm_.set_channel_name("cluster.res.login", 0);
+		vm_.set_channel_name("db.res.subscribe", 1);
 	}
 
 	cyng::vm_proxy bus::init_vm(bus_interface* bip) {
 
 		std::function<void(bool)> f1 = std::bind(&bus_interface::on_login, bip, std::placeholders::_1);
-		return bip->get_fabric()->create_proxy(f1);
+		std::function<void(std::string
+			, cyng::key_t  key
+			, cyng::data_t  data
+			, std::uint64_t gen
+			, boost::uuids::uuid tag)> f2 = std::bind(&bus_interface::db_res_subscribe, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+		return bip->get_fabric()->create_proxy(f1, f2);
 
 	}
 
@@ -232,6 +238,8 @@ namespace smf {
 	void bus::do_write()
 	{
 		if (is_stopped())	return;
+
+		BOOST_ASSERT(!buffer_write_.empty());
 
 		// Start an asynchronous operation to send a heartbeat message.
 		boost::asio::async_write(socket_,

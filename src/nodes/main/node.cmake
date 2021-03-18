@@ -7,11 +7,15 @@ set (main_cpp
     src/main.cpp
     src/controller.cpp
     src/session.cpp
+    src/db.cpp
+    src/cfg.cpp
 )
     
 set (main_h
     include/controller.h
     include/session.h
+    include/db.h
+    include/cfg.h
 )
 
 if(WIN32)

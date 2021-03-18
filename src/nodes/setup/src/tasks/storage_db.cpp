@@ -46,7 +46,7 @@ namespace smf {
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("open", 0);
-			//sp->set_channel_name("load-data", 1);
+
 			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
 	}

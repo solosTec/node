@@ -11,6 +11,7 @@
 #include <smf/sml/event.h>
 
 #include <cyng/log/record.h>
+#include <cyng/store/slot.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -54,7 +55,7 @@ namespace smf
 
 	void persistence::connect() {
 
-		cfg_.get_cache().connect("cfg", cyng::slot(channel_));
+		cfg_.get_cache().connect("cfg", cyng::make_slot(channel_));
 		CYNG_LOG_INFO(logger_, "persistence connected");
 	}
 

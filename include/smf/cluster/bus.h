@@ -15,6 +15,7 @@
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/vm/proxy.h>
 #include <cyng/vm/vm_fwd.h>
+#include <cyng/store/key.hpp>
 
 namespace smf
 {
@@ -25,7 +26,14 @@ namespace smf
 	class bus_interface {
 	public:
 		virtual cyng::mesh* get_fabric() = 0;
+
 		virtual void on_login(bool) = 0;
+
+		virtual void db_res_subscribe(std::string
+			, cyng::key_t  key
+			, cyng::data_t  data
+			, std::uint64_t gen
+			, boost::uuids::uuid tag) = 0;
 	};
 
 	/**

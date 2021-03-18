@@ -62,12 +62,14 @@ namespace smf {
 	{
 		CYNG_LOG_WARNING(logger_, "stop cluster task(" << tag_ << ")");
 		bus_.stop();
+		storage_->stop();
 	}
 
 	void cluster::connect()
 	{
 		//
-		//	connect to database
+		//	connect to database and
+		//	load data into cache
 		//
 		storage_->dispatch("open", cyng::make_tuple());
 
@@ -88,11 +90,29 @@ namespace smf {
 		if (success) {
 			CYNG_LOG_INFO(logger_, "cluster join complete");
 
-			bus_.req_subscribe("TDevice");
+			bus_.req_subscribe("device");
 
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "joining cluster failed");
 		}
 
 	}
+
+	void cluster::db_res_subscribe(std::string table_name
+		, cyng::key_t  key
+		, cyng::data_t  data
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "cluster response subscribe: " 
+			<< table_name
+		<< " #"
+		<< gen
+		<< " <- "
+		<< data);
+	}
+
 
 	cyng::channel_ptr start_data_store(cyng::controller& ctl
 		, cyng::logger logger

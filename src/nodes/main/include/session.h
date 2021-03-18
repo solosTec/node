@@ -11,6 +11,7 @@
 #include <cyng/io/parser/parser.h>
 #include <cyng/vm/proxy.h>
 #include <cyng/obj/intrinsics/pid.h>
+#include <cyng/store/slot_interface.h>
 
 #include <memory>
 #include <array>
@@ -20,6 +21,33 @@ namespace smf {
 	class server;
 	class session : public std::enable_shared_from_this<session>
 	{
+		class slot : public cyng::slot_interface {
+		public:
+
+			slot(session*);
+
+			virtual bool forward(cyng::table const*
+				, cyng::key_t const&
+				, cyng::data_t const&
+				, std::uint64_t
+				, boost::uuids::uuid) override;
+
+			virtual bool forward(cyng::table const* tbl
+				, cyng::key_t const& key
+				, cyng::attr_t const& attr
+				, std::uint64_t gen
+				, boost::uuids::uuid tag) override;
+
+			virtual bool forward(cyng::table const* tbl
+				, cyng::key_t const& key
+				, boost::uuids::uuid tag) override;
+
+			virtual bool forward(cyng::table const*
+				, boost::uuids::uuid) override;
+
+		private:
+			session* sp_;
+		};
 	public:
 		session(boost::asio::ip::tcp::socket socket, server*, cyng::logger);
 		~session();
@@ -48,6 +76,7 @@ namespace smf {
 
 	private:
 		boost::asio::ip::tcp::socket socket_;
+		server* srvp_;
 		cyng::logger logger_;
 
 		/**
@@ -62,6 +91,8 @@ namespace smf {
 
 		cyng::vm_proxy	vm_;
 		cyng::io::parser parser_;
+
+		cyng::slot_ptr	slot_;
 
 	};
 

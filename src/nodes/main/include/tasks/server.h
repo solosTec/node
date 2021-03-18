@@ -7,6 +7,8 @@
 #ifndef SMF_MAIN_TASK_SERVER_H
 #define SMF_MAIN_TASK_SERVER_H
 
+#include <db.h>
+
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
@@ -38,7 +40,8 @@ namespace smf {
 			, std::string const& account
 			, std::string const& pwd
 			, std::string const& salt
-			, std::chrono::seconds monitor);
+			, std::chrono::seconds monitor
+			, cyng::param_map_t const&);
 		~server();
 
 	private:
@@ -63,6 +66,12 @@ namespace smf {
 		std::uint64_t session_counter_;
 
 		cyng::mesh fabric_;
+
+		/**
+		 *  data cache
+		 */
+		cyng::store store_;
+		db cache_;
 	};
 
 }

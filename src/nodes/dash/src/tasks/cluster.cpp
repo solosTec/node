@@ -95,8 +95,14 @@ namespace smf {
 
 		}
 		else {
-			CYNG_LOG_ERROR(logger_, "joining the cluster failed");
+			CYNG_LOG_ERROR(logger_, "joining cluster failed");
 		}
+	}
+	void cluster::db_res_subscribe(std::string
+		, cyng::key_t  key
+		, cyng::data_t  data
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
 	}
 
 }

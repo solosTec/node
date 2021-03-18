@@ -22,7 +22,8 @@ namespace smf {
 		, std::string const& account
 		, std::string const& pwd
 		, std::string const& salt
-		, std::chrono::seconds monitor)
+		, std::chrono::seconds monitor
+		, cyng::param_map_t const& session_cfg)
 	: sigs_{ 
 		std::bind(&server::start, this, std::placeholders::_1),
 		std::bind(&server::stop, this, std::placeholders::_1),
@@ -37,12 +38,19 @@ namespace smf {
 		, acceptor_(ctl.get_ctx())
 		, session_counter_{ 0 }
 		, fabric_(ctl)
+		, store_()
+		, cache_(store_, logger, tag)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("start", 0);
-			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
+			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
 		}
+
+		//
+		//	create all tables and set initial values
+		//
+		cache_.init(session_cfg);
 	}
 
 	server::~server()
@@ -51,7 +59,6 @@ namespace smf {
 		std::cout << "server(~)" << std::endl;
 #endif
 	}
-
 
 	void server::stop(cyng::eod)
 	{

@@ -7,8 +7,6 @@
 
 #include <controller.h>
 #include <tasks/cluster.h>
-//#include <tasks/storage_xml.h>
-//#include <tasks/storage_json.h>
 #include <tasks/storage_db.h>
 
 
@@ -84,18 +82,6 @@ namespace smf {
 		auto const storage_type = cyng::value_cast(reader["storage"].get(), "DB");
 		CYNG_LOG_INFO(logger, "storage type is " << storage_type);
 
-		//auto channel = start_data_store(ctl
-		//	, logger
-		//	, tag
-		//	, storage_type
-		//	, cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
-
-		////
-		////	channel required
-		////
-		//if (!channel)	return;
-		//channel->dispatch("open", cyng::make_tuple());
-
 		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
 		BOOST_ASSERT(!tgl.empty());
 		if (tgl.empty()) {
@@ -114,29 +100,6 @@ namespace smf {
 			, storage_type
 			, cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
 	}
-
-	//cyng::channel_ptr controller::start_data_store(cyng::controller& ctl
-	//	, cyng::logger logger
-	//	, boost::uuids::uuid tag
-	//	, std::string const& storage_type
-	//	, cyng::param_map_t&& cfg) {
-
-	//	if (boost::algorithm::equals(storage_type, "DB")) {
-	//		return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, tag, logger, std::move(cfg));
-	//	}
-	//	else if (boost::algorithm::equals(storage_type, "XML")) {
-	//		CYNG_LOG_ERROR(logger, "XML data storage not available");
-	//		return ctl.create_named_channel_with_ref<storage_xml>("storage", ctl, tag, logger, std::move(cfg));
-	//	}
-	//	else if (boost::algorithm::equals(storage_type, "JSON")) {
-	//		CYNG_LOG_ERROR(logger, "JSON data storage not available");
-	//		return ctl.create_named_channel_with_ref<storage_json>("storage", ctl, tag, logger, std::move(cfg));
-	//	}
-
-	//	CYNG_LOG_FATAL(logger, "no data storage configured");
-
-	//	return cyng::channel_ptr();
-	//}
 
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger

@@ -4,10 +4,9 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_SEGW_CFG_H
-#define SMF_SEGW_CFG_H
+#ifndef SMF_MAIN_CFG_H
+#define SMF_MAIN_CFG_H
 
-#include <smf/sml/status.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/store/db.h>
@@ -21,27 +20,10 @@ namespace smf {
 	/**
 	 * manage configuration data
 	 */
-	class bridge;
 	class cfg
 	{
-		friend class bridge;
-
 	public:
-		cfg(cyng::logger, cyng::store&);
-
-		inline cyng::store& get_cache() {
-			return cache_;
-		}
-
-		/**
-		 * @return itentity/source tag
-		 */
-		boost::uuids::uuid get_tag() const;
-
-		/**
-		 * get configured server ID (OBIS_SERVER_ID:)
-		 */
-		cyng::buffer_t get_srv_id() const;
+		cfg(cyng::store&, boost::uuids::uuid tag);
 
 		/**
 		 * read a configuration object from table "cfg"
@@ -75,34 +57,13 @@ namespace smf {
 		}
 
 		/**
-		 * @return SML status word
+		 * @return itentity/source tag
 		 */
-		sml::status_word_t get_status_word() const;
-
-		/**
-		 * the separator character
-		 */
-		constexpr static char sep = '/';
+		boost::uuids::uuid get_tag() const;
 
 	private:
-		cyng::logger logger_;
 		cyng::store& cache_;
-
-		/**
-		 * source tag - initialized by bridge
-		 */
-		boost::uuids::uuid tag_;
-
-		/**
-		 * server id
-		 */
-		cyng::buffer_t id_;
-
-		/**
-		 * OBIS log status
-		 */
-		sml::status_word_t status_word_;
-
+		boost::uuids::uuid const tag_;
 	};
 }
 

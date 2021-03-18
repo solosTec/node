@@ -11,7 +11,7 @@ set (cluster_cpp
     
 set (cluster_h
     include/smf/cluster.h
-#    include/smf/cluster/config.h
+    include/smf/cluster/config.h
 #    include/smf/cluster/bus.h
 )
 

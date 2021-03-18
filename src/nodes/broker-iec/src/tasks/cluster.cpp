@@ -85,13 +85,18 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "start HTTP server");
-
-			//
-			//	ToDo: start HTTP server
-			//
+			CYNG_LOG_INFO(logger_, "cluster join complete");
 		}
+		else {
+			CYNG_LOG_ERROR(logger_, "joining cluster failed");
+		}
+	}
 
+	void cluster::db_res_subscribe(std::string
+		, cyng::key_t  key
+		, cyng::data_t  data
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
 	}
 
 }

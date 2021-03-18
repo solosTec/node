@@ -43,6 +43,11 @@ namespace smf {
 		cyng::meta_store get_store_cluster();
 
 		/**
+		 * super simple config table
+		 */
+		cyng::meta_store get_config();
+
+		/**
 		 * container to store meta data of in-memory tables
 		 */
 		using store_map = std::map<std::string, cyng::meta_store>;

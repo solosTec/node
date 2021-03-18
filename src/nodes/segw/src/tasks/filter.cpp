@@ -40,14 +40,14 @@ namespace smf
 		, parser_([this](mbus::radio::header const& h, cyng::buffer_t const& data) {
 			auto const flag_id = h.get_manufacturer_code();
 			CYNG_LOG_TRACE(logger_, "[filter] meter: " << h.get_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
-//#ifdef _DEBUG_SEGW
+#ifdef _DEBUG_SEGW
 			{
 				std::stringstream ss;
 				cyng::io::hex_dump<8> hd;
 				hd(ss, std::begin(data), std::end(data));
 				CYNG_LOG_DEBUG(logger_, "[" << h.get_dev_id() << "] " << data.size() << " bytes:\n" << ss.str());
 			}
-//#endif
+#endif
 			this->check(h, data);
 		})
 		, targets_()
@@ -72,14 +72,14 @@ namespace smf
 	void filter::receive(cyng::buffer_t data) {
 		CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] received " << data.size() << " bytes");
 
-//#ifdef _DEBUG_SEGW
+#ifdef _DEBUG_SEGW
 		{
 			std::stringstream ss;
 			cyng::io::hex_dump<8> hd;
 			hd(ss, std::begin(data), std::end(data));
 			CYNG_LOG_DEBUG(logger_, "[" << cfg_blocklist_.get_task_name() << "] parse " << data.size() << " bytes:\n" << ss.str());
 		}
-//#endif
+#endif
 
 		if (cfg_blocklist_.is_enabled()) {
 

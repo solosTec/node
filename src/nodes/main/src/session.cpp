@@ -9,10 +9,12 @@
 
 #include <cyng/log/record.h>
 #include <cyng/io/serialize.h>
+#include <cyng/io/ostream.h>
 #include <cyng/vm/vm.h>
 #include <cyng/vm/linearize.hpp>
 #include <cyng/vm/generator.hpp>
 #include <cyng/vm/mesh.h>
+#include <cyng/obj/algorithm/add.hpp>
 
 #include <iostream>
 
@@ -20,6 +22,7 @@ namespace smf {
 
 	session::session(boost::asio::ip::tcp::socket socket, server* srv, cyng::logger logger)
 	: socket_(std::move(socket))
+		, srvp_(srv)
 		, logger_(logger)
 		, buffer_()
 		, buffer_write_()
@@ -28,6 +31,7 @@ namespace smf {
 			CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
 			vm_.load(std::move(obj));
 		})
+		, slot_(cyng::make_slot(new slot(this)))
 	{
 		vm_ = init_vm(srv);
 		vm_.set_channel_name("cluster.req.login", 0);
@@ -100,6 +104,7 @@ namespace smf {
 
 		std::function<void(std::string)> f7 = std::bind(&server::pty_connect, srv, std::placeholders::_1);
 		return srv->fabric_.create_proxy(f1, f2, f3, f4, f5, f6, f7);
+
 	}
 
 	void session::do_write()
@@ -159,6 +164,16 @@ namespace smf {
 		//	send response
 		//
 		buffer_write_ = cyng::serialize_invoke("cluster.res.login", true);
+#ifdef _DEBUG
+		//for (auto const& obj : buffer_write_) {
+		//	CYNG_LOG_TRACE(logger_, "debug forward ["
+		//		<< obj
+		//		<< "]");
+
+		//}
+#endif
+
+
 		do_write();
 
 	}
@@ -170,18 +185,99 @@ namespace smf {
 			<< "] subscribe "
 			<< table );
 
-	}
-	void session::db_req_insert(std::string) {
+		srvp_->store_.connect(table, slot_);
 
 	}
-	void session::db_req_update(std::string) {
+	void session::db_req_insert(std::string table) {
 
 	}
-	void session::db_req_remove(std::string) {
+	void session::db_req_update(std::string table) {
 
 	}
-	void session::db_req_clear(std::string) {
+	void session::db_req_remove(std::string table) {
 
+	}
+	void session::db_req_clear(std::string table) {
+
+	}
+
+	//
+	//	slot implementation
+	//
+
+	session::slot::slot(session* sp) 
+		: sp_(sp)
+	{}
+
+	bool session::slot::forward(cyng::table const* tbl
+		, cyng::key_t const& key
+		, cyng::data_t const& data
+		, std::uint64_t gen
+		, boost::uuids::uuid source) {
+
+		//
+		//	send to subscriber
+		//
+		CYNG_LOG_TRACE(sp_->logger_, "forward ["
+			<< tbl->meta().get_name()
+			<< "]");
+
+#ifdef _DEBUG
+		//auto const deq = cyng::serialize_invoke("db.res.subscribe"
+		//	, tbl->meta().get_name()
+		//	, key);
+		//	//, data
+		//	//, gen
+		//	//, source);
+		//for (auto const& obj : deq) {
+		//	CYNG_LOG_TRACE(sp_->logger_, "debug forward ["
+		//		<< obj
+		//		<< "]");
+
+		//}
+#endif
+
+
+		cyng::add(sp_->buffer_write_, cyng::serialize_invoke("db.res.subscribe"
+			, tbl->meta().get_name()
+			, key
+			, data
+			, gen
+			, source));
+		sp_->do_write();
+
+		return true;
+	}
+
+	bool session::slot::forward(cyng::table const* tbl
+			, cyng::key_t const& key
+			, cyng::attr_t const& attr
+			, std::uint64_t gen
+			, boost::uuids::uuid tag) {
+		//
+		//	ToDo: send to subscriber
+		//
+
+		return true;
+	}
+
+	bool session::slot::forward(cyng::table const* tbl
+			, cyng::key_t const& key
+			, boost::uuids::uuid tag) {
+		//
+		//	ToDo: send to subscriber
+		//
+
+		return true;
+	}
+
+	bool session::slot::forward(cyng::table const*
+			, boost::uuids::uuid) {
+		//
+		//	ToDo: send to subscriber
+		//
+
+		return true;
 	}
 
 }

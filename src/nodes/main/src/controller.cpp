@@ -99,6 +99,8 @@ namespace smf {
 		auto const salt = cyng::value_cast(reader["cluster"]["salt"].get(), "");
 		auto const monitor = cyng::numeric_cast<std::uint32_t>(reader["cluster"]["monitor"].get(), 58);	//	seconds
 
+		auto const session_cfg = cyng::container_cast<cyng::param_map_t>(reader["session"].get());
+
 		auto channel = ctl.create_named_channel_with_ref<server>("main"
 			, ctl
 			, tag
@@ -106,7 +108,8 @@ namespace smf {
 			, account
 			, pwd
 			, salt
-			, std::chrono::seconds(monitor));
+			, std::chrono::seconds(monitor)
+			, session_cfg);
 		BOOST_ASSERT(channel->is_open());
 
 		channel->dispatch("start", cyng::make_tuple(ep));

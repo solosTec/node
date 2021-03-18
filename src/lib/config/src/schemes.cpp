@@ -109,6 +109,16 @@ namespace smf {
 			, 1);
 		}
 
+		cyng::meta_store get_config() {
+			return cyng::meta_store("config"
+				, {
+					cyng::column("key", cyng::TC_STRING),	//	key
+					cyng::column("value", cyng::TC_NULL)	//	any data type allowed	
+				}
+			, 1);
+
+		}
+
 	}
 }
 
