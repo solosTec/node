@@ -48,6 +48,7 @@ namespace smf {
 		vm_ = init_vm(bip);
 		vm_.set_channel_name("cluster.res.login", 0);
 		vm_.set_channel_name("db.res.subscribe", 1);
+		vm_.set_channel_name("db.res.trx", 2);
 	}
 
 	cyng::vm_proxy bus::init_vm(bus_interface* bip) {
@@ -58,7 +59,9 @@ namespace smf {
 			, cyng::data_t  data
 			, std::uint64_t gen
 			, boost::uuids::uuid tag)> f2 = std::bind(&bus_interface::db_res_subscribe, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
-		return bip->get_fabric()->create_proxy(f1, f2);
+		std::function<void(std::string
+			, bool)> f3 = std::bind(&bus_interface::db_res_trx, bip, std::placeholders::_1, std::placeholders::_2);
+		return bip->get_fabric()->create_proxy(f1, f2, f3);
 
 	}
 

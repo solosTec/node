@@ -34,6 +34,10 @@ namespace smf
 			, cyng::data_t  data
 			, std::uint64_t gen
 			, boost::uuids::uuid tag) = 0;
+
+		virtual void db_res_trx(std::string
+			, bool) = 0;
+
 	};
 
 	/**

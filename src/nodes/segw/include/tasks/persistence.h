@@ -45,6 +45,8 @@ namespace smf {
 				, boost::uuids::uuid)>,
 			std::function<void(cyng::table const*
 				, boost::uuids::uuid)>,
+			std::function<void(cyng::table const*
+				, bool)>,
 			std::function<void()>	//	power_return
 		>;
 
@@ -92,6 +94,12 @@ namespace smf {
 		void clear(cyng::table const*
 			, boost::uuids::uuid);
 
+
+		/**
+		 * start/comit transaction
+		 */
+		void trx(cyng::table const*
+			, bool);
 
 	private:
 		signatures_t sigs_;

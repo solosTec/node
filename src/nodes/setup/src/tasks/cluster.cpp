@@ -112,6 +112,13 @@ namespace smf {
 		<< " <- "
 		<< data);
 	}
+	void cluster::db_res_trx(std::string table_name
+		, bool trx) {
+
+		CYNG_LOG_TRACE(logger_, "cluster trx: "
+			<< table_name
+			<< (trx ? " start" : " commit"));
+	}
 
 
 	cyng::channel_ptr start_data_store(cyng::controller& ctl

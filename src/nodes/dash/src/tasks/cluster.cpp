@@ -104,6 +104,13 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 	}
+	void cluster::db_res_trx(std::string table_name
+		, bool trx) {
+
+		CYNG_LOG_TRACE(logger_, "cluster trx: "
+			<< table_name
+			<< (trx ? " start" : " commit"));
+	}
 
 }
 

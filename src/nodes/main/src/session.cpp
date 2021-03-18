@@ -127,12 +127,6 @@ namespace smf {
 			if (!buffer_write_.empty()) {
 				do_write();
 			}
-			else {
-
-				// Wait 10 seconds before sending the next heartbeat.
-				//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
-				//heartbeat_timer_.async_wait(std::bind(&bus::do_write, this));
-			}
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "[session] write: " << ec.message());
@@ -164,15 +158,6 @@ namespace smf {
 		//	send response
 		//
 		buffer_write_ = cyng::serialize_invoke("cluster.res.login", true);
-#ifdef _DEBUG
-		//for (auto const& obj : buffer_write_) {
-		//	CYNG_LOG_TRACE(logger_, "debug forward ["
-		//		<< obj
-		//		<< "]");
-
-		//}
-#endif
-
 
 		do_write();
 
@@ -218,7 +203,7 @@ namespace smf {
 		//
 		//	send to subscriber
 		//
-		CYNG_LOG_TRACE(sp_->logger_, "forward ["
+		CYNG_LOG_TRACE(sp_->logger_, "forward insert ["
 			<< tbl->meta().get_name()
 			<< "]");
 
@@ -276,6 +261,23 @@ namespace smf {
 		//
 		//	ToDo: send to subscriber
 		//
+
+		return true;
+	}
+
+	bool session::slot::forward(cyng::table const* tbl
+		, bool trx) {
+
+		CYNG_LOG_TRACE(sp_->logger_, "forward trx ["
+			<< tbl->meta().get_name()
+			<< "] "
+			<< (trx ? "start" : "commit"));
+
+		//cyng::add(sp_->buffer_write_, cyng::serialize_invoke("db.res.trx"
+		//	, tbl->meta().get_name()
+		//	, trx));
+
+		//sp_->do_write();
 
 		return true;
 	}

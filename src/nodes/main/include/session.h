@@ -45,6 +45,10 @@ namespace smf {
 			virtual bool forward(cyng::table const*
 				, boost::uuids::uuid) override;
 
+			virtual bool forward(cyng::table const*
+				, bool) override;
+
+
 		private:
 			session* sp_;
 		};

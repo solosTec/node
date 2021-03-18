@@ -59,6 +59,8 @@ namespace smf {
 			, cyng::data_t  data
 			, std::uint64_t gen
 			, boost::uuids::uuid tag) override;
+		virtual void db_res_trx(std::string
+			, bool) override;
 
 	private:
 		signatures_t sigs_;

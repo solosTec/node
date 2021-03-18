@@ -28,6 +28,7 @@ namespace smf
 			std::bind(&persistence::modify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5),
 			std::bind(&persistence::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2),
+			std::bind(&persistence::trx, this, std::placeholders::_1, std::placeholders::_2),
 			std::bind(&persistence::power_return, this)
 		}
 		, channel_(wp)
@@ -42,7 +43,8 @@ namespace smf
 			sp->set_channel_name("db.modify", 2);
 			sp->set_channel_name("db.remove", 3);
 			sp->set_channel_name("db.clear", 4);
-			sp->set_channel_name("power-return", 5);
+			sp->set_channel_name("db.trx", 5);
+			sp->set_channel_name("power-return", 6);
 		}
 
 		connect();
@@ -137,6 +139,10 @@ namespace smf
 
 	}
 
+	void persistence::trx(cyng::table const* tbl
+		, bool) {
+		CYNG_LOG_TRACE(logger_, "trx " << tbl->meta().get_name());
+	}
 
 }
 

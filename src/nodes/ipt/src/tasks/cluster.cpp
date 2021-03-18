@@ -95,6 +95,9 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 	}
+	void cluster::db_res_trx(std::string
+		, bool) {
+	}
 
 }
 
