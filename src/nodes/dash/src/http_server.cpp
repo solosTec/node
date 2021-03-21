@@ -6,8 +6,13 @@
 #include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
+#include <cyng/obj/algorithm/reader.hpp>
+#include <cyng/parse/json/json_parser.h>
+#include <cyng/io/ostream.h>
 
-#include <iostream>
+//#include <iostream>
+
+#include <boost/uuid/uuid_io.hpp>
 
 namespace smf {
 
@@ -15,25 +20,16 @@ namespace smf {
 		, boost::uuids::uuid tag
 		, cyng::logger logger
 		, std::string const& document_root
-		, std::uint64_t max_upload_size
-		, std::string const& nickname
-		, std::chrono::seconds timeout
+		, db& data
 		, blocklist_type&& blocklist)
 	: tag_(tag)
 		, logger_(logger)
 		, document_root_(document_root)
-		, max_upload_size_(max_upload_size)
-		, nickname_(nickname)
-		, timeout_(timeout)
+		, db_(data)
 		, blocklist_(blocklist.begin(), blocklist.end())
 		, server_(ioc, logger, std::bind(&http_server::accept, this, std::placeholders::_1))
-		, parser_([this](cyng::object&& obj) {
-
-			CYNG_LOG_TRACE(logger_, "[HTTP] ws parsed " << obj);
-			//send_response(reader_.run(cyng::container_cast<cyng::param_map_t>(std::move(obj)), rebind));
-
-		})
 		, uidgen_()
+		, ws_map_()
 	{
 		CYNG_LOG_INFO(logger_, "[HTTP] server " << tag << " started");
 	}
@@ -81,19 +77,22 @@ namespace smf {
 			std::move(s),
 			logger_,
 			document_root_,
-			max_upload_size_,
-			nickname_,
-			timeout_,
+			db_.cfg_.get_value("http-max-upload-size", static_cast<std::uint64_t>(0xA00000)),
+			db_.cfg_.get_value("http-server-nickname", "coraline"),
+			db_.cfg_.get_value("http-session-timeout", std::chrono::seconds(30)),
 			std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders::_2))->run();
 	}
 
 	void http_server::upgrade(boost::asio::ip::tcp::socket s
 		, boost::beast::http::request<boost::beast::http::string_body> req) {
 
-		CYNG_LOG_INFO(logger_, "new ws (" << s.remote_endpoint() << ")");
-		std::make_shared<http::ws>(std::move(s)
+		/*boost::asio::make_strand(server_.ioc_);*/
+		auto const tag = uidgen_();
+		CYNG_LOG_INFO(logger_, "new ws " << tag << '@' << s.remote_endpoint() << " #" << ws_map_.size() + 1);
+		ws_map_.emplace(tag, std::make_shared<http::ws>(std::move(s)
+			, server_.ioc_
 			, logger_
-			, std::bind(&http_server::on_msg, this, uidgen_(), std::placeholders::_1))->do_accept(std::move(req));
+			, std::bind(&http_server::on_msg, this, tag, std::placeholders::_1))).first->second.lock()->do_accept(std::move(req));
 	}
 
 	void http_server::on_msg(boost::uuids::uuid tag, std::string msg) {
@@ -102,7 +101,117 @@ namespace smf {
 		//	JSON parser
 		//
 		CYNG_LOG_TRACE(logger_, "ws (" << tag << ") received " << msg);
-		parser_.read(msg.begin(), msg.end());
+		cyng::json::parser parser([this, tag](cyng::object&& obj) {
+
+			CYNG_LOG_TRACE(logger_, "[HTTP] ws parsed " << obj);
+			auto const reader = cyng::make_reader(std::move(obj));
+			auto const cmd = cyng::value_cast(reader["cmd"].get(), "uups");
+
+			auto pos = ws_map_.find(tag);
+			if (pos != ws_map_.end() && !pos->second.expired()) {
+
+				if (boost::algorithm::equals(cmd, "subscribe")) {
+					auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+					CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] subscribes channel " << channel);
+					response_subscribe_channel(pos->second.lock(), channel);
+
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
+				}
+			}
+			else {
+
+				CYNG_LOG_WARNING(logger_, "[HTTP] ws [" << tag << "] is not registered");
+
+			}
+
+		});
+
+		parser.read(msg.begin(), msg.end());
+	}
+
+	void http_server::response_subscribe_channel(ws_sptr wsp, std::string const& name) {
+
+
+		auto const rel = db_.by_channel(name);
+		if (!rel.empty()) {
+
+			BOOST_ASSERT(boost::algorithm::equals(name, rel.channel_));
+
+			//
+			//	ToDo: add subscription table
+			//
+			
+			// 
+			//	Send initial data set
+			//
+			db_.cache_.access([&](cyng::table const* tbl) -> void {
+
+				//
+				//	inform client that data upload is starting
+				//
+				wsp->push_msg(json_load_icon(name, true));
+
+				//
+				//	get total record size
+				//
+				//auto size{ tbl->size() };
+				//std::size_t percent{ 0 }, idx{ 0 };
+
+
+				tbl->loop([&](cyng::record&& rec, std::size_t idx) -> bool {
+
+					auto const str = json_insert_record(name, rec.to_tuple());
+					wsp->push_msg(str);
+
+					return true;
+				});
+
+				//
+				//	inform client that data upload is finished
+				//
+				wsp->push_msg(json_load_icon(name, false));
+
+			}, cyng::access::read(rel.table_));
+		}
+		else {
+
+			auto const rel = db_.by_counter(name);
+			if (!rel.empty()) {
+
+				//
+				//	ToDo: add subscription table
+				//
+
+				//
+				//	Send table size
+				//
+				auto const str =  json_update_channel(name, db_.cache_.size(rel.table_));
+				wsp->push_msg(str);
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[HTTP] undefined channel " << name);
+			}
+		}
+	}
+
+	std::string json_insert_record(std::string channel, cyng::tuple_t&& tpl) {
+
+		return cyng::io::to_json(cyng::make_tuple(
+			cyng::make_param("cmd", "insert"),
+			cyng::make_param("channel", channel),
+			cyng::make_param("rec", std::move(tpl))));
+
+	}
+
+	std::string json_load_icon(std::string channel, bool b) {
+		return cyng::io::to_json(cyng::make_tuple(
+			cyng::make_param("cmd", "load"),
+			cyng::make_param("channel", channel),
+			cyng::make_param("show", b)));
+
 	}
 
 }

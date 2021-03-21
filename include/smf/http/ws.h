@@ -34,6 +34,7 @@ namespace smf {
         public:
             // Take ownership of the socket
             explicit ws(boost::asio::ip::tcp::socket&& socket
+                , boost::asio::io_context& ctx
                 , cyng::logger
                 , std::function<void(std::string)>);
 
@@ -81,17 +82,30 @@ namespace smf {
                         shared_from_this()));
             }
 
+            /**
+             * Add a message to the output queue
+             */
+            void push_msg(std::string);
+
         private:
             void on_accept(boost::beast::error_code ec);
             void do_read();
             void on_read(boost::beast::error_code ec,
                 std::size_t bytes_transferred);
+            void do_write();
             void on_write(boost::beast::error_code ec,
                 std::size_t bytes_transferred);
 
             std::function<void(std::string)> on_msg_;
+
         private:
+            boost::asio::io_context::strand strand_;
             cyng::logger logger_;
+            /**
+             * Buffer for outgoing data.
+             */
+            std::deque<std::string>	buffer_write_;
+
         };
 
 

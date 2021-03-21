@@ -36,23 +36,23 @@ namespace smf {
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
+		, store_()
+		, db_(store_, logger, tag)
 		, http_server_(ctl.get_ctx()
 			, tag
 			, logger
 			, document_root
-			, max_upload_size
-			, nickname
-			, timeout
+			, db_
 			, std::move(blocklist))
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("connect", 0);
 			sp->set_channel_name("listen", 1);
+			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
 		}
 
-		CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
-
+		db_.init(max_upload_size, nickname, timeout);
 	}
 
 	cluster::~cluster()
@@ -91,25 +91,38 @@ namespace smf {
 			//
 			//	Subscribe tables
 			//
-			bus_.req_subscribe("TDevice");
+			bus_.req_subscribe("device");
 
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "joining cluster failed");
 		}
 	}
-	void cluster::db_res_subscribe(std::string
+	void cluster::db_res_subscribe(std::string table_name
 		, cyng::key_t  key
 		, cyng::data_t  data
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
+
+		db_.db_res_subscribe(table_name, key, data, gen, tag);
+
 	}
 	void cluster::db_res_trx(std::string table_name
 		, bool trx) {
 
-		CYNG_LOG_TRACE(logger_, "cluster trx: "
+		CYNG_LOG_INFO(logger_, "cluster trx: "
 			<< table_name
 			<< (trx ? " start" : " commit"));
+
+		if (!trx) {
+			//
+			//	transfer complete
+			//
+			CYNG_LOG_INFO(logger_, "table size ["
+				<< table_name
+				<< "]: "
+				<< store_.size(table_name));
+		}
 	}
 
 }

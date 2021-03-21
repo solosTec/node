@@ -7,6 +7,7 @@ set (config_cpp
     src/lib/config/src/config.cpp
     src/lib/config/src/controller_base.cpp
     src/lib/config/src/schemes.cpp
+    src/lib/config/src/kv_store.cpp
 )
     
 set (config_h
@@ -14,6 +15,7 @@ set (config_h
     include/smf/config.h    
     include/smf/controller_base.h
     include/smf/config/schemes.h
+    include/smf/config/kv_store.h
 )
 
 

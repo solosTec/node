@@ -4,8 +4,8 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_MAIN_CFG_H
-#define SMF_MAIN_CFG_H
+#ifndef SMF_CONFIG_KV_STORE_H
+#define SMF_CONFIG_KV_STORE_H
 
 
 #include <cyng/log/logger.h>
@@ -20,13 +20,13 @@ namespace smf {
 	/**
 	 * manage configuration data
 	 */
-	class cfg
+	class kv_store
 	{
 	public:
-		cfg(cyng::store&, boost::uuids::uuid tag);
+		kv_store(cyng::store&, boost::uuids::uuid tag);
 
 		/**
-		 * read a configuration object from table "cfg"
+		 * read a configuration object from table "kv_store"
 		 */
 		cyng::object get_obj(std::string name);
 

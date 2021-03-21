@@ -7,11 +7,13 @@ set (dash_cpp
     src/main.cpp
     src/controller.cpp
     src/http_server.cpp
+    src/db.cpp
 )
     
 set (dash_h
     include/controller.h
     include/http_server.h
+    include/db.h
 )
 
 if(WIN32)

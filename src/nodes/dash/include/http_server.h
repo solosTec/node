@@ -4,14 +4,15 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_IPT_TASK_HTTP_SERVER_H
-#define SMF_IPT_TASK_HTTP_SERVER_H
+#ifndef SMF_DASH_HTTP_SERVER_H
+#define SMF_DASH_HTTP_SERVER_H
 
 #include <smf/http/server.h>
+#include <db.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
-#include <cyng/parse/json/json_parser.h>
+#include <cyng/io/serialize.h>
 
 #include <tuple>
 #include <functional>
@@ -23,6 +24,15 @@
 
 namespace smf {
 
+	//
+	//	forward declarations
+	//
+	namespace http {
+		class ws;
+	}
+	using ws_sptr = std::shared_ptr<http::ws>;
+	using ws_wptr = std::weak_ptr<http::ws>;
+
 	class http_server
 	{
 	public:
@@ -33,9 +43,7 @@ namespace smf {
 			, boost::uuids::uuid tag
 			, cyng::logger
 			, std::string const& document_root
-			, std::uint64_t max_upload_size
-			, std::string const& nickname
-			, std::chrono::seconds timeout
+			, db&
 			, blocklist_type&&);
 		~http_server();
 
@@ -59,13 +67,15 @@ namespace smf {
 		 */
 		void on_msg(boost::uuids::uuid tag, std::string);
 
+		void response_subscribe_channel(ws_sptr, std::string const&);
+
 	private:
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
 		std::string const document_root_;
-		std::uint64_t const max_upload_size_;
-		std::string const nickname_;
-		std::chrono::seconds const timeout_;
+
+		db& db_;
+
 		std::set<boost::asio::ip::address> const blocklist_;
 
 		/**
@@ -74,16 +84,31 @@ namespace smf {
 		http::server server_;
 
 		/**
-		 * JSON parser
-		 */
-		cyng::json::parser	parser_;
-
-		/**
 		 * generate unique session tags
 		 */
 		boost::uuids::random_generator uidgen_;
 
+		/**
+		 * list of all web sockets
+		 */
+		std::map<boost::uuids::uuid, ws_wptr>	ws_map_;
+
 	};
+
+	/**
+	 * Generate the JSON channel update string
+	 */
+	template <typename T>
+	std::string json_update_channel(std::string channel, T value) {
+		return cyng::io::to_json(cyng::make_tuple(
+			cyng::make_param("cmd", "update"),
+			cyng::make_param("channel", channel),
+			cyng::make_param("value", value)
+		));
+	}
+
+	std::string json_insert_record(std::string channel, cyng::tuple_t&&);
+	std::string json_load_icon(std::string channel, bool);
 
 }
 

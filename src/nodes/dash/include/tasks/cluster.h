@@ -9,11 +9,13 @@
 
 #include <smf/cluster/bus.h>
 #include <http_server.h>
+#include <db.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
 #include <cyng/vm/mesh.h>
+#include <cyng/store/db.h>
 
 #include <tuple>
 #include <functional>
@@ -75,6 +77,8 @@ namespace smf {
 		cyng::logger logger_;
 		cyng::mesh fabric_;
 		bus	bus_;
+		cyng::store store_;
+		db db_;
 		http_server http_server_;
 	};
 

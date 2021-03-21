@@ -7,7 +7,7 @@
 #ifndef SMF_MAIN_DB_H
 #define SMF_MAIN_DB_H
 
-#include <cfg.h>
+#include <smf/config/kv_store.h>
 
 #include <smf/config/schemes.h>
 
@@ -44,7 +44,7 @@ namespace smf {
 	private:
 		cyng::store& cache_;
 		cyng::logger logger_;
-		cfg cfg_;	
+		kv_store cfg_;
 		config::store_map store_map_;
 		boost::uuids::random_generator uuid_gen_;
 	};

@@ -137,7 +137,7 @@ namespace smf {
 		return cyng::make_param("server", cyng::make_tuple(
 			cyng::make_param("address", "0.0.0.0"),
 			cyng::make_param("port", 8080),
-			cyng::make_param("timeout", "15"),	//	seconds
+			cyng::make_param("timeout", 15),	//	seconds
 			cyng::make_param("max-upload-size", 1024 * 1024 * 10),	//	10 MB
 			cyng::make_param("document-root", root.string()),
 			cyng::make_param("server-nickname", "Coraline"),	//	x-servernickname

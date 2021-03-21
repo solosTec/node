@@ -12,11 +12,14 @@ namespace smf {
     namespace http {
 
         ws::ws(boost::asio::ip::tcp::socket&& socket
+            , boost::asio::io_context& ctx
             , cyng::logger logger
             , std::function<void(std::string)> on_msg)
         : ws_(std::move(socket))
+            , strand_(ctx)
             , logger_(logger)
             , on_msg_(on_msg)
+            , buffer_write_()
         {}
 
         void ws::on_accept(boost::beast::error_code ec)
@@ -106,11 +109,32 @@ namespace smf {
                 return;
             }
 
-            // Clear the buffer
-            buffer_.consume(buffer_.size());
+            BOOST_ASSERT(!buffer_write_.empty());
+            buffer_write_.pop_front();
 
-            // Do another read
-            do_read();
+            if (!buffer_write_.empty()) {
+                do_write();
+            }
+        }
+
+        void ws::push_msg(std::string msg) {
+            bool const b = buffer_write_.empty();
+            buffer_write_.push_back(msg);
+            if (b)	do_write();
+
+        }
+
+        void ws::do_write() {
+
+            BOOST_ASSERT(!buffer_write_.empty());
+
+            //
+            //	write actually data to socket
+            //
+            ws_.async_write(
+                boost::asio::buffer(buffer_write_.front(), buffer_write_.front().size()),
+                boost::asio::bind_executor(strand_, std::bind(&ws::on_write, shared_from_this(),
+                    std::placeholders::_1, std::placeholders::_2)));
         }
 
         // a function to select the most preferred protocol from a comma-separated list

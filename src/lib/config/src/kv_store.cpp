@@ -5,7 +5,7 @@
  *
  */
 
-#include <cfg.h>
+#include <smf/config/kv_store.h>
 
 #include <cyng/obj/container_cast.hpp>
  
@@ -16,22 +16,22 @@
 #include <boost/uuid/nil_generator.hpp>
 
 namespace smf {
-	cfg::cfg(cyng::store& cache, boost::uuids::uuid tag)
+	kv_store::kv_store(cyng::store& cache, boost::uuids::uuid tag)
 		: cache_(cache)
 		, tag_(tag)
 	{}
 
 
-	cyng::object cfg::get_obj(std::string path) {
+	cyng::object kv_store::get_obj(std::string path) {
 		return cache_.get_object("config", "val", path);
 	}
 
-	bool cfg::set_obj(std::string name, cyng::object&& obj) {
+	bool kv_store::set_obj(std::string name, cyng::object&& obj) {
 
 		bool r = false;
-		cache_.access([&](cyng::table* cfg) {
+		cache_.access([&](cyng::table* kv_store) {
 
-			r = cfg->merge(cyng::key_generator(name)
+			r = kv_store->merge(cyng::key_generator(name)
 				, cyng::data_generator(obj)
 				, 1u	//	only needed for insert operations
 				, tag_);	//	tag not available yet
@@ -40,11 +40,11 @@ namespace smf {
 		return r;
 	}
 
-	bool cfg::set_value(std::string name, cyng::object obj) {
+	bool kv_store::set_value(std::string name, cyng::object obj) {
 		return set_obj(name, std::move(obj));
 	}
 
-	boost::uuids::uuid cfg::get_tag() const {
+	boost::uuids::uuid kv_store::get_tag() const {
 		return tag_;
 	}
 
