@@ -318,7 +318,7 @@ namespace smf {
 			, table_name
 			, tag_);
 
-		cyng::exec(vm_, [=]() {
+		cyng::exec(vm_, [=, this]() {
 			bool const b = buffer_write_.empty();
 			cyng::add(buffer_write_, deq);
 			if (b)	do_write();
