@@ -823,12 +823,13 @@ set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_http smf_ipt smf_
 
 message(STATUS "** Target list                  : ${SMF_TARGET_LIST}")
 
+include(GNUInstallDirs)
 install(TARGETS ${SMF_TARGET_LIST}
     EXPORT SMFTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib/static
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BIN_DIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDE_DIR}
 )
 
 #
@@ -839,27 +840,20 @@ include(CMakePackageConfigHelpers)
 
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
-    VERSION "${PROJECT_VERSION}"
-    COMPATIBILITY AnyNewerVersion
+    VERSION 
+        "${PROJECT_VERSION}"
+    COMPATIBILITY 
+        AnyNewerVersion
 )
 
-export(EXPORT SMFTargets
-    FILE "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
-    NAMESPACE SMF::
-)
-
-set(ConfigPackageLocation lib/cmake/smf)
-
-install(
-    FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/node/NodeTargets.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
+install(EXPORT SMFTargets
+    FILE 
+        SMFTargets.cmake
+    NAMESPACE 
+        SMF::
     DESTINATION
-        ${ConfigPackageLocation}
-    COMPONENT
-        Devel
+        ${CMAKE_INSTALL_LIBDIR}/cmake/smf
 )
-
 
 #
 # CPack configuration

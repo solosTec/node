@@ -217,7 +217,7 @@ namespace smf {
 			, gen
 			, source);
 
-		cyng::exec(sp_->vm_, [=]() {
+		cyng::exec(sp_->vm_, [=, this]() {
 			bool const b = sp_->buffer_write_.empty();
 			cyng::add(sp_->buffer_write_, deq);
 			if (b)	sp_->do_write();
@@ -270,7 +270,7 @@ namespace smf {
 			, tbl->meta().get_name()
 			, trx);
 
-		cyng::exec(sp_->vm_, [=]() {
+		cyng::exec(sp_->vm_, [=, this]() {
 			bool const b = sp_->buffer_write_.empty();
 			cyng::add(sp_->buffer_write_, deq);
 			if (b)	sp_->do_write();
