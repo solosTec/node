@@ -89,13 +89,14 @@ namespace smf
 			parser_.read(std::begin(data), std::end(data));
 		}
 		else {
-			CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] not enabled");
+			CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] pass through");
 
 			//
 			//	send data to broker
 			//
 			for (auto target : targets_) {
-				target->dispatch("receive", cyng::make_tuple(data));
+				cyng::buffer_t tmp = data;	//	copy
+				target->dispatch("receive", cyng::make_tuple(std::move(tmp)));
 			}
 
 		}

@@ -92,6 +92,43 @@ namespace smf {
 				});
 		}
 
+		cyng::meta_store get_store_meterIEC() {
+			return cyng::meta_store("meterIEC"
+				, {
+					cyng::column("tag", cyng::TC_UUID),			//	same as meter/device
+					cyng::column("host", cyng::TC_STRING),		//	host/domain name
+					cyng::column("port", cyng::TC_UINT16),		//	listener port (outgoing)
+					cyng::column("interval", cyng::TC_SECOND),	//	pull cycle
+				}
+			, 1);
+
+		}
+		cyng::meta_sql get_table_meterIEC() {
+			return cyng::to_sql(get_store_meterIEC(), { 36
+				, 128	//	address
+				, 0		//	port
+				, 0
+				});
+
+		}
+
+		cyng::meta_store get_store_meterwMBus() {
+			return cyng::meta_store("meterwMBus"
+				, {
+					cyng::column("tag", cyng::TC_UUID),				//	same as meter/device
+					cyng::column("address", cyng::TC_IP_ADDRESS),	//	listener address
+					cyng::column("port", cyng::TC_UINT16),			//	listener port (incoming)
+				}
+			, 1);
+
+		}
+		cyng::meta_sql get_table_meterwMBus() {
+			return cyng::to_sql(get_store_meterwMBus(), { 36
+				, 0	//	address
+				, 0	//	port
+				});
+		}
+
 		cyng::meta_store get_store_gateway() {
 			return cyng::meta_store("gateway"
 				, {

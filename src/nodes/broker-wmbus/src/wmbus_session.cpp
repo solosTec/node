@@ -62,7 +62,7 @@ namespace smf {
 			[this, self](boost::system::error_code ec, std::size_t bytes_transferred) {
 
 				if (!ec) {
-					CYNG_LOG_DEBUG(logger_, "session [" << socket_.remote_endpoint() << "] received " << bytes_transferred << " bytes");
+					CYNG_LOG_DEBUG(logger_, "[session] received " << bytes_transferred << " bytes from [" << socket_.remote_endpoint() << "]");
 
 #ifdef _DEBUG_BROKER_WMBUS
 					{

@@ -27,6 +27,19 @@ namespace smf {
 		cyng::meta_sql get_table_meter();
 
 		/**
+		 * meterIEC/TMeterIEC
+		 */
+		cyng::meta_store get_store_meterIEC();
+		cyng::meta_sql get_table_meterIEC();
+
+		/**
+		 * meterwMBus/TMeterwMBus
+		 */
+		cyng::meta_store get_store_meterwMBus();
+		cyng::meta_sql get_table_meterwMBus();
+
+
+		/**
 		 * gateway/TGateway
 		 */
 		cyng::meta_store get_store_gateway();

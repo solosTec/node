@@ -151,6 +151,13 @@ namespace smf {
 						<< sql
 						<< std::endl;
 				}
+				else {
+					std::cout
+						<< "create: "
+						<< m.get_name()
+						<< std::endl;
+
+				}
 			}
 
 			return true;
@@ -166,6 +173,8 @@ namespace smf {
 		return {
 			config::get_table_device(),
 			config::get_table_meter(),
+			config::get_table_meterIEC(),
+			config::get_table_meterwMBus(),
 			config::get_table_gateway(),
 			config::get_table_lora(),
 			config::get_table_gui_user(),
