@@ -9,8 +9,8 @@
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/parse/json/json_parser.h>
 #include <cyng/io/ostream.h>
-
-//#include <iostream>
+#include <cyng/sys/memory.h>
+#include <cyng/rnd/rnd.hpp>
 
 #include <boost/uuid/uuid_io.hpp>
 
@@ -116,6 +116,13 @@ namespace smf {
 					response_subscribe_channel(pos->second.lock(), channel);
 
 				}
+				else if (boost::algorithm::equals(cmd, "update")) {
+					//	{"cmd":"update","channel":"sys.cpu.usage.total"}
+					auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+					CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] update channel " << channel);
+					response_update_channel(pos->second.lock(), channel);
+
+				}
 				else {
 					CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
 				}
@@ -192,9 +199,34 @@ namespace smf {
 
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "[HTTP] undefined channel " << name);
+				CYNG_LOG_WARNING(logger_, "[HTTP] subscribe undefined channel " << name);
 			}
 		}
+	}
+
+	void http_server::response_update_channel(ws_sptr wsp, std::string const& name) {
+
+		if (boost::algorithm::starts_with(name, "sys.cpu.usage.total"))	{
+			auto rnd = cyng::crypto::make_rnd(0, 100);
+			wsp->push_msg(json_update_channel(name, rnd()));
+		}
+		else if (boost::algorithm::starts_with(name, "sys.cpu.count"))	{
+			wsp->push_msg(json_update_channel(name, std::thread::hardware_concurrency()));
+		}
+		else if (boost::algorithm::starts_with(name, "sys.mem.virtual.total"))	{
+			wsp->push_msg(json_update_channel(name, cyng::sys::get_total_virtual_memory()));
+		}
+		else if (boost::algorithm::starts_with(name, "sys.mem.virtual.used"))	{
+			wsp->push_msg(json_update_channel(name, cyng::sys::get_used_virtual_memory()));
+		}
+		else if (boost::algorithm::starts_with(name, "sys.mem.virtual.stat"))	{
+			wsp->push_msg(json_update_channel(name, 402));
+		}
+		else
+		{
+			CYNG_LOG_WARNING(logger_, "[HTTP] update undefined channel " << name);
+		}
+
 	}
 
 	std::string json_insert_record(std::string channel, cyng::tuple_t&& tpl) {

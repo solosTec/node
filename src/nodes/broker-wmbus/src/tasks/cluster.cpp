@@ -36,7 +36,7 @@ namespace smf {
 		if (sp) {
 			sp->set_channel_name("connect", 0);
 			sp->set_channel_name("listen", 1);	//	wmbus_server
-			CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
+			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
 		}
 
 
@@ -44,7 +44,7 @@ namespace smf {
 
 	cluster::~cluster()
 	{
-#ifdef _DEBUG_IPT
+#ifdef _DEBUG_BROKER_WMBUS
 		std::cout << "cluster(~)" << std::endl;
 #endif
 	}
@@ -80,12 +80,13 @@ namespace smf {
 			CYNG_LOG_ERROR(logger_, "joining cluster failed");
 		}
 	}
-	void cluster::db_res_subscribe(std::string
-		, cyng::key_t  key
-		, cyng::data_t  data
+	void cluster::db_res_subscribe(std::string table_name
+		, cyng::key_t key
+		, cyng::data_t data
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 	}
+
 	void cluster::db_res_trx(std::string table_name
 		, bool trx) {
 

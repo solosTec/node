@@ -106,12 +106,15 @@ namespace smf {
 
 	std::vector< cyng::meta_store > get_store_meta_data() {
 		return {
+			config::get_config(),	//	"config"
 			config::get_store_device(),
+			config::get_store_meter(),
+			config::get_store_gateway(),
 			config::get_store_lora(),
 			config::get_store_gui_user(),
 			config::get_store_target(),
 			config::get_store_cluster(),
-			config::get_config()	//	"config"
+			config::get_store_location()
 		};
 	}
 

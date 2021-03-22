@@ -165,8 +165,11 @@ namespace smf {
 
 		return {
 			config::get_table_device(),
+			config::get_table_meter(),
+			config::get_table_gateway(),
 			config::get_table_lora(),
-			config::get_table_gui_user()
+			config::get_table_gui_user(),
+			config::get_table_location()
 		};
 	}
 

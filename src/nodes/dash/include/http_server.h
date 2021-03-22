@@ -68,6 +68,7 @@ namespace smf {
 		void on_msg(boost::uuids::uuid tag, std::string);
 
 		void response_subscribe_channel(ws_sptr, std::string const&);
+		void response_update_channel(ws_sptr, std::string const&);
 
 	private:
 		boost::uuids::uuid const tag_;

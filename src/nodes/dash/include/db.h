@@ -64,6 +64,11 @@ namespace smf {
 		 */
 		rel by_counter(std::string const& name) const;
 
+		/**
+		 * loop over all rel-entries
+		 */
+		void loop_rel(std::function<void(rel const&)>) const;
+
 	private:
 		void set_start_values(std::uint64_t max_upload_size
 			, std::string const& nickname
@@ -77,7 +82,7 @@ namespace smf {
 		cyng::logger logger_;
 		config::store_map store_map_;
 
-		using array_t = std::array<rel, 6>;
+		using array_t = std::array<rel, 9>;
 		static array_t const rel_;
 
 	};

@@ -12,7 +12,7 @@
 
 #include <cyng/log/logger.h>
 #include <cyng/store/db.h>
-//#include <cyng/db/session.h>
+//#include <cyng/store/slot_interface.h>
 
 #include <cyng/task/task_fwd.h>
 
@@ -23,7 +23,7 @@ namespace smf {
 	/**
 	 * make configuration changes persistent
 	 */
-	class persistence
+	class persistence //: public cyng::slot_interface
 	{
 		template <typename T >
 		friend class cyng::task;

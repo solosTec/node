@@ -7,6 +7,8 @@
 #ifndef SMF_TASK_WMBUS_SESSION_H
 #define SMF_TASK_WMBUS_SESSION_H
 
+#include <smf/mbus/radio/parser.h>
+
 #include <cyng/log/logger.h>
 #include <cyng/io/parser/parser.h>
 #include <cyng/vm/proxy.h>
@@ -45,6 +47,12 @@ namespace smf {
 		 * Buffer for outgoing data.
 		 */
 		std::deque<cyng::buffer_t>	buffer_write_;
+
+		/**
+		 * parser for wireless M-Bus data
+		 */
+		mbus::radio::parser parser_;
+
 
 	};
 

@@ -240,7 +240,7 @@ namespace smf {
 				<< SMF_SYSTEM_PROCESSOR
 				<< std::endl
 				<< "               : "
-				<< cyng::sys::get_processor_description()
+				<< cyng::sys::get_host_processor_description()
 				<< std::endl
 
 #if defined(__ARMEL__)
@@ -289,20 +289,20 @@ namespace smf {
 				<< std::endl
 
 				<< "logical cores  : "
-				<< cyng::sys::get_number_of_logical_cores()
+				<< cyng::sys::get_host_number_of_logical_cores()
 				<< std::endl
 
 				<< "physical cores : "
-				<< cyng::sys::get_number_of_physical_cores()
+				<< cyng::sys::get_host_number_of_physical_cores()
 				<< std::endl
 				
 				<< "virt. memory   : "
-				<< cyng::sys::get_total_virtual_memory()
+				<< cyng::sys::get_host_total_virtual_memory()
 				<< " MB"
 				<< std::endl
 				
 				<< "phys. memory   : "
-				<< cyng::sys::get_total_physical_memory()
+				<< cyng::sys::get_host_total_physical_memory()
 				<< " MB"
 				<< std::endl
 

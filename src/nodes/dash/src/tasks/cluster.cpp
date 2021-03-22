@@ -86,16 +86,19 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "cluster join complete");
+			CYNG_LOG_INFO(logger_, "[cluster] join complete");
 
 			//
 			//	Subscribe tables
 			//
-			bus_.req_subscribe("device");
+			db_.loop_rel([&](db::rel const& r)->void {
+				CYNG_LOG_INFO(logger_, "[cluster] subscribe table " << r.table_ << " (" << r.channel_ << ")");
+				bus_.req_subscribe(r.table_);
+			});
 
 		}
 		else {
-			CYNG_LOG_ERROR(logger_, "joining cluster failed");
+			CYNG_LOG_ERROR(logger_, "[cluster] joining failed");
 		}
 	}
 	void cluster::db_res_subscribe(std::string table_name

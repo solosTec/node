@@ -57,7 +57,7 @@ namespace smf
 
 	void persistence::connect() {
 
-		cfg_.get_cache().connect("cfg", cyng::make_slot(channel_));
+		cfg_.get_cache().connect_only("cfg", cyng::make_slot(channel_));
 		CYNG_LOG_INFO(logger_, "persistence connected");
 	}
 
@@ -81,7 +81,9 @@ namespace smf
 		CYNG_LOG_TRACE(logger_, "insert " << tbl->meta().get_name());
 		if (boost::algorithm::equals(tbl->meta().get_name(), "cfg")) {
 			CYNG_LOG_TRACE(logger_, key.at(0) << " := " << data.at(0));
-			storage_.cfg_insert(key.at(0), data.at(0));
+			if (!storage_.cfg_insert(key.at(0), data.at(0))) {
+				CYNG_LOG_WARNING(logger_, "[persistence] insert " << tbl->meta().get_name() << " <"<< key.at(0) << "> failed");
+			}
 		}
 		else {
 			// use default mechanism
@@ -100,8 +102,12 @@ namespace smf
 		if (boost::algorithm::equals(tbl->meta().get_name(), "cfg")) {
 			BOOST_ASSERT(key.size() == 1);
 			CYNG_LOG_TRACE(logger_, key.at(0) << " = " << attr.second);
-			storage_.cfg_update(key.at(0), attr.second);
-			distributor_.update(cyng::to_string(key.at(0)), attr.second);
+			if (storage_.cfg_update(key.at(0), attr.second)) {
+				distributor_.update(cyng::to_string(key.at(0)), attr.second);
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[persistence] update " << tbl->meta().get_name() << " failed");
+			}
 		}
 		else {
 			// use default mechanism
@@ -120,7 +126,9 @@ namespace smf
 		CYNG_LOG_TRACE(logger_, "remove " << tbl->meta().get_name());
 		if (boost::algorithm::equals(tbl->meta().get_name(), "cfg")) {
 			CYNG_LOG_TRACE(logger_, "remove config entry: " << key.at(0));
-			storage_.cfg_remove(key.at(0));
+			if (!storage_.cfg_remove(key.at(0))) {
+				CYNG_LOG_WARNING(logger_, "[persistence] remove " << tbl->meta().get_name() << " failed");
+			}
 		}
 		else {
 			// use default mechanism

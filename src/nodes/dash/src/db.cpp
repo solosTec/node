@@ -98,6 +98,12 @@ namespace smf {
 			;
 	}
 
+	void db::loop_rel(std::function<void(rel const&)> cb) const {
+		for (auto const& r : rel_) {
+			cb(r);
+		}
+	}
+
 	void db::db_res_subscribe(std::string table_name
 		, cyng::key_t  key
 		, cyng::data_t  data
@@ -130,11 +136,11 @@ namespace smf {
 		db::rel{"target", "status.target", "table.target.count"},
 		db::rel{"cluster", "status.cluster", "table.cluster.count"},
 		db::rel{"config", "config.system", ""},
-
-		//db::rel{"TGateway", "config.gateway", "table.gateway.count"},
-		//db::rel{"TMeter", "config.meter", "table.meter.count"},
+		db::rel{"gateway", "config.gateway", "table.gateway.count"},
+		db::rel{"meter", "config.meter", "table.meter.count"},
+		db::rel{"location", "config.location", "table.location.count"}
+		// 
 		//db::rel{"TMeterAccess", "config.meterwMBus", "table.meterwMBus.count"},
-		//db::rel{"TLocation", "config.location", "table.location.count"},
 		//db::rel{"TBridge", "config.bridge", "table.bridge.count"},
 		//db::rel{"_Session", "status.session", "table.session.count"},
 		//db::rel{"_Connection", "status.connection", "table.connection.count"},
@@ -154,10 +160,13 @@ namespace smf {
 	std::vector< cyng::meta_store > get_store_meta_data() {
 		return {
 			config::get_store_device(),
+			config::get_store_meter(),
+			config::get_store_gateway(),
 			config::get_store_lora(),
 			config::get_store_gui_user(),
 			config::get_store_target(),
 			config::get_store_cluster(),
+			config::get_store_location(),
 			config::get_config()	//	"config"
 		};
 	}

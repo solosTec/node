@@ -67,7 +67,7 @@ namespace smf
 
 			cyng::buffer_t restore_data(header const& h, cyng::buffer_t const& payload) {
 				cyng::buffer_t res(&h.data_[0], &h.data_[header::size() - 1]);	//	without frame type
-				res.insert(res.begin(), payload.begin(), payload.end());
+				res.insert(res.end(), payload.begin(), payload.end());
 				return res;
 			}
 		}

@@ -21,6 +21,18 @@ namespace smf {
 		cyng::meta_sql get_table_device();
 
 		/**
+		 * meter/TMeter
+		 */
+		cyng::meta_store get_store_meter();
+		cyng::meta_sql get_table_meter();
+
+		/**
+		 * gateway/TGateway
+		 */
+		cyng::meta_store get_store_gateway();
+		cyng::meta_sql get_table_gateway();
+
+		/**
 		 * loRaDevice/TLoRaDevice
 		 */
 		cyng::meta_store get_store_lora();
@@ -32,8 +44,16 @@ namespace smf {
 		cyng::meta_store get_store_gui_user();
 		cyng::meta_sql get_table_gui_user();
 
+		/**
+		 * location/TLocation
+		 */
+		cyng::meta_store get_store_location();
+		cyng::meta_sql get_table_location();
+
+
 		//
 		//	store only schemes
+		// -----------------------------------------------------------------+
 		//
 		cyng::meta_store get_store_target();
 

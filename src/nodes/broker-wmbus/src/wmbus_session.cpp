@@ -7,9 +7,17 @@
 #include <wmbus_session.h>
 #include <wmbus_server.h>
 
+#include <smf/mbus/flag_id.h>
+
 #include <cyng/log/record.h>
 
 #include <iostream>
+
+#ifdef _DEBUG_BROKER_WMBUS
+#include <iostream>
+#include <sstream>
+#include <cyng/io/hex_dump.hpp>
+#endif
 
 namespace smf {
 
@@ -18,12 +26,16 @@ namespace smf {
 		, logger_(logger)
 		, buffer_()
 		, buffer_write_()
+		, parser_([this](mbus::radio::header const& h, cyng::buffer_t const& data) {
+			auto const flag_id = h.get_manufacturer_code();
+			CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << h.get_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+		})
 	{
 	}
 
 	wmbus_session::~wmbus_session()
 	{
-#ifdef _DEBUG_MAIN
+#ifdef _DEBUG_BROKER_WMBUS
 		std::cout << "session(~)" << std::endl;
 #endif
 	}
@@ -52,9 +64,19 @@ namespace smf {
 				if (!ec) {
 					CYNG_LOG_DEBUG(logger_, "session [" << socket_.remote_endpoint() << "] received " << bytes_transferred << " bytes");
 
+#ifdef _DEBUG_BROKER_WMBUS
+					{
+						std::stringstream ss;
+						cyng::io::hex_dump<8> hd;
+						hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+						CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes:\n" << ss.str());
+					}
+#endif
+
 					//
 					//	let parse it
 					//
+					parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
 
 					//
 					//	continue reading

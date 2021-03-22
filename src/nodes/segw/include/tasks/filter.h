@@ -63,6 +63,9 @@ namespace smf
 		 */
 		cyng::logger logger_;
 
+		/**
+		 * blocklist with IP addresses
+		 */
 		cfg_blocklist	cfg_blocklist_;
 
 		/**
