@@ -326,6 +326,14 @@ target_compile_definitions(smf_cluster_bus
         $<$<CONFIG:Debug>:_DEBUG_CLUSTER>
 )
 
+#
+# -Wno-psabi for gcc > 6.0 && gcc < 7.1
+#
+target_compile_options(smf_cluster_bus 
+    PRIVATE 
+        $<$<AND:$<VERSION_GREATER_EQUAL:${CMAKE_CXX_COMPILER_VERSION},7.0>,$<CXX_COMPILER_ID:GNU>>:-Wno-psabi>
+)
+
 target_link_libraries(smf_cluster_bus 
     PRIVATE 
         Boost::boost 
@@ -793,7 +801,7 @@ message(STATUS "** CMAKE_CROSSCOMPILING         : ${CMAKE_CROSSCOMPILING}")
 if(${CMAKE_CROSSCOMPILING})
 
 	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
-    message(STATUS "** cross compile project    : ${OECP_NAME}")
+    message(STATUS "** cross compile project       : ${OECP_NAME}")
 
 	configure_file (
 		  "opkg/control.in"
@@ -819,7 +827,7 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
         PATTERN "*hpp"
 )
 
-set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_hci smf_http smf_ipt smf_ipt_bus smf_obis smf_serial_bus dash imega ipt segw store lora main modem setup mqtt)
+set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_hci smf_http smf_ipt smf_iec smf_ipt_bus smf_mbus smf_obis smf_serial_bus dash imega ipt segw store lora main modem setup mqtt)
 
 message(STATUS "** Target list                  : ${SMF_TARGET_LIST}")
 

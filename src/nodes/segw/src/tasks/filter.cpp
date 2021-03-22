@@ -89,12 +89,14 @@ namespace smf
 			parser_.read(std::begin(data), std::end(data));
 		}
 		else {
-			CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] pass through");
-
+			if (targets_.empty())	{
+				CYNG_LOG_WARNING(logger_, "[" << cfg_blocklist_.get_task_name() << "] has no targets - drop " << data.size() << " bytes");
+			}
 			//
 			//	send data to broker
 			//
 			for (auto target : targets_) {
+				CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] pass through " << target->get_name());
 				cyng::buffer_t tmp = data;	//	copy
 				target->dispatch("receive", cyng::make_tuple(std::move(tmp)));
 			}
