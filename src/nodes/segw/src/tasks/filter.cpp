@@ -31,12 +31,14 @@ namespace smf
 	: sigs_{
 			std::bind(&filter::stop, this, std::placeholders::_1),		//	0
 			std::bind(&filter::receive, this, std::placeholders::_1),	//	1
-			std::bind(&filter::reset_target_channels, this, std::placeholders::_1)	//	2
-		}
+			std::bind(&filter::reset_target_channels, this, std::placeholders::_1),	//	2
+			std::bind(&filter::update_statistics, this),	//	3
+	}
 		, channel_(wp)
 		, ctl_(ctl)
 		, logger_(logger)
 		, cfg_blocklist_(config, type)
+		, cfg_gpio_(config)
 		, parser_([this](mbus::radio::header const& h, cyng::buffer_t const& data) {
 			auto const flag_id = h.get_manufacturer_code();
 			CYNG_LOG_TRACE(logger_, "[filter] meter: " << h.get_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
@@ -52,6 +54,7 @@ namespace smf
 		})
 		, targets_()
 		, access_times_()
+		, accumulated_bytes_{ 0 }
 	{
 
 		//channel_.lock()->get_name()
@@ -59,8 +62,13 @@ namespace smf
 		if (sp) {
 			sp->set_channel_name("receive", 1);
 			sp->set_channel_name("reset-target-channels", 2);
+			sp->set_channel_name("update-statistics", 3);
 
 			CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "]  ready");
+
+			//	update statistics
+			if (sp)	sp->suspend(std::chrono::seconds(1), 3, cyng::make_tuple());
+
 		}
 	}
 
@@ -81,6 +89,7 @@ namespace smf
 		}
 #endif
 
+
 		if (cfg_blocklist_.is_enabled()) {
 
 			//
@@ -91,6 +100,9 @@ namespace smf
 		else {
 			if (targets_.empty())	{
 				CYNG_LOG_WARNING(logger_, "[" << cfg_blocklist_.get_task_name() << "] has no targets - drop " << data.size() << " bytes");
+			}
+			else {
+				accumulated_bytes_ += data.size();
 			}
 			//
 			//	send data to broker
@@ -120,6 +132,8 @@ namespace smf
 				//	passthrough
 				//
 				if (check_frequency(id)) {
+					accumulated_bytes_ += payload.size();
+
 					for (auto target : targets_) {
 						target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, payload)));
 					}
@@ -136,6 +150,7 @@ namespace smf
 				//	accept mode and listed
 				//	passthrough
 				//
+				accumulated_bytes_ += payload.size();
 				if (check_frequency(id)) {
 					for (auto target : targets_) {
 						target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, payload)));
@@ -208,6 +223,34 @@ namespace smf
 		
 	}
 
+	void filter::update_statistics() {
+		if (accumulated_bytes_ > 0) {
+			CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] update statistics: " << accumulated_bytes_);
+			if (accumulated_bytes_ < 128) {
+				flash_led(std::chrono::milliseconds(500), 2);
+			}
+			else if (accumulated_bytes_ < 512) {
+				flash_led(std::chrono::milliseconds(250), 4);
+			}
+			else {
+				flash_led(std::chrono::milliseconds(125), 8);
+			}
+			accumulated_bytes_ = 0;
+		}
+		auto sp = channel_.lock();
+		if (sp)	sp->suspend(std::chrono::seconds(1), 3, cyng::make_tuple());
+	}
 
+	void filter::flash_led(std::chrono::milliseconds ms, std::size_t count) {
+
+		//
+		//	LED control
+		//
+		if (cfg_gpio_.is_enabled()) {
+
+			auto const gpio_task_name = cfg_gpio::get_name(lmn_type::ETHERNET);
+			ctl_.get_registry().dispatch(gpio_task_name, "flashing", cyng::make_tuple(ms, count));
+		}
+	}
 }
 

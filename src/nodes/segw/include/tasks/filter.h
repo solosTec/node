@@ -10,6 +10,7 @@
 #include <cfg.h>
 #include <config/cfg_lmn.h>
 #include <config/cfg_blocklist.h>
+#include <config/cfg_gpio.h>
 
 #include <smf/mbus/radio/parser.h>
 
@@ -30,7 +31,8 @@ namespace smf
 		using signatures_t = std::tuple<
 			std::function<void(cyng::eod)>,
 			std::function<void(cyng::buffer_t)>,
-			std::function<void(std::string)>		//	reset_target_channels
+			std::function<void(std::string)>,		//	reset_target_channels
+			std::function<void(void)>		//	update_statistics
 		>;
 
 	public:
@@ -48,9 +50,12 @@ namespace smf
 		 */
 		void receive(cyng::buffer_t);
 		void reset_target_channels(std::string);
+		void update_statistics();
+		void flash_led(std::chrono::milliseconds, std::size_t);
 
 		void check(mbus::radio::header const& h, cyng::buffer_t const& data);
 		bool check_frequency(std::string const& id);
+
 
 	private:
 		signatures_t sigs_;
@@ -67,6 +72,7 @@ namespace smf
 		 * blocklist with IP addresses
 		 */
 		cfg_blocklist	cfg_blocklist_;
+		cfg_gpio cfg_gpio_;
 
 		/**
 		 * parser for wireless M-Bus data
@@ -79,6 +85,7 @@ namespace smf
 		std::vector<cyng::channel_ptr>	targets_;
 
 		std::map<std::string, std::chrono::system_clock::time_point>	access_times_;
+		std::size_t accumulated_bytes_;
 
 	};
 }

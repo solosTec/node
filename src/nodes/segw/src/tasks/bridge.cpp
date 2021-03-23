@@ -347,7 +347,12 @@ namespace smf {
 				//
 				//	start broker with addition information like timeout and login
 				//
-				auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, trg, timeout, login);
+				auto channel = ctl_.create_named_channel_with_ref<broker>(name
+					, ctl_
+					, logger_
+					, trg
+					, timeout
+					, login);
 				BOOST_ASSERT(channel->is_open());
 				channel->dispatch("start", cyng::make_tuple());
 
