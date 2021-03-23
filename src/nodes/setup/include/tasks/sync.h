@@ -4,8 +4,8 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_SETUP_TASK_STORAGE_JSON_H
-#define SMF_SETUP_TASK_STORAGE_JSON_H
+#ifndef SMF_SETUP_TASK_SYNC_H
+#define SMF_SETUP_TASK_SYNC_H
 
 
 #include <cyng/obj/intrinsics/eod.h>
@@ -23,30 +23,29 @@
 namespace smf {
 
 	class bus;
-	class storage_json
+	class sync
 	{
 		template <typename T >
 		friend class cyng::task;
 
 		using signatures_t = std::tuple<
-			std::function<void(void)>,
+			std::function<void(std::string)>,
 			std::function<void(cyng::eod)>
 		>;
 
 	public:
-		storage_json(std::weak_ptr<cyng::channel>
+		sync(std::weak_ptr<cyng::channel>
 			, cyng::controller&
-			, bus&
+			, bus& cluster_bus
 			, cyng::store& cache
-			, cyng::logger logger
-			, cyng::param_map_t&& cfg);
-		~storage_json();
+			, cyng::logger logger);
+		~sync();
 
 
 		void stop(cyng::eod);
 
 	private:
-		void open();
+		void start(std::string table_name);
 
 	private:
 		signatures_t sigs_;

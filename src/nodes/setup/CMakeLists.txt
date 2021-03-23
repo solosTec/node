@@ -7,7 +7,7 @@ target_compile_features(setup PRIVATE cxx_std_20)
 
 target_compile_definitions(setup
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_FRONTEND>
+        $<$<CONFIG:Debug>:_DEBUG_SETUP>
 )
 
 #

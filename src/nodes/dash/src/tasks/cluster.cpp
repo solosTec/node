@@ -127,6 +127,30 @@ namespace smf {
 				<< store_.size(table_name));
 		}
 	}
+	void cluster::db_res_update(std::string table_name
+		, cyng::key_t key
+		, cyng::attr_t attr
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
+
+		db_.db_res_update(table_name, key, attr, gen, tag);
+
+	}
+
+	void cluster::db_res_remove(std::string table_name
+		, cyng::key_t key
+		, boost::uuids::uuid tag) {
+
+		db_.db_res_remove(table_name, key, tag);
+
+	}
+
+	void cluster::db_res_clear(std::string table_name
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] clear: "
+			<< table_name);
+	}
 
 }
 

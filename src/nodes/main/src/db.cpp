@@ -22,9 +22,6 @@ namespace smf {
 		, uuid_gen_()
 	{}
 
-	db::~db()
-	{}
-
 	void db::init(cyng::param_map_t const& session_cfg) {
 
 		//
@@ -48,9 +45,30 @@ namespace smf {
 		//
 		//	insert test device
 		//
+		auto const tag_01 = uuid_gen_();
 		cache_.insert("device"
-			, cyng::key_generator(uuid_gen_())
+			, cyng::key_generator(tag_01)
 			, cyng::data_generator("name", "pwd", "msisdn", "descr", "id", "vFirmware", true, std::chrono::system_clock::now(), 6)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+
+		auto const tag_02 = uuid_gen_();
+		cache_.insert("device"
+			, cyng::key_generator(tag_02)
+			, cyng::data_generator("wM-Bus", "pwd", "msisdn", "descr", "id", "vFirmware", true, std::chrono::system_clock::now(), 6)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+
+		cache_.insert("meterIEC"
+			, cyng::key_generator(tag_01)
+			, cyng::data_generator("192.168.0.200", static_cast<std::uint16_t>(2000u),std::chrono::seconds(840))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+
+		
+		cache_.insert("meterwMBus"
+			, cyng::key_generator(tag_02)
+			, cyng::data_generator(boost::asio::ip::make_address("192.168.0.200"), static_cast<std::uint16_t>(6000u))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 #endif 
@@ -103,6 +121,9 @@ namespace smf {
 			, cfg_.get_tag());
 	}
 
+	bool db::remove_cluster_member(boost::uuids::uuid tag) {
+		return cache_.erase("cluster", cyng::key_generator(tag), cfg_.get_tag());
+	}
 
 	std::vector< cyng::meta_store > get_store_meta_data() {
 		return {

@@ -22,6 +22,7 @@
 
 namespace smf {
 
+	class bus;
 	class storage_xml
 	{
 		template <typename T >
@@ -35,7 +36,7 @@ namespace smf {
 	public:
 		storage_xml(std::weak_ptr<cyng::channel>
 			, cyng::controller&
-			, boost::uuids::uuid tag
+			, bus& cluster_bus
 			, cyng::store& cache
 			, cyng::logger logger
 			, cyng::param_map_t&& cfg);
@@ -51,7 +52,7 @@ namespace smf {
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
 		cyng::controller& ctl_;
-		boost::uuids::uuid const tag_;
+		bus& cluster_bus_;
 		cyng::logger logger_;
 		cyng::store& store_;
 	};

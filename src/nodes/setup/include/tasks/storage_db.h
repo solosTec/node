@@ -24,6 +24,7 @@
 
 namespace smf {
 
+	class bus;
 	class storage_db
 	{
 		template <typename T >
@@ -31,13 +32,14 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
+			std::function<void(void)>,	//	load_store
 			std::function<void(cyng::eod)>
 		>;
 
 	public:
 		storage_db(std::weak_ptr<cyng::channel>
 			, cyng::controller&
-			, boost::uuids::uuid tag
+			, bus&
 			, cyng::store& cache
 			, cyng::logger logger
 			, cyng::param_map_t&& cfg);
@@ -48,16 +50,16 @@ namespace smf {
 
 	private:
 		void open();
-		void init_store();
+		void init_stores();
 		void init_store(cyng::meta_store);
-		void load_store();
+		void load_stores();
 		void load_store(cyng::meta_sql const&);
 
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
 		cyng::controller& ctl_;
-		boost::uuids::uuid const tag_;
+		bus& cluster_bus_;
 		cyng::logger logger_;
 		cyng::db::session db_;
 		cyng::store& store_;

@@ -89,15 +89,55 @@ namespace smf {
 			CYNG_LOG_ERROR(logger_, "joining cluster failed");
 		}
 	}
-	void cluster::db_res_subscribe(std::string
-		, cyng::key_t  key
-		, cyng::data_t  data
+	void cluster::db_res_subscribe(std::string table_name
+		, cyng::key_t key
+		, cyng::data_t data
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] insert: "
+			<< table_name
+			<< " - "
+			<< data);
 	}
-	void cluster::db_res_trx(std::string
-		, bool) {
+
+	void cluster::db_res_trx(std::string table_name
+		, bool trx) {
+		CYNG_LOG_TRACE(logger_, "[cluster] trx: "
+			<< table_name
+			<< (trx ? " start" : " commit"));
 	}
+
+	void cluster::db_res_update(std::string table_name
+		, cyng::key_t key
+		, cyng::attr_t attr
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] update: "
+			<< table_name
+			<< " - "
+			<< key);
+
+	}
+
+	void cluster::db_res_remove(std::string table_name
+		, cyng::key_t key
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] remove: "
+			<< table_name
+			<< " - "
+			<< key);
+	}
+
+	void cluster::db_res_clear(std::string table_name
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] clear: "
+			<< table_name);
+	}
+
 
 }
 

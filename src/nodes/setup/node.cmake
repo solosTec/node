@@ -31,10 +31,12 @@ set (setup_tasks
   include/tasks/storage_db.h
   include/tasks/storage_json.h
   include/tasks/storage_xml.h
+#  include/tasks/sync.h
   src/tasks/cluster.cpp
   src/tasks/storage_db.cpp
   src/tasks/storage_json.cpp
   src/tasks/storage_xml.cpp
+#  src/tasks/sync.cpp
 )
 
 source_group("setup-assets" FILES ${setup_assets})

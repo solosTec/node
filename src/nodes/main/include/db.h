@@ -22,7 +22,6 @@ namespace smf {
 
 	public:
 		db(cyng::store& cache, cyng::logger, boost::uuids::uuid tag);
-		~db();
 
 		/**
 		 * fill store map and create all tables
@@ -37,6 +36,8 @@ namespace smf {
 			, cyng::version
 			, boost::asio::ip::tcp::endpoint
 			, cyng::pid);
+
+		bool remove_cluster_member(boost::uuids::uuid);
 
 	private:
 		void set_start_values(cyng::param_map_t const& session_cfg);

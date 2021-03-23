@@ -93,9 +93,18 @@ namespace smf {
 					logger_
 				), [this](session* s) {
 
+					BOOST_ASSERT(s != nullptr);
+
+					//
+					//	remove from cluster table
+					// 
+					CYNG_LOG_TRACE(logger_, "session [" << s->get_peer() << "] closed");
+					cache_.remove_cluster_member(s->get_peer());
+
 					//
 					//	update session counter
 					//
+					BOOST_ASSERT(session_counter_ != 0);
 					--session_counter_;
 					CYNG_LOG_TRACE(logger_, "session(s) running: " << session_counter_);
 

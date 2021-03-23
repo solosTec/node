@@ -32,6 +32,7 @@ namespace smf {
 			vm_.load(std::move(obj));
 		})
 		, slot_(cyng::make_slot(new slot(this)))
+		, peer_(boost::uuids::nil_uuid())
 	{
 		vm_ = init_vm(srv);
 		vm_.set_channel_name("cluster.req.login", 0);
@@ -50,6 +51,9 @@ namespace smf {
 #endif
 	}
 
+	boost::uuids::uuid session::get_peer() const {
+		return peer_;
+	}
 
 	void session::stop()
 	{
@@ -93,11 +97,22 @@ namespace smf {
 
 	cyng::vm_proxy session::init_vm(server* srv) {
 
-		std::function<void(std::string, std::string, cyng::pid, std::string, boost::uuids::uuid, cyng::version)> f1
-			= std::bind(&session::cluster_login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+		std::function<void(std::string
+			, std::string
+			, cyng::pid
+			, std::string
+			, boost::uuids::uuid
+			, cyng::version)> f1 = std::bind(&session::cluster_login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
 
-		std::function<void(std::string, boost::uuids::uuid tag)> f2 = std::bind(&session::db_req_subscribe, this, std::placeholders::_1, std::placeholders::_2);
-		std::function<void(std::string)> f3 = std::bind(&session::db_req_insert, this, std::placeholders::_1);
+		std::function<void(std::string
+			, boost::uuids::uuid tag)> f2 = std::bind(&session::db_req_subscribe, this, std::placeholders::_1, std::placeholders::_2);
+
+		std::function<void(std::string
+			, cyng::key_t
+			, cyng::data_t
+			, std::uint64_t
+			, boost::uuids::uuid)> f3 = std::bind(&session::db_req_insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+
 		std::function<void(std::string)> f4 = std::bind(&session::db_req_update, this, std::placeholders::_1);
 		std::function<void(std::string)> f5 = std::bind(&session::db_req_remove, this, std::placeholders::_1);
 		std::function<void(std::string)> f6 = std::bind(&session::db_req_clear, this, std::placeholders::_1);
@@ -154,6 +169,8 @@ namespace smf {
 		//
 		//	insert into cluster table
 		//
+		BOOST_ASSERT(!tag.is_nil());
+		peer_ = tag;
 		srvp_->cache_.insert_cluster_member(tag, node, v, socket_.remote_endpoint(), n);
 
 		//
@@ -176,7 +193,20 @@ namespace smf {
 		srvp_->store_.connect(table, slot_);
 
 	}
-	void session::db_req_insert(std::string table) {
+	void session::db_req_insert(std::string const& table_name
+		, cyng::key_t key
+		, cyng::data_t data
+		, std::uint64_t generation
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_INFO(logger_, "session ["
+			<< socket_.remote_endpoint()
+			<< "] insert "
+			<< table_name
+			<< " - "
+			<< data);
+
+		srvp_->store_.insert(table_name, key, data, generation, tag);
 
 	}
 	void session::db_req_update(std::string table) {
@@ -231,29 +261,74 @@ namespace smf {
 			, cyng::key_t const& key
 			, cyng::attr_t const& attr
 			, std::uint64_t gen
-			, boost::uuids::uuid tag) {
+			, boost::uuids::uuid source) {
 		//
-		//	ToDo: send to subscriber
+		//	send update to subscriber
 		//
+		CYNG_LOG_TRACE(sp_->logger_, "forward update ["
+			<< tbl->meta().get_name()
+			<< "]");
+
+		auto const deq = cyng::serialize_invoke("db.res.update"
+			, tbl->meta().get_name()
+			, key
+			, attr
+			, gen
+			, source);
+
+		cyng::exec(sp_->vm_, [=, this]() {
+			bool const b = sp_->buffer_write_.empty();
+			cyng::add(sp_->buffer_write_, deq);
+			if (b)	sp_->do_write();
+			});
 
 		return true;
 	}
 
 	bool session::slot::forward(cyng::table const* tbl
 			, cyng::key_t const& key
-			, boost::uuids::uuid tag) {
+			, boost::uuids::uuid source) {
 		//
-		//	ToDo: send to subscriber
+		//	send remove to subscriber
 		//
+		CYNG_LOG_TRACE(sp_->logger_, "forward remove ["
+			<< tbl->meta().get_name()
+			<< "]");
+
+		auto const deq = cyng::serialize_invoke("db.res.remove"
+			, tbl->meta().get_name()
+			, key
+			, source);
+
+		cyng::exec(sp_->vm_, [=, this]() {
+			bool const b = sp_->buffer_write_.empty();
+			cyng::add(sp_->buffer_write_, deq);
+			if (b)	sp_->do_write();
+			});
 
 		return true;
 	}
 
-	bool session::slot::forward(cyng::table const*
-			, boost::uuids::uuid) {
+	bool session::slot::forward(cyng::table const* tbl
+			, boost::uuids::uuid source) {
+
 		//
-		//	ToDo: send to subscriber
+		//	send clear to subscriber
 		//
+
+		CYNG_LOG_TRACE(sp_->logger_, "forward clear ["
+			<< tbl->meta().get_name()
+			<< "]");
+
+		auto const deq = cyng::serialize_invoke("db.res.clear"
+			, tbl->meta().get_name()
+			, source);
+
+		cyng::exec(sp_->vm_, [=, this]() {
+			bool const b = sp_->buffer_write_.empty();
+			cyng::add(sp_->buffer_write_, deq);
+			if (b)	sp_->do_write();
+			});
 
 		return true;
 	}

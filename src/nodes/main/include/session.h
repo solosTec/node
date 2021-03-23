@@ -52,12 +52,18 @@ namespace smf {
 		private:
 			session* sp_;
 		};
+
 	public:
 		session(boost::asio::ip::tcp::socket socket, server*, cyng::logger);
 		~session();
 
 		void start();
 		void stop();
+
+		/**
+		 * @return tag of remote session
+		 */
+		boost::uuids::uuid get_peer() const;
 
 	private:
 		cyng::vm_proxy init_vm(server*);
@@ -73,7 +79,11 @@ namespace smf {
 			, cyng::version v);
 
 		void db_req_subscribe(std::string, boost::uuids::uuid tag);
-		void db_req_insert(std::string);
+		void db_req_insert(std::string const& table_name
+			, cyng::key_t key
+			, cyng::data_t data
+			, std::uint64_t generation
+			, boost::uuids::uuid);
 		void db_req_update(std::string);
 		void db_req_remove(std::string);
 		void db_req_clear(std::string);
@@ -97,6 +107,11 @@ namespace smf {
 		cyng::io::parser parser_;
 
 		cyng::slot_ptr	slot_;
+
+		/**
+		 * remote session tag
+		 */
+		boost::uuids::uuid peer_;
 
 	};
 

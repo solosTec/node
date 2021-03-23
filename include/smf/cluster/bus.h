@@ -38,6 +38,18 @@ namespace smf
 		virtual void db_res_trx(std::string
 			, bool) = 0;
 
+		virtual void db_res_update(std::string
+			, cyng::key_t key
+			, cyng::attr_t attr
+			, std::uint64_t gen
+			, boost::uuids::uuid tag) = 0;
+
+		virtual void db_res_remove(std::string
+			, cyng::key_t key
+			, boost::uuids::uuid tag) = 0;
+
+		virtual void db_res_clear(std::string
+			, boost::uuids::uuid tag) = 0;
 	};
 
 	/**
@@ -63,20 +75,22 @@ namespace smf
 		void start();
 		void stop();
 
+		boost::uuids::uuid get_tag() const;
+
 		//
 		//	cluster client functions
 		//
 		void req_subscribe(std::string table_name);
 		void req_db_insert(std::string const& table_name
-			, cyng::vector_t const& key
-			, cyng::vector_t const&
+			, cyng::key_t  key
+			, cyng::data_t  data
 			, std::uint64_t generation);
 		void req_db_update(std::string const&
-			, cyng::vector_t const&
-			, cyng::vector_t const&
+			, cyng::key_t  key
+			, cyng::data_t 
 			, std::uint64_t generation);
 		void req_db_remove(std::string const&
-			, cyng::vector_t const&);
+			, cyng::key_t);
 		void req_db_clear(std::string const&);
 
 	private:

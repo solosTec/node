@@ -62,6 +62,18 @@ namespace smf {
 			, boost::uuids::uuid tag) override;
 		virtual void db_res_trx(std::string
 			, bool) override;
+		virtual void db_res_update(std::string
+			, cyng::key_t key
+			, cyng::attr_t attr
+			, std::uint64_t gen
+			, boost::uuids::uuid tag) override;
+
+		virtual void db_res_remove(std::string
+			, cyng::key_t key
+			, boost::uuids::uuid tag) override;
+
+		virtual void db_res_clear(std::string
+			, boost::uuids::uuid tag) override;
 
 	private:
 		signatures_t sigs_;

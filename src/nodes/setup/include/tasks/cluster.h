@@ -63,6 +63,23 @@ namespace smf {
 			, boost::uuids::uuid tag) override;
 		virtual void db_res_trx(std::string
 			, bool) override;
+		virtual void db_res_update(std::string
+			, cyng::key_t key
+			, cyng::attr_t attr
+			, std::uint64_t gen
+			, boost::uuids::uuid tag) override;
+
+		virtual void db_res_remove(std::string
+			, cyng::key_t key
+			, boost::uuids::uuid tag) override;
+
+		virtual void db_res_clear(std::string
+			, boost::uuids::uuid tag) override;
+
+		/**
+		 * Upload table cache to main node
+		 */
+		void upload(std::string const& table_name);
 
 	private:
 		signatures_t sigs_;
@@ -78,7 +95,7 @@ namespace smf {
 
 	cyng::channel_ptr start_data_store(cyng::controller& ctl
 		, cyng::logger logger
-		, boost::uuids::uuid
+		, bus&
 		, cyng::store& cache
 		, std::string const& storage_type
 		, cyng::param_map_t&&);

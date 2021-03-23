@@ -23,9 +23,6 @@ namespace smf {
 		, store_map_()
 	{}
 
-	db::~db()
-	{}
-
 	void db::init(std::uint64_t max_upload_size
 		, std::string const& nickname
 		, std::chrono::seconds timeout)
@@ -118,6 +115,36 @@ namespace smf {
 		cache_.insert(table_name, key, data, gen, tag);
 	}
 
+	void db::db_res_update(std::string table_name
+		, cyng::key_t key
+		, cyng::attr_t attr
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] db_res_update: "
+			<< table_name
+			<< " - "
+			<< key);
+
+		//cache_.update(table_name
+		//	, key
+		//	, attr
+		//	, gen
+		//	, tag );
+
+	}
+
+	void db::db_res_remove(std::string table_name
+		, cyng::key_t  key
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] db_res_remove: "
+			<< table_name
+			<< " - "
+			<< key);
+
+		cache_.erase(table_name, key, tag);
+	}
 
 	db::rel::rel(std::string table, std::string channel, std::string counter)
 		: table_(table)

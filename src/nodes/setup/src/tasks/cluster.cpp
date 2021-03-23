@@ -38,7 +38,7 @@ namespace smf {
 		, store_()
 		, storage_(start_data_store(ctl
 			, logger
-			, tag
+			, bus_
 			, store_
 			, storage_type
 			, std::move(cfg_db)))
@@ -52,7 +52,7 @@ namespace smf {
 
 	cluster::~cluster()
 	{
-#ifdef _DEBUG_IPT
+#ifdef _DEBUG_SETUP
 		std::cout << "cluster(~)" << std::endl;
 #endif
 	}
@@ -90,8 +90,10 @@ namespace smf {
 		if (success) {
 			CYNG_LOG_INFO(logger_, "cluster join complete");
 
-			bus_.req_subscribe("device");
-
+			//
+			//	load data from database and synchronize data with main node
+			//
+			storage_->dispatch("load", cyng::make_tuple());
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "joining cluster failed");
@@ -100,44 +102,134 @@ namespace smf {
 	}
 
 	void cluster::db_res_subscribe(std::string table_name
-		, cyng::key_t  key
-		, cyng::data_t  data
+		, cyng::key_t key
+		, cyng::data_t data
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "cluster response subscribe: " 
+		CYNG_LOG_TRACE(logger_, "[cluster] response subscribe: " 
 			<< table_name
-		<< " #"
-		<< gen
-		<< " <- "
-		<< data);
+			<< " #"
+			<< gen
+			<< " <- "
+			<< data);
+
+		store_.access([&](cyng::table* tbl) {
+			if (tbl->exist(key)) {
+
+				CYNG_LOG_INFO(logger_, "[cluster] remove duplicate: "
+					<< table_name
+					<< " <"
+					<< key
+					<< ">");
+				tbl->erase(key, tag);
+			}
+			else {
+
+				CYNG_LOG_INFO(logger_, "[cluster] make persistent: "
+					<< table_name
+					<< " <"
+					<< key
+					<< ">");
+
+				//
+				//	ToDo: insert into database (persistence layer)
+				//
+
+			}
+			}, cyng::access::write(table_name));
 	}
+
 	void cluster::db_res_trx(std::string table_name
 		, bool trx) {
 
-		CYNG_LOG_INFO(logger_, "cluster trx: "
+		CYNG_LOG_INFO(logger_, "[cluster] trx: "
 			<< table_name
 			<< (trx ? " start" : " commit"));
+
+		if (!trx) {
+
+			CYNG_LOG_INFO(logger_, "[cluster] upload: "
+				<< table_name
+				<< " #"
+				<< store_.size(table_name)
+				<< " records");
+
+			upload(table_name);
+
+		}
 	}
 
+	void cluster::db_res_update(std::string table_name
+		, cyng::key_t key
+		, cyng::attr_t attr
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] update: "
+			<< table_name
+			<< " - "
+			<< key);
+
+	}
+
+	void cluster::db_res_remove(std::string table_name
+		, cyng::key_t key
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] remove: "
+			<< table_name
+			<< " - "
+			<< key);
+	}
+
+	void cluster::db_res_clear(std::string table_name
+		, boost::uuids::uuid tag) {
+
+		CYNG_LOG_TRACE(logger_, "[cluster] clear: "
+			<< table_name);
+	}
+
+	void cluster::upload(std::string const& table_name) {
+		store_.access([&](cyng::table* tbl) {
+			tbl->loop([&](cyng::record&& rec, std::size_t idx) {
+
+				CYNG_LOG_TRACE(logger_, "[cluster] upload: "
+					<< table_name
+					<< " - "
+					<< rec.to_string());
+
+				bus_.req_db_insert(table_name, rec.key(), rec.data(), rec.get_generation());
+				return true;
+				});
+
+			//
+			//	discard cache
+			//
+			CYNG_LOG_TRACE(logger_, "[cluster] discard: "
+				<< table_name);
+			tbl->clear(tag_);
+
+			}, cyng::access::write(table_name));
+	}
 
 	cyng::channel_ptr start_data_store(cyng::controller& ctl
 		, cyng::logger logger
-		, boost::uuids::uuid tag
+		, bus& cluster_bus
 		, cyng::store& cache
 		, std::string const& storage_type
 		, cyng::param_map_t&& cfg) {
 
 		if (boost::algorithm::equals(storage_type, "DB")) {
-			return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, tag, cache, logger, std::move(cfg));
+			return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, cluster_bus, cache, logger, std::move(cfg));
 		}
 		else if (boost::algorithm::equals(storage_type, "XML")) {
 			CYNG_LOG_ERROR(logger, "XML data storage not available");
-			return ctl.create_named_channel_with_ref<storage_xml>("storage", ctl, tag, cache, logger, std::move(cfg));
+			return ctl.create_named_channel_with_ref<storage_xml>("storage", ctl, cluster_bus, cache, logger, std::move(cfg));
 		}
 		else if (boost::algorithm::equals(storage_type, "JSON")) {
 			CYNG_LOG_ERROR(logger, "JSON data storage not available");
-			return ctl.create_named_channel_with_ref<storage_json>("storage", ctl, tag, cache, logger, std::move(cfg));
+			return ctl.create_named_channel_with_ref<storage_json>("storage", ctl, cluster_bus, cache, logger, std::move(cfg));
 		}
 
 		CYNG_LOG_FATAL(logger, "no data storage configured");

@@ -5,13 +5,16 @@
  *
  */
 #include <tasks/storage_db.h>
+//#include <tasks/sync.h>
 
 #include <smf/config/schemes.h>
+#include <smf/cluster/bus.h>
 #include <smf.h>
 
-#include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
+#include <cyng/task/channel.h>
+#include <cyng/task/controller.h>
 #include <cyng/sql/sql.hpp>
 #include <cyng/db/details/statement_interface.h>
 #include <cyng/db/storage.h>
@@ -27,17 +30,18 @@ namespace smf {
 
 	storage_db::storage_db(cyng::channel_weak wp
 		, cyng::controller& ctl
-		, boost::uuids::uuid tag
+		, bus& cluster_bus
 		, cyng::store& cache
 		, cyng::logger logger
 		, cyng::param_map_t&& cfg)
 	: sigs_{ 
 		std::bind(&storage_db::open, this),
-		std::bind(&storage_db::stop, this, std::placeholders::_1),
-		}
+		std::bind(&storage_db::load_stores, this),
+		std::bind(&storage_db::stop, this, std::placeholders::_1)
+	}
 		, channel_(wp)
 		, ctl_(ctl)
-		, tag_(tag)
+		, cluster_bus_(cluster_bus)
 		, logger_(logger)
 		, db_(cyng::db::create_db_session(cfg))
 		, store_(cache)
@@ -46,6 +50,7 @@ namespace smf {
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("open", 0);
+			sp->set_channel_name("load", 1);
 
 			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
@@ -53,8 +58,8 @@ namespace smf {
 
 	storage_db::~storage_db()
 	{
-#ifdef _DEBUG_IPT
-		std::cout << "cluster(~)" << std::endl;
+#ifdef _DEBUG_SETUP
+		std::cout << "storage_db(~)" << std::endl;
 #endif
 	}
 
@@ -68,12 +73,11 @@ namespace smf {
 			//	database is open fill cache
 			//
 			CYNG_LOG_INFO(logger_, "database is open");
-			init_store();
-			load_store();
+			init_stores();
 		}
 	}
 
-	void storage_db::init_store() {
+	void storage_db::init_stores() {
 		auto const tbl_vec = get_sql_meta_data();
 		for (auto const& ms : tbl_vec) {
 			init_store(cyng::to_mem(ms));
@@ -90,7 +94,7 @@ namespace smf {
 		}
 	}
 
-	void storage_db::load_store() {
+	void storage_db::load_stores() {
 		//
 		//	load data from database
 		//
@@ -116,7 +120,7 @@ namespace smf {
 				tbl->insert(rec.key()
 					, rec.data()
 					, rec.get_generation()
-					, tag_);
+					, cluster_bus_.get_tag());
 
 				return true;
 			});
@@ -124,12 +128,18 @@ namespace smf {
 
 		CYNG_LOG_INFO(logger_, "table [" << m.get_name() << "] holds " << store_.size(m.get_name()) << " entries");
 
+		//
+		//	start sync task
+		//
+		//auto channel = ctl_.create_named_channel_with_ref<sync>(m.get_name(), ctl_, cluster_bus_, store_, logger_);
+		//channel->dispatch("start", cyng::make_tuple(m.get_name()));
+		cluster_bus_.req_subscribe(m.get_name());
 	}
 
 	void storage_db::stop(cyng::eod)
 	{
 		db_.close();
-		CYNG_LOG_WARNING(logger_, "[storage] stopped");
+		CYNG_LOG_WARNING(logger_, "task [" << channel_.lock()->get_name() << "] stopped");
 	}
 
 

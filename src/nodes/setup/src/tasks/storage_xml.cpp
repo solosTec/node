@@ -5,6 +5,9 @@
  *
  */
 #include <tasks/storage_xml.h>
+
+#include <smf/cluster/bus.h>
+
 #include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
@@ -15,7 +18,7 @@ namespace smf {
 
 	storage_xml::storage_xml(cyng::channel_weak wp
 		, cyng::controller& ctl
-		, boost::uuids::uuid tag
+		, bus& cluster_bus
 		, cyng::store& cache
 		, cyng::logger logger
 		, cyng::param_map_t&& cfg)
@@ -25,7 +28,7 @@ namespace smf {
 		}
 		, channel_(wp)
 		, ctl_(ctl)
-		, tag_(tag)
+		, cluster_bus_(cluster_bus)
 		, logger_(logger)
 		, store_(cache)
 	{
@@ -38,8 +41,8 @@ namespace smf {
 
 	storage_xml::~storage_xml()
 	{
-#ifdef _DEBUG_IPT
-		std::cout << "cluster(~)" << std::endl;
+#ifdef _DEBUG_SETUP
+		std::cout << "storage_xml(~)" << std::endl;
 #endif
 	}
 
@@ -49,7 +52,7 @@ namespace smf {
 
 	void storage_xml::stop(cyng::eod)
 	{
-		CYNG_LOG_WARNING(logger_, "stop storage_xml task(" << tag_ << ")");
+		CYNG_LOG_WARNING(logger_, "task [" << channel_.lock()->get_name() << "] stopped");
 	}
 
 

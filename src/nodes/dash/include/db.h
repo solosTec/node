@@ -37,7 +37,6 @@ namespace smf {
 		db(cyng::store& cache
 			, cyng::logger
 			, boost::uuids::uuid tag);
-		~db();
 
 		void init(std::uint64_t max_upload_size
 			, std::string const& nickname
@@ -47,6 +46,16 @@ namespace smf {
 			, cyng::key_t  key
 			, cyng::data_t  data
 			, std::uint64_t gen
+			, boost::uuids::uuid tag);
+
+		void db_res_update(std::string table_name
+			, cyng::key_t key
+			, cyng::attr_t attr
+			, std::uint64_t gen
+			, boost::uuids::uuid tag);
+
+		void db_res_remove(std::string table_name
+			, cyng::key_t  key
 			, boost::uuids::uuid tag);
 
 		/**

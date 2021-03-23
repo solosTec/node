@@ -4,7 +4,7 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#include <tasks/storage_json.h>
+#include <tasks/sync.h>
 
 #include <smf/cluster/bus.h>
 
@@ -16,15 +16,14 @@
 
 namespace smf {
 
-	storage_json::storage_json(cyng::channel_weak wp
+	sync::sync(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, bus& cluster_bus
 		, cyng::store& cache
-		, cyng::logger logger
-		, cyng::param_map_t&& cfg)
+		, cyng::logger logger)
 	: sigs_{
-		std::bind(&storage_json::open, this),
-		std::bind(&storage_json::stop, this, std::placeholders::_1),
+		std::bind(&sync::start, this, std::placeholders::_1),
+		std::bind(&sync::stop, this, std::placeholders::_1),
 		}
 		, channel_(wp)
 		, ctl_(ctl)
@@ -34,29 +33,28 @@ namespace smf {
 	{
 		auto sp = channel_.lock();
 		if (sp) {
-			sp->set_channel_name("open", 0);
+			sp->set_channel_name("start", 0);
 			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
 
 	}
 
-	storage_json::~storage_json()
+	sync::~sync()
 	{
 #ifdef _DEBUG_SETUP
-		std::cout << "storage_json(~)" << std::endl;
+		std::cout << "sync(~)" << std::endl;
 #endif
 	}
 
-	void storage_json::open() {
-
+	void sync::start(std::string table_name) {
+		CYNG_LOG_INFO(logger_, "task [" << channel_.lock()->get_name() << "] sync");
+		//cluster_bus_.req_subscribe(table_name);
 	}
 
-	void storage_json::stop(cyng::eod)
+	void sync::stop(cyng::eod)
 	{
 		CYNG_LOG_WARNING(logger_, "task [" << channel_.lock()->get_name() << "] stopped");
 	}
-
-
 }
 
 
