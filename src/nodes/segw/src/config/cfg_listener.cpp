@@ -43,6 +43,9 @@ namespace smf {
 		std::string login_path(std::uint8_t type) {
 			return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "login");
 		}
+		std::string timeout_path(std::uint8_t type) {
+			return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "timeout");
+		}
 	}
 
 	boost::asio::ip::address cfg_listener::get_address() const {
@@ -52,6 +55,11 @@ namespace smf {
 	std::uint16_t cfg_listener::get_port() const {
 		return cfg_.get_value(port_path(get_index()), static_cast<std::uint16_t>(12000));
 	}
+
+	std::chrono::seconds cfg_listener::get_timeout() const {
+		return cfg_.get_value(timeout_path(get_index()), std::chrono::seconds(30));
+	}
+
 
 	boost::asio::ip::tcp::endpoint cfg_listener::get_ep() const {
 		return { get_address(), get_port() };
@@ -79,6 +87,10 @@ namespace smf {
 
 	bool cfg_listener::set_enabled(bool b) const {
 		return cfg_.set_value(enabled_path(get_index()), b);
+	}
+
+	bool cfg_listener::set_timeout(std::chrono::seconds timeout) const {
+		return cfg_.set_value(timeout_path(get_index()), timeout);
 	}
 
 	std::ostream& operator<<(std::ostream& os, cfg_listener const& cfg) {

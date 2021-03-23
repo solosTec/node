@@ -268,6 +268,15 @@ namespace smf {
 					else if (boost::algorithm::equals(param.first, "blocklist")) {
 						cmd_merge_blocklist(pm, cfg.get_lmn_type(), cyng::container_cast<cyng::param_map_t>(param.second));
 					}
+					else if (boost::algorithm::equals(param.first, "max-readout-frequency")) {
+						auto const max_freq = cyng::numeric_cast<std::uint32_t>(param.second, 20);
+						cfg_blocklist blocklist_cfg(cfg_, cfg.get_lmn_type());
+						blocklist_cfg.set_max_frequency(std::chrono::seconds(max_freq));
+						cyng::merge(pm, { "max-readout-frequency", port.first, param.first }, cyng::make_object("ok"));
+					}
+					else if (boost::algorithm::equals(param.first, "loop")) {
+						//	unused attribute
+					}
 					else {
 						cyng::merge(pm, { "serial-port", port.first, param.first }, cyng::make_object("error: unknown attribute"));
 					}
@@ -299,6 +308,10 @@ namespace smf {
 				}
 				else if (boost::algorithm::equals(param.first, "pwd")) {
 					auto const pwd = cyng::value_cast(param.second, "");
+				}
+				else if (boost::algorithm::equals(param.first, "timeout")) {
+					auto const timeout = cyng::numeric_cast<std::uint32_t>(param.second, 30);
+					cfg.set_timeout(std::chrono::seconds(timeout));
 				}
 				else {
 					cyng::merge(pm, { "nms", "listener", param.first }, cyng::make_object("error: unknown NMS/listener attribute"));
@@ -407,6 +420,7 @@ namespace smf {
 							("enabled", rs485_listener.is_enabled())
 							("address", rs485_listener.get_address())
 							("port", rs485_listener.get_port())
+							("timeout", rs485_listener.get_timeout().count())
 							())
 						("loop", cyng::param_map_factory
 							("timeout", 60)
@@ -423,6 +437,7 @@ namespace smf {
 						("baudrate", wmbus.get_baud_rate().value())
 						("protocol", wmbus.get_protocol())
 						("broker", wmbus_broker.get_target_vector())
+						("max-readout-frequency", wmbus_blocklist.get_max_frequency())
 						("blocklist", cyng::param_map_factory
 							("enabled", wmbus_blocklist.is_enabled())
 							("mode", wmbus_blocklist.get_mode())

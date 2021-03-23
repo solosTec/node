@@ -44,6 +44,7 @@
 
 		 boost::asio::ip::address get_address() const;
 		 std::uint16_t get_port() const;
+		 std::chrono::seconds get_timeout() const;
 
 		 boost::asio::ip::tcp::endpoint get_ep() const;
 
@@ -52,6 +53,7 @@
 
 		 bool set_login(bool) const;
 		 bool set_enabled(bool) const;
+		 bool set_timeout(std::chrono::seconds) const;
 
 		 constexpr static char root[] = "listener";
 

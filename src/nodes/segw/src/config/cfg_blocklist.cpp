@@ -117,6 +117,10 @@ namespace smf {
 		return cfg_.set_value(mode_path(get_index()), mode);
 	}
 
+	bool cfg_blocklist::set_max_frequency(std::chrono::seconds sec) const {
+		return cfg_.set_value(period_path(get_index()), sec);
+	}
+
 	bool cfg_blocklist::set_list(std::vector<std::string> const& vec) const {
 
 		std::size_t idx{ 0 };

@@ -60,6 +60,8 @@
 
 		 bool set_enabled(bool) const;
 		 bool set_mode(std::string) const;
+		 bool set_max_frequency(std::chrono::seconds) const;
+
 		 bool set_list(std::vector<std::string> const&) const;
 
 		 constexpr static char root[] = "blocklist";
