@@ -66,8 +66,14 @@ namespace smf
 
 			CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "]  ready");
 
+			//	stop blinking
+			if (cfg_gpio_.is_enabled()) {
+
+				auto const gpio_task_name = cfg_gpio::get_name(lmn_type::ETHERNET);
+				ctl_.get_registry().dispatch(gpio_task_name, "turn", cyng::make_tuple(false));
+			}
 			//	update statistics
-			if (sp)	sp->suspend(std::chrono::seconds(1), 3, cyng::make_tuple());
+			sp->suspend(std::chrono::seconds(1), 3, cyng::make_tuple());
 
 		}
 	}
