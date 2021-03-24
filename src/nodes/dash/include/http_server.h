@@ -50,6 +50,21 @@ namespace smf {
 		void stop(cyng::eod);
 		void listen(boost::asio::ip::tcp::endpoint);
 
+		/**
+		 * notify to remove an element 
+		 */
+		void notify_remove(std::string channel, cyng::key_t, boost::uuids::uuid tag);
+
+		/**
+		 * notify to clear a table
+		 */
+		void notify_clear(std::string channel, boost::uuids::uuid tag);
+
+		/**
+		 * notify to insert an element
+		 */
+		void notify_insert(std::string channel, cyng::record&&, boost::uuids::uuid tag);
+
 	private:
 		/**
 		 * incoming connection
@@ -67,8 +82,9 @@ namespace smf {
 		 */
 		void on_msg(boost::uuids::uuid tag, std::string);
 
-		void response_subscribe_channel(ws_sptr, std::string const&);
+		bool response_subscribe_channel(ws_sptr, std::string const&);
 		void response_update_channel(ws_sptr, std::string const&);
+
 
 	private:
 		boost::uuids::uuid const tag_;
@@ -94,6 +110,7 @@ namespace smf {
 		 */
 		std::map<boost::uuids::uuid, ws_wptr>	ws_map_;
 
+
 	};
 
 	/**
@@ -110,6 +127,9 @@ namespace smf {
 
 	std::string json_insert_record(std::string channel, cyng::tuple_t&&);
 	std::string json_load_icon(std::string channel, bool);
+	std::string json_delete_record(std::string channel, cyng::key_t const&);
+	std::string json_clear_table(std::string channel);
+	
 
 }
 

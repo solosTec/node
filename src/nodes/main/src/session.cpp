@@ -38,9 +38,9 @@ namespace smf {
 		vm_.set_channel_name("cluster.req.login", 0);
 		vm_.set_channel_name("db.req.subscribe", 1);
 		vm_.set_channel_name("db.req.insert", 2);
-		vm_.set_channel_name("db.req.update", 3);
-		vm_.set_channel_name("db.req.remove", 4);
-		vm_.set_channel_name("db.req.clear", 5);
+		vm_.set_channel_name("db.req.update", 3);	//	table merge()
+		vm_.set_channel_name("db.req.remove", 4);	//	table erase()
+		vm_.set_channel_name("db.req.clear", 5);	//	table clear()
 		vm_.set_channel_name("pty.connect", 6);
 	}
 
@@ -97,29 +97,13 @@ namespace smf {
 
 	cyng::vm_proxy session::init_vm(server* srv) {
 
-		std::function<void(std::string
-			, std::string
-			, cyng::pid
-			, std::string
-			, boost::uuids::uuid
-			, cyng::version)> f1 = std::bind(&session::cluster_login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
-
-		std::function<void(std::string
-			, boost::uuids::uuid tag)> f2 = std::bind(&session::db_req_subscribe, this, std::placeholders::_1, std::placeholders::_2);
-
-		std::function<void(std::string
-			, cyng::key_t
-			, cyng::data_t
-			, std::uint64_t
-			, boost::uuids::uuid)> f3 = std::bind(&session::db_req_insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
-
-		std::function<void(std::string)> f4 = std::bind(&session::db_req_update, this, std::placeholders::_1);
-		std::function<void(std::string)> f5 = std::bind(&session::db_req_remove, this, std::placeholders::_1);
-		std::function<void(std::string)> f6 = std::bind(&session::db_req_clear, this, std::placeholders::_1);
-
-		std::function<void(std::string)> f7 = std::bind(&server::pty_connect, srv, std::placeholders::_1);
-		return srv->fabric_.create_proxy(f1, f2, f3, f4, f5, f6, f7);
-
+		return srv->fabric_.create_proxy(get_vm_func_cluster_req_login(this)
+			, get_vm_func_db_req_subscribe(this)
+			, get_vm_func_db_req_insert(this)
+			, get_vm_func_db_req_update(this)
+			, get_vm_func_db_req_remove(this)
+			, get_vm_func_db_req_clear(this)
+			, get_vm_func_pty_connect(srv));
 	}
 
 	void session::do_write()
@@ -209,13 +193,20 @@ namespace smf {
 		srvp_->store_.insert(table_name, key, data, generation, tag);
 
 	}
-	void session::db_req_update(std::string table) {
+	void session::db_req_update(std::string const& table_name
+		, cyng::key_t key
+		, cyng::data_t data
+		, std::uint64_t generation
+		, boost::uuids::uuid) {
 
 	}
-	void session::db_req_remove(std::string table) {
+	void session::db_req_remove(std::string const& table_name
+		, cyng::key_t key
+		, boost::uuids::uuid source) {
 
 	}
-	void session::db_req_clear(std::string table) {
+	void session::db_req_clear(std::string const& table_name
+		, boost::uuids::uuid source) {
 
 	}
 
@@ -240,7 +231,7 @@ namespace smf {
 			<< tbl->meta().get_name()
 			<< "]");
 
-		auto const deq = cyng::serialize_invoke("db.res.subscribe"
+		auto const deq = cyng::serialize_invoke("db.res.insert"
 			, tbl->meta().get_name()
 			, key
 			, data
@@ -262,6 +253,7 @@ namespace smf {
 			, cyng::attr_t const& attr
 			, std::uint64_t gen
 			, boost::uuids::uuid source) {
+
 		//
 		//	send update to subscriber
 		//
@@ -353,6 +345,62 @@ namespace smf {
 
 		return true;
 	}
+
+	std::function<void(std::string
+		, std::string
+		, cyng::pid
+		, std::string
+		, boost::uuids::uuid
+		, cyng::version)> 
+	session::get_vm_func_cluster_req_login(session* ptr) {
+		return std::bind(&session::cluster_login, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+	}
+
+	std::function<void(std::string
+		, boost::uuids::uuid tag)>  
+	session::get_vm_func_db_req_subscribe(session* ptr) {
+		return std::bind(&session::db_req_subscribe, ptr, std::placeholders::_1, std::placeholders::_2);
+	}
+
+	std::function<void(std::string
+		, cyng::key_t
+		, cyng::data_t
+		, std::uint64_t
+		, boost::uuids::uuid)>
+	session::get_vm_func_db_req_insert(session* ptr) {
+		return std::bind(&session::db_req_insert, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+	}
+
+	//	"db.req.update" aka merge()
+	std::function<void(std::string
+		, cyng::key_t
+		, cyng::data_t
+		, std::uint64_t
+		, boost::uuids::uuid)>
+	session::get_vm_func_db_req_update(session* ptr) {
+		return std::bind(&session::db_req_update, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+	}
+
+	//	"db.req.remove"
+	std::function<void(std::string
+		, cyng::key_t
+		, boost::uuids::uuid)>
+	session::get_vm_func_db_req_remove(session* ptr) {
+		return std::bind(&session::db_req_remove, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+	}
+
+	//	"db.req.clear"
+	std::function<void(std::string
+		, boost::uuids::uuid)>
+	session::get_vm_func_db_req_clear(session* ptr) {
+		return std::bind(&session::db_req_clear, ptr, std::placeholders::_1, std::placeholders::_2);
+	}
+
+	std::function<void(std::string)>
+	session::get_vm_func_pty_connect(server* ptr) {
+		return std::bind(&server::pty_connect, ptr, std::placeholders::_1);
+	}
+
 
 }
 

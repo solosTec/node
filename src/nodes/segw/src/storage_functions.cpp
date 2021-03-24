@@ -665,7 +665,7 @@ namespace smf {
 				insert_config_record(stmt
 					, cyng::to_path(cfg::sep, "listener", std::to_string(counter), listener.first)
 					, cyng::make_object(listener_port)
-					, "listener port " + std::to_string(listener_port));
+					, "default listener port " + std::to_string(listener_port));
 			}
 			else if (boost::algorithm::equals(listener.first, "address")) {
 				boost::system::error_code ec;

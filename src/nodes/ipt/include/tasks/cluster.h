@@ -55,7 +55,7 @@ namespace smf {
 		//
 		virtual cyng::mesh* get_fabric() override;
 		virtual void on_login(bool) override;
-		virtual void db_res_subscribe(std::string
+		virtual void db_res_insert(std::string
 			, cyng::key_t  key
 			, cyng::data_t  data
 			, std::uint64_t gen

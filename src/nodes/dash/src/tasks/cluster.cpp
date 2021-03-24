@@ -5,8 +5,9 @@
  *
  */
 #include <tasks/cluster.h>
-#include <cyng/task/channel.h>
+#include <notifier.h>
 
+#include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
 
@@ -44,6 +45,7 @@ namespace smf {
 			, document_root
 			, db_
 			, std::move(blocklist))
+		//, notifier_(std::make_shared<notifier>(db_, http_server_, logger))
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -52,7 +54,10 @@ namespace smf {
 			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
 		}
 
-		db_.init(max_upload_size, nickname, timeout);
+		auto slot = std::static_pointer_cast<cyng::slot_interface>(std::make_shared<notifier>(db_, http_server_, logger));
+		db_.init(max_upload_size, nickname, timeout, slot);
+
+
 	}
 
 	cluster::~cluster()
@@ -101,15 +106,21 @@ namespace smf {
 			CYNG_LOG_ERROR(logger_, "[cluster] joining failed");
 		}
 	}
-	void cluster::db_res_subscribe(std::string table_name
+
+	void cluster::db_res_insert(std::string table_name
 		, cyng::key_t  key
 		, cyng::data_t  data
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		db_.db_res_subscribe(table_name, key, data, gen, tag);
+		db_.res_insert(table_name
+			, key
+			, data
+			, gen
+			, tag);
 
 	}
+
 	void cluster::db_res_trx(std::string table_name
 		, bool trx) {
 
@@ -133,7 +144,7 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		db_.db_res_update(table_name, key, attr, gen, tag);
+		db_.res_update(table_name, key, attr, gen, tag);
 
 	}
 
@@ -141,7 +152,9 @@ namespace smf {
 		, cyng::key_t key
 		, boost::uuids::uuid tag) {
 
-		db_.db_res_remove(table_name, key, tag);
+		db_.res_remove(table_name
+			, key
+			, tag);
 
 	}
 
@@ -150,6 +163,10 @@ namespace smf {
 
 		CYNG_LOG_TRACE(logger_, "[cluster] clear: "
 			<< table_name);
+
+		db_.res_clear(table_name
+			, tag);
+
 	}
 
 }

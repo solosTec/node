@@ -50,11 +50,13 @@ namespace smf {
             // This indicates that the websocket_session was closed
             if (ec == boost::beast::websocket::error::closed) {
                 CYNG_LOG_TRACE(logger_, "ws closed");
+                on_msg_("{\"cmd\": \"exit\", \"reason\": \"ws closed\"}");
                 return;
             }
 
             if (ec) {
                 CYNG_LOG_WARNING(logger_, "ws read " << ec << ": " << ec.message());
+                on_msg_("{\"cmd\": \"exit\", \"reason\": \"" + ec.message() + "\"}");
                 return;
             }
 
@@ -106,6 +108,7 @@ namespace smf {
 
             if (ec) {
                 CYNG_LOG_WARNING(logger_, "ws write " << ec << ": " << ec.message());
+                on_msg_("{\"cmd\": \"exit\", \"reason\": \"" + ec.message() + "\"}");
                 return;
             }
 
@@ -118,10 +121,14 @@ namespace smf {
         }
 
         void ws::push_msg(std::string msg) {
-            bool const b = buffer_write_.empty();
-            buffer_write_.push_back(msg);
-            if (b)	do_write();
 
+            boost::asio::post(strand_, [this, msg]() {
+
+                bool const b = buffer_write_.empty();
+                buffer_write_.push_back(msg);
+                if (b)	do_write();
+
+                });
         }
 
         void ws::do_write() {

@@ -15,8 +15,10 @@
 
 namespace smf {
 
+	class notifier;
 	class db
 	{
+		friend class notifier;
 	public:
 		/**
 		 * releation between table name, channel name and table size channel
@@ -40,22 +42,26 @@ namespace smf {
 
 		void init(std::uint64_t max_upload_size
 			, std::string const& nickname
-			, std::chrono::seconds timeout);
+			, std::chrono::seconds timeout
+			, cyng::slot_ptr);
 
-		void db_res_subscribe(std::string table_name
+		void res_insert(std::string table_name
 			, cyng::key_t  key
 			, cyng::data_t  data
 			, std::uint64_t gen
 			, boost::uuids::uuid tag);
 
-		void db_res_update(std::string table_name
+		void res_update(std::string table_name
 			, cyng::key_t key
 			, cyng::attr_t attr
 			, std::uint64_t gen
 			, boost::uuids::uuid tag);
 
-		void db_res_remove(std::string table_name
+		void res_remove(std::string table_name
 			, cyng::key_t  key
+			, boost::uuids::uuid tag);
+
+		void res_clear(std::string table_name
 			, boost::uuids::uuid tag);
 
 		/**
@@ -78,6 +84,15 @@ namespace smf {
 		 */
 		void loop_rel(std::function<void(rel const&)>) const;
 
+		void add_to_subscriptions(std::string const& channel, boost::uuids::uuid tag);
+
+		/**
+		 * remove (a ws) from the subscription list
+		 *
+		 * @return number of affected subscriptions
+		 */
+		std::size_t remove_from_subscription(boost::uuids::uuid tag);
+
 	private:
 		void set_start_values(std::uint64_t max_upload_size
 			, std::string const& nickname
@@ -93,6 +108,13 @@ namespace smf {
 
 		using array_t = std::array<rel, 9>;
 		static array_t const rel_;
+
+		/** @brief channel list
+		 *
+		 * Each channel can be subscribed by a multitude of channels
+		 * channel => ws
+		 */
+		std::multimap<std::string, boost::uuids::uuid>	subscriptions_;
 
 	};
 

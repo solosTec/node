@@ -29,7 +29,7 @@ namespace smf
 
 		virtual void on_login(bool) = 0;
 
-		virtual void db_res_subscribe(std::string
+		virtual void db_res_insert(std::string
 			, cyng::key_t  key
 			, cyng::data_t  data
 			, std::uint64_t gen
@@ -85,12 +85,18 @@ namespace smf
 			, cyng::key_t  key
 			, cyng::data_t  data
 			, std::uint64_t generation);
+
+		/**
+		 * triggers a merge() on the receiver side
+		 */
 		void req_db_update(std::string const&
 			, cyng::key_t  key
 			, cyng::data_t 
 			, std::uint64_t generation);
+
 		void req_db_remove(std::string const&
 			, cyng::key_t);
+
 		void req_db_clear(std::string const&);
 
 	private:
@@ -114,6 +120,44 @@ namespace smf
 		 */
 		cyng::vm_proxy init_vm(bus_interface*);
 
+		//
+		//	generate VM channel functions
+		//
+
+		static std::function<void(bool)> 
+		get_vm_func_on_login(bus_interface*);
+
+		//	subscribe (1)
+		static std::function<void(std::string
+			, cyng::key_t key
+			, cyng::data_t data
+			, std::uint64_t gen
+			, boost::uuids::uuid tag)> 
+		get_vm_func_db_res_insert(bus_interface*);
+
+		//	trx (2)
+		static std::function<void(std::string
+			, bool)>
+		get_vm_func_db_res_trx(bus_interface*);
+
+		//	update (3)
+		static std::function<void(std::string
+			, cyng::key_t key
+			, cyng::attr_t attr
+			, std::uint64_t gen
+			, boost::uuids::uuid tag)> 
+		get_vm_func_db_res_update(bus_interface*);
+
+		//	remove (4)
+		static std::function<void(std::string
+			, cyng::key_t key
+			, boost::uuids::uuid tag)> 
+		get_vm_func_db_res_remove(bus_interface*);
+
+		//	clear (5)
+		static std::function<void(std::string
+			, boost::uuids::uuid tag)> 
+		get_vm_func_db_res_clear(bus_interface*);
 
 	private:
 		boost::asio::io_context& ctx_;

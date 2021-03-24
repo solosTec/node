@@ -79,14 +79,83 @@ namespace smf {
 			, cyng::version v);
 
 		void db_req_subscribe(std::string, boost::uuids::uuid tag);
+
 		void db_req_insert(std::string const& table_name
 			, cyng::key_t key
 			, cyng::data_t data
 			, std::uint64_t generation
 			, boost::uuids::uuid);
-		void db_req_update(std::string);
-		void db_req_remove(std::string);
-		void db_req_clear(std::string);
+
+		/**
+		 * table merge()
+		 */
+		void db_req_update(std::string const& table_name
+			, cyng::key_t key
+			, cyng::data_t data
+			, std::uint64_t generation
+			, boost::uuids::uuid);
+
+		/**
+		 * table erase()
+		 */
+		void db_req_remove(std::string const& table_name
+			, cyng::key_t key
+			, boost::uuids::uuid source);
+
+		/**
+		 * table clear()
+		 */
+		void db_req_clear(std::string const& table_name
+			, boost::uuids::uuid source);
+
+		//
+		//	generate VM channel functions
+		//
+
+		//	"cluster.req.login"
+		static std::function<void(std::string
+			, std::string
+			, cyng::pid
+			, std::string
+			, boost::uuids::uuid
+			, cyng::version)> 
+		get_vm_func_cluster_req_login(session*); 
+
+		//	"db.req.subscribe"
+		static std::function<void(std::string
+			, boost::uuids::uuid tag)> 
+		get_vm_func_db_req_subscribe(session*); 
+
+		//	"db.req.insert"
+		static std::function<void(std::string
+			, cyng::key_t
+			, cyng::data_t
+			, std::uint64_t
+			, boost::uuids::uuid)> 
+		get_vm_func_db_req_insert(session*);
+
+		//	"db.req.update" aka merge()
+		static std::function<void(std::string
+			, cyng::key_t
+			, cyng::data_t
+			, std::uint64_t
+			, boost::uuids::uuid)> 
+		get_vm_func_db_req_update(session*);
+
+		//	"db.req.remove"
+		static std::function<void(std::string
+			, cyng::key_t
+			, boost::uuids::uuid)> 
+		get_vm_func_db_req_remove(session*);
+
+		//	"db.req.clear"
+		static std::function<void(std::string
+			, boost::uuids::uuid)> 
+		get_vm_func_db_req_clear(session*);
+
+		static std::function<void(std::string)> 
+		get_vm_func_pty_connect(server*);
+
 
 	private:
 		boost::asio::ip::tcp::socket socket_;

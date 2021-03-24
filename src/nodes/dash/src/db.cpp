@@ -21,11 +21,13 @@ namespace smf {
 		, cache_(cache)
 		, logger_(logger)
 		, store_map_()
+		, subscriptions_()
 	{}
 
 	void db::init(std::uint64_t max_upload_size
 		, std::string const& nickname
-		, std::chrono::seconds timeout)
+		, std::chrono::seconds timeout
+		, cyng::slot_ptr slot)
 	{
 		//
 		//	initialize cache
@@ -35,6 +37,7 @@ namespace smf {
 			CYNG_LOG_INFO(logger_, "init table [" << m.get_name() << "]");
 			store_map_.emplace(m.get_name(), m);
 			cache_.create_table(m);
+			cache_.connect_only(m.get_name(), slot);
 		}
 		BOOST_ASSERT(vec.size() == cache_.size());
 
@@ -101,13 +104,13 @@ namespace smf {
 		}
 	}
 
-	void db::db_res_subscribe(std::string table_name
+	void db::res_insert(std::string table_name
 		, cyng::key_t  key
 		, cyng::data_t  data
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] db_res_subscribe: "
+		CYNG_LOG_TRACE(logger_, "[cluster] db.res.insert: "
 			<< table_name
 			<< " - "
 			<< data);
@@ -115,17 +118,24 @@ namespace smf {
 		cache_.insert(table_name, key, data, gen, tag);
 	}
 
-	void db::db_res_update(std::string table_name
+	void db::res_update(std::string table_name
 		, cyng::key_t key
 		, cyng::attr_t attr
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] db_res_update: "
+		CYNG_LOG_TRACE(logger_, "[cluster] db.res.update: "
 			<< table_name
 			<< " - "
 			<< key);
 
+		//
+		//	ToDo: notify all subscriptions
+		// 
+
+		//
+		// ToDo: implement in cyng::db
+		// 
 		//cache_.update(table_name
 		//	, key
 		//	, attr
@@ -134,16 +144,63 @@ namespace smf {
 
 	}
 
-	void db::db_res_remove(std::string table_name
+	void db::res_remove(std::string table_name
 		, cyng::key_t  key
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] db_res_remove: "
+		CYNG_LOG_TRACE(logger_, "[cluster] db.res.remove: "
 			<< table_name
 			<< " - "
 			<< key);
 
+		//
+		//	remove from cache
+		//
 		cache_.erase(table_name, key, tag);
+	}
+
+	void db::res_clear(std::string table_name
+		, boost::uuids::uuid tag) {
+
+		////
+		////	notify all subscriptions
+		//// 
+		//auto const r = by_table(table_name);
+		//if (!r.empty()) {
+
+		//	auto range = subscriptions_.equal_range(r.channel_);
+		//	auto const count = std::distance(range.first, range.second);
+		//	CYNG_LOG_TRACE(logger_, "update channel (clear): " << r.channel_ << " of " << count << " ws");
+		//	for (auto pos = range.first; pos != range.second; ++pos) {
+		//		notify(r.channel_, pos->second);
+		//	}
+		//}
+
+		//
+		//	clear table
+		//
+		cache_.clear(table_name, tag);
+
+	}
+
+	void db::add_to_subscriptions(std::string const& channel, boost::uuids::uuid tag) {
+		subscriptions_.emplace(channel, tag);
+	}
+
+	std::size_t db::remove_from_subscription(boost::uuids::uuid tag) {
+
+		std::size_t counter{ 0 };
+		for (auto pos = subscriptions_.begin(); pos != subscriptions_.end(); )
+		{
+			if (pos->second == tag) {
+				pos = subscriptions_.erase(pos);
+				++counter;
+			}
+			else {
+				++pos;
+			}
+		}
+		return counter;
 	}
 
 	db::rel::rel(std::string table, std::string channel, std::string counter)

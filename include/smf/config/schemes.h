@@ -80,6 +80,14 @@ namespace smf {
 		 */
 		cyng::meta_store get_config();
 
+		//
+		//	uplinks
+		//
+		cyng::meta_store get_store_uplink_lora();
+		cyng::meta_store get_store_uplink_iec();
+		cyng::meta_store get_store_uplink_wmbus();
+
+
 		/**
 		 * container to store meta data of in-memory tables
 		 */

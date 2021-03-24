@@ -47,7 +47,7 @@ namespace smf {
 	{
 		vm_ = init_vm(bip);
 		vm_.set_channel_name("cluster.res.login", 0);
-		vm_.set_channel_name("db.res.subscribe", 1);
+		vm_.set_channel_name("db.res.insert", 1);
 		vm_.set_channel_name("db.res.trx", 2);
 		vm_.set_channel_name("db.res.update", 3);
 		vm_.set_channel_name("db.res.remove", 4);
@@ -56,36 +56,13 @@ namespace smf {
 
 	cyng::vm_proxy bus::init_vm(bus_interface* bip) {
 
-		std::function<void(bool)> f1 = std::bind(&bus_interface::on_login, bip, std::placeholders::_1);
-
-		//	insert (1)
-		std::function<void(std::string
-			, cyng::key_t key
-			, cyng::data_t data
-			, std::uint64_t gen
-			, boost::uuids::uuid tag)> f2 = std::bind(&bus_interface::db_res_subscribe, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
-
-		//	trx (2)
-		std::function<void(std::string
-			, bool)> f3 = std::bind(&bus_interface::db_res_trx, bip, std::placeholders::_1, std::placeholders::_2);
-
-		//	update (3)
-		std::function<void(std::string
-			, cyng::key_t key
-			, cyng::attr_t attr
-			, std::uint64_t gen
-			, boost::uuids::uuid tag)> f4 = std::bind(&bus_interface::db_res_update, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
-
-		//	remove (4)
-		std::function<void(std::string
-			, cyng::key_t key
-			, boost::uuids::uuid tag)> f5 = std::bind(&bus_interface::db_res_remove, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-
-		//	clear (5)
-		std::function<void(std::string
-			, boost::uuids::uuid tag)> f6 = std::bind(&bus_interface::db_res_clear, bip, std::placeholders::_1, std::placeholders::_2);
-
-		return bip->get_fabric()->create_proxy(f1, f2, f3, f4, f5, f6);
+		return bip->get_fabric()->create_proxy(
+			get_vm_func_on_login(bip),			//	"cluster.res.login"
+			get_vm_func_db_res_insert(bip),	//	"db.res.insert"
+			get_vm_func_db_res_trx(bip),		//	"db.res.trx"
+			get_vm_func_db_res_update(bip),		//	"db.res.update"
+			get_vm_func_db_res_remove(bip),		//	"db.res.remove"
+			get_vm_func_db_res_clear(bip));		//	"db.res.clear"
 
 	}
 
@@ -377,6 +354,9 @@ namespace smf {
 		, cyng::data_t data
 		, std::uint64_t generation) {
 
+		//
+		//	triggers a merge() on the receiver side
+		//
 		auto const deq = cyng::serialize_invoke("db.req.update"
 			, table_name
 			, key
@@ -420,6 +400,46 @@ namespace smf {
 
 	}
 
+	std::function<void(bool)>
+	bus::get_vm_func_on_login(bus_interface* bip) {
+		return std::bind(&bus_interface::on_login, bip, std::placeholders::_1);
+	}
 
+	std::function<void(std::string
+		, cyng::key_t key
+		, cyng::data_t data
+		, std::uint64_t gen
+		, boost::uuids::uuid tag)>
+	bus::get_vm_func_db_res_insert(bus_interface* bip) {
+		return std::bind(&bus_interface::db_res_insert, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+	}
+
+	std::function<void(std::string
+		, bool)>
+	bus::get_vm_func_db_res_trx(bus_interface* bip) {
+		return std::bind(&bus_interface::db_res_trx, bip, std::placeholders::_1, std::placeholders::_2);
+	}
+
+	std::function<void(std::string
+		, cyng::key_t key
+		, cyng::attr_t attr
+		, std::uint64_t gen
+		, boost::uuids::uuid tag)>
+	bus::get_vm_func_db_res_update(bus_interface* bip) {
+		return std::bind(&bus_interface::db_res_update, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+	}
+
+	std::function<void(std::string
+		, cyng::key_t key
+		, boost::uuids::uuid tag)>
+	bus::get_vm_func_db_res_remove(bus_interface* bip) {
+		return std::bind(&bus_interface::db_res_remove, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+	}
+
+	std::function<void(std::string
+		, boost::uuids::uuid tag)>
+	bus::get_vm_func_db_res_clear(bus_interface* bip) {
+		return std::bind(&bus_interface::db_res_clear, bip, std::placeholders::_1, std::placeholders::_2);
+	}
 }
 

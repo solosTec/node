@@ -8,12 +8,14 @@ set (dash_cpp
     src/controller.cpp
     src/http_server.cpp
     src/db.cpp
+    src/notifier.cpp
 )
     
 set (dash_h
     include/controller.h
     include/http_server.h
     include/db.h
+    include/notifier.h
 )
 
 if(WIN32)

@@ -101,7 +101,7 @@ namespace smf {
 
 	}
 
-	void cluster::db_res_subscribe(std::string table_name
+	void cluster::db_res_insert(std::string table_name
 		, cyng::key_t key
 		, cyng::data_t data
 		, std::uint64_t gen

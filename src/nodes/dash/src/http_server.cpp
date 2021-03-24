@@ -110,10 +110,40 @@ namespace smf {
 			auto pos = ws_map_.find(tag);
 			if (pos != ws_map_.end() && !pos->second.expired()) {
 
-				if (boost::algorithm::equals(cmd, "subscribe")) {
+				if (boost::algorithm::equals(cmd, "exit")) {
+					auto const reason = cyng::value_cast(reader["reason"].get(), "uups");
+					CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] closed: " << reason);
+
+					//
+					//	remove from subscription list
+					//
+					auto const count = db_.remove_from_subscription(tag);
+					CYNG_LOG_INFO(logger_, "[HTTP] ws [" << tag << "] removed from " << count << " subscriptions");
+
+					//
+					//	remove from ws list
+					//
+					ws_map_.erase(pos);
+
+					//
+					//	iterator invalid!
+					//
+				}
+				else if (boost::algorithm::equals(cmd, "subscribe")) {
 					auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
 					CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] subscribes channel " << channel);
-					response_subscribe_channel(pos->second.lock(), channel);
+
+					//
+					//	send response
+					//
+					BOOST_ASSERT(pos->second.lock());
+					if (response_subscribe_channel(pos->second.lock(), channel)) {
+
+						//
+						//	add to subscription list
+						//
+						db_.add_to_subscriptions(channel, tag);
+					}
 
 				}
 				else if (boost::algorithm::equals(cmd, "update")) {
@@ -138,7 +168,8 @@ namespace smf {
 		parser.read(msg.begin(), msg.end());
 	}
 
-	void http_server::response_subscribe_channel(ws_sptr wsp, std::string const& name) {
+
+	bool http_server::response_subscribe_channel(ws_sptr wsp, std::string const& name) {
 
 
 		auto const rel = db_.by_channel(name);
@@ -146,10 +177,6 @@ namespace smf {
 
 			BOOST_ASSERT(boost::algorithm::equals(name, rel.channel_));
 
-			//
-			//	ToDo: add subscription table
-			//
-			
 			// 
 			//	Send initial data set
 			//
@@ -181,6 +208,8 @@ namespace smf {
 				wsp->push_msg(json_load_icon(name, false));
 
 			}, cyng::access::read(rel.table_));
+
+			return true;	//	valid channel 
 		}
 		else {
 
@@ -196,12 +225,14 @@ namespace smf {
 				//
 				auto const str =  json_update_channel(name, db_.cache_.size(rel.table_));
 				wsp->push_msg(str);
-
+				return true;	//	valid channel 
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "[HTTP] subscribe undefined channel " << name);
 			}
 		}
+
+		return false;
 	}
 
 	void http_server::response_update_channel(ws_sptr wsp, std::string const& name) {
@@ -226,6 +257,45 @@ namespace smf {
 		{
 			CYNG_LOG_WARNING(logger_, "[HTTP] update undefined channel " << name);
 		}
+	}
+
+	void http_server::notify_remove(std::string channel, cyng::key_t key, boost::uuids::uuid tag) {
+		auto const pos = ws_map_.find(tag);
+		if (pos != ws_map_.end()) {
+			auto sp = pos->second.lock();
+			if (sp) sp->push_msg(json_delete_record(channel, key));
+			else {
+				//	shouldn't be necessary
+				BOOST_ASSERT_MSG(false, "invalid ws map - notify_remove");
+				ws_map_.erase(pos);
+			}
+		}
+	}
+
+	void http_server::notify_clear(std::string channel, boost::uuids::uuid tag) {
+		auto const pos = ws_map_.find(tag);
+		if (pos != ws_map_.end()) {
+			auto sp = pos->second.lock();
+			if (sp) sp->push_msg(json_clear_table(channel));
+			else {
+				//	shouldn't be necessary
+				BOOST_ASSERT_MSG(false, "invalid ws map - notify_clear");
+				ws_map_.erase(pos);
+			}
+		}
+	}
+
+	void http_server::notify_insert(std::string channel, cyng::record&& rec, boost::uuids::uuid tag) {
+		auto const pos = ws_map_.find(tag);
+		if (pos != ws_map_.end()) {
+			auto sp = pos->second.lock();
+			if (sp) sp->push_msg(json_insert_record(channel, rec.to_tuple()));
+			else {
+				//	shouldn't be necessary
+				BOOST_ASSERT_MSG(false, "invalid ws map - notify_insert");
+				ws_map_.erase(pos);
+			}
+		}
 
 	}
 
@@ -243,6 +313,23 @@ namespace smf {
 			cyng::make_param("cmd", "load"),
 			cyng::make_param("channel", channel),
 			cyng::make_param("show", b)));
+
+	}
+
+	std::string json_delete_record(std::string channel, cyng::key_t const& key) {
+
+		return cyng::io::to_json(cyng::make_tuple(
+			cyng::make_param("cmd", "delete"),
+			cyng::make_param("channel", channel),
+			cyng::make_param("key", key)));
+
+	}
+
+	std::string json_clear_table(std::string channel) {
+
+		return cyng::io::to_json(cyng::make_tuple(
+			cyng::make_param("cmd", "clear"),
+			cyng::make_param("channel", channel)));
 
 	}
 

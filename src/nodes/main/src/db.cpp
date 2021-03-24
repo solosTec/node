@@ -137,7 +137,11 @@ namespace smf {
 			config::get_store_gui_user(),
 			config::get_store_target(),
 			config::get_store_cluster(),
-			config::get_store_location()
+			config::get_store_location(),
+			//	temporary upload data
+			config::get_store_uplink_lora(),
+			config::get_store_uplink_iec(),
+			config::get_store_uplink_wmbus()
 		};
 	}
 
