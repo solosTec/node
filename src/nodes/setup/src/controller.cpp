@@ -160,7 +160,10 @@ namespace smf {
 			return true;
 		}
 
-		return false;
+		//
+		//	call base classe
+		//
+		return controller_base::run_options(vars);
 	}
 
 	void controller::generate_access_rights(cyng::object&& cfg, std::string const& user) {

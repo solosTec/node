@@ -271,6 +271,7 @@ namespace smf {
 					}
 					else if (boost::algorithm::equals(param.first, "max-readout-frequency")) {
 						auto const max_freq = cyng::numeric_cast<std::uint32_t>(param.second, 20);
+						CYNG_LOG_TRACE(logger_, "[NMS] new max-readout-frequency: " << max_freq);
 						cfg_blocklist blocklist_cfg(cfg_, cfg.get_lmn_type());
 						blocklist_cfg.set_max_frequency(std::chrono::seconds(max_freq));
 						cyng::merge(pm, { "max-readout-frequency", port.first, param.first }, cyng::make_object("ok"));
@@ -459,6 +460,10 @@ namespace smf {
 				;
 		}
 
+		std::string reader::enclose_quotation_marks(std::string str) {
+			return "\"" + str + "\"";
+		}
+
 		cyng::param_map_t reader::cmd_update(std::string const& cmd, boost::uuids::uuid tag, pmap_reader const& dom) {
 
 			cfg_nms cfg(cfg_);
@@ -491,19 +496,19 @@ namespace smf {
 					<< std::endl
 					<< "/usr/local/sbin/fw-update.sh "
 					<< address
-					<< " \""
-					<< username
-					<< "\" \""
-					<< password
-					<< "\" \""
-					<< filename
-					<< "\" \""
-					<< ca_path_download
-					<< "\" \""
-					<< ca_path_vendor
-					<< "\" \""
-					<< path_firmware
-					<< "\" "
+					<< ' '
+					<< enclose_quotation_marks(username)
+					<< ' '
+					<< enclose_quotation_marks(password)
+					<< ' '
+					<< enclose_quotation_marks(filename)
+					<< ' '
+					<< enclose_quotation_marks(ca_path_download)
+					<< ' '
+					<< enclose_quotation_marks(ca_path_vendor)
+					<< ' '
+					<< enclose_quotation_marks(path_firmware)
+					<< ' '
 					<< port
 					<< std::endl
 					;

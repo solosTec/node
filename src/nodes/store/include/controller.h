@@ -17,6 +17,7 @@
 	{
 	public:
 		controller(config::startup const&);
+		virtual bool run_options(boost::program_options::variables_map&) override;
 
 	protected:
 		cyng::vector_t create_default_config(std::chrono::system_clock::time_point&& now
@@ -26,6 +27,10 @@
 			, cyng::logger
 			, cyng::object const& cfg
 			, std::string const& node_name) override;
+
+	private:
+		void init_storage(cyng::object&&);
+		void create_influx_dbs(cyng::object&&, std::string const& cmd);
 
 	};
 }

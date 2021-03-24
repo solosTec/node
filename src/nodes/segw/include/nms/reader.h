@@ -45,6 +45,11 @@ namespace smf {
 			void cmd_merge_blocklist(cyng::param_map_t& pm, lmn_type, cyng::param_map_t&& params);
 			void cmd_merge_listener(cyng::param_map_t& pm, lmn_type, cyng::param_map_t&& params);
 
+			/**
+			 * enclose specified string in quotation marks
+			 */
+			static std::string enclose_quotation_marks(std::string);
+
 		private:
 			cyng::logger logger_;
 			cfg& cfg_;
