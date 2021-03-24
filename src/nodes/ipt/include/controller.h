@@ -9,6 +9,7 @@
 
 #include <smf/controller_base.h>
 #include <smf/cluster/config.h>
+#include <smf/ipt/scramble_key.h>
 
  namespace smf {
 
@@ -34,7 +35,12 @@
 			, cyng::logger
 			, boost::uuids::uuid
 			, std::string const& node_name
-			, toggle::server_vec_t&& cfg);
+			, toggle::server_vec_t&& cfg
+			, std::string const& address
+			, std::uint16_t port
+			, ipt::scramble_key const&
+			, std::chrono::minutes watchdog
+			, std::chrono::seconds timeout);
 	};
 }
 

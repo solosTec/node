@@ -34,7 +34,6 @@ namespace smf
 			, tgl_(std::move(tgl))
 			, model_(model)
 			, cb_cmd_(cb_cmd)
-			, stopped_(false)
 			, endpoints_()
 			, socket_(ctx)
 			, timer_(ctx)
@@ -65,7 +64,6 @@ namespace smf
 
 		void bus::reset() {
 			buffer_write_.clear();
-			stopped_ = true;
 			boost::system::error_code ignored_ec;
 			socket_.close(ignored_ec);
 			timer_.cancel();
@@ -221,7 +219,9 @@ namespace smf
 
 		void bus::do_write()
 		{
-			if (stopped_)	return;
+			if (is_stopped())	return;
+
+			CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] write: " << buffer_write_.front().size() << " bytes");
 
 			// Start an asynchronous operation to send a heartbeat message.
 			boost::asio::async_write(socket_,

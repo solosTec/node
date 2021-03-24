@@ -8,9 +8,12 @@
 #include <controller.h>
 #include <tasks/cluster.h>
 
+#include <smf/ipt/scramble_key_format.h>
+
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/container_cast.hpp>
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/sys/locale.h>
@@ -51,7 +54,7 @@ namespace smf {
 	cyng::param_t controller::create_server_spec() {
 		return cyng::make_param("server", cyng::make_tuple(
 			cyng::make_param("address", "0.0.0.0"),
-			cyng::make_param("service", "26862"),
+			cyng::make_param("port", 26862),
 			cyng::make_param("sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 			cyng::make_param("watchdog", 30),	//	for IP-T connection (minutes)
 			cyng::make_param("timeout", 10)		//	connection timeout in seconds
@@ -86,6 +89,13 @@ namespace smf {
 			CYNG_LOG_FATAL(logger, "no cluster data configured");
 		}
 
+		auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
+		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 26862);
+		auto const sk = ipt::to_sk(cyng::value_cast(reader["server"]["sk"].get(), "0102030405060708090001020304050607080900010203040506070809000001"));
+		auto const watchdog = cyng::numeric_cast<std::uint16_t>(reader["server"]["watchdog"].get(), 30);
+		auto const timeout = cyng::numeric_cast<std::uint16_t>(reader["server"]["timeout"].get(), 10);
+
+
 		//
 		//	connect to cluster
 		//
@@ -93,19 +103,31 @@ namespace smf {
 			, logger
 			, tag
 			, node_name
-			, std::move(tgl));
+			, std::move(tgl)
+			, address
+			, port
+			, sk
+			, std::chrono::minutes(watchdog)
+			, std::chrono::seconds(timeout));
 	}
 
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
 		, std::string const& node_name
-		, toggle::server_vec_t&& tgl) {
+		, toggle::server_vec_t&& tgl, std::string const& address
+		, std::uint16_t port
+		, ipt::scramble_key const& sk
+		, std::chrono::minutes watchdog
+		, std::chrono::seconds timeout) {
 
-		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl));
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl), sk, watchdog, timeout);
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
-		channel->dispatch("status_check", cyng::make_tuple(1));
+
+		auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
+		channel->dispatch("listen", cyng::make_tuple(ep));
+
 	}
 
 }

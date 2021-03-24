@@ -99,6 +99,12 @@ namespace smf
 
 		void req_db_clear(std::string const&);
 
+		//	"pty.login"
+		void pty_login();
+
+		//	"pty.connect"
+		void pty_connect(std::string msisdn);
+
 	private:
 		void reset();
 		void connect(boost::asio::ip::tcp::resolver::results_type endpoints);

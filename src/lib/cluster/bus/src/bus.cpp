@@ -400,6 +400,36 @@ namespace smf {
 
 	}
 
+	void bus::pty_login() {
+		auto const srv = tgl_.get();
+		auto const deq = cyng::serialize_invoke("pty.login"
+			, tag_
+			, srv.account_
+			, srv.pwd_
+			, socket_.local_endpoint());
+
+		cyng::exec(vm_, [=, this]() {
+			bool const b = buffer_write_.empty();
+			cyng::add(buffer_write_, deq);
+			if (b)	do_write();
+			});
+
+	}
+
+	void bus::pty_connect(std::string msisdn) {
+		auto const deq = cyng::serialize_invoke("pty.connect"
+			, tag_
+			, msisdn);
+
+		cyng::exec(vm_, [=, this]() {
+			bool const b = buffer_write_.empty();
+			cyng::add(buffer_write_, deq);
+			if (b)	do_write();
+			});
+
+	}
+
+
 	std::function<void(bool)>
 	bus::get_vm_func_on_login(bus_interface* bip) {
 		return std::bind(&bus_interface::on_login, bip, std::placeholders::_1);

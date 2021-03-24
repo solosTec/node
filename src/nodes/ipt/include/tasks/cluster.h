@@ -7,7 +7,10 @@
 #ifndef SMF_IPT_TASK_CLUSTER_H
 #define SMF_IPT_TASK_CLUSTER_H
 
+#include <ipt_server.h>
+
 #include <smf/cluster/bus.h>
+#include <smf/ipt/scramble_key.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -30,8 +33,7 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
-			std::function<void(int)>,
-			//std::function<void(int, std::string, float)>,
+			std::function<void(boost::asio::ip::tcp::endpoint)>,
 			std::function<void(cyng::eod)>
 		>;
 
@@ -41,11 +43,13 @@ namespace smf {
 			, boost::uuids::uuid tag
 			, std::string const& node_name
 			, cyng::logger
-			, toggle::server_vec_t&&);
+			, toggle::server_vec_t&&
+			, ipt::scramble_key const& sk
+			, std::chrono::minutes watchdog
+			, std::chrono::seconds timeout);
 		~cluster();
 
 		void connect();
-		void status_check(int);
 
 		void stop(cyng::eod);
 
@@ -82,7 +86,11 @@ namespace smf {
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
 		cyng::mesh fabric_;
+		/**
+		 * cluster bus
+		 */
 		bus	bus_;
+		ipt_server server_;
 	};
 
 }

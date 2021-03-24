@@ -6,12 +6,14 @@
  */
 
 #include <controller.h>
+#include <tasks/network.h>
 
 #include <smf.h>
 
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/container_cast.hpp>
+#include <cyng/obj/vector_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/sys/locale.h>
@@ -46,6 +48,7 @@ namespace smf {
 				cyng::make_param("tag", get_random_tag()),
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
+				cyng::make_param("model", "smf.store"),
 
 				cyng::make_param("output", cyng::make_vector({"ALL:BIN"})),	//	options are XML, JSON, DB, BIN, ...
 
@@ -130,14 +133,6 @@ namespace smf {
 					cyng::make_param("pwd", "pwd"),
 					cyng::make_param("interval", 46)	//	seconds
 				)),
-
-				cyng::make_param("server", cyng::make_tuple(
-					cyng::make_param("address", "0.0.0.0"),
-					cyng::make_param("service", "26862"),
-					cyng::make_param("sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
-					cyng::make_param("watchdog", 30),	//	for IP-T connection (minutes)
-					cyng::make_param("timeout", 10)		//	connection timeout in seconds
-				)),
 				cyng::make_param("ipt", cyng::make_vector({
 					cyng::make_tuple(
 						cyng::make_param("host", "127.0.0.1"),
@@ -159,17 +154,65 @@ namespace smf {
 						//cyng::make_param("monitor", rng())),	//	seconds
 					)})
 				),
-				cyng::make_param("targets", cyng::make_vector({
-					//	list of targets and their data type
-					cyng::make_param("water@solostec", "SML"),
-					cyng::make_param("gas@solostec", "SML"),
-					cyng::make_param("power@solostec", "SML"),
-					cyng::make_param("LZQJ", "IEC") 
-				}))
+				cyng::make_param("targets", cyng::make_tuple(
+					cyng::make_param("SML", cyng::make_vector({ "water@solostec", "gas@solostec", "power@solostec" })),
+					cyng::make_param("IEC", cyng::make_vector({ "LZQJ" }))
+				))
 			)
-			});
+		});
 	}
-	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg, std::string const& node_name) {
+	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
+
+		auto const reader = cyng::make_reader(cfg);
+		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+		auto const config_types = cyng::vector_cast<std::string>(reader["output"].get(), "ALL:BIN");
+		auto const model = cyng::value_cast(reader["model"].get(), "smf.store");
+
+		auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
+		auto tgl = ipt::read_config(ipt_vec);
+		if (tgl.empty()) {
+			CYNG_LOG_FATAL(logger, "no ip-t server configured");
+		}
+		auto const target_sml = cyng::vector_cast<std::string>(reader["targets"]["SML"].get(), "sml@solostec");
+		auto const target_iec = cyng::vector_cast<std::string>(reader["targets"]["IEC"].get(), "iec@solostec");
+
+		if (target_sml.empty() && target_iec.empty()) {
+			CYNG_LOG_FATAL(logger, "no targets configured");
+		}
+
+		join_network(ctl
+			, logger
+			, tag
+			, node_name
+			, model
+			, std::move(tgl)
+			, config_types
+			, target_sml
+			, target_iec);
+
+	}
+
+	void controller::join_network(cyng::controller& ctl
+		, cyng::logger logger
+		, boost::uuids::uuid tag
+		, std::string const& node_name
+		, std::string const& model
+		, ipt::toggle::server_vec_t&& tgl
+		, std::vector<std::string> const& config_types
+		, std::vector<std::string> const& sml_targets
+		, std::vector<std::string> const& iec_targets ) {
+
+		auto channel = ctl.create_named_channel_with_ref<network>("network"
+			, ctl
+			, tag
+			, logger
+			, node_name
+			, std::move(tgl)
+			, config_types
+			, sml_targets
+			, iec_targets);
+		BOOST_ASSERT(channel->is_open());
+		channel->dispatch("connect", cyng::make_tuple(model));
 
 	}
 

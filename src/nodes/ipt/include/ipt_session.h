@@ -4,27 +4,26 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_WMBUS_SESSION_H
-#define SMF_WMBUS_SESSION_H
+#ifndef SMF_IPT_SESSION_H
+#define SMF_IPT_SESSION_H
 
-#include <smf/mbus/radio/parser.h>
+#include <smf/ipt/parser.h>
+#include <smf/cluster/bus.h>
 
 #include <cyng/log/logger.h>
-#include <cyng/io/parser/parser.h>
-#include <cyng/vm/proxy.h>
-#include <cyng/obj/intrinsics/pid.h>
+#include <cyng/obj/intrinsics/buffer.h>
 
 #include <memory>
 #include <array>
 
 namespace smf {
 
-	class wmbus_server;
-	class wmbus_session : public std::enable_shared_from_this<wmbus_session>
+	class ipt_server;
+	class ipt_session : public std::enable_shared_from_this<ipt_session>
 	{
 	public:
-		wmbus_session(boost::asio::ip::tcp::socket socket, wmbus_server*, cyng::logger);
-		~wmbus_session();
+		ipt_session(boost::asio::ip::tcp::socket socket, ipt_server*, cyng::logger);
+		~ipt_session();
 
 		void start();
 		void stop();
@@ -34,9 +33,17 @@ namespace smf {
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);
 
+		//
+		//	bus interface
+		//
+		void ipt_cmd(ipt::header const&, cyng::buffer_t&&);
+		void ipt_stream(cyng::buffer_t&&);
+
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logger logger_;
+
+		bus& cluster_bus_;
 
 		/**
 		 * Buffer for incoming data.
@@ -51,7 +58,7 @@ namespace smf {
 		/**
 		 * parser for wireless M-Bus data
 		 */
-		mbus::radio::parser parser_;
+		ipt::parser parser_;
 
 
 	};

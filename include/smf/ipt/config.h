@@ -77,7 +77,7 @@ namespace smf
 		 */
 		toggle::server_vec_t read_config(cyng::vector_t const& vec);
 
-	}	//	cluster
+	}	//	ipt
 }
 
 

@@ -41,6 +41,7 @@ namespace smf {
 		vm_.set_channel_name("db.req.update", 3);	//	table merge()
 		vm_.set_channel_name("db.req.remove", 4);	//	table erase()
 		vm_.set_channel_name("db.req.clear", 5);	//	table clear()
+		vm_.set_channel_name("pty.login", 6);
 		vm_.set_channel_name("pty.connect", 6);
 	}
 
@@ -103,6 +104,7 @@ namespace smf {
 			, get_vm_func_db_req_update(this)
 			, get_vm_func_db_req_remove(this)
 			, get_vm_func_db_req_clear(this)
+			, get_vm_func_pty_login(srv)
 			, get_vm_func_pty_connect(srv));
 	}
 
@@ -396,10 +398,20 @@ namespace smf {
 		return std::bind(&session::db_req_clear, ptr, std::placeholders::_1, std::placeholders::_2);
 	}
 
-	std::function<void(std::string)>
-	session::get_vm_func_pty_connect(server* ptr) {
-		return std::bind(&server::pty_connect, ptr, std::placeholders::_1);
+	std::function<void(boost::uuids::uuid
+		, std::string
+		, std::string
+		, boost::asio::ip::tcp::endpoint)>
+	session::get_vm_func_pty_login(server* ptr) {
+		return std::bind(&server::pty_login, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 	}
+
+	std::function<void(boost::uuids::uuid
+		, std::string)>
+	session::get_vm_func_pty_connect(server* ptr) {
+		return std::bind(&server::pty_connect, ptr, std::placeholders::_1, std::placeholders::_2);
+	}
+
 
 
 }

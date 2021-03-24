@@ -6,6 +6,7 @@
  */
 
 #include <tasks/cluster.h>
+
 #include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
@@ -19,11 +20,13 @@ namespace smf {
 		, boost::uuids::uuid tag
 		, std::string const& node_name
 		, cyng::logger logger
-		, toggle::server_vec_t&& tgl)
+		, toggle::server_vec_t&& tgl
+		, ipt::scramble_key const& sk
+		, std::chrono::minutes watchdog
+		, std::chrono::seconds timeout)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
-		std::bind(&cluster::status_check, this, std::placeholders::_1),
-		//std::bind(&cluster::login, this, std::placeholders::_1),
+		std::bind(&ipt_server::listen, &server_, std::placeholders::_1),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
 	}
 		, channel_(wp)
@@ -32,11 +35,12 @@ namespace smf {
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(tgl), node_name, tag, this)
+		, server_(ctl.get_ctx(), tag, logger, sk, watchdog, timeout, bus_)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("connect", 0);
-			sp->set_channel_name("status_check", 1);
+			sp->set_channel_name("listen", 1);
 		}
 
 		CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
@@ -61,19 +65,6 @@ namespace smf {
 	{
 		bus_.start();
 	}
-
-	void cluster::status_check(int n)
-	{
-		auto sp = channel_.lock();
-		if (sp) {
-			CYNG_LOG_TRACE(logger_, "status_check(" << tag_ << ", " << n << ")");
-			sp->suspend(std::chrono::seconds(30), "status_check", cyng::make_tuple(n + 1));
-		}
-		else {
-			CYNG_LOG_ERROR(logger_, "status_check(" << tag_ << ", " << n << ")");
-		}
-	}
-
 
 	//
 	//	bus interface

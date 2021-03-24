@@ -153,9 +153,15 @@ namespace smf {
 			, boost::uuids::uuid)> 
 		get_vm_func_db_req_clear(session*);
 
-		static std::function<void(std::string)> 
-		get_vm_func_pty_connect(server*);
+		static std::function<void(boost::uuids::uuid
+			, std::string
+			, std::string
+			, boost::asio::ip::tcp::endpoint)>
+		get_vm_func_pty_login(server*);
 
+		static std::function<void(boost::uuids::uuid
+			, std::string)>
+		get_vm_func_pty_connect(server*);
 
 	private:
 		boost::asio::ip::tcp::socket socket_;

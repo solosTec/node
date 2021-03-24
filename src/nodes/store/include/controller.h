@@ -9,6 +9,7 @@
 #define SMF_STORE_CONTROLLER_H
 
 #include <smf/controller_base.h>
+#include <smf/ipt/config.h>
 
 
  namespace smf {
@@ -28,6 +29,16 @@
 			, cyng::object const& cfg
 			, std::string const& node_name) override;
 
+	private:
+		void join_network(cyng::controller&
+			, cyng::logger
+			, boost::uuids::uuid
+			, std::string const& node_name
+			, std::string const& model
+			, ipt::toggle::server_vec_t&&
+			, std::vector<std::string> const&
+			, std::vector<std::string> const&
+			, std::vector<std::string> const&);
 	private:
 		void init_storage(cyng::object&&);
 		void create_influx_dbs(cyng::object&&, std::string const& cmd);

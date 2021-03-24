@@ -62,7 +62,6 @@ namespace smf
 			std::string const model_;
 			parser::command_cb cb_cmd_;
 
-			bool stopped_;
 			boost::asio::ip::tcp::resolver::results_type endpoints_;
 			boost::asio::ip::tcp::socket socket_;
 			boost::asio::steady_timer timer_;

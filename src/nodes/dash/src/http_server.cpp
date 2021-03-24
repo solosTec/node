@@ -190,14 +190,24 @@ namespace smf {
 				//
 				//	get total record size
 				//
-				//auto size{ tbl->size() };
-				//std::size_t percent{ 0 }, idx{ 0 };
+				auto total_size{ tbl->size() };
+				std::size_t percent{ 0 }, idx{ 0 };
 
 
 				tbl->loop([&](cyng::record&& rec, std::size_t idx) -> bool {
 
 					auto const str = json_insert_record(name, rec.to_tuple());
 					wsp->push_msg(str);
+
+					//
+					//	update current index and percentage calculation
+					//	
+					++idx;
+					const auto prev_percent = percent;
+					percent = (100u * idx) / total_size;
+					if (prev_percent != percent) {
+						wsp->push_msg(json_load_level(name, percent));
+					}
 
 					return true;
 				});
@@ -315,6 +325,16 @@ namespace smf {
 			cyng::make_param("show", b)));
 
 	}
+
+	std::string json_load_level(std::string channel, std::size_t level) {
+
+		return cyng::io::to_json(cyng::make_tuple(
+			cyng::make_param("cmd", "load"),
+			cyng::make_param("channel", channel),
+			cyng::make_param("level", level)));
+
+	}
+
 
 	std::string json_delete_record(std::string channel, cyng::key_t const& key) {
 

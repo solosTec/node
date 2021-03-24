@@ -138,7 +138,16 @@ namespace smf {
 		});
 	}
 
-	void server::pty_connect(std::string msisdn) {
+	void server::pty_login(boost::uuids::uuid tag
+		, std::string name
+		, std::string pwd
+		, boost::asio::ip::tcp::endpoint ep) {
+
+		CYNG_LOG_INFO(logger_, "pty login " << name << ':' << pwd << '@' << ep);
+	}
+
+	void server::pty_connect(boost::uuids::uuid tag
+		, std::string msisdn) {
 		CYNG_LOG_INFO(logger_, "pty connect " << msisdn);
 	}
 
