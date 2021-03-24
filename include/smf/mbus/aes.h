@@ -9,7 +9,7 @@
 
 #include <cyng/obj/intrinsics/buffer.h>
 
-#include <crypto/aes.h>
+#include <smfsec/aes.h>
 
 #include <cstdint>
 #include <array>

@@ -130,15 +130,15 @@ else()
 endif()
 
 #
-# find crypto library
-# -DCRYPT_ROOT:path=...
+# find smfsec library
+# -DSMFSEC_ROOT:path=...
 #
-find_package(CRYPTO REQUIRED)
-if (CRYPTO_FOUND)
-    message(STATUS "** CRYPTO_INCLUDE_DIRS      : ${CRYPTO_INCLUDE_DIRS}")
-    message(STATUS "** CRYPTO_LIBRARIES         : ${CRYPTO_LIBRARIES}")
+find_package(SMFSEC REQUIRED)
+if (SMFSEC_FOUND)
+    message(STATUS "** SMFSEC_INCLUDE_DIRS      : ${SMFSEC_INCLUDE_DIRS}")
+    message(STATUS "** SMFSEC_LIBRARIES         : ${SMFSEC_LIBRARIES}")
 else()
-    message(FATAL_ERROR "** CYRPTO library not found")
+    message(FATAL_ERROR "** SMFSEC library not found")
 endif()
 
 #
@@ -437,7 +437,7 @@ target_include_directories(smf_mbus
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${CYNG_INCLUDE_DIRS}
-        ${CRYPTO_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -482,7 +482,7 @@ target_include_directories(smf_iec
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${CYNG_INCLUDE_DIRS}
-        ${CRYPTO_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -527,7 +527,7 @@ target_include_directories(smf_hci
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${CYNG_INCLUDE_DIRS}
-        ${CRYPTO_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

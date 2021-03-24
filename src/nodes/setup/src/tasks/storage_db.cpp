@@ -5,7 +5,6 @@
  *
  */
 #include <tasks/storage_db.h>
-//#include <tasks/sync.h>
 
 #include <smf/config/schemes.h>
 #include <smf/cluster/bus.h>
@@ -19,7 +18,7 @@
 #include <cyng/db/details/statement_interface.h>
 #include <cyng/db/storage.h>
 
-#include <crypto/hash/sha1.h>
+#include <smfsec/hash/sha1.h>
 
 #include <iostream>
 
@@ -200,7 +199,8 @@ namespace smf {
 		std::pair<int, bool> r = stmt->prepare(sql);
 		if (r.second) {
 
-			auto digest = cyng::sha1_hash("user");
+			//	linker with undefined reference to cyng::sha1_hash(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+			auto digest = cyng::sha1_hash("user");	
 
 			stmt->push(cyng::make_object(boost::uuids::random_generator()()), 36);	//	pk
 			stmt->push(cyng::make_object(1u), 32);	//	generation
