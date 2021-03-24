@@ -40,7 +40,7 @@ install: build
 	install -m 755 @cyng_vm@ $(INSTALLDIR)/usr/local/lib
 
 #	crypto lib
-	install -m 755 @crypto@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @smfsec@ $(INSTALLDIR)/usr/local/lib
 
 	# maybe another path is required to build in a docker environment
 	install -m 755 @Boost_LIBRARY_DIRS@/libboost_filesystem.so.1.75.0 $(INSTALLDIR)/usr/local/lib/libboost_filesystem.so.1.75.0
