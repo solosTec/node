@@ -20,6 +20,7 @@
 #include <cyng/sys/filesystem.h>
 #include <cyng/parse/string.h>
 #include <cyng/obj/algorithm/merge.h>
+#include <cyng/sys/info.h>
 
 #include <filesystem>
 #include <fstream>
@@ -628,8 +629,8 @@ namespace smf {
 				("ec", "ok")
 				("version", protocol_version_)
 				("source", tag)
-				//("name", cyng::sys::get_os_name())
-				//("release", cyng::sys::get_os_release())
+				("name", cyng::sys::get_os_name())
+				("release", cyng::sys::get_os_release())
 				;
 
 		}
