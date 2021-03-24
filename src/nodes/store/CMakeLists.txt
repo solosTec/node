@@ -7,7 +7,7 @@ target_compile_features(store PRIVATE cxx_std_20)
 
 target_compile_definitions(store
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_FRONTEND>
+        $<$<CONFIG:Debug>:_DEBUG_STORE>
 )
 
 #

@@ -216,6 +216,8 @@ namespace smf {
 			<< pmap
 			<< std::endl;
 
+		cyng::controller ctl(config_.pool_size_);
+
 		if (boost::algorithm::equals(cmd, "create")) {
 
 			//
@@ -256,6 +258,7 @@ namespace smf {
 				<< std::endl;
 		}
 
+		ctl.stop();
 
 	}
 

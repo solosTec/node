@@ -4,7 +4,7 @@
 set (store_node)
 
 set (store_cpp
-     src/main.cpp
+    src/main.cpp
     src/controller.cpp
 )
     
@@ -26,13 +26,19 @@ else()
     )
 endif()
 
+set (store_tasks
+  include/tasks/network.h
+  src/tasks/network.cpp
+)
 
 source_group("store-assets" FILES ${store_assets})
+source_group("tasks" FILES ${store_tasks})
 
 
 set (store_node
   ${store_cpp}
   ${store_h}
   ${store_assets}
+  ${store_tasks}
 )
 
