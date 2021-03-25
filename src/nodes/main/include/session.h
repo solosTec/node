@@ -108,6 +108,15 @@ namespace smf {
 		void db_req_clear(std::string const& table_name
 			, boost::uuids::uuid source);
 
+		/**
+		 * pty login
+		 */
+		void pty_login(boost::uuids::uuid
+			, std::string
+			, std::string
+			, boost::asio::ip::tcp::endpoint
+			, std::string);
+
 		//
 		//	generate VM channel functions
 		//
@@ -156,8 +165,9 @@ namespace smf {
 		static std::function<void(boost::uuids::uuid
 			, std::string
 			, std::string
-			, boost::asio::ip::tcp::endpoint)>
-		get_vm_func_pty_login(server*);
+			, boost::asio::ip::tcp::endpoint
+			, std::string)>
+		get_vm_func_pty_login(session*);
 
 		static std::function<void(boost::uuids::uuid
 			, std::string)>
@@ -187,7 +197,7 @@ namespace smf {
 		 * remote session tag
 		 */
 		boost::uuids::uuid peer_;
-
+		std::string protocol_layer_;
 	};
 
 }

@@ -115,6 +115,8 @@ namespace smf {
 			<< " - "
 			<< data);
 
+		//std::reverse(key.begin(), key.end());
+		std::reverse(data.begin(), data.end());
 		cache_.insert(table_name, key, data, gen, tag);
 	}
 
@@ -162,20 +164,6 @@ namespace smf {
 	void db::res_clear(std::string table_name
 		, boost::uuids::uuid tag) {
 
-		////
-		////	notify all subscriptions
-		//// 
-		//auto const r = by_table(table_name);
-		//if (!r.empty()) {
-
-		//	auto range = subscriptions_.equal_range(r.channel_);
-		//	auto const count = std::distance(range.first, range.second);
-		//	CYNG_LOG_TRACE(logger_, "update channel (clear): " << r.channel_ << " of " << count << " ws");
-		//	for (auto pos = range.first; pos != range.second; ++pos) {
-		//		notify(r.channel_, pos->second);
-		//	}
-		//}
-
 		//
 		//	clear table
 		//
@@ -222,11 +210,11 @@ namespace smf {
 		db::rel{"config", "config.system", ""},
 		db::rel{"gateway", "config.gateway", "table.gateway.count"},
 		db::rel{"meter", "config.meter", "table.meter.count"},
-		db::rel{"location", "config.location", "table.location.count"}
+		db::rel{"location", "config.location", "table.location.count"},
+		db::rel{"session", "status.session", "table.session.count"}
 		// 
 		//db::rel{"TMeterAccess", "config.meterwMBus", "table.meterwMBus.count"},
 		//db::rel{"TBridge", "config.bridge", "table.bridge.count"},
-		//db::rel{"_Session", "status.session", "table.session.count"},
 		//db::rel{"_Connection", "status.connection", "table.connection.count"},
 		//db::rel{"_SysMsg", "monitor.msg", "table.msg.count"},
 		//db::rel{"---", "config.web", ""},
@@ -253,7 +241,9 @@ namespace smf {
 			config::get_store_target(),
 			config::get_store_cluster(),
 			config::get_store_location(),
-			config::get_config()	//	"config"
+			config::get_config(),	//	"config"
+			config::get_store_session()
+
 		};
 	}
 

@@ -20,6 +20,7 @@ namespace smf {
 		, cfg_(cache, tag)
 		, store_map_()
 		, uuid_gen_()
+		, source_(1)	//	ip-t source id
 	{}
 
 	void db::init(cyng::param_map_t const& session_cfg) {
@@ -125,6 +126,40 @@ namespace smf {
 		return cache_.erase("cluster", cyng::key_generator(tag), cfg_.get_tag());
 	}
 
+	bool db::insert_pty(boost::uuids::uuid tag
+		, boost::uuids::uuid peer
+		, std::string const& name
+		, std::string const& pwd
+		, boost::asio::ip::tcp::endpoint ep
+		, std::string const& data_layer) {
+
+		return cache_.insert("session"
+			, cyng::key_generator(tag)
+			, cyng::data_generator(peer
+				, name
+				, ep
+				, boost::uuids::uuid()	//	device
+				, source_++	//	source
+				, std::chrono::system_clock::now()	//	login time
+				, boost::uuids::uuid()	//	rTag
+				, "ipt"	//	player
+				, data_layer
+				, static_cast<std::uint64_t>(0)
+				, static_cast<std::uint64_t>(0)
+				, static_cast<std::uint64_t>(0))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+
+	}
+
+	bool db::remove_pty(boost::uuids::uuid tag) {
+		return cache_.erase("session", cyng::key_generator(tag), cfg_.get_tag());
+	}
+
+	void db::remove_pty_by_peer(boost::uuids::uuid peer) {
+		//	ToDo:
+	}
+
 	std::vector< cyng::meta_store > get_store_meta_data() {
 		return {
 			config::get_config(),	//	"config"
@@ -138,6 +173,7 @@ namespace smf {
 			config::get_store_target(),
 			config::get_store_cluster(),
 			config::get_store_location(),
+			config::get_store_session(),
 			//	temporary upload data
 			config::get_store_uplink_lora(),
 			config::get_store_uplink_iec(),

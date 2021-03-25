@@ -49,10 +49,6 @@ namespace smf {
 		void do_accept();
 		void stop(cyng::eod);
 
-		void pty_login(boost::uuids::uuid
-			, std::string
-			, std::string
-			, boost::asio::ip::tcp::endpoint);
 		void pty_connect(boost::uuids::uuid tag
 			, std::string msisdn);
 

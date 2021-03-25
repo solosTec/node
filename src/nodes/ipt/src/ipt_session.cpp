@@ -129,10 +129,10 @@ namespace smf {
 		CYNG_LOG_TRACE(logger_, "ipt cmd " << ipt::command_name(h.command_));
 		switch (ipt::to_code(h.command_)) {
 		case ipt::code::CTRL_REQ_LOGIN_PUBLIC:
-			cluster_bus_.pty_login();
+			cluster_bus_.pty_login("sml", socket_.remote_endpoint());
 			break;
 		case ipt::code::CTRL_REQ_LOGIN_SCRAMBLED:
-			cluster_bus_.pty_login();
+			cluster_bus_.pty_login("sml", socket_.remote_endpoint());
 			break;
 		default:
 			break;

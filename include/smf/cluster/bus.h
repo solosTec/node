@@ -100,7 +100,7 @@ namespace smf
 		void req_db_clear(std::string const&);
 
 		//	"pty.login"
-		void pty_login();
+		void pty_login(std::string data_layer, boost::asio::ip::tcp::endpoint ep);
 
 		//	"pty.connect"
 		void pty_connect(std::string msisdn);

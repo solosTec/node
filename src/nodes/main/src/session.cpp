@@ -33,6 +33,7 @@ namespace smf {
 		})
 		, slot_(cyng::make_slot(new slot(this)))
 		, peer_(boost::uuids::nil_uuid())
+		, protocol_layer_("any")
 	{
 		vm_ = init_vm(srv);
 		vm_.set_channel_name("cluster.req.login", 0);
@@ -104,7 +105,7 @@ namespace smf {
 			, get_vm_func_db_req_update(this)
 			, get_vm_func_db_req_remove(this)
 			, get_vm_func_db_req_clear(this)
-			, get_vm_func_pty_login(srv)
+			, get_vm_func_pty_login(this)
 			, get_vm_func_pty_connect(srv));
 	}
 
@@ -157,6 +158,7 @@ namespace smf {
 		//
 		BOOST_ASSERT(!tag.is_nil());
 		peer_ = tag;
+		protocol_layer_ = node;
 		srvp_->cache_.insert_cluster_member(tag, node, v, socket_.remote_endpoint(), n);
 
 		//
@@ -348,6 +350,29 @@ namespace smf {
 		return true;
 	}
 
+	void session::pty_login(boost::uuids::uuid tag
+		, std::string name
+		, std::string pwd
+		, boost::asio::ip::tcp::endpoint ep
+		, std::string data_layer) {
+
+		CYNG_LOG_INFO(logger_, "pty login " << name << ':' << pwd << '@' << ep);
+
+		//
+		//	ToDo: check credentials
+		// 
+
+		//
+		//	insert into session table
+		//
+		srvp_->cache_.insert_pty(tag, peer_, name, pwd, ep, data_layer);
+
+		//
+		//	ToDo: send response
+		// 
+
+	}
+
 	std::function<void(std::string
 		, std::string
 		, cyng::pid
@@ -401,9 +426,10 @@ namespace smf {
 	std::function<void(boost::uuids::uuid
 		, std::string
 		, std::string
-		, boost::asio::ip::tcp::endpoint)>
-	session::get_vm_func_pty_login(server* ptr) {
-		return std::bind(&server::pty_login, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+		, boost::asio::ip::tcp::endpoint
+		, std::string)>
+	session::get_vm_func_pty_login(session* ptr) {
+		return std::bind(&session::pty_login, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
 	}
 
 	std::function<void(boost::uuids::uuid

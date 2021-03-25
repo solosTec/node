@@ -68,6 +68,15 @@ namespace smf {
 		//	store only schemes
 		// -----------------------------------------------------------------+
 		//
+
+		/**
+		 * sessions
+		 */
+		cyng::meta_store get_store_session();
+
+		/**
+		 * push targets
+		 */
 		cyng::meta_store get_store_target();
 
 		/**

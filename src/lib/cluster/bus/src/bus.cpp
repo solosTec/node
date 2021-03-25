@@ -400,13 +400,14 @@ namespace smf {
 
 	}
 
-	void bus::pty_login() {
+	void bus::pty_login(std::string data_layer, boost::asio::ip::tcp::endpoint ep) {
 		auto const srv = tgl_.get();
 		auto const deq = cyng::serialize_invoke("pty.login"
 			, tag_
 			, srv.account_
 			, srv.pwd_
-			, socket_.local_endpoint());
+			, ep
+			, data_layer);
 
 		cyng::exec(vm_, [=, this]() {
 			bool const b = buffer_write_.empty();

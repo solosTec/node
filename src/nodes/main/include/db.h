@@ -39,6 +39,21 @@ namespace smf {
 
 		bool remove_cluster_member(boost::uuids::uuid);
 
+		bool insert_pty(boost::uuids::uuid tag
+			, boost::uuids::uuid peer
+			, std::string const& name
+			, std::string const& pwd
+			, boost::asio::ip::tcp::endpoint ep
+			, std::string const& data_layer);
+
+		bool remove_pty(boost::uuids::uuid);
+
+		/**
+		 * remove all sessions of this peer
+		 */
+		void remove_pty_by_peer(boost::uuids::uuid);
+
+
 	private:
 		void set_start_values(cyng::param_map_t const& session_cfg);
 
@@ -48,6 +63,7 @@ namespace smf {
 		kv_store cfg_;
 		config::store_map store_map_;
 		boost::uuids::random_generator uuid_gen_;
+		std::uint32_t source_;
 	};
 
 	/**
