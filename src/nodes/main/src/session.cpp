@@ -164,9 +164,14 @@ namespace smf {
 		//
 		//	send response
 		//
-		cyng::exec(vm_, [this]() {
-			buffer_write_ = cyng::serialize_invoke("cluster.res.login", true);
-			do_write();
+		auto const deq = cyng::serialize_invoke("cluster.res.login", true);
+		cyng::exec(vm_, [=, this]() {
+			bool const b = buffer_write_.empty();
+			cyng::add(buffer_write_, deq);
+			if (b)	do_write();
+
+			//buffer_write_ = cyng::serialize_invoke("cluster.res.login", true);
+			//do_write();
 		});
 
 	}
@@ -194,6 +199,8 @@ namespace smf {
 			<< " - "
 			<< data);
 
+		std::reverse(key.begin(), key.end());
+		std::reverse(data.begin(), data.end());
 		srvp_->store_.insert(table_name, key, data, generation, tag);
 
 	}
@@ -359,7 +366,7 @@ namespace smf {
 		CYNG_LOG_INFO(logger_, "pty login " << name << ':' << pwd << '@' << ep);
 
 		//
-		//	ToDo: check credentials
+		//	ToDo: check credentials and get associated device
 		// 
 
 		//
