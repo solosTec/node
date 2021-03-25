@@ -99,7 +99,7 @@ namespace smf {
 					//	remove from cluster table
 					// 
 					CYNG_LOG_TRACE(logger_, "session [" << s->get_peer() << "] closed");
-					cache_.remove_cluster_member(s->get_peer());
+					cache_.remove_pty_by_peer(s->get_peer());
 
 					//
 					//	update session counter

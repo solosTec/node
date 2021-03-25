@@ -45,6 +45,7 @@ namespace smf {
 				cyng::make_param("tag", get_random_tag()),
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
+				cyng::make_param("query", 6),
 				create_server_spec(),
 				create_cluster_spec()
 			)
@@ -81,6 +82,7 @@ namespace smf {
 #endif
 		auto const reader = cyng::make_reader(cfg);
 		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+		auto const query = cyng::numeric_cast<std::uint32_t>(reader["query"].get(), 6u);
 
 	
 		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
@@ -102,6 +104,7 @@ namespace smf {
 		join_cluster(ctl
 			, logger
 			, tag
+			, query
 			, node_name
 			, std::move(tgl)
 			, address
@@ -114,6 +117,7 @@ namespace smf {
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag
+		, std::uint32_t query
 		, std::string const& node_name
 		, toggle::server_vec_t&& tgl, std::string const& address
 		, std::uint16_t port
@@ -121,7 +125,7 @@ namespace smf {
 		, std::chrono::minutes watchdog
 		, std::chrono::seconds timeout) {
 
-		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl), sk, watchdog, timeout);
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout);
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
 

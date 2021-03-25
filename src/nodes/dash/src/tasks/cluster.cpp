@@ -169,6 +169,11 @@ namespace smf {
 
 	}
 
+	void cluster::pty_res_login(boost::uuids::uuid, bool) {
+		BOOST_ASSERT_MSG(false, "pty_res_login");
+	}
+
+
 }
 
 

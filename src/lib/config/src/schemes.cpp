@@ -28,9 +28,6 @@ namespace smf {
 				}
 			, 1);
 		}
-		//cyng::meta_sql get_table_cluster() {
-		//	return cyng::to_sql(get_store_cluster(), { 36, 0, 32, 0, 0, 0, 0, 0 });
-		//}
 
 		cyng::meta_store get_store_device() {
 
@@ -44,15 +41,14 @@ namespace smf {
 					cyng::column("id", cyng::TC_STRING),	//	model
 					cyng::column("vFirmware", cyng::TC_STRING),
 					cyng::column("enabled", cyng::TC_BOOL),
-					cyng::column("creationTime", cyng::TC_TIME_POINT),
-					cyng::column("query", cyng::TC_UINT32)
+					cyng::column("creationTime", cyng::TC_TIME_POINT)
 				}
 			, 1);
 
 		}
 
 		cyng::meta_sql get_table_device() {
-			return cyng::to_sql(get_store_device(), { 36, 128, 32, 64, 512, 64, 64, 0, 0, 0 });
+			return cyng::to_sql(get_store_device(), { 36, 128, 32, 64, 512, 64, 64, 0, 0 });
 		}
 
 		cyng::meta_store get_store_meter() {

@@ -18,6 +18,7 @@ namespace smf {
 	cluster::cluster(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, boost::uuids::uuid tag
+		, std::uint32_t query
 		, std::string const& node_name
 		, cyng::logger logger
 		, toggle::server_vec_t&& tgl
@@ -32,6 +33,7 @@ namespace smf {
 		, channel_(wp)
 		, ctl_(ctl)
 		, tag_(tag)
+		, query_(query)
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(tgl), node_name, tag, this)
@@ -129,6 +131,17 @@ namespace smf {
 			<< table_name);
 	}
 
+	void cluster::pty_res_login(boost::uuids::uuid tag
+		, bool success) {
+
+		if (success) {
+			CYNG_LOG_TRACE(logger_, "[pty] login ok {" << tag << "}");
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[pty] login failed {" << tag << "}");
+		}
+
+	}
 
 }
 

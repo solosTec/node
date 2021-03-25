@@ -23,6 +23,13 @@ namespace smf {
 	public:
 		db(cyng::store& cache, cyng::logger, boost::uuids::uuid tag);
 
+		inline kv_store& get_cfg() {
+			return cfg_;
+		}
+		inline kv_store const& get_cfg() const {
+			return cfg_;
+		}
+
 		/**
 		 * fill store map and create all tables
 		 */
@@ -41,6 +48,7 @@ namespace smf {
 
 		bool insert_pty(boost::uuids::uuid tag
 			, boost::uuids::uuid peer
+			, boost::uuids::uuid dev
 			, std::string const& name
 			, std::string const& pwd
 			, boost::asio::ip::tcp::endpoint ep
@@ -49,10 +57,30 @@ namespace smf {
 		bool remove_pty(boost::uuids::uuid);
 
 		/**
-		 * remove all sessions of this peer
+		 * remove all sessions of this peer. "cluster" table
+		 * will be updated too.
+		 * 
+		 * @return number of removed sessions
 		 */
-		void remove_pty_by_peer(boost::uuids::uuid);
+		std::size_t remove_pty_by_peer(boost::uuids::uuid);
 
+		/**
+		 * update pty counter in cluster table according to current 
+		 * count of members in "session" table
+		 */
+		std::size_t update_pty_counter(boost::uuids::uuid peer);
+
+		/**
+		 * @return the tag of the device with the specified credentials. Returns a null-tag
+		 * if no matching device was found. The boolean signals if the device is enabled or not
+		 */
+		std::pair<boost::uuids::uuid, bool> 
+			lookup_device(std::string const& name, std::string const& pwd);
+
+		bool insert_device(boost::uuids::uuid tag
+			, std::string const& name
+			, std::string const& pwd
+			, bool enabled);
 
 	private:
 		void set_start_values(cyng::param_map_t const& session_cfg);

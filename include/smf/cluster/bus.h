@@ -50,6 +50,9 @@ namespace smf
 
 		virtual void db_res_clear(std::string
 			, boost::uuids::uuid tag) = 0;
+
+		virtual void pty_res_login(boost::uuids::uuid
+			, bool) = 0;
 	};
 
 	/**
@@ -99,11 +102,12 @@ namespace smf
 
 		void req_db_clear(std::string const&);
 
-		//	"pty.login"
+		//	"pty.req.login"
 		void pty_login(std::string data_layer, boost::asio::ip::tcp::endpoint ep);
 
 		//	"pty.connect"
 		void pty_connect(std::string msisdn);
+
 
 	private:
 		void reset();
@@ -135,10 +139,10 @@ namespace smf
 
 		//	subscribe (1)
 		static std::function<void(std::string
-			, cyng::key_t key
-			, cyng::data_t data
-			, std::uint64_t gen
-			, boost::uuids::uuid tag)> 
+			, cyng::key_t
+			, cyng::data_t
+			, std::uint64_t
+			, boost::uuids::uuid )> 
 		get_vm_func_db_res_insert(bus_interface*);
 
 		//	trx (2)
@@ -148,22 +152,27 @@ namespace smf
 
 		//	update (3)
 		static std::function<void(std::string
-			, cyng::key_t key
-			, cyng::attr_t attr
-			, std::uint64_t gen
-			, boost::uuids::uuid tag)> 
+			, cyng::key_t
+			, cyng::attr_t
+			, std::uint64_t
+			, boost::uuids::uuid)> 
 		get_vm_func_db_res_update(bus_interface*);
 
 		//	remove (4)
 		static std::function<void(std::string
 			, cyng::key_t key
-			, boost::uuids::uuid tag)> 
+			, boost::uuids::uuid)> 
 		get_vm_func_db_res_remove(bus_interface*);
 
 		//	clear (5)
 		static std::function<void(std::string
-			, boost::uuids::uuid tag)> 
+			, boost::uuids::uuid)> 
 		get_vm_func_db_res_clear(bus_interface*);
+
+		//	clear (6)
+		static std::function<void(boost::uuids::uuid
+			, bool)>
+		get_vm_func_pty_res_login(bus_interface*);
 
 	private:
 		boost::asio::io_context& ctx_;

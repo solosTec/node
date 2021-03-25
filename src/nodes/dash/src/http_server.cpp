@@ -237,7 +237,7 @@ namespace smf {
 				wsp->push_msg(str);
 				return true;	//	valid channel 
 			}
-//#ifdef _DEBUG_DASH
+#ifdef _DEBUG_DASH
 			else if (boost::algorithm::equals(name, "config.bridge")) {
 				auto const str1 = json_insert_record(name, 
 					cyng::make_tuple(
@@ -253,7 +253,24 @@ namespace smf {
 				wsp->push_msg(str2);
 
 			}
-//#endif
+			else if (boost::algorithm::equals(name, "monitor.wMBus")) {
+				wsp->push_msg(json_load_icon(name, true));
+				auto const str1 = json_insert_record(name,
+					cyng::make_tuple(
+						cyng::make_param("key", cyng::make_tuple(cyng::make_param("id", 2))),
+						cyng::make_param("data", cyng::make_tuple(
+							cyng::make_param("ts", "2021-03-03T12:00:01"), 
+							cyng::make_param("serverId", "01-e61e-13090016-3c-07"), 
+							cyng::make_param("medium", 2), 
+							cyng::make_param("manufacturer", "EMH"), 
+							cyng::make_param("frameType", 72), 
+							cyng::make_param("tag", "tag"),
+							cyng::make_param("Payload", "...")))
+					));
+				wsp->push_msg(str1);
+				wsp->push_msg(json_load_icon(name, false));
+			}
+#endif
 			else {
 				CYNG_LOG_WARNING(logger_, "[HTTP] subscribe undefined channel " << name);
 			}
@@ -330,6 +347,15 @@ namespace smf {
 
 		return cyng::io::to_json(cyng::make_tuple(
 			cyng::make_param("cmd", "insert"),
+			cyng::make_param("channel", channel),
+			cyng::make_param("rec", std::move(tpl))));
+
+	}
+
+	std::string json_update_record(std::string channel, cyng::tuple_t&& tpl) {
+
+		return cyng::io::to_json(cyng::make_tuple(
+			cyng::make_param("cmd", "update"),
 			cyng::make_param("channel", channel),
 			cyng::make_param("rec", std::move(tpl))));
 

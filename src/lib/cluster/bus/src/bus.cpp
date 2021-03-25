@@ -52,18 +52,20 @@ namespace smf {
 		vm_.set_channel_name("db.res.update", 3);
 		vm_.set_channel_name("db.res.remove", 4);
 		vm_.set_channel_name("db.res.clear", 5);
+		vm_.set_channel_name("pty.res.login", 6);
 	}
 
 	cyng::vm_proxy bus::init_vm(bus_interface* bip) {
 
 		return bip->get_fabric()->create_proxy(
 			get_vm_func_on_login(bip),			//	"cluster.res.login"
-			get_vm_func_db_res_insert(bip),	//	"db.res.insert"
+			get_vm_func_db_res_insert(bip),		//	"db.res.insert"
 			get_vm_func_db_res_trx(bip),		//	"db.res.trx"
 			get_vm_func_db_res_update(bip),		//	"db.res.update"
 			get_vm_func_db_res_remove(bip),		//	"db.res.remove"
-			get_vm_func_db_res_clear(bip));		//	"db.res.clear"
-
+			get_vm_func_db_res_clear(bip),		//	"db.res.clear"
+			get_vm_func_pty_res_login(bip)		//	"pty.res.login"
+		);
 	}
 
 	void bus::start() {
@@ -402,7 +404,7 @@ namespace smf {
 
 	void bus::pty_login(std::string data_layer, boost::asio::ip::tcp::endpoint ep) {
 		auto const srv = tgl_.get();
-		auto const deq = cyng::serialize_invoke("pty.login"
+		auto const deq = cyng::serialize_invoke("pty.req.login"
 			, tag_
 			, srv.account_
 			, srv.pwd_
@@ -453,7 +455,7 @@ namespace smf {
 
 	std::function<void(std::string
 		, cyng::key_t key
-		, cyng::attr_t attr
+		, cyng::attr_t attr_t
 		, std::uint64_t gen
 		, boost::uuids::uuid tag)>
 	bus::get_vm_func_db_res_update(bus_interface* bip) {
@@ -472,5 +474,13 @@ namespace smf {
 	bus::get_vm_func_db_res_clear(bus_interface* bip) {
 		return std::bind(&bus_interface::db_res_clear, bip, std::placeholders::_1, std::placeholders::_2);
 	}
+
+	std::function<void(boost::uuids::uuid tag
+		, bool success)>
+	bus::get_vm_func_pty_res_login(bus_interface* bip) {
+		return std::bind(&bus_interface::pty_res_login, bip, std::placeholders::_1, std::placeholders::_2);
+
+	}
+
 }
 

@@ -34,6 +34,7 @@
 		void join_cluster(cyng::controller&
 			, cyng::logger
 			, boost::uuids::uuid
+			, std::uint32_t query
 			, std::string const& node_name
 			, toggle::server_vec_t&& cfg
 			, std::string const& address

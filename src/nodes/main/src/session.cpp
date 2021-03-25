@@ -42,7 +42,7 @@ namespace smf {
 		vm_.set_channel_name("db.req.update", 3);	//	table merge()
 		vm_.set_channel_name("db.req.remove", 4);	//	table erase()
 		vm_.set_channel_name("db.req.clear", 5);	//	table clear()
-		vm_.set_channel_name("pty.login", 6);
+		vm_.set_channel_name("pty.req.login", 6);
 		vm_.set_channel_name("pty.connect", 6);
 	}
 
@@ -169,9 +169,6 @@ namespace smf {
 			bool const b = buffer_write_.empty();
 			cyng::add(buffer_write_, deq);
 			if (b)	do_write();
-
-			//buffer_write_ = cyng::serialize_invoke("cluster.res.login", true);
-			//do_write();
 		});
 
 	}
@@ -208,16 +205,29 @@ namespace smf {
 		, cyng::key_t key
 		, cyng::data_t data
 		, std::uint64_t generation
-		, boost::uuids::uuid) {
+		, boost::uuids::uuid source) {
+
+		//
+		//	ToDo:
+		// 
+		std::reverse(key.begin(), key.end());
+		std::reverse(data.begin(), data.end());
+		srvp_->store_.merge(table_name, key, std::move(data), generation, source);
+
 
 	}
 	void session::db_req_remove(std::string const& table_name
 		, cyng::key_t key
 		, boost::uuids::uuid source) {
 
+		std::reverse(key.begin(), key.end());
+		srvp_->store_.erase(table_name, key, source);
+
 	}
 	void session::db_req_clear(std::string const& table_name
 		, boost::uuids::uuid source) {
+
+		srvp_->store_.clear(table_name, source);
 
 	}
 
@@ -366,17 +376,62 @@ namespace smf {
 		CYNG_LOG_INFO(logger_, "pty login " << name << ':' << pwd << '@' << ep);
 
 		//
-		//	ToDo: check credentials and get associated device
+		//	ToDo: check if there is already a session of this pty
 		// 
 
 		//
-		//	insert into session table
-		//
-		srvp_->cache_.insert_pty(tag, peer_, name, pwd, ep, data_layer);
-
-		//
-		//	ToDo: send response
+		//	check credentials and get associated device
 		// 
+		auto const dev = srvp_->cache_.lookup_device(name, pwd);
+		if (!dev.first.is_nil()) {
+
+			//
+			//	insert into session table
+			//
+			srvp_->cache_.insert_pty(tag, peer_, dev.first, name, pwd, ep, data_layer);
+
+			//
+			//	send response
+			// 
+			auto const deq = cyng::serialize_invoke("pty.res.login"
+				, tag
+				, true);
+
+			cyng::exec(vm_, [=, this]() {
+				bool const b = buffer_write_.empty();
+				cyng::add(buffer_write_, deq);
+				if (b)	do_write();
+				});
+
+			//
+			//	update cluster table (pty counter)
+			// 
+			srvp_->cache_.update_pty_counter(peer_);
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "pty login [" << name << "] failed");
+
+			//
+			//	send response
+			// 
+			auto const deq = cyng::serialize_invoke("pty.res.login"
+				, tag
+				, false);
+
+			cyng::exec(vm_, [=, this]() {
+				bool const b = buffer_write_.empty();
+				cyng::add(buffer_write_, deq);
+				if (b)	do_write();
+				});
+
+			//	check auto insert
+			auto const auto_enabled = srvp_->cache_.get_cfg().get_value("auto-enabled", false);
+			if (auto_enabled) {
+				CYNG_LOG_INFO(logger_, "auto-enabled is ON - insert [" << name << "] into device table");
+				srvp_->cache_.insert_device(tag, name, pwd, true);
+			}
+		}
 
 	}
 

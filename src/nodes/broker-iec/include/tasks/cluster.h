@@ -73,6 +73,8 @@ namespace smf {
 		virtual void db_res_clear(std::string
 			, boost::uuids::uuid tag) override;
 
+		virtual void pty_res_login(boost::uuids::uuid, bool) override;
+
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
