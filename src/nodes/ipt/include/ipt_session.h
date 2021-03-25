@@ -9,6 +9,7 @@
 
 #include <smf/ipt/parser.h>
 #include <smf/cluster/bus.h>
+#include <smf/ipt/serializer.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/buffer.h>
@@ -56,10 +57,11 @@ namespace smf {
 		std::deque<cyng::buffer_t>	buffer_write_;
 
 		/**
-		 * parser for wireless M-Bus data
+		 * parser for ip-t data
 		 */
 		ipt::parser parser_;
 
+		ipt::serializer	serializer_;
 
 	};
 

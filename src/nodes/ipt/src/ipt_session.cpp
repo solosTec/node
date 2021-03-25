@@ -8,6 +8,8 @@
 #include <ipt_server.h>
 
 #include <smf/ipt/codes.h>
+#include <smf/ipt/response.hpp>
+#include <smf/ipt/transpiler.h>
 
 #include <cyng/log/record.h>
 
@@ -31,6 +33,7 @@ namespace smf {
 			, std::bind(&ipt_session::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&ipt_session::ipt_stream, this, std::placeholders::_1)
 		)
+		, serializer_(srv->sk_)
 	{}
 
 	ipt_session::~ipt_session()
@@ -110,12 +113,12 @@ namespace smf {
 			if (!buffer_write_.empty()) {
 				do_write();
 			}
-			else {
+			//else {
 
-				// Wait 10 seconds before sending the next heartbeat.
-				//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
-				//heartbeat_timer_.async_wait(std::bind(&bus::do_write, this));
-			}
+			//	// Wait 10 seconds before sending the next heartbeat.
+			//	//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
+			//	//heartbeat_timer_.async_wait(std::bind(&bus::do_write, this));
+			//}
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "[session] write: " << ec.message());
@@ -129,10 +132,26 @@ namespace smf {
 		CYNG_LOG_TRACE(logger_, "ipt cmd " << ipt::command_name(h.command_));
 		switch (ipt::to_code(h.command_)) {
 		case ipt::code::CTRL_REQ_LOGIN_PUBLIC:
-			cluster_bus_.pty_login("sml", socket_.remote_endpoint());
+			if(cluster_bus_.is_connected()) {
+				auto const [name, pwd] = ipt::ctrl_req_login_public(std::move(body));
+				cluster_bus_.pty_login("sml", socket_.remote_endpoint());
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
+				buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
+				do_write();
+			}
 			break;
 		case ipt::code::CTRL_REQ_LOGIN_SCRAMBLED:
-			cluster_bus_.pty_login("sml", socket_.remote_endpoint());
+			if (cluster_bus_.is_connected()) {
+				auto const [name, pwd, sk] = ipt::ctrl_req_login_scrambled(std::move(body));
+				cluster_bus_.pty_login("sml", socket_.remote_endpoint());
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
+				buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
+				do_write();
+			}
 			break;
 		default:
 			break;

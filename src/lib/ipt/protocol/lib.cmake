@@ -11,6 +11,7 @@ set (ipt_cpp
     src/lib/ipt/protocol/src/response.cpp
     src/lib/ipt/protocol/src/parser.cpp
     src/lib/ipt/protocol/src/serializer.cpp
+    src/lib/ipt/protocol/src/transpiler.cpp
 )
     
 set (ipt_h
@@ -25,6 +26,7 @@ set (ipt_h
     include/smf/ipt/scrambler.hpp
     include/smf/ipt/parser.h
     include/smf/ipt/serializer.h
+    include/smf/ipt/transpiler.h
 )
 
 

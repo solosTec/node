@@ -80,6 +80,10 @@ namespace smf
 
 		boost::uuids::uuid get_tag() const;
 
+		constexpr bool is_connected() const {
+			return state_ == state::CONNECTED;
+		}
+
 		//
 		//	cluster client functions
 		//

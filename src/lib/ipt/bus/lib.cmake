@@ -6,7 +6,7 @@ set (ipt_bus)
 set (ipt_bus_cpp
     src/lib/ipt/bus/src/config.cpp
     src/lib/ipt/bus/src/bus.cpp
-    src/lib/ipt/bus/src/transpiler.cpp
+#    src/lib/ipt/bus/src/transpiler.cpp
 )
     
 set (ipt_bus_h
@@ -14,7 +14,7 @@ set (ipt_bus_h
     include/smf/ipt.h    
     include/smf/ipt/config.h    
     include/smf/ipt/bus.h
-    include/smf/ipt/transpiler.h
+#    include/smf/ipt/transpiler.h
 )
 
 

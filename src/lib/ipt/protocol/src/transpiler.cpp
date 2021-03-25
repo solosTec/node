@@ -28,16 +28,23 @@ namespace smf
 			};
 		}
 
-		//cyng::deque_t ctrl_res_login_scrambled(cyng::buffer_t&& data) {
-		//	auto res = cyng::to_numeric_be<response_t>(data);
-		//	auto wd = cyng::to_numeric_be<std::uint16_t>(data, sizeof(response_t));
+		std::tuple<std::string, std::string> ctrl_req_login_public(cyng::buffer_t&& data) {
+			return {
+				std::string(data.data()),
+				""
+			};
 
-		//	//
-		//	//	ToDo: set new scramble key
-		//	//
+		}
 
-		//	return cyng::make_deque(wd, res, 2, "ipt.res.login", cyng::op::INVOKE);
-		//}
+		std::tuple<std::string, std::string, scramble_key> ctrl_req_login_scrambled(cyng::buffer_t&& data) {
+			return {
+				std::string(data.data()),
+				"",
+				scramble_key::null_scramble_key_
+			};
+
+
+		}
 
 		cyng::deque_t gen_instructions(header const& h, cyng::buffer_t&& data) {
 
