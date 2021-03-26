@@ -289,10 +289,10 @@ namespace smf {
 			wsp->push_msg(json_update_channel(name, std::thread::hardware_concurrency()));
 		}
 		else if (boost::algorithm::starts_with(name, "sys.mem.virtual.total"))	{
-			wsp->push_msg(json_update_channel(name, cyng::sys::get_total_virtual_memory()));
+			wsp->push_msg(json_update_channel(name, cyng::sys::get_total_ram()));
 		}
 		else if (boost::algorithm::starts_with(name, "sys.mem.virtual.used"))	{
-			wsp->push_msg(json_update_channel(name, cyng::sys::get_used_virtual_memory()));
+			wsp->push_msg(json_update_channel(name, cyng::sys::get_used_ram()));
 		}
 		else if (boost::algorithm::starts_with(name, "sys.mem.virtual.stat"))	{
 			wsp->push_msg(json_update_channel(name, 402));
