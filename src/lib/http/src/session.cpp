@@ -12,6 +12,7 @@
 #include <smf.h>
 
 #include <cyng/log/record.h>
+#include <cyng/parse/string.h>
 
 #include <algorithm>
 
@@ -73,6 +74,7 @@ namespace smf {
         session::session(boost::asio::ip::tcp::socket&& socket
             , cyng::logger logger
             , std::string doc_root
+            , std::map<std::string, std::string> const& redirects_intrinsic
             , std::uint64_t const max_upload_size
             , std::string const nickname
             , std::chrono::seconds const timeout
@@ -81,6 +83,7 @@ namespace smf {
             , buffer_()
             , logger_(logger)
             , doc_root_(doc_root)
+            , redirects_intrinsic_(redirects_intrinsic)
             , max_upload_size_(max_upload_size)
             , nickname_(nickname)
             , timeout_(timeout)
@@ -158,11 +161,6 @@ namespace smf {
                 return;
             }
 
-            //
-            //	ToDo: test authorization
-            //
-
-
             // Send the response
             CYNG_LOG_TRACE(logger_, "handle request from " << stream_.socket().remote_endpoint());
             handle_request(parser_->release());
@@ -211,9 +209,9 @@ namespace smf {
             //
             //  sanity check
             //
-            if (req.target().empty() ||
-                req.target()[0] != '/' ||
-                req.target().find("..") != boost::beast::string_view::npos)
+            if (req.target().empty() 
+                || req.target()[0] != '/' 
+                || req.target().find("..") != boost::beast::string_view::npos)
             {
                 return queue_(send_bad_request(req.version()
                     , req.keep_alive()
@@ -222,6 +220,18 @@ namespace smf {
 
             auto target = req.target().to_string();
             CYNG_LOG_TRACE(logger_, "request target " << target);
+
+            //
+            //	test authorization
+            //
+            if (!check_auth(parser_->get())) {
+                return;
+            }
+
+            //
+            //  apply intrinsic redirects
+            //
+            intrinsic_redirect(target);
 
             switch (req.method()) {
             case boost::beast::http::verb::get:
@@ -243,6 +253,45 @@ namespace smf {
                 break;
             }
 
+        }
+
+        void session::intrinsic_redirect(std::string& target) {
+
+            //	skip all characters after '?'
+            //	example: /sockjs-node/info?t=1599821614083
+            auto const vec = cyng::split(target, "?");
+
+            //  virtual path (not the real one)
+            auto const virt_path = (vec.size() == 2)
+                ? vec.at(0)
+                : target
+                ;
+
+            if (vec.size() < 2) {
+                if (std::filesystem::is_directory(target)) {
+                    target.append("/index.html");
+                }
+            }
+
+            //
+            //  apply intrinsic redirects to virt_path
+            //
+            auto pos = redirects_intrinsic_.lower_bound(virt_path);
+            if (pos != redirects_intrinsic_.end() && pos != redirects_intrinsic_.begin()) {
+                --pos;
+                auto const& key = pos->first;
+                if (boost::algorithm::starts_with(virt_path, key)) {
+                    CYNG_LOG_TRACE(logger_, "intrinsic redirect " << virt_path << " ==> " << pos->second);
+                    target = pos->second;
+                    return; //  complete
+                }
+            }
+
+#ifdef _DEBUG_HTTP
+            //if (virt_path.starts_with("/config")) {
+            //    target = "/index.html";
+            //}
+#endif
         }
 
         void session::handle_get_head_request(boost::beast::http::request<boost::beast::http::string_body>&& req
@@ -337,6 +386,11 @@ namespace smf {
 
         }
 
+        bool session::check_auth(boost::beast::http::request<boost::beast::http::string_body> const& req)
+        {
+            auto const target = req.target().to_string();
+            return true;
+        }
 
         boost::beast::http::response<boost::beast::http::string_body> session::send_bad_request(std::uint32_t version
             , bool keep_alive

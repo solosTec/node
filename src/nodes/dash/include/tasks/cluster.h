@@ -48,7 +48,8 @@ namespace smf {
 			, std::uint64_t max_upload_size
 			, std::string const& nickname
 			, std::chrono::seconds timeout
-			, http_server::blocklist_type&&);
+			, http_server::blocklist_type&&
+			, std::map<std::string, std::string>&&);
 		~cluster();
 
 		void stop(cyng::eod);

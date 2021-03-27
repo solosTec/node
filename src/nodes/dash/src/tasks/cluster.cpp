@@ -25,7 +25,8 @@ namespace smf {
 		, std::uint64_t max_upload_size
 		, std::string const& nickname
 		, std::chrono::seconds timeout
-		, http_server::blocklist_type&& blocklist)
+		, http_server::blocklist_type&& blocklist
+		, std::map<std::string, std::string>&& redirects_intrinsic)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&http_server::listen, &http_server_, std::placeholders::_1),
@@ -44,7 +45,8 @@ namespace smf {
 			, logger
 			, document_root
 			, db_
-			, std::move(blocklist))
+			, std::move(blocklist)
+			, std::move(redirects_intrinsic))
 		//, notifier_(std::make_shared<notifier>(db_, http_server_, logger))
 	{
 		auto sp = channel_.lock();

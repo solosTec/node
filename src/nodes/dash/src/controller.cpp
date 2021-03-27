@@ -59,6 +59,11 @@ namespace smf {
 		blocklist_type blocklist = convert_to_blocklist(cyng::vector_cast<std::string>(reader["server"]["blocklist"].get(), "0.0.0.0"));
 
 		//
+		//	get intrinsic redirects
+		//
+		auto redirects_intrinsic = cyng::to_map<std::string>(cyng::container_cast<cyng::param_map_t>(reader["server"]["redirects"]["intrinsic"].get()), "/index.html");
+
+		//
 		//	connect to cluster
 		//
 		join_cluster(ctl
@@ -72,7 +77,8 @@ namespace smf {
 			, max_upload_size
 			, nickname
 			, timeout
-			, std::move(blocklist));
+			, std::move(blocklist)
+			, std::move(redirects_intrinsic));
 
 		
 	}
@@ -88,7 +94,8 @@ namespace smf {
 		, std::uint64_t max_upload_size
 		, std::string const& nickname
 		, std::chrono::seconds timeout
-		, blocklist_type&& blocklist) 
+		, blocklist_type&& blocklist
+		, std::map<std::string, std::string>&& redirects_intrinsic)
 	{
 
 		if (!std::filesystem::exists(document_root)) {
@@ -105,7 +112,8 @@ namespace smf {
 			, max_upload_size
 			, nickname
 			, timeout		
-			, std::move(blocklist));
+			, std::move(blocklist)
+			, std::move(redirects_intrinsic));
 
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
@@ -141,9 +149,10 @@ namespace smf {
 			cyng::make_param("max-upload-size", 1024 * 1024 * 10),	//	10 MB
 			cyng::make_param("document-root", root.string()),
 			cyng::make_param("server-nickname", "Coraline"),	//	x-servernickname
+			cyng::make_param("auth-type", "Basic"),	//	none, cookie
 			create_auth_spec(),
-			create_block_list()
-			//create_redirects()	//	ToDo: create redirect rules
+			create_block_list(),
+			create_redirects()	//	intrinsic redirections
 		));
 	}
 
@@ -194,6 +203,26 @@ namespace smf {
 			}
 		));
 	}
+
+	cyng::param_t controller::create_redirects() {
+		return cyng::make_param("redirects", cyng::make_tuple(
+			create_intrinsic_redirects(),
+			cyng::make_param("permanent", cyng::tuple_factory()),
+			cyng::make_param("see-other", cyng::tuple_factory()),
+			cyng::make_param("temporary", cyng::tuple_factory())
+		));
+	}
+
+	cyng::param_t controller::create_intrinsic_redirects() {
+		return cyng::make_param("intrinsic", cyng::make_tuple(
+				cyng::make_param("/config", "/index.html"),
+				cyng::make_param("/status", "/index.html"),
+				cyng::make_param("/monitor", "/index.html"),
+				cyng::make_param("/task", "/index.html"),
+				cyng::make_param("/collector", "/index.html")	
+		));
+	}
+
 
 	std::vector<boost::asio::ip::address> convert_to_blocklist(std::vector<std::string>&& inp) {
 		std::vector<boost::asio::ip::address> res;

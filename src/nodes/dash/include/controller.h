@@ -38,6 +38,8 @@ namespace smf {
 		cyng::param_t create_cluster_spec();
 		cyng::param_t create_auth_spec();
 		cyng::param_t create_block_list();
+		cyng::param_t create_redirects();
+		cyng::param_t create_intrinsic_redirects();
 
 		void join_cluster(cyng::controller&
 			, cyng::logger
@@ -50,7 +52,8 @@ namespace smf {
 			, std::uint64_t max_upload_size
 			, std::string const& nickname
 			, std::chrono::seconds timeout
-			, blocklist_type&&);
+			, blocklist_type&&
+			, std::map<std::string, std::string>&&);
 
 	};
 

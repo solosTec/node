@@ -44,7 +44,8 @@ namespace smf {
 			, cyng::logger
 			, std::string const& document_root
 			, db&
-			, blocklist_type&&);
+			, blocklist_type&&
+			, std::map<std::string, std::string>&&);
 		~http_server();
 
 		void stop(cyng::eod);
@@ -94,6 +95,7 @@ namespace smf {
 		db& db_;
 
 		std::set<boost::asio::ip::address> const blocklist_;
+		std::map<std::string, std::string> const redirects_intrinsic_;
 
 		/**
 		 * listen for incoming connections.
