@@ -94,7 +94,7 @@ namespace smf {
 					cyng::column("tag", cyng::TC_UUID),			//	same as meter/device
 					cyng::column("host", cyng::TC_STRING),		//	host/domain name
 					cyng::column("port", cyng::TC_UINT16),		//	listener port (outgoing)
-					cyng::column("interval", cyng::TC_SECOND),	//	pull cycle
+					cyng::column("interval", cyng::TC_SECOND)	//	pull cycle
 				}
 			, 1);
 
@@ -114,6 +114,7 @@ namespace smf {
 					cyng::column("tag", cyng::TC_UUID),				//	same as meter/device
 					cyng::column("address", cyng::TC_IP_ADDRESS),	//	listener address
 					cyng::column("port", cyng::TC_UINT16),			//	listener port (incoming)
+					cyng::column("aes", cyng::TC_AES128)		//	AES 128 key
 				}
 			, 1);
 

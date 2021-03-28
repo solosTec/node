@@ -210,6 +210,8 @@ namespace smf {
 		db::rel{"config", "config.system", ""},
 		db::rel{"gateway", "config.gateway", "table.gateway.count"},
 		db::rel{"meter", "config.meter", "table.meter.count"},
+		db::rel{"meterIEC", "config.iec", "table.iec.count"},
+		db::rel{"meterwMBus", "config.wmbus", "table.wmbus.count"},
 		db::rel{"location", "config.location", "table.location.count"},
 		db::rel{"session", "status.session", "table.session.count"}
 		// 
