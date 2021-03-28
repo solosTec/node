@@ -45,6 +45,7 @@ namespace smf
 			sp->set_channel_name("db.clear", 4);
 			sp->set_channel_name("db.trx", 5);
 			sp->set_channel_name("power-return", 6);
+			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
 		}
 
 		connect();

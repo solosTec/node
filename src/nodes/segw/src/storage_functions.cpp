@@ -893,7 +893,7 @@ namespace smf {
 
 		auto const obj = cyng::make_object(path);
 
-		if (boost::algorithm::equals(type, "bool")) {
+		if (boost::algorithm::equals(type, "bool") || boost::algorithm::equals(type, "b") || boost::algorithm::equals(type, "boolean")) {
 			return store.cfg_update(obj, cyng::make_object(boost::algorithm::equals(value, "true")));
 		}
 		else if (boost::algorithm::equals(type, "u8")) {
@@ -907,6 +907,18 @@ namespace smf {
 		}
 		else if (boost::algorithm::equals(type, "u64")) {
 			return store.cfg_update(obj, cyng::make_object(static_cast<std::uint64_t>(std::stoull(value))));
+		}
+		else if (boost::algorithm::equals(type, "i8")) {
+			return store.cfg_update(obj, cyng::make_object(static_cast<std::int8_t>(std::stol(value))));
+		}
+		else if (boost::algorithm::equals(type, "i16")) {
+			return store.cfg_update(obj, cyng::make_object(static_cast<std::int16_t>(std::stol(value))));
+		}
+		else if (boost::algorithm::equals(type, "i32")) {
+			return store.cfg_update(obj, cyng::make_object(static_cast<std::int32_t>(std::stol(value))));
+		}
+		else if (boost::algorithm::equals(type, "i64")) {
+			return store.cfg_update(obj, cyng::make_object(static_cast<std::int64_t>(std::stoll(value))));
 		}
 		else if (boost::algorithm::equals(type, "s")) {
 			return store.cfg_update(obj, cyng::make_object(value));
@@ -923,7 +935,7 @@ namespace smf {
 		}
 		else {
 			std::cerr
-				<< "supported data types: [bool] [u8] [u16] [u32] [u64] [s] [chrono:sec] [chrono:min] [ip:address]"
+				<< "supported data types: [bool] [u8] [u16] [u32] [u64] [i8] [i16] [i32] [i64] [s] [chrono:sec] [chrono:min] [ip:address]"
 				<< std::endl;
 		}
 

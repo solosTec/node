@@ -56,6 +56,7 @@ namespace smf {
 			sp->set_channel_name("set-stopbits", 7);
 			sp->set_channel_name("set-databits", 8);
 			sp->set_channel_name("update-statistics", 9);
+			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
 		}
 
 		CYNG_LOG_INFO(logger_, "LMN " << cfg_.get_port() << " ready");
@@ -241,6 +242,45 @@ namespace smf {
 	void lmn::do_write(cyng::buffer_t data) {
 
 		boost::system::error_code ec;
+
+#ifdef __DEBUG
+
+		//	1200, 2400, 4800, 9600, 19200, 38400, 115200, 57600
+		std::array<std::uint32_t, 10> baudrates = { 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 115200, 57600 };
+		std::vector<std::string> stopbits = {"one", "onepointfive", "two"};
+		std::vector<std::string> parity = { "odd", "even", "none" };
+		std::vector<std::uint8_t> databits = { 7, 8 };
+		data = cyng::make_buffer("/?!\n\n\n\n");
+
+		for (auto const br : baudrates) {
+			CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] baudrate " << br);
+			set_baud_rate(br);
+
+			for (auto const& sb : stopbits) {
+
+				CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] stopbits " << sb);
+				set_stopbits(sb);
+
+				for (auto const& par : parity) {
+
+					CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] parity " << par);
+					set_parity(par);
+
+					for (auto db : databits) {
+						CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] databits " << +db);
+						set_databits(db);
+
+						boost::asio::write(port_, boost::asio::buffer(data, data.size()), ec);
+
+						std::this_thread::sleep_for(std::chrono::milliseconds(200));
+					}
+				}
+			}
+		}
+
+		//data = cyng::make_buffer("/?!\n\n\n\n");
+#endif
+
 		boost::asio::write(port_, boost::asio::buffer(data, data.size()), ec);
 		if (!ec) {
 			CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] sent " << data.size() << " bytes");

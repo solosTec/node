@@ -42,6 +42,7 @@ set (segw_tasks
     include/tasks/CP210x.h
     include/tasks/persistence.h
     include/tasks/filter.h
+    include/tasks/redirector.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
@@ -49,6 +50,7 @@ set (segw_tasks
     src/tasks/CP210x.cpp
     src/tasks/persistence.cpp
     src/tasks/filter.cpp
+    src/tasks/redirector.cpp
 )
 
 set (segw_config

@@ -49,6 +49,7 @@ namespace smf {
 		if (sp) {
 			sp->set_channel_name("receive", 1);
 			sp->set_channel_name("start", 2);
+			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
 		}
 
 		CYNG_LOG_INFO(logger_, "[broker] ready: " << target_);

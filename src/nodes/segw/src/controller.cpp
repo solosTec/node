@@ -89,6 +89,10 @@ namespace smf {
 			}
 			return true;
 		}
+		//if (vars.count("readout-serial") != 0) {
+		//	auto const idx = vars["readout-serial"].as< std::uint8_t >();
+		//	readout_serial(read_config_section(config_.json_path_, config_.config_index_), idx);
+		//}
 		//
 		//	call base classe
 		//
@@ -594,6 +598,11 @@ namespace smf {
 				<< "cannot open GPIO [" << path.generic_string() << "]" << std::endl;
 		}
 	}
+
+	//void controller::readout_serial(cyng::object&& cfg, std::uint8_t idx) {
+	//	cyng::controller ctl(2);
+
+	//}
 
 	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
 

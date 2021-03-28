@@ -25,10 +25,12 @@ namespace smf {
 		public:
 			session(boost::asio::ip::tcp::socket socket, cyng::registry&, cfg&, cyng::logger, lmn_type);
 
-			void start();
+			void start(cyng::controller&);
 
 		private:
 			void do_read();
+			void do_write(cyng::buffer_t);
+			//void handle_write(const boost::system::error_code& ec);
 
 		private:
 			boost::asio::ip::tcp::socket socket_;
@@ -40,6 +42,12 @@ namespace smf {
 			 * Buffer for incoming data.
 			 */
 			std::array<char, 2048>	buffer_;
+			/**
+			 * Buffer for outgoing data.
+			 */
+			//std::deque<cyng::buffer_t>	buffer_write_;
+
+			cyng::channel_ptr channel_;
 		};
 	}
 }

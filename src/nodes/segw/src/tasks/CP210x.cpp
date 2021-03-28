@@ -31,6 +31,7 @@ namespace smf
 		if (sp) {
 			sp->set_channel_name("receive", 1);
 			sp->set_channel_name("reset-target-channels", 2);
+			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
 		}
 
 		CYNG_LOG_INFO(logger_, "CP210x ready");

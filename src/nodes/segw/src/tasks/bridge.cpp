@@ -64,6 +64,7 @@ namespace smf {
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("start", 1);
+			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
 		}
 
 		CYNG_LOG_INFO(logger_, "segw ready");

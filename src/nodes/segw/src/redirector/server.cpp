@@ -15,7 +15,8 @@ namespace smf {
 	namespace rdr {
 
 		server::server(cyng::controller& ctl, cfg& c, cyng::logger logger, lmn_type type)
-			: cfg_(c)
+			: ctl_(ctl)
+			, cfg_(c)
 			, logger_(logger)
 			, type_(type)
 			, registry_(ctl.get_registry())
@@ -70,7 +71,7 @@ namespace smf {
 						//
 						//	start session
 						//
-						sp->start();
+						sp->start(ctl_);
 
 						//
 						//	update session counter

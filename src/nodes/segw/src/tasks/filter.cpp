@@ -64,6 +64,7 @@ namespace smf
 			sp->set_channel_name("reset-target-channels", 2);
 			sp->set_channel_name("update-statistics", 3);
 
+			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
 			CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "]  ready");
 
 			//	stop blinking

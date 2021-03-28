@@ -28,13 +28,12 @@ namespace smf
 		, logger_(logger)
 		, path_(p / "value")
 	{
-		CYNG_LOG_INFO(logger_, "GPIO [" << path_ << "] ready");
-
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("turn", 1);
 			sp->set_channel_name("flashing", 2);
 			sp->set_channel_name("blinking", 3);
+			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
 		}
 
 		//

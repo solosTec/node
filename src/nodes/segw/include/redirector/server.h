@@ -27,6 +27,7 @@ namespace smf {
 			void do_accept();
 
 		private:
+			cyng::controller& ctl_;
 			cfg& cfg_;
 			cyng::logger logger_;
 			lmn_type const type_;

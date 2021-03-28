@@ -123,6 +123,7 @@ namespace smf {
 			return cyng::to_sql(get_store_meterwMBus(), { 36
 				, 0	//	address
 				, 0	//	port
+				, 32
 				});
 		}
 

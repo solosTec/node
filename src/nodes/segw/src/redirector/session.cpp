@@ -6,9 +6,11 @@
  */
 
 #include <redirector/session.h>
+#include <tasks/redirector.h>
 
 #include <cyng/log/record.h>
 #include <cyng/task/registry.h>
+#include <cyng/task/controller.h>
 
 namespace smf {
 	namespace rdr {
@@ -19,10 +21,33 @@ namespace smf {
 			, logger_(logger)
 			, cfg_(config, type)
 			, buffer_{ 0 }
+			//, buffer_write_()
+			, channel_()
 		{}
 
-		void session::start() {
+		void session::start(cyng::controller& ctl) {
+
+			//
+			//	start receiver task
+			//
+			channel_ = ctl.create_named_channel_with_ref<redirector>("redirector", registry_, logger_, std::bind(&session::do_write, this, std::placeholders::_1));
+			BOOST_ASSERT(channel_->is_open());
+
+			//
+			//	port name == LMN task name
+			//
+			channel_->dispatch("start", cyng::make_tuple(cfg_.get_port_name()));
+
+			//
+			//	start reading incoming data (mostly "/?!")
+			//
 			do_read();
+		}
+
+		void session::do_write(cyng::buffer_t data) {
+			//	write it straight to the socket
+			boost::system::error_code ec;
+			boost::asio::write(socket_, boost::asio::buffer(data.data(), data.size()), ec);
 		}
 
 		void session::do_read() {
