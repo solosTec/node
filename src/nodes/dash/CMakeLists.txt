@@ -35,10 +35,12 @@ target_link_directories(dash
 
 target_link_libraries(dash 
     PRIVATE
-        ${CYNG_LIBRARIES} 
         smf_config
         smf_cluster_bus
         smf_http
+        ${CYNG_LIBRARIES} 
+        ${SMFSEC_LIBRARIES}
+        ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

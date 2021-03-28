@@ -22,13 +22,15 @@ namespace smf {
 		, std::string const& document_root
 		, db& data
 		, blocklist_type&& blocklist
-		, std::map<std::string, std::string>&& redirects_intrinsic)
+		, std::map<std::string, std::string>&& redirects_intrinsic
+		, http::auth_dirs const& auths)
 	: tag_(tag)
 		, logger_(logger)
 		, document_root_(document_root)
 		, db_(data)
 		, blocklist_(blocklist.begin(), blocklist.end())
 		, redirects_intrinsic_(redirects_intrinsic.begin(), redirects_intrinsic.end())
+		, auths_(auths)
 		, server_(ioc, logger, std::bind(&http_server::accept, this, std::placeholders::_1))
 		, uidgen_()
 		, ws_map_()
@@ -80,6 +82,7 @@ namespace smf {
 			logger_,
 			document_root_,
 			redirects_intrinsic_,
+			auths_,
 			db_.cfg_.get_value("http-max-upload-size", static_cast<std::uint64_t>(0xA00000)),
 			db_.cfg_.get_value("http-server-nickname", "coraline"),
 			db_.cfg_.get_value("http-session-timeout", std::chrono::seconds(30)),

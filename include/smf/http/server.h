@@ -7,8 +7,9 @@
 #ifndef SMF_HTTP_SERVER_H
 #define SMF_HTTP_SERVER_H
 
-#include <cyng/log/logger.h>
+#include <smf/http/auth.h>
 
+#include <cyng/log/logger.h>
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>

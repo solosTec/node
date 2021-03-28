@@ -10,6 +10,7 @@
 
 #include <smf/controller_base.h>
 #include <smf/cluster/config.h>
+#include <smf/http/auth.h>
 
 #include <vector>
 
@@ -53,7 +54,8 @@ namespace smf {
 			, std::string const& nickname
 			, std::chrono::seconds timeout
 			, blocklist_type&&
-			, std::map<std::string, std::string>&&);
+			, std::map<std::string, std::string>&&
+			, http::auth_dirs const&);
 
 	};
 

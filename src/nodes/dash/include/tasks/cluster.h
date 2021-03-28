@@ -7,9 +7,11 @@
 #ifndef SMF_DASH_TASK_CLUSTER_H
 #define SMF_DASH_TASK_CLUSTER_H
 
-#include <smf/cluster/bus.h>
 #include <http_server.h>
 #include <db.h>
+
+#include <smf/cluster/bus.h>
+#include <smf/http/auth.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -49,7 +51,8 @@ namespace smf {
 			, std::string const& nickname
 			, std::chrono::seconds timeout
 			, http_server::blocklist_type&&
-			, std::map<std::string, std::string>&&);
+			, std::map<std::string, std::string>&&
+			, http::auth_dirs const&);
 		~cluster();
 
 		void stop(cyng::eod);

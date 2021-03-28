@@ -9,6 +9,7 @@ set (http_cpp
     src/lib/http/src/ws.cpp
     src/lib/http/src/url.cpp
     src/lib/http/src/mime_type.cpp
+    src/lib/http/src/auth.cpp
 )
     
 set (http_h
@@ -18,6 +19,7 @@ set (http_h
     include/smf/http/ws.h
     include/smf/http/url.h
     include/smf/http/mime_type.h
+    include/smf/http/auth.h
 )
 
 

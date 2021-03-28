@@ -7,6 +7,8 @@
 #ifndef SMF_HTTP_SESSION_H
 #define SMF_HTTP_SESSION_H
 
+#include <smf/http/auth.h>
+
 #include <cyng/log/logger.h>
 
 #include <type_traits>
@@ -98,6 +100,7 @@ namespace smf {
                 , cyng::logger
                 , std::string doc_root
                 , std::map<std::string, std::string> const& redirects_intrinsic
+                , auth_dirs const& auths_
                 , std::uint64_t const max_upload_size
                 , std::string const nickname
                 , std::chrono::seconds const timeout
@@ -119,7 +122,9 @@ namespace smf {
             //void handle_head_request(boost::beast::http::request<boost::beast::http::string_body>&&, std::string const&);
             void handle_post_request(boost::beast::http::request<boost::beast::http::string_body>&&, std::string const&);
             void handle_options_request(boost::beast::http::request<boost::beast::http::string_body>&& req);
+
             bool check_auth(boost::beast::http::request<boost::beast::http::string_body> const& req);
+            bool check_auth(boost::beast::http::request<boost::beast::http::string_body> const& req, boost::beast::string_view);
 
             /**
              * sanitize URL/target
@@ -158,12 +163,18 @@ namespace smf {
                 , bool
                 , std::string options);
 
+            boost::beast::http::response<boost::beast::http::string_body> send_not_authorized(std::uint32_t version
+                , bool keep_alive
+                , std::string target
+                , std::string realm);
+
 		private:
             boost::beast::tcp_stream stream_;
             boost::beast::flat_buffer buffer_;
             cyng::logger logger_;
             std::string const doc_root_;
-            std::map<std::string, std::string> const redirects_intrinsic_;
+            std::map<std::string, std::string> const& redirects_intrinsic_;
+            auth_dirs const& auths_;
             std::uint64_t const max_upload_size_;
             std::string const nickname_;
             std::chrono::seconds const timeout_;

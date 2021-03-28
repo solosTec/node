@@ -75,6 +75,7 @@ namespace smf {
             , cyng::logger logger
             , std::string doc_root
             , std::map<std::string, std::string> const& redirects_intrinsic
+            , auth_dirs const& auths
             , std::uint64_t const max_upload_size
             , std::string const nickname
             , std::chrono::seconds const timeout
@@ -84,6 +85,7 @@ namespace smf {
             , logger_(logger)
             , doc_root_(doc_root)
             , redirects_intrinsic_(redirects_intrinsic)
+            , auths_(auths)
             , max_upload_size_(max_upload_size)
             , nickname_(nickname)
             , timeout_(timeout)
@@ -146,6 +148,13 @@ namespace smf {
             if (ec) {
                 //return fail(ec, "read");
                 CYNG_LOG_WARNING(logger_, "HTTP read " << ec << ": " << ec.message());
+                return;
+            }
+
+            //
+            //	test authorization
+            //
+            if (!check_auth(parser_->get())) {
                 return;
             }
 
@@ -220,13 +229,6 @@ namespace smf {
 
             auto target = req.target().to_string();
             CYNG_LOG_TRACE(logger_, "request target " << target);
-
-            //
-            //	test authorization
-            //
-            if (!check_auth(parser_->get())) {
-                return;
-            }
 
             //
             //  apply intrinsic redirects
@@ -389,7 +391,71 @@ namespace smf {
         bool session::check_auth(boost::beast::http::request<boost::beast::http::string_body> const& req)
         {
             auto const target = req.target().to_string();
+            if (is_auth_required(target.empty() ? "/" : target, auths_)) {
+
+                //
+                //	Test auth token
+                //
+                auto pos = req.find("Authorization");
+                if (pos == req.end()) {
+
+                    //
+                    //	authorization required
+                    //
+                    CYNG_LOG_WARNING(logger_, "missing authorization for resource "
+                        << target);
+
+                    //
+                    //	send auth request
+                    //
+                    queue_(send_not_authorized(req.version()
+                        , req.keep_alive()
+                        , req.target().to_string()
+                        , "solos::Tec"));
+
+                    //  authorization failed - but complete
+                    return false;
+
+                }
+                else {
+
+                    return check_auth(req, pos->value());
+                }
+            }
             return true;
+        }
+
+        bool session::check_auth(boost::beast::http::request<boost::beast::http::string_body> const& req, boost::beast::string_view credentials) {
+
+            CYNG_LOG_DEBUG(logger_, "credentials input: " << credentials.to_string());
+
+            //
+            //	authorized as "auth@example.com:secret"
+            //	Basic YXV0aEBleGFtcGxlLmNvbTpzZWNyZXQ=
+            //
+            std::pair<auth, bool> r = is_credentials_valid(credentials, auths_);
+            if (r.second) {
+                CYNG_LOG_INFO(logger_, "authorized as " << r.first.get_user());
+
+                //
+                //  session is authorized
+                //
+                return true;
+            }
+            else {
+                CYNG_LOG_WARNING(logger_, "authorization failed "
+                    << credentials);
+
+                //
+                //	send auth request
+                //
+                queue_(send_not_authorized(req.version()
+                    , req.keep_alive()
+                    , req.target().to_string()
+                    , "solos::Tec"));
+
+            }
+            return false;
         }
 
         boost::beast::http::response<boost::beast::http::string_body> session::send_bad_request(std::uint32_t version
@@ -483,6 +549,46 @@ namespace smf {
             res.set(boost::beast::http::field::allow, options);
             res.keep_alive(keep_alive);
             return res;
+        }
+
+        boost::beast::http::response<boost::beast::http::string_body> session::send_not_authorized(std::uint32_t version
+            , bool keep_alive
+            , std::string target
+            , std::string realm) {
+
+            CYNG_LOG_WARNING(logger_, "401 - unauthorized: " << target);
+
+            std::string body =
+                "<!DOCTYPE html>\n"
+                "<html lang=en>\n"
+
+                "<head>\n"
+                "\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n"
+                "\t<title>401 not authorized</title>\n"
+                "</head>\n"
+
+                "<body style=\"color: #444; margin:0;font: normal 14px/20px Arial, Helvetica, sans-serif; height:100%; background-color: #fff;\">\n"
+                "\t<div style=\"height:auto; min-height:100%; \">"
+                "\t\t<div style=\"text-align: center; width:800px; margin-left: -400px; position:absolute; top: 30%; left:50%;\">\n"
+                "\t\t\t<h1 style=\"margin:0; font-size:150px; line-height:150px; font-weight:bold;\">401</h1>\n"
+                "\t\t\t<h2 style=\"margin-top:20px;font-size: 30px;\">Not Authorized</h2>\n"
+                "\t\t\t<p>You are not authorized</p>\n"
+                "\t\t</div>\n"
+                "\t</div>\n"
+
+                "</body>\n"
+                "</html>\n"
+                ;
+
+            boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::unauthorized, version };
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
+            res.set(boost::beast::http::field::content_type, "text/html");
+            res.set(boost::beast::http::field::www_authenticate, "Basic realm=\"" + realm + "\"");
+            res.keep_alive(keep_alive);
+            res.body() = body;
+            res.prepare_payload();
+            return res;
+
         }
 
         boost::beast::http::response<boost::beast::http::empty_body> session::send_head(std::uint32_t version

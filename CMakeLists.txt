@@ -351,6 +351,7 @@ target_include_directories(smf_http
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${CYNG_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )

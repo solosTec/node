@@ -8,6 +8,7 @@
 #include <controller.h>
 #include <tasks/cluster.h>
 
+
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/container_cast.hpp>
@@ -64,6 +65,11 @@ namespace smf {
 		auto redirects_intrinsic = cyng::to_map<std::string>(cyng::container_cast<cyng::param_map_t>(reader["server"]["redirects"]["intrinsic"].get()), "/index.html");
 
 		//
+		//	get a list of all directories that require an authentification
+		//
+		auto const auths = http::to_auth_dirs(cyng::container_cast<cyng::vector_t>(reader["server"]["auth"].get()));
+
+		//
 		//	connect to cluster
 		//
 		join_cluster(ctl
@@ -78,7 +84,8 @@ namespace smf {
 			, nickname
 			, timeout
 			, std::move(blocklist)
-			, std::move(redirects_intrinsic));
+			, std::move(redirects_intrinsic)
+			, auths);
 
 		
 	}
@@ -95,7 +102,8 @@ namespace smf {
 		, std::string const& nickname
 		, std::chrono::seconds timeout
 		, blocklist_type&& blocklist
-		, std::map<std::string, std::string>&& redirects_intrinsic)
+		, std::map<std::string, std::string>&& redirects_intrinsic
+		, http::auth_dirs const& auths)
 	{
 
 		if (!std::filesystem::exists(document_root)) {
@@ -113,7 +121,8 @@ namespace smf {
 			, nickname
 			, timeout		
 			, std::move(blocklist)
-			, std::move(redirects_intrinsic));
+			, std::move(redirects_intrinsic)
+			, auths);
 
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());

@@ -7,8 +7,10 @@
 #ifndef SMF_DASH_HTTP_SERVER_H
 #define SMF_DASH_HTTP_SERVER_H
 
-#include <smf/http/server.h>
 #include <db.h>
+
+#include <smf/http/server.h>
+#include <smf/http/auth.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -45,7 +47,8 @@ namespace smf {
 			, std::string const& document_root
 			, db&
 			, blocklist_type&&
-			, std::map<std::string, std::string>&&);
+			, std::map<std::string, std::string>&&
+			, http::auth_dirs const&);
 		~http_server();
 
 		void stop(cyng::eod);
@@ -96,6 +99,7 @@ namespace smf {
 
 		std::set<boost::asio::ip::address> const blocklist_;
 		std::map<std::string, std::string> const redirects_intrinsic_;
+		http::auth_dirs const auths_;
 
 		/**
 		 * listen for incoming connections.
