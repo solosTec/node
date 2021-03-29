@@ -456,7 +456,7 @@ namespace smf {
 				insert_config_record(stmt
 					, cyng::to_path(cfg::sep, "sml", param.first)
 					, cyng::make_object(sml_port)
-					, "SML listener port (" + std::to_string(sml_port) + ")");
+					, "default SML listener port (" + std::to_string(sml_port) + ")");
 			}
 			else if (boost::algorithm::equals(param.first, "discover")) {
 
@@ -496,7 +496,7 @@ namespace smf {
 				insert_config_record(stmt
 					, cyng::to_path(cfg::sep, "nms", param.first)
 					, cyng::make_object(nms_port)
-					, "NMS listener port (" + std::to_string(nms_port) + ")");
+					, "default NMS listener port (" + std::to_string(nms_port) + ")");
 			}
 			else if (boost::algorithm::equals(param.first, "script-path")) {
 

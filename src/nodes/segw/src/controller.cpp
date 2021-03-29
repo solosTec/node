@@ -234,7 +234,7 @@ namespace smf {
 
 #endif
 			cyng::make_param("protocol", "wM-Bus:EN13757-4"),		//	raw, mbus, iec, sml
-			cyng::make_param("broker-enabled", false),
+			cyng::make_param("broker-enabled", true),
 			cyng::make_param("broker-login", false),
 			cyng::make_param("broker-timeout", 12),	//	seconds
 			cyng::make_param("hex-dump", false),
@@ -262,8 +262,14 @@ namespace smf {
 	cyng::param_t controller::create_wireless_broker(std::string const& hostname) const {
 		return cyng::make_param("broker", cyng::make_vector({
 			//	define multiple broker here
-			cyng::param_map_factory("address", "segw.ch")
+			cyng::param_map_factory
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+				("address", "segw.ch")
 				("port", 12001)
+#else
+				("address", "192.168.230.208")
+				("port", 3000)
+#endif
 				("account", hostname)
 				("pwd", "wM-Bus")
 			.operator cyng::param_map_t()
@@ -286,7 +292,7 @@ namespace smf {
 			cyng::make_param("address", "0.0.0.0"),
 			cyng::make_param("port", 6006),
 			cyng::make_param("login", false),	//	request login
-			cyng::make_param("enabled", false),	//	start rs485 server
+			cyng::make_param("enabled", true),	//	start rs485 server
 			cyng::make_param("timeout", std::chrono::seconds(30))
 		));
 	}
@@ -385,7 +391,7 @@ namespace smf {
 	cyng::param_t controller::create_nms_server_spec(std::filesystem::path const& tmp) const {
 		return cyng::make_param("nms", cyng::tuple_factory(
 			cyng::make_param("address", "0.0.0.0"),
-			cyng::make_param("port", 7261),
+			cyng::make_param("port", 7562),
 			cyng::make_param("account", "operator"),
 			cyng::make_param("pwd", "operator"),
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)

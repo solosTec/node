@@ -180,9 +180,15 @@ namespace smf {
 				}
 				else if (boost::algorithm::equals(param.first, "address")) {
 					boost::system::error_code ec;
-					auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"), ec);
-					cfg.set_address(address);
-					cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+					auto const str = cyng::value_cast(param.second, "0.0.0.0");
+					auto const address = boost::asio::ip::make_address(str, ec);
+					if (!ec) {
+						cfg.set_address(address);
+						cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+					}
+					else {
+						cyng::merge(pm, { "nms", param.first }, cyng::make_object("error: invalid value [" + str + "]"));
+					}
 					rebind_required = true;
 				}
 				else if (boost::algorithm::equals(param.first, "port")) {
