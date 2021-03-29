@@ -19,7 +19,7 @@
 		 cfg_nms(cfg_nms&) = default;
 
 		 boost::asio::ip::tcp::endpoint get_ep() const;
-		 boost::asio::ip::address get_address() const;
+		 std::string get_address() const;
 		 std::uint16_t get_port() const;
 		 std::string get_account() const;
 		 std::string get_pwd() const;
@@ -33,7 +33,12 @@
 
 		 std::filesystem::path get_script_path() const;
 
-		 bool set_address(boost::asio::ip::address) const;
+		 /**
+		  * The address has to a string since it can contains the additional
+		  * information of the interface name.
+		  * example: fe80::225:18ff:fea0:a3b%br0
+		  */
+		 bool set_address(std::string) const;
 		 bool set_port(std::uint16_t port) const;
 		 bool set_account(std::string) const;
 		 bool set_pwd(std::string) const;

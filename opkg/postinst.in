@@ -79,6 +79,9 @@ done
 echo "${PROJECT_NAME} shared libraries available"
 
 echo "${PROJECT_NAME} create default configuration"
+if [ -f /usr/local/etc/segw_v0.9.cfg ]; then
+   mv /usr/local/etc/segw_v0.9.cfg /usr/local/etc/segw_v0.9.cfg-backup
+fi
 /usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -D
 
 echo "${PROJECT_NAME} initialize database"
@@ -90,7 +93,8 @@ echo "${PROJECT_NAME} remove previous configuration"
 echo "${PROJECT_NAME} load default configuration into database"
 /usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -T
 
+echo "start segw service"
 systemctl daemon-reload
-#systemctl start segw
+systemctl start segw
 
 echo "service configuration updated"

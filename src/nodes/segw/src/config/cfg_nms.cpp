@@ -50,14 +50,14 @@ namespace smf {
 	//	nms/script-path|"C:\\Users\\WWW\\AppData\\Local\\Temp\\update-script.cmd"|"C:\\Users\\Sylko\\AppData\\Local\\Temp\\update-script.cmd"|15|path to update script
 
 	boost::asio::ip::tcp::endpoint cfg_nms::get_ep() const {
-		return { get_address(), get_port() };
+		return { boost::asio::ip::make_address(get_address()), get_port() };
 	}
 
-	boost::asio::ip::address cfg_nms::get_address() const {
-		return cfg_.get_value(address_path(), boost::asio::ip::address());
+	std::string cfg_nms::get_address() const {
+		return cfg_.get_value(address_path(), "0.0.0.0");
 	}
 
-	bool cfg_nms::set_address(boost::asio::ip::address address) const {
+	bool cfg_nms::set_address(std::string address) const {
 		return cfg_.set_value(address_path(), address);
 	}
 

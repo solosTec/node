@@ -243,7 +243,7 @@ namespace smf {
 				wsp->push_msg(str);
 				return true;	//	valid channel 
 			}
-#ifdef _DEBUG_DASH
+//#ifdef _DEBUG_DASH
 			else if (boost::algorithm::equals(name, "config.bridge")) {
 				auto const str1 = json_insert_record(name, 
 					cyng::make_tuple(
@@ -306,7 +306,7 @@ namespace smf {
 				wsp->push_msg(str2);
 
 			}
-#endif
+//#endif
 			else {
 				CYNG_LOG_WARNING(logger_, "[HTTP] subscribe undefined channel " << name);
 			}

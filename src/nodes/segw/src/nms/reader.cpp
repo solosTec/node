@@ -183,13 +183,13 @@ namespace smf {
 					auto const str = cyng::value_cast(param.second, "0.0.0.0");
 					auto const address = boost::asio::ip::make_address(str, ec);
 					if (!ec) {
-						cfg.set_address(address);
+						cfg.set_address(str);	//	ToDo: has to be of type string
 						cyng::merge(pm, { "nms", param.first }, cyng::make_object("info: restarts immediately"));
+						rebind_required = true;
 					}
 					else {
 						cyng::merge(pm, { "nms", param.first }, cyng::make_object("error: invalid value [" + str + "]"));
 					}
-					rebind_required = true;
 				}
 				else if (boost::algorithm::equals(param.first, "port")) {
 					auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
@@ -344,7 +344,8 @@ namespace smf {
 				}
 				else if (boost::algorithm::equals(param.first, "mode")) {
 					auto const mode = cyng::value_cast(param.second, "drop");
-					cfg.set_mode(mode);
+					//	store the lowercase version 
+					cfg.set_mode(boost::algorithm::to_lower_copy(mode));
 				}
 				else {
 					cyng::merge(pm, { "nms", "blocklist", param.first }, cyng::make_object("error: unknown NMS/blocklist attribute"));

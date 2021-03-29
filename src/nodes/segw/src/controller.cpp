@@ -9,6 +9,7 @@
 #include <storage_functions.h>
 #include <tasks/bridge.h>
 #include <tasks/gpio.h>
+#include <smf.h>
 
 #include <smf/obis/defs.h>
 //#include <smf/ipt/config.h>
@@ -21,6 +22,7 @@
 #include <cyng/sys/locale.h>
 #include <cyng/sys/host.h>
 #include <cyng/sys/mac.h>
+#include <cyng/sys/net.h>
 #include <cyng/task/controller.h>
 #include <cyng/io/io_buffer.h>
 #include <cyng/log/record.h>
@@ -111,6 +113,7 @@ namespace smf {
 		return cyng::make_vector({
 			cyng::make_tuple(
 				cyng::make_param("generated", now),
+				cyng::make_param("version", SMF_VERSION_TAG),
 				cyng::make_param("log-dir", tmp.string()),
 				cyng::make_param("tag", get_random_tag()),
 				cyng::make_param("country-code", "CH"),
@@ -322,12 +325,18 @@ namespace smf {
 #else
 			cyng::make_param("enabled", true),
 			cyng::make_param("port", "/dev/ttyAPP1"),
-			cyng::make_param("parity", "none"),	//	none, odd, even
 
 			//	8N1
+#if defined(__ARMEL__)
+			cyng::make_param("databits", 7),
+			cyng::make_param("stopbits", "two"),	//	one, onepointfive, two
+			cyng::make_param("parity", "even"),		//	none, odd, even
+#else
 			cyng::make_param("databits", 8),
-			cyng::make_param("flow-control", "none"),	//	none, software, hardware
 			cyng::make_param("stopbits", "one"),	//	one, onepointfive, two
+			cyng::make_param("parity", "none"),		//	none, odd, even
+#endif
+			cyng::make_param("flow-control", "none"),	//	none, software, hardware
 			cyng::make_param("speed", 9600),		//	initial
 
 #endif
@@ -389,8 +398,9 @@ namespace smf {
 	}
 
 	cyng::param_t controller::create_nms_server_spec(std::filesystem::path const& tmp) const {
+
 		return cyng::make_param("nms", cyng::tuple_factory(
-			cyng::make_param("address", "0.0.0.0"),
+			cyng::make_param("address", get_nms_address()),
 			cyng::make_param("port", 7562),
 			cyng::make_param("account", "operator"),
 			cyng::make_param("pwd", "operator"),
@@ -620,5 +630,18 @@ namespace smf {
 		channel->dispatch("start", cyng::make_tuple());
 	}
 
+	std::string get_nms_address() {
+#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
+		auto const pres = cyng::sys::get_nic_prefix();
+		auto const pos = std::find(pres.begin(), pres.end(), "bpr0");
+		if (pos != pres.end()) {
+			//	ToDo: find IPv6 address of this interface
+		}
+		return "0.0.0.0";
+#else
+		return "0.0.0.0";
+#endif
+
+	}
 
 }

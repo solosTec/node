@@ -62,6 +62,13 @@ namespace cyng {
 		void switch_gpio(cyng::object&& cfg, std::string const& number, std::string const& state);
 		//void readout_serial(cyng::object&& cfg, std::uint8_t);
 	};
+
+	/**
+	 * When running on the segw hardware tries to figure out if this is a BPL device
+	 * and returns the link local address of "
+	 */
+	std::string get_nms_address();
+
 }
 
 #endif
