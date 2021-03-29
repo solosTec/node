@@ -244,7 +244,6 @@ namespace smf {
 				stmt->push(cyng::make_object(SMF_VERSION_SUFFIX), 64);	//	vFirmware
 				stmt->push(cyng::make_object(false), 0);	//	enabled
 				stmt->push(cyng::make_object(std::chrono::system_clock::now()), 0);	//	creationTime
-				stmt->push(cyng::make_object(6u), 0);	//	query
 				if (stmt->execute()) {
 					stmt->clear();
 				}

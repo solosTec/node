@@ -13,17 +13,22 @@
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/buffer.h>
+#include <cyng/vm/proxy.h>
+#include <cyng/vm/vm_fwd.h>
 
 #include <memory>
 #include <array>
 
 namespace smf {
 
-	class ipt_server;
 	class ipt_session : public std::enable_shared_from_this<ipt_session>
 	{
 	public:
-		ipt_session(boost::asio::ip::tcp::socket socket, ipt_server*, cyng::logger);
+		ipt_session(boost::asio::ip::tcp::socket socket
+			, bus&
+			, cyng::mesh& fabric
+			, ipt::scramble_key const&
+			, cyng::logger);
 		~ipt_session();
 
 		void start();
@@ -39,6 +44,12 @@ namespace smf {
 		//
 		void ipt_cmd(ipt::header const&, cyng::buffer_t&&);
 		void ipt_stream(cyng::buffer_t&&);
+
+		void pty_res_login(bool);
+
+		static std::function<void(bool success)>
+		get_vm_func_pty_res_login(ipt_session* p);
+
 
 	private:
 		boost::asio::ip::tcp::socket socket_;
@@ -62,6 +73,8 @@ namespace smf {
 		ipt::parser parser_;
 
 		ipt::serializer	serializer_;
+
+		cyng::vm_proxy	vm_;
 
 	};
 

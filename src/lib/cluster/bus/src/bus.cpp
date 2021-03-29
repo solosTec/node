@@ -63,8 +63,7 @@ namespace smf {
 			get_vm_func_db_res_trx(bip),		//	"db.res.trx"
 			get_vm_func_db_res_update(bip),		//	"db.res.update"
 			get_vm_func_db_res_remove(bip),		//	"db.res.remove"
-			get_vm_func_db_res_clear(bip),		//	"db.res.clear"
-			get_vm_func_pty_res_login(bip)		//	"pty.res.login"
+			get_vm_func_db_res_clear(bip)		//	"db.res.clear"
 		);
 	}
 
@@ -402,12 +401,17 @@ namespace smf {
 
 	}
 
-	void bus::pty_login(std::string data_layer, boost::asio::ip::tcp::endpoint ep) {
+	void bus::pty_login(std::string name
+		, std::string pwd
+		, boost::uuids::uuid tag
+		, std::string data_layer
+		, boost::asio::ip::tcp::endpoint ep) {
+
 		auto const srv = tgl_.get();
 		auto const deq = cyng::serialize_invoke("pty.req.login"
-			, tag_
-			, srv.account_
-			, srv.pwd_
+			, tag
+			, name
+			, pwd
 			, ep
 			, data_layer);
 
@@ -473,13 +477,6 @@ namespace smf {
 		, boost::uuids::uuid tag)>
 	bus::get_vm_func_db_res_clear(bus_interface* bip) {
 		return std::bind(&bus_interface::db_res_clear, bip, std::placeholders::_1, std::placeholders::_2);
-	}
-
-	std::function<void(boost::uuids::uuid tag
-		, bool success)>
-	bus::get_vm_func_pty_res_login(bus_interface* bip) {
-		return std::bind(&bus_interface::pty_res_login, bip, std::placeholders::_1, std::placeholders::_2);
-
 	}
 
 }

@@ -66,6 +66,13 @@ namespace smf
 				header_ = to_header(buffer_);
 				buffer_.clear();
 
+				//
+				//	check for scrambled login and switch scramble code
+				//
+				if (to_code(header_.command_) == ipt::code::CTRL_REQ_LOGIN_SCRAMBLED) {
+					scrambler_ = def_sk_.key();
+				};
+
 				if (has_data(header_)) {
 
 					//

@@ -16,6 +16,16 @@ namespace smf
 {
 	namespace ipt
 	{
+		scramble_key to_sk(cyng::buffer_t const& data, std::size_t offset) {
+			BOOST_ASSERT(scramble_key::size() == data.size() - offset);
+			scramble_key::key_type key;
+			for (std::size_t idx = 0; idx < scramble_key::size(); ++idx) {
+				key.at(idx) = data.at(idx + offset);
+				if (idx + offset >= data.size())	break;
+			}
+			return key;
+		}
+
 		std::tuple<response_t, std::uint16_t, std::string> ctrl_res_login(cyng::buffer_t&& data) {
 
 			//	response
@@ -29,21 +39,25 @@ namespace smf
 		}
 
 		std::tuple<std::string, std::string> ctrl_req_login_public(cyng::buffer_t&& data) {
-			return {
-				std::string(data.data()),
-				""
-			};
 
+			auto const name = cyng::to_string_nil(data, 0);
+			std::size_t offset = name.size() + 1;
+			auto const pwd = cyng::to_string_nil(data, ++offset);
+			return { name, pwd };
 		}
 
 		std::tuple<std::string, std::string, scramble_key> ctrl_req_login_scrambled(cyng::buffer_t&& data) {
+			
+			auto const name = cyng::to_string_nil(data, 0);
+			std::size_t offset = name.size() + 1;
+			auto const pwd = cyng::to_string_nil(data, offset);
+			offset += pwd.size();
+			auto sk = to_sk(data, ++offset);
 			return {
-				std::string(data.data()),
-				"",
-				scramble_key::null_scramble_key_
+				name,
+				pwd,
+				sk
 			};
-
-
 		}
 
 		cyng::deque_t gen_instructions(header const& h, cyng::buffer_t&& data) {

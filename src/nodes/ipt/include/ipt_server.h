@@ -12,6 +12,7 @@
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
+#include <cyng/vm/mesh.h>
 
 #include <tuple>
 #include <functional>
@@ -30,12 +31,12 @@ namespace smf {
 
 	public:
 		ipt_server(boost::asio::io_context&
-			, boost::uuids::uuid tag
 			, cyng::logger
 			, ipt::scramble_key const& sk
 			, std::chrono::minutes watchdog
 			, std::chrono::seconds timeout
-			, bus&);
+			, bus&
+			, cyng::mesh& fabric);
 		~ipt_server();
 
 		void stop(cyng::eod);
@@ -49,7 +50,6 @@ namespace smf {
 
 
 	private:
-		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
 
 		ipt::scramble_key const sk_;
@@ -57,6 +57,7 @@ namespace smf {
 		std::chrono::seconds const timeout_;
 
 		bus& cluster_bus_;
+		cyng::mesh& fabric_;
 
 		boost::asio::ip::tcp::acceptor acceptor_;
 		std::uint64_t session_counter_;

@@ -190,10 +190,6 @@ namespace smf {
 			<< table_name);
 	}
 
-	void cluster::pty_res_login(boost::uuids::uuid, bool) {
-		BOOST_ASSERT_MSG(false, "pty_res_login");
-	}
-
 	void cluster::upload(std::string const& table_name) {
 		store_.access([&](cyng::table* tbl) {
 			tbl->loop([&](cyng::record&& rec, std::size_t idx) {

@@ -51,8 +51,6 @@ namespace smf
 		virtual void db_res_clear(std::string
 			, boost::uuids::uuid tag) = 0;
 
-		virtual void pty_res_login(boost::uuids::uuid
-			, bool) = 0;
 	};
 
 	/**
@@ -107,7 +105,11 @@ namespace smf
 		void req_db_clear(std::string const&);
 
 		//	"pty.req.login"
-		void pty_login(std::string data_layer, boost::asio::ip::tcp::endpoint ep);
+		void pty_login(std::string name
+			, std::string pwd
+			, boost::uuids::uuid tag
+			, std::string data_layer
+			, boost::asio::ip::tcp::endpoint ep);
 
 		//	"pty.connect"
 		void pty_connect(std::string msisdn);
@@ -172,11 +174,6 @@ namespace smf
 		static std::function<void(std::string
 			, boost::uuids::uuid)> 
 		get_vm_func_db_res_clear(bus_interface*);
-
-		//	clear (6)
-		static std::function<void(boost::uuids::uuid
-			, bool)>
-		get_vm_func_pty_res_login(bus_interface*);
 
 	private:
 		boost::asio::io_context& ctx_;

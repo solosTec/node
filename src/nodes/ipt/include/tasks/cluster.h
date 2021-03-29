@@ -80,14 +80,10 @@ namespace smf {
 		virtual void db_res_clear(std::string
 			, boost::uuids::uuid tag) override;
 
-		virtual void pty_res_login(boost::uuids::uuid
-			, bool) override;
-
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
 		cyng::controller& ctl_;
-		boost::uuids::uuid const tag_;
 		std::uint32_t const query_;
 		cyng::logger logger_;
 		cyng::mesh fabric_;

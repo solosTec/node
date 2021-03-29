@@ -32,12 +32,11 @@ namespace smf {
 	}
 		, channel_(wp)
 		, ctl_(ctl)
-		, tag_(tag)
 		, query_(query)
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(tgl), node_name, tag, this)
-		, server_(ctl.get_ctx(), tag, logger, sk, watchdog, timeout, bus_)
+		, server_(ctl.get_ctx(), logger, sk, watchdog, timeout, bus_, fabric_)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -59,7 +58,7 @@ namespace smf {
 
 	void cluster::stop(cyng::eod)
 	{
-		CYNG_LOG_WARNING(logger_, "stop cluster task(" << tag_ << ")");
+		CYNG_LOG_WARNING(logger_, "stop cluster bus(" << bus_.get_tag() << ")");
 		bus_.stop();
 	}
 
@@ -129,18 +128,6 @@ namespace smf {
 
 		CYNG_LOG_TRACE(logger_, "[cluster] clear: "
 			<< table_name);
-	}
-
-	void cluster::pty_res_login(boost::uuids::uuid tag
-		, bool success) {
-
-		if (success) {
-			CYNG_LOG_TRACE(logger_, "[pty] login ok {" << tag << "}");
-		}
-		else {
-			CYNG_LOG_WARNING(logger_, "[pty] login failed {" << tag << "}");
-		}
-
 	}
 
 }

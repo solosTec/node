@@ -9,28 +9,26 @@
 namespace smf {
 
 	ipt_server::ipt_server(boost::asio::io_context& ioc
-		, boost::uuids::uuid tag
 		, cyng::logger logger
 		, ipt::scramble_key const& sk
 		, std::chrono::minutes watchdog
 		, std::chrono::seconds timeout
-		, bus& cluster_bus)
-	: tag_(tag)
-		, logger_(logger)
+		, bus& cluster_bus
+		, cyng::mesh& fabric)
+	: logger_(logger)
 		, sk_(sk)
 		, watchdog_(watchdog)
 		, timeout_(timeout)
 		, cluster_bus_(cluster_bus)
+		, fabric_(fabric)
 		, acceptor_(ioc)
 		, session_counter_{ 0 }
-	{
-		CYNG_LOG_INFO(logger_, "wmbus server " << tag << " created");
-	}
+	{}
 
 	ipt_server::~ipt_server()
 	{
-#ifdef _DEBUG_DASH
-		std::cout << "wmbus(~)" << std::endl;
+#ifdef _DEBUG_IPT
+		std::cout << "ipt(~)" << std::endl;
 #endif
 	}
 
@@ -61,7 +59,9 @@ namespace smf {
 
 				auto sp = std::shared_ptr<ipt_session>(new ipt_session(
 					std::move(socket),
-					this,
+					cluster_bus_,
+					fabric_,
+					sk_,
 					logger_
 				), [this](ipt_session* s) {
 

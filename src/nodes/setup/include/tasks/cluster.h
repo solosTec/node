@@ -76,8 +76,6 @@ namespace smf {
 		virtual void db_res_clear(std::string
 			, boost::uuids::uuid tag) override;
 
-		virtual void pty_res_login(boost::uuids::uuid, bool) override;
-
 		/**
 		 * Upload table cache to main node
 		 */

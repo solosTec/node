@@ -393,7 +393,7 @@ namespace smf {
 			//
 			//	send response
 			// 
-			auto const deq = cyng::serialize_invoke("pty.res.login"
+			auto const deq = cyng::serialize_forward("pty.res.login"
 				, tag
 				, true);
 
@@ -415,7 +415,7 @@ namespace smf {
 			//
 			//	send response
 			// 
-			auto const deq = cyng::serialize_invoke("pty.res.login"
+			auto const deq = cyng::serialize_forward("pty.res.login"
 				, tag
 				, false);
 
