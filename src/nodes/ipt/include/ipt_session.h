@@ -48,6 +48,11 @@ namespace smf {
 
 		void pty_res_login(bool);
 
+		/**
+		 * query some device data
+		 */
+		void query();
+
 		static std::function<void(bool success)>
 		get_vm_func_pty_res_login(ipt_session* p);
 

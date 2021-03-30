@@ -243,7 +243,7 @@ namespace smf {
 				wsp->push_msg(str);
 				return true;	//	valid channel 
 			}
-//#ifdef _DEBUG_DASH
+#ifdef _DEBUG_DASH
 			else if (boost::algorithm::equals(name, "config.bridge")) {
 				auto const str1 = json_insert_record(name, 
 					cyng::make_tuple(
@@ -296,19 +296,19 @@ namespace smf {
 				wsp->push_msg(json_load_icon(name, true));
 				auto const str1 = json_insert_record(name,
 					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("pk", uidgen_()))),
+						cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
 						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.25"), cyng::make_param("meter", "637642"), cyng::make_param("port", 6000), cyng::make_param("interval", 60)))
 					));
 				wsp->push_msg(str1);
 				auto const str2 = json_insert_record(name,
 					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("pk", uidgen_()))),
+						cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
 						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.26"), cyng::make_param("meter", "198535"), cyng::make_param("port", 6000), cyng::make_param("interval", 60)))
 					));
 				wsp->push_msg(str2);
 				wsp->push_msg(json_load_icon(name, false));
 			}
-//#endif
+#endif
 			else {
 				CYNG_LOG_WARNING(logger_, "[HTTP] subscribe undefined channel " << name);
 			}

@@ -44,37 +44,42 @@ namespace smf {
 		//
 		set_start_values(session_cfg);
 
-#ifdef _DEBUG_MAIN
+//#ifdef _DEBUG_MAIN
 		//
 		//	insert test device
 		//
 		auto const tag_01 = uuid_gen_();
-		cache_.insert("device"
+		auto b = cache_.insert("device"
 			, cyng::key_generator(tag_01)
-			, cyng::data_generator("name", "pwd", "msisdn", "descr", "id", "vFirmware", true, std::chrono::system_clock::now())
+			, cyng::data_generator("IEC", "pwd", "msisdn", "descr", "id", "vFirmware", true, std::chrono::system_clock::now())
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
 
 		auto const tag_02 = uuid_gen_();
-		cache_.insert("device"
+		b = cache_.insert("device"
 			, cyng::key_generator(tag_02)
 			, cyng::data_generator("wM-Bus", "pwd", "msisdn", "descr", "id", "vFirmware", true, std::chrono::system_clock::now())
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
 
-		cache_.insert("meterIEC"
+		b = cache_.insert("meterIEC"
 			, cyng::key_generator(tag_01)
-			, cyng::data_generator("192.168.0.200", static_cast<std::uint16_t>(2000u),std::chrono::seconds(840))
+			, cyng::data_generator("192.168.0.200", static_cast<std::uint16_t>(2000u), std::chrono::seconds(840))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
 
 		
-		cache_.insert("meterwMBus"
+		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_02)
-			, cyng::data_generator(boost::asio::ip::make_address("192.168.0.200"), static_cast<std::uint16_t>(6000u))
+			, cyng::data_generator(boost::asio::ip::make_address("192.168.0.200"), static_cast<std::uint16_t>(6000u), cyng::make_buffer("6E3272357538782F413F4428472B4B62"))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
-#endif 
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+//#endif 
 	}
 
 	void db::set_start_values(cyng::param_map_t const& session_cfg) {
