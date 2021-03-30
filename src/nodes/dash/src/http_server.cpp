@@ -244,70 +244,70 @@ namespace smf {
 				return true;	//	valid channel 
 			}
 #ifdef _DEBUG_DASH
-			else if (boost::algorithm::equals(name, "config.bridge")) {
-				auto const str1 = json_insert_record(name, 
-					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
-						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.23"), cyng::make_param("meter", "563412"), cyng::make_param("protocol", "wM-Bus"), cyng::make_param("port", 2000), cyng::make_param("direction", false), cyng::make_param("interval", 60)))
-					));
-				wsp->push_msg(str1);
-				auto const str2 = json_insert_record(name,
-					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
-						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.24"), cyng::make_param("meter", "563412"), cyng::make_param("port", 6000), cyng::make_param("direction", true), cyng::make_param("interval", 60)))
-					));
-				wsp->push_msg(str2);
+			//else if (boost::algorithm::equals(name, "config.bridge")) {
+			//	auto const str1 = json_insert_record(name, 
+			//		cyng::make_tuple(
+			//			cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
+			//			cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.23"), cyng::make_param("meter", "563412"), cyng::make_param("protocol", "wM-Bus"), cyng::make_param("port", 2000), cyng::make_param("direction", false), cyng::make_param("interval", 60)))
+			//		));
+			//	wsp->push_msg(str1);
+			//	auto const str2 = json_insert_record(name,
+			//		cyng::make_tuple(
+			//			cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
+			//			cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.24"), cyng::make_param("meter", "563412"), cyng::make_param("port", 6000), cyng::make_param("direction", true), cyng::make_param("interval", 60)))
+			//		));
+			//	wsp->push_msg(str2);
 
-			}
-			else if (boost::algorithm::equals(name, "monitor.wMBus")) {
-				wsp->push_msg(json_load_icon(name, true));
-				auto const str1 = json_insert_record(name,
-					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("id", uidgen_()))),
-						cyng::make_param("data", cyng::make_tuple(
-							cyng::make_param("ts", "2021-03-03T12:00:01"), 
-							cyng::make_param("serverId", "01-e61e-13090016-3c-07"), 
-							cyng::make_param("medium", 2), 
-							cyng::make_param("manufacturer", "EMH"), 
-							cyng::make_param("frameType", 72), 
-							cyng::make_param("tag", "tag"),
-							cyng::make_param("Payload", "...")))
-					));
-				wsp->push_msg(str1);
-				wsp->push_msg(json_load_icon(name, false));
-			}
-			else if (boost::algorithm::equals(name, "config.wmbus")) {
-				wsp->push_msg(json_load_icon(name, true));
-				auto const str1 = json_insert_record(name,
-					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
-						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.23"), cyng::make_param("meter", "563412"), cyng::make_param("port", 2000), cyng::make_param("aes", cyng::make_buffer("33743677397A24432646294A404D6351"))))
-					));
-				wsp->push_msg(str1);
-				auto const str2 = json_insert_record(name,
-					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
-						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.24"), cyng::make_param("meter", "342167"), cyng::make_param("port", 2000), cyng::make_param("aes", cyng::make_buffer("6E3272357538782F413F4428472B4B62"))))
-					));
-				wsp->push_msg(str2);
-				wsp->push_msg(json_load_icon(name, false));
-			}
-			else if (boost::algorithm::equals(name, "config.iec")) {
-				wsp->push_msg(json_load_icon(name, true));
-				auto const str1 = json_insert_record(name,
-					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
-						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.25"), cyng::make_param("meter", "637642"), cyng::make_param("port", 6000), cyng::make_param("interval", 60)))
-					));
-				wsp->push_msg(str1);
-				auto const str2 = json_insert_record(name,
-					cyng::make_tuple(
-						cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
-						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.26"), cyng::make_param("meter", "198535"), cyng::make_param("port", 6000), cyng::make_param("interval", 60)))
-					));
-				wsp->push_msg(str2);
-				wsp->push_msg(json_load_icon(name, false));
-			}
+			//}
+			//else if (boost::algorithm::equals(name, "monitor.wMBus")) {
+			//	wsp->push_msg(json_load_icon(name, true));
+			//	auto const str1 = json_insert_record(name,
+			//		cyng::make_tuple(
+			//			cyng::make_param("key", cyng::make_tuple(cyng::make_param("id", uidgen_()))),
+			//			cyng::make_param("data", cyng::make_tuple(
+			//				cyng::make_param("ts", "2021-03-03T12:00:01"), 
+			//				cyng::make_param("serverId", "01-e61e-13090016-3c-07"), 
+			//				cyng::make_param("medium", 2), 
+			//				cyng::make_param("manufacturer", "EMH"), 
+			//				cyng::make_param("frameType", 72), 
+			//				cyng::make_param("tag", "tag"),
+			//				cyng::make_param("Payload", "...")))
+			//		));
+			//	wsp->push_msg(str1);
+			//	wsp->push_msg(json_load_icon(name, false));
+			//}
+			//else if (boost::algorithm::equals(name, "config.wmbus")) {
+			//	wsp->push_msg(json_load_icon(name, true));
+			//	auto const str1 = json_insert_record(name,
+			//		cyng::make_tuple(
+			//			cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
+			//			cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.23"), cyng::make_param("meter", "563412"), cyng::make_param("port", 2000), cyng::make_param("aes", cyng::make_buffer("33743677397A24432646294A404D6351"))))
+			//		));
+			//	wsp->push_msg(str1);
+			//	auto const str2 = json_insert_record(name,
+			//		cyng::make_tuple(
+			//			cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
+			//			cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.24"), cyng::make_param("meter", "342167"), cyng::make_param("port", 2000), cyng::make_param("aes", cyng::make_buffer("6E3272357538782F413F4428472B4B62"))))
+			//		));
+			//	wsp->push_msg(str2);
+			//	wsp->push_msg(json_load_icon(name, false));
+			//}
+			//else if (boost::algorithm::equals(name, "config.iec")) {
+			//	wsp->push_msg(json_load_icon(name, true));
+			//	auto const str1 = json_insert_record(name,
+			//		cyng::make_tuple(
+			//			cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
+			//			cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.25"), cyng::make_param("meter", "637642"), cyng::make_param("port", 6000), cyng::make_param("interval", 60)))
+			//		));
+			//	wsp->push_msg(str1);
+			//	auto const str2 = json_insert_record(name,
+			//		cyng::make_tuple(
+			//			cyng::make_param("key", cyng::make_tuple(cyng::make_param("tag", uidgen_()))),
+			//			cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.26"), cyng::make_param("meter", "198535"), cyng::make_param("port", 6000), cyng::make_param("interval", 60)))
+			//		));
+			//	wsp->push_msg(str2);
+			//	wsp->push_msg(json_load_icon(name, false));
+			//}
 #endif
 			else {
 				CYNG_LOG_WARNING(logger_, "[HTTP] subscribe undefined channel " << name);

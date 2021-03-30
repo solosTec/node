@@ -250,8 +250,8 @@ namespace smf {
 
 			return cyng::meta_store("target"
 				, {
-					cyng::column("channel", cyng::TC_UINT32),
-					cyng::column("tag", cyng::TC_UUID),			//	owner session
+					cyng::column("tag", cyng::TC_UINT32),		//	IP-T channel
+					cyng::column("tagSession", cyng::TC_UUID),	//	owner session
 					cyng::column("peer", cyng::TC_UUID),		//	peer of owner
 					cyng::column("name", cyng::TC_STRING),		//	target id
 					cyng::column("device", cyng::TC_UUID),		//	owner of target
@@ -278,7 +278,7 @@ namespace smf {
 		cyng::meta_store get_store_uplink_lora() {
 			return cyng::meta_store("loRaUplink"
 				, {
-					cyng::column("id", cyng::TC_UINT64),		//	message number
+					cyng::column("tag", cyng::TC_UINT64),		//	message number
 					cyng::column("ts", cyng::TC_TIME_POINT),	//	timestamp
 					cyng::column("DevEUI", cyng::TC_MAC64),
 					cyng::column("FPort", cyng::TC_UINT16),
@@ -288,18 +288,18 @@ namespace smf {
 					cyng::column("FCntDn", cyng::TC_INT32),
 					cyng::column("CustomerID", cyng::TC_STRING),
 					cyng::column("Payload", cyng::TC_STRING),
-					cyng::column("tag", cyng::TC_UUID)
+					cyng::column("tagLora", cyng::TC_UUID)
 				}
 			, 1);
 		}
 		cyng::meta_store get_store_uplink_iec() {
 			return cyng::meta_store("iecUplink"
 				, {
-					cyng::column("id", cyng::TC_UINT64),		//	message number
+					cyng::column("tag", cyng::TC_UINT64),		//	message number
 					cyng::column("ts", cyng::TC_TIME_POINT),	//	timestamp
 					cyng::column("event", cyng::TC_STRING),		//	description
 					cyng::column("ep", cyng::TC_UINT8),
-					cyng::column("tag", cyng::TC_UUID)
+					cyng::column("tagSession", cyng::TC_UUID)
 				}
 			, 1);
 
@@ -307,14 +307,14 @@ namespace smf {
 		cyng::meta_store get_store_uplink_wmbus() {
 			return cyng::meta_store("wMBusUplink"
 				, {
-					cyng::column("id", cyng::TC_UINT64),		//	message number
+					cyng::column("tag", cyng::TC_UINT64),		//	message number
 					cyng::column("ts", cyng::TC_TIME_POINT),	//	timestamp
 					cyng::column("serverId", cyng::TC_STRING),	//	example: 01-e61e-13090016-3c-07
 					cyng::column("medium", cyng::TC_UINT8),
 					cyng::column("manufacturer", cyng::TC_STRING),
 					cyng::column("frameType", cyng::TC_UINT8),
 					cyng::column("payload", cyng::TC_STRING),
-					cyng::column("tag", cyng::TC_UUID)
+					cyng::column("tagSession", cyng::TC_UUID)
 				}
 			, 1);
 
