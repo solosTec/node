@@ -28,10 +28,12 @@ namespace smf {
 		, bus& cluster_bus
 		, cyng::mesh& fabric
 		, ipt::scramble_key const& sk
+		, std::uint32_t query
 		, cyng::logger logger)
 	: socket_(std::move(socket))
 		, logger_(logger)
 		, cluster_bus_(cluster_bus)
+		, query_(query)
 		, buffer_()
 		, buffer_write_()
 		, parser_(sk
@@ -196,10 +198,15 @@ namespace smf {
 	void ipt_session::pty_res_login(bool success) {
 		if (success) {
 			CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag()  << " login ok");
+			buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
+			do_write();
+
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
+			buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
 		}
+
 	}
 
 	std::function<void(bool success)>

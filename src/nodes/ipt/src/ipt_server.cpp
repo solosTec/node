@@ -13,12 +13,14 @@ namespace smf {
 		, ipt::scramble_key const& sk
 		, std::chrono::minutes watchdog
 		, std::chrono::seconds timeout
+		, std::uint32_t query
 		, bus& cluster_bus
 		, cyng::mesh& fabric)
 	: logger_(logger)
 		, sk_(sk)
 		, watchdog_(watchdog)
 		, timeout_(timeout)
+		, query_(query)
 		, cluster_bus_(cluster_bus)
 		, fabric_(fabric)
 		, acceptor_(ioc)
@@ -62,6 +64,7 @@ namespace smf {
 					cluster_bus_,
 					fabric_,
 					sk_,
+					query_,
 					logger_
 				), [this](ipt_session* s) {
 

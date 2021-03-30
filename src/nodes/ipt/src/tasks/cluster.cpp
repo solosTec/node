@@ -32,11 +32,10 @@ namespace smf {
 	}
 		, channel_(wp)
 		, ctl_(ctl)
-		, query_(query)
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(tgl), node_name, tag, this)
-		, server_(ctl.get_ctx(), logger, sk, watchdog, timeout, bus_, fabric_)
+		, server_(ctl.get_ctx(), logger, sk, watchdog, timeout, query, bus_, fabric_)
 	{
 		auto sp = channel_.lock();
 		if (sp) {

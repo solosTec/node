@@ -28,6 +28,7 @@ namespace smf {
 			, bus&
 			, cyng::mesh& fabric
 			, ipt::scramble_key const&
+			, std::uint32_t query
 			, cyng::logger);
 		~ipt_session();
 
@@ -56,7 +57,7 @@ namespace smf {
 		cyng::logger logger_;
 
 		bus& cluster_bus_;
-
+		std::uint32_t const query_;
 		/**
 		 * Buffer for incoming data.
 		 */

@@ -35,6 +35,7 @@ namespace smf {
 			, ipt::scramble_key const& sk
 			, std::chrono::minutes watchdog
 			, std::chrono::seconds timeout
+			, std::uint32_t query
 			, bus&
 			, cyng::mesh& fabric);
 		~ipt_server();
@@ -55,6 +56,7 @@ namespace smf {
 		ipt::scramble_key const sk_;
 		std::chrono::minutes const watchdog_;
 		std::chrono::seconds const timeout_;
+		std::uint32_t const query_;
 
 		bus& cluster_bus_;
 		cyng::mesh& fabric_;
