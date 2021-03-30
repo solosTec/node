@@ -91,8 +91,7 @@ namespace smf {
 		 */
 		void db_req_update(std::string const& table_name
 			, cyng::key_t key
-			, cyng::data_t data
-			, std::uint64_t generation
+			, cyng::param_map_t
 			, boost::uuids::uuid);
 
 		/**
@@ -146,8 +145,7 @@ namespace smf {
 		//	"db.req.update" aka merge()
 		static std::function<void(std::string
 			, cyng::key_t
-			, cyng::data_t
-			, std::uint64_t
+			, cyng::param_map_t
 			, boost::uuids::uuid)> 
 		get_vm_func_db_req_update(session*);
 

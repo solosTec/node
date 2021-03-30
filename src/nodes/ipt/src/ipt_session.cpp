@@ -14,6 +14,7 @@
 #include <cyng/log/record.h>
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
+#include <cyng/obj/container_factory.hpp>
 
 #include <iostream>
 
@@ -43,6 +44,7 @@ namespace smf {
 		)
 		, serializer_(sk)
 		, vm_()
+		, dev_(boost::uuids::nil_uuid())
 	{
 		vm_ = fabric.create_proxy(cluster_bus_.get_tag()
 			, get_vm_func_pty_res_login(this));
@@ -186,19 +188,50 @@ namespace smf {
 				do_write();
 			}
 			break;
+		case ipt::code::APP_RES_SOFTWARE_VERSION:
+			update_software_version(ipt::app_res_software_version(std::move(body)));
+			break;
+		case ipt::code::APP_RES_DEVICE_IDENTIFIER:
+			update_device_identifier(ipt::app_res_device_identifier(std::move(body)));
+			break;
 		default:
 			CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " dropped");
 			break;
 		}
 
 	}
+
+	void ipt_session::update_software_version(std::string str) {
+		CYNG_LOG_INFO(logger_, "[ipt] software version: " << str);
+
+		cyng::param_map_t const data = cyng::param_map_factory()("vFirmware", str);
+		//cluster_bus_.req_db_update("device"
+		//	, cyng::key_generator(dev_)
+		//	, data);
+
+	}
+	void ipt_session::update_device_identifier(std::string str) {
+		CYNG_LOG_INFO(logger_, "[ipt] device id: " << str);
+		cyng::param_map_t const data = cyng::param_map_factory()("id", str);
+		//cluster_bus_.req_db_update("device"
+		//	, cyng::key_generator(dev_)
+		//	, data));
+
+	}
+
 	void ipt_session::ipt_stream(cyng::buffer_t&& data) {
 		CYNG_LOG_TRACE(logger_, "ipt stream " << data.size() << " byte");
 
 	}
 
-	void ipt_session::pty_res_login(bool success) {
+	void ipt_session::pty_res_login(bool success, boost::uuids::uuid dev) {
 		if (success) {
+
+			//
+			//	update device tag
+			//
+			dev_ = dev;
+
 			CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag()  << " login ok");
 			buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
 			do_write();
@@ -257,9 +290,9 @@ namespace smf {
 		}
 	}
 
-	std::function<void(bool success)>
+	std::function<void(bool success, boost::uuids::uuid)>
 	ipt_session::get_vm_func_pty_res_login(ipt_session* ptr) {
-		return std::bind(&ipt_session::pty_res_login, ptr, std::placeholders::_1);
+		return std::bind(&ipt_session::pty_res_login, ptr, std::placeholders::_1, std::placeholders::_2);
 	}
 
 }

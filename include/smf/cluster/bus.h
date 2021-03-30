@@ -96,8 +96,7 @@ namespace smf
 		 */
 		void req_db_update(std::string const&
 			, cyng::key_t  key
-			, cyng::data_t 
-			, std::uint64_t generation);
+			, cyng::param_map_t data);
 
 		void req_db_remove(std::string const&
 			, cyng::key_t);

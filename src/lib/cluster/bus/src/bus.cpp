@@ -352,8 +352,7 @@ namespace smf {
 
 	void bus::req_db_update(std::string const& table_name
 		, cyng::key_t key
-		, cyng::data_t data
-		, std::uint64_t generation) {
+		, cyng::param_map_t data) {
 
 		//
 		//	triggers a merge() on the receiver side
@@ -362,7 +361,6 @@ namespace smf {
 			, table_name
 			, key
 			, data
-			, generation
 			, tag_);
 
 		cyng::exec(vm_, [=, this]() {

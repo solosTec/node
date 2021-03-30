@@ -96,8 +96,6 @@ namespace smf {
 		cyng::store store_;
 		db db_;
 		http_server http_server_;
-		//cyng::slot_ptr notifier_;
-		//notifier notifier_;
 	};
 
 }

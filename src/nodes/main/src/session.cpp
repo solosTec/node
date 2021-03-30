@@ -203,16 +203,14 @@ namespace smf {
 	}
 	void session::db_req_update(std::string const& table_name
 		, cyng::key_t key
-		, cyng::data_t data
-		, std::uint64_t generation
+		, cyng::param_map_t data
 		, boost::uuids::uuid source) {
 
 		//
-		//	ToDo:
+		//	modify multiple 
 		// 
 		std::reverse(key.begin(), key.end());
-		std::reverse(data.begin(), data.end());
-		srvp_->store_.merge(table_name, key, std::move(data), generation, source);
+		srvp_->store_.modify(table_name, key, data, source);
 
 
 	}
@@ -375,27 +373,30 @@ namespace smf {
 
 		CYNG_LOG_INFO(logger_, "pty login " << name << ':' << pwd << '@' << ep);
 
-		//
-		//	ToDo: check if there is already a session of this pty
-		// 
 
 		//
 		//	check credentials and get associated device
 		// 
-		auto const dev = srvp_->cache_.lookup_device(name, pwd);
-		if (!dev.first.is_nil()) {
+		//auto const dev = srvp_->cache_.lookup_device(name, pwd);
+		auto const[dev, enabled] = srvp_->cache_.lookup_device(name, pwd);
+		if (!dev.is_nil()) {
+
+			//
+			//	ToDo: check if there is already a session of this pty
+			// 
 
 			//
 			//	insert into session table
 			//
-			srvp_->cache_.insert_pty(tag, peer_, dev.first, name, pwd, ep, data_layer);
+			srvp_->cache_.insert_pty(dev, peer_, tag, name, pwd, ep, data_layer);
 
 			//
 			//	send response
 			// 
 			auto const deq = cyng::serialize_forward("pty.res.login"
 				, tag
-				, true);
+				, true
+				, dev);
 
 			cyng::exec(vm_, [=, this]() {
 				bool const b = buffer_write_.empty();
@@ -417,7 +418,8 @@ namespace smf {
 			// 
 			auto const deq = cyng::serialize_forward("pty.res.login"
 				, tag
-				, false);
+				, false
+				, boost::uuids::nil_uuid());	//	no device
 
 			cyng::exec(vm_, [=, this]() {
 				bool const b = buffer_write_.empty();
@@ -463,11 +465,10 @@ namespace smf {
 	//	"db.req.update" aka merge()
 	std::function<void(std::string
 		, cyng::key_t
-		, cyng::data_t
-		, std::uint64_t
+		, cyng::param_map_t
 		, boost::uuids::uuid)>
 	session::get_vm_func_db_req_update(session* ptr) {
-		return std::bind(&session::db_req_update, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+		return std::bind(&session::db_req_update, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 	}
 
 	//	"db.req.remove"

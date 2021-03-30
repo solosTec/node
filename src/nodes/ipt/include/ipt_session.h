@@ -46,14 +46,17 @@ namespace smf {
 		void ipt_cmd(ipt::header const&, cyng::buffer_t&&);
 		void ipt_stream(cyng::buffer_t&&);
 
-		void pty_res_login(bool);
+		void pty_res_login(bool, boost::uuids::uuid dev);
 
 		/**
 		 * query some device data
 		 */
 		void query();
 
-		static std::function<void(bool success)>
+		void update_software_version(std::string);
+		void update_device_identifier(std::string);
+
+		static std::function<void(bool success, boost::uuids::uuid)>
 		get_vm_func_pty_res_login(ipt_session* p);
 
 
@@ -82,6 +85,10 @@ namespace smf {
 
 		cyng::vm_proxy	vm_;
 
+		/**
+		 * tag/pk of device
+		 */
+		boost::uuids::uuid dev_;
 	};
 
 }

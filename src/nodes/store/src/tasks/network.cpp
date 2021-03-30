@@ -80,11 +80,11 @@ namespace smf {
 
 	void network::ipt_cmd(ipt::header const& h, cyng::buffer_t&& body) {
 
-		CYNG_LOG_TRACE(logger_, "router ipt cmd " << ipt::command_name(h.command_));
+		CYNG_LOG_TRACE(logger_, "ipt cmd " << ipt::command_name(h.command_));
 
 	}
 	void network::ipt_stream(cyng::buffer_t&& data) {
-		CYNG_LOG_TRACE(logger_, "router ipt stream " << data.size() << " byte");
+		CYNG_LOG_TRACE(logger_, "ipt stream " << data.size() << " byte");
 
 	}
 

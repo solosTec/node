@@ -26,6 +26,9 @@ namespace smf
 		std::tuple<std::string, std::string> ctrl_req_login_public(cyng::buffer_t&& data);
 		std::tuple<std::string, std::string, scramble_key> ctrl_req_login_scrambled(cyng::buffer_t&& data);
 
+		std::string app_res_software_version(cyng::buffer_t&& data);
+		std::string app_res_device_identifier(cyng::buffer_t&& data);
+
 		[[nodiscard]]
 		scramble_key to_sk(cyng::buffer_t const& data, std::size_t offset);
 

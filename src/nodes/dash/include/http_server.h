@@ -11,10 +11,12 @@
 
 #include <smf/http/server.h>
 #include <smf/http/auth.h>
+#include <smf/cluster/bus.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 #include <cyng/io/serialize.h>
+#include <cyng/obj/intrinsics/container.h>
 
 #include <tuple>
 #include <functional>
@@ -42,7 +44,7 @@ namespace smf {
 
 	public:
 		http_server(boost::asio::io_context&
-			, boost::uuids::uuid tag
+			, bus&
 			, cyng::logger
 			, std::string const& document_root
 			, db&
@@ -89,9 +91,14 @@ namespace smf {
 		bool response_subscribe_channel(ws_sptr, std::string const&);
 		void response_update_channel(ws_sptr, std::string const&);
 
+		void modify_request(std::string const& channel
+			, cyng::vector_t&& key
+			, cyng::param_map_t&& data);
+
 
 	private:
-		boost::uuids::uuid const tag_;
+		bus& cluster_bus_;
+
 		cyng::logger logger_;
 		std::string const document_root_;
 
@@ -138,6 +145,10 @@ namespace smf {
 	std::string json_delete_record(std::string channel, cyng::key_t const&);
 	std::string json_clear_table(std::string channel);
 	
+	/**
+	 * remove all empty records and records that starts with an underline '_'
+	 */
+	void tidy(cyng::param_map_t&);
 
 }
 

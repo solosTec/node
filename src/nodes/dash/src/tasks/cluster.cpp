@@ -42,7 +42,7 @@ namespace smf {
 		, store_()
 		, db_(store_, logger, tag)
 		, http_server_(ctl.get_ctx()
-			, tag
+			, bus_
 			, logger
 			, document_root
 			, db_

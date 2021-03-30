@@ -60,6 +60,13 @@ namespace smf
 			};
 		}
 
+		std::string app_res_software_version(cyng::buffer_t&& data) {
+			return cyng::to_string_nil(data, 0);
+		}
+		std::string app_res_device_identifier(cyng::buffer_t&& data) {
+			return cyng::to_string_nil(data, 0);
+		}
+
 		cyng::deque_t gen_instructions(header const& h, cyng::buffer_t&& data) {
 
 			switch (static_cast<code>(h.command_)) {

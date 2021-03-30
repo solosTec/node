@@ -11,20 +11,21 @@
 #include <cyng/io/ostream.h>
 #include <cyng/sys/memory.h>
 #include <cyng/rnd/rnd.hpp>
+#include <cyng/obj/container_cast.hpp>
 
 #include <boost/uuid/uuid_io.hpp>
 
 namespace smf {
 
 	http_server::http_server(boost::asio::io_context& ioc
-		, boost::uuids::uuid tag
+		, bus& cluster_bus
 		, cyng::logger logger
 		, std::string const& document_root
 		, db& data
 		, blocklist_type&& blocklist
 		, std::map<std::string, std::string>&& redirects_intrinsic
 		, http::auth_dirs const& auths)
-	: tag_(tag)
+	: cluster_bus_(cluster_bus)
 		, logger_(logger)
 		, document_root_(document_root)
 		, db_(data)
@@ -35,7 +36,7 @@ namespace smf {
 		, uidgen_()
 		, ws_map_()
 	{
-		CYNG_LOG_INFO(logger_, "[HTTP] server " << tag << " started");
+		CYNG_LOG_INFO(logger_, "[HTTP] server [" << document_root_ << "] started");
 	}
 
 	http_server::~http_server()
@@ -48,7 +49,7 @@ namespace smf {
 
 	void http_server::stop(cyng::eod)
 	{
-		CYNG_LOG_WARNING(logger_, "stop http server task(" << tag_ << ")");
+		CYNG_LOG_WARNING(logger_, "stop http server task(" << document_root_ << ")");
 		server_.stop();
 	}
 
@@ -86,7 +87,7 @@ namespace smf {
 			db_.cfg_.get_value("http-max-upload-size", static_cast<std::uint64_t>(0xA00000)),
 			db_.cfg_.get_value("http-server-nickname", "coraline"),
 			db_.cfg_.get_value("http-session-timeout", std::chrono::seconds(30)),
-			std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders::_2))->run();
+std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders::_2))->run();
 	}
 
 	void http_server::upgrade(boost::asio::ip::tcp::socket s
@@ -159,6 +160,16 @@ namespace smf {
 					response_update_channel(pos->second.lock(), channel);
 
 				}
+				else if (boost::algorithm::equals(cmd, "modify")) {
+					//	%(("channel":config.device),("cmd":modify),("rec":%(("data":%(("enabled":false))),("key":[....]))))
+					auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+					CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] modify request from channel " << channel);
+
+					modify_request(channel
+						, cyng::container_cast<cyng::vector_t>(reader["rec"]["key"].get())
+						, cyng::container_cast<cyng::param_map_t>(reader["rec"]["data"].get()));
+
+				}
 				else {
 					CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
 				}
@@ -169,11 +180,35 @@ namespace smf {
 
 			}
 
-		});
+			});
 
 		parser.read(msg.begin(), msg.end());
 	}
 
+	void http_server::modify_request(std::string const& channel
+		, cyng::vector_t&& key
+		, cyng::param_map_t&& data)	{
+
+		BOOST_ASSERT_MSG(!key.empty(), "no modify key");
+		BOOST_ASSERT_MSG(!data.empty(), "no modify data");
+		auto const rel = db_.by_channel(channel);
+		if (!rel.empty()) {
+
+			BOOST_ASSERT(boost::algorithm::equals(channel, rel.channel_));
+
+			//
+			//	tidy
+			//	remove all empty records and records that starts with an underline '_'
+			//
+			tidy(data);
+
+			CYNG_LOG_TRACE(logger_, "[HTTP] modify request for table " << rel.table_ << ": " << data);
+			cluster_bus_.req_db_update(rel.table_, key, data);
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[HTTP] modify undefined channel " << channel);
+		}
+	}
 
 	bool http_server::response_subscribe_channel(ws_sptr wsp, std::string const& name) {
 
@@ -203,6 +238,7 @@ namespace smf {
 				tbl->loop([&](cyng::record&& rec, std::size_t idx) -> bool {
 
 					auto const str = json_insert_record(name, rec.to_tuple());
+					CYNG_LOG_DEBUG(logger_, str);
 					wsp->push_msg(str);
 
 					//
@@ -431,6 +467,16 @@ namespace smf {
 		return cyng::io::to_json(cyng::make_tuple(
 			cyng::make_param("cmd", "clear"),
 			cyng::make_param("channel", channel)));
+
+	}
+
+	void tidy(cyng::param_map_t& pm) {
+
+		for (auto pos = pm.begin(); pos != pm.end(); ) {
+			if (!pos->first.empty() && pos->first.at(0) == '_')	pos = pm.erase(pos);
+			else if (pos->first.empty())	pos = pm.erase(pos);
+			else ++pos;
+		}
 
 	}
 

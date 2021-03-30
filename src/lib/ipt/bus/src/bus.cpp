@@ -153,17 +153,19 @@ namespace smf
 				//
 				//	send login sequence
 				//
-				if (tgl_.get().scrambled_) {
+				auto const srv = tgl_.get();
+				if (srv.scrambled_) {
 
 					buffer_write_.push_back(serializer_.req_login_scrambled(
-						tgl_.get().account_,
-						tgl_.get().pwd_,
-						tgl_.get().sk_));
+						srv.account_,
+						srv.pwd_,
+						srv.sk_));
+					parser_.set_sk(srv.sk_);
 				}
 				else {
 					buffer_write_.push_back(serializer_.req_login_public(
-						tgl_.get().account_,
-						tgl_.get().pwd_));
+						srv.account_,
+						srv.pwd_));
 
 				}
 
