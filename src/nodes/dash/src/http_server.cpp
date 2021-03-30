@@ -277,6 +277,7 @@ namespace smf {
 				wsp->push_msg(json_load_icon(name, false));
 			}
 			else if (boost::algorithm::equals(name, "config.wmbus")) {
+				wsp->push_msg(json_load_icon(name, true));
 				auto const str1 = json_insert_record(name,
 					cyng::make_tuple(
 						cyng::make_param("key", cyng::make_tuple(cyng::make_param("pk", uidgen_()))),
@@ -289,9 +290,10 @@ namespace smf {
 						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.24"), cyng::make_param("meter", "342167"), cyng::make_param("port", 2000), cyng::make_param("aes", cyng::make_buffer("6E3272357538782F413F4428472B4B62"))))
 					));
 				wsp->push_msg(str2);
-
+				wsp->push_msg(json_load_icon(name, false));
 			}
 			else if (boost::algorithm::equals(name, "config.iec")) {
+				wsp->push_msg(json_load_icon(name, true));
 				auto const str1 = json_insert_record(name,
 					cyng::make_tuple(
 						cyng::make_param("key", cyng::make_tuple(cyng::make_param("pk", uidgen_()))),
@@ -304,7 +306,7 @@ namespace smf {
 						cyng::make_param("data", cyng::make_tuple(cyng::make_param("address", "10.0.1.26"), cyng::make_param("meter", "198535"), cyng::make_param("port", 6000), cyng::make_param("interval", 60)))
 					));
 				wsp->push_msg(str2);
-
+				wsp->push_msg(json_load_icon(name, false));
 			}
 //#endif
 			else {
