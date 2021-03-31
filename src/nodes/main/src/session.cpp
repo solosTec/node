@@ -39,7 +39,7 @@ namespace smf {
 		vm_.set_channel_name("cluster.req.login", 0);
 		vm_.set_channel_name("db.req.subscribe", 1);
 		vm_.set_channel_name("db.req.insert", 2);
-		vm_.set_channel_name("db.req.update", 3);	//	table merge()
+		vm_.set_channel_name("db.req.update", 3);	//	table modify()
 		vm_.set_channel_name("db.req.remove", 4);	//	table erase()
 		vm_.set_channel_name("db.req.clear", 5);	//	table clear()
 		vm_.set_channel_name("pty.req.login", 6);
