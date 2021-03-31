@@ -79,8 +79,9 @@ done
 echo "${PROJECT_NAME} shared libraries available"
 
 echo "${PROJECT_NAME} create default configuration"
-if [ -f /usr/local/etc/segw_v0.9.cfg ]; then
-   mv /usr/local/etc/segw_v0.9.cfg /usr/local/etc/segw_v0.9.cfg-backup
+if [ -f /usr/local/etc/smf/segw_v0.9.cfg ]; then
+	echo "${PROJECT_NAME} backup previous configuration"
+   	mv /usr/local/etc/smf/segw_v0.9.cfg /usr/local/etc/smf/segw_v0.9.cfg-backup
 fi
 /usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -D
 
