@@ -632,12 +632,14 @@ namespace smf {
 
 	std::string get_nms_address() {
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
+//		return cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string();
 		auto const pres = cyng::sys::get_nic_prefix();
-		auto const pos = std::find(pres.begin(), pres.end(), "bpr0");
-		if (pos != pres.end()) {
-			//	ToDo: find IPv6 address of this interface
-		}
-		return "0.0.0.0";
+		//	br0
+		auto const pos = std::find(pres.begin(), pres.end(), "br0");
+		return (pos != pres.end()) 
+			? cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL)
+			: "0.0.0.0";
+		
 #else
 		return "0.0.0.0";
 #endif
