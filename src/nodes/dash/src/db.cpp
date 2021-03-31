@@ -9,8 +9,12 @@
 
 #include <cyng/log/record.h>
 #include <cyng/io/ostream.h>
+#include <cyng/io/serialize.h>
+#include <cyng/parse/string.h>
 
 #include <iostream>
+
+#include <boost/uuid/string_generator.hpp>
 
 namespace smf {
 
@@ -126,24 +130,21 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] db.res.update: "
+		CYNG_LOG_INFO(logger_, "[cluster] db.res.update: "
 			<< table_name
 			<< " - "
-			<< key);
+			<< attr.first
+			<< " => "
+			<< attr.second);
 
 		//
-		//	ToDo: notify all subscriptions
+		//	notify all subscriptions
 		// 
-
-		//
-		// ToDo: implement in cyng::db
-		// 
-		//cache_.update(table_name
-		//	, key
-		//	, attr
-		//	, gen
-		//	, tag );
-
+		std::reverse(key.begin(), key.end());
+		cache_.modify(table_name
+			, key
+			, std::move(attr)
+			, tag);
 	}
 
 	void db::res_remove(std::string table_name
@@ -189,6 +190,40 @@ namespace smf {
 			}
 		}
 		return counter;
+	}
+
+	void db::convert(std::string const& table_name
+		, cyng::vector_t& key
+		, cyng::param_map_t& data) {
+
+		auto const pos = store_map_.find(table_name);
+		if (pos != store_map_.end()) {
+
+			std::size_t index{ 0 };
+			for (auto& k : key) {
+				auto const col = pos->second.get_column(index);
+				k = convert_to_type(col.type_, k);
+
+			}
+
+			for (auto& e : data) {
+				auto const idx = pos->second.get_index_by_name(e.first);
+				if (idx != std::numeric_limits<std::size_t>::max()) {
+
+					auto const col = pos->second.get_column(idx);
+					BOOST_ASSERT(boost::algorithm::equals(col.name_, e.first));
+
+					e.second = convert_to_type(col.type_, e.second);
+				}
+				else {
+					CYNG_LOG_ERROR(logger_, "[db] convert: unknown column [" << e.first << "] in table " << table_name);
+
+				}
+			}
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "[db] convert: unknown table " << table_name);
+		}
 	}
 
 	db::rel::rel(std::string table, std::string channel, std::string counter)
@@ -247,6 +282,58 @@ namespace smf {
 			config::get_store_session()
 
 		};
+	}
+
+	cyng::object convert_to_type(cyng::type_code tc, cyng::object& obj) {
+		switch (tc) {
+		case cyng::TC_UUID:			return convert_to_uuid(obj);
+		case cyng::TC_TIME_POINT:	return convert_to_tp(obj);
+		case cyng::TC_IP_ADDRESS:	return convert_to_ip_address(obj);
+		case cyng::TC_AES128:		return convert_to_aes128(obj);
+		case cyng::TC_AES192:		return convert_to_aes192(obj);
+		case cyng::TC_AES256:		return convert_to_aes256(obj);
+
+		default:
+			break;
+		}
+		return obj;
+	}
+
+	cyng::object convert_to_uuid(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_uuid(str));
+	}
+
+	cyng::object convert_to_tp(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+
+		return cyng::make_object(cyng::to_tp_iso8601(str));
+
+	}
+
+	cyng::object convert_to_ip_address(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+
+		return cyng::make_object(cyng::to_ip_address(str));
+	}
+
+	cyng::object convert_to_aes128(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes128_size>(str));
+	}
+	cyng::object convert_to_aes192(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes192_size>(str));
+	}
+	cyng::object convert_to_aes256(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes256_size>(str));
 	}
 
 }

@@ -71,6 +71,11 @@ namespace smf {
 		 */
 		void notify_insert(std::string channel, cyng::record&&, boost::uuids::uuid tag);
 
+		/**
+		 * notify to update an element
+		 */
+		void notify_update(std::string channel, cyng::key_t, cyng::param_t const&, boost::uuids::uuid tag);
+
 	private:
 		/**
 		 * incoming connection
@@ -138,8 +143,8 @@ namespace smf {
 		));
 	}
 
-	std::string json_insert_record(std::string channel, cyng::tuple_t&&);
-	std::string json_update_record(std::string channel, cyng::tuple_t&& tpl);
+	std::string json_insert_record(std::string channel, cyng::tuple_t&& tpl);
+	std::string json_update_record(std::string channel, cyng::key_t const& key, cyng::param_t const& param);
 	std::string json_load_icon(std::string channel, bool);
 	std::string json_load_level(std::string channel, std::size_t);
 	std::string json_delete_record(std::string channel, cyng::key_t const&);

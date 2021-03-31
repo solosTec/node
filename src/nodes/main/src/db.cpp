@@ -12,6 +12,7 @@
 #include <cyng/io/ostream.h>
 #include <cyng/sys/process.h>
 #include <cyng/parse/buffer.h>
+#include <cyng/parse/string.h>
 
 #include <boost/uuid/nil_generator.hpp>
 
@@ -49,7 +50,7 @@ namespace smf {
 		//
 		//	insert test device
 		//
-		auto const tag_01 = uuid_gen_();
+		auto const tag_01 = cyng::to_uuid("4808b333-3545-4d9c-a57a-ed19d7c0548b");
 		auto b = cache_.insert("device"
 			, cyng::key_generator(tag_01)
 			, cyng::data_generator("IEC", "pwd", "msisdn", "descr", "id", "vFirmware", true, std::chrono::system_clock::now())
@@ -57,7 +58,7 @@ namespace smf {
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
 
-		auto const tag_02 = uuid_gen_();
+		auto const tag_02 = cyng::to_uuid("7afde964-b59c-4a04-b0a3-72dd63f4b6c0");
 		b = cache_.insert("device"
 			, cyng::key_generator(tag_02)
 			, cyng::data_generator("wM-Bus", "pwd", "msisdn", "descr", "id", "vFirmware", true, std::chrono::system_clock::now())
@@ -83,7 +84,7 @@ namespace smf {
 		//
 		// onee
 		// 
-		auto const tag_03 = uuid_gen_();
+		auto const tag_03 = cyng::to_uuid("be3931f9-6266-44db-b2b6-bd3b94b7a563");
 		b = cache_.insert("device"
 			, cyng::key_generator(tag_03)
 			, cyng::data_generator("MA0000000000000000000000003496219", "secret", "3496219", "C1 House 101", "", "", true, std::chrono::system_clock::now())
@@ -96,9 +97,29 @@ namespace smf {
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
+		//	meter
+		b = cache_.insert("meter"
+			, cyng::key_generator(tag_03)
+			, cyng::data_generator(
+				"01-e61e-13090016-3c-07"	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "16000913"					//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "MA87687686876"	//cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at 2019-01-31
+				, "MAN"			//cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+				, std::chrono::system_clock::now()	//cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+				, "11600000"	//cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+				, "parametrierversion"	//cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+				, "06441734"	//cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+				, "NXT4-S20EW-6N00-4000-5020-E50/Q"	//cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, "Q3/Q1"	//cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, boost::uuids::nil_uuid() //cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
+				, "IEC"	//cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
 
 
-		auto const tag_04 = uuid_gen_();
+		auto const tag_04 = cyng::to_uuid("41c97d7a-6e37-4c49-99cf-3c87a2a11dbc");
 		b = cache_.insert("device"
 			, cyng::key_generator(tag_04)
 			, cyng::data_generator("MA0000000000000000000000003496225", "secret", "3496225", "C1 House 94", "", "", true, std::chrono::system_clock::now())
@@ -112,7 +133,7 @@ namespace smf {
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
 
-		auto const tag_05 = uuid_gen_();
+		auto const tag_05 = cyng::to_uuid("5b436e3f-adac-41d9-84fe-57b0c6207f7d");
 		b = cache_.insert("device"
 			, cyng::key_generator(tag_05)
 			, cyng::data_generator("MA0000000000000000000000003496230", "secret", "3496230", "C1 House 94/B9", "", "", true, std::chrono::system_clock::now())
@@ -126,7 +147,7 @@ namespace smf {
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
 
-		auto const tag_06 = uuid_gen_();
+		auto const tag_06 = cyng::to_uuid("405473f4-edd6-4afa-8cea-c224d5918f29");
 		b = cache_.insert("device"
 			, cyng::key_generator(tag_06)
 			, cyng::data_generator("MA0000000000000000000000004354752", "secret", "4354752", "Maison 44", "", "", true, std::chrono::system_clock::now())
@@ -140,7 +161,35 @@ namespace smf {
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
 
-		//2BFFCB61D7E8DC439239555D3DFE1B1D
+		//
+		//	gateway
+		//
+		auto const tag_07 = cyng::to_uuid("28c4b783-f35d-49f1-9027-a75dbae9f5e2");
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_07)
+			, cyng::data_generator("gateway-one", "secret", "one", "labor", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("gateway"
+			, cyng::key_generator(tag_07)
+			, cyng::data_generator("0500153B02517E"	//	server ID
+				, "EMH"	//	manufacturer
+				, std::chrono::system_clock::now()	//	tom
+				, "06441734"
+				, cyng::mac48()	//cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
+				, cyng::mac48()	//cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
+				, "pw"		//cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
+				, "root"	//cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
+				, "A815408943050131"	//cyng::column("mbus", cyng::TC_STRING),			//	(9) W-Mbus ID (i.e. A815408943050131)
+				, "operator"	//cyng::column("userName", cyng::TC_STRING),		//	(10)
+				, "operator"	//cyng::column("userPwd", cyng::TC_STRING)		//	(11)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+
 
 //#endif 
 	}

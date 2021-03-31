@@ -202,20 +202,29 @@ namespace smf {
 	}
 
 	void ipt_session::update_software_version(std::string str) {
+
 		CYNG_LOG_INFO(logger_, "[ipt] software version: " << str);
 
+		//
+		//	update "device" table
+		//
 		cyng::param_map_t const data = cyng::param_map_factory()("vFirmware", str);
-		//cluster_bus_.req_db_update("device"
-		//	, cyng::key_generator(dev_)
-		//	, data);
+		cluster_bus_.req_db_update("device"
+			, cyng::key_generator(dev_)
+			, data);
 
 	}
 	void ipt_session::update_device_identifier(std::string str) {
+
 		CYNG_LOG_INFO(logger_, "[ipt] device id: " << str);
+
+		//
+		//	update "device" table
+		//
 		cyng::param_map_t const data = cyng::param_map_factory()("id", str);
-		//cluster_bus_.req_db_update("device"
-		//	, cyng::key_generator(dev_)
-		//	, data));
+		cluster_bus_.req_db_update("device"
+			, cyng::key_generator(dev_)
+			, data);
 
 	}
 

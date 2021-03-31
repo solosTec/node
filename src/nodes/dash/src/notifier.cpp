@@ -54,7 +54,24 @@ namespace smf {
 		, cyng::attr_t const& attr
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
+
 		//	update
+		//
+		//	notify all subscriptions
+		// 
+		auto const r = db_.by_table(tbl->meta().get_name());
+		if (!r.empty()) {
+
+			auto range = db_.subscriptions_.equal_range(r.channel_);
+			auto const count = std::distance(range.first, range.second);
+			CYNG_LOG_TRACE(logger_, "update channel (modify): " << r.channel_ << " of " << count << " ws");
+			//	get column name
+			auto const col_name = tbl->meta().get_column(attr.first).name_;
+			auto const param = cyng::param_t(col_name, attr.second);
+			for (auto pos = range.first; pos != range.second; ++pos) {
+				http_server_.notify_update(r.channel_, key, param, pos->second);
+			}
+		}
 		return true;
 	}
 

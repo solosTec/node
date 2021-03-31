@@ -93,6 +93,14 @@ namespace smf {
 		 */
 		std::size_t remove_from_subscription(boost::uuids::uuid tag);
 
+		/**
+		 * convert data types from ws to matching data types
+		 * in table schemes.
+		 */
+		void convert(std::string const& table_name
+			, cyng::vector_t& key
+			, cyng::param_map_t& data);
+
 	private:
 		void set_start_values(std::uint64_t max_upload_size
 			, std::string const& nickname
@@ -122,6 +130,14 @@ namespace smf {
 	 * @return vector of all required meta data
 	 */
 	std::vector< cyng::meta_store > get_store_meta_data();
+
+	cyng::object convert_to_type(cyng::type_code, cyng::object&);
+	cyng::object convert_to_uuid(cyng::object&);
+	cyng::object convert_to_tp(cyng::object&);
+	cyng::object convert_to_ip_address(cyng::object&);
+	cyng::object convert_to_aes128(cyng::object&);
+	cyng::object convert_to_aes192(cyng::object& obj);
+	cyng::object convert_to_aes256(cyng::object& obj);
 
 }
 
