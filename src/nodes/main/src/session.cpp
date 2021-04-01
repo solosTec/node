@@ -64,6 +64,8 @@ namespace smf {
 		boost::system::error_code ec;
 		socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
 		socket_.close(ec);
+
+		vm_.stop();
 	}
 
 	void session::start()

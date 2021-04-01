@@ -100,8 +100,8 @@ namespace smf {
 					//
 					//	remove from cluster table
 					// 
-					CYNG_LOG_TRACE(logger_, "session [" << s->get_peer() << "] closed");
-					cache_.remove_pty_by_peer(s->get_peer());
+					auto const ptys = cache_.remove_pty_by_peer(s->get_peer());
+					CYNG_LOG_TRACE(logger_, "session [" << s->get_peer() << "] with " << ptys << " users closed");
 
 					//
 					//	update session counter

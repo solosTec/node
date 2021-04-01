@@ -384,7 +384,7 @@ std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders:
 			cyng::make_param("cmd", "modify"),
 			cyng::make_param("channel", channel),
 			cyng::make_param("key", key),
-			param));
+			cyng::make_param("value", param)));
 	}
 
 	std::string json_load_icon(std::string channel, bool b) {

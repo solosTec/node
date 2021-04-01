@@ -14,7 +14,8 @@
 
 #include <iostream>
 
-#include <boost/uuid/string_generator.hpp>
+//#include <boost/uuid/string_generator.hpp>
+#include <boost/uuid/nil_generator.hpp>
 
 namespace smf {
 
@@ -130,7 +131,7 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_INFO(logger_, "[cluster] db.res.update: "
+		CYNG_LOG_TRACE(logger_, "[cluster] db.res.update: "
 			<< table_name
 			<< " - "
 			<< attr.first
@@ -302,9 +303,12 @@ namespace smf {
 	}
 
 	cyng::object convert_to_uuid(cyng::object& obj) {
-		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
-		auto const str = cyng::io::to_plain(obj);
-		return cyng::make_object(cyng::to_uuid(str));
+		//BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		if (obj.rtti().tag() == cyng::TC_STRING) {
+			auto const str = cyng::io::to_plain(obj);
+			return cyng::make_object(cyng::to_uuid(str));
+		}
+		return  cyng::make_object(boost::uuids::nil_uuid());
 	}
 
 	cyng::object convert_to_tp(cyng::object& obj) {
