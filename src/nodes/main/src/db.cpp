@@ -399,6 +399,7 @@ namespace smf {
 			config::get_store_cluster(),
 			config::get_store_location(),
 			config::get_store_session(),
+			config::get_store_connection(),
 			//	temporary upload data
 			config::get_store_uplink_lora(),
 			config::get_store_uplink_iec(),

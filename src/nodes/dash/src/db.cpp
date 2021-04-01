@@ -280,8 +280,8 @@ namespace smf {
 			config::get_store_location(),
 			config::get_config(),	//	"config"
 			config::get_store_session(),
-			config::get_store_connection(),
-			config::get_store_sys_msg()
+			config::get_store_connection()
+			//config::get_store_sys_msg()
 
 		};
 	}
