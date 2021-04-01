@@ -115,13 +115,14 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
+		std::reverse(key.begin(), key.end());
+		std::reverse(data.begin(), data.end());
+
 		CYNG_LOG_TRACE(logger_, "[cluster] db.res.insert: "
 			<< table_name
 			<< " - "
 			<< data);
 
-		//std::reverse(key.begin(), key.end());
-		std::reverse(data.begin(), data.end());
 		cache_.insert(table_name, key, data, gen, tag);
 	}
 

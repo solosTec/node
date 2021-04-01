@@ -191,6 +191,9 @@ namespace smf {
 		, std::uint64_t generation
 		, boost::uuids::uuid tag) {
 
+		std::reverse(key.begin(), key.end());
+		std::reverse(data.begin(), data.end());
+
 		CYNG_LOG_INFO(logger_, "session ["
 			<< socket_.remote_endpoint()
 			<< "] insert "
@@ -198,8 +201,6 @@ namespace smf {
 			<< " - "
 			<< data);
 
-		std::reverse(key.begin(), key.end());
-		std::reverse(data.begin(), data.end());
 		srvp_->store_.insert(table_name, key, data, generation, tag);
 
 	}
