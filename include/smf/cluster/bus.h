@@ -29,6 +29,13 @@ namespace smf
 
 		virtual void on_login(bool) = 0;
 
+		/**
+		 * connection to cluster lost
+		 * 
+		 * @param msg system message
+		 */
+		virtual void on_disconnect(std::string msg) = 0;
+
 		virtual void db_res_insert(std::string
 			, cyng::key_t  key
 			, cyng::data_t  data
@@ -142,6 +149,9 @@ namespace smf
 
 		static std::function<void(bool)> 
 		get_vm_func_on_login(bus_interface*);
+
+		static std::function<void(std::string)>
+		get_vm_func_on_disconnect(bus_interface*);
 
 		//	subscribe (1)
 		static std::function<void(std::string

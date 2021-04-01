@@ -82,8 +82,14 @@ namespace smf {
 			, std::string const& pwd
 			, bool enabled);
 
+		/**
+		 * insert new system message
+		 */
+		bool push_sys_msg(std::string msg, cyng::severity);
+
 	private:
 		void set_start_values(cyng::param_map_t const& session_cfg);
+		void init_sys_msg();
 
 	private:
 		cyng::store& cache_;

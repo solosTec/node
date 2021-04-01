@@ -75,6 +75,11 @@ namespace smf {
 		cyng::meta_store get_store_session();
 
 		/**
+		 * all current connections
+		 */
+		cyng::meta_store get_store_connection();
+
+		/**
 		 * push targets
 		 */
 		cyng::meta_store get_store_target();
@@ -88,6 +93,11 @@ namespace smf {
 		 * super simple config table
 		 */
 		cyng::meta_store get_config();
+
+		/**
+		 * system messages
+		 */
+		cyng::meta_store get_store_sys_msg();
 
 		//
 		//	uplinks

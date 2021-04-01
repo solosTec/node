@@ -46,6 +46,11 @@ namespace smf {
 		//
 		set_start_values(session_cfg);
 
+		//
+		//	create auto tables
+		//
+		init_sys_msg();
+
 //#ifdef _DEBUG_MAIN
 		//
 		//	insert test device
@@ -366,6 +371,19 @@ namespace smf {
 
 	}
 
+	void db::init_sys_msg() {
+		auto const ms = config::get_store_sys_msg();
+		auto const start_key = cyng::key_generator(static_cast<std::uint64_t>(0));
+		cache_.create_auto_table(ms, start_key, [this](cyng::key_t const& key) {
+			BOOST_ASSERT(key.size() == 1);
+			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
+		});
+
+	}
+
+	bool db::push_sys_msg(std::string msg, cyng::severity level) {
+		return cache_.insert_auto("sysMsg", cyng::data_generator(std::chrono::system_clock::now(), level, msg), cfg_.get_tag());
+	}
 
 	std::vector< cyng::meta_store > get_store_meta_data() {
 		return {

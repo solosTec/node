@@ -47,18 +47,20 @@ namespace smf {
 	{
 		vm_ = init_vm(bip);
 		vm_.set_channel_name("cluster.res.login", 0);
-		vm_.set_channel_name("db.res.insert", 1);
-		vm_.set_channel_name("db.res.trx", 2);
-		vm_.set_channel_name("db.res.update", 3);
-		vm_.set_channel_name("db.res.remove", 4);
-		vm_.set_channel_name("db.res.clear", 5);
-		vm_.set_channel_name("pty.res.login", 6);
+		vm_.set_channel_name("cluster.disconnect", 1);
+		vm_.set_channel_name("db.res.insert", 2);
+		vm_.set_channel_name("db.res.trx", 3);
+		vm_.set_channel_name("db.res.update", 4);
+		vm_.set_channel_name("db.res.remove", 5);
+		vm_.set_channel_name("db.res.clear", 6);
+		vm_.set_channel_name("pty.res.login", 7);
 	}
 
 	cyng::vm_proxy bus::init_vm(bus_interface* bip) {
 
 		return bip->get_fabric()->create_proxy(
 			get_vm_func_on_login(bip),			//	"cluster.res.login"
+			get_vm_func_on_disconnect(bip),		//	"cluster.disconnect"
 			get_vm_func_db_res_insert(bip),		//	"db.res.insert"
 			get_vm_func_db_res_trx(bip),		//	"db.res.trx"
 			get_vm_func_db_res_update(bip),		//	"db.res.update"
@@ -98,6 +100,7 @@ namespace smf {
 		socket_.close(ignored_ec);
 		state_ = state::START;
 		timer_.cancel();
+
 	}
 
 	void bus::check_deadline(const boost::system::error_code& ec) {
@@ -282,6 +285,12 @@ namespace smf {
 			reset();
 
 			//
+			//	call disconnect function
+			//
+			vm_.load(cyng::generate_invoke("cluster.disconnect", ec.message()));
+			vm_.run();
+
+			//
 			//	reconnect after 10/20 seconds
 			//
 			timer_.expires_after((ec == boost::asio::error::connection_reset)
@@ -438,6 +447,11 @@ namespace smf {
 	std::function<void(bool)>
 	bus::get_vm_func_on_login(bus_interface* bip) {
 		return std::bind(&bus_interface::on_login, bip, std::placeholders::_1);
+	}
+
+	std::function<void(std::string)>
+	bus::get_vm_func_on_disconnect(bus_interface* bip) {
+		return std::bind(&bus_interface::on_disconnect, bip, std::placeholders::_1);
 	}
 
 	std::function<void(std::string

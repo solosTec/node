@@ -98,7 +98,10 @@ namespace smf {
 		else {
 			CYNG_LOG_ERROR(logger_, "joining cluster failed");
 		}
+	}
 
+	void cluster::on_disconnect(std::string msg) {
+		CYNG_LOG_WARNING(logger_, "[cluster] disconnect: " << msg);
 	}
 
 	void cluster::db_res_insert(std::string table_name

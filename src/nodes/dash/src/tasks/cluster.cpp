@@ -111,6 +111,16 @@ namespace smf {
 		}
 	}
 
+	void cluster::on_disconnect(std::string msg) {
+		CYNG_LOG_WARNING(logger_, "[cluster] disconnect: " << msg);
+
+		//
+		//	clear cluster table
+		//
+		db_.cache_.clear("cluster", db_.cfg_.get_tag());
+	}
+
+
 	void cluster::db_res_insert(std::string table_name
 		, cyng::key_t  key
 		, cyng::data_t  data

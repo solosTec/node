@@ -248,12 +248,12 @@ namespace smf {
 		db::rel{"meterIEC", "config.iec", "table.iec.count"},
 		db::rel{"meterwMBus", "config.wmbus", "table.wmbus.count"},
 		db::rel{"location", "config.location", "table.location.count"},
-		db::rel{"session", "status.session", "table.session.count"}
+		db::rel{"session", "status.session", "table.session.count"},
+		db::rel{"connection", "status.connection", "table.connection.count"},
+		db::rel{"sysMsg", "monitor.msg", "table.msg.count"}
 		// 
 		//db::rel{"TMeterAccess", "config.meterwMBus", "table.meterwMBus.count"},
 		//db::rel{"TBridge", "config.bridge", "table.bridge.count"},
-		//db::rel{"_Connection", "status.connection", "table.connection.count"},
-		//db::rel{"_SysMsg", "monitor.msg", "table.msg.count"},
 		//db::rel{"---", "config.web", ""},
 		//db::rel{"_HTTPSession", "web.sessions", "table.web.count"},
 		//db::rel{"_TimeSeries", "monitor.tsdb", ""},
@@ -279,7 +279,9 @@ namespace smf {
 			config::get_store_cluster(),
 			config::get_store_location(),
 			config::get_config(),	//	"config"
-			config::get_store_session()
+			config::get_store_session(),
+			config::get_store_connection(),
+			config::get_store_sys_msg()
 
 		};
 	}

@@ -246,6 +246,20 @@ namespace smf {
 			, 1);
 		}
 
+		cyng::meta_store get_store_connection() {
+			return cyng::meta_store("connection"
+				, {
+					cyng::column("first", cyng::TC_UUID),		//	primary key 
+					cyng::column("second", cyng::TC_UUID),		//	primary key 
+					cyng::column("caller", cyng::TC_STRING),	//	account
+					cyng::column("callee", cyng::TC_STRING),	//	seen from pty
+					cyng::column("start", cyng::TC_IP_TCP_ENDPOINT),	//	owner of target
+					cyng::column("local", cyng::TC_BOOL),	//	true if local connection
+					cyng::column("throughput", cyng::TC_UINT64)			//	data throughput
+				}
+			, 2);
+		}
+
 		cyng::meta_store get_store_target() {
 
 			return cyng::meta_store("target"
@@ -274,6 +288,18 @@ namespace smf {
 			, 1);
 
 		}
+
+		cyng::meta_store get_store_sys_msg() {
+			return cyng::meta_store("sysMsg"
+				, {
+					cyng::column("tag", cyng::TC_UINT64),			//	message number
+					cyng::column("ts", cyng::TC_TIME_POINT),		//	timestamp
+					cyng::column("severity", cyng::TC_SEVERITY),
+					cyng::column("msg", cyng::TC_STRING)			//	message text
+				}
+			, 1);
+		}
+
 
 		cyng::meta_store get_store_uplink_lora() {
 			return cyng::meta_store("loRaUplink"

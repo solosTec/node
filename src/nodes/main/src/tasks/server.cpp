@@ -87,6 +87,8 @@ namespace smf {
 			if (!ec) {
 				CYNG_LOG_INFO(logger_, "new session " << socket.remote_endpoint());
 
+				cache_.push_sys_msg("new session", cyng::severity::LEVEL_TRACE);
+
 				auto sp = std::shared_ptr<session>(new session(
 					std::move(socket),
 					this,
