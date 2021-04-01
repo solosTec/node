@@ -169,10 +169,16 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] update: "
+		CYNG_LOG_TRACE(logger_, "[cluster] update "
 			<< table_name
+			<< ": "
+			<< key
 			<< " - "
-			<< key);
+			<< attr.first	//	zero based body index
+			<< " => " 
+			<< attr.second);
+
+		storage_->dispatch("update", cyng::make_tuple(table_name, key, attr, gen, tag));
 
 	}
 
@@ -180,9 +186,9 @@ namespace smf {
 		, cyng::key_t key
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] remove: "
+		CYNG_LOG_TRACE(logger_, "[cluster] remove "
 			<< table_name
-			<< " - "
+			<< ": "
 			<< key);
 	}
 

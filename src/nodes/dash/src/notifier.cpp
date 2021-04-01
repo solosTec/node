@@ -65,7 +65,7 @@ namespace smf {
 			auto range = db_.subscriptions_.equal_range(r.channel_);
 			auto const count = std::distance(range.first, range.second);
 			//	get column name
-			auto const col_name = tbl->meta().get_column(attr.first).name_;
+			auto const col_name = tbl->meta().get_body_column(attr.first).name_;
 			CYNG_LOG_INFO(logger_, "[channel] "
 				<< r.channel_
 				<< " update (#"

@@ -199,6 +199,7 @@ std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders:
 			//
 			//	tidy
 			//	remove all empty records and records that starts with an underline '_'
+			// and with the name "tag"
 			//
 			tidy(data);
 
@@ -427,6 +428,7 @@ std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders:
 		for (auto pos = pm.begin(); pos != pm.end(); ) {
 			if (!pos->first.empty() && pos->first.at(0) == '_')	pos = pm.erase(pos);
 			else if (pos->first.empty())	pos = pm.erase(pos);
+			else if (boost::algorithm::equals(pos->first, "tag"))	pos = pm.erase(pos);
 			else ++pos;
 		}
 

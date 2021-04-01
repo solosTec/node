@@ -12,6 +12,7 @@
 
 #include <cyng/store/db.h>
 #include <cyng/log/logger.h>
+#include <cyng/obj/numeric_cast.hpp>
 
 namespace smf {
 
@@ -138,6 +139,12 @@ namespace smf {
 	cyng::object convert_to_aes128(cyng::object&);
 	cyng::object convert_to_aes192(cyng::object& obj);
 	cyng::object convert_to_aes256(cyng::object& obj);
+
+	template <typename T>
+	cyng::object convert_to_numeric(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().is_integral());
+		return cyng::make_object(cyng::numeric_cast<T>(obj, T(0)));
+	}
 
 }
 

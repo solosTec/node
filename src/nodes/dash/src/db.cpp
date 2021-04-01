@@ -201,18 +201,23 @@ namespace smf {
 		auto const pos = store_map_.find(table_name);
 		if (pos != store_map_.end()) {
 
+			//
+			//	table meta data
+			//
+			auto const& meta = pos->second;
+
 			std::size_t index{ 0 };
 			for (auto& k : key) {
-				auto const col = pos->second.get_column(index);
+				auto const col = meta.get_column(index);
 				k = convert_to_type(col.type_, k);
 
 			}
 
 			for (auto& e : data) {
-				auto const idx = pos->second.get_index_by_name(e.first);
+				auto const idx = meta.get_index_by_name(e.first);
 				if (idx != std::numeric_limits<std::size_t>::max()) {
 
-					auto const col = pos->second.get_column(idx);
+					auto const col = meta.get_column(idx);
 					BOOST_ASSERT(boost::algorithm::equals(col.name_, e.first));
 
 					e.second = convert_to_type(col.type_, e.second);
@@ -296,6 +301,15 @@ namespace smf {
 		case cyng::TC_AES128:		return convert_to_aes128(obj);
 		case cyng::TC_AES192:		return convert_to_aes192(obj);
 		case cyng::TC_AES256:		return convert_to_aes256(obj);
+
+		case cyng::TC_UINT8:		return convert_to_numeric<std::uint8_t>(obj);
+		case cyng::TC_UINT16:		return convert_to_numeric<std::uint16_t>(obj);
+		case cyng::TC_UINT32:		return convert_to_numeric<std::uint32_t>(obj);
+		case cyng::TC_UINT64:		return convert_to_numeric<std::uint64_t>(obj);
+		case cyng::TC_INT8:			return convert_to_numeric<std::int8_t>(obj);
+		case cyng::TC_INT16:		return convert_to_numeric<std::int16_t>(obj);
+		case cyng::TC_INT32:		return convert_to_numeric<std::int32_t>(obj);
+		case cyng::TC_INT64:		return convert_to_numeric<std::int64_t>(obj);
 
 		default:
 			break;

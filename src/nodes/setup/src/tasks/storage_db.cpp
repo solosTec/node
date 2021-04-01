@@ -36,6 +36,10 @@ namespace smf {
 	: sigs_{ 
 		std::bind(&storage_db::open, this),
 		std::bind(&storage_db::load_stores, this),
+		std::bind(&storage_db::update, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5),
+		std::bind(&storage_db::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5),
+		std::bind(&storage_db::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+		std::bind(&storage_db::clear, this, std::placeholders::_1, std::placeholders::_2),
 		std::bind(&storage_db::stop, this, std::placeholders::_1)
 	}
 		, channel_(wp)
@@ -45,11 +49,16 @@ namespace smf {
 		, db_(cyng::db::create_db_session(cfg))
 		, store_(cache)
 		, store_map_()
+		, sql_map_()
 	{
 		auto sp = channel_.lock();
 		if (sp) {
 			sp->set_channel_name("open", 0);
 			sp->set_channel_name("load", 1);
+			sp->set_channel_name("update", 2);
+			sp->set_channel_name("insert", 3);
+			sp->set_channel_name("remove", 4);
+			sp->set_channel_name("clear", 5);
 
 			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
@@ -79,7 +88,13 @@ namespace smf {
 	void storage_db::init_stores() {
 		auto const tbl_vec = get_sql_meta_data();
 		for (auto const& ms : tbl_vec) {
-			init_store(cyng::to_mem(ms));
+			auto const m = cyng::to_mem(ms);
+			init_store(m);
+
+			//
+			//	initialize sql map with the name of the memory table
+			//
+			sql_map_.emplace(m.get_name(), ms);
 		}
 	}
 
@@ -141,6 +156,96 @@ namespace smf {
 		CYNG_LOG_WARNING(logger_, "task [" << channel_.lock()->get_name() << "] stopped");
 	}
 
+	void storage_db::update(std::string table_name
+		, cyng::key_t key
+		, cyng::attr_t attr
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
+
+		auto const pos = sql_map_.find(table_name);
+		if (pos != sql_map_.end()) {
+
+			auto const& meta = pos->second;
+			auto const sql = cyng::sql::update(db_.get_dialect(), meta).set_placeholder(meta, attr.first).where(meta, cyng::sql::pk())();
+
+			auto stmt = db_.create_statement();
+			std::pair<int, bool> const r = stmt->prepare(sql);
+			if (r.second) {
+				BOOST_ASSERT(r.first == 2 + key.size());	//	attribute to "gen"
+				
+				auto const width = meta.get_body_column(attr.first).width_;
+				stmt->push(attr.second, width);	
+				stmt->push(cyng::make_object(gen), 0);	//	name
+
+				for (auto& kp : key) {
+					stmt->push(kp, 36);	//	pk
+				}
+
+				if (stmt->execute()) {
+					stmt->clear();
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "[db] update error: " << sql);
+				}
+
+			}
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[db] update - unknown table: " << table_name);
+
+		}
+	}
+
+	void storage_db::insert(std::string table_name
+		, cyng::key_t  key
+		, cyng::data_t  data
+		, std::uint64_t gen
+		, boost::uuids::uuid tag) {
+
+		auto const pos = sql_map_.find(table_name);
+		if (pos != sql_map_.end()) {
+			auto const& meta = pos->second;
+			auto const sql = cyng::sql::insert(db_.get_dialect(), meta).bind_values(meta).to_str();
+			//auto const sql = cyng::sql::update(db_.get_dialect(), meta) .set_placeholder(meta)();
+			//auto const sql = "UPDATE TCfg SET val = ? WHERE path = ?";
+
+			auto stmt = db_.create_statement();
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[db] insert - unknown table: " << table_name);
+
+		}
+	}
+
+	void storage_db::remove(std::string table_name
+		, cyng::key_t key
+		, boost::uuids::uuid tag) {
+
+		auto const pos = sql_map_.find(table_name);
+		if (pos != sql_map_.end()) {
+			auto const& meta = pos->second;
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[db] remove - unknown table: " << table_name);
+
+		}
+	}
+
+	void storage_db::clear(std::string table_name
+		, boost::uuids::uuid tag) {
+
+		auto const pos = sql_map_.find(table_name);
+		if (pos != sql_map_.end()) {
+			auto const& ms = pos->second;
+
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[db] clear - unknown table: " << table_name);
+
+		}
+	}
 
 	bool init_storage(cyng::db::session& db) {
 		BOOST_ASSERT(db.is_alive());

@@ -30,6 +30,21 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
+			std::function<void(std::string table_name
+				, cyng::key_t key
+				, cyng::attr_t attr
+				, std::uint64_t gen
+				, boost::uuids::uuid tag)>,
+			std::function<void(std::string
+				, cyng::key_t  key
+				, cyng::data_t  data
+				, std::uint64_t gen
+				, boost::uuids::uuid tag)>,
+			std::function<void(std::string
+				, cyng::key_t key
+				, boost::uuids::uuid tag)>,
+			std::function<void(std::string
+				, boost::uuids::uuid tag)>,
 			std::function<void(cyng::eod)>
 		>;
 
@@ -47,6 +62,24 @@ namespace smf {
 
 	private:
 		void open();
+		void update(std::string table_name
+			, cyng::key_t key
+			, cyng::attr_t attr
+			, std::uint64_t gen
+			, boost::uuids::uuid tag);
+
+		void insert(std::string
+			, cyng::key_t  key
+			, cyng::data_t  data
+			, std::uint64_t gen
+			, boost::uuids::uuid tag);
+
+		void remove(std::string
+			, cyng::key_t key
+			, boost::uuids::uuid tag);
+
+		void clear(std::string
+			, boost::uuids::uuid tag);
 
 	private:
 		signatures_t sigs_;

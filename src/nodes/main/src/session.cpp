@@ -196,7 +196,7 @@ namespace smf {
 
 		CYNG_LOG_INFO(logger_, "session ["
 			<< socket_.remote_endpoint()
-			<< "] insert "
+			<< "] req.insert "
 			<< table_name
 			<< " - "
 			<< data);
@@ -208,6 +208,13 @@ namespace smf {
 		, cyng::key_t key
 		, cyng::param_map_t data
 		, boost::uuids::uuid source) {
+
+		CYNG_LOG_INFO(logger_, "session ["
+			<< socket_.remote_endpoint()
+			<< "] req.update "
+			<< table_name
+			<< " - "
+			<< data);
 
 		//
 		//	modify multiple 
@@ -251,6 +258,8 @@ namespace smf {
 		//
 		CYNG_LOG_TRACE(sp_->logger_, "forward insert ["
 			<< tbl->meta().get_name()
+			<< '/'
+			<< sp_->protocol_layer_
 			<< "]");
 
 		auto const deq = cyng::serialize_invoke("db.res.insert"
@@ -281,7 +290,12 @@ namespace smf {
 		//
 		CYNG_LOG_TRACE(sp_->logger_, "forward update ["
 			<< tbl->meta().get_name()
-			<< "]");
+			<< '/'
+			<< sp_->protocol_layer_
+			<< "] "
+			<< attr.first
+			<< " => "
+			<< attr.second);
 
 		auto const deq = cyng::serialize_invoke("db.res.update"
 			, tbl->meta().get_name()
@@ -307,6 +321,8 @@ namespace smf {
 		//
 		CYNG_LOG_TRACE(sp_->logger_, "forward remove ["
 			<< tbl->meta().get_name()
+			<< '/'
+			<< sp_->protocol_layer_
 			<< "]");
 
 		auto const deq = cyng::serialize_invoke("db.res.remove"
@@ -330,8 +346,10 @@ namespace smf {
 		//	send clear to subscriber
 		//
 
-		CYNG_LOG_TRACE(sp_->logger_, "forward clear ["
+		CYNG_LOG_TRACE(sp_->logger_, " forward clear ["
 			<< tbl->meta().get_name()
+			<< '/'
+			<< sp_->protocol_layer_
 			<< "]");
 
 		auto const deq = cyng::serialize_invoke("db.res.clear"
