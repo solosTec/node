@@ -36,7 +36,8 @@ namespace smf {
 					, ipt_cfg.get_toggle()
 					, hw_cfg.get_model()
 					, std::bind(&router::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2)
-					, std::bind(&router::ipt_stream, this, std::placeholders::_1));
+					, std::bind(&router::ipt_stream, this, std::placeholders::_1)
+					, std::bind(&router::auth_state, this, std::placeholders::_1));
 				bus_->start();
 			}
 			catch (std::exception const& ex) {
@@ -56,12 +57,22 @@ namespace smf {
 
 	void router::ipt_cmd(ipt::header const& h, cyng::buffer_t&& body) {
 
-		CYNG_LOG_TRACE(logger_, "router ipt cmd " << ipt::command_name(h.command_));
+		CYNG_LOG_TRACE(logger_, "[ipt]  cmd " << ipt::command_name(h.command_));
 
 	}
 	void router::ipt_stream(cyng::buffer_t&& data) {
-		CYNG_LOG_TRACE(logger_, "router ipt stream " << data.size() << " byte");
+		CYNG_LOG_TRACE(logger_, "[ipt]  stream " << data.size() << " byte");
 
+	}
+
+	void router::auth_state(bool auth) {
+		if (auth) {
+			CYNG_LOG_INFO(logger_, "[ipt] authorized");
+			//register_targets();
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[ipt] authorization lost");
+		}
 	}
 
 

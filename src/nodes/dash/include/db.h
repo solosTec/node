@@ -166,6 +166,13 @@ namespace smf {
 		return cyng::make_object(cyng::numeric_cast<T>(obj, T(0)));
 	}
 
+	cyng::object convert_to_nanoseconds(cyng::object&);
+	cyng::object convert_to_microseconds(cyng::object&);
+	cyng::object convert_to_milliseconds(cyng::object&);
+	cyng::object convert_to_seconds(cyng::object&);
+	cyng::object convert_to_minutes(cyng::object&);
+	cyng::object convert_to_hours(cyng::object&);
+
 }
 
 #endif

@@ -28,12 +28,14 @@ namespace smf
 			, toggle::server_vec_t&& tgl
 			, std::string model
 			, parser::command_cb cb_cmd
-			, parser::data_cb cb_stream)
+			, parser::data_cb cb_stream
+			, auth_cb cb_auth)
 		: state_(state::START)
 			, logger_(logger)
 			, tgl_(std::move(tgl))
 			, model_(model)
 			, cb_cmd_(cb_cmd)
+			, cb_auth_(cb_auth)
 			, endpoints_()
 			, socket_(ctx)
 			, timer_(ctx)
@@ -67,6 +69,14 @@ namespace smf
 			boost::system::error_code ignored_ec;
 			socket_.close(ignored_ec);
 			timer_.cancel();
+
+			if (state_ == state::AUTHORIZED) {
+				//
+				//	signal changed authorization state
+				//
+				cb_auth_(false);
+			}
+
 			state_ = state::START;
 		}
 
@@ -101,7 +111,7 @@ namespace smf
 				reset();
 				
 				//
-				//	switch rdundancy
+				//	switch redundancy
 				//
 				tgl_.changeover();
 				CYNG_LOG_WARNING(logger_, "[ipt] connect failed - switch to " << tgl_.get());
@@ -379,8 +389,20 @@ namespace smf
 				state_ = state::AUTHORIZED;
 
 				//
-				//	ToDo: set watchdog
+				//	set watchdog
 				//
+				if (watchdog != 0) {
+					CYNG_LOG_INFO(logger_, "ipt [" << tgl_.get() << "] set watchdog: " << watchdog << " minutes");
+
+					//
+					//	ToDo:
+					//
+				}
+
+				//
+				//	signal changed authorization state
+				//
+				cb_auth_(true);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "ipt [" << tgl_.get() << "] login failed: " << r.get_response_name());

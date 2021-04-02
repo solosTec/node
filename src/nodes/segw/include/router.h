@@ -27,6 +27,7 @@
 	 private:
 		 void ipt_cmd(ipt::header const&, cyng::buffer_t&&);
 		 void ipt_stream(cyng::buffer_t&&);
+		 void auth_state(bool);
 
 	 private:
 		 cyng::controller& ctl_;

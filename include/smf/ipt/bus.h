@@ -28,12 +28,17 @@ namespace smf
 			} state_;
 
 		public:
+			//	call back to signal changed IP-T authorization state
+			using auth_cb = std::function<void(bool)>;
+
+		public:
 			bus(boost::asio::io_context& ctx
 				, cyng::logger
 				, toggle::server_vec_t&&
 				, std::string model
 				, parser::command_cb
-				, parser::data_cb);
+				, parser::data_cb
+				, auth_cb);
 			void start();
 			void stop();
 
@@ -61,6 +66,7 @@ namespace smf
 			toggle tgl_;
 			std::string const model_;
 			parser::command_cb cb_cmd_;
+			auth_cb cb_auth_;
 
 			boost::asio::ip::tcp::resolver::results_type endpoints_;
 			boost::asio::ip::tcp::socket socket_;

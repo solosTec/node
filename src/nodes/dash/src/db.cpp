@@ -11,6 +11,7 @@
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
 #include <cyng/parse/string.h>
+#include <cyng/parse/duration.h>
 
 #include <iostream>
 
@@ -412,6 +413,13 @@ namespace smf {
 		case cyng::TC_INT32:		return convert_to_numeric<std::int32_t>(obj);
 		case cyng::TC_INT64:		return convert_to_numeric<std::int64_t>(obj);
 
+		case cyng::TC_NANO_SECOND:	return convert_to_nanoseconds(obj);
+		case cyng::TC_MICRO_SECOND:	return convert_to_microseconds(obj);
+		case cyng::TC_MILLI_SECOND:	return convert_to_milliseconds(obj);
+		case cyng::TC_SECOND:		return convert_to_seconds(obj);
+		case cyng::TC_MINUTE:		return convert_to_minutes(obj);
+		case cyng::TC_HOUR:			return convert_to_hours(obj);
+
 		default:
 			break;
 		}
@@ -461,6 +469,41 @@ namespace smf {
 		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes256_size>(str));
 	}
 
+	cyng::object convert_to_nanoseconds(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return obj;
+	}
+
+	cyng::object convert_to_microseconds(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_microseconds(str));
+	}
+
+	cyng::object convert_to_milliseconds(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_milliseconds(str));
+	}
+
+	cyng::object convert_to_seconds(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_seconds(str));
+	}
+
+	cyng::object convert_to_minutes(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_minutes(str));
+	}
+
+	cyng::object convert_to_hours(cyng::object& obj) {
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		auto const str = cyng::io::to_plain(obj);
+		return cyng::make_object(cyng::to_hours(str));
+	}
 
 }
 
