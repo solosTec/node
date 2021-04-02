@@ -14,6 +14,8 @@
 #include <cyng/log/logger.h>
 #include <cyng/obj/numeric_cast.hpp>
 
+#include <boost/uuid/random_generator.hpp>
+
 namespace smf {
 
 	class notifier;
@@ -102,10 +104,23 @@ namespace smf {
 			, cyng::vector_t& key
 			, cyng::param_map_t& data);
 
+		/**
+		 * To insert a new entity over the web interface a new primary key
+		 * for the database is required.
+		 */
+		cyng::vector_t generate_new_key(std::string const&, cyng::vector_t&& key, cyng::param_map_t const& data);
+
+		cyng::data_t complete(std::string const&, cyng::param_map_t&&);
+
 	private:
 		void set_start_values(std::uint64_t max_upload_size
 			, std::string const& nickname
 			, std::chrono::seconds timeout);
+
+		/**
+		 * @return object of the specified type with a generic NULL value
+		 */
+		cyng::object generate_empty_value(cyng::type_code);
 
 	public:
 		kv_store cfg_;
@@ -124,6 +139,11 @@ namespace smf {
 		 * channel => ws
 		 */
 		std::multimap<std::string, boost::uuids::uuid>	subscriptions_;
+
+		/**
+		 * generate unique tags
+		 */
+		boost::uuids::random_generator uidgen_;
 
 	};
 

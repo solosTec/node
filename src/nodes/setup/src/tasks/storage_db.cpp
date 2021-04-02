@@ -177,6 +177,9 @@ namespace smf {
 				stmt->push(attr.second, width);	
 				stmt->push(cyng::make_object(gen), 0);	//	name
 
+				//
+				//	key
+				//
 				for (auto& kp : key) {
 					stmt->push(kp, 36);	//	pk
 				}
@@ -184,10 +187,10 @@ namespace smf {
 				if (stmt->execute()) {
 					stmt->clear();
 				}
-				else {
-					CYNG_LOG_WARNING(logger_, "[db] update error: " << sql);
-				}
 
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[db] update error: " << sql);
 			}
 		}
 		else {
@@ -206,10 +209,46 @@ namespace smf {
 		if (pos != sql_map_.end()) {
 			auto const& meta = pos->second;
 			auto const sql = cyng::sql::insert(db_.get_dialect(), meta).bind_values(meta).to_str();
-			//auto const sql = cyng::sql::update(db_.get_dialect(), meta) .set_placeholder(meta)();
-			//auto const sql = "UPDATE TCfg SET val = ? WHERE path = ?";
 
 			auto stmt = db_.create_statement();
+			std::pair<int, bool> const r = stmt->prepare(sql);
+			if (r.second) {
+				BOOST_ASSERT(r.first == data.size() + key.size() + 1);
+
+				//
+				//	pk
+				//
+				std::size_t col_index{ 0 };
+				for (auto& kp : key) {
+					auto const width = meta.get_column(col_index).width_;
+					stmt->push(kp, width);	//	pk
+					++col_index;
+				}
+
+				//
+				//	gen
+				//
+				stmt->push(cyng::make_object(gen), 0);
+				++col_index;
+
+				//
+				//	body
+				//
+				for (auto& val : data) {
+					auto const width = meta.get_column(col_index).width_;
+					stmt->push(val, width);
+					++col_index;
+				}
+
+
+				if (stmt->execute()) {
+					stmt->clear();
+				}
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[db] insert error: " << sql);
+			}
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "[db] insert - unknown table: " << table_name);

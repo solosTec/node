@@ -110,7 +110,10 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] response subscribe: " 
+		std::reverse(key.begin(), key.end());
+		std::reverse(data.begin(), data.end());
+
+		CYNG_LOG_TRACE(logger_, "[cluster] response insert/subscribe: " 
 			<< table_name
 			<< " #"
 			<< gen
@@ -131,13 +134,13 @@ namespace smf {
 
 				CYNG_LOG_INFO(logger_, "[cluster] make persistent: "
 					<< table_name
-					<< " <"
-					<< key
-					<< ">");
+					<< " "
+					<< key);
 
 				//
-				//	ToDo: insert into database (persistence layer)
+				//	insert into database (persistence layer)
 				//
+				storage_->dispatch("insert", cyng::make_tuple(table_name, key, data, gen, tag));
 
 			}
 			}, cyng::access::write(table_name));

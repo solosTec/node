@@ -27,6 +27,7 @@ namespace smf {
 		, logger_(logger)
 		, store_map_()
 		, subscriptions_()
+		, uidgen_()
 	{}
 
 	void db::init(std::uint64_t max_upload_size
@@ -233,6 +234,106 @@ namespace smf {
 		}
 	}
 
+	cyng::vector_t db::generate_new_key(std::string const& table_name, cyng::vector_t&& key, cyng::param_map_t const& data) {
+
+		if (boost::algorithm::equals(table_name, "device")
+			|| boost::algorithm::equals(table_name, "meter")
+			|| boost::algorithm::equals(table_name, "meterIEC")
+			|| boost::algorithm::equals(table_name, "meterwMBus")
+			|| boost::algorithm::equals(table_name, "gateway")
+			|| boost::algorithm::equals(table_name, "loRaDevice")
+			|| boost::algorithm::equals(table_name, "guiUser")
+			|| boost::algorithm::equals(table_name, "location")
+			) {
+			return cyng::key_generator(uidgen_());
+		}
+		CYNG_LOG_WARNING(logger_, "[db] cannot generate pk for table " << table_name);
+		return key;
+	}
+
+	cyng::data_t db::complete(std::string const& table_name, cyng::param_map_t&& pm) {
+
+		cyng::data_t data;
+		auto const pos = store_map_.find(table_name);
+		if (pos != store_map_.end()) {
+
+			//
+			//	table meta data
+			//
+			auto const& meta = pos->second;
+			meta.loop([&](std::size_t, cyng::column const& col, bool pk)->void {
+
+				if (!pk) {
+					auto pos = pm.find(col.name_);
+					if (pos != pm.end()) {
+
+						//
+						//	column found
+						//	convert to expected data type
+						//
+						data.push_back(convert_to_type(col.type_, pos->second));
+
+					}
+					else {
+						//
+						//	column is missing
+						//	generate a default value
+						//
+						data.push_back(generate_empty_value(col.type_));
+					}
+				}
+
+				});
+
+		}
+		CYNG_LOG_ERROR(logger_, "[db] complete: unknown table " << table_name);
+		return data;
+	}
+
+	cyng::object db::generate_empty_value(cyng::type_code tc) {
+		switch (tc) {
+		case cyng::TC_UUID:			return cyng::make_object(boost::uuids::nil_uuid());
+		case cyng::TC_TIME_POINT:	return cyng::make_object(std::chrono::system_clock::now());
+		case cyng::TC_IP_ADDRESS:	return cyng::make_object(boost::asio::ip::address());
+		case cyng::TC_AES128:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes128_size>("0000000000000000"));
+		case cyng::TC_AES192:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes192_size>("000000000000000000000000"));
+		case cyng::TC_AES256:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes256_size>("00000000000000000000000000000000"));
+
+		case cyng::TC_BUFFER: return cyng::make_object(cyng::buffer_t());
+		case cyng::TC_VERSION: return cyng::make_object(cyng::version());
+		case cyng::TC_REVISION: return cyng::make_object(cyng::revision());
+		case cyng::TC_OP: return cyng::make_object(cyng::op::NOOP);
+		case cyng::TC_SEVERITY: return cyng::make_object(cyng::severity::LEVEL_INFO);
+		case cyng::TC_MAC48: return cyng::make_object(cyng::mac48());
+		case cyng::TC_MAC64: return cyng::make_object(cyng::mac64());
+		case cyng::TC_PID: return cyng::make_object(cyng::pid());
+		case cyng::TC_OBIS: return cyng::make_object(cyng::obis());
+		case cyng::TC_EDIS: return cyng::make_object(cyng::edis());
+
+		case cyng::TC_UINT8:		return cyng::make_object<std::uint8_t>(0);
+		case cyng::TC_UINT16:		return cyng::make_object<std::uint16_t>(0);
+		case cyng::TC_UINT32:		return cyng::make_object<std::uint32_t>(0);
+		case cyng::TC_UINT64:		return cyng::make_object<std::uint64_t>(0);
+		case cyng::TC_INT8:			return cyng::make_object<std::int8_t>(0);
+		case cyng::TC_INT16:		return cyng::make_object<std::int16_t>(0);
+		case cyng::TC_INT32:		return cyng::make_object<std::int32_t>(0);
+		case cyng::TC_INT64:		return cyng::make_object<std::int64_t>(0);
+
+		case cyng::TC_STRING:		return cyng::make_object("");
+		case cyng::TC_NANO_SECOND:	return cyng::make_object(std::chrono::nanoseconds(0));
+		case cyng::TC_MICRO_SECOND:	return cyng::make_object(std::chrono::microseconds(0));
+		case cyng::TC_MILLI_SECOND:	return cyng::make_object(std::chrono::milliseconds(0));
+		case cyng::TC_SECOND:		return cyng::make_object(std::chrono::seconds(0));
+		case cyng::TC_MINUTE:		return cyng::make_object(std::chrono::minutes(0));
+		case cyng::TC_HOUR:			return cyng::make_object(std::chrono::hours(0));
+
+		default:
+			break;
+		}
+		return cyng::make_object();
+	}
+
+
 	db::rel::rel(std::string table, std::string channel, std::string counter)
 		: table_(table)
 		, channel_(channel)
@@ -323,6 +424,9 @@ namespace smf {
 			auto const str = cyng::io::to_plain(obj);
 			return cyng::make_object(cyng::to_uuid(str));
 		}
+		else if (obj.rtti().tag() == cyng::TC_UUID) {
+			return obj;	//	nothing to do
+		}
 		return  cyng::make_object(boost::uuids::nil_uuid());
 	}
 
@@ -356,6 +460,7 @@ namespace smf {
 		auto const str = cyng::io::to_plain(obj);
 		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes256_size>(str));
 	}
+
 
 }
 

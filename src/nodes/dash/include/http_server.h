@@ -100,6 +100,10 @@ namespace smf {
 			, cyng::vector_t&& key
 			, cyng::param_map_t&& data);
 
+		void insert_request(std::string const& channel
+			, cyng::vector_t&& key
+			, cyng::param_map_t&& data);
+
 
 	private:
 		bus& cluster_bus_;
@@ -151,7 +155,8 @@ namespace smf {
 	std::string json_clear_table(std::string channel);
 	
 	/**
-	 * remove all empty records and records that starts with an underline '_'
+	 * remove all empty records and records that starts with an underline '_' or carry
+	 * names like "tag" or "source"
 	 */
 	void tidy(cyng::param_map_t&);
 

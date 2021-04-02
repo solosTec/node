@@ -87,7 +87,7 @@ namespace smf {
 			db_.cfg_.get_value("http-max-upload-size", static_cast<std::uint64_t>(0xA00000)),
 			db_.cfg_.get_value("http-server-nickname", "coraline"),
 			db_.cfg_.get_value("http-session-timeout", std::chrono::seconds(30)),
-std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders::_2))->run();
+			std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders::_2))->run();
 	}
 
 	void http_server::upgrade(boost::asio::ip::tcp::socket s
@@ -125,7 +125,7 @@ std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders:
 					//	remove from subscription list
 					//
 					auto const count = db_.remove_from_subscription(tag);
-					CYNG_LOG_INFO(logger_, "[HTTP] ws [" << tag << "] removed from " << count << " subscriptions");
+					CYNG_LOG_INFO(logger_, "[HTTP] ws [" << tag << "] removed from #" << count << " subscriptions");
 
 					//
 					//	remove from ws list
@@ -170,6 +170,14 @@ std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders:
 						, cyng::container_cast<cyng::param_map_t>(reader["rec"]["data"].get()));
 
 				}
+				else if (boost::algorithm::equals(cmd, "insert")) {
+					auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+					CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] insert request from channel " << channel);
+					insert_request(channel
+						, cyng::container_cast<cyng::vector_t>(reader["rec"]["key"].get())
+						, cyng::container_cast<cyng::param_map_t>(reader["rec"]["data"].get()));
+
+				}
 				else {
 					CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
 				}
@@ -183,6 +191,41 @@ std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders:
 			});
 
 		parser.read(msg.begin(), msg.end());
+	}
+
+	void http_server::insert_request(std::string const& channel
+		, cyng::vector_t&& key
+		, cyng::param_map_t&& data) {
+		BOOST_ASSERT_MSG(!data.empty(), "no modify data");
+		auto const rel = db_.by_channel(channel);
+		if (!rel.empty()) {
+
+			BOOST_ASSERT(boost::algorithm::equals(channel, rel.channel_));
+
+			//
+			//	tidy
+			//	remove all empty records and records that starts with an underline '_'
+			// and with the name "tag"
+			//
+			tidy(data);
+
+			//
+			//	produce a new key
+			//
+			key = db_.generate_new_key(rel.table_, std::move(key), data);
+
+			//
+			//	convert data types
+			//
+			//db_.convert(rel.table_, key, data);
+
+			CYNG_LOG_TRACE(logger_, "[HTTP] insert request for table " << rel.table_ << ": " << data);
+			cluster_bus_.req_db_insert(rel.table_, key, db_.complete(rel.table_, std::move(data)), 0);
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[HTTP] insert undefined channel " << channel);
+		}
 	}
 
 	void http_server::modify_request(std::string const& channel
@@ -429,6 +472,7 @@ std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders:
 			if (!pos->first.empty() && pos->first.at(0) == '_')	pos = pm.erase(pos);
 			else if (pos->first.empty())	pos = pm.erase(pos);
 			else if (boost::algorithm::equals(pos->first, "tag"))	pos = pm.erase(pos);
+			else if (boost::algorithm::equals(pos->first, "source"))	pos = pm.erase(pos);
 			else ++pos;
 		}
 
