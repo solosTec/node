@@ -67,6 +67,19 @@ namespace smf
 			return cyng::to_string_nil(data, 0);
 		}
 
+		std::tuple<std::string, std::uint16_t, std::uint8_t> ctrl_req_register_target(cyng::buffer_t&& data) {
+			auto const name = cyng::to_string_nil(data, 0);
+			std::size_t offset = name.size() + 1;
+			auto const paket_size = cyng::to_numeric_be<std::uint16_t>(data, offset);
+			offset += sizeof(std::uint16_t);
+			auto const window_size = cyng::to_numeric_be<std::uint8_t>(data, offset);
+			return {
+				name,
+				paket_size,
+				window_size
+			};
+		}
+
 		cyng::deque_t gen_instructions(header const& h, cyng::buffer_t&& data) {
 
 			switch (static_cast<code>(h.command_)) {

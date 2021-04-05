@@ -120,7 +120,10 @@ namespace smf
 		//	"pty.connect"
 		void pty_connect(std::string msisdn);
 
-		//void pty_reg_target(std::string name);
+		//	"pty.register"
+		void pty_reg_target(std::string name
+			, std::uint16_t
+			, std::uint8_t);
 
 	private:
 		void reset();

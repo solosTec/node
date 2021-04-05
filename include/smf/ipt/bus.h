@@ -42,6 +42,8 @@ namespace smf
 			void start();
 			void stop();
 
+			void register_target(std::string, std::function<void(cyng::buffer_t&&)>);
+
 		private:
 			constexpr bool is_stopped() const {
 				return state_ == state::STOPPED;
@@ -57,9 +59,15 @@ namespace smf
 			void handle_read(boost::system::error_code const& ec, std::size_t n);
 			void handle_write(boost::system::error_code const& ec);
 
+			/**
+			 * start an async write
+			 */
+			void send(cyng::buffer_t);
+
 			void cmd_complete(header const&, cyng::buffer_t&&);
 
 			void res_login(cyng::buffer_t&&);
+			void res_res_register_target(header const&, cyng::buffer_t&&);
 
 		private:
 			cyng::logger logger_;
@@ -71,10 +79,13 @@ namespace smf
 			boost::asio::ip::tcp::resolver::results_type endpoints_;
 			boost::asio::ip::tcp::socket socket_;
 			boost::asio::steady_timer timer_;
+			boost::asio::io_context::strand dispatcher_;
 			serializer	serializer_;
 			parser	parser_;
 			std::deque<cyng::buffer_t>	buffer_write_;
 			std::array<char, 2048>	input_buffer_;
+
+			std::map<ipt::sequence_t, std::function<void(cyng::buffer_t&&)> >	registrant_;
 
 		};
 	}	//	ipt

@@ -23,7 +23,7 @@ namespace smf {
 		friend class cyng::task;
 
 		using signatures_t = std::tuple<
-			std::function<void(std::string)>,
+			std::function<void()>,
 			std::function<void(cyng::eod)>
 		>;
 
@@ -33,6 +33,7 @@ namespace smf {
 			, boost::uuids::uuid tag
 			, cyng::logger logger
 			, std::string const& node_name
+			, std::string const& model
 			, ipt::toggle::server_vec_t&&
 			, std::vector<std::string> const& config_types
 			, std::vector<std::string> const& sml_targets
@@ -42,7 +43,7 @@ namespace smf {
 		void stop(cyng::eod);
 
 	private:
-		void connect(std::string);
+		void connect();
 
 		//
 		//	bus interface
@@ -51,6 +52,8 @@ namespace smf {
 		void ipt_stream(cyng::buffer_t&&);
 		void auth_state(bool);
 
+		void register_targets();
+
 	private:
 		signatures_t sigs_;
 		std::weak_ptr<cyng::channel> channel_;
@@ -58,7 +61,11 @@ namespace smf {
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
 		ipt::toggle::server_vec_t toggle_;
-		std::unique_ptr<ipt::bus>	bus_;
+
+		std::vector<std::string> const sml_targets_;
+		std::vector<std::string> const iec_targets_;
+
+		ipt::bus	bus_;
 	};
 
 }

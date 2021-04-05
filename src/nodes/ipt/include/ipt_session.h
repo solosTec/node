@@ -45,6 +45,10 @@ namespace smf {
 		//
 		void ipt_cmd(ipt::header const&, cyng::buffer_t&&);
 		void ipt_stream(cyng::buffer_t&&);
+		/**
+		 * start an async write
+		 */
+		void ipt_send(cyng::buffer_t&&);
 
 		void pty_res_login(bool, boost::uuids::uuid dev);
 
@@ -55,6 +59,7 @@ namespace smf {
 
 		void update_software_version(std::string);
 		void update_device_identifier(std::string);
+		void register_target(std::string name, std::uint16_t paket_size, std::uint8_t window_size);
 
 		static std::function<void(bool success, boost::uuids::uuid)>
 		get_vm_func_pty_res_login(ipt_session* p);

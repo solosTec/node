@@ -28,7 +28,11 @@ endif()
 
 set (store_tasks
   include/tasks/network.h
+  include/tasks/sml_target.h
+  include/tasks/iec_target.h
   src/tasks/network.cpp
+  src/tasks/sml_target.cpp
+  src/tasks/iec_target.cpp
 )
 
 source_group("store-assets" FILES ${store_assets})

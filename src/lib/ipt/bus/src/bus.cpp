@@ -39,11 +39,13 @@ namespace smf
 			, endpoints_()
 			, socket_(ctx)
 			, timer_(ctx)
+			, dispatcher_(ctx)
 			, serializer_(tgl_.get().sk_)
 			, parser_(tgl_.get().sk_
 				, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), cb_stream)
 			, buffer_write_()
 			, input_buffer_()
+			, registrant_()
 		{}
 
 		void bus::start() {
@@ -166,26 +168,25 @@ namespace smf
 				auto const srv = tgl_.get();
 				if (srv.scrambled_) {
 
-					buffer_write_.push_back(serializer_.req_login_scrambled(
+					send(serializer_.req_login_scrambled(
 						srv.account_,
 						srv.pwd_,
 						srv.sk_));
+					//buffer_write_.push_back();
 					parser_.set_sk(srv.sk_);
 				}
 				else {
-					buffer_write_.push_back(serializer_.req_login_public(
+					send(serializer_.req_login_public(
 						srv.account_,
 						srv.pwd_));
+					//buffer_write_.push_back();
 
 				}
 
 				// Start the input actor.
 				do_read();
 
-				// Start the heartbeat actor.
-				do_write();
 			}
-
 		}
 
 		void bus::check_deadline(boost::system::error_code const& ec)
@@ -238,7 +239,7 @@ namespace smf
 			// Start an asynchronous operation to send a heartbeat message.
 			boost::asio::async_write(socket_,
 				boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-				std::bind(&bus::handle_write, this, std::placeholders::_1));
+				dispatcher_.wrap(std::bind(&bus::handle_write, this, std::placeholders::_1)));
 		}
 
 		void bus::handle_read(const boost::system::error_code& ec, std::size_t n)
@@ -296,6 +297,14 @@ namespace smf
 			}
 		}
 
+		void bus::send(cyng::buffer_t data) {
+			boost::asio::post(dispatcher_, [this, data]() {
+				bool const b = buffer_write_.empty();
+				buffer_write_.push_back(data);
+				if (b)	do_write();
+				});
+		}
+
 		void bus::cmd_complete(header const& h, cyng::buffer_t&& body) {
 			CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] cmd " << command_name(h.command_));	
 
@@ -324,23 +333,23 @@ namespace smf
 				cb_cmd_(h, std::move(body));
 				break;
 			case code::APP_REQ_PROTOCOL_VERSION:
-				buffer_write_.push_back(serializer_.res_protocol_version(h.sequence_, 1));
+				send(serializer_.res_protocol_version(h.sequence_, 1));
 				break;
 			case code::APP_REQ_SOFTWARE_VERSION:
-				buffer_write_.push_back(serializer_.res_software_version(h.sequence_, SMF_VERSION_NAME));
+				send(serializer_.res_software_version(h.sequence_, SMF_VERSION_NAME));
 				break;
 			case code::APP_REQ_DEVICE_IDENTIFIER:
-				buffer_write_.push_back(serializer_.res_device_id(h.sequence_, model_));
+				send(serializer_.res_device_id(h.sequence_, model_));
 				break;
 			case code::APP_REQ_DEVICE_AUTHENTIFICATION:
-				buffer_write_.push_back(serializer_.res_device_auth(h.sequence_
+				send(serializer_.res_device_auth(h.sequence_
 					, tgl_.get().account_
 					, tgl_.get().pwd_
 					, tgl_.get().account_	//	number
 					, model_));
 				break;
 			case code::APP_REQ_DEVICE_TIME:
-				buffer_write_.push_back(serializer_.res_device_time(h.sequence_));
+				send(serializer_.res_device_time(h.sequence_));
 				break;
 			case code::CTRL_RES_LOGIN_PUBLIC:
 				res_login(std::move(body));
@@ -355,13 +364,13 @@ namespace smf
 			//	break;
 
 			case code::CTRL_REQ_REGISTER_TARGET:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				send(serializer_.res_unknown_command(h.sequence_, h.command_));
 				break;
 			case code::CTRL_RES_REGISTER_TARGET:
-				cb_cmd_(h, std::move(body));
+				res_res_register_target(h, std::move(body));
 				break;
 			case code::CTRL_REQ_DEREGISTER_TARGET:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				send(serializer_.res_unknown_command(h.sequence_, h.command_));
 				break;
 			case code::CTRL_RES_DEREGISTER_TARGET:
 				cb_cmd_(h, std::move(body));
@@ -369,11 +378,9 @@ namespace smf
 
 			case code::UNKNOWN:
 			default:
-				buffer_write_.push_back(serializer_.res_unknown_command(h.sequence_, h.command_));
+				send(serializer_.res_unknown_command(h.sequence_, h.command_));
 				break;
 			}
-
-			if (!buffer_write_.empty())	do_write();
 		}
 
 		void bus::res_login(cyng::buffer_t&& data) {
@@ -409,6 +416,29 @@ namespace smf
 			}
 		}
 
+		void bus::register_target(std::string name, std::function<void(cyng::buffer_t&&)> cb) {
+			auto r = serializer_.req_register_push_target(name
+				, std::numeric_limits<std::uint16_t>::max()	//	0xffff
+				, 1);
+
+			//
+			//	send register command to ip-t server
+			//
+			registrant_.emplace(r.second, cb);
+			send(r.first);
+		}
+
+		void bus::res_res_register_target(header const& h, cyng::buffer_t&& body) {
+			auto const pos = registrant_.find(h.sequence_);
+			if (pos != registrant_.end()) {
+				CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_));
+
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing registrant");
+				cb_cmd_(h, std::move(body));
+			}
+		}
 
 	}	//	ipt
 }

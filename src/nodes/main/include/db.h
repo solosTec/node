@@ -87,6 +87,11 @@ namespace smf {
 		 */
 		bool push_sys_msg(std::string msg, cyng::severity);
 
+		bool register_target(boost::uuids::uuid tag
+			, std::string name
+			, std::uint16_t paket_size
+			, std::uint8_t window_size);
+
 	private:
 		void set_start_values(cyng::param_map_t const& session_cfg);
 		void init_sys_msg();
@@ -98,6 +103,7 @@ namespace smf {
 		config::store_map store_map_;
 		boost::uuids::random_generator uuid_gen_;
 		std::uint32_t source_;
+		std::uint32_t channel_;
 	};
 
 	/**

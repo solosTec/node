@@ -143,7 +143,22 @@ namespace smf {
 
 	void server::pty_connect(boost::uuids::uuid tag
 		, std::string msisdn) {
-		CYNG_LOG_INFO(logger_, "pty connect " << msisdn);
+		CYNG_LOG_INFO(logger_, "pty connect " << msisdn << " {" << tag << "}");
+	}
+
+	void server::pty_register(boost::uuids::uuid tag
+		, std::string name
+		, std::uint16_t paket_size
+		, std::uint8_t window_size) {
+
+		if (cache_.register_target(tag, name, paket_size, window_size)) {
+			CYNG_LOG_INFO(logger_, "pty registered target " << name << " {" << tag << "}");
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "pty registering target " << name << " {" << tag << "} failed");
+
+		}
 	}
 
 }

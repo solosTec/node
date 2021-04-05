@@ -443,6 +443,23 @@ namespace smf {
 
 	}
 
+	void bus::pty_reg_target(std::string name
+		, std::uint16_t paket_size
+		, std::uint8_t window_size) {
+
+		auto const deq = cyng::serialize_invoke("pty.register"
+			, tag_
+			, name
+			, paket_size
+			, window_size);
+
+		cyng::exec(vm_, [=, this]() {
+			bool const b = buffer_write_.empty();
+			cyng::add(buffer_write_, deq);
+			if (b)	do_write();
+			});
+	}
+
 
 	std::function<void(bool)>
 	bus::get_vm_func_on_login(bus_interface* bip) {

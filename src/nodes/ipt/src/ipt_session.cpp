@@ -127,7 +127,7 @@ namespace smf {
 		// Start an asynchronous operation to send a heartbeat message.
 		boost::asio::async_write(socket_,
 			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-			std::bind(&ipt_session::handle_write, this, std::placeholders::_1));
+			cyng::expose_dispatcher(vm_).wrap(std::bind(&ipt_session::handle_write, this, std::placeholders::_1)));
 	}
 
 	void ipt_session::handle_write(const boost::system::error_code& ec)
@@ -170,8 +170,7 @@ namespace smf {
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
-				buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
-				do_write();
+				ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
 			}
 			break;
 		case ipt::code::CTRL_REQ_LOGIN_SCRAMBLED:
@@ -184,8 +183,7 @@ namespace smf {
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
-				buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
-				do_write();
+				ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
 			}
 			break;
 		case ipt::code::APP_RES_SOFTWARE_VERSION:
@@ -194,11 +192,24 @@ namespace smf {
 		case ipt::code::APP_RES_DEVICE_IDENTIFIER:
 			update_device_identifier(ipt::app_res_device_identifier(std::move(body)));
 			break;
+		case ipt::code::CTRL_REQ_REGISTER_TARGET:
+			if (cluster_bus_.is_connected()) {
+				auto const [name, paket_size, window_size] = ipt::ctrl_req_register_target(std::move(body));
+				register_target(name, paket_size, window_size);
+			}
+			break;
 		default:
 			CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " dropped");
+			ipt_send(serializer_.res_unknown_command(h.sequence_, h.command_));
+			do_write();
 			break;
 		}
 
+	}
+
+	void ipt_session::register_target(std::string name, std::uint16_t paket_size, std::uint8_t window_size) {
+		CYNG_LOG_INFO(logger_, "[ipt] register: " << name);
+		cluster_bus_.pty_reg_target(name, paket_size, window_size);
 	}
 
 	void ipt_session::update_software_version(std::string str) {
@@ -233,6 +244,15 @@ namespace smf {
 
 	}
 
+	void ipt_session::ipt_send(cyng::buffer_t&& data) {
+		cyng::exec(vm_, [this, data]() {
+			bool const b = buffer_write_.empty();
+			buffer_write_.push_back(data);
+			if (b)	do_write();
+			});
+
+	}
+
 	void ipt_session::pty_res_login(bool success, boost::uuids::uuid dev) {
 		if (success) {
 
@@ -242,15 +262,14 @@ namespace smf {
 			dev_ = dev;
 
 			CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag()  << " login ok");
-			buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
-			do_write();
+			ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
 
 			query();
 
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
-			buffer_write_.push_back(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
+			ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
 		}
 
 	}
@@ -259,43 +278,36 @@ namespace smf {
 
 		if (ipt::test_bit(query_, ipt::query::PROTOCOL_VERSION)) {
 			CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::PROTOCOL_VERSION)));
-			buffer_write_.push_back(serializer_.req_protocol_version());
-			do_write();
+			ipt_send(serializer_.req_protocol_version());
 
 		}
 		if (ipt::test_bit(query_, ipt::query::FIRMWARE_VERSION)) {
 			CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::FIRMWARE_VERSION)));
-			buffer_write_.push_back(serializer_.req_software_version());
-			do_write();
+			ipt_send(serializer_.req_software_version());
 
 		}
 		if (ipt::test_bit(query_, ipt::query::DEVICE_IDENTIFIER)) {
 			CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_IDENTIFIER)));
-			buffer_write_.push_back(serializer_.req_device_id());
-			do_write();
+			ipt_send(serializer_.req_device_id());
 
 		}
 		if (ipt::test_bit(query_, ipt::query::NETWORK_STATUS)) {
 			CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::NETWORK_STATUS)));
-			buffer_write_.push_back(serializer_.req_network_status());
-			do_write();
+			ipt_send(serializer_.req_network_status());
 
 		}
 		if (ipt::test_bit(query_, ipt::query::IP_STATISTIC)) {
 			CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::IP_STATISTIC)));
-			buffer_write_.push_back(serializer_.req_ip_statistics());
-			do_write();
+			ipt_send(serializer_.req_ip_statistics());
 		}
 		if (ipt::test_bit(query_, ipt::query::DEVICE_AUTHENTIFICATION)) {
 			CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_AUTHENTIFICATION)));
-			buffer_write_.push_back(serializer_.req_device_auth());
-			do_write();
+			ipt_send(serializer_.req_device_auth());
 
 		}
 		if (ipt::test_bit(query_, ipt::query::DEVICE_TIME)) {
 			CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_TIME)));
-			buffer_write_.push_back(serializer_.req_device_time());
-			do_write();
+			ipt_send(serializer_.req_device_time());
 		}
 	}
 

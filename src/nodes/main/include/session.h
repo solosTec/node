@@ -171,6 +171,12 @@ namespace smf {
 			, std::string)>
 		get_vm_func_pty_connect(server*);
 
+		static std::function<void(boost::uuids::uuid
+			, std::string
+			, std::uint16_t
+			, std::uint8_t)>
+		get_vm_func_pty_register(server*);
+
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		server* srvp_;

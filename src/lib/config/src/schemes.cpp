@@ -265,7 +265,7 @@ namespace smf {
 			return cyng::meta_store("target"
 				, {
 					cyng::column("tag", cyng::TC_UINT32),		//	IP-T channel
-					cyng::column("tagSession", cyng::TC_UUID),	//	owner session
+					cyng::column("session", cyng::TC_UUID),		//	owner session
 					cyng::column("peer", cyng::TC_UUID),		//	peer of owner
 					cyng::column("name", cyng::TC_STRING),		//	target id
 					cyng::column("device", cyng::TC_UUID),		//	owner of target

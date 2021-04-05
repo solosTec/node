@@ -25,6 +25,7 @@ namespace smf {
 		, store_map_()
 		, uuid_gen_()
 		, source_(1)	//	ip-t source id
+		, channel_(1)	//	ip-t channel id
 	{}
 
 	void db::init(cyng::param_map_t const& session_cfg) {
@@ -383,6 +384,31 @@ namespace smf {
 
 	bool db::push_sys_msg(std::string msg, cyng::severity level) {
 		return cache_.insert_auto("sysMsg", cyng::data_generator(std::chrono::system_clock::now(), level, msg), cfg_.get_tag());
+	}
+
+	bool db::register_target(boost::uuids::uuid tag
+		, std::string name
+		, std::uint16_t paket_size
+		, std::uint8_t window_size) {
+
+		//
+		//	ToDo: test for duplicate target names of same session 
+		//
+
+		return cache_.insert("target"
+			, cyng::key_generator(channel_++)
+			, cyng::data_generator(tag
+				, tag
+				, name
+				, tag
+				, "owner"
+				, paket_size
+				, window_size
+				, std::chrono::system_clock::now()
+				, static_cast<std::uint64_t>(0)		//	px
+				, static_cast<std::uint64_t>(0))
+			, 1
+			, cfg_.get_tag());
 	}
 
 	std::vector< cyng::meta_store > get_store_meta_data() {

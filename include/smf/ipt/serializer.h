@@ -173,7 +173,7 @@ namespace smf {
 			cyng::buffer_t res_device_time(sequence_t seq);
 
 			[[nodiscard]]
-			cyng::buffer_t req_register_push_target(std::string target,
+			std::pair<cyng::buffer_t, sequence_t> req_register_push_target(std::string target,
 				std::uint16_t p_size,
 				std::uint8_t w_size);
 

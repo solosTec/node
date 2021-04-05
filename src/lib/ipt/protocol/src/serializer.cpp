@@ -644,7 +644,7 @@ namespace smf {
 //			BOOST_ASSERT_MSG(false, "logout is deprecated");
 //		}
 //
-		cyng::buffer_t serializer::req_register_push_target(std::string target,
+		std::pair<cyng::buffer_t, sequence_t> serializer::req_register_push_target(std::string target,
 			std::uint16_t p_size,
 			std::uint8_t w_size)
 		{
@@ -653,7 +653,7 @@ namespace smf {
 			write(target);
 			write_numeric(p_size);
 			write_numeric(w_size);
-			return merge();
+			return std::make_pair(merge(), last_seq_);
 		}
 //
 		cyng::buffer_t serializer::res_register_push_target(sequence_t seq,

@@ -52,6 +52,10 @@ namespace smf {
 		void pty_connect(boost::uuids::uuid tag
 			, std::string msisdn);
 
+		void pty_register(boost::uuids::uuid
+			, std::string
+			, std::uint16_t
+			, std::uint8_t);
 
 	private:
 		signatures_t sigs_;

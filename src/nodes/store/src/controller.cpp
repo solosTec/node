@@ -208,12 +208,13 @@ namespace smf {
 			, tag
 			, logger
 			, node_name
+			, model
 			, std::move(tgl)
 			, config_types
 			, sml_targets
 			, iec_targets);
 		BOOST_ASSERT(channel->is_open());
-		channel->dispatch("connect", cyng::make_tuple(model));
+		channel->dispatch("connect", cyng::make_tuple());
 
 	}
 

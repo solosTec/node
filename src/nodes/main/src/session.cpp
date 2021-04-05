@@ -43,7 +43,8 @@ namespace smf {
 		vm_.set_channel_name("db.req.remove", 4);	//	table erase()
 		vm_.set_channel_name("db.req.clear", 5);	//	table clear()
 		vm_.set_channel_name("pty.req.login", 6);
-		vm_.set_channel_name("pty.connect", 6);
+		vm_.set_channel_name("pty.connect", 7);
+		vm_.set_channel_name("pty.register", 8);
 	}
 
 	session::~session()
@@ -108,7 +109,8 @@ namespace smf {
 			, get_vm_func_db_req_remove(this)
 			, get_vm_func_db_req_clear(this)
 			, get_vm_func_pty_login(this)
-			, get_vm_func_pty_connect(srv));
+			, get_vm_func_pty_connect(srv)
+			, get_vm_func_pty_register(srv));
 	}
 
 	void session::do_write()
@@ -455,7 +457,6 @@ namespace smf {
 				srvp_->cache_.insert_device(tag, name, pwd, true);
 			}
 		}
-
 	}
 
 	std::function<void(std::string
@@ -522,6 +523,13 @@ namespace smf {
 		return std::bind(&server::pty_connect, ptr, std::placeholders::_1, std::placeholders::_2);
 	}
 
+	std::function<void(boost::uuids::uuid
+		, std::string
+		, std::uint16_t
+		, std::uint8_t)>
+	session::get_vm_func_pty_register(server* ptr) {
+		return std::bind(&server::pty_register, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+	}
 
 
 }

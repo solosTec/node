@@ -29,6 +29,11 @@ namespace smf
 		std::string app_res_software_version(cyng::buffer_t&& data);
 		std::string app_res_device_identifier(cyng::buffer_t&& data);
 
+		/**
+		 * @return target name, packet size, windows size
+		 */
+		std::tuple<std::string, std::uint16_t, std::uint8_t> ctrl_req_register_target(cyng::buffer_t&& data);
+
 		[[nodiscard]]
 		scramble_key to_sk(cyng::buffer_t const& data, std::size_t offset);
 
