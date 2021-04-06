@@ -358,8 +358,8 @@ namespace smf {
 		db::rel{"meterwMBus", "config.wmbus", "table.wmbus.count"},
 		db::rel{"location", "config.location", "table.location.count"},
 		db::rel{"session", "status.session", "table.session.count"},
-		db::rel{"connection", "status.connection", "table.connection.count"}
-		//db::rel{"sysMsg", "monitor.msg", "table.msg.count"}
+		db::rel{"connection", "status.connection", "table.connection.count"},
+		db::rel{"sysMsg", "monitor.msg", "table.msg.count"}
 		// 
 		//db::rel{"TMeterAccess", "config.meterwMBus", "table.meterwMBus.count"},
 		//db::rel{"TBridge", "config.bridge", "table.bridge.count"},
@@ -389,8 +389,8 @@ namespace smf {
 			config::get_store_location(),
 			config::get_config(),	//	"config"
 			config::get_store_session(),
-			config::get_store_connection()
-			//config::get_store_sys_msg()
+			config::get_store_connection(),
+			config::get_store_sys_msg()
 
 		};
 	}

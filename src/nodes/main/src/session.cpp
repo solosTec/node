@@ -66,6 +66,16 @@ namespace smf {
 		socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
 		socket_.close(ec);
 
+		//
+		//	remove all subscriptions
+		// 
+		BOOST_ASSERT(srvp_ != nullptr);
+		auto const count = srvp_->store_.disconnect(slot_);
+		CYNG_LOG_TRACE(logger_, "disconnect from " << count  << " tables");
+
+		//
+		//	stop VM
+		//
 		vm_.stop();
 	}
 
@@ -429,11 +439,13 @@ namespace smf {
 			//
 			//	update cluster table (pty counter)
 			// 
-			srvp_->cache_.update_pty_counter(peer_);
+			auto const counter = srvp_->cache_.update_pty_counter(peer_);
+			srvp_->cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users");
 
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "pty login [" << name << "] failed");
+			srvp_->cache_.sys_msg(cyng::severity::LEVEL_TRACE, "login of", name, "failed");
 
 			//
 			//	send response

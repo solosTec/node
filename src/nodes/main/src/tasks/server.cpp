@@ -87,8 +87,6 @@ namespace smf {
 			if (!ec) {
 				CYNG_LOG_INFO(logger_, "new session " << socket.remote_endpoint());
 
-				cache_.push_sys_msg("new session", cyng::severity::LEVEL_TRACE);
-
 				auto sp = std::shared_ptr<session>(new session(
 					std::move(socket),
 					this,
@@ -104,11 +102,18 @@ namespace smf {
 					CYNG_LOG_TRACE(logger_, "session [" << s->get_peer() << "] with " << ptys << " users closed");
 
 					//
+					//	stop session and
+					//	remove all subscriptions
+					//
+					s->stop();
+
+					//
 					//	update session counter
 					//
 					BOOST_ASSERT(session_counter_ != 0);
 					--session_counter_;
 					CYNG_LOG_TRACE(logger_, "session(s) running: " << session_counter_);
+					cache_.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_,  "session(s) online");
 
 					//
 					//	remove session
@@ -127,6 +132,8 @@ namespace smf {
 					//	update session counter
 					//
 					++session_counter_;
+					cache_.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_, "session(s) online");
+
 				}
 
 				//
@@ -156,11 +163,10 @@ namespace smf {
 
 		if (cache_.register_target(tag, dev, name, paket_size, window_size)) {
 			CYNG_LOG_INFO(logger_, "pty registered target " << name << " {" << tag << "}");
-
+			cache_.sys_msg(cyng::severity::LEVEL_TRACE, "target", name, "registered");
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "pty registering target " << name << " {" << tag << "} failed");
-
 		}
 	}
 

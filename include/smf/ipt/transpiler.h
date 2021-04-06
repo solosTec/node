@@ -13,6 +13,8 @@
 
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/obj/intrinsics/container.h>
+#include <cyng/obj/util.hpp>
+#include <cyng/obj/buffer_cast.hpp>
 
 #include <tuple>
 
@@ -20,7 +22,72 @@ namespace smf
 {
 	namespace ipt	
 	{
-		cyng::deque_t gen_instructions(header const&, cyng::buffer_t&&);
+		[[nodiscard]]
+		scramble_key to_sk(cyng::buffer_t const& data, std::size_t offset);
+
+		namespace {
+
+			//
+			//	numerics
+			//
+			template <typename T>
+			std::size_t read_policy(T& value, cyng::buffer_t const& data, std::size_t offset) {
+				value = cyng::to_numeric_be<T>(data, offset);
+				return offset + sizeof(T);
+			}
+
+			//
+			//	strings
+			//
+			std::size_t read_policy(std::string& value, cyng::buffer_t const& data, std::size_t offset) {
+				value = cyng::to_string_nil(data, offset);
+				return offset + value.size() + 1;
+			}
+
+			//
+			//	scramble key
+			//
+			std::size_t read_policy(scramble_key& value, cyng::buffer_t const& data, std::size_t offset) {
+				value = to_sk(data, offset);
+				return offset + scramble_key::size();
+			}
+			
+
+			template <std::size_t N, typename ...Args>
+			struct read_impl
+			{
+				static std::size_t convert(cyng::buffer_t const& data, std::tuple<Args...>& tpl, std::size_t offset) {
+
+					if constexpr (N > 0) {
+						offset = read_impl<N - 1, Args...>::convert(data, tpl, offset);
+					}
+					using T = typename std::tuple_element<N, std::tuple<Args...>>::type;
+					return read_policy(std::get<N>(tpl), data, offset);
+				}
+			};
+
+			template <typename ...Args>
+			struct read_impl<0, Args...>
+			{
+				static std::size_t convert(cyng::buffer_t const& data, std::tuple<Args...>& tpl, std::size_t offset) {
+
+					using T = typename std::tuple_element<0, std::tuple<Args...>>::type;
+					return read_policy(std::get<0>(tpl), data, offset);
+				}
+			};
+
+		}
+
+		template <typename ...Args>
+		auto read(cyng::buffer_t&& data) -> std::tuple<Args...> {
+			std::tuple<Args...> r;
+
+			constexpr std::size_t upper_bound = sizeof...(Args) - 1;
+
+			auto const size = read_impl<upper_bound, Args...>::convert(data, r, 0);
+			BOOST_ASSERT(size == data.size());
+			return r;
+		}
 
 		std::tuple<response_t, std::uint16_t, std::string> ctrl_res_login(cyng::buffer_t&& data);
 		std::tuple<std::string, std::string> ctrl_req_login_public(cyng::buffer_t&& data);
@@ -33,9 +100,10 @@ namespace smf
 		 * @return target name, packet size, windows size
 		 */
 		std::tuple<std::string, std::uint16_t, std::uint8_t> ctrl_req_register_target(cyng::buffer_t&& data);
+		std::string ctrl_req_deregister_target(cyng::buffer_t&& data);
 
-		[[nodiscard]]
-		scramble_key to_sk(cyng::buffer_t const& data, std::size_t offset);
+		std::uint16_t ctrl_res_unknown_cmd(cyng::buffer_t&& data);
+
 
 	}	//	ipt
 }

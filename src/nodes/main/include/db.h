@@ -87,6 +87,17 @@ namespace smf {
 		 */
 		bool push_sys_msg(std::string msg, cyng::severity);
 
+		/**
+		 * insert new system message
+		 */
+		template <typename Head, typename ...Args>
+		bool sys_msg(cyng::severity level, Head&& v, Args&&... args) {
+			std::stringstream ss;
+			ss << v;
+			((ss << ' ' << args), ...);
+			return push_sys_msg(ss.str(), level);
+		}
+
 		bool register_target(boost::uuids::uuid tag
 			, boost::uuids::uuid dev
 			, std::string name

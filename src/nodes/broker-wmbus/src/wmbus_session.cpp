@@ -36,7 +36,7 @@ namespace smf {
 	wmbus_session::~wmbus_session()
 	{
 #ifdef _DEBUG_BROKER_WMBUS
-		std::cout << "session(~)" << std::endl;
+		std::cout << "wmbus_session(~)" << std::endl;
 #endif
 	}
 

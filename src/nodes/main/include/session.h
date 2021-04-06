@@ -59,6 +59,7 @@ namespace smf {
 
 		void start();
 		void stop();
+		void unsubscribe();
 
 		/**
 		 * @return tag of remote session
