@@ -637,7 +637,8 @@ namespace smf {
 		//	br0
 		auto const pos = std::find(pres.begin(), pres.end(), "br0");
 		return (pos != pres.end()) 
-			? cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string()
+			//? cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string()
+			? cyng::sys::get_address_IPv6("br0").to_string() + "%br0"
 			: "0.0.0.0";
 		
 #else
