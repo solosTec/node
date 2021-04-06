@@ -53,6 +53,7 @@ namespace smf {
 			, std::string msisdn);
 
 		void pty_register(boost::uuids::uuid
+			, boost::uuids::uuid dev
 			, std::string
 			, std::uint16_t
 			, std::uint8_t);

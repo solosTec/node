@@ -209,7 +209,7 @@ namespace smf {
 
 	void ipt_session::register_target(std::string name, std::uint16_t paket_size, std::uint8_t window_size) {
 		CYNG_LOG_INFO(logger_, "[ipt] register: " << name);
-		cluster_bus_.pty_reg_target(name, paket_size, window_size);
+		cluster_bus_.pty_reg_target(name, paket_size, window_size, dev_);
 	}
 
 	void ipt_session::update_software_version(std::string str) {

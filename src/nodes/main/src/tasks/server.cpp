@@ -147,11 +147,14 @@ namespace smf {
 	}
 
 	void server::pty_register(boost::uuids::uuid tag
+		, boost::uuids::uuid dev
 		, std::string name
 		, std::uint16_t paket_size
 		, std::uint8_t window_size) {
 
-		if (cache_.register_target(tag, name, paket_size, window_size)) {
+		BOOST_ASSERT(tag != dev);
+
+		if (cache_.register_target(tag, dev, name, paket_size, window_size)) {
 			CYNG_LOG_INFO(logger_, "pty registered target " << name << " {" << tag << "}");
 
 		}

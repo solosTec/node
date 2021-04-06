@@ -172,6 +172,7 @@ namespace smf {
 		get_vm_func_pty_connect(server*);
 
 		static std::function<void(boost::uuids::uuid
+			, boost::uuids::uuid
 			, std::string
 			, std::uint16_t
 			, std::uint8_t)>

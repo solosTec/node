@@ -123,7 +123,8 @@ namespace smf
 		//	"pty.register"
 		void pty_reg_target(std::string name
 			, std::uint16_t
-			, std::uint8_t);
+			, std::uint8_t
+			, boost::uuids::uuid dev);
 
 	private:
 		void reset();

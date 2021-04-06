@@ -445,10 +445,12 @@ namespace smf {
 
 	void bus::pty_reg_target(std::string name
 		, std::uint16_t paket_size
-		, std::uint8_t window_size) {
+		, std::uint8_t window_size
+		, boost::uuids::uuid dev) {
 
 		auto const deq = cyng::serialize_invoke("pty.register"
 			, tag_
+			, dev
 			, name
 			, paket_size
 			, window_size);

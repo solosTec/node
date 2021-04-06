@@ -88,6 +88,7 @@ namespace smf {
 		bool push_sys_msg(std::string msg, cyng::severity);
 
 		bool register_target(boost::uuids::uuid tag
+			, boost::uuids::uuid dev
 			, std::string name
 			, std::uint16_t paket_size
 			, std::uint8_t window_size);

@@ -400,7 +400,6 @@ namespace smf {
 		//
 		//	check credentials and get associated device
 		// 
-		//auto const dev = srvp_->cache_.lookup_device(name, pwd);
 		auto const[dev, enabled] = srvp_->cache_.lookup_device(name, pwd);
 		if (!dev.is_nil()) {
 
@@ -524,11 +523,12 @@ namespace smf {
 	}
 
 	std::function<void(boost::uuids::uuid
+		, boost::uuids::uuid
 		, std::string
 		, std::uint16_t
 		, std::uint8_t)>
 	session::get_vm_func_pty_register(server* ptr) {
-		return std::bind(&server::pty_register, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+		return std::bind(&server::pty_register, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
 	}
 
 

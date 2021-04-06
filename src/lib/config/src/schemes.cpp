@@ -229,14 +229,14 @@ namespace smf {
 
 			return cyng::meta_store("session"
 				, {
-					cyng::column("tag", cyng::TC_UUID),			//	pty 
+					cyng::column("tag", cyng::TC_UUID),			//	pty (same as dev)
 					cyng::column("peer", cyng::TC_UUID),		//	peer of owner
 					cyng::column("name", cyng::TC_STRING),		//	account
 					cyng::column("ep", cyng::TC_IP_TCP_ENDPOINT),	//	seen from pty
-					cyng::column("device", cyng::TC_UUID),		//	owner of target
+					cyng::column("rTag", cyng::TC_UUID),		//	remote session tag
 					cyng::column("source", cyng::TC_UINT32),	//	ip-t source id (unique)
 					cyng::column("loginTime", cyng::TC_TIME_POINT),	//	login time
-					cyng::column("rtag", cyng::TC_UUID),		//	remote client session if connected
+					cyng::column("rConnect", cyng::TC_UUID),		//	remote client session if connected
 					cyng::column("pLayer", cyng::TC_STRING),	//	protocol layer (from session)
 					cyng::column("dLayer", cyng::TC_STRING),	//	data layer (from pty)
 					cyng::column("rx", cyng::TC_UINT64),		//	received bytes (from device)

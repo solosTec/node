@@ -253,18 +253,20 @@ namespace smf {
 
 	bool db::insert_pty(boost::uuids::uuid tag
 		, boost::uuids::uuid peer
-		, boost::uuids::uuid dev
+		, boost::uuids::uuid rtag
 		, std::string const& name
 		, std::string const& pwd
 		, boost::asio::ip::tcp::endpoint ep
 		, std::string const& data_layer) {
+
+		CYNG_LOG_TRACE(logger_, "[db] insert session " << name << ", tag: " << tag << ", peer: " << peer << ", remote tag: " << rtag);
 
 		return cache_.insert("session"
 			, cyng::key_generator(tag)
 			, cyng::data_generator(peer
 				, name
 				, ep
-				, dev	//	device
+				, rtag	
 				, source_++	//	source
 				, std::chrono::system_clock::now()	//	login time
 				, boost::uuids::uuid()	//	rTag
@@ -387,6 +389,7 @@ namespace smf {
 	}
 
 	bool db::register_target(boost::uuids::uuid tag
+		, boost::uuids::uuid dev
 		, std::string name
 		, std::uint16_t paket_size
 		, std::uint8_t window_size) {
@@ -395,20 +398,54 @@ namespace smf {
 		//	ToDo: test for duplicate target names of same session 
 		//
 
-		return cache_.insert("target"
-			, cyng::key_generator(channel_++)
-			, cyng::data_generator(tag
-				, tag
-				, name
-				, tag
-				, "owner"
-				, paket_size
-				, window_size
-				, std::chrono::system_clock::now()
-				, static_cast<std::uint64_t>(0)		//	px
-				, static_cast<std::uint64_t>(0))
-			, 1
-			, cfg_.get_tag());
+		bool r = false;
+
+		//
+		//	insert into target table
+		//
+		cache_.access([&](cyng::table* tbl_trg, cyng::table const* tbl_dev) {
+
+			auto const rec = tbl_dev->lookup(cyng::key_generator(dev));
+			if (!rec.empty()) {
+
+				auto const owner = rec.value<std::string>("name", "");
+				CYNG_LOG_INFO(logger_, "[db] register target - device [" << owner << "]");
+				r = tbl_trg->insert(cyng::key_generator(channel_++)
+					, cyng::data_generator(tag
+						, tag
+						, name
+						, dev
+						, owner
+						, paket_size
+						, window_size
+						, std::chrono::system_clock::now()
+						, static_cast<std::uint64_t>(0)		//	px
+						, static_cast<std::uint64_t>(0))
+					, 1
+					, cfg_.get_tag());
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[db] register target - device " << dev << " not found");
+
+			}
+			}, cyng::access::write("target"), cyng::access::read("device"));
+
+		return r;
+		//return cache_.insert("target"
+		//	, cyng::key_generator(channel_++)
+		//	, cyng::data_generator(tag
+		//		, tag
+		//		, name
+		//		, dev
+		//		, "owner"
+		//		, paket_size
+		//		, window_size
+		//		, std::chrono::system_clock::now()
+		//		, static_cast<std::uint64_t>(0)		//	px
+		//		, static_cast<std::uint64_t>(0))
+		//	, 1
+		//	, cfg_.get_tag());
 	}
 
 	std::vector< cyng::meta_store > get_store_meta_data() {
