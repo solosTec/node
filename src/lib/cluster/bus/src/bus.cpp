@@ -348,6 +348,15 @@ namespace smf {
 			, tag_));
 	}
 
+	void bus::req_db_insert_auto(std::string const& table_name
+		, cyng::data_t  data) {
+
+		add_msg(cyng::serialize_invoke("db.req.insert.auto"
+			, table_name
+			, data
+			, tag_));
+	}
+
 	void bus::req_db_update(std::string const& table_name
 		, cyng::key_t key
 		, cyng::param_map_t data) {

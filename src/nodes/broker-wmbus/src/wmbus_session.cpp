@@ -5,7 +5,6 @@
  *
  */
 #include <wmbus_session.h>
-//#include <wmbus_server.h>
 
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/radio/header.h>
@@ -19,6 +18,8 @@
 #include <sstream>
 #include <cyng/io/hex_dump.hpp>
 #endif
+
+#include <boost/uuid/nil_generator.hpp>
 
 namespace smf {
 
@@ -130,12 +131,21 @@ namespace smf {
 
 		auto const flag_id = h.get_manufacturer_code();
 		//using mbus::operator<<;
-		CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h) << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+		auto const manufacturer = mbus::decode(flag_id.first, flag_id.second);
+		CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h) << " (" << manufacturer << ")");
 
 		if (db_) {
 			auto const[key, found] = db_->lookup_meter(h.get_id());
 			if (found) {
-
+				bus_.req_db_insert_auto("wMBusUplink", cyng::data_generator(
+					std::chrono::system_clock::now(),
+					mbus::to_str(h),
+					h.get_medium(),
+					manufacturer,
+					h.get_frame_type(),
+					"payload",
+					boost::uuids::nil_uuid()
+				));
 			}
 			else {
 				bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", mbus::to_str(h), "has no AES key");

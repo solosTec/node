@@ -99,6 +99,12 @@ namespace smf
 			, std::uint64_t generation);
 
 		/**
+		 * insert data in table with auto-increment
+		 */
+		void req_db_insert_auto(std::string const& table_name
+			, cyng::data_t  data);
+
+		/**
 		 * triggers a merge() on the receiver side
 		 */
 		void req_db_update(std::string const&

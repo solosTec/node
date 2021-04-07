@@ -130,7 +130,7 @@ namespace smf {
 		cyng::logger logger_;
 		config::store_map store_map_;
 
-		using array_t = std::array<rel, 14>;
+		using array_t = std::array<rel, 15>;
 		static array_t const rel_;
 
 		/** @brief channel list

@@ -89,6 +89,11 @@ namespace smf {
 			, std::uint64_t generation
 			, boost::uuids::uuid);
 
+		void db_req_insert_auto(std::string const& table_name
+			, cyng::data_t data
+			, boost::uuids::uuid);
+
+
 		/**
 		 * table merge()
 		 */
@@ -175,6 +180,12 @@ namespace smf {
 			, std::uint64_t
 			, boost::uuids::uuid)> 
 		get_vm_func_db_req_insert(session*);
+
+		//	"db.req.insert.auto"
+		static std::function<void(std::string
+			, cyng::data_t
+			, boost::uuids::uuid)>
+		get_vm_func_db_req_insert_auto(session*);
 
 		//	"db.req.update" aka merge()
 		static std::function<void(std::string

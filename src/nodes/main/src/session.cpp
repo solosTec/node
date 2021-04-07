@@ -40,6 +40,7 @@ namespace smf {
 		vm_.set_channel_name("cluster.req.login", idx++);
 		vm_.set_channel_name("db.req.subscribe", idx++);
 		vm_.set_channel_name("db.req.insert", idx++);
+		vm_.set_channel_name("db.req.insert.auto", idx++);
 		vm_.set_channel_name("db.req.update", idx++);	//	table modify()
 		vm_.set_channel_name("db.req.remove", idx++);	//	table erase()
 		vm_.set_channel_name("db.req.clear", idx++);	//	table clear()
@@ -121,6 +122,7 @@ namespace smf {
 		return fabric.create_proxy(get_vm_func_cluster_req_login(this)
 			, get_vm_func_db_req_subscribe(this)
 			, get_vm_func_db_req_insert(this)
+			, get_vm_func_db_req_insert_auto(this)
 			, get_vm_func_db_req_update(this)
 			, get_vm_func_db_req_remove(this)
 			, get_vm_func_db_req_clear(this)
@@ -222,6 +224,22 @@ namespace smf {
 		cache_.get_store().insert(table_name, key, data, generation, tag);
 
 	}
+	void session::db_req_insert_auto(std::string const& table_name
+		, cyng::data_t data
+		, boost::uuids::uuid tag) {
+
+		std::reverse(data.begin(), data.end());
+
+		CYNG_LOG_INFO(logger_, "session ["
+			<< socket_.remote_endpoint()
+			<< "] req.insert.auto "
+			<< table_name
+			<< " - "
+			<< data);
+
+		cache_.get_store().insert_auto(table_name, std::move(data), tag);
+	}
+
 	void session::db_req_update(std::string const& table_name
 		, cyng::key_t key
 		, cyng::param_map_t data
@@ -540,6 +558,14 @@ namespace smf {
 		, boost::uuids::uuid)>
 	session::get_vm_func_db_req_insert(session* ptr) {
 		return std::bind(&session::db_req_insert, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+	}
+
+	//	"db.req.insert.auto"
+	std::function<void(std::string
+		, cyng::data_t
+		, boost::uuids::uuid)>
+	session::get_vm_func_db_req_insert_auto(session* ptr) {
+		return std::bind(&session::db_req_insert_auto, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 	}
 
 	//	"db.req.update" aka merge()
