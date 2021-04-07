@@ -7,6 +7,9 @@
 #ifndef SMF_WMBUS_SERVER_H
 #define SMF_WMBUS_SERVER_H
 
+#include <db.h>
+#include <smf/cluster/bus.h>
+
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 
@@ -25,8 +28,9 @@ namespace smf {
 
 	public:
 		wmbus_server(boost::asio::io_context&
-			, boost::uuids::uuid tag
-			, cyng::logger);
+			, cyng::logger
+			, bus&
+			, std::shared_ptr<db>);
 		~wmbus_server();
 
 		void stop(cyng::eod);
@@ -41,8 +45,9 @@ namespace smf {
 
 
 	private:
-		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
+		bus& bus_;
+		std::shared_ptr<db> db_;
 		boost::asio::ip::tcp::acceptor acceptor_;
 		std::uint64_t session_counter_;
 

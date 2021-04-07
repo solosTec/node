@@ -102,6 +102,13 @@ namespace smf
 		std::tuple<std::string, std::uint16_t, std::uint8_t> ctrl_req_register_target(cyng::buffer_t&& data);
 		std::string ctrl_req_deregister_target(cyng::buffer_t&& data);
 
+		/**
+		 * @return target name, account, number, version, device id, timout
+		 */
+		std::tuple<std::string, std::string, std::string, std::string, std::string, std::uint16_t> ctrl_req_open_push_channel(cyng::buffer_t&& data);
+		std::uint32_t ctrl_req_close_push_channel(cyng::buffer_t&& data);
+
+
 		std::uint16_t ctrl_res_unknown_cmd(cyng::buffer_t&& data);
 
 

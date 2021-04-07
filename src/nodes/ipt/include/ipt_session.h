@@ -51,6 +51,7 @@ namespace smf {
 		void ipt_send(cyng::buffer_t&&);
 
 		void pty_res_login(bool, boost::uuids::uuid dev);
+		void pty_res_register(bool, std::uint32_t, cyng::param_map_t token);
 
 		/**
 		 * query some device data
@@ -59,11 +60,34 @@ namespace smf {
 
 		void update_software_version(std::string);
 		void update_device_identifier(std::string);
-		void register_target(std::string name, std::uint16_t paket_size, std::uint8_t window_size);
+		void register_target(std::string name
+			, std::uint16_t paket_size
+			, std::uint8_t window_size
+			, boost::uuids::uuid tag
+			, ipt::sequence_t);
+
+		void deregister_target(std::string name
+			, boost::uuids::uuid tag
+			, ipt::sequence_t);
+
+		void open_push_channel(std::string target
+			, std::string account
+			, std::string msisdn
+			, std::string version
+			, std::string id
+			, std::uint16_t timeout
+			, boost::uuids::uuid tag
+			, ipt::sequence_t);
+
+		void close_push_channel(std::uint32_t channel
+			, boost::uuids::uuid tag
+			, ipt::sequence_t);
 
 		static std::function<void(bool success, boost::uuids::uuid)>
 		get_vm_func_pty_res_login(ipt_session* p);
 
+		static std::function<void(bool success, std::uint32_t, cyng::param_map_t)>
+		get_vm_func_pty_res_register(ipt_session* p);
 
 	private:
 		boost::asio::ip::tcp::socket socket_;

@@ -30,6 +30,10 @@ namespace smf {
 			return cfg_;
 		}
 
+		inline cyng::store& get_store() {
+			return cache_;
+		}
+
 		/**
 		 * fill store map and create all tables
 		 */
@@ -98,7 +102,7 @@ namespace smf {
 			return push_sys_msg(ss.str(), level);
 		}
 
-		bool register_target(boost::uuids::uuid tag
+		std::pair<std::uint32_t, bool> register_target(boost::uuids::uuid tag
 			, boost::uuids::uuid dev
 			, std::string name
 			, std::uint16_t paket_size
@@ -107,6 +111,9 @@ namespace smf {
 	private:
 		void set_start_values(cyng::param_map_t const& session_cfg);
 		void init_sys_msg();
+		void init_LoRa_uplink();
+		void init_iec_uplink();
+		void init_wmbus_uplink();
 
 	private:
 		cyng::store& cache_;

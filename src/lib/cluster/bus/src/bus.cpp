@@ -219,19 +219,19 @@ namespace smf {
 			//	send login sequence
 			//
 			auto cfg = tgl_.get();
-			buffer_write_ = cyng::serialize_invoke("cluster.req.login"
+			add_msg(cyng::serialize_invoke("cluster.req.login"
 				, cfg.account_
 				, cfg.pwd_
 				, cyng::sys::get_process_id()
 				, node_name_
 				, tag_
-				, cyng::version(SMF_VERSION_MAJOR, SMF_VERSION_MINOR));
+				, cyng::version(SMF_VERSION_MAJOR, SMF_VERSION_MINOR)));
 
 			// Start the input actor.
 			do_read();
 
 			// Start the heartbeat actor.
-			do_write();
+			//do_write();
 		}
 
 	}
@@ -329,15 +329,10 @@ namespace smf {
 
 	void bus::req_subscribe(std::string table_name) {
 
-		auto const deq = cyng::serialize_invoke("db.req.subscribe"
+		add_msg(cyng::serialize_invoke("db.req.subscribe"
 			, table_name
-			, tag_);
+			, tag_));
 
-		cyng::exec(vm_, [=, this]() {
-			bool const b = buffer_write_.empty();
-			cyng::add(buffer_write_, deq);
-			if (b)	do_write();
-		});
 	}
 
 	void bus::req_db_insert(std::string const& table_name
@@ -345,18 +340,12 @@ namespace smf {
 		, cyng::data_t  data
 		, std::uint64_t generation) {
 
-		auto const deq = cyng::serialize_invoke("db.req.insert"
+		add_msg(cyng::serialize_invoke("db.req.insert"
 			, table_name
 			, key
 			, data
 			, generation
-			, tag_);
-
-		cyng::exec(vm_, [=, this]() {
-			bool const b = buffer_write_.empty();
-			cyng::add(buffer_write_, deq);
-			if (b)	do_write();
-			});
+			, tag_));
 	}
 
 	void bus::req_db_update(std::string const& table_name
@@ -366,46 +355,29 @@ namespace smf {
 		//
 		//	triggers a merge() on the receiver side
 		//
-		auto const deq = cyng::serialize_invoke("db.req.update"
+		add_msg(cyng::serialize_invoke("db.req.update"
 			, table_name
 			, key
 			, data
-			, tag_);
+			, tag_));
 
-		cyng::exec(vm_, [=, this]() {
-			bool const b = buffer_write_.empty();
-			cyng::add(buffer_write_, deq);
-			if (b)	do_write();
-			});
 	}
 
 	void bus::req_db_remove(std::string const& table_name
 		, cyng::key_t key) {
 
-		auto const deq = cyng::serialize_invoke("db.req.remove"
+		add_msg(cyng::serialize_invoke("db.req.remove"
 			, table_name
 			, key
-			, tag_);
-
-		cyng::exec(vm_, [=, this]() {
-			bool const b = buffer_write_.empty();
-			cyng::add(buffer_write_, deq);
-			if (b)	do_write();
-			});
+			, tag_));
 
 	}
 
 	void bus::req_db_clear(std::string const& table_name) {
-		auto const deq = cyng::serialize_invoke("db.req.clear"
+
+		add_msg(cyng::serialize_invoke("db.req.clear"
 			, table_name
-			, tag_);
-
-		cyng::exec(vm_, [=, this]() {
-			bool const b = buffer_write_.empty();
-			cyng::add(buffer_write_, deq);
-			if (b)	do_write();
-			});
-
+			, tag_));
 	}
 
 	void bus::pty_login(std::string name
@@ -415,53 +387,111 @@ namespace smf {
 		, boost::asio::ip::tcp::endpoint ep) {
 
 		auto const srv = tgl_.get();
-		auto const deq = cyng::serialize_invoke("pty.req.login"
+		add_msg(cyng::serialize_invoke("pty.req.login"
 			, tag
 			, name
 			, pwd
 			, ep
-			, data_layer);
-
-		cyng::exec(vm_, [=, this]() {
-			bool const b = buffer_write_.empty();
-			cyng::add(buffer_write_, deq);
-			if (b)	do_write();
-			});
+			, data_layer));
 
 	}
 
-	void bus::pty_connect(std::string msisdn) {
-		auto const deq = cyng::serialize_invoke("pty.connect"
-			, tag_
-			, msisdn);
+	void bus::pty_connect(std::string msisdn, boost::uuids::uuid tag) {
 
-		cyng::exec(vm_, [=, this]() {
-			bool const b = buffer_write_.empty();
-			cyng::add(buffer_write_, deq);
-			if (b)	do_write();
-			});
+		add_msg(cyng::serialize_invoke("pty.connect"
+			, tag
+			, msisdn));
 
+	}
+
+	void bus::pty_disconnect(boost::uuids::uuid tag) {
+
+		add_msg(cyng::serialize_invoke("pty.disconnect"
+			, tag));
 	}
 
 	void bus::pty_reg_target(std::string name
 		, std::uint16_t paket_size
 		, std::uint8_t window_size
-		, boost::uuids::uuid dev) {
+		, boost::uuids::uuid dev
+		, boost::uuids::uuid tag
+		, cyng::param_map_t&& token) {
 
-		auto const deq = cyng::serialize_invoke("pty.register"
-			, tag_
+		add_msg(cyng::serialize_invoke("pty.register"
+			, tag
 			, dev
 			, name
 			, paket_size
-			, window_size);
+			, window_size
+			, token));
+	}
+
+	void bus::pty_dereg_target(std::string name
+		, boost::uuids::uuid dev
+		, boost::uuids::uuid tag
+		, cyng::param_map_t&& token) {
+
+		add_msg(cyng::serialize_invoke("pty.deregister"
+			, tag
+			, dev
+			, name
+			, token));
+	}
+
+	//	"pty.open.channel"
+	void bus::pty_open_channel(std::string name
+		, std::string account
+		, std::string msisdn
+		, std::string version
+		, std::string id
+		, std::chrono::seconds timeout
+		, boost::uuids::uuid dev
+		, boost::uuids::uuid tag
+		, cyng::param_map_t&& token) {
+
+		add_msg(cyng::serialize_invoke("pty.open.channel"
+			, tag
+			, dev
+			, name
+			, account
+			, msisdn
+			, version 
+			, id 
+			, timeout
+			, token));
+	}
+
+	//	"pty.close.channel"
+	void bus::pty_close_channel(std::uint32_t channel
+		, boost::uuids::uuid dev
+		, boost::uuids::uuid tag
+		, cyng::param_map_t&& token) {
+
+		add_msg(cyng::serialize_invoke("pty.close.channel"
+			, tag
+			, dev
+			, channel
+			, token));
+	}
+
+
+	void bus::push_sys_msg(std::string msg, cyng::severity level) {
+
+		add_msg(cyng::serialize_invoke("sys.msg"
+			, msg
+			, level));
+
+	}
+
+	void bus::add_msg(std::deque<cyng::buffer_t>&& msg) {
 
 		cyng::exec(vm_, [=, this]() {
 			bool const b = buffer_write_.empty();
-			cyng::add(buffer_write_, deq);
+			cyng::add(buffer_write_, msg);
 			if (b)	do_write();
 			});
-	}
 
+	}
 
 	std::function<void(bool)>
 	bus::get_vm_func_on_login(bus_interface* bip) {

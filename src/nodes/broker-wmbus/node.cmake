@@ -8,12 +8,14 @@ set (broker-wmbus_cpp
     src/controller.cpp
     src/wmbus_server.cpp
     src/wmbus_session.cpp
+    src/db.cpp
 )
     
 set (broker-wmbus_h
     include/controller.h
     include/wmbus_server.h
     include/wmbus_session.h
+    include/db.h
 )
 
 if(WIN32)

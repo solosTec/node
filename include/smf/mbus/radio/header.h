@@ -11,6 +11,8 @@
 #include <smf/mbus/server_id.h>
 
 #include <type_traits>
+#include <iostream>
+#include <iomanip>
 
 namespace smf
 {
@@ -140,6 +142,39 @@ namespace smf
 
 		}
 
+		template <typename ch, typename char_traits>
+		std::basic_ostream<ch, char_traits>& operator<<(std::basic_ostream<ch, char_traits>& os, radio::header const& h)
+		{
+			//	"01-e61e-08646300-36-03"
+			auto const id = h.get_server_id();
+			os
+				<< "01-"
+				<< std::setfill('0')
+				<< std::hex
+				<< std::setw(2)
+				<< +id.at(1)
+				<< std::setw(2)
+				<< +id.at(2)
+				<< '-'
+				<< std::setw(2)
+				<< +id.at(3)
+				<< std::setw(2)
+				<< +id.at(4)
+				<< std::setw(2)
+				<< +id.at(5)
+				<< std::setw(2)
+				<< +id.at(6)
+				<< '-'
+				<< std::setw(2)
+				<< +id.at(7)
+				<< '-'
+				<< std::setw(2)
+				<< +id.at(8)
+				;
+			return os;
+		}
+
+		std::string to_str(radio::header const& h);
 	}
 }
 

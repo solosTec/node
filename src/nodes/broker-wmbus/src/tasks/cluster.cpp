@@ -30,7 +30,9 @@ namespace smf {
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
-		, server_(ctl.get_ctx(), tag, logger)
+		, store_()
+		, db_(std::make_shared<db>(store_, logger_, tag_))
+		, server_(ctl.get_ctx(), logger, bus_, db_)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -75,6 +77,14 @@ namespace smf {
 		if (success) {
 			CYNG_LOG_INFO(logger_, "cluster join complete");
 
+			//
+			//	subscribe table "meterwMBus" and "meter"
+			//
+			auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
+			db_->init(slot);
+			db_->loop([this](cyng::meta_store const& m) {
+				bus_.req_subscribe(m.get_name());
+				});
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "joining cluster failed");
@@ -83,6 +93,9 @@ namespace smf {
 
 	void cluster::on_disconnect(std::string msg) {
 		CYNG_LOG_WARNING(logger_, "[cluster] disconnect: " << msg);
+		auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
+		db_->disconnect(slot);
+		//db_.reset();
 	}
 
 	void cluster::db_res_insert(std::string table_name
@@ -95,6 +108,7 @@ namespace smf {
 			<< table_name
 			<< " - "
 			<< data);
+		if (db_)	db_->res_insert(table_name, key, data, gen, tag);
 	}
 
 	void cluster::db_res_trx(std::string table_name
@@ -115,6 +129,7 @@ namespace smf {
 			<< table_name
 			<< " - "
 			<< key);
+		if (db_)	db_->res_update(table_name, key, attr, gen, tag);
 
 	}
 	
@@ -126,6 +141,7 @@ namespace smf {
 			<< table_name
 			<< " - "
 			<< key);
+		if (db_)	db_->res_remove(table_name, key, tag);
 	}
 
 	void cluster::db_res_clear(std::string table_name
@@ -133,6 +149,7 @@ namespace smf {
 
 		CYNG_LOG_TRACE(logger_, "[cluster] clear: "
 			<< table_name);
+		if (db_)	db_->res_clear(table_name, tag);
 	}
 
 }

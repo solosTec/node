@@ -64,6 +64,17 @@ namespace smf
 
 		}
 
+		std::tuple<std::string, std::string, std::string, std::string, std::string, std::uint16_t> ctrl_req_open_push_channel(cyng::buffer_t&& data) {
+
+			return read<std::string, std::string, std::string, std::string, std::string, std::uint16_t>(std::move(data));
+
+		}
+
+		std::uint32_t ctrl_req_close_push_channel(cyng::buffer_t&& data) {
+			return cyng::to_numeric_be<std::uint32_t >(data, 0);
+		}
+
+
 
 	}	//	ipt
 }

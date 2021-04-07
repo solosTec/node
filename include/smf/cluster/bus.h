@@ -118,13 +118,53 @@ namespace smf
 			, boost::asio::ip::tcp::endpoint ep);
 
 		//	"pty.connect"
-		void pty_connect(std::string msisdn);
+		void pty_connect(std::string msisdn, boost::uuids::uuid tag);
+		void pty_disconnect(boost::uuids::uuid tag);
 
 		//	"pty.register"
 		void pty_reg_target(std::string name
 			, std::uint16_t
 			, std::uint8_t
-			, boost::uuids::uuid dev);
+			, boost::uuids::uuid dev
+			, boost::uuids::uuid tag
+			, cyng::param_map_t&& token);
+		//	"pty.deregister"
+		void pty_dereg_target(std::string name
+			, boost::uuids::uuid dev
+			, boost::uuids::uuid tag
+			, cyng::param_map_t&& token);
+
+		//	"pty.open.channel"
+		void pty_open_channel(std::string name
+			, std::string account
+			, std::string msisdn
+			, std::string version
+			, std::string id
+			, std::chrono::seconds timeout
+			, boost::uuids::uuid dev
+			, boost::uuids::uuid tag
+			, cyng::param_map_t&& token);
+
+		//	"pty.close.channel"
+		void pty_close_channel(std::uint32_t channel
+			, boost::uuids::uuid dev
+			, boost::uuids::uuid tag
+			, cyng::param_map_t&& token);
+
+
+		/**
+		 * push system message
+		 * "sys.msg"
+		 */
+		template <typename Head, typename ...Args>
+		void sys_msg(cyng::severity level, Head&& v, Args&&... args) {
+			std::stringstream ss;
+			ss << v;
+			((ss << ' ' << args), ...);
+			push_sys_msg(ss.str(), level);
+		}
+		void push_sys_msg(std::string, cyng::severity level);
+
 
 	private:
 		void reset();
@@ -141,6 +181,8 @@ namespace smf
 		constexpr bool is_stopped() const {
 			return state_ == state::STOPPED;
 		}
+
+		void add_msg(std::deque<cyng::buffer_t>&&);
 
 		/**
 		 * insert external functions

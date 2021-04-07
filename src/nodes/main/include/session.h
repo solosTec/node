@@ -7,18 +7,20 @@
 #ifndef SMF_MAIN_SESSION_H
 #define SMF_MAIN_SESSION_H
 
+#include <db.h>
+
 #include <cyng/log/logger.h>
 #include <cyng/io/parser/parser.h>
 #include <cyng/vm/proxy.h>
 #include <cyng/obj/intrinsics/pid.h>
 #include <cyng/store/slot_interface.h>
+#include <cyng/vm/mesh.h>
 
 #include <memory>
 #include <array>
 
 namespace smf {
 
-	class server;
 	class session : public std::enable_shared_from_this<session>
 	{
 		class slot : public cyng::slot_interface {
@@ -54,7 +56,7 @@ namespace smf {
 		};
 
 	public:
-		session(boost::asio::ip::tcp::socket socket, server*, cyng::logger);
+		session(boost::asio::ip::tcp::socket socket, db&, cyng::mesh&, cyng::logger);
 		~session();
 
 		void start();
@@ -67,7 +69,7 @@ namespace smf {
 		boost::uuids::uuid get_peer() const;
 
 	private:
-		cyng::vm_proxy init_vm(server*);
+		cyng::vm_proxy init_vm(cyng::mesh&);
 		void do_read();
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);
@@ -117,6 +119,37 @@ namespace smf {
 			, boost::asio::ip::tcp::endpoint
 			, std::string);
 
+		void pty_connect(boost::uuids::uuid tag
+			, std::string msisdn);
+
+		void pty_disconnect(boost::uuids::uuid tag);
+
+		void pty_register(boost::uuids::uuid
+			, boost::uuids::uuid dev
+			, std::string
+			, std::uint16_t
+			, std::uint8_t
+			, cyng::param_map_t);
+
+		void pty_deregister(boost::uuids::uuid
+			, std::string);
+
+		void pty_open_channel(boost::uuids::uuid
+			, boost::uuids::uuid
+			, std::string
+			, std::string
+			, std::string
+			, std::string
+			, std::string
+			, std::chrono::seconds
+			, cyng::param_map_t);
+		void pty_close_channel(boost::uuids::uuid
+			, boost::uuids::uuid
+			, std::uint32_t
+			, cyng::param_map_t);
+
+		void send_cluster_response(std::deque<cyng::buffer_t>&&);
+
 		//
 		//	generate VM channel functions
 		//
@@ -127,8 +160,8 @@ namespace smf {
 			, cyng::pid
 			, std::string
 			, boost::uuids::uuid
-			, cyng::version)> 
-		get_vm_func_cluster_req_login(session*); 
+			, cyng::version)>
+		get_vm_func_cluster_req_login(session*);
 
 		//	"db.req.subscribe"
 		static std::function<void(std::string
@@ -170,18 +203,46 @@ namespace smf {
 
 		static std::function<void(boost::uuids::uuid
 			, std::string)>
-		get_vm_func_pty_connect(server*);
+		get_vm_func_pty_connect(session*);
+
+		static std::function<void(boost::uuids::uuid)>
+		get_vm_func_pty_disconnect(session*);
 
 		static std::function<void(boost::uuids::uuid
 			, boost::uuids::uuid
 			, std::string
 			, std::uint16_t
-			, std::uint8_t)>
-		get_vm_func_pty_register(server*);
+			, std::uint8_t
+			, cyng::param_map_t)>
+		get_vm_func_pty_register(session*);
+
+		static std::function<void(boost::uuids::uuid
+			, std::string)>
+		get_vm_func_pty_deregister(session*);
+
+		static std::function<void(boost::uuids::uuid
+			, boost::uuids::uuid
+			, std::string
+			, std::string
+			, std::string
+			, std::string
+			, std::string
+			, std::chrono::seconds
+			, cyng::param_map_t)>
+			get_vm_func_pty_open_channel(session*);
+
+		static std::function<void(boost::uuids::uuid
+			, boost::uuids::uuid
+			, std::uint32_t
+			, cyng::param_map_t)>
+		get_vm_func_pty_close_channel(session*);
+
+		static std::function<bool(std::string msg, cyng::severity)>
+		get_vm_func_sys_msg(db*);
 
 	private:
 		boost::asio::ip::tcp::socket socket_;
-		server* srvp_;
+		db& cache_;
 		cyng::logger logger_;
 
 		/**
@@ -205,6 +266,7 @@ namespace smf {
 		boost::uuids::uuid peer_;
 		std::string protocol_layer_;
 	};
+
 
 }
 

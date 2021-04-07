@@ -5,9 +5,10 @@
  *
  */
 #include <wmbus_session.h>
-#include <wmbus_server.h>
+//#include <wmbus_server.h>
 
 #include <smf/mbus/flag_id.h>
+#include <smf/mbus/radio/header.h>
 
 #include <cyng/log/record.h>
 
@@ -21,14 +22,15 @@
 
 namespace smf {
 
-	wmbus_session::wmbus_session(boost::asio::ip::tcp::socket socket, wmbus_server* srv, cyng::logger logger)
+	wmbus_session::wmbus_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<db> db, cyng::logger logger, bus& cluster_bus)
 	: socket_(std::move(socket))
 		, logger_(logger)
+		, db_(db)
+		, bus_(cluster_bus)
 		, buffer_()
 		, buffer_write_()
 		, parser_([this](mbus::radio::header const& h, cyng::buffer_t const& data) {
-			auto const flag_id = h.get_manufacturer_code();
-			CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << h.get_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+			this->decode(h, data);
 		})
 	{
 	}
@@ -124,6 +126,26 @@ namespace smf {
 		}
 	}
 
+	void wmbus_session::decode(mbus::radio::header const& h, cyng::buffer_t const& data) {
+
+		auto const flag_id = h.get_manufacturer_code();
+		//using mbus::operator<<;
+		CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h) << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+
+		if (db_) {
+			auto const[key, found] = db_->lookup_meter(h.get_id());
+			if (found) {
+
+			}
+			else {
+				bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", mbus::to_str(h), "has no AES key");
+			}
+		}
+		else {
+			CYNG_LOG_ERROR(logger_, "[wmbus] no database");
+			bus_.sys_msg(cyng::severity::LEVEL_ERROR, "[wmbus] no database");
+		}
+	}
 
 }
 

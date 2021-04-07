@@ -15,6 +15,7 @@
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/algorithm/reader.hpp>
 
 #include <iostream>
 
@@ -47,9 +48,11 @@ namespace smf {
 		, dev_(boost::uuids::nil_uuid())
 	{
 		vm_ = fabric.create_proxy(cluster_bus_.get_tag()
-			, get_vm_func_pty_res_login(this));
+			, get_vm_func_pty_res_login(this)
+			, get_vm_func_pty_res_register(this));
 
 		vm_.set_channel_name("pty.res.login", 0);
+		vm_.set_channel_name("pty.res.register", 1);
 
 		CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
 
@@ -195,22 +198,75 @@ namespace smf {
 		case ipt::code::CTRL_REQ_REGISTER_TARGET:
 			if (cluster_bus_.is_connected()) {
 				auto const [name, paket_size, window_size] = ipt::ctrl_req_register_target(std::move(body));
-				register_target(name, paket_size, window_size);
+				register_target(name, paket_size, window_size, vm_.get_tag(), h.sequence_);
+			}
+			break;
+		case ipt::code::CTRL_REQ_DEREGISTER_TARGET:
+			if (cluster_bus_.is_connected()) {
+				auto const name = ipt::ctrl_req_deregister_target(std::move(body));
+				deregister_target(name, vm_.get_tag(), h.sequence_);
+			}
+			break;
+		case ipt::code::TP_REQ_OPEN_PUSH_CHANNEL:
+			if (cluster_bus_.is_connected()) {
+				auto const [target, account, msisdn, version, id, timeout] = ipt::ctrl_req_open_push_channel(std::move(body));
+				open_push_channel(target, account, msisdn, version, id, timeout, vm_.get_tag(), h.sequence_);
+			}
+			break;
+		case ipt::code::TP_REQ_CLOSE_PUSH_CHANNEL:
+			if (cluster_bus_.is_connected()) {
+				auto const channel = ipt::ctrl_req_close_push_channel(std::move(body));
+				close_push_channel(channel, vm_.get_tag(), h.sequence_);
 			}
 			break;
 		default:
 			CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " dropped");
 			ipt_send(serializer_.res_unknown_command(h.sequence_, h.command_));
-			do_write();
 			break;
 		}
 
 	}
 
-	void ipt_session::register_target(std::string name, std::uint16_t paket_size, std::uint8_t window_size) {
+	void ipt_session::register_target(std::string name
+		, std::uint16_t paket_size
+		, std::uint8_t window_size
+		, boost::uuids::uuid tag
+		, ipt::sequence_t seq) {
+
 		CYNG_LOG_INFO(logger_, "[ipt] register: " << name);
-		cluster_bus_.pty_reg_target(name, paket_size, window_size, dev_);
+		cluster_bus_.pty_reg_target(name, paket_size, window_size, dev_, tag, cyng::param_map_factory("seq", seq));
 	}
+
+	void ipt_session::deregister_target(std::string name
+		, boost::uuids::uuid tag
+		, ipt::sequence_t seq) {
+
+		CYNG_LOG_INFO(logger_, "[ipt] deregister: " << name);
+		cluster_bus_.pty_dereg_target(name, dev_, tag, cyng::param_map_factory("seq", seq));
+	}
+
+	void ipt_session::open_push_channel(std::string name
+		, std::string account
+		, std::string msisdn
+		, std::string version
+		, std::string id
+		, std::uint16_t timeout
+		, boost::uuids::uuid tag
+		, ipt::sequence_t seq) {
+
+		CYNG_LOG_INFO(logger_, "[ipt] open push channel: " << name);
+		cluster_bus_.pty_open_channel(name, account, msisdn, version, id, std::chrono::seconds(timeout), dev_, tag, cyng::param_map_factory("seq", seq));
+
+	}
+
+	void ipt_session::close_push_channel(std::uint32_t channel
+		, boost::uuids::uuid tag
+		, ipt::sequence_t seq) {
+
+		CYNG_LOG_INFO(logger_, "[ipt] close push channel: " << channel);
+		cluster_bus_.pty_close_channel(channel, dev_, tag, cyng::param_map_factory("seq", seq));
+	}
+
 
 	void ipt_session::update_software_version(std::string str) {
 
@@ -271,7 +327,23 @@ namespace smf {
 			CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
 			ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
 		}
+	}
 
+	void ipt_session::pty_res_register(bool success, std::uint32_t channel, cyng::param_map_t token) {
+
+		auto const reader = cyng::make_reader(token);
+		auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
+
+		BOOST_ASSERT(seq != 0);
+		if (success) {
+			CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " register target ok: " << token);
+		
+			ipt_send(serializer_.res_register_push_target(seq, ipt::ctrl_res_register_target_policy::OK, channel));
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " register target failed: " << token);
+			ipt_send(serializer_.res_register_push_target(seq, ipt::ctrl_res_register_target_policy::REJECTED, channel));
+		}
 	}
 
 	void ipt_session::query() {
@@ -314,6 +386,11 @@ namespace smf {
 	std::function<void(bool success, boost::uuids::uuid)>
 	ipt_session::get_vm_func_pty_res_login(ipt_session* ptr) {
 		return std::bind(&ipt_session::pty_res_login, ptr, std::placeholders::_1, std::placeholders::_2);
+	}
+
+	std::function<void(bool success, std::uint32_t, cyng::param_map_t)>
+	ipt_session::get_vm_func_pty_res_register(ipt_session* ptr) {
+		return std::bind(&ipt_session::pty_res_register, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 	}
 
 }

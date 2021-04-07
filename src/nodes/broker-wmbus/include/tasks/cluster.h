@@ -7,8 +7,10 @@
 #ifndef SMF_BROKER_WMBUS_TASK_CLUSTER_H
 #define SMF_BROKER_WMBUS_TASK_CLUSTER_H
 
-#include <smf/cluster/bus.h>
 #include <wmbus_server.h>
+#include <db.h>
+
+#include <smf/cluster/bus.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -45,7 +47,6 @@ namespace smf {
 		~cluster();
 
 		void connect();
-		//void status_check(int);
 
 		void stop(cyng::eod);
 
@@ -84,6 +85,8 @@ namespace smf {
 		cyng::logger logger_;
 		cyng::mesh fabric_;
 		bus	bus_;
+		cyng::store store_;
+		std::shared_ptr<db> db_;
 		wmbus_server server_;
 	};
 

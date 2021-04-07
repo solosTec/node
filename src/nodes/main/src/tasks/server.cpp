@@ -89,7 +89,8 @@ namespace smf {
 
 				auto sp = std::shared_ptr<session>(new session(
 					std::move(socket),
-					this,
+					cache_,
+					fabric_,
 					logger_
 				), [this](session* s) {
 
@@ -148,27 +149,6 @@ namespace smf {
 	}
 
 
-	void server::pty_connect(boost::uuids::uuid tag
-		, std::string msisdn) {
-		CYNG_LOG_INFO(logger_, "pty connect " << msisdn << " {" << tag << "}");
-	}
-
-	void server::pty_register(boost::uuids::uuid tag
-		, boost::uuids::uuid dev
-		, std::string name
-		, std::uint16_t paket_size
-		, std::uint8_t window_size) {
-
-		BOOST_ASSERT(tag != dev);
-
-		if (cache_.register_target(tag, dev, name, paket_size, window_size)) {
-			CYNG_LOG_INFO(logger_, "pty registered target " << name << " {" << tag << "}");
-			cache_.sys_msg(cyng::severity::LEVEL_TRACE, "target", name, "registered");
-		}
-		else {
-			CYNG_LOG_WARNING(logger_, "pty registering target " << name << " {" << tag << "} failed");
-		}
-	}
 
 }
 

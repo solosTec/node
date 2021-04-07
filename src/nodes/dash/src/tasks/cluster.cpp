@@ -49,7 +49,6 @@ namespace smf {
 			, std::move(blocklist)
 			, std::move(redirects_intrinsic)
 			, auths)
-		//, notifier_(std::make_shared<notifier>(db_, http_server_, logger))
 	{
 		auto sp = channel_.lock();
 		if (sp) {

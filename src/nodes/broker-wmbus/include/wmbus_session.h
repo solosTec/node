@@ -7,6 +7,9 @@
 #ifndef SMF_WMBUS_SESSION_H
 #define SMF_WMBUS_SESSION_H
 
+#include <db.h>
+#include <smf/cluster/bus.h>
+
 #include <smf/mbus/radio/parser.h>
 
 #include <cyng/log/logger.h>
@@ -19,11 +22,10 @@
 
 namespace smf {
 
-	class wmbus_server;
 	class wmbus_session : public std::enable_shared_from_this<wmbus_session>
 	{
 	public:
-		wmbus_session(boost::asio::ip::tcp::socket socket, wmbus_server*, cyng::logger);
+		wmbus_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<db>, cyng::logger, bus&);
 		~wmbus_session();
 
 		void start();
@@ -34,9 +36,13 @@ namespace smf {
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);
 
+		void decode(mbus::radio::header const& h, cyng::buffer_t const& data);
+
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logger logger_;
+		bus& bus_;
+		std::shared_ptr<db> db_;
 
 		/**
 		 * Buffer for incoming data.

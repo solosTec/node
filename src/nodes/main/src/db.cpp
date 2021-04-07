@@ -51,6 +51,9 @@ namespace smf {
 		//	create auto tables
 		//
 		init_sys_msg();
+		init_LoRa_uplink();
+		init_iec_uplink();
+		init_wmbus_uplink();
 
 //#ifdef _DEBUG_MAIN
 		//
@@ -168,18 +171,18 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 
 		//
-		//	gateway
+		//	gateway LSMTest2
 		//
 		auto const tag_07 = cyng::to_uuid("28c4b783-f35d-49f1-9027-a75dbae9f5e2");
 		b = cache_.insert("device"
 			, cyng::key_generator(tag_07)
-			, cyng::data_generator("gateway-one", "secret", "one", "labor", "", "", true, std::chrono::system_clock::now())
+			, cyng::data_generator("LSMTest2", "LSMTest2", "LSMTest2", "labor", "", "", true, std::chrono::system_clock::now())
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("gateway"
 			, cyng::key_generator(tag_07)
-			, cyng::data_generator("0500153B02517E"	//	server ID
+			, cyng::data_generator("0500153B01EC46"	//	server ID
 				, "EMH"	//	manufacturer
 				, std::chrono::system_clock::now()	//	tom
 				, "06441734"
@@ -195,7 +198,221 @@ namespace smf {
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
 
+		//
+		//	test gateways/devices
+		//
+		auto const tag_08 = cyng::to_uuid("27527834-aedc-4508-995c-1db0636a92c4");
+		//	01-e61e-29436587-bf-03
+		//	87654329
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_08)
+			, cyng::data_generator("87654329", "secret", "87654329", "01-e61e-29436587-bf-03", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meterwMBus"
+			, cyng::key_generator(tag_08)
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("51728910E66D83F851728910E66D83F8")))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meter"
+			, cyng::key_generator(tag_08)
+			, cyng::data_generator(
+				"01-e61e-29436587-bf-03"	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "87654329"					//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "CH87654329"	//cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at 2019-01-31
+				, "MAN"			//cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+				, std::chrono::system_clock::now()	//cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+				, ""	//cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+				, ""	//cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+				, ""	//cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+				, ""	//cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, ""	//cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, boost::uuids::nil_uuid() //cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
+				, "M-Bus"	//cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
 
+		auto const tag_09 = cyng::to_uuid("7fb2b466-d2f5-4057-ba66-566082dbb288");
+		//	01-e61e-13090016-3c-07
+		//	16000913
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_09)
+			, cyng::data_generator("16000913", "secret", "16000913", "01-e61e-13090016-3c-07", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meterwMBus"
+			, cyng::key_generator(tag_09)
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("51728910E66D83F851728910E66D83F8")))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meter"
+			, cyng::key_generator(tag_09)
+			, cyng::data_generator(
+				"01-e61e-13090016-3c-07"	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "16000913"					//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "CH16000913"	//cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at 2019-01-31
+				, "MAN"			//cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+				, std::chrono::system_clock::now()	//cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+				, ""	//cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+				, ""	//cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+				, ""	//cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+				, ""	//cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, ""	//cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, boost::uuids::nil_uuid() //cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
+				, "M-Bus"	//cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+		auto const tag_10 = cyng::to_uuid("89f7be0e-01c5-4d3a-99cf-f009e25cac76");
+		//	01-a815-74314504-01-02
+		//	04453174
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_10)
+			, cyng::data_generator("04453174", "secret", "04453174", "01-a815-74314504-01-02", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meterwMBus"
+			, cyng::key_generator(tag_10)
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("23A84B07EBCBAF948895DF0E9133520D")))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meter"
+			, cyng::key_generator(tag_10)
+			, cyng::data_generator(
+				"01-a815-74314504-01-02"	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "04453174"					//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "CH04453174"	//cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at 2019-01-31
+				, "MAN"			//cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+				, std::chrono::system_clock::now()	//cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+				, ""	//cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+				, ""	//cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+				, ""	//cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+				, ""	//cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, ""	//cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, boost::uuids::nil_uuid() //cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
+				, "M-Bus"	//cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+		auto const tag_11 = cyng::to_uuid("0b935305-7ac4-46e6-a835-7068159a73a8");
+		//	01-e61e-79426800-02-0e
+		//	00684279
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_11)
+			, cyng::data_generator("00684279", "secret", "00684279", "01-e61e-79426800-02-0e", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meterwMBus"
+			, cyng::key_generator(tag_11)
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6140B8C066EDDE3773EDF7F8007A45AB")))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meter"
+			, cyng::key_generator(tag_11)
+			, cyng::data_generator(
+				"01-e61e-79426800-02-0e"	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "00684279"					//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "CH00684279"	//cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at 2019-01-31
+				, "MAN"			//cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+				, std::chrono::system_clock::now()	//cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+				, ""	//cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+				, ""	//cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+				, ""	//cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+				, ""	//cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, ""	//cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, boost::uuids::nil_uuid() //cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
+				, "M-Bus"	//cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+		auto const tag_12 = cyng::to_uuid("b801e64f-fabf-4023-ab2e-4bcb8f64f464");
+		//	01-e61e-57140621-36-03
+		//	21061457
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_12)
+			, cyng::data_generator("21061457", "secret", "21061457", "01-e61e-57140621-36-03", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meterwMBus"
+			, cyng::key_generator(tag_12)
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6140B8C066EDDE3773EDF7F8007A45AB")))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meter"
+			, cyng::key_generator(tag_12)
+			, cyng::data_generator(
+				"01-e61e-57140621-36-03"	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "21061457"					//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "CH21061457"	//cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at 2019-01-31
+				, "MAN"			//cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+				, std::chrono::system_clock::now()	//cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+				, ""	//cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+				, ""	//cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+				, ""	//cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+				, ""	//cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, ""	//cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, boost::uuids::nil_uuid() //cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
+				, "M-Bus"	//cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+		//	00636408
+		auto const tag_13 = cyng::to_uuid("e6e62eae-2a80-4185-8e72-5505d4dfe74b");
+		//	01-e61e-08646300-36-03
+		//	00636408
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_13)
+			, cyng::data_generator("00636408", "secret", "00636408", "01-e61e-08646300-36-03", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meterwMBus"
+			, cyng::key_generator(tag_13)
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("00000000000000000000000000000000")))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meter"
+			, cyng::key_generator(tag_13)
+			, cyng::data_generator(
+				"01-e61e-08646300-36-03"	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "00636408"					//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "CH00636408"	//cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at 2019-01-31
+				, "MAN"			//cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+				, std::chrono::system_clock::now()	//cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+				, ""	//cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+				, ""	//cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+				, ""	//cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+				, ""	//cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, ""	//cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, boost::uuids::nil_uuid() //cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
+				, "M-Bus"	//cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+		//	00200796
 
 //#endif 
 	}
@@ -288,7 +505,7 @@ namespace smf {
 
 		cyng::key_list_t keys;
 
-		cache_.access([&](cyng::table* tbl_pty, cyng::table* tbl_cls) {
+		cache_.access([&](cyng::table* tbl_pty, cyng::table* tbl_target, cyng::table* tbl_cls) {
 			tbl_pty->loop([&](cyng::record&& rec, std::size_t) -> bool {
 
 				auto const tag = rec.value("peer", peer);
@@ -305,11 +522,32 @@ namespace smf {
 			}
 				
 			//
+			//	remove targets
+			// 
+			keys.clear();
+			tbl_target->loop([&](cyng::record&& rec, std::size_t) -> bool {
+				auto const tag = rec.value("peer", peer);
+				auto const name = rec.value("name", "");
+				if (tag == peer) {
+					CYNG_LOG_TRACE(logger_, "[db] remove target [" << name << "]");
+					keys.insert(rec.key());
+				}
+				return true;
+				});
+
+			//
+			//	remove targets
+			//
+			for (auto const& key : keys) {
+				tbl_target->erase(key, cfg_.get_tag());
+			}
+
+			//
 			//	update cluster table
 			//
 			tbl_cls->erase(cyng::key_generator(peer), cfg_.get_tag());
 
-			}, cyng::access::write("session"), cyng::access::write("cluster"));
+			}, cyng::access::write("session"), cyng::access::write("target"), cyng::access::write("cluster"));
 
 		return keys.size();
 	}
@@ -381,14 +619,45 @@ namespace smf {
 			BOOST_ASSERT(key.size() == 1);
 			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
 		});
+	}
+
+	void db::init_LoRa_uplink() {
+
+		auto const ms = config::get_store_uplink_lora();
+		auto const start_key = cyng::key_generator(static_cast<std::uint64_t>(0));
+		cache_.create_auto_table(ms, start_key, [this](cyng::key_t const& key) {
+			BOOST_ASSERT(key.size() == 1);
+			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
+			});
 
 	}
+
+	void db::init_iec_uplink() {
+
+		auto const ms = config::get_store_uplink_iec();
+		auto const start_key = cyng::key_generator(static_cast<std::uint64_t>(0));
+		cache_.create_auto_table(ms, start_key, [this](cyng::key_t const& key) {
+			BOOST_ASSERT(key.size() == 1);
+			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
+			});
+	}
+
+	void db::init_wmbus_uplink() {
+
+		auto const ms = config::get_store_uplink_wmbus();
+		auto const start_key = cyng::key_generator(static_cast<std::uint64_t>(0));
+		cache_.create_auto_table(ms, start_key, [this](cyng::key_t const& key) {
+			BOOST_ASSERT(key.size() == 1);
+			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
+			});
+	}
+
 
 	bool db::push_sys_msg(std::string msg, cyng::severity level) {
 		return cache_.insert_auto("sysMsg", cyng::data_generator(std::chrono::system_clock::now(), level, msg), cfg_.get_tag());
 	}
 
-	bool db::register_target(boost::uuids::uuid tag
+	std::pair<std::uint32_t, bool> db::register_target(boost::uuids::uuid tag
 		, boost::uuids::uuid dev
 		, std::string name
 		, std::uint16_t paket_size
@@ -431,21 +700,7 @@ namespace smf {
 			}
 			}, cyng::access::write("target"), cyng::access::read("device"));
 
-		return r;
-		//return cache_.insert("target"
-		//	, cyng::key_generator(channel_++)
-		//	, cyng::data_generator(tag
-		//		, tag
-		//		, name
-		//		, dev
-		//		, "owner"
-		//		, paket_size
-		//		, window_size
-		//		, std::chrono::system_clock::now()
-		//		, static_cast<std::uint64_t>(0)		//	px
-		//		, static_cast<std::uint64_t>(0))
-		//	, 1
-		//	, cfg_.get_tag());
+		return { channel_, r };
 	}
 
 	std::vector< cyng::meta_store > get_store_meta_data() {
@@ -462,11 +717,8 @@ namespace smf {
 			config::get_store_cluster(),
 			config::get_store_location(),
 			config::get_store_session(),
-			config::get_store_connection(),
+			config::get_store_connection()
 			//	temporary upload data
-			config::get_store_uplink_lora(),
-			config::get_store_uplink_iec(),
-			config::get_store_uplink_wmbus()
 		};
 	}
 

@@ -9,21 +9,23 @@
 namespace smf {
 
 	wmbus_server::wmbus_server(boost::asio::io_context& ioc
-		, boost::uuids::uuid tag
-		, cyng::logger logger)
-	: tag_(tag)
-		, logger_(logger)
+		, cyng::logger logger
+		, bus& cluster_bus
+		, std::shared_ptr<db> db)
+	: logger_(logger)
+		, bus_(cluster_bus)
 		, acceptor_(ioc)
+		, db_(db)
 		, session_counter_{ 0 }
 	{
-		CYNG_LOG_INFO(logger_, "wmbus server " << tag << " created");
+		CYNG_LOG_INFO(logger_, "[server] created");
 
 	}
 
 	wmbus_server::~wmbus_server()
 	{
-#ifdef _DEBUG_DASH
-		std::cout << "wmbus(~)" << std::endl;
+#ifdef _DEBUG_BROKER_WMBUS
+		std::cout << "wmbus_server(~)" << std::endl;
 #endif
 	}
 
@@ -36,11 +38,11 @@ namespace smf {
 		if (!ec)	acceptor_.bind(ep, ec);
 		if (!ec)	acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
 		if (!ec) {
-			CYNG_LOG_INFO(logger_, "server starts listening at " << ep);
+			CYNG_LOG_INFO(logger_, "[server] starts listening at " << ep);
 			do_accept();
 		}
 		else {
-			CYNG_LOG_WARNING(logger_, "server cannot start listening at "
+			CYNG_LOG_WARNING(logger_, "[server] cannot start listening at "
 				<< ep << ": " << ec.message());
 		}
 
@@ -50,19 +52,20 @@ namespace smf {
 
 		acceptor_.async_accept([this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
 			if (!ec) {
-				CYNG_LOG_INFO(logger_, "new session " << socket.remote_endpoint());
+				CYNG_LOG_INFO(logger_, "[server] new session " << socket.remote_endpoint());
 
 				auto sp = std::shared_ptr<wmbus_session>(new wmbus_session(
 					std::move(socket),
-					this,
-					logger_
+					db_,
+					logger_,
+					bus_
 				), [this](wmbus_session* s) {
 
 					//
 					//	update session counter
 					//
 					--session_counter_;
-					CYNG_LOG_TRACE(logger_, "session(s) running: " << session_counter_);
+					CYNG_LOG_TRACE(logger_, "[server] session(s) running: " << session_counter_);
 
 					//
 					//	remove session
@@ -89,7 +92,7 @@ namespace smf {
 				do_accept();
 			}
 			else {
-				CYNG_LOG_WARNING(logger_, "server stopped: " << ec.message());
+				CYNG_LOG_WARNING(logger_, "[server] stopped: " << ec.message());
 			}
 		});
 

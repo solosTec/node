@@ -19,7 +19,7 @@
 
 namespace smf {
 
-	class session;
+	//class session;
 	class server
 	{
 		template <typename T >
@@ -30,7 +30,7 @@ namespace smf {
 			std::function<void(cyng::eod)>
 		>;
 
-		friend class session;
+		//friend class session;
 
 	public:
 		server(std::weak_ptr<cyng::channel>
@@ -49,14 +49,6 @@ namespace smf {
 		void do_accept();
 		void stop(cyng::eod);
 
-		void pty_connect(boost::uuids::uuid tag
-			, std::string msisdn);
-
-		void pty_register(boost::uuids::uuid
-			, boost::uuids::uuid dev
-			, std::string
-			, std::uint16_t
-			, std::uint8_t);
 
 	private:
 		signatures_t sigs_;
