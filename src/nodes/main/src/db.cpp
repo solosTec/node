@@ -414,6 +414,35 @@ namespace smf {
 
 		//	00200796
 
+		//
+		//	gateway LSMTest3
+		//
+		auto const tag_14 = cyng::to_uuid("8e971cf0-36bd-4b36-92f0-a070a0194fae");
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_14)
+			, cyng::data_generator("LSMTest3", "LSMTest3", "LSMTest3", "labor", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("gateway"
+			, cyng::key_generator(tag_14)
+			, cyng::data_generator("0500153B021774"	//	server ID
+				, "EMH"	//	manufacturer
+				, std::chrono::system_clock::now()	//	tom
+				, "B021774"
+				, cyng::mac48()	//cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
+				, cyng::mac48()	//cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
+				, "pw"		//cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
+				, "root"	//cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
+				, "A815408943050131"	//cyng::column("mbus", cyng::TC_STRING),			//	(9) W-Mbus ID (i.e. A815408943050131)
+				, "operator"	//cyng::column("userName", cyng::TC_STRING),		//	(10)
+				, "operator"	//cyng::column("userPwd", cyng::TC_STRING)		//	(11)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+
 //#endif 
 	}
 

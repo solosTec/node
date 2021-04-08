@@ -10,6 +10,7 @@
 #include <smf/mbus/radio/header.h>
 
 #include <cyng/log/record.h>
+#include <cyng/io/io_buffer.h>
 
 #include <iostream>
 
@@ -139,11 +140,11 @@ namespace smf {
 			if (found) {
 				bus_.req_db_insert_auto("wMBusUplink", cyng::data_generator(
 					std::chrono::system_clock::now(),
-					mbus::to_str(h),
+					h.get_id(),	//	mbus::to_str(h),
 					h.get_medium(),
 					manufacturer,
 					h.get_frame_type(),
-					"payload",
+					cyng::io::to_hex(data),	//	"payload",
 					boost::uuids::nil_uuid()
 				));
 			}
