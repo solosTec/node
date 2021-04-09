@@ -36,7 +36,6 @@
 			, toggle::server_vec_t&& tgl);
 
 	private:
-		cyng::param_t create_server_spec(std::filesystem::path const& cwd);
 		cyng::param_t create_client_spec();
 		cyng::param_t create_cluster_spec();
 

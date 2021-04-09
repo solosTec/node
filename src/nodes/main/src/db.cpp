@@ -442,6 +442,40 @@ namespace smf {
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
 
+		//
+		//	as 1440 (labor)
+		//
+		auto const tag_15 = cyng::to_uuid("1e6a5c94-c493-4ff6-a790-9b35c431c0e2");
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_15)
+			, cyng::data_generator("CH0000000000000000000000003218421", "secret", "03218421", "test device", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		b = cache_.insert("meter"
+			, cyng::key_generator(tag_15)
+			, cyng::data_generator(
+				"01-e61e-08646300-36-03"	//	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+				, "03218421"					//	[string] meter number (i.e. 16000913) 4 bytes 
+				, "CH0000000000000000000000003218421"	//cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at 2019-01-31
+				, "ELS"			//cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+				, std::chrono::system_clock::now()	//cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+				, ""	//cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+				, ""	//cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+				, "1019 1000 0321 8421"	//cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+				, "AS1440"	//cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+				, ""	//cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+				, boost::uuids::nil_uuid() //cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
+				, "IEC"	//cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("meterIEC"
+			, cyng::key_generator(tag_15)
+			, cyng::data_generator("192.168.0.200", static_cast<std::uint16_t>(6006u), std::chrono::seconds(840))
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
 
 //#endif 
 	}
@@ -615,7 +649,7 @@ namespace smf {
 				if (boost::algorithm::equals(name, n)
 					&& boost::algorithm::equals(pwd, p)) {
 
-					CYNG_LOG_INFO(logger_, "login [" << name << "] => [" << rec.value("pwd", "") << "]");
+					CYNG_LOG_INFO(logger_, "login [" << name << "] => [" << p << "]");
 
 					tag = rec.value("tag", tag);
 					enabled = rec.value("enabled", false);

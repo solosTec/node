@@ -43,6 +43,8 @@ namespace smf {
 		, endpoints_()
 		, socket_(ctl.get_ctx())
 		, timer_(ctl.get_ctx())
+		, dispatcher_(ctl.get_ctx())
+		, input_buffer_()
 		, buffer_write_()
 	{
 		auto sp = channel_.lock();
@@ -63,7 +65,9 @@ namespace smf {
 	}
 
 	void broker::reset() {
-		buffer_write_.clear();
+		boost::asio::post(dispatcher_, [this]() {
+			buffer_write_.clear();
+			});
 		boost::system::error_code ignored_ec;
 		socket_.close(ignored_ec);
 		timer_.cancel();
@@ -73,8 +77,12 @@ namespace smf {
 	void broker::receive(cyng::buffer_t data) {
 		if (is_connected()) {
 			CYNG_LOG_INFO(logger_, "[broker] transmit " << data.size() << " bytes to " << target_);
-			buffer_write_.emplace_back(data);
-			do_write();
+
+			boost::asio::post(dispatcher_, [this, data]() {
+				bool const b = buffer_write_.empty();
+				buffer_write_.emplace_back(data);
+				if (b)	do_write();
+			});
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "[broker] drops " << data.size() << " bytes to " << target_);
@@ -85,7 +93,9 @@ namespace smf {
 		CYNG_LOG_INFO(logger_, "[broker] start " << target_);
 
 		state_ = state::START;
-		buffer_write_.clear();
+		boost::asio::post(dispatcher_, [this]() {
+			buffer_write_.clear();
+			});
 
 #ifdef __DEBUG
 		//	test with an HTTP server
@@ -213,14 +223,16 @@ namespace smf {
 
 			if (login_) {
 
-				//
-				//	set login sequence
-				//
-				buffer_write_.emplace_back(cyng::make_buffer(target_.get_login_sequence()));
-				buffer_write_.emplace_back(cyng::make_buffer("\r\n"));
-
-				// Start the heartbeat actor.
-				do_write();
+				boost::asio::post(dispatcher_, [this]() {
+					bool const b = buffer_write_.empty();
+					//
+					//	set login sequence
+					//
+					buffer_write_.emplace_back(cyng::make_buffer(target_.get_login_sequence()));
+					buffer_write_.emplace_back(cyng::make_buffer("\r\n"));
+					// Start the heartbeat actor.
+					if (b)	do_write();
+					});
 			}
 		}
 	}
@@ -277,7 +289,7 @@ namespace smf {
 		// Start an asynchronous operation to send a heartbeat message.
 		boost::asio::async_write(socket_,
 			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-			std::bind(&broker::handle_write, this, std::placeholders::_1));
+			dispatcher_.wrap(std::bind(&broker::handle_write, this, std::placeholders::_1)));
 	}
 
 	void broker::handle_write(const boost::system::error_code& ec)

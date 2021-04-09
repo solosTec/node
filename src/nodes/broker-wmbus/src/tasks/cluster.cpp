@@ -75,7 +75,7 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "cluster join complete");
+			CYNG_LOG_INFO(logger_, "[cluster] join complete");
 
 			//
 			//	subscribe table "meterwMBus" and "meter"
@@ -87,7 +87,7 @@ namespace smf {
 				});
 		}
 		else {
-			CYNG_LOG_ERROR(logger_, "joining cluster failed");
+			CYNG_LOG_ERROR(logger_, "[cluster] joining failed");
 		}
 	}
 
@@ -114,7 +114,7 @@ namespace smf {
 	void cluster::db_res_trx(std::string table_name
 		, bool trx) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] trx: "
+		CYNG_LOG_INFO(logger_, "[cluster] trx: "
 			<< table_name
 			<< (trx ? " start" : " commit"));
 	}

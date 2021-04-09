@@ -360,7 +360,8 @@ namespace smf {
 		db::rel{"session", "status.session", "table.session.count"},
 		db::rel{"connection", "status.connection", "table.connection.count"},
 		db::rel{"sysMsg", "monitor.msg", "table.msg.count"},
-		db::rel{"wMBusUplink", "monitor.wMBus", "table.wMBus.count"}
+		db::rel{"wMBusUplink", "monitor.wMBus", "table.wMBus.count"},
+		db::rel{"iecUplink", "monitor.IEC", "table.IEC.count"}
 		// 
 		//db::rel{"TMeterAccess", "config.meterwMBus", "table.meterwMBus.count"},
 		//db::rel{"TBridge", "config.bridge", "table.bridge.count"},
@@ -368,7 +369,6 @@ namespace smf {
 		//db::rel{"_HTTPSession", "web.sessions", "table.web.count"},
 		//db::rel{"_TimeSeries", "monitor.tsdb", ""},
 		//db::rel{"_LoRaUplink", "monitor.lora", "table.uplink.count"},
-		//db::rel{"_IECUplink", "monitor.IEC", "table.IEC.count"},
 		//db::rel{"_CSV", "task.csv", ""},
 		//db::rel{"TGWSnapshot", "monitor.snapshot", "table.snapshot.count"},
 		//db::rel{"_EventQueue", "event.queue", "table.event.queue"}
@@ -391,7 +391,8 @@ namespace smf {
 			config::get_store_session(),
 			config::get_store_connection(),
 			config::get_store_sys_msg(),
-			config::get_store_uplink_wmbus()
+			config::get_store_uplink_wmbus(),
+			config::get_store_uplink_iec()
 		};
 	}
 

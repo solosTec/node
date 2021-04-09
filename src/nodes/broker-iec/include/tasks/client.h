@@ -4,32 +4,28 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_SEGW_TASK_BROKER_H
-#define SMF_SEGW_TASK_BROKER_H
+#ifndef SMF_DASH_TASK_CLIENT_H
+#define SMF_DASH_TASK_CLIENT_H
 
-#include <cfg.h>
-#include <config/cfg_broker.h>
+#include <db.h>
+
+#include <smf/cluster/bus.h>
 
 #include <cyng/obj/intrinsics/eod.h>
-#include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
+#include <cyng/store/key.hpp>
 
 namespace smf {
 
-	/**
-	 * connect to MDM system
-	 * https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/example/cpp03/timeouts/async_tcp_client.cpp
-	 */
-	class broker
+	class client
 	{
 		template <typename T >
 		friend class cyng::task;
 
 		using signatures_t = std::tuple<
-			std::function<void(cyng::eod)>,
-			std::function<void(cyng::buffer_t)>,
-			std::function<void()>
+			std::function<void(std::string, std::string, std::chrono::seconds)>,
+			std::function<void(cyng::eod)>
 		>;
 
 		enum class state {
@@ -40,21 +36,18 @@ namespace smf {
 		} state_;
 
 	public:
-		broker(std::weak_ptr<cyng::channel>
-			, cyng::controller& ctl
+		client(std::weak_ptr<cyng::channel>
+			, cyng::controller&
+			, bus&
+			, std::shared_ptr<db> db
 			, cyng::logger
-			, target const&
-			, std::chrono::seconds
-			, bool login);
+			, cyng::key_t key
+			, std::string meter);
+
+		void stop(cyng::eod);
 
 	private:
-		void stop(cyng::eod);
-		void start();
-
-		/**
-		 * incoming raw data from serial interface
-		 */
-		void receive(cyng::buffer_t);
+		void start(std::string, std::string, std::chrono::seconds);
 
 		void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
 		void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
@@ -64,7 +57,6 @@ namespace smf {
 		void handle_read(const boost::system::error_code& ec, std::size_t n);
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);
-		void check_deadline(const boost::system::error_code& ec);
 
 		constexpr bool is_stopped() const {
 			return state_ == state::STOPPED;
@@ -73,26 +65,28 @@ namespace smf {
 			return state_ == state::CONNECTED;
 		}
 
-		void reset();
-
 	private:
 		signatures_t sigs_;
-		std::weak_ptr<cyng::channel> channel_;
+		cyng::channel_weak channel_;
 		cyng::controller& ctl_;
+		bus& cluster_bus_;
+		std::shared_ptr<db> db_;
 		cyng::logger logger_;
-		target const target_;
-		std::chrono::seconds const timeout_;
-		bool const login_;
+		cyng::key_t const key_;
+		std::vector<std::string> meters_;
 
 		boost::asio::ip::tcp::resolver::results_type endpoints_;
 		boost::asio::ip::tcp::socket socket_;
-		boost::asio::steady_timer timer_;
 		boost::asio::io_context::strand dispatcher_;
-
-		std::string input_buffer_;
 		std::deque<cyng::buffer_t>	buffer_write_;
+		std::array<char, 2048>	input_buffer_;
 
 	};
+
+	/**
+	 * generate a query string in the format /?METER!\n\n
+	 */
+	cyng::buffer_t generate_query(std::string meter);
 }
 
 #endif

@@ -42,7 +42,6 @@ namespace smf {
 				cyng::make_param("tag", get_random_tag()),
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
-				create_server_spec(cwd),
 				create_client_spec(),
 				create_cluster_spec()
 			)
@@ -83,14 +82,6 @@ namespace smf {
 		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl));
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
-		channel->dispatch("status_check", cyng::make_tuple(1));
-	}
-
-	cyng::param_t controller::create_server_spec(std::filesystem::path const& cwd) {
-		return cyng::make_param("server", cyng::make_tuple(
-			cyng::make_param("address", "0.0.0.0"),
-			cyng::make_param("service", "12001")
-		));
 	}
 
 	cyng::param_t controller::create_cluster_spec() {

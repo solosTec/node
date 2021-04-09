@@ -5,6 +5,8 @@
  *
  */
 #include <tasks/cluster.h>
+#include <tasks/client.h>
+
 #include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
@@ -21,7 +23,7 @@ namespace smf {
 		, toggle::server_vec_t&& cfg)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
-		std::bind(&cluster::status_check, this, std::placeholders::_1),
+		std::bind(&cluster::update_client, this, std::placeholders::_1, std::placeholders::_2),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
 	}
 		, channel_(wp)
@@ -30,18 +32,21 @@ namespace smf {
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
+		, store_()
+		, db_(std::make_shared<db>(store_, logger_, tag_, channel_))
 	{
 		auto sp = channel_.lock();
 		if (sp) {
-			sp->set_channel_name("connect", 0);
-			sp->set_channel_name("status_check", 1);
+			std::size_t idx{ 0 };
+			sp->set_channel_name("connect", idx++);
+			sp->set_channel_name("update.client", idx++);
 			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
 	}
 
 	void cluster::stop(cyng::eod)
 	{
-		CYNG_LOG_WARNING(logger_, "stop cluster task(" << tag_ << ")");
+		CYNG_LOG_WARNING(logger_, "[cluster] stop task(" << tag_ << ")");
 		bus_.stop();
 	}
 
@@ -54,19 +59,83 @@ namespace smf {
 
 	}
 
-	void cluster::status_check(int n)
-	{
-		auto sp = channel_.lock();
-		if (sp) {
-			CYNG_LOG_TRACE(logger_, "status_check(" << tag_ << ", " << n << ")");
+	bool cluster::check_client(cyng::record const& rec) {
+
+		auto const host = rec.value("host", "");
+		auto const port = rec.value<std::uint16_t>("port", 0);
+		auto const interval = rec.value("interval", std::chrono::seconds(900));
+		bool found = false;
+
+		std::size_t counter{ 0 };
+		store_.access([&](cyng::table const* tbl_iec, cyng::table const* tbl_meter) {
+
 			//
-			//	ToDo: status check
+			//	lookup meter
 			//
-			sp->suspend(std::chrono::seconds(30), "status_check", cyng::make_tuple(n + 1));
-		}
-		else {
-			CYNG_LOG_ERROR(logger_, "status_check(" << tag_ << ", " << n << ")");
-		}
+			auto const meter = tbl_meter->lookup(rec.key());
+			if (!meter.empty()) {
+
+				//
+				//	update "found" flag
+				//
+				found = true;
+
+				//
+				//	get meter name
+				//
+				auto const name = meter.value("meter", "no-meter");
+
+				//
+				//	search for duplicate ip adresses
+				//
+				tbl_iec->loop([&](cyng::record const& rec, std::size_t) -> bool {
+
+					auto const cmp_host = rec.value("host", "");
+					auto const cmp_port = rec.value<std::uint16_t>("port", 0);
+
+					if (boost::algorithm::equals(cmp_host, host)
+						&& cmp_port == port) {
+						++counter;
+					}
+
+					return true;
+					});
+
+				//
+				//	construct task name
+				//
+				auto task = make_task_name(host, port);
+
+				//
+				//	start/update clients
+				//
+				auto sp = channel_.lock();
+				if (counter != 0) {
+					CYNG_LOG_INFO(logger_, "[db] address with multiple meters " << counter - 1 << ": " << host << ':' << port);
+					if (sp)	sp->dispatch("update.client", cyng::make_tuple(task, name));
+				}
+				else {
+
+					//
+					//	start client
+					//
+					auto channel = ctl_.create_named_channel_with_ref<client>(task, ctl_, bus_, db_, logger_, rec.key(), name);
+					BOOST_ASSERT(channel->is_open());
+					channel->dispatch("start", cyng::make_tuple(host, std::to_string(port), interval));
+				}
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[db] address " << host << ':' << port << " without meter configuration");
+				bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec]", host, ":", port, "without meter configuration");
+			}
+
+			}, cyng::access::read("meterIEC"), cyng::access::read("meter"));
+
+		return found;
+	}
+
+	void cluster::update_client(std::string task_name, std::string meter) {
+		CYNG_LOG_INFO(logger_, "update client " << meter);
 	}
 
 	//
@@ -77,15 +146,27 @@ namespace smf {
 	}
 	void cluster::on_login(bool success) {
 		if (success) {
-			CYNG_LOG_INFO(logger_, "cluster join complete");
+			CYNG_LOG_INFO(logger_, "[cluster] join complete");
+
+			//
+			//	subscribe table "meterIEC" and "meter"
+			//
+			auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
+			db_->init(slot);
+			db_->loop([this](cyng::meta_store const& m) {
+				bus_.req_subscribe(m.get_name());
+				});
+
 		}
 		else {
-			CYNG_LOG_ERROR(logger_, "joining cluster failed");
+			CYNG_LOG_ERROR(logger_, "[cluster] joining failed");
 		}
 	}
 
 	void cluster::on_disconnect(std::string msg) {
 		CYNG_LOG_WARNING(logger_, "[cluster] disconnect: " << msg);
+		auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
+		db_->disconnect(slot);
 	}
 
 	void cluster::db_res_insert(std::string table_name
@@ -94,15 +175,31 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
-		CYNG_LOG_TRACE(logger_, "[cluster] insert: "
-			<< table_name
-			<< " - "
-			<< data);
+		std::reverse(key.begin(), key.end());
+		std::reverse(data.begin(), data.end());
+
+		//CYNG_LOG_TRACE(logger_, "[cluster] insert: "
+		//	<< table_name
+		//	<< " - "
+		//	<< data);
+
+		//
+		//	start/update client
+		//
+
+		if (db_) {
+			if (boost::algorithm::equals(table_name, "meterIEC")) {
+				cyng::record rec(db_->get_meta_iec(), key, data, gen);
+
+				check_client(rec);
+			}
+			db_->res_insert(table_name, key, data, gen, tag);
+		}
 	}
 
 	void cluster::db_res_trx(std::string table_name
 		, bool trx) {
-		CYNG_LOG_TRACE(logger_, "[cluster] trx: "
+		CYNG_LOG_INFO(logger_, "[cluster] trx: "
 			<< table_name
 			<< (trx ? " start" : " commit"));
 	}
@@ -113,10 +210,14 @@ namespace smf {
 		, std::uint64_t gen
 		, boost::uuids::uuid tag) {
 
+		std::reverse(key.begin(), key.end());
+
 		CYNG_LOG_TRACE(logger_, "[cluster] update: "
 			<< table_name
 			<< " - "
 			<< key);
+
+		if (db_)	db_->res_update(table_name, key, attr, gen, tag);
 
 	}
 
@@ -124,10 +225,14 @@ namespace smf {
 		, cyng::key_t key
 		, boost::uuids::uuid tag) {
 
+		std::reverse(key.begin(), key.end());
+
 		CYNG_LOG_TRACE(logger_, "[cluster] remove: "
 			<< table_name
 			<< " - "
 			<< key);
+
+		if (db_)	db_->res_remove(table_name, key, tag);
 	}
 
 	void cluster::db_res_clear(std::string table_name
@@ -135,6 +240,15 @@ namespace smf {
 
 		CYNG_LOG_TRACE(logger_, "[cluster] clear: "
 			<< table_name);
+
+		if (db_)	db_->res_clear(table_name, tag);
+
+	}
+
+	std::string make_task_name(std::string host, std::uint16_t port) {
+		std::stringstream ss;
+		ss << host << ':' << port;
+		return ss.str();
 	}
 
 }

@@ -242,7 +242,7 @@ namespace smf {
 		//	connect was successful
 		//
 
-		// Start an asynchronous operation to read a newline-delimited message.
+		// Start an asynchronous operation to read
 		socket_.async_read_some(boost::asio::buffer(input_buffer_), std::bind(&bus::handle_read, this,
 			std::placeholders::_1, std::placeholders::_2));
 	}

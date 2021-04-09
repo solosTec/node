@@ -6,10 +6,12 @@ set (broker-iec_node)
 set (broker-iec_cpp
     src/main.cpp
     src/controller.cpp
+    src/db.cpp
 )
     
 set (broker-iec_h
     include/controller.h
+    include/db.h
 )
 
 if(WIN32)
@@ -28,7 +30,9 @@ endif()
 
 set (broker-iec_tasks
   include/tasks/cluster.h
+  include/tasks/client.h
   src/tasks/cluster.cpp
+  src/tasks/client.cpp
 )
 
 source_group("broker-iec-assets" FILES ${broker-iec_assets})

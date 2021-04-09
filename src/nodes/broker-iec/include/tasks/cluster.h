@@ -7,6 +7,8 @@
 #ifndef SMF_DASH_TASK_CLUSTER_H
 #define SMF_DASH_TASK_CLUSTER_H
 
+#include <db.h>
+
 #include <smf/cluster/bus.h>
 
 #include <cyng/obj/intrinsics/eod.h>
@@ -30,7 +32,7 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(void)>,
-			std::function<void(int)>,
+			std::function<void(std::string, std::string)>,	//	update client client
 			std::function<void(cyng::eod)>
 		>;
 
@@ -43,7 +45,6 @@ namespace smf {
 			, toggle::server_vec_t&&);
 
 		void connect();
-		void status_check(int);
 
 		void stop(cyng::eod);
 
@@ -74,15 +75,27 @@ namespace smf {
 		virtual void db_res_clear(std::string
 			, boost::uuids::uuid tag) override;
 
+
+		/**
+		 * @return true if meter is defined
+		 */
+		bool check_client(cyng::record const&);
+		//void start_client(cyng::key_t, std::string, std::string);	//	start client
+		void update_client(std::string, std::string);	//	update client client
+
 	private:
 		signatures_t sigs_;
-		std::weak_ptr<cyng::channel> channel_;
+		cyng::channel_weak channel_;
 		cyng::controller& ctl_;
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
 		cyng::mesh fabric_;
 		bus	bus_;
+		cyng::store store_;
+		std::shared_ptr<db> db_;
 	};
+
+	std::string make_task_name(std::string host, std::uint16_t port);
 
 }
 
