@@ -177,14 +177,12 @@ namespace smf {
 		return true;
 	}
 
-	std::pair<cyng::crypto::aes_128_key, bool> db::lookup_meter(std::string id) {
+	std::pair<cyng::crypto::aes_128_key, boost::uuids::uuid> db::lookup_meter(std::string id) {
 
 		cyng::crypto::aes_128_key key;
-		bool found = false;
+		boost::uuids::uuid tag = boost::uuids::nil_uuid();
 
 		cache_.access([&](cyng::table const* tbl_meter, cyng::table const* tbl_wmbus) -> void {
-
-			boost::uuids::uuid tag = boost::uuids::nil_uuid();
 
 			tbl_meter->loop([&](cyng::record&& rec, std::size_t idx) -> bool {
 
@@ -204,19 +202,18 @@ namespace smf {
 				//	get aes key
 				//
 				key = rec.value("aes", cyng::crypto::aes_128_key());
-				found = true;
 				CYNG_LOG_TRACE(logger_, "[db] meter " << id << " has AES key: " << key);
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "[db] meter " << id << " is not configured as wM-Bus {" << tag << "}");
-
+				tag = boost::uuids::nil_uuid();	//	zero out UUID
 			}
 			}, cyng::access::read("meter"), cyng::access::read("meterwMBus"));
 
 		//
 		//	return result
 		//
-		return { key, found };
+		return { key, tag };
 	}
 
 

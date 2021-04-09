@@ -94,15 +94,17 @@ namespace smf {
 					cyng::column("tag", cyng::TC_UUID),			//	same as meter/device
 					cyng::column("host", cyng::TC_STRING),		//	host/domain name
 					cyng::column("port", cyng::TC_UINT16),		//	listener port (outgoing)
-					cyng::column("interval", cyng::TC_SECOND)	//	pull cycle
+					cyng::column("interval", cyng::TC_SECOND),	//	pull cycle
+					cyng::column("lastSeen", cyng::TC_TIME_POINT)	//	last connect 
 				}
 			, 1);
-
 		}
+
 		cyng::meta_sql get_table_meterIEC() {
 			return cyng::to_sql(get_store_meterIEC(), { 36
 				, 128	//	address
 				, 0		//	port
+				, 0
 				, 0
 				});
 
@@ -114,16 +116,18 @@ namespace smf {
 					cyng::column("tag", cyng::TC_UUID),				//	same as meter/device
 					cyng::column("address", cyng::TC_IP_ADDRESS),	//	listener address
 					cyng::column("port", cyng::TC_UINT16),			//	listener port (incoming)
-					cyng::column("aes", cyng::TC_AES128)		//	AES 128 key
+					cyng::column("aes", cyng::TC_AES128),			//	AES 128 key
+					cyng::column("lastSeen", cyng::TC_TIME_POINT)	//	last connect
 				}
 			, 1);
-
 		}
+
 		cyng::meta_sql get_table_meterwMBus() {
 			return cyng::to_sql(get_store_meterwMBus(), { 36
 				, 0	//	address
 				, 0	//	port
 				, 32
+				, 0
 				});
 		}
 
@@ -151,7 +155,7 @@ namespace smf {
 			return cyng::to_sql(get_store_gateway(), { 36	//	pk
 				, 23	//	serverId
 				, 64	//	manufacturer
-				, 0		//	made
+				, 0		//	tom
 				, 8		//	factoryNr
 				, 18	//	ifService
 				, 18	//	ifData

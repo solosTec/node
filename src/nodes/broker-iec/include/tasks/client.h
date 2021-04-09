@@ -69,7 +69,7 @@ namespace smf {
 		signatures_t sigs_;
 		cyng::channel_weak channel_;
 		cyng::controller& ctl_;
-		bus& cluster_bus_;
+		bus& bus_;
 		std::shared_ptr<db> db_;
 		cyng::logger logger_;
 		cyng::key_t const key_;

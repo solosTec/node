@@ -10,6 +10,7 @@
 #include <cyng/log/record.h>
 #include <cyng/task/controller.h>
 #include <cyng/obj/buffer_cast.hpp>
+#include <cyng/obj/container_factory.hpp>
 
 #include <iostream>
 
@@ -31,7 +32,7 @@ namespace smf {
 		}
 		, channel_(wp)
 		, ctl_(ctl)
-		, cluster_bus_(cluster_bus)
+		, bus_(cluster_bus)
 		, db_(db)
 		, logger_(logger)
 		, key_(key)
@@ -142,6 +143,12 @@ namespace smf {
 			CYNG_LOG_INFO(logger_, "[client] connected to " << endpoint_iter->endpoint());
 			state_ = state::CONNECTED;
 
+			//
+			//	update configuration
+			//
+			bus_.req_db_update("meterIEC"
+				, key_
+				, cyng::param_map_factory()("lastSeen", std::chrono::system_clock::now()));
 
 			// Start the input actor.
 			do_read();
@@ -190,7 +197,7 @@ namespace smf {
 			std::stringstream ss;
 			ss << "[client] received " << bytes_transferred << " bytes";
 
-			cluster_bus_.req_db_insert_auto("iecUplink", cyng::data_generator(
+			bus_.req_db_insert_auto("iecUplink", cyng::data_generator(
 				std::chrono::system_clock::now(),
 				ss.str(),
 				socket_.remote_endpoint(),

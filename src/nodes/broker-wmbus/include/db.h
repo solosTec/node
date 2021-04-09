@@ -89,7 +89,10 @@ namespace smf {
 		 */
 		void loop(std::function<void(cyng::meta_store const&)>);
 
-		std::pair<cyng::crypto::aes_128_key, bool> lookup_meter(std::string);
+		/**
+		 * uuid is nil if meter wasn't found
+		 */
+		std::pair<cyng::crypto::aes_128_key, boost::uuids::uuid> lookup_meter(std::string);
 
 	public:
 		cyng::store& cache_;

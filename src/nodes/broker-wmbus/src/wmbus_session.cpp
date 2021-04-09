@@ -11,6 +11,7 @@
 
 #include <cyng/log/record.h>
 #include <cyng/io/io_buffer.h>
+#include <cyng/obj/container_factory.hpp>
 
 #include <iostream>
 
@@ -56,7 +57,11 @@ namespace smf {
 
 	void wmbus_session::start()
 	{
+		//
+		//	start reading
+		//
 		do_read();
+
 	}
 
 	void wmbus_session::do_read() {
@@ -131,13 +136,20 @@ namespace smf {
 	void wmbus_session::decode(mbus::radio::header const& h, cyng::buffer_t const& data) {
 
 		auto const flag_id = h.get_manufacturer_code();
-		//using mbus::operator<<;
 		auto const manufacturer = mbus::decode(flag_id.first, flag_id.second);
 		CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h) << " (" << manufacturer << ")");
 
 		if (db_) {
-			auto const[key, found] = db_->lookup_meter(h.get_id());
-			if (found) {
+
+			//
+			//	if tag is "nil" no meter configuration was found
+			//
+			auto const[key, tag] = db_->lookup_meter(h.get_id());
+			if (!tag.is_nil()) {
+
+				//
+				//	insert uplink data
+				//
 				bus_.req_db_insert_auto("wMBusUplink", cyng::data_generator(
 					std::chrono::system_clock::now(),
 					h.get_id(),	//	mbus::to_str(h),
@@ -147,6 +159,22 @@ namespace smf {
 					cyng::io::to_hex(data),	//	"payload",
 					boost::uuids::nil_uuid()
 				));
+
+				//
+				//	update config data
+				//	ip adress, port and last seen
+				//
+				auto const ep = socket_.remote_endpoint();
+				bus_.req_db_update("meterwMBus"
+					, cyng::key_generator(tag)
+					, cyng::param_map_factory()("address", ep.address()));
+				bus_.req_db_update("meterwMBus"
+					, cyng::key_generator(tag)
+					, cyng::param_map_factory()("port", ep.port()));
+				bus_.req_db_update("meterwMBus"
+					, cyng::key_generator(tag)
+					, cyng::param_map_factory()("lastSeen", std::chrono::system_clock::now()));
+
 			}
 			else {
 				bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", mbus::to_str(h), "has no AES key");

@@ -77,7 +77,7 @@ namespace smf {
 
 		b = cache_.insert("meterIEC"
 			, cyng::key_generator(tag_01)
-			, cyng::data_generator("192.168.0.200", static_cast<std::uint16_t>(2000u), std::chrono::seconds(840))
+			, cyng::data_generator("192.168.0.200", static_cast<std::uint16_t>(2000u), std::chrono::seconds(840), std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -85,7 +85,10 @@ namespace smf {
 		
 		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_02)
-			, cyng::data_generator(boost::asio::ip::make_address("192.168.0.200"), static_cast<std::uint16_t>(6000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6E3272357538782F413F4428472B4B62")))
+			, cyng::data_generator(boost::asio::ip::make_address("192.168.0.200")
+				, static_cast<std::uint16_t>(6000u)
+				, cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6E3272357538782F413F4428472B4B62"))
+				, std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -103,7 +106,7 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterIEC"
 			, cyng::key_generator(tag_03)
-			, cyng::data_generator("10.132.28.150", static_cast<std::uint16_t>(6000u), std::chrono::seconds(840))
+			, cyng::data_generator("10.132.28.150", static_cast<std::uint16_t>(6000u), std::chrono::seconds(840), std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -138,7 +141,7 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterIEC"
 			, cyng::key_generator(tag_04)
-			, cyng::data_generator("10.132.28.151", static_cast<std::uint16_t>(6000u), std::chrono::seconds(840))
+			, cyng::data_generator("10.132.28.151", static_cast<std::uint16_t>(6000u), std::chrono::seconds(840), std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -171,7 +174,7 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterIEC"
 			, cyng::key_generator(tag_05)
-			, cyng::data_generator("10.132.24.150", static_cast<std::uint16_t>(6000u), std::chrono::seconds(840))
+			, cyng::data_generator("10.132.24.150", static_cast<std::uint16_t>(6000u), std::chrono::seconds(840), std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -185,7 +188,10 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_06)
-			, cyng::data_generator(boost::asio::ip::make_address("10.132.32.142"), static_cast<std::uint16_t>(2000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("2BFFCB61D7E8DC439239555D3DFE1B1D")))
+			, cyng::data_generator(boost::asio::ip::make_address("10.132.32.142")
+				, static_cast<std::uint16_t>(2000u)
+				, cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("2BFFCB61D7E8DC439239555D3DFE1B1D"))
+				, std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -232,7 +238,10 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_08)
-			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("51728910E66D83F851728910E66D83F8")))
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0")
+				, static_cast<std::uint16_t>(12000u)
+				, cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("51728910E66D83F851728910E66D83F8"))
+				, std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -267,7 +276,10 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_09)
-			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("51728910E66D83F851728910E66D83F8")))
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0")
+				, static_cast<std::uint16_t>(12000u)
+				, cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("51728910E66D83F851728910E66D83F8"))
+				, std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -302,7 +314,10 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_10)
-			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("23A84B07EBCBAF948895DF0E9133520D")))
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0")
+				, static_cast<std::uint16_t>(12000u)
+				, cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("23A84B07EBCBAF948895DF0E9133520D"))
+				, std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -337,7 +352,10 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_11)
-			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6140B8C066EDDE3773EDF7F8007A45AB")))
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0")
+				, static_cast<std::uint16_t>(12000u)
+				, cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6140B8C066EDDE3773EDF7F8007A45AB"))
+				, std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -372,7 +390,10 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_12)
-			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6140B8C066EDDE3773EDF7F8007A45AB")))
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0")
+				, static_cast<std::uint16_t>(12000u)
+				, cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6140B8C066EDDE3773EDF7F8007A45AB"))
+				, std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -408,7 +429,10 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterwMBus"
 			, cyng::key_generator(tag_13)
-			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0"), static_cast<std::uint16_t>(12000u), cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("00000000000000000000000000000000")))
+			, cyng::data_generator(boost::asio::ip::make_address("0.0.0.0")
+				, static_cast<std::uint16_t>(12000u)
+				, cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("00000000000000000000000000000000"))
+				, std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -492,7 +516,7 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterIEC"
 			, cyng::key_generator(tag_15)
-			, cyng::data_generator("192.168.0.200", static_cast<std::uint16_t>(6006u), std::chrono::seconds(840))
+			, cyng::data_generator("192.168.0.200", static_cast<std::uint16_t>(6006u), std::chrono::seconds(840), std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
@@ -528,7 +552,7 @@ namespace smf {
 		BOOST_ASSERT_MSG(b, "insert failed");
 		b = cache_.insert("meterIEC"
 			, cyng::key_generator(tag_16)
-			, cyng::data_generator("10.132.24.150", static_cast<std::uint16_t>(6000u), std::chrono::seconds(840))
+			, cyng::data_generator("10.132.24.150", static_cast<std::uint16_t>(6000u), std::chrono::seconds(840), std::chrono::system_clock::time_point(std::chrono::hours(0)))
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");

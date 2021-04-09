@@ -308,6 +308,8 @@ namespace smf {
 					std::cout
 						<< "create: "
 						<< m.get_name()
+						<< " - "
+						<< sql
 						<< std::endl;
 
 				}
