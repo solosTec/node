@@ -10,6 +10,7 @@
 #include <db.h>
 
 #include <smf/cluster/bus.h>
+#include <smf/iec/parser.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
@@ -81,10 +82,16 @@ namespace smf {
 		std::deque<cyng::buffer_t>	buffer_write_;
 		std::array<char, 2048>	input_buffer_;
 
+		iec::parser parser_;
+
 	};
 
 	/**
-	 * generate a query string in the format /?METER!\n\n
+	 * generate a query string (clearing list) in the format "/?METER!\r\n"
+	 * 
+	 * "/2!\r\n" special list on elster Annnn meters
+	 * "/3!\r\n" table 3 on EMH LZQJ-XC meters
+	 * "/4!\r\n" service on EMH LZQJ-XC meters
 	 */
 	cyng::buffer_t generate_query(std::string meter);
 }

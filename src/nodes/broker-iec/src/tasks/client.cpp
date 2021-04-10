@@ -16,6 +16,13 @@
 
 #include <boost/uuid/nil_generator.hpp>
 
+#ifdef _DEBUG_BROKER_IEC
+#include <iostream>
+#include <sstream>
+#include <cyng/io/hex_dump.hpp>
+#endif
+
+
 namespace smf {
 
 	client::client(cyng::channel_weak wp
@@ -42,6 +49,21 @@ namespace smf {
 		, dispatcher_(ctl.get_ctx())
 		, buffer_write_()
 		, input_buffer_()
+		, parser_([this](cyng::obis code, std::string value, std::string unit) {
+
+			CYNG_LOG_TRACE(logger_, "[iec] data " << code << ": " << value << " " << unit);
+
+			}, [this](std::string dev, bool crc) {
+				CYNG_LOG_TRACE(logger_, "[iec] complete " << dev);
+
+				bus_.req_db_insert_auto("iecUplink", cyng::data_generator(
+					std::chrono::system_clock::now(),
+					"readout complete: " + dev,
+					socket_.remote_endpoint(),
+					boost::uuids::nil_uuid()
+				));
+
+			}, 1u)
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -196,13 +218,23 @@ namespace smf {
 			//
 			std::stringstream ss;
 			ss << "[client] received " << bytes_transferred << " bytes";
+#ifdef _DEBUG_BROKER_IEC
+			{
+				std::stringstream ss;
+				cyng::io::hex_dump<8> hd;
+				hd(ss, input_buffer_.data(), input_buffer_.data() + bytes_transferred);
+				CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes:\n" << ss.str());
+			}
+#endif
 
-			bus_.req_db_insert_auto("iecUplink", cyng::data_generator(
-				std::chrono::system_clock::now(),
-				ss.str(),
-				socket_.remote_endpoint(),
-				boost::uuids::nil_uuid()
-			));
+			parser_.read(input_buffer_.data(), input_buffer_.data() + bytes_transferred);
+
+			//bus_.req_db_insert_auto("iecUplink", cyng::data_generator(
+			//	std::chrono::system_clock::now(),
+			//	ss.str(),
+			//	socket_.remote_endpoint(),
+			//	boost::uuids::nil_uuid()
+			//));
 
 			do_read();
 		}

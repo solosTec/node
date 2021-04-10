@@ -9,6 +9,7 @@ add_executable(unit_test
     main.cpp
     src/test_config.cpp
     src/test_sml.cpp
+    src/test_iec.cpp
     ${test-assets}
 )
 
@@ -49,6 +50,7 @@ target_link_libraries(unit_test
         ${CYNG_LIBRARIES} 
         smf_config
         smf_sml
+        smf_iec
         "$<$<PLATFORM_ID:Linux>:pthread>"
         "$<$<PLATFORM_ID:Windows>:odbc32>"
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"

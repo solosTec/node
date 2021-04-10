@@ -28,6 +28,9 @@ namespace smf
 		 * ! - end character
 		 * ? - Transmission request command
 		 */
+		constexpr char start_c = '/';
+		constexpr char end_c = '!';
+		constexpr char transmission_req_c = '?';
 
 		 /** @brief Reduced ID codes (e.g. for IEC 62056-21)
 		  *
