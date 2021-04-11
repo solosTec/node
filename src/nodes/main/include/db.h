@@ -58,7 +58,7 @@ namespace smf {
 			, boost::asio::ip::tcp::endpoint ep
 			, std::string const& data_layer);
 
-		bool remove_pty(boost::uuids::uuid);
+		bool remove_pty(boost::uuids::uuid, boost::uuids::uuid);
 
 		/**
 		 * remove all sessions of this peer. "cluster" table
@@ -108,6 +108,29 @@ namespace smf {
 			, std::uint16_t paket_size
 			, std::uint8_t window_size);
 
+		//	[channel, source, packet_size, count]
+		std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t> open_channel(boost::uuids::uuid tag
+			, boost::uuids::uuid dev
+			, std::string name
+			, std::string account
+			, std::string number
+			, std::string sv
+			, std::string id
+			, std::chrono::seconds timeout);
+
+		std::pair<cyng::key_list_t, std::uint16_t> get_matching_targets(cyng::table const* tbl
+			, std::string name
+			, std::string account
+			, std::string number
+			, std::string sv
+			, std::string id
+			, boost::uuids::uuid dev);
+
+		/**
+		 * remove push channel
+		 */
+		std::size_t close_channel(std::uint32_t);
+
 	private:
 		void set_start_values(cyng::param_map_t const& session_cfg);
 		void init_sys_msg();
@@ -122,7 +145,8 @@ namespace smf {
 		config::store_map store_map_;
 		boost::uuids::random_generator uuid_gen_;
 		std::uint32_t source_;
-		std::uint32_t channel_;
+		std::uint32_t channel_target_;
+		std::uint32_t channel_pty_;
 	};
 
 	/**

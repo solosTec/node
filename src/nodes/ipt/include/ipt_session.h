@@ -34,6 +34,7 @@ namespace smf {
 
 		void start();
 		void stop();
+		void logout();
 
 	private:
 		void do_read();
@@ -52,6 +53,19 @@ namespace smf {
 
 		void pty_res_login(bool, boost::uuids::uuid dev);
 		void pty_res_register(bool, std::uint32_t, cyng::param_map_t token);
+		void pty_res_open_channel(bool
+			, std::uint32_t channel
+			, std::uint32_t source
+			, std::uint16_t packet_size
+			, std::uint8_t window_size
+			, std::uint8_t status
+			, std::uint32_t count
+			, cyng::param_map_t token);
+
+		void pty_res_close_channel(bool success
+			, std::uint32_t channel
+			, std::size_t count
+			, cyng::param_map_t);
 
 		/**
 		 * query some device data
@@ -83,11 +97,35 @@ namespace smf {
 			, boost::uuids::uuid tag
 			, ipt::sequence_t);
 
+		void pushdata_transfer(std::uint32_t
+			, std::uint32_t
+			, std::uint8_t
+			, std::uint8_t
+			, cyng::buffer_t
+			, boost::uuids::uuid tag
+			, ipt::sequence_t);
+
 		static std::function<void(bool success, boost::uuids::uuid)>
 		get_vm_func_pty_res_login(ipt_session* p);
 
 		static std::function<void(bool success, std::uint32_t, cyng::param_map_t)>
 		get_vm_func_pty_res_register(ipt_session* p);
+
+		static std::function<void(bool success
+			, std::uint32_t channel
+			, std::uint32_t source
+			, std::uint16_t packet_size
+			, std::uint8_t window_size
+			, std::uint8_t status
+			, std::uint32_t count
+			, cyng::param_map_t)>
+		get_vm_func_pty_res_open_channel(ipt_session* p);
+
+		static std::function<void(bool success
+			, std::uint32_t channel
+			, std::size_t count
+			, cyng::param_map_t)>
+		get_vm_func_pty_res_close_channel(ipt_session* p);
 
 	private:
 		boost::asio::ip::tcp::socket socket_;

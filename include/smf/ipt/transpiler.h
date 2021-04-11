@@ -52,6 +52,14 @@ namespace smf
 				return offset + scramble_key::size();
 			}
 			
+			//
+			//	buffer data
+			//
+			std::size_t read_policy(cyng::buffer_t& value, cyng::buffer_t const& data, std::size_t offset) {
+				auto const size = cyng::to_numeric_be<std::uint32_t>(data, offset);
+				std::copy_n(data.begin() + offset, size, std::back_inserter(value));
+				return offset + value.size() + sizeof(size);
+			}
 
 			template <std::size_t N, typename ...Args>
 			struct read_impl
@@ -103,11 +111,25 @@ namespace smf
 		std::string ctrl_req_deregister_target(cyng::buffer_t&& data);
 
 		/**
+		 * @return response, channel
+		 */
+		std::tuple<std::uint8_t, std::uint32_t> ctrl_res_register_target(cyng::buffer_t&& data);
+
+		/**
 		 * @return target name, account, number, version, device id, timout
 		 */
-		std::tuple<std::string, std::string, std::string, std::string, std::string, std::uint16_t> ctrl_req_open_push_channel(cyng::buffer_t&& data);
+		std::tuple<std::string, std::string, std::string, std::string, std::string, std::uint16_t> tp_req_open_push_channel(cyng::buffer_t&& data);
 		std::uint32_t ctrl_req_close_push_channel(cyng::buffer_t&& data);
 
+		/**
+		 * @return response code, channel, source, packet size, window size, status, target count
+		 */
+		std::tuple<std::uint8_t, std::uint32_t, std::uint32_t, std::uint16_t, std::uint8_t, std::uint8_t, std::uint32_t> tp_res_open_push_channel(cyng::buffer_t&& data);
+
+		/**
+		 * @return channel, source, status, block and data
+		 */
+		std::tuple <std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t, cyng::buffer_t> tp_req_pushdata_transfer(cyng::buffer_t&& data);
 
 		std::uint16_t ctrl_res_unknown_cmd(cyng::buffer_t&& data);
 

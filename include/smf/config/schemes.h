@@ -85,6 +85,11 @@ namespace smf {
 		cyng::meta_store get_store_target();
 
 		/**
+		 * push channels
+		 */
+		cyng::meta_store get_store_channel();
+
+		/**
 		 * cluster/TCluster
 		 */
 		cyng::meta_store get_store_cluster();

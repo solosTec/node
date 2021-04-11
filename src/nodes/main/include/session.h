@@ -124,6 +124,12 @@ namespace smf {
 			, boost::asio::ip::tcp::endpoint
 			, std::string);
 
+		/**
+		 * pty logout
+		 */
+		void pty_logout(boost::uuids::uuid
+			, boost::uuids::uuid);
+
 		void pty_connect(boost::uuids::uuid tag
 			, std::string msisdn);
 
@@ -152,8 +158,15 @@ namespace smf {
 			, boost::uuids::uuid
 			, std::uint32_t
 			, cyng::param_map_t);
+		void pty_push_data_req(boost::uuids::uuid
+			, boost::uuids::uuid
+			, std::uint32_t
+			, std::uint32_t
+			, cyng::buffer_t
+			, cyng::param_map_t);
 
 		void send_cluster_response(std::deque<cyng::buffer_t>&&);
+
 
 		//
 		//	generate VM channel functions
@@ -205,12 +218,18 @@ namespace smf {
 			, boost::uuids::uuid)> 
 		get_vm_func_db_req_clear(session*);
 
+		//	"cluster.req.login"
 		static std::function<void(boost::uuids::uuid
 			, std::string
 			, std::string
 			, boost::asio::ip::tcp::endpoint
 			, std::string)>
 		get_vm_func_pty_login(session*);
+
+		//	"cluster.req.logout"
+		static std::function<void(boost::uuids::uuid
+			, boost::uuids::uuid)>
+		get_vm_func_pty_logout(session*);
 
 		static std::function<void(boost::uuids::uuid
 			, std::string)>
@@ -247,6 +266,14 @@ namespace smf {
 			, std::uint32_t
 			, cyng::param_map_t)>
 		get_vm_func_pty_close_channel(session*);
+
+		static std::function<void(boost::uuids::uuid
+			, boost::uuids::uuid
+			, std::uint32_t
+			, std::uint32_t
+			, cyng::buffer_t
+			, cyng::param_map_t)>
+		get_vm_func_pty_push_data_req(session*);
 
 		static std::function<bool(std::string msg, cyng::severity)>
 		get_vm_func_sys_msg(db*);

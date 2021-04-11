@@ -49,10 +49,14 @@ namespace smf {
 	{
 		vm_ = fabric.create_proxy(cluster_bus_.get_tag()
 			, get_vm_func_pty_res_login(this)
-			, get_vm_func_pty_res_register(this));
+			, get_vm_func_pty_res_register(this)
+			, get_vm_func_pty_res_open_channel(this));
 
-		vm_.set_channel_name("pty.res.login", 0);
-		vm_.set_channel_name("pty.res.register", 1);
+		std::size_t slot{ 0 };
+		vm_.set_channel_name("pty.res.login", slot++);
+		vm_.set_channel_name("pty.res.register", slot++);
+		vm_.set_channel_name("pty.res.open.channel", slot++);
+		vm_.set_channel_name("pty.res.close.channel", slot++);
 
 		CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
 
@@ -65,7 +69,6 @@ namespace smf {
 #endif
 	}
 
-
 	void ipt_session::stop()
 	{
 		//	https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/reference/basic_stream_socket/close/overload2.html
@@ -73,7 +76,14 @@ namespace smf {
 		boost::system::error_code ec;
 		socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
 		socket_.close(ec);
+
+		vm_.stop();
 	}
+
+	void ipt_session::logout() {
+		cluster_bus_.pty_logout(dev_, vm_.get_tag());
+	}
+
 
 	void ipt_session::start()
 	{
@@ -209,7 +219,7 @@ namespace smf {
 			break;
 		case ipt::code::TP_REQ_OPEN_PUSH_CHANNEL:
 			if (cluster_bus_.is_connected()) {
-				auto const [target, account, msisdn, version, id, timeout] = ipt::ctrl_req_open_push_channel(std::move(body));
+				auto const [target, account, msisdn, version, id, timeout] = ipt::tp_req_open_push_channel(std::move(body));
 				open_push_channel(target, account, msisdn, version, id, timeout, vm_.get_tag(), h.sequence_);
 			}
 			break;
@@ -217,6 +227,12 @@ namespace smf {
 			if (cluster_bus_.is_connected()) {
 				auto const channel = ipt::ctrl_req_close_push_channel(std::move(body));
 				close_push_channel(channel, vm_.get_tag(), h.sequence_);
+			}
+			break;
+		case ipt::code::TP_REQ_PUSHDATA_TRANSFER:
+			if (cluster_bus_.is_connected()) {
+				auto const [channel, source, status, block, data] = ipt::tp_req_pushdata_transfer(std::move(body));
+				pushdata_transfer(channel, source, status, block, data, vm_.get_tag(), h.sequence_);
 			}
 			break;
 		default:
@@ -265,6 +281,23 @@ namespace smf {
 
 		CYNG_LOG_INFO(logger_, "[ipt] close push channel: " << channel);
 		cluster_bus_.pty_close_channel(channel, dev_, tag, cyng::param_map_factory("seq", seq));
+	}
+
+	void ipt_session::pushdata_transfer(std::uint32_t channel
+		, std::uint32_t source
+		, std::uint8_t status
+		, std::uint8_t block
+		, cyng::buffer_t data
+		, boost::uuids::uuid tag
+		, ipt::sequence_t seq) {
+
+		CYNG_LOG_INFO(logger_, "[ipt] pushdata transfer: " << channel);
+		cluster_bus_.pty_push_data(channel
+			, source
+			, std::move(data)
+			, dev_
+			, tag
+			, cyng::param_map_factory("seq", seq)("status", status)("block", block));
 	}
 
 
@@ -346,6 +379,56 @@ namespace smf {
 		}
 	}
 
+	void ipt_session::pty_res_open_channel(bool success
+		, std::uint32_t channel
+		, std::uint32_t source
+		, std::uint16_t packet_size
+		, std::uint8_t window_size
+		, std::uint8_t status
+		, std::uint32_t count
+		, cyng::param_map_t token) {
+
+		auto const reader = cyng::make_reader(token);
+		auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
+
+		BOOST_ASSERT(seq != 0);
+		if (success) {
+			CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " open push channel " << channel << ':' << source << " ok: " << token);
+
+			ipt_send(serializer_.res_open_push_channel(seq
+				, ipt::tp_res_open_push_channel_policy::SUCCESS
+				, channel
+				, source
+				, packet_size
+				, window_size
+				, status
+				, count));
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " open push channel failed: " << token);
+			ipt_send(serializer_.res_open_push_channel(seq, ipt::tp_res_open_push_channel_policy::UNREACHABLE, 0, 0, 0, 1, 0, 0));
+		}
+	}
+
+	void ipt_session::pty_res_close_channel(bool success
+		, std::uint32_t channel
+		, std::size_t count
+		, cyng::param_map_t token) {
+
+		auto const reader = cyng::make_reader(token);
+		auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
+
+		BOOST_ASSERT(seq != 0);
+		if (success) {
+			CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " close push channel " << channel << " ok: " << token);
+			ipt_send(serializer_.res_close_push_channel(seq, ipt::tp_res_close_push_channel_policy::SUCCESS, channel));
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " close push channel " << channel << " failed: " << token);
+			ipt_send(serializer_.res_close_push_channel(seq, ipt::tp_res_close_push_channel_policy::BROKEN, channel));
+		}
+	}
+
 	void ipt_session::query() {
 
 		if (ipt::test_bit(query_, ipt::query::PROTOCOL_VERSION)) {
@@ -391,6 +474,26 @@ namespace smf {
 	std::function<void(bool success, std::uint32_t, cyng::param_map_t)>
 	ipt_session::get_vm_func_pty_res_register(ipt_session* ptr) {
 		return std::bind(&ipt_session::pty_res_register, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+	}
+
+	std::function<void(bool success
+		, std::uint32_t
+		, std::uint32_t
+		, std::uint16_t
+		, std::uint8_t
+		, std::uint8_t
+		, std::uint32_t
+		, cyng::param_map_t)>
+	ipt_session::get_vm_func_pty_res_open_channel(ipt_session* ptr) {
+		return std::bind(&ipt_session::pty_res_open_channel, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7, std::placeholders::_8);
+	}
+
+	std::function<void(bool success
+		, std::uint32_t channel
+		, std::size_t count
+		, cyng::param_map_t)>
+	ipt_session::get_vm_func_pty_res_close_channel(ipt_session* ptr) {
+		return std::bind(&ipt_session::pty_res_close_channel, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 	}
 
 }

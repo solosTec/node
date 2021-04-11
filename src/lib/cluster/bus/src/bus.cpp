@@ -402,8 +402,16 @@ namespace smf {
 			, pwd
 			, ep
 			, data_layer));
-
 	}
+
+	void bus::pty_logout(boost::uuids::uuid dev
+		, boost::uuids::uuid tag) {
+
+		add_msg(cyng::serialize_invoke("pty.req.logout"
+			, tag
+			, dev));
+	}
+
 
 	void bus::pty_connect(std::string msisdn, boost::uuids::uuid tag) {
 
@@ -480,6 +488,23 @@ namespace smf {
 			, tag
 			, dev
 			, channel
+			, token));
+	}
+
+	//	"pty.push.data.req"
+	void bus::pty_push_data(std::uint32_t channel
+		, std::uint32_t source
+		, cyng::buffer_t data
+		, boost::uuids::uuid dev
+		, boost::uuids::uuid tag
+		, cyng::param_map_t&& token) {
+
+		add_msg(cyng::serialize_invoke("pty.push.data.req"
+			, tag
+			, dev
+			, channel
+			, source 
+			, data
 			, token));
 	}
 

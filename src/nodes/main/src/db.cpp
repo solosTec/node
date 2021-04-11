@@ -25,7 +25,8 @@ namespace smf {
 		, store_map_()
 		, uuid_gen_()
 		, source_(1)	//	ip-t source id
-		, channel_(1)	//	ip-t channel id
+		, channel_target_(1)	//	ip-t channel id
+		, channel_pty_(1)	//	ip-t channel id
 	{}
 
 	void db::init(cyng::param_map_t const& session_cfg) {
@@ -640,8 +641,52 @@ namespace smf {
 
 	}
 
-	bool db::remove_pty(boost::uuids::uuid tag) {
-		return cache_.erase("session", cyng::key_generator(tag), cfg_.get_tag());
+	bool db::remove_pty(boost::uuids::uuid tag, boost::uuids::uuid) {
+
+		bool r = false;
+		cache_.access([&](cyng::table* tbl_pty, cyng::table* tbl_target, cyng::table* tbl_channel) {
+
+			//
+			//	remove from session table
+			//
+			auto const key = cyng::key_generator(tag);
+			r = tbl_pty->erase(key, cfg_.get_tag());
+
+			//
+			//	remove from target table
+			//
+			cyng::key_list_t keys;
+			tbl_target->loop([&](cyng::record&& rec, std::size_t) -> bool {
+				auto const device = rec.value("device", boost::uuids::nil_uuid());
+				if (device == tag) {
+					keys.insert(rec.key());
+				}
+				return true;
+				});
+
+			for (auto const& pk : keys) {
+				tbl_target->erase(pk, cfg_.get_tag());
+			}
+			keys.clear();
+
+			//
+			//	remove from channel table
+			//
+			tbl_channel->loop([&](cyng::record&& rec, std::size_t) -> bool {
+				auto const target = rec.value("target_tag", boost::uuids::nil_uuid());
+				if (target == tag) {
+					keys.insert(rec.key());
+				}
+				return true;
+				});
+
+			for (auto const& pk : keys) {
+				tbl_channel->erase(pk, cfg_.get_tag());
+			}
+
+			}, cyng::access::write("session"), cyng::access::write("target"), cyng::access::write("channel"));
+
+		return r;
 	}
 
 	std::size_t db::remove_pty_by_peer(boost::uuids::uuid peer) {
@@ -822,7 +867,7 @@ namespace smf {
 
 				auto const owner = rec.value<std::string>("name", "");
 				CYNG_LOG_INFO(logger_, "[db] register target - device [" << owner << "]");
-				r = tbl_trg->insert(cyng::key_generator(channel_++)
+				r = tbl_trg->insert(cyng::key_generator(channel_target_++)
 					, cyng::data_generator(tag
 						, tag
 						, name
@@ -843,7 +888,157 @@ namespace smf {
 			}
 			}, cyng::access::write("target"), cyng::access::read("device"));
 
-		return { channel_, r };
+		return { channel_target_, r };
+	}
+
+	std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t> db::open_channel(boost::uuids::uuid tag
+		, boost::uuids::uuid dev
+		, std::string name
+		, std::string account
+		, std::string number
+		, std::string sv
+		, std::string id
+		, std::chrono::seconds timeout) {
+
+		//	[channel, source, packet_size, count]
+		std::uint32_t source = 0;
+		std::uint16_t packet_size = std::numeric_limits<std::uint16_t>::max();
+		cyng::key_list_t targets;
+
+		//
+		//	get source channel from session
+		//
+		cache_.access([&, this](cyng::table const* tbl_session, cyng::table const* tbl_target, cyng::table* tbl_channel) {
+
+			auto const key = cyng::key_generator(dev);
+			auto const rec_session = tbl_session->lookup(key);
+			if (!rec_session.empty()) {
+
+				source = rec_session.value<std::uint32_t>("source", 0);
+				CYNG_LOG_DEBUG(logger_, "channel to " << name << " has source id: " << source);
+
+				//
+				//	ToDo: check if device is enabled
+				//
+
+				//
+				//	find matching target
+				//
+				std::tie(targets, packet_size) = get_matching_targets(tbl_target
+					, name
+					, account
+					, number
+					, sv
+					, id
+					, dev);
+				CYNG_LOG_DEBUG(logger_, targets.size() << " targets found - packet size " << packet_size);
+
+				//
+				//	ToDo: check device name, number, version and id
+				//
+
+				//
+				//	create push channels
+				//
+				for (auto const& key_target : targets) {
+
+					//
+					//	read target data
+					//
+					auto const rec_target = tbl_target->lookup(key_target);
+					auto const target_id = rec_target.value<std::uint32_t>("tag", 0);
+					BOOST_ASSERT(target_id != 0);
+					auto const target_tag = rec_target.value("device", boost::uuids::nil_uuid());
+					BOOST_ASSERT(!target_tag.is_nil());
+
+					tbl_channel->insert(cyng::key_generator(channel_pty_, target_id)
+						, cyng::data_generator(target_tag, packet_size, timeout)
+						, 1
+						, cfg_.get_tag());
+				}
+
+				++channel_pty_;
+
+
+			}
+			else {
+				CYNG_LOG_ERROR(logger_, "session " << dev << " not found");
+			}
+
+			}	, cyng::access::read("session")
+				, cyng::access::read("target")
+				, cyng::access::write("channel"));
+
+		//	[channel, source, packet_size, count]
+		return { channel_pty_, source, packet_size, static_cast<std::uint32_t>(targets.size()) };
+	}
+
+	std::pair<cyng::key_list_t, std::uint16_t> db::get_matching_targets(cyng::table const* tbl
+		, std::string name
+		, std::string account
+		, std::string number
+		, std::string sv
+		, std::string id
+		, boost::uuids::uuid dev) {
+
+		cyng::key_list_t keys;
+		std::uint16_t packet_size = std::numeric_limits<std::uint16_t>::max();
+
+		tbl->loop([&](cyng::record const& rec, std::size_t) -> bool {
+
+			auto const target = rec.value("name", "");
+			BOOST_ASSERT(!target.empty());
+			auto const device = rec.value("device", boost::uuids::nil_uuid());
+			//
+			//	dont't open channels to your own targets
+			//
+			if (dev == device) {
+				CYNG_LOG_WARNING(logger_, "session " << dev << " opens channel to it's own target " << name);
+			}
+
+			if (boost::algorithm::starts_with(target, name)) {
+
+				//
+				//	matching target
+				//
+				keys.insert(rec.key());
+
+				auto const ps = rec.value("pSize", packet_size);
+
+				//
+				//	a minimum size of 0x100 bytes is required
+				//
+				if (ps < packet_size && ps > 0x100) {
+					packet_size = ps;
+				}
+			}
+
+			return true;
+
+			});
+
+		return { keys, packet_size };
+	}
+
+	std::size_t db::close_channel(std::uint32_t channel) {
+
+		cyng::key_list_t keys;
+		cache_.access([&, this](cyng::table* tbl_channel) {
+
+			tbl_channel->loop([&, this](cyng::record&& rec, std::size_t) -> bool {
+				auto const c = rec.value<std::uint32_t>("channel", 0);
+				if (c == channel) {
+					keys.insert(rec.key());
+				}
+				return true;
+				});
+
+			for (auto const& key : keys) {
+				tbl_channel->erase(key, cfg_.get_tag());
+			}
+
+			}, cyng::access::write("channel"));
+		return keys.size();
 	}
 
 	std::vector< cyng::meta_store > get_store_meta_data() {
@@ -860,7 +1055,8 @@ namespace smf {
 			config::get_store_cluster(),
 			config::get_store_location(),
 			config::get_store_session(),
-			config::get_store_connection()
+			config::get_store_connection(),
+			config::get_store_channel()	//	only in main node
 			//	temporary upload data
 		};
 	}

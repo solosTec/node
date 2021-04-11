@@ -42,7 +42,7 @@ namespace smf
 			void start();
 			void stop();
 
-			void register_target(std::string, std::function<void(cyng::buffer_t&&)>);
+			void register_target(std::string, cyng::channel_weak);
 
 		private:
 			constexpr bool is_stopped() const {
@@ -67,7 +67,9 @@ namespace smf
 			void cmd_complete(header const&, cyng::buffer_t&&);
 
 			void res_login(cyng::buffer_t&&);
-			void res_res_register_target(header const&, cyng::buffer_t&&);
+			void res_register_target(header const&, cyng::buffer_t&&);
+
+			void pushdata_transfer(header const&, cyng::buffer_t&&);
 
 		private:
 			cyng::logger logger_;
@@ -85,7 +87,13 @@ namespace smf
 			std::deque<cyng::buffer_t>	buffer_write_;
 			std::array<char, 2048>	input_buffer_;
 
-			std::map<ipt::sequence_t, std::function<void(cyng::buffer_t&&)> >	registrant_;
+			/**
+			 * Temporary table to hold a "register target" request.
+			 * After receiving a response the stored callback will be moved
+			 * to the channel => callback map.
+			 */
+			std::map< ipt::sequence_t, cyng::channel_weak >	registrant_;
+			std::map< std::uint32_t, cyng::channel_weak >	targets_;
 
 		};
 	}	//	ipt

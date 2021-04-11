@@ -69,6 +69,12 @@ namespace smf {
 				), [this](ipt_session* s) {
 
 					//
+					//	update cluster state
+					// 
+					s->logout();
+					s->stop();
+
+					//
 					//	update session counter
 					//
 					--session_counter_;

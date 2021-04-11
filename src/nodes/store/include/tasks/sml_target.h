@@ -24,11 +24,12 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(std::string)>,
+			std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t)>,
 			std::function<void(cyng::eod)>
 		>;
 
 	public:
-		sml_target(std::weak_ptr<cyng::channel>
+		sml_target(cyng::channel_weak
 			, cyng::controller& ctl
 			, cyng::logger logger
 			, ipt::bus&);
@@ -38,11 +39,11 @@ namespace smf {
 
 	private:
 		void register_target(std::string);
-		void receive(cyng::buffer_t&&);
+		void receive(std::uint32_t, std::uint32_t, cyng::buffer_t&&);
 
 	private:
 		signatures_t sigs_;
-		std::weak_ptr<cyng::channel> channel_;
+		cyng::channel_weak channel_;
 		cyng::controller& ctl_;
 		cyng::logger logger_;
 		ipt::bus& bus_;

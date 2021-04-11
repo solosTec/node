@@ -211,47 +211,45 @@ namespace smf {
 			cyng::buffer_t scramble(cyng::buffer_t&& data);
 
 		private:
-			void write_header(code cmd, sequence_t seq, std::size_t length);
+			[[nodiscard]]
+			std::deque<cyng::buffer_t> write_header(code cmd, sequence_t seq, std::size_t length);
 
 			/**
 			 * Append a '\0' value to terminate string
 			 */
-			void write(std::string const&);
-			void write(scramble_key::key_type const&);
+			[[nodiscard]]
+			cyng::buffer_t write(std::string const&);
+			[[nodiscard]]
+			cyng::buffer_t write(scramble_key::key_type const&);
 
 			/**
 			 * append numeric value using the scramble key
 			 */
 			template <typename T >
-			void write_numeric(T v)
+			[[nodiscard]]
+			cyng::buffer_t write_numeric(T v)
 			{
 				static_assert(std::is_arithmetic<T>::value, "arithmetic type required");
-				append(cyng::to_buffer_be(v));
+				return scramble(cyng::to_buffer_be(v));
 			}
 
 			/**
 			 * append data to buffer using the scramble key.
 			 * To duplicate all ESC characters use method write().
 			 */
-			void append(cyng::buffer_t&& data);
+			//void append(cyng::buffer_t&& data);
 
 			/**
 			 * Send data escaped over the wire.
 			 * In IP-T layer data bytes should not contain single 
 			 * escape values (0x1b). 
 			 */
-			void write(cyng::buffer_t const& data);
+			[[nodiscard]]
+			cyng::buffer_t write(cyng::buffer_t const& data);
 
 			void reset();
 
-			/**
-			 * Combine alle single buffers into one
-			 */
-			cyng::buffer_t merge();
-
 		private:
-			std::deque<cyng::buffer_t>	buffer_;
-
 
 			/**
 			 * produces consecutive sequence numbers
@@ -266,6 +264,13 @@ namespace smf {
 			scrambler_t		scrambler_;
 			scramble_key	def_key_;	//!< default scramble key
 		};
+
+		/**
+		 * merge multiple entries into one buffer
+		 */
+		[[nodiscard]]
+		cyng::buffer_t merge(std::deque<cyng::buffer_t> deq);
+
 	}
 }
 

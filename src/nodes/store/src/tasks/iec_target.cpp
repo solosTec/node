@@ -20,6 +20,7 @@ namespace smf {
 		, ipt::bus& bus)
 		: sigs_{
 		std::bind(&iec_target::register_target, this, std::placeholders::_1),
+		std::bind(&iec_target::receive, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 		std::bind(&iec_target::stop, this, std::placeholders::_1)
 	}
 		, channel_(wp)
@@ -51,10 +52,10 @@ namespace smf {
 
 
 	void iec_target::register_target(std::string name) {
-		bus_.register_target(name, std::bind(&iec_target::receive, this, std::placeholders::_1));
+		bus_.register_target(name, channel_);
 	}
 
-	void iec_target::receive(cyng::buffer_t&& data) {
+	void iec_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data) {
 
 		CYNG_LOG_TRACE(logger_, "[iec] receive " << data.size() << " bytes");
 	}

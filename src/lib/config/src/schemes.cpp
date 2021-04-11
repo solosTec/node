@@ -272,7 +272,7 @@ namespace smf {
 					cyng::column("session", cyng::TC_UUID),		//	owner session
 					cyng::column("peer", cyng::TC_UUID),		//	peer of owner
 					cyng::column("name", cyng::TC_STRING),		//	target id
-					cyng::column("device", cyng::TC_UUID),		//	owner of target
+					cyng::column("device", cyng::TC_UUID),		//	owner of target (pk to session)
 					cyng::column("account", cyng::TC_STRING),	//	name of target owner
 					cyng::column("pSize", cyng::TC_UINT16),		//	packet size
 					cyng::column("wSize", cyng::TC_UINT8),		//	window size
@@ -281,6 +281,24 @@ namespace smf {
 					cyng::column("counter", cyng::TC_UINT64)	//	message counter
 				}
 			, 1);
+		}
+
+		cyng::meta_store get_store_channel() {
+
+			/**
+			 * ack-time: the time interval (in seconds) in which a Push Data Transfer Response is expected
+			 * after the transmission of the last character of a Push Data Transfer Request.
+			 */
+			return cyng::meta_store("channel"
+				, {
+					cyng::column("channel", cyng::TC_UINT32),		//	pk
+					//cyng::column("source", cyng::TC_UINT32),		//	pk
+					cyng::column("target", cyng::TC_UINT32),		//	pk
+					cyng::column("target_tag", cyng::TC_UUID),
+					cyng::column("pSize", cyng::TC_UINT16),			//	packet size
+					cyng::column("ackTime", cyng::TC_SECOND),		//	see above
+				}
+			, 2);
 		}
 
 		cyng::meta_store get_config() {

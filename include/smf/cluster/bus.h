@@ -123,6 +123,10 @@ namespace smf
 			, std::string data_layer
 			, boost::asio::ip::tcp::endpoint ep);
 
+		//	"pty.req.logout"
+		void pty_logout(boost::uuids::uuid dev
+			, boost::uuids::uuid tag);
+
 		//	"pty.connect"
 		void pty_connect(std::string msisdn, boost::uuids::uuid tag);
 		void pty_disconnect(boost::uuids::uuid tag);
@@ -157,6 +161,13 @@ namespace smf
 			, boost::uuids::uuid tag
 			, cyng::param_map_t&& token);
 
+		//	"pty.push.data"
+		void pty_push_data(std::uint32_t channel
+			, std::uint32_t source
+			, cyng::buffer_t data
+			, boost::uuids::uuid dev
+			, boost::uuids::uuid tag
+			, cyng::param_map_t&& token);
 
 		/**
 		 * push system message
