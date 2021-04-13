@@ -315,6 +315,20 @@ namespace smf {
 				}
 			}
 			break;
+		case ipt::code::TP_RES_OPEN_PUSH_CHANNEL:
+			//
+			//	open push channel response is mostly an error when received from ip-t server
+			// 
+			// 	Normally TP_RES_OPEN_PUSH_CHANNEL should not be used, because the open
+			//	push channel request is answered by the IP-T server.
+			//	There is a bug in the VARIOSafe Manager to answer an open
+			//	connection request with an open push channel response.
+			//
+			if (cluster_bus_.is_connected()) {
+				auto const[res, channel, source, ps, ws, status, count] = ipt::tp_res_open_push_channel(std::move(body));
+				CYNG_LOG_WARNING(logger_, "[ipt] response open push channel " << channel << ':' << source << ": " << ipt::tp_res_open_push_channel_policy::get_response_name(res));
+			}
+			break;
 		default:
 			CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " dropped");
 			ipt_send(serializer_.res_unknown_command(h.sequence_, h.command_));

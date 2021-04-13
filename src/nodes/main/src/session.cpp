@@ -30,7 +30,7 @@ namespace smf {
 		, buffer_write_()
 		, vm_()
 		, parser_([this](cyng::object&& obj) {
-			CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
+			//CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
 			vm_.load(std::move(obj));
 		})
 		, slot_(cyng::make_slot(new slot(this)))
@@ -694,7 +694,7 @@ namespace smf {
 		auto const [channel, success] = cache_.register_target(tag, dev, name, paket_size, window_size);
 		if (success) {
 			CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " registered target " << name << " {" << tag << "}");
-			cache_.sys_msg(cyng::severity::LEVEL_TRACE, "target", name, "registered");
+			cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "target[", name, "]registered");
 
 			send_cluster_response(cyng::serialize_forward("pty.res.register"
 				, tag
@@ -731,7 +731,7 @@ namespace smf {
 
 		if (name.empty()) {
 			CYNG_LOG_WARNING(logger_, "no target specified");
-			this->cache_.sys_msg(cyng::severity::LEVEL_WARNING, protocol_layer_, "no target specified");
+			cache_.sys_msg(cyng::severity::LEVEL_WARNING, protocol_layer_, "no target specified");
 
 			send_cluster_response(cyng::serialize_forward("pty.res.open.channel"
 				, tag
@@ -747,10 +747,6 @@ namespace smf {
 		}
 		else {
 
-			CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " open channel [" << name << "] " << token);
-
-			//CYNG_LOG_DEBUG(logger_, "lookup session tag " << tag << ", dev " << dev);
-
 			auto const[channel, source, packet_size, count] = cache_.open_channel(tag
 				, dev
 				, name
@@ -759,6 +755,14 @@ namespace smf {
 				, sv
 				, id
 				, timeout);
+
+			if (count == 0) {
+				cache_.sys_msg(cyng::severity::LEVEL_WARNING, protocol_layer_, "target [", name, "] not found");
+				CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << "target [" << name << "] not found");
+			}
+			else {
+				CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " open channel [" << name << "] " << token);
+			}
 
 			send_cluster_response(cyng::serialize_forward("pty.res.open.channel"
 				, tag
@@ -800,6 +804,12 @@ namespace smf {
 		, cyng::param_map_t token) {
 
 		CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " push data " << data.size() << " bytes [#" << channel << ":" << source << "] " << token);
+
+		//
+		//	forward data to push target(s)
+		//
+		cache_.get_matching_channels(channel);
+
 	}
 
 	std::function<void(std::string

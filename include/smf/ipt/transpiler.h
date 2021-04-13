@@ -141,6 +141,9 @@ namespace smf
 		 */
 		response_t tp_res_open_connection(cyng::buffer_t&& data);
 
+		/**
+		 * @return unknown command as u16 value
+		 */
 		std::uint16_t ctrl_res_unknown_cmd(cyng::buffer_t&& data);
 
 

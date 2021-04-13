@@ -293,9 +293,10 @@ namespace smf {
 			return cyng::meta_store("channel"
 				, {
 					cyng::column("channel", cyng::TC_UINT32),		//	pk
-					//cyng::column("source", cyng::TC_UINT32),		//	pk
 					cyng::column("target", cyng::TC_UINT32),		//	pk
-					cyng::column("target_tag", cyng::TC_UUID),
+
+					cyng::column("target_tag", cyng::TC_UUID),		//	target tag (session)
+					cyng::column("target_peer", cyng::TC_UUID),		//	target-vm
 					cyng::column("pSize", cyng::TC_UINT16),			//	packet size
 					cyng::column("ackTime", cyng::TC_SECOND),		//	see above
 				}

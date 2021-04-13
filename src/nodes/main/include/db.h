@@ -158,13 +158,12 @@ namespace smf {
 			, std::string id
 			, std::chrono::seconds timeout);
 
-		std::pair<cyng::key_list_t, std::uint16_t> get_matching_targets(cyng::table const* tbl
-			, std::string name
-			, std::string account
-			, std::string number
-			, std::string sv
-			, std::string id
-			, boost::uuids::uuid dev);
+
+		/**
+		 * lookup "channel" table for matching channels and return all
+		 * targets connected to this channel.
+		 */
+		void get_matching_channels(std::uint32_t);
 
 		/**
 		 * remove push channel
@@ -177,6 +176,14 @@ namespace smf {
 		void init_LoRa_uplink();
 		void init_iec_uplink();
 		void init_wmbus_uplink();
+
+		std::pair<cyng::key_list_t, std::uint16_t> get_matching_targets(cyng::table const* tbl
+			, std::string name
+			, std::string account
+			, std::string number
+			, std::string sv
+			, std::string id
+			, boost::uuids::uuid dev);
 
 	private:
 		cyng::store& cache_;

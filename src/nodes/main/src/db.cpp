@@ -559,7 +559,63 @@ namespace smf {
 			, cfg_.get_tag());
 		BOOST_ASSERT_MSG(b, "insert failed");
 
-//#endif 
+		//
+		//	gateway LSMTest1
+		//
+		auto const tag_17 = cyng::to_uuid("34868fbb-3e4e-4df6-bd5f-50b2b6f68708");
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_17)
+			, cyng::data_generator("LSMTest1", "LSMTest1", "LSMTest1", "Testdevice (1) labor", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("gateway"
+			, cyng::key_generator(tag_17)
+			, cyng::data_generator("0500153B022980"	//	server ID
+				, "EMH"	//	manufacturer
+				, std::chrono::system_clock::now()	//	tom
+				, "B022980"
+				, cyng::mac48()	//cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
+				, cyng::mac48()	//cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
+				, "pw"		//cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
+				, "root"	//cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
+				, "A815408943050131"	//cyng::column("mbus", cyng::TC_STRING),			//	(9) W-Mbus ID (i.e. A815408943050131)
+				, "operator"	//cyng::column("userName", cyng::TC_STRING),		//	(10)
+				, "operator"	//cyng::column("userPwd", cyng::TC_STRING)		//	(11)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+		//
+		//	gateway LSMTest5
+		//
+		auto const tag_18 = cyng::to_uuid("55fbb39d-cd1d-4c24-b407-aba86a23a789");
+		b = cache_.insert("device"
+			, cyng::key_generator(tag_18)
+			, cyng::data_generator("LSMTest5", "LSMTest5", "LSMTest5", "Testdevice (5) labor", "", "", true, std::chrono::system_clock::now())
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+		b = cache_.insert("gateway"
+			, cyng::key_generator(tag_18)
+			, cyng::data_generator("0500153B02297e"	//	server ID
+				, "EMH"	//	manufacturer
+				, std::chrono::system_clock::now()	//	tom
+				, "B02297e"
+				, cyng::mac48()	//cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
+				, cyng::mac48()	//cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
+				, "pw"		//cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
+				, "root"	//cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
+				, "A815408943050131"	//cyng::column("mbus", cyng::TC_STRING),			//	(9) W-Mbus ID (i.e. A815408943050131)
+				, "operator"	//cyng::column("userName", cyng::TC_STRING),		//	(10)
+				, "operator"	//cyng::column("userPwd", cyng::TC_STRING)		//	(11)
+			)
+			, 1u	//	only needed for insert operations
+			, cfg_.get_tag());
+		BOOST_ASSERT_MSG(b, "insert failed");
+
+		//#endif 
 	}
 
 	void db::set_start_values(cyng::param_map_t const& session_cfg) {
@@ -1083,12 +1139,12 @@ namespace smf {
 		, std::string name
 		, std::string account
 		, std::string number
-		, std::string sv
-		, std::string id
+		, std::string sv	//	software version
+		, std::string id	//	device id / model
 		, std::chrono::seconds timeout) {
 
 		//	[channel, source, packet_size, count]
-		std::uint32_t source = 0;
+		std::uint32_t source = 0, channel = 0;
 		std::uint16_t packet_size = std::numeric_limits<std::uint16_t>::max();
 		cyng::key_list_t targets;
 
@@ -1118,7 +1174,8 @@ namespace smf {
 					, sv
 					, id
 					, dev);
-				CYNG_LOG_DEBUG(logger_, targets.size() << " targets found - packet size " << packet_size);
+
+				CYNG_LOG_INFO(logger_, targets.size() << " target(s) of name " << name << " found - packet size " << packet_size);
 
 				//
 				//	ToDo: check device name, number, version and id
@@ -1127,6 +1184,8 @@ namespace smf {
 				//
 				//	create push channels
 				//
+				channel = channel_pty_;
+
 				for (auto const& key_target : targets) {
 
 					//
@@ -1135,17 +1194,27 @@ namespace smf {
 					auto const rec_target = tbl_target->lookup(key_target);
 					auto const target_id = rec_target.value<std::uint32_t>("tag", 0);
 					BOOST_ASSERT(target_id != 0);
-					auto const target_tag = rec_target.value("device", boost::uuids::nil_uuid());
-					BOOST_ASSERT(!target_tag.is_nil());
 
-					tbl_channel->insert(cyng::key_generator(channel_pty_, target_id)
-						, cyng::data_generator(target_tag, packet_size, timeout)
+					//
+					//	this is the tag of the target session
+					//
+					auto const target_tag = rec_target.value("session", boost::uuids::nil_uuid());
+					BOOST_ASSERT(!target_tag.is_nil());
+					auto const target_peer = rec_target.value("peer", boost::uuids::nil_uuid());
+					BOOST_ASSERT(!target_peer.is_nil());
+
+					CYNG_LOG_DEBUG(logger_, "target tag: " << target_tag << ", target peer: " << target_peer);
+
+					tbl_channel->insert(cyng::key_generator(channel, target_id)
+						, cyng::data_generator(target_tag, target_peer, packet_size, timeout)
 						, 1
 						, cfg_.get_tag());
 				}
 
+				//
+				//	prepare next channel id
+				//
 				++channel_pty_;
-
 
 			}
 			else {
@@ -1157,7 +1226,7 @@ namespace smf {
 				, cyng::access::write("channel"));
 
 		//	[channel, source, packet_size, count]
-		return { channel_pty_, source, packet_size, static_cast<std::uint32_t>(targets.size()) };
+		return { channel, source, packet_size, static_cast<std::uint32_t>(targets.size()) };
 	}
 
 	std::pair<cyng::key_list_t, std::uint16_t> db::get_matching_targets(cyng::table const* tbl
@@ -1205,6 +1274,31 @@ namespace smf {
 			});
 
 		return { keys, packet_size };
+	}
+
+	void db::get_matching_channels(std::uint32_t channel) {
+
+		cache_.access([&, this](cyng::table const* tbl_channel, cyng::table const* tbl_target) {
+			//cyng::key_list_t keys;
+			tbl_channel->loop([&](cyng::record const& rec, std::size_t) -> bool {
+
+				auto const c = rec.value<std::uint32_t>("channel", 0);
+				if (channel == c) {
+					auto const t = rec.value<std::uint32_t>("target", 0);
+					CYNG_LOG_TRACE(logger_, "[db] matching target: " << channel << ':' << t << " found");
+
+					auto const rec_target = tbl_target->lookup(cyng::key_generator(t));
+					if (!rec_target.empty()) {
+						CYNG_LOG_TRACE(logger_, "[db] matching target: " << channel << ':' << t << ": " << rec_target.to_string());
+
+					}
+					else {
+						CYNG_LOG_WARNING(logger_, "[db] channel: " << channel << ':' << t << " has no target entry");
+					}
+				}
+				return true;
+				});
+			}, cyng::access::read("channel"), cyng::access::read("target"));
 	}
 
 	std::size_t db::close_channel(std::uint32_t channel) {
