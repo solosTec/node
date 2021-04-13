@@ -30,6 +30,9 @@ BOOST_AUTO_TEST_CASE(scrambler)
 	auto b3 = std::move(b2);
 	BOOST_REQUIRE(b2.empty());
 
+	BOOST_REQUIRE_EQUAL(2 ^ 3, 3 ^ 2);
+	BOOST_REQUIRE_EQUAL(120 ^ 376, 376 ^ 120);
+
 	auto const sk = smf::ipt::gen_random_sk();
 
 	smf::ipt::parser p(sk

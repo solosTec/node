@@ -13,6 +13,7 @@
 #include <cyng/sys/process.h>
 #include <cyng/parse/buffer.h>
 #include <cyng/parse/string.h>
+#include <cyng/obj/util.hpp>
 
 #include <boost/uuid/nil_generator.hpp>
 
@@ -960,8 +961,10 @@ namespace smf {
 
 			}
 #endif
-
-			tbl_connection->insert(cyng::key_generator(caller_dev, dev)
+			//
+			//	both "dev-tags" are merged to one UUID that is independend from the ordering of the parameters.
+			//		
+			tbl_connection->insert(cyng::key_generator(cyng::merge(caller_dev, dev))
 				, cyng::data_generator(caller_name, callee_name, std::chrono::system_clock::now(), local, static_cast<std::uint64_t>(0))
 				, 1, cfg_.get_tag());
 

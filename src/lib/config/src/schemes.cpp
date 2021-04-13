@@ -253,15 +253,16 @@ namespace smf {
 		cyng::meta_store get_store_connection() {
 			return cyng::meta_store("connection"
 				, {
-					cyng::column("first", cyng::TC_UUID),		//	primary key (session-key)
-					cyng::column("second", cyng::TC_UUID),		//	primary key (session-key)
+					cyng::column("tag", cyng::TC_UUID),			//	tag (merged from tags of boths parties)
+					//cyng::column("first", cyng::TC_UUID),		//	primary key (session-key)
+					//cyng::column("second", cyng::TC_UUID),		//	primary key (session-key)
 					cyng::column("caller", cyng::TC_STRING),	//	account
 					cyng::column("callee", cyng::TC_STRING),	//	seen from pty
 					cyng::column("start", cyng::TC_TIME_POINT),	//	start time
 					cyng::column("local", cyng::TC_BOOL),		//	true if local connection
 					cyng::column("throughput", cyng::TC_UINT64)	//	data throughput
 				}
-			, 2);
+			, 1);
 		}
 
 		cyng::meta_store get_store_target() {
