@@ -131,6 +131,16 @@ namespace smf
 		 */
 		std::tuple <std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t, cyng::buffer_t> tp_req_pushdata_transfer(cyng::buffer_t&& data);
 
+		/**
+		 * @return msisdn
+		 */
+		std::string tp_req_open_connection(cyng::buffer_t&& data);
+
+		/**
+		 * @return response code
+		 */
+		response_t tp_res_open_connection(cyng::buffer_t&& data);
+
 		std::uint16_t ctrl_res_unknown_cmd(cyng::buffer_t&& data);
 
 

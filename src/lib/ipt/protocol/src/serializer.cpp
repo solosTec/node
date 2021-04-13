@@ -251,12 +251,12 @@ namespace smf {
 			return merge(deq);
 		}
 //
-		cyng::buffer_t serializer::req_open_connection(std::string number)
+		std::pair<cyng::buffer_t, sequence_t> serializer::req_open_connection(std::string number)
 		{
 			last_seq_ = sgen_();
 			auto deq = write_header(code::TP_REQ_OPEN_CONNECTION, last_seq_, number.size() + 1);
 			deq.push_back(write(number));
-			return merge(deq);
+			return { merge(deq), last_seq_ };
 		}
 //
 		cyng::buffer_t serializer::res_open_connection(sequence_t seq, response_t res)
@@ -590,7 +590,7 @@ namespace smf {
 		cyng::buffer_t serializer::write(cyng::buffer_t const& data)
 		{
 			cyng::buffer_t buffer;
-			buffer.reserve(data.size());
+			buffer.reserve(data.size() + 4);
 
 			for (auto c : data)
 			{

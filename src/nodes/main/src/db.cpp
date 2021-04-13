@@ -612,9 +612,9 @@ namespace smf {
 		return cache_.erase("cluster", cyng::key_generator(tag), cfg_.get_tag());
 	}
 
-	bool db::insert_pty(boost::uuids::uuid tag
-		, boost::uuids::uuid peer
-		, boost::uuids::uuid rtag
+	bool db::insert_pty(boost::uuids::uuid tag	//	device tag
+		, boost::uuids::uuid peer				//	local vm-tag
+		, boost::uuids::uuid rtag				//	remote vm-tag (required for forward ops)
 		, std::string const& name
 		, std::string const& pwd
 		, boost::asio::ip::tcp::endpoint ep
@@ -641,7 +641,7 @@ namespace smf {
 
 	}
 
-	bool db::remove_pty(boost::uuids::uuid tag, boost::uuids::uuid) {
+	bool db::remove_pty(boost::uuids::uuid tag, boost::uuids::uuid dev) {
 
 		bool r = false;
 		cache_.access([&](cyng::table* tbl_pty, cyng::table* tbl_target, cyng::table* tbl_channel) {
@@ -649,8 +649,18 @@ namespace smf {
 			//
 			//	remove from session table
 			//
-			auto const key = cyng::key_generator(tag);
+			auto const key = cyng::key_generator(dev);
 			r = tbl_pty->erase(key, cfg_.get_tag());
+			if (!r) {
+				CYNG_LOG_WARNING(logger_, "[db] remove session " << dev << ", tag: " << tag << " failed");
+#ifdef _DEBUG
+				tbl_pty->loop([&](cyng::record const& rec, std::size_t) -> bool {
+
+					CYNG_LOG_TRACE(logger_, "[db] remove session " << dev << ", tag: " << tag << ", rec: " << rec.to_string());
+					return true;
+					});
+#endif
+			}
 
 			//
 			//	remove from target table
@@ -798,6 +808,132 @@ namespace smf {
 			, 1u	//	only needed for insert operations
 			, cfg_.get_tag());
 
+	}
+
+	std::tuple<bool, bool, boost::uuids::uuid, boost::uuids::uuid, std::string, std::string>
+		db::lookup_msisdn(std::string msisdn, boost::uuids::uuid dev) {
+
+		//	(1) session already connected, 
+		//	(2) remote session online, enabled and not connected, 
+		//	(3) remote session vm-tag
+		//  (4) remote session tag
+		//  (5) caller name
+		//  (6) callee name
+
+		bool connected = true;
+		bool online = false;
+		std::string caller_name, callee_name;
+		boost::uuids::uuid vm_tag = boost::uuids::nil_uuid();
+		boost::uuids::uuid remote = boost::uuids::nil_uuid();
+		cache_.access([&](cyng::table const* tbl_dev, cyng::table const* tbl_session) {
+
+			//
+			//	test if session is already connected
+			//	"rConnect" is the session tag of the remote session
+			//
+			auto const caller = tbl_session->lookup(cyng::key_generator(dev));
+			connected = !caller.value("rConnect", boost::uuids::nil_uuid()).is_nil();
+			caller_name = caller.value("name", "");
+
+			//
+			//	don't need more information if already connected
+			//
+			if (!connected) {
+
+				//
+				//	search device
+				//
+				cyng::key_t key;
+				bool enabled = false;
+				tbl_dev->loop([&](cyng::record&& rec, std::size_t) -> bool {
+
+					auto const n = rec.value("msisdn", "");
+					if (boost::algorithm::equals(msisdn, n)) {
+						key = rec.key();
+						enabled = rec.value("enabled", false);
+						callee_name = rec.value("name", "");
+						return false;
+					}
+					return true;
+					});
+
+				//
+				//	test if session is online
+				//
+				if (!key.empty() && enabled) {
+					auto const rec = tbl_session->lookup(key);
+					if (!rec.empty()) {
+						vm_tag = rec.value("peer", vm_tag);
+						remote = rec.value("rTag", remote);
+						online = rec.value("rConnect", boost::uuids::nil_uuid()).is_nil();
+					}
+				}
+			}
+
+			}, cyng::access::read("device"), cyng::access::read("session"));
+
+		return { connected, online, vm_tag, remote, caller_name, callee_name };
+	}
+
+	void db::establish_connection(boost::uuids::uuid caller_tag
+		, boost::uuids::uuid caller_vm
+		, boost::uuids::uuid caller_dev
+		, std::string caller_name
+		, std::string callee_name
+		, boost::uuids::uuid tag	//	callee tag
+		, boost::uuids::uuid dev	//	callee dev-tag
+		, boost::uuids::uuid callee	//	callee vm-tag	
+		, bool local) {
+
+		cache_.access([&](cyng::table* tbl_session, cyng::table* tbl_connection) {
+
+			auto const b1 = tbl_session->modify(cyng::key_generator(caller_dev), cyng::make_param("rConnect", tag), cfg_.get_tag());
+			auto const b2 = tbl_session->modify(cyng::key_generator(dev), cyng::make_param("rConnect", caller_tag), cfg_.get_tag());
+
+			//BOOST_ASSERT_MSG(b1, "caller not found");
+			//BOOST_ASSERT_MSG(b2, "callee not found");
+#ifdef _DEBUG
+			if (!b1) {
+				CYNG_LOG_WARNING(logger_, "[db] session (1) " << caller_dev << " not modified");
+				tbl_session->loop([&](cyng::record const& rec, std::size_t) -> bool {
+
+					CYNG_LOG_TRACE(logger_, "[db] search session " << caller_dev << ", tag: " << caller_tag << ", rec: " << rec.to_string());
+					return true;
+					});
+
+			}
+			if (!b2) {
+				CYNG_LOG_WARNING(logger_, "[db] session (2) " << dev << " not modified");
+				tbl_session->loop([&](cyng::record const& rec, std::size_t) -> bool {
+
+					CYNG_LOG_TRACE(logger_, "[db] search session " << dev << ", tag: " << tag << ", rec: " << rec.to_string());
+					return true;
+					});
+
+			}
+#endif
+
+			tbl_connection->insert(cyng::key_generator(caller_dev, dev)
+				, cyng::data_generator(caller_name, callee_name, std::chrono::system_clock::now(), local, static_cast<std::uint64_t>(0))
+				, 1, cfg_.get_tag());
+
+			}, cyng::access::write("session"), cyng::access::write("connection"));
+	}
+
+	std::pair< boost::uuids::uuid, boost::uuids::uuid > db::get_remote(boost::uuids::uuid dev) {
+
+		boost::uuids::uuid rtag = boost::uuids::nil_uuid(), rpeer = boost::uuids::nil_uuid();
+		cache_.access([&](cyng::table const* tbl_session) {
+
+			auto const rec = tbl_session->lookup(cyng::key_generator(dev));
+			if (!rec.empty()) {
+				rtag = rec.value("rConnect", rtag);
+				//	ToDo: rPeer
+			}
+
+			}, cyng::access::read("session"));
+		
+		return { rtag, rpeer };
 	}
 
 	void db::init_sys_msg() {

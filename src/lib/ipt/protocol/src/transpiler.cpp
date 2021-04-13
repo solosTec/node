@@ -89,6 +89,13 @@ namespace smf
 			return read <std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t, cyng::buffer_t>(std::move(data));
 		}
 
+		std::string tp_req_open_connection(cyng::buffer_t&& data) {
+			return cyng::to_string_nil(data, 0);
+		}
+
+		response_t tp_res_open_connection(cyng::buffer_t&& data) {
+			return cyng::to_numeric_be< response_t >(data, 0);
+		}
 
 
 	}	//	ipt

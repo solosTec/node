@@ -87,6 +87,37 @@ namespace smf {
 			, bool enabled);
 
 		/**
+		 * search a session by msisdn
+		 * @return 
+		 *	(1) session already connected, 
+		 *	(2) remote session online and enabled, 
+		 *	(3) remote session vm-tag
+		 *  (4) remote session dev-tag
+		 *  (5) caller name
+		 *  (6) callee name
+		 */
+		std::tuple<bool, bool, boost::uuids::uuid, boost::uuids::uuid, std::string, std::string>
+			lookup_msisdn(std::string msisdn, boost::uuids::uuid dev);
+
+		/**
+		 * update session and connection table
+		 */
+		void establish_connection(boost::uuids::uuid caller_tag
+			, boost::uuids::uuid caller_vm
+			, boost::uuids::uuid caller_dev
+			, std::string caller_name
+			, std::string callee_name
+			, boost::uuids::uuid tag	//	callee tag
+			, boost::uuids::uuid dev	//	callee dev-tag
+			, boost::uuids::uuid callee	//	callee vm-tag	
+			, bool local);
+
+		/**
+		 * Search for a remote session (if connected)
+		 */
+		std::pair< boost::uuids::uuid, boost::uuids::uuid > get_remote(boost::uuids::uuid);
+
+		/**
 		 * insert new system message
 		 */
 		bool push_sys_msg(std::string msg, cyng::severity);

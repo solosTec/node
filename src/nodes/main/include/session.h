@@ -130,21 +130,62 @@ namespace smf {
 		void pty_logout(boost::uuids::uuid
 			, boost::uuids::uuid);
 
-		void pty_connect(boost::uuids::uuid tag
-			, std::string msisdn);
+		/**
+		 * pty.open.connection
+		 */
+		void pty_open_connection(boost::uuids::uuid tag
+			, boost::uuids::uuid dev
+			, std::string msisdn
+			, cyng::param_map_t token);
 
-		void pty_disconnect(boost::uuids::uuid tag);
+		/** @brief node internal command
+		 * 
+		 * pty.forward.open.connection
+		 */
+		void pty_forward_open_connection(std::string msisdn
+			, boost::uuids::uuid dev
+			, bool local
+			, cyng::param_map_t token);
 
-		void pty_register(boost::uuids::uuid
+		/** @brief node internal command
+		 *
+		 * pty.return.open.connection
+		 */
+		void pty_return_open_connection(bool success
+			, boost::uuids::uuid dev	//	callee dev-tag
+			, boost::uuids::uuid callee	//	callee vm-tag	
+			, cyng::param_map_t token);
+
+		/**
+		 * pty.transfer.data
+		 */
+		void pty_transfer_data(boost::uuids::uuid tag
+			, boost::uuids::uuid dev
+			, cyng::buffer_t);
+
+		/**
+		 * pty.close.connection
+		 */
+		void pty_close_connection(boost::uuids::uuid tag
+			, boost::uuids::uuid dev
+			, cyng::param_map_t);
+
+		void pty_register(boost::uuids::uuid tag
 			, boost::uuids::uuid dev
 			, std::string
 			, std::uint16_t
 			, std::uint8_t
 			, cyng::param_map_t);
 
+		/**
+		 * pty.register
+		 */
 		void pty_deregister(boost::uuids::uuid
 			, std::string);
 
+		/**
+		 * pty.open.channel
+		 */
 		void pty_open_channel(boost::uuids::uuid
 			, boost::uuids::uuid
 			, std::string
@@ -154,10 +195,18 @@ namespace smf {
 			, std::string
 			, std::chrono::seconds
 			, cyng::param_map_t);
+
+		/**
+		 * pty.close.channel
+		 */
 		void pty_close_channel(boost::uuids::uuid
 			, boost::uuids::uuid
 			, std::uint32_t
 			, cyng::param_map_t);
+
+		/**
+		 * pty.push.data.req
+		 */
 		void pty_push_data_req(boost::uuids::uuid
 			, boost::uuids::uuid
 			, std::uint32_t
@@ -165,6 +214,9 @@ namespace smf {
 			, cyng::buffer_t
 			, cyng::param_map_t);
 
+		/**
+		 * send data to cluster node
+		 */
 		void send_cluster_response(std::deque<cyng::buffer_t>&&);
 
 
@@ -232,11 +284,32 @@ namespace smf {
 		get_vm_func_pty_logout(session*);
 
 		static std::function<void(boost::uuids::uuid
-			, std::string)>
-		get_vm_func_pty_connect(session*);
+			, boost::uuids::uuid
+			, std::string
+			, cyng::param_map_t)>
+		get_vm_func_pty_open_connection(session*);
 
-		static std::function<void(boost::uuids::uuid)>
-		get_vm_func_pty_disconnect(session*);
+		static std::function<void(std::string
+			, boost::uuids::uuid
+			, bool
+			, cyng::param_map_t)>
+		get_vm_func_pty_forward_open_connection(session*);
+
+		static std::function<void(bool
+			, boost::uuids::uuid
+			, boost::uuids::uuid
+			, cyng::param_map_t)>
+		get_vm_func_pty_return_open_connection(session*);
+
+		static std::function<void(boost::uuids::uuid
+			, boost::uuids::uuid
+			, cyng::buffer_t)>
+		get_vm_func_pty_transfer_data(session*);
+
+		static std::function<void(boost::uuids::uuid
+			, boost::uuids::uuid
+			, cyng::param_map_t)>
+		get_vm_func_pty_close_connection(session*);
 
 		static std::function<void(boost::uuids::uuid
 			, boost::uuids::uuid
@@ -259,7 +332,7 @@ namespace smf {
 			, std::string
 			, std::chrono::seconds
 			, cyng::param_map_t)>
-			get_vm_func_pty_open_channel(session*);
+		get_vm_func_pty_open_channel(session*);
 
 		static std::function<void(boost::uuids::uuid
 			, boost::uuids::uuid

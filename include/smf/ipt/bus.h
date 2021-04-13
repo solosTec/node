@@ -71,6 +71,8 @@ namespace smf
 
 			void pushdata_transfer(header const&, cyng::buffer_t&&);
 
+			void req_watchdog(header const&, cyng::buffer_t&&);
+
 		private:
 			cyng::logger logger_;
 			toggle tgl_;

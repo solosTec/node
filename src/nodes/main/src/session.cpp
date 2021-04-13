@@ -15,6 +15,8 @@
 #include <cyng/vm/generator.hpp>
 #include <cyng/vm/mesh.h>
 #include <cyng/obj/algorithm/add.hpp>
+#include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/algorithm/reader.hpp>
 
 #include <iostream>
 
@@ -37,23 +39,26 @@ namespace smf {
 	{
 		vm_ = init_vm(fabric);
 		std::size_t slot{ 0 };
-		vm_.set_channel_name("cluster.req.login", slot++);
-		vm_.set_channel_name("db.req.subscribe", slot++);
-		vm_.set_channel_name("db.req.insert", slot++);
-		vm_.set_channel_name("db.req.insert.auto", slot++);
+		vm_.set_channel_name("cluster.req.login", slot++);	//	get_vm_func_cluster_req_login
+		vm_.set_channel_name("db.req.subscribe", slot++);	//	get_vm_func_db_req_subscribe
+		vm_.set_channel_name("db.req.insert", slot++);		//	get_vm_func_db_req_insert
+		vm_.set_channel_name("db.req.insert.auto", slot++);	//	get_vm_func_db_req_insert_auto
 		vm_.set_channel_name("db.req.update", slot++);	//	table modify()
 		vm_.set_channel_name("db.req.remove", slot++);	//	table erase()
 		vm_.set_channel_name("db.req.clear", slot++);	//	table clear()
-		vm_.set_channel_name("pty.req.login", slot++);
-		vm_.set_channel_name("pty.req.logout", slot++);
-		vm_.set_channel_name("pty.connect", slot++);
-		vm_.set_channel_name("pty.disconnect", slot++);
-		vm_.set_channel_name("pty.register", slot++);
-		vm_.set_channel_name("pty.deregister", slot++);
-		vm_.set_channel_name("pty.open.channel", slot++);
-		vm_.set_channel_name("pty.close.channel", slot++);
-		vm_.set_channel_name("pty.push.data.req", slot++);
-		vm_.set_channel_name("sys.msg", slot++);
+		vm_.set_channel_name("pty.req.login", slot++);				//	get_vm_func_pty_login
+		vm_.set_channel_name("pty.req.logout", slot++);				//	get_vm_func_pty_logout
+		vm_.set_channel_name("pty.open.connection", slot++);		//	get_vm_func_pty_open_connection
+		vm_.set_channel_name("pty.forward.open.connection", slot++);	//	get_vm_func_pty_forward_open_connection
+		vm_.set_channel_name("pty.return.open.connection", slot++);		//	get_vm_func_pty_return_open_connection
+		vm_.set_channel_name("pty.transfer.data", slot++);			//	get_vm_func_pty_transfer_data
+		vm_.set_channel_name("pty.close.connection", slot++);		//	get_vm_func_pty_close_connection
+		vm_.set_channel_name("pty.register", slot++);				//	get_vm_func_pty_register
+		vm_.set_channel_name("pty.deregister", slot++);				//	get_vm_func_pty_deregister
+		vm_.set_channel_name("pty.open.channel", slot++);			//	get_vm_func_pty_open_channel
+		vm_.set_channel_name("pty.close.channel", slot++);			//	get_vm_func_pty_close_channel
+		vm_.set_channel_name("pty.push.data.req", slot++);			//	get_vm_func_pty_push_data_req
+		vm_.set_channel_name("sys.msg", slot++);					//	get_vm_func_sys_msg
 	}
 
 	session::~session()
@@ -130,8 +135,11 @@ namespace smf {
 			, get_vm_func_db_req_clear(this)
 			, get_vm_func_pty_login(this)
 			, get_vm_func_pty_logout(this)
-			, get_vm_func_pty_connect(this)
-			, get_vm_func_pty_disconnect(this)
+			, get_vm_func_pty_open_connection(this)
+			, get_vm_func_pty_forward_open_connection(this)
+			, get_vm_func_pty_return_open_connection(this)
+			, get_vm_func_pty_transfer_data(this)
+			, get_vm_func_pty_close_connection(this)
 			, get_vm_func_pty_register(this)
 			, get_vm_func_pty_deregister(this)
 			, get_vm_func_pty_open_channel(this)
@@ -428,7 +436,7 @@ namespace smf {
 			//
 			//	insert into session table
 			//
-			cache_.insert_pty(dev, peer_, tag, name, pwd, ep, data_layer);
+			cache_.insert_pty(dev, vm_.get_tag(), tag, name, pwd, ep, data_layer);
 
 			//
 			//	send response
@@ -469,12 +477,12 @@ namespace smf {
 	void session::pty_logout(boost::uuids::uuid tag
 		, boost::uuids::uuid dev) {
 
-		CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " logout [" << dev << "]");
+		CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " logout [vm:" << vm_.get_tag() << "]");
 
 		//
 		//	remove session table, targets and channels
 		//
-		if (!cache_.remove_pty(dev, tag)) {
+		if (!cache_.remove_pty(tag, dev)) {
 			CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << " logout [" << dev << "] failed");
 		}
 		else {
@@ -488,19 +496,177 @@ namespace smf {
 		}
 	}
 
-	void session::pty_connect(boost::uuids::uuid tag
-		, std::string msisdn) {
+	void session::pty_open_connection(boost::uuids::uuid tag
+		, boost::uuids::uuid dev
+		, std::string msisdn
+		, cyng::param_map_t token) {
+
 		CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " connect " << msisdn << " {" << tag << "}");
-		send_cluster_response(cyng::serialize_forward("pty.res.connect"
-			, tag
-			, false));	//	failed
+
+		//
+		//	forward to callee
+		//	(1) session already connected, 
+		//	(2) remote session online, enabled and not connected, 
+		//	(3) remote session vm-tag
+		//  (4) remote session tag (session to address with FORWARD op)
+		//  (5) caller name
+		//  (6) callee name
+		//
+		auto const[connected, online, vm_key, remote, caller, callee] = cache_.lookup_msisdn(msisdn, dev);
+
+		//
+		//	don't call itself
+		//
+		if (!connected && online) {
+
+			BOOST_ASSERT_MSG(remote != tag, "caller and callee with same tag");
+
+			//
+			//	forward connection request
+			//
+			CYNG_LOG_TRACE(logger_, "pty " << msisdn << " is online: " << callee);
+
+			//	data to identify caller
+			token.emplace("caller-tag", cyng::make_object(tag));
+			token.emplace("caller-vm", cyng::make_object(vm_.get_tag()));
+			token.emplace("callee-vm", cyng::make_object(vm_key));
+			token.emplace("dev", cyng::make_object(dev));
+			token.emplace("caller", cyng::make_object(caller));
+			token.emplace("callee", cyng::make_object(callee));
+			token.emplace("local", cyng::make_object(vm_key == vm_.get_tag()));
+
+			//
+			//	send to next VM in the fabric
+			//
+			vm_.load(cyng::generate_forward("pty.forward.open.connection"
+				, vm_key
+				, msisdn
+				, remote
+				, vm_key == vm_.get_tag()
+				, token));
+			vm_.run();
+
+		}
+		else {
+
+			CYNG_LOG_TRACE(logger_, "pty " << msisdn << " is offline / connected");
+
+			//
+			//	session offline or already connected
+			//
+			send_cluster_response(cyng::serialize_forward("pty.res.open.connection"
+				, tag
+				, false
+				, token));	//	failed
+
+		}
 	}
 
-	void session::pty_disconnect(boost::uuids::uuid tag) {
-		CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " disconnect {" << tag << "}");
-		send_cluster_response(cyng::serialize_forward("pty.res.disconnect"
+	void session::pty_forward_open_connection(std::string msisdn
+		, boost::uuids::uuid tag
+		, bool local
+		, cyng::param_map_t token) {
+
+		CYNG_LOG_TRACE(logger_, "pty forward open connection " << msisdn << " - " <<  (local ? "local " : "distributed "));
+
+		//
+		//	send to cluster node
+		//
+		send_cluster_response(cyng::serialize_forward("pty.req.open.connection"
 			, tag
-			, false));	//	failed
+			, msisdn
+			, local
+			, token));
+	}
+
+	void session::pty_return_open_connection(bool success
+		, boost::uuids::uuid dev	//	callee dev-tag
+		, boost::uuids::uuid callee	//	callee vm-tag	
+		, cyng::param_map_t token) {
+
+		CYNG_LOG_INFO(logger_, "pty establish connection " << (success ? "ok" : "failed"));
+		CYNG_LOG_DEBUG(logger_, "pty establish connection vm:" << vm_.get_tag() << ", token: " << token);
+		CYNG_LOG_DEBUG(logger_, "pty establish connection callee dev-tag:" << dev << ", callee vm-tag: " << callee);
+		//CYNG_LOG_INFO(logger_, "pty connection established between " << tag);
+		//	pty establish connection vm:449d3e5d-39b1-45de-92d1-84e1b8de4e51, token: %(
+		// ("callee":segw),
+		// ("caller":VARIOSAFE-Manager),
+		// ("dev":cf100cff-be7f-4f02-b584-2b1eeb91ed98),
+		// ("local":true),
+		// ("seq":1),
+		// ("tag":90c2d314-6da4-4dce-a1b5-6c9ea0207510),
+		// ("vm":449d3e5d-39b1-45de-92d1-84e1b8de4e51))
+		//	pty establish connection tag: 90c2d314-6da4-4dce-a1b5-6c9ea0207510, callee dev-tag:9ddce97d-ba61-4904-a2cd-4f598714594e, callee vm-tag: f9a92698-12b7-4949-8057-aa2889ca2af8
+
+		auto const reader = cyng::make_reader(token);
+		auto const caller_tag = cyng::value_cast(reader["caller-tag"].get(), boost::uuids::nil_uuid());
+		auto const caller_vm = cyng::value_cast(reader["caller-vm"].get(), boost::uuids::nil_uuid());
+		auto const caller_dev = cyng::value_cast(reader["dev"].get(), boost::uuids::nil_uuid());
+		auto const caller_name = cyng::value_cast(reader["caller"].get(), "");
+
+		auto const callee_vm = cyng::value_cast(reader["callee-vm"].get(), boost::uuids::nil_uuid());
+		auto const callee_name = cyng::value_cast(reader["callee"].get(), "");
+		auto const local = cyng::value_cast(reader["local"].get(), false);
+
+		BOOST_ASSERT_MSG(caller_dev != dev, "same dev tag");
+		BOOST_ASSERT_MSG(caller_tag != callee, "same session tag");
+		BOOST_ASSERT_MSG(caller_vm == vm_.get_tag(), "wrong vm");
+
+		//
+		//	update "connection" table
+		//
+		cache_.establish_connection(caller_tag
+			, caller_vm
+			, caller_dev
+			, caller_name
+			, callee_name
+			, callee		//	callee tag
+			, dev			//	callee dev-tag
+			, callee_vm		//	callee vm-tag	
+			, local);
+
+		//
+		//	forward response to [ip-t] node
+		//
+		send_cluster_response(cyng::serialize_forward("pty.res.open.connection"
+			, caller_tag
+			, success
+			, token));	//	complete
+
+	}
+
+	void session::pty_transfer_data(boost::uuids::uuid tag
+		, boost::uuids::uuid dev
+		, cyng::buffer_t data) {
+
+		auto const [rtag, rpeer] = cache_.get_remote(dev);
+		if (!rtag.is_nil()) {
+
+			BOOST_ASSERT(tag != rtag);
+			CYNG_LOG_TRACE(logger_, "pty transfer " << data.size() << " bytes to " << rtag);
+
+			//
+			//	ToDo: enabled other VMs too
+			//
+			send_cluster_response(cyng::serialize_forward("pty.transfer.data"
+				, rtag
+				, data));
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << " is not connected {" << dev << "}");
+
+		}
+	}
+
+	void session::pty_close_connection(boost::uuids::uuid tag
+		, boost::uuids::uuid dev
+		, cyng::param_map_t token) {
+		CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " disconnect {" << tag << "}");
+		send_cluster_response(cyng::serialize_forward("pty.res.close.connection"
+			, tag
+			, false
+			, token));	//	failed
 
 	}
 
@@ -698,14 +864,41 @@ namespace smf {
 	}
 
 	std::function<void(boost::uuids::uuid
-		, std::string)>
-	session::get_vm_func_pty_connect(session* ptr) {
-		return std::bind(&session::pty_connect, ptr, std::placeholders::_1, std::placeholders::_2);
+		, boost::uuids::uuid
+		, std::string
+		, cyng::param_map_t)>
+	session::get_vm_func_pty_open_connection(session* ptr) {
+		return std::bind(&session::pty_open_connection, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 	}
 
-	std::function<void(boost::uuids::uuid)>
-	session::get_vm_func_pty_disconnect(session* ptr) {
-		return std::bind(&session::pty_disconnect, ptr, std::placeholders::_1);
+	std::function<void(std::string
+		, boost::uuids::uuid
+		, bool
+		, cyng::param_map_t)>
+	session::get_vm_func_pty_forward_open_connection(session* ptr) {
+		return std::bind(&session::pty_forward_open_connection, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+	}
+
+	std::function<void(bool
+		, boost::uuids::uuid
+		, boost::uuids::uuid
+		, cyng::param_map_t)>
+	session::get_vm_func_pty_return_open_connection(session* ptr) {
+		return std::bind(&session::pty_return_open_connection, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+	}
+
+	std::function<void(boost::uuids::uuid
+		, boost::uuids::uuid
+		, cyng::buffer_t)>
+	session::get_vm_func_pty_transfer_data(session* ptr) {
+		return std::bind(&session::pty_transfer_data, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+	}
+
+	std::function<void(boost::uuids::uuid
+		, boost::uuids::uuid
+		, cyng::param_map_t)>
+	session::get_vm_func_pty_close_connection(session* ptr) {
+		return std::bind(&session::pty_close_connection, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 	}
 
 	std::function<void(boost::uuids::uuid

@@ -379,6 +379,9 @@ namespace smf
 			case code::CTRL_RES_DEREGISTER_TARGET:
 				cb_cmd_(h, std::move(body));
 				break;
+			case code::CTRL_REQ_WATCHDOG:
+				req_watchdog(h, std::move(body));
+				break;
 
 			case code::UNKNOWN:
 			default:
@@ -504,6 +507,13 @@ namespace smf
 				CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " dropped");
 			}
 		}
+
+		void bus::req_watchdog(header const& h, cyng::buffer_t&& body) {
+			BOOST_ASSERT(body.empty());
+			CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << +h.sequence_);
+			send(serializer_.res_watchdog(h.sequence_));
+		}
+
 
 	}	//	ipt
 }

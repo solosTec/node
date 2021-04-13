@@ -99,7 +99,7 @@ namespace smf {
 				std::uint8_t);		//	[5] block
 
 			[[nodiscard]]
-			cyng::buffer_t req_open_connection(std::string number);
+			std::pair<cyng::buffer_t, sequence_t> req_open_connection(std::string number);
 
 			[[nodiscard]]
 			cyng::buffer_t res_open_connection(sequence_t seq
@@ -210,6 +210,14 @@ namespace smf {
 			 */
 			cyng::buffer_t scramble(cyng::buffer_t&& data);
 
+			/**
+			 * Send data escaped over the wire.
+			 * In IP-T layer data bytes should not contain single
+			 * escape values (0x1b).
+			 */
+			[[nodiscard]]
+			cyng::buffer_t write(cyng::buffer_t const& data);
+
 		private:
 			[[nodiscard]]
 			std::deque<cyng::buffer_t> write_header(code cmd, sequence_t seq, std::size_t length);
@@ -232,20 +240,6 @@ namespace smf {
 				static_assert(std::is_arithmetic<T>::value, "arithmetic type required");
 				return scramble(cyng::to_buffer_be(v));
 			}
-
-			/**
-			 * append data to buffer using the scramble key.
-			 * To duplicate all ESC characters use method write().
-			 */
-			//void append(cyng::buffer_t&& data);
-
-			/**
-			 * Send data escaped over the wire.
-			 * In IP-T layer data bytes should not contain single 
-			 * escape values (0x1b). 
-			 */
-			[[nodiscard]]
-			cyng::buffer_t write(cyng::buffer_t const& data);
 
 			void reset();
 

@@ -413,18 +413,51 @@ namespace smf {
 	}
 
 
-	void bus::pty_connect(std::string msisdn, boost::uuids::uuid tag) {
+	void bus::pty_open_connection(std::string msisdn
+		, boost::uuids::uuid dev
+		, boost::uuids::uuid tag
+		, cyng::param_map_t&& token) {
 
-		add_msg(cyng::serialize_invoke("pty.connect"
+		add_msg(cyng::serialize_invoke("pty.open.connection"
 			, tag
-			, msisdn));
-
+			, dev
+			, msisdn
+			, token));
 	}
 
-	void bus::pty_disconnect(boost::uuids::uuid tag) {
+	void bus::pty_res_open_connection(bool success
+		, boost::uuids::uuid peer	//	caller_vm
+		//, boost::uuids::uuid tag	//	caller_tag
+		, boost::uuids::uuid dev	//	callee dev-tag
+		, boost::uuids::uuid callee	//	callee vm-tag	
+		, cyng::param_map_t&& token) {
 
-		add_msg(cyng::serialize_invoke("pty.disconnect"
-			, tag));
+		add_msg(cyng::serialize_forward("pty.return.open.connection"
+			, peer	//	caller_vm
+			//, tag	//	caller_tag
+			, success
+			, dev
+			, callee
+			, token));
+	}
+	void bus::pty_close_connection(boost::uuids::uuid dev
+		, boost::uuids::uuid tag
+		, cyng::param_map_t&& token) {
+
+		add_msg(cyng::serialize_invoke("pty.close.connection"
+			, tag
+			, dev
+			, token));
+	}
+
+	void bus::pty_transfer_data(boost::uuids::uuid dev
+		, boost::uuids::uuid tag
+		, cyng::buffer_t&& data) {
+
+		add_msg(cyng::serialize_invoke("pty.transfer.data"
+			, tag
+			, dev
+			, std::move(data)));
 	}
 
 	void bus::pty_reg_target(std::string name

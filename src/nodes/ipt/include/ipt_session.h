@@ -67,6 +67,18 @@ namespace smf {
 			, std::size_t count
 			, cyng::param_map_t);
 
+		void pty_res_open_connection(bool success
+			, cyng::param_map_t);
+
+		void pty_res_close_connection(bool success
+			, cyng::param_map_t);
+
+		void pty_req_open_connection(std::string
+			, bool local
+			, cyng::param_map_t token);
+
+		void pty_transfer_data(cyng::buffer_t);
+
 		/**
 		 * query some device data
 		 */
@@ -77,11 +89,9 @@ namespace smf {
 		void register_target(std::string name
 			, std::uint16_t paket_size
 			, std::uint8_t window_size
-			, boost::uuids::uuid tag
 			, ipt::sequence_t);
 
 		void deregister_target(std::string name
-			, boost::uuids::uuid tag
 			, ipt::sequence_t);
 
 		void open_push_channel(std::string target
@@ -90,11 +100,9 @@ namespace smf {
 			, std::string version
 			, std::string id
 			, std::uint16_t timeout
-			, boost::uuids::uuid tag
 			, ipt::sequence_t);
 
 		void close_push_channel(std::uint32_t channel
-			, boost::uuids::uuid tag
 			, ipt::sequence_t);
 
 		void pushdata_transfer(std::uint32_t
@@ -102,7 +110,9 @@ namespace smf {
 			, std::uint8_t
 			, std::uint8_t
 			, cyng::buffer_t
-			, boost::uuids::uuid tag
+			, ipt::sequence_t);
+
+		void open_connection(std::string msisdn
 			, ipt::sequence_t);
 
 		static std::function<void(bool success, boost::uuids::uuid)>
@@ -127,6 +137,22 @@ namespace smf {
 			, cyng::param_map_t)>
 		get_vm_func_pty_res_close_channel(ipt_session* p);
 
+		static std::function<void(bool success
+			, cyng::param_map_t)>
+		get_vm_func_pty_res_open_connection(ipt_session* p);
+
+		static std::function<void(cyng::buffer_t)>
+		get_vm_func_pty_transfer_data(ipt_session* p);
+
+		static std::function<void(bool success
+			, cyng::param_map_t)>
+		get_vm_func_pty_res_close_connection(ipt_session* p);
+
+		std::function<void(std::string
+			, bool
+			, cyng::param_map_t)>
+		get_vm_func_pty_req_open_connection(ipt_session* p);
+
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logger logger_;
@@ -137,6 +163,7 @@ namespace smf {
 		 * Buffer for incoming data.
 		 */
 		std::array<char, 2048>	buffer_;
+		std::uint64_t rx_, sx_;
 
 		/**
 		 * Buffer for outgoing data.
@@ -156,6 +183,11 @@ namespace smf {
 		 * tag/pk of device
 		 */
 		boost::uuids::uuid dev_;
+
+		/**
+		 * store temporary data during connection establishment
+		 */
+		std::map<ipt::sequence_t, cyng::param_map_t>	oce_map_;
 	};
 
 }

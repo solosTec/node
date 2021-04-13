@@ -127,9 +127,29 @@ namespace smf
 		void pty_logout(boost::uuids::uuid dev
 			, boost::uuids::uuid tag);
 
-		//	"pty.connect"
-		void pty_connect(std::string msisdn, boost::uuids::uuid tag);
-		void pty_disconnect(boost::uuids::uuid tag);
+		//	"pty.open.connection"
+		void pty_open_connection(std::string msisdn
+			, boost::uuids::uuid dev
+			, boost::uuids::uuid tag
+			, cyng::param_map_t&& token);
+
+		//	"pty.res.open.connection"
+		void pty_res_open_connection(bool
+			, boost::uuids::uuid peer
+			//, boost::uuids::uuid tag
+			, boost::uuids::uuid dev	//	callee dev-tag
+			, boost::uuids::uuid callee	//	callee vm-tag	
+			, cyng::param_map_t&& token);
+
+		//	"pty.close.connection"
+		void pty_close_connection(boost::uuids::uuid dev
+			, boost::uuids::uuid tag
+			, cyng::param_map_t&& token);
+
+		//	"pty.transfer.data"
+		void pty_transfer_data(boost::uuids::uuid dev
+			, boost::uuids::uuid tag
+			, cyng::buffer_t&&);
 
 		//	"pty.register"
 		void pty_reg_target(std::string name
