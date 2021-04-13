@@ -67,6 +67,7 @@ namespace smf {
 		 * @return tag of remote session
 		 */
 		boost::uuids::uuid get_peer() const;
+		boost::uuids::uuid get_remote_peer() const;
 
 	private:
 		cyng::vm_proxy init_vm(cyng::mesh&);

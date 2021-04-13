@@ -169,19 +169,21 @@ namespace smf
 				auto const srv = tgl_.get();
 				if (srv.scrambled_) {
 
+					//
+					//	use a random key
+					//
+					auto const sk = gen_random_sk();
+
 					send(serializer_.req_login_scrambled(
 						srv.account_,
 						srv.pwd_,
-						srv.sk_));
-					//buffer_write_.push_back();
-					parser_.set_sk(srv.sk_);
+						sk));
+					parser_.set_sk(sk);
 				}
 				else {
 					send(serializer_.req_login_public(
 						srv.account_,
 						srv.pwd_));
-					//buffer_write_.push_back();
-
 				}
 
 				// Start the input actor.

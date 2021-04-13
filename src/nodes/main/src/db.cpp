@@ -641,15 +641,39 @@ namespace smf {
 
 	}
 
-	bool db::remove_pty(boost::uuids::uuid tag, boost::uuids::uuid dev) {
+	std::pair<cyng::key_list_t, bool> db::remove_pty(boost::uuids::uuid tag, boost::uuids::uuid dev) {
 
 		bool r = false;
+		cyng::key_list_t open_connections;
 		cache_.access([&](cyng::table* tbl_pty, cyng::table* tbl_target, cyng::table* tbl_channel) {
+
+			//
+			//	clean up open connections
+			//
+			auto const key = cyng::key_generator(dev);
+			auto const rec_pty = tbl_pty->lookup(key);
+			BOOST_ASSERT(!rec_pty.empty());
+			auto const rtag = rec_pty.value("rConnect", boost::uuids::nil_uuid());
+			if (!rtag.is_nil()) {
+				tbl_pty->loop([&](cyng::record const& rec, std::size_t) -> bool {
+
+					auto const remote = rec.value("rTag", boost::uuids::nil_uuid());
+					if (remote == rtag) {
+						open_connections.insert(rec.key());
+						CYNG_LOG_TRACE(logger_, "[db] remove connection to " << rec.value("name", ""));
+					}
+					return true;
+					});
+
+				BOOST_ASSERT(open_connections.size() < 2);
+				for (auto const& key : open_connections) {
+					tbl_pty->modify(key, cyng::make_param("rConnect", boost::uuids::nil_uuid()), cfg_.get_tag());
+				}
+			}
 
 			//
 			//	remove from session table
 			//
-			auto const key = cyng::key_generator(dev);
 			r = tbl_pty->erase(key, cfg_.get_tag());
 			if (!r) {
 				CYNG_LOG_WARNING(logger_, "[db] remove session " << dev << ", tag: " << tag << " failed");
@@ -677,6 +701,7 @@ namespace smf {
 			for (auto const& pk : keys) {
 				tbl_target->erase(pk, cfg_.get_tag());
 			}
+			if (!keys.empty())	CYNG_LOG_INFO(logger_, "[db] remove session " << dev << ", with " << keys.size() << " targets");
 			keys.clear();
 
 			//
@@ -693,18 +718,38 @@ namespace smf {
 			for (auto const& pk : keys) {
 				tbl_channel->erase(pk, cfg_.get_tag());
 			}
+			if (!keys.empty())	CYNG_LOG_INFO(logger_, "[db] remove session " << dev << ", with " << keys.size() << " channels");
 
 			}, cyng::access::write("session"), cyng::access::write("target"), cyng::access::write("channel"));
 
-		return r;
+		return { open_connections, r };
 	}
 
-	std::size_t db::remove_pty_by_peer(boost::uuids::uuid peer) {
+	std::pair < boost::uuids::uuid, boost::uuids::uuid >  db::get_access_params(cyng::key_t key) {
+
+		//	 rTag and peer of the specified session
+		boost::uuids::uuid rtag = boost::uuids::nil_uuid(), peer = boost::uuids::nil_uuid();
+
+		cache_.access([&](cyng::table const* tbl_pty) {
+			auto const rec = tbl_pty->lookup(key);
+			if (!rec.empty()) {
+				rtag = rec.value("rTag", rtag);
+				peer = rec.value("peer", peer);
+			}
+			}, cyng::access::read("session"));
+
+		return { rtag, peer };
+	}
+
+
+	std::size_t db::remove_pty_by_peer(boost::uuids::uuid peer, boost::uuids::uuid remote_peer) {
 
 		cyng::key_list_t keys;
 
 		cache_.access([&](cyng::table* tbl_pty, cyng::table* tbl_target, cyng::table* tbl_cls) {
 			tbl_pty->loop([&](cyng::record&& rec, std::size_t) -> bool {
+
+				//CYNG_LOG_DEBUG(logger_, "[db] remove peer [" << peer << "] " << rec.to_string());
 
 				auto const tag = rec.value("peer", peer);
 				if (tag == peer)	keys.insert(rec.key());
@@ -715,6 +760,7 @@ namespace smf {
 			//
 			//	remove ptys
 			//
+			CYNG_LOG_INFO(logger_, "[db] remove [" << keys.size() << "] ptys");
 			for (auto const& key : keys) {
 				tbl_pty->erase(key, cfg_.get_tag());
 			}
@@ -743,16 +789,16 @@ namespace smf {
 			//
 			//	update cluster table
 			//
-			tbl_cls->erase(cyng::key_generator(peer), cfg_.get_tag());
+			tbl_cls->erase(cyng::key_generator(remote_peer), cfg_.get_tag());
 
 			}, cyng::access::write("session"), cyng::access::write("target"), cyng::access::write("cluster"));
 
 		return keys.size();
 	}
 
-	std::size_t db::update_pty_counter(boost::uuids::uuid peer) {
+	std::size_t db::update_pty_counter(boost::uuids::uuid peer, boost::uuids::uuid remote_peer) {
 
-		std::size_t count{ 0 };
+		std::uint64_t count{ 0 };
 		cache_.access([&](cyng::table const* tbl_pty, cyng::table* tbl_cls) {
 			tbl_pty->loop([&](cyng::record&& rec, std::size_t) -> bool {
 
@@ -761,10 +807,12 @@ namespace smf {
 				return true;
 				});
 
+			CYNG_LOG_TRACE(logger_, "[db] session [" << peer << "] has " << count << " ptys");
+
 			//
 			//	update cluster table
 			//
-			//tbl_cls->
+			tbl_cls->modify(cyng::key_generator(remote_peer), cyng::make_param("clients", count), cfg_.get_tag());
 
 			}, cyng::access::read("session"), cyng::access::write("cluster"));
 		return count;

@@ -58,7 +58,16 @@ namespace smf {
 			, boost::asio::ip::tcp::endpoint ep
 			, std::string const& data_layer);
 
-		bool remove_pty(boost::uuids::uuid, boost::uuids::uuid);
+		/**
+		 * @return session keys to open connections (should be 0 up to 1 - otherwise this indicates an error)
+		 */
+		std::pair<cyng::key_list_t, bool> remove_pty(boost::uuids::uuid
+			, boost::uuids::uuid);
+
+		/**
+		 * @return rTag and peer of the specified session
+		 */
+		std::pair < boost::uuids::uuid, boost::uuids::uuid > get_access_params(cyng::key_t);
 
 		/**
 		 * remove all sessions of this peer. "cluster" table
@@ -66,13 +75,13 @@ namespace smf {
 		 * 
 		 * @return number of removed sessions
 		 */
-		std::size_t remove_pty_by_peer(boost::uuids::uuid);
+		std::size_t remove_pty_by_peer(boost::uuids::uuid peer, boost::uuids::uuid remote_peer);
 
 		/**
 		 * update pty counter in cluster table according to current 
 		 * count of members in "session" table
 		 */
-		std::size_t update_pty_counter(boost::uuids::uuid peer);
+		std::size_t update_pty_counter(boost::uuids::uuid peer, boost::uuids::uuid remote_peer);
 
 		/**
 		 * @return the tag of the device with the specified credentials. Returns a null-tag

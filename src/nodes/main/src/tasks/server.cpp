@@ -99,7 +99,7 @@ namespace smf {
 					//
 					//	remove from cluster table
 					// 
-					auto const ptys = cache_.remove_pty_by_peer(s->get_peer());
+					auto const ptys = cache_.remove_pty_by_peer(s->get_peer(), s->get_remote_peer());
 					CYNG_LOG_TRACE(logger_, "session [" << s->get_peer() << "] with " << ptys << " users closed");
 
 					//

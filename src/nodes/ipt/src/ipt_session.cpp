@@ -59,17 +59,19 @@ namespace smf {
 			, get_vm_func_pty_res_open_connection(this)
 			, get_vm_func_pty_transfer_data(this)
 			, get_vm_func_pty_res_close_connection(this)
-			, get_vm_func_pty_req_open_connection(this));
+			, get_vm_func_pty_req_open_connection(this)
+			, get_vm_func_pty_req_close_connection(this));
 
 		std::size_t slot{ 0 };
-		vm_.set_channel_name("pty.res.login", slot++);
-		vm_.set_channel_name("pty.res.register", slot++);
-		vm_.set_channel_name("pty.res.open.channel", slot++);
-		vm_.set_channel_name("pty.res.close.channel", slot++);
-		vm_.set_channel_name("pty.res.open.connection", slot++);
-		vm_.set_channel_name("pty.transfer.data", slot++);
-		vm_.set_channel_name("pty.res.close.connection", slot++);
-		vm_.set_channel_name("pty.req.open.connection", slot++);
+		vm_.set_channel_name("pty.res.login", slot++);				//	get_vm_func_pty_res_login
+		vm_.set_channel_name("pty.res.register", slot++);			//	get_vm_func_pty_res_register
+		vm_.set_channel_name("pty.res.open.channel", slot++);		//	get_vm_func_pty_res_open_channel
+		vm_.set_channel_name("pty.res.close.channel", slot++);		//	get_vm_func_pty_res_close_channel
+		vm_.set_channel_name("pty.res.open.connection", slot++);	//	get_vm_func_pty_res_open_connection
+		vm_.set_channel_name("pty.transfer.data", slot++);			//	get_vm_func_pty_transfer_data
+		vm_.set_channel_name("pty.res.close.connection", slot++);	//	get_vm_func_pty_res_close_connection
+		vm_.set_channel_name("pty.req.open.connection", slot++);	//	get_vm_func_pty_req_open_connection
+		vm_.set_channel_name("pty.req.close.connection", slot++);	//	get_vm_func_pty_req_close_connection
 
 		CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
 
@@ -96,7 +98,6 @@ namespace smf {
 	void ipt_session::logout() {
 		cluster_bus_.pty_logout(dev_, vm_.get_tag());
 	}
-
 
 	void ipt_session::start()
 	{
@@ -595,6 +596,10 @@ namespace smf {
 		//ipt_send(serializer_.scramble(std::move(data)));
 	}
 
+	void ipt_session::pty_req_close_connection() {
+		CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " close connection");
+		ipt_send(serializer_.req_close_connection());
+	}
 
 	void ipt_session::query() {
 
@@ -685,6 +690,11 @@ namespace smf {
 		, cyng::param_map_t)>
 	ipt_session::get_vm_func_pty_req_open_connection(ipt_session* ptr) {
 		return std::bind(&ipt_session::pty_req_open_connection, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+	}
+
+	std::function<void()>
+	ipt_session::get_vm_func_pty_req_close_connection(ipt_session* ptr) {
+		return std::bind(&ipt_session::pty_req_close_connection, ptr);
 	}
 
 }

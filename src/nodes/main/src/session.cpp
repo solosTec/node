@@ -69,6 +69,10 @@ namespace smf {
 	}
 
 	boost::uuids::uuid session::get_peer() const {
+		return vm_.get_tag();
+	}
+
+	boost::uuids::uuid session::get_remote_peer() const {
 		return peer_;
 	}
 
@@ -449,13 +453,13 @@ namespace smf {
 			//
 			//	update cluster table (pty counter)
 			// 
-			auto const counter = cache_.update_pty_counter(peer_);
+			auto const counter = cache_.update_pty_counter(vm_.get_tag(), peer_);
 			cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users");
 
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "pty login [" << name << "] failed");
-			cache_.sys_msg(cyng::severity::LEVEL_TRACE, "login of", name, "failed");
+			cache_.sys_msg(cyng::severity::LEVEL_TRACE, data_layer, "login [", name, ":", pwd, "] failed");
 
 			//
 			//	send response
@@ -482,15 +486,32 @@ namespace smf {
 		//
 		//	remove session table, targets and channels
 		//
-		if (!cache_.remove_pty(tag, dev)) {
+		auto const [connections, success] = cache_.remove_pty(tag, dev);
+		if (!success) {
 			CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << " logout [" << dev << "] failed");
 		}
 		else {
 
 			//
+			//	remove open connections
+			//
+			for (auto const& key : connections) {
+				auto const [rtag, peer] = cache_.get_access_params(key);
+				BOOST_ASSERT(peer == vm_.get_tag());	//	correct implementation later
+				//"pty.req.close.connection"
+				send_cluster_response(cyng::serialize_forward("pty.req.close.connection"
+					, rtag));
+				//vm_.load(cyng::generate_forward("pty.req.close.connection"
+				//	, peer
+				//	, rtag));
+				//vm_.run();
+
+			}
+
+			//
 			//	update cluster table (pty counter)
 			// 
-			auto const counter = cache_.update_pty_counter(peer_);
+			auto const counter = cache_.update_pty_counter(vm_.get_tag(), peer_);
 			cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users");
 
 		}
@@ -587,16 +608,6 @@ namespace smf {
 		CYNG_LOG_INFO(logger_, "pty establish connection " << (success ? "ok" : "failed"));
 		CYNG_LOG_DEBUG(logger_, "pty establish connection vm:" << vm_.get_tag() << ", token: " << token);
 		CYNG_LOG_DEBUG(logger_, "pty establish connection callee dev-tag:" << dev << ", callee vm-tag: " << callee);
-		//CYNG_LOG_INFO(logger_, "pty connection established between " << tag);
-		//	pty establish connection vm:449d3e5d-39b1-45de-92d1-84e1b8de4e51, token: %(
-		// ("callee":segw),
-		// ("caller":VARIOSAFE-Manager),
-		// ("dev":cf100cff-be7f-4f02-b584-2b1eeb91ed98),
-		// ("local":true),
-		// ("seq":1),
-		// ("tag":90c2d314-6da4-4dce-a1b5-6c9ea0207510),
-		// ("vm":449d3e5d-39b1-45de-92d1-84e1b8de4e51))
-		//	pty establish connection tag: 90c2d314-6da4-4dce-a1b5-6c9ea0207510, callee dev-tag:9ddce97d-ba61-4904-a2cd-4f598714594e, callee vm-tag: f9a92698-12b7-4949-8057-aa2889ca2af8
 
 		auto const reader = cyng::make_reader(token);
 		auto const caller_tag = cyng::value_cast(reader["caller-tag"].get(), boost::uuids::nil_uuid());

@@ -77,7 +77,10 @@ namespace smf {
 			, bool local
 			, cyng::param_map_t token);
 
+		void pty_req_close_connection();
+
 		void pty_transfer_data(cyng::buffer_t);
+
 
 		/**
 		 * query some device data
@@ -152,6 +155,9 @@ namespace smf {
 			, bool
 			, cyng::param_map_t)>
 		get_vm_func_pty_req_open_connection(ipt_session* p);
+
+		std::function<void()>
+		get_vm_func_pty_req_close_connection(ipt_session* p);
 
 	private:
 		boost::asio::ip::tcp::socket socket_;

@@ -87,6 +87,7 @@ namespace smf
 					//
 					//	command complete
 					//
+					BOOST_ASSERT(buffer_.empty());
 					command_complete_(header_, std::move(buffer_));
 					return state::STREAM;
 				}
@@ -102,6 +103,7 @@ namespace smf
 				//	command complete
 				//
 				command_complete_(header_, std::move(buffer_));
+				//	necessary - move doesn't really move here!
 				buffer_.clear();
 				return state::STREAM;
 			}
@@ -120,6 +122,8 @@ namespace smf
 				//	transmit data
 				//
 				transmit_(std::move(buffer_));
+				//	necessary - move doesn't really move here!
+				buffer_.clear();
 			}
 		}
 
