@@ -254,8 +254,6 @@ namespace smf {
 			return cyng::meta_store("connection"
 				, {
 					cyng::column("tag", cyng::TC_UUID),			//	tag (merged from tags of boths parties)
-					//cyng::column("first", cyng::TC_UUID),		//	primary key (session-key)
-					//cyng::column("second", cyng::TC_UUID),		//	primary key (session-key)
 					cyng::column("caller", cyng::TC_STRING),	//	account
 					cyng::column("callee", cyng::TC_STRING),	//	seen from pty
 					cyng::column("start", cyng::TC_TIME_POINT),	//	start time
@@ -271,7 +269,7 @@ namespace smf {
 				, {
 					cyng::column("tag", cyng::TC_UINT32),		//	IP-T channel
 					cyng::column("session", cyng::TC_UUID),		//	owner session
-					cyng::column("peer", cyng::TC_UUID),		//	peer of owner
+					cyng::column("peer", cyng::TC_UUID),		//	peer (local vm)
 					cyng::column("name", cyng::TC_STRING),		//	target id
 					cyng::column("device", cyng::TC_UUID),		//	owner of target (pk to session)
 					cyng::column("account", cyng::TC_STRING),	//	name of target owner

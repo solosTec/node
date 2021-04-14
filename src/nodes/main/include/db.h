@@ -17,6 +17,29 @@
 
 namespace smf {
 
+	/**
+	 * To address a party (remote session) two components are required:
+	 * 
+	 * <li>tag</li>
+	 * <li>peer</li>
+	 */
+	using pty = std::pair<boost::uuids::uuid, boost::uuids::uuid>;
+
+	/**
+	 * To address a push target two components are required:
+	 *
+	 * <li>pty</li>
+	 * <li>channel</li>
+	 */
+	struct push_target {
+		push_target();
+		push_target(pty, std::uint32_t);
+		pty pty_;
+		std::uint32_t channel_;
+	};
+
+	/** @brief provide all functions around synchronized data access
+	 */
 	class db
 	{
 
@@ -67,7 +90,7 @@ namespace smf {
 		/**
 		 * @return rTag and peer of the specified session
 		 */
-		std::pair < boost::uuids::uuid, boost::uuids::uuid > get_access_params(cyng::key_t);
+		pty get_access_params(cyng::key_t);
 
 		/**
 		 * remove all sessions of this peer. "cluster" table
@@ -124,7 +147,7 @@ namespace smf {
 		/**
 		 * Search for a remote session (if connected)
 		 */
-		std::pair< boost::uuids::uuid, boost::uuids::uuid > get_remote(boost::uuids::uuid);
+		pty get_remote(boost::uuids::uuid);
 
 		/**
 		 * insert new system message
@@ -144,6 +167,7 @@ namespace smf {
 
 		std::pair<std::uint32_t, bool> register_target(boost::uuids::uuid tag
 			, boost::uuids::uuid dev
+			, boost::uuids::uuid peer
 			, std::string name
 			, std::uint16_t paket_size
 			, std::uint8_t window_size);
@@ -163,7 +187,7 @@ namespace smf {
 		 * lookup "channel" table for matching channels and return all
 		 * targets connected to this channel.
 		 */
-		void get_matching_channels(std::uint32_t);
+		std::vector<push_target> get_matching_channels(std::uint32_t, std::size_t);
 
 		/**
 		 * remove push channel

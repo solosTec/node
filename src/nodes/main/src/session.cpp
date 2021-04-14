@@ -691,7 +691,7 @@ namespace smf {
 		BOOST_ASSERT(tag != dev);
 
 		//std::pair<std::uint32_t, bool>
-		auto const [channel, success] = cache_.register_target(tag, dev, name, paket_size, window_size);
+		auto const [channel, success] = cache_.register_target(tag, dev, vm_.get_tag(), name, paket_size, window_size);
 		if (success) {
 			CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " registered target " << name << " {" << tag << "}");
 			cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "target[", name, "]registered");
@@ -806,9 +806,31 @@ namespace smf {
 		CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " push data " << data.size() << " bytes [#" << channel << ":" << source << "] " << token);
 
 		//
-		//	forward data to push target(s)
+		//	distribute data to push target(s)
 		//
-		cache_.get_matching_channels(channel);
+		auto const vec = cache_.get_matching_channels(channel, data.size());
+		for (auto const& pty : vec) {
+
+			//
+			//	forward data (multiple times)
+			//
+			CYNG_LOG_DEBUG(logger_, "pty " << protocol_layer_ << " push data to " << pty.pty_.first << ", " << pty.pty_.second);
+
+			send_cluster_response(cyng::serialize_forward("pty.push.data.req"
+				, pty.pty_.first
+				, pty.channel_
+				, source
+				, data));
+
+		}
+
+		send_cluster_response(cyng::serialize_forward("pty.push.data.res"
+			, tag
+			, !vec.empty()	//	success
+			, channel
+			, source
+			, token));
+
 
 	}
 

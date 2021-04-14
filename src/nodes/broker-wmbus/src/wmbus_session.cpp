@@ -167,13 +167,13 @@ namespace smf {
 				auto const ep = socket_.remote_endpoint();
 				bus_.req_db_update("meterwMBus"
 					, cyng::key_generator(tag)
-					, cyng::param_map_factory()("address", ep.address()));
-				bus_.req_db_update("meterwMBus"
-					, cyng::key_generator(tag)
-					, cyng::param_map_factory()("port", ep.port()));
-				bus_.req_db_update("meterwMBus"
-					, cyng::key_generator(tag)
-					, cyng::param_map_factory()("lastSeen", std::chrono::system_clock::now()));
+					, cyng::param_map_factory()("address", ep.address())("port", ep.port())("lastSeen", std::chrono::system_clock::now()));
+				//bus_.req_db_update("meterwMBus"
+				//	, cyng::key_generator(tag)
+				//	, cyng::param_map_factory()("port", ep.port()));
+				//bus_.req_db_update("meterwMBus"
+				//	, cyng::key_generator(tag)
+				//	, cyng::param_map_factory()("lastSeen", std::chrono::system_clock::now()));
 
 			}
 			else {

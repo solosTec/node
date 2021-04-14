@@ -41,6 +41,7 @@ namespace smf {
 		, buffer_()
 		, rx_{ 0 }
 		, sx_{ 0 }
+		, px_{ 0 }
 		, buffer_write_()
 		, parser_(sk
 			, std::bind(&ipt_session::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2)
@@ -55,6 +56,8 @@ namespace smf {
 			, get_vm_func_pty_res_login(this)
 			, get_vm_func_pty_res_register(this)
 			, get_vm_func_pty_res_open_channel(this)
+			, get_vm_func_pty_req_push_data(this)
+			, get_vm_func_pty_res_push_data(this)
 			, get_vm_func_pty_res_close_channel(this)
 			, get_vm_func_pty_res_open_connection(this)
 			, get_vm_func_pty_transfer_data(this)
@@ -66,6 +69,10 @@ namespace smf {
 		vm_.set_channel_name("pty.res.login", slot++);				//	get_vm_func_pty_res_login
 		vm_.set_channel_name("pty.res.register", slot++);			//	get_vm_func_pty_res_register
 		vm_.set_channel_name("pty.res.open.channel", slot++);		//	get_vm_func_pty_res_open_channel
+
+		vm_.set_channel_name("pty.push.data.req", slot++);			//	get_vm_func_pty_req_push_data
+		vm_.set_channel_name("pty.push.data.res", slot++);			//	get_vm_func_pty_res_push_data
+
 		vm_.set_channel_name("pty.res.close.channel", slot++);		//	get_vm_func_pty_res_close_channel
 		vm_.set_channel_name("pty.res.open.connection", slot++);	//	get_vm_func_pty_res_open_connection
 		vm_.set_channel_name("pty.transfer.data", slot++);			//	get_vm_func_pty_transfer_data
@@ -139,10 +146,9 @@ namespace smf {
 					rx_ += static_cast<std::uint64_t>(bytes_transferred);
 					if (!dev_.is_nil() && cluster_bus_.is_connected()) {
 
-						cyng::param_map_t const data = cyng::param_map_factory()("rx", rx_);
 						cluster_bus_.req_db_update("session"
 							, cyng::key_generator(dev_)
-							, data);
+							, cyng::param_map_factory()("rx", rx_));
 					}
 
 					//
@@ -182,10 +188,9 @@ namespace smf {
 			sx_ += static_cast<std::uint64_t>(buffer_write_.front().size());
 			if (!dev_.is_nil() && cluster_bus_.is_connected()) {
 
-				cyng::param_map_t const data = cyng::param_map_factory()("sx", sx_);
 				cluster_bus_.req_db_update("session"
 					, cyng::key_generator(dev_)
-					, data);
+					, cyng::param_map_factory()("sx", sx_));
 			}
 
 			buffer_write_.pop_front();
@@ -392,13 +397,26 @@ namespace smf {
 		, cyng::buffer_t data
 		, ipt::sequence_t seq) {
 
-		CYNG_LOG_INFO(logger_, "[ipt] pushdata transfer: " << channel);
+		auto const size = data.size();
+
+		CYNG_LOG_INFO(logger_, "[ipt] pushdata transfer " << channel << ':' << source << ", " << size << " bytes");
 		cluster_bus_.pty_push_data(channel
 			, source
 			, std::move(data)
 			, dev_
 			, vm_.get_tag()
 			, cyng::param_map_factory("seq", seq)("status", status)("block", block));
+
+		//
+		//	update px
+		//
+		px_ += static_cast<std::uint64_t>(size);
+		if (!dev_.is_nil() && cluster_bus_.is_connected()) {
+
+			cluster_bus_.req_db_update("session"
+				, cyng::key_generator(dev_)
+				, cyng::param_map_factory()("px", px_));
+		}
 	}
 
 	void ipt_session::open_connection(std::string msisdn
@@ -529,6 +547,54 @@ namespace smf {
 		else {
 			CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " open push channel failed: " << token);
 			ipt_send(serializer_.res_open_push_channel(seq, ipt::tp_res_open_push_channel_policy::UNREACHABLE, 0, 0, 0, 1, 0, 0));
+		}
+	}
+
+	void ipt_session::pty_req_push_data(std::uint32_t channel
+		, std::uint32_t source
+		, cyng::buffer_t data) {
+
+		CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " push data " << data.size() << " bytes");
+		std::uint8_t status = 0;
+		std::uint8_t block = 0;
+		ipt_send(serializer_.req_transfer_push_data(channel, source, status, block, std::move(data)));
+	}
+
+	void ipt_session::pty_res_push_data(bool success
+		, std::uint32_t channel
+		, std::uint32_t source
+		, cyng::param_map_t token) {
+
+		auto const reader = cyng::make_reader(token);
+		auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
+		auto const status = cyng::value_cast<std::uint8_t>(reader["status"].get(), 0);
+		auto const block = cyng::value_cast<std::uint8_t>(reader["block"].get(), 0);
+
+		//	%(("block":0),("seq":6d),("status":c1))
+		BOOST_ASSERT(seq != 0);
+		if (success) {
+			CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " push data " << channel << " ok: " << token);
+			if (status != 0xc1) {
+				CYNG_LOG_WARNING(logger_, "[pty] " 
+					<< vm_.get_tag() 
+					<< " push data " 
+					<< channel 
+					<< ':'
+					<< source
+					<< " invalid push channel status: "
+					<< +status);
+			}
+
+			ipt_send(serializer_.res_transfer_push_data(seq
+				, ipt::tp_res_pushdata_transfer_policy::SUCCESS
+				, channel
+				, source
+				, status | ipt::tp_res_pushdata_transfer_policy::ACK
+				, block));
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " push data " << channel << " failed: " << token);
+			ipt_send(serializer_.res_transfer_push_data(seq, ipt::tp_res_pushdata_transfer_policy::UNREACHABLE, channel, source, status, block));
 		}
 	}
 
@@ -672,6 +738,25 @@ namespace smf {
 		, cyng::param_map_t)>
 	ipt_session::get_vm_func_pty_res_open_channel(ipt_session* ptr) {
 		return std::bind(&ipt_session::pty_res_open_channel, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7, std::placeholders::_8);
+	}
+
+	std::function <void(std::uint32_t
+		, std::uint32_t
+		, cyng::buffer_t)>
+	ipt_session::get_vm_func_pty_req_push_data(ipt_session* ptr) {
+
+		return std::bind(&ipt_session::pty_req_push_data, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+	}
+
+	std::function <void(bool
+		, std::uint32_t
+		, std::uint32_t
+		, cyng::param_map_t)>
+	ipt_session::get_vm_func_pty_res_push_data(ipt_session* ptr) {
+
+		return std::bind(&ipt_session::pty_res_push_data, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+
 	}
 
 	std::function<void(bool success

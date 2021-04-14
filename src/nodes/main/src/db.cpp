@@ -782,7 +782,7 @@ namespace smf {
 		return { open_connections, r };
 	}
 
-	std::pair < boost::uuids::uuid, boost::uuids::uuid >  db::get_access_params(cyng::key_t key) {
+	pty  db::get_access_params(cyng::key_t key) {
 
 		//	 rTag and peer of the specified session
 		boost::uuids::uuid rtag = boost::uuids::nil_uuid(), peer = boost::uuids::nil_uuid();
@@ -1027,7 +1027,7 @@ namespace smf {
 			}, cyng::access::write("session"), cyng::access::write("connection"));
 	}
 
-	std::pair< boost::uuids::uuid, boost::uuids::uuid > db::get_remote(boost::uuids::uuid dev) {
+	pty db::get_remote(boost::uuids::uuid dev) {
 
 		boost::uuids::uuid rtag = boost::uuids::nil_uuid(), rpeer = boost::uuids::nil_uuid();
 		cache_.access([&](cyng::table const* tbl_session) {
@@ -1090,6 +1090,7 @@ namespace smf {
 
 	std::pair<std::uint32_t, bool> db::register_target(boost::uuids::uuid tag
 		, boost::uuids::uuid dev
+		, boost::uuids::uuid peer	//	local vm
 		, std::string name
 		, std::uint16_t paket_size
 		, std::uint8_t window_size) {
@@ -1112,7 +1113,7 @@ namespace smf {
 				CYNG_LOG_INFO(logger_, "[db] register target - device [" << owner << "]");
 				r = tbl_trg->insert(cyng::key_generator(channel_target_++)
 					, cyng::data_generator(tag
-						, tag
+						, peer
 						, name
 						, dev
 						, owner
@@ -1276,29 +1277,55 @@ namespace smf {
 		return { keys, packet_size };
 	}
 
-	void db::get_matching_channels(std::uint32_t channel) {
+	std::vector<push_target> db::get_matching_channels(std::uint32_t channel, std::size_t size) {
 
-		cache_.access([&, this](cyng::table const* tbl_channel, cyng::table const* tbl_target) {
-			//cyng::key_list_t keys;
+		std::vector<push_target> vec;
+
+		cache_.access([&, this](cyng::table const* tbl_channel, cyng::table* tbl_target) {
 			tbl_channel->loop([&](cyng::record const& rec, std::size_t) -> bool {
 
 				auto const c = rec.value<std::uint32_t>("channel", 0);
 				if (channel == c) {
-					auto const t = rec.value<std::uint32_t>("target", 0);
-					CYNG_LOG_TRACE(logger_, "[db] matching target: " << channel << ':' << t << " found");
 
-					auto const rec_target = tbl_target->lookup(cyng::key_generator(t));
+					//
+					//	target channel
+					//
+					auto const target = rec.value<std::uint32_t>("target", 0);
+					CYNG_LOG_TRACE(logger_, "[db] matching target: " << channel << ':' << target << " found");
+
+					auto const rec_target = tbl_target->lookup(cyng::key_generator(target));
 					if (!rec_target.empty()) {
-						CYNG_LOG_TRACE(logger_, "[db] matching target: " << channel << ':' << t << ": " << rec_target.to_string());
+						CYNG_LOG_DEBUG(logger_, "[db] matching target: " << channel << ':' << target << ": " << rec_target.to_string());
+
+						//
+						//	add to result vector
+						// 
+						vec.push_back({ std::make_pair(
+							rec_target.value("session", boost::uuids::nil_uuid()),
+							rec_target.value("peer", boost::uuids::nil_uuid())), target });
+
+						//
+						//	update message counter
+						//
+						auto const counter = rec_target.value<std::uint64_t>("counter", 0);
+						tbl_target->modify(rec_target.key(), cyng::make_param("counter", counter + 1), cfg_.get_tag());
+
+						//
+						//	update px
+						//
+						auto const px = rec_target.value<std::uint64_t>("px", 0);
+						tbl_target->modify(rec_target.key(), cyng::make_param("px", px + size), cfg_.get_tag());
 
 					}
 					else {
-						CYNG_LOG_WARNING(logger_, "[db] channel: " << channel << ':' << t << " has no target entry");
+						CYNG_LOG_WARNING(logger_, "[db] channel: " << channel << ':' << target << " has no target entry");
 					}
 				}
 				return true;
 				});
-			}, cyng::access::read("channel"), cyng::access::read("target"));
+			}, cyng::access::read("channel"), cyng::access::write("target"));
+
+		return vec;
 	}
 
 	std::size_t db::close_channel(std::uint32_t channel) {
@@ -1321,6 +1348,16 @@ namespace smf {
 			}, cyng::access::write("channel"));
 		return keys.size();
 	}
+
+	push_target::push_target()
+		: pty_(boost::uuids::nil_uuid(), boost::uuids::nil_uuid())
+		, channel_(0)
+	{}
+
+	push_target::push_target(pty p, std::uint32_t channel)
+		: pty_(p)
+		, channel_(channel)
+	{}
 
 	std::vector< cyng::meta_store > get_store_meta_data() {
 		return {

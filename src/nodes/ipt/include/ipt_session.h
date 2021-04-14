@@ -62,6 +62,15 @@ namespace smf {
 			, std::uint32_t count
 			, cyng::param_map_t token);
 
+		void pty_req_push_data(std::uint32_t channel
+			, std::uint32_t source
+			, cyng::buffer_t data);
+
+		void pty_res_push_data(bool success
+			, std::uint32_t channel
+			, std::uint32_t source
+			, cyng::param_map_t token);
+
 		void pty_res_close_channel(bool success
 			, std::uint32_t channel
 			, std::size_t count
@@ -124,15 +133,26 @@ namespace smf {
 		static std::function<void(bool success, std::uint32_t, cyng::param_map_t)>
 		get_vm_func_pty_res_register(ipt_session* p);
 
-		static std::function<void(bool success
-			, std::uint32_t channel
-			, std::uint32_t source
-			, std::uint16_t packet_size
-			, std::uint8_t window_size
-			, std::uint8_t status
-			, std::uint32_t count
+		static std::function<void(bool
+			, std::uint32_t
+			, std::uint32_t
+			, std::uint16_t
+			, std::uint8_t
+			, std::uint8_t
+			, std::uint32_t
 			, cyng::param_map_t)>
 		get_vm_func_pty_res_open_channel(ipt_session* p);
+
+		static std::function <void(std::uint32_t
+			, std::uint32_t
+			, cyng::buffer_t)>
+		get_vm_func_pty_req_push_data(ipt_session* p);
+
+		static std::function <void(bool
+			, std::uint32_t
+			, std::uint32_t
+			, cyng::param_map_t)>
+		get_vm_func_pty_res_push_data(ipt_session* p);
 
 		static std::function<void(bool success
 			, std::uint32_t channel
@@ -169,7 +189,7 @@ namespace smf {
 		 * Buffer for incoming data.
 		 */
 		std::array<char, 2048>	buffer_;
-		std::uint64_t rx_, sx_;
+		std::uint64_t rx_, sx_, px_;
 
 		/**
 		 * Buffer for outgoing data.
