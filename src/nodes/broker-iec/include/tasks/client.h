@@ -42,6 +42,7 @@ namespace smf {
 			, bus&
 			, std::shared_ptr<db> db
 			, cyng::logger
+			, std::filesystem::path
 			, cyng::key_t key
 			, std::string meter);
 
@@ -75,6 +76,7 @@ namespace smf {
 		cyng::logger logger_;
 		cyng::key_t const key_;
 		std::vector<std::string> meters_;
+		std::size_t meter_index_;
 
 		boost::asio::ip::tcp::resolver::results_type endpoints_;
 		boost::asio::ip::tcp::socket socket_;
@@ -83,7 +85,7 @@ namespace smf {
 		std::array<char, 2048>	input_buffer_;
 
 		iec::parser parser_;
-
+		cyng::channel_ptr	writer_;
 	};
 
 	/**

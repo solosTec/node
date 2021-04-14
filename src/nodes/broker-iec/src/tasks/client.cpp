@@ -5,6 +5,7 @@
  *
  */
 #include <tasks/client.h>
+#include <tasks/writer.h>
 
 #include <cyng/task/channel.h>
 #include <cyng/log/record.h>
@@ -30,6 +31,7 @@ namespace smf {
 		, bus& cluster_bus
 		, std::shared_ptr<db> db
 		, cyng::logger logger
+		, std::filesystem::path out
 		, cyng::key_t key
 		, std::string meter)
 	: state_(state::START) 
@@ -44,6 +46,7 @@ namespace smf {
 		, logger_(logger)
 		, key_(key)
 		, meters_{ meter }
+		, meter_index_{ 0 }
 		, endpoints_()
 		, socket_(ctl.get_ctx())
 		, dispatcher_(ctl.get_ctx())
@@ -51,19 +54,33 @@ namespace smf {
 		, input_buffer_()
 		, parser_([this](cyng::obis code, std::string value, std::string unit) {
 
-			CYNG_LOG_TRACE(logger_, "[iec] data " << code << ": " << value << " " << unit);
+				auto const name = meters_.at(meter_index_);
+				CYNG_LOG_TRACE(logger_, "[iec] data " << name << " - " << code << ": " << value << " " << unit);
+				writer_->dispatch("store", cyng::make_tuple(code, value, unit));
 
 			}, [this](std::string dev, bool crc) {
-				CYNG_LOG_TRACE(logger_, "[iec] complete " << dev);
+
+				auto const name = meters_.at(meter_index_);
+				CYNG_LOG_TRACE(logger_, "[iec] readout complete " << dev << ", " << name);
+				writer_->dispatch("commit", cyng::make_tuple());
 
 				bus_.req_db_insert_auto("iecUplink", cyng::data_generator(
 					std::chrono::system_clock::now(),
-					"readout complete: " + dev,
+					"readout complete: " + name + " (" + dev + ")" ,
 					socket_.remote_endpoint(),
 					boost::uuids::nil_uuid()
 				));
 
+				//
+				//	next meter
+				//
+				++meter_index_;
+				if (meter_index_ == meters_.size()) {
+					meter_index_ = 0;
+				}
+
 			}, 1u)
+		, writer_(ctl_.create_channel_with_ref<writer>(logger_, out))
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -71,6 +88,12 @@ namespace smf {
 			sp->set_channel_name("start", idx++);
 			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
 		}
+
+		//
+		//	check writer
+		// 
+		BOOST_ASSERT(writer_->is_open());
+
 	}
 
 	void client::stop(cyng::eod)
@@ -182,9 +205,14 @@ namespace smf {
 
 				buffer_write_.clear();
 
-				for (auto const& name : meters_) {
+				if (meter_index_ < meters_.size()) {
+					auto const name = meters_.at(meter_index_);
 					CYNG_LOG_INFO(logger_, "[client] query " << name);
 					buffer_write_.push_back(generate_query(name));
+					writer_->dispatch("open", cyng::make_tuple(name));
+				}
+				else {
+					meter_index_ = 0;
 				}
 
 				if (!buffer_write_.empty()) do_write();

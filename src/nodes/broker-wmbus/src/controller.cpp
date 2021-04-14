@@ -67,7 +67,7 @@ namespace smf {
 
 		auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
 		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["service"].get(), 12002);
-		auto const client_login = (reader["client"]["login"].get(), false);
+		auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
 
 		//
 		//	connect to cluster

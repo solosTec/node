@@ -22,6 +22,8 @@
 #include <locale>
 #include <iostream>
 
+#include <boost/predef.h>
+
 namespace smf {
 
 	controller::controller(config::startup const& config) 
@@ -62,6 +64,18 @@ namespace smf {
 			CYNG_LOG_FATAL(logger, "no cluster data configured");
 		}
 
+		auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
+		auto const client_target = cyng::value_cast(reader["client"]["target"].get(), "power@solostec");
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+		std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "D:\\projects\\data\\csv");
+#else 
+		std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "/data/csv");
+#endif
+
+		if (!std::filesystem::exists(client_out)) {
+			CYNG_LOG_FATAL(logger, "output path not found: [" << client_out << "]");
+		}
+
 		//
 		//	connect to cluster
 		//
@@ -69,7 +83,10 @@ namespace smf {
 			, logger
 			, tag
 			, node_name
-			, std::move(tgl));
+			, std::move(tgl)
+			, client_login
+			, client_target
+			, client_out);
 
 	}
 
@@ -77,9 +94,20 @@ namespace smf {
 		, cyng::logger logger
 		, boost::uuids::uuid tag
 		, std::string const& node_name
-		, toggle::server_vec_t&& tgl) {
+		, toggle::server_vec_t&& tgl
+		, bool login
+		, std::string target
+		, std::filesystem::path out) {
 
-		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl));
+		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster"
+			, ctl
+			, tag
+			, node_name
+			, logger
+			, std::move(tgl)
+			, login
+			, target
+			, out);
 		BOOST_ASSERT(channel->is_open());
 		channel->dispatch("connect", cyng::make_tuple());
 	}
@@ -101,7 +129,12 @@ namespace smf {
 		return cyng::make_param("client", cyng::make_tuple(
 			cyng::make_param("login", false),
 			cyng::make_param("verbose", false),	//	parser	
-			cyng::make_param("target", "power@solostec")	//	push target name
+			cyng::make_param("target", "power@solostec"),	//	push target name
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+			cyng::make_param("out", "D:\\projects\\data\\csv")	//	output path
+#else
+			cyng::make_param("out", "/data/csv")	//	output path
+#endif
 
 		));
 	}

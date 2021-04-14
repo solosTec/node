@@ -46,10 +46,10 @@ namespace smf
 					;
 				break;
 			case state::STX:
-				BOOST_ASSERT(STX == c);
+				//BOOST_ASSERT(STX == c);
 				state_ = (STX == c)
 					? state::DATA
-					: state::START
+					: state_bbc(c)	//	error
 					;
 				break;
 			case state::DATA:

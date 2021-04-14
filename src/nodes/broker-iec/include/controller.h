@@ -33,7 +33,10 @@
 			, cyng::logger logger
 			, boost::uuids::uuid tag
 			, std::string const& node_name
-			, toggle::server_vec_t&& tgl);
+			, toggle::server_vec_t&& tgl
+			, bool
+			, std::string 
+			, std::filesystem::path);
 
 	private:
 		cyng::param_t create_client_spec();

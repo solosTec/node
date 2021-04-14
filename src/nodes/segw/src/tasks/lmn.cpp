@@ -220,11 +220,11 @@ namespace smf {
 				//
 				//	post data to receiver 
 				//
-				CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] dispatch to " << targets_.size() << " target(s)");
+				CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] dispatch " << bytes_transferred << " bytes to " << targets_.size() << " target(s)");
 				for (auto target : targets_) {
+					//	copy data
 					target->dispatch("receive", cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) + bytes_transferred)));
 				}
-
 
 				//
 				//	continue reading

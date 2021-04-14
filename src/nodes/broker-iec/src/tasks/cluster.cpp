@@ -20,7 +20,10 @@ namespace smf {
 		, boost::uuids::uuid tag
 		, std::string const& node_name
 		, cyng::logger logger
-		, toggle::server_vec_t&& cfg)
+		, toggle::server_vec_t&& cfg
+		, bool login
+		, std::string target
+		, std::filesystem::path out)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&cluster::update_client, this, std::placeholders::_1, std::placeholders::_2),
@@ -30,6 +33,7 @@ namespace smf {
 		, ctl_(ctl)
 		, tag_(tag)
 		, logger_(logger)
+		, out_(out)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
 		, store_()
@@ -119,7 +123,7 @@ namespace smf {
 					//
 					//	start client
 					//
-					auto channel = ctl_.create_named_channel_with_ref<client>(task, ctl_, bus_, db_, logger_, rec.key(), name);
+					auto channel = ctl_.create_named_channel_with_ref<client>(task, ctl_, bus_, db_, logger_, out_, rec.key(), name);
 					BOOST_ASSERT(channel->is_open());
 					channel->dispatch("start", cyng::make_tuple(host, std::to_string(port), interval));
 				}

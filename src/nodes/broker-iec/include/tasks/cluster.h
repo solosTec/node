@@ -42,7 +42,10 @@ namespace smf {
 			, boost::uuids::uuid tag
 			, std::string const& node_name
 			, cyng::logger
-			, toggle::server_vec_t&&);
+			, toggle::server_vec_t&&
+			, bool login
+			, std::string target
+			, std::filesystem::path out);
 
 		void connect();
 
@@ -89,6 +92,8 @@ namespace smf {
 		cyng::controller& ctl_;
 		boost::uuids::uuid const tag_;
 		cyng::logger logger_;
+		std::filesystem::path const out_;
+
 		cyng::mesh fabric_;
 		bus	bus_;
 		cyng::store store_;

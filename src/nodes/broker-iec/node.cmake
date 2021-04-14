@@ -31,8 +31,10 @@ endif()
 set (broker-iec_tasks
   include/tasks/cluster.h
   include/tasks/client.h
+  include/tasks/writer.h
   src/tasks/cluster.cpp
   src/tasks/client.cpp
+  src/tasks/writer.cpp
 )
 
 source_group("broker-iec-assets" FILES ${broker-iec_assets})
