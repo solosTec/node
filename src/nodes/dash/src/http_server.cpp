@@ -179,6 +179,13 @@ namespace smf {
 						, cyng::container_cast<cyng::param_map_t>(reader["rec"]["data"].get()));
 
 				}
+				else  if (boost::algorithm::equals(cmd, "delete")) {
+					//	%(("channel":config.wmbus),("cmd":delete),("key":%(("tag":[e6e62eae-2a80-4185-8e72-5505d4dfe74b]))))
+					auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+					CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] delete request from channel " << channel);
+					delete_request(channel
+						, cyng::container_cast<cyng::vector_t>(reader["key"]["tag"].get()));
+				}
 				else {
 					CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
 				}
@@ -218,14 +225,36 @@ namespace smf {
 			//
 			//	convert data types
 			//
-			//db_.convert(rel.table_, key, data);
+			db_.convert(rel.table_, key, data);
 
 			CYNG_LOG_TRACE(logger_, "[HTTP] insert request for table " << rel.table_ << ": " << data);
 			cluster_bus_.req_db_insert(rel.table_, key, db_.complete(rel.table_, std::move(data)), 0);
 
 		}
 		else {
-			CYNG_LOG_WARNING(logger_, "[HTTP] insert undefined channel " << channel);
+			CYNG_LOG_WARNING(logger_, "[HTTP] insert: undefined channel " << channel);
+		}
+	}
+
+	void http_server::delete_request(std::string const& channel
+		, cyng::vector_t&& key) {
+
+		BOOST_ASSERT_MSG(!key.empty(), "no modify key");
+		auto const rel = db_.by_channel(channel);
+		if (!rel.empty()) {
+
+			BOOST_ASSERT(boost::algorithm::equals(channel, rel.channel_));
+
+			//
+			//	convert key data type(s)
+			//
+			db_.convert(rel.table_, key);
+
+			CYNG_LOG_TRACE(logger_, "[HTTP] delete request for table " << rel.table_ << ": " << key);
+			cluster_bus_.req_db_remove(rel.table_, key);
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "[HTTP] delete: undefined channel " << channel);
 		}
 	}
 
@@ -256,7 +285,7 @@ namespace smf {
 			cluster_bus_.req_db_update(rel.table_, key, data);
 		}
 		else {
-			CYNG_LOG_WARNING(logger_, "[HTTP] modify undefined channel " << channel);
+			CYNG_LOG_WARNING(logger_, "[HTTP] modify: undefined channel " << channel);
 		}
 	}
 

@@ -107,6 +107,8 @@ namespace smf {
 			, cyng::vector_t&& key
 			, cyng::param_map_t&& data);
 
+		void delete_request(std::string const& channel
+			, cyng::vector_t&& key);
 
 	private:
 		bus& cluster_bus_;

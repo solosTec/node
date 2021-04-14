@@ -105,6 +105,13 @@ namespace smf {
 			, cyng::param_map_t& data);
 
 		/**
+		 * convert data types from ws to matching data types
+		 * in table schemes.
+		 */
+		void convert(std::string const& table_name
+			, cyng::vector_t& key);
+
+		/**
 		 * To insert a new entity over the web interface a new primary key
 		 * for the database is required.
 		 */

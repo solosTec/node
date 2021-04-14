@@ -30,7 +30,7 @@ namespace smf {
 		, buffer_write_()
 		, vm_()
 		, parser_([this](cyng::object&& obj) {
-			//CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
+			CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
 			vm_.load(std::move(obj));
 		})
 		, slot_(cyng::make_slot(new slot(this)))
@@ -283,8 +283,33 @@ namespace smf {
 		, boost::uuids::uuid source) {
 
 		std::reverse(key.begin(), key.end());
-		cache_.get_store().erase(table_name, key, source);
+		if (cache_.get_store().erase(table_name, key, source)) {
 
+			CYNG_LOG_TRACE(logger_, "remove ["
+				<< table_name
+				<< '/'
+				<< key
+				<< "] ok");
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "remove ["
+				<< table_name
+				<< '/'
+				<< key
+				<< "] failed");
+
+#ifdef _DEBUG
+			cache_.get_store().access([&](cyng::table const* tbl) {
+				tbl->loop([&](cyng::record const& rec, std::size_t) -> bool {
+
+					CYNG_LOG_DEBUG(logger_, "search " << key << " - " << rec.to_string());
+
+					return true;
+					});
+				}, cyng::access::read(table_name));
+#endif
+
+		}
 	}
 	void session::db_req_clear(std::string const& table_name
 		, boost::uuids::uuid source) {

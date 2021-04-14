@@ -197,6 +197,26 @@ namespace smf {
 	}
 
 	void db::convert(std::string const& table_name
+		, cyng::vector_t& key) {
+
+		auto const pos = store_map_.find(table_name);
+		if (pos != store_map_.end()) {
+
+			//
+			//	table meta data
+			//
+			auto const& meta = pos->second;
+
+			std::size_t index{ 0 };
+			for (auto& k : key) {
+				auto const col = meta.get_column(index);
+				k = convert_to_type(col.type_, k);
+
+			}
+		}
+	}
+
+	void db::convert(std::string const& table_name
 		, cyng::vector_t& key
 		, cyng::param_map_t& data) {
 
@@ -215,18 +235,29 @@ namespace smf {
 
 			}
 
-			for (auto& e : data) {
-				auto const idx = meta.get_index_by_name(e.first);
+			for(auto pos = data.begin(); pos != data.end(); )	{
+
+				auto const idx = meta.get_index_by_name(pos->first);
 				if (idx != std::numeric_limits<std::size_t>::max()) {
 
 					auto const col = meta.get_column(idx);
-					BOOST_ASSERT(boost::algorithm::equals(col.name_, e.first));
+					BOOST_ASSERT(boost::algorithm::equals(col.name_, pos->first));
 
-					e.second = convert_to_type(col.type_, e.second);
+					pos->second = convert_to_type(col.type_, pos->second);
+					++pos;
+				}
+				else if (boost::algorithm::equals(table_name, "meterwMBus")
+					&& boost::algorithm::equals(pos->first, "meter")) {
+
+					//
+					//	second update required if "meter" has changed
+					//
+					pos = data.erase(pos);
+					CYNG_LOG_DEBUG(logger_, "[db] convert: column [" << pos->first << "] in table " << table_name << " removed");
 				}
 				else {
-					CYNG_LOG_ERROR(logger_, "[db] convert: unknown column [" << e.first << "] in table " << table_name);
-
+					CYNG_LOG_ERROR(logger_, "[db] convert: unknown column [" << pos->first << "] in table " << table_name);
+					++pos;
 				}
 			}
 		}
@@ -457,17 +488,26 @@ namespace smf {
 	cyng::object convert_to_aes128(cyng::object& obj) {
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
-		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes128_size>(str));
+		BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_128_key::hex_size(), "aes128 key has wrong size");
+		return (str.size() == cyng::crypto::aes_128_key::hex_size())
+			? cyng::make_object(cyng::to_aes_key<cyng::crypto::aes128_size>(str))
+			: cyng::make_object(cyng::crypto::aes_128_key());
 	}
 	cyng::object convert_to_aes192(cyng::object& obj) {
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
-		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes192_size>(str));
+		BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_192_key::hex_size(), "aes192 key has wrong size");
+		return (str.size() == cyng::crypto::aes_192_key::hex_size())
+			? cyng::make_object(cyng::to_aes_key<cyng::crypto::aes192_size>(str))
+			: cyng::make_object(cyng::crypto::aes_192_key());
 	}
 	cyng::object convert_to_aes256(cyng::object& obj) {
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
-		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes256_size>(str));
+		BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_256_key::hex_size(), "aes256 key has wrong size");
+		return (str.size() == cyng::crypto::aes_256_key::hex_size())
+			? cyng::make_object(cyng::to_aes_key<cyng::crypto::aes256_size>(str))
+			: cyng::make_object(cyng::crypto::aes_256_key());
 	}
 
 	cyng::object convert_to_nanoseconds(cyng::object& obj) {
