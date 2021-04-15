@@ -9,6 +9,7 @@ set (dash_cpp
     src/http_server.cpp
     src/db.cpp
     src/notifier.cpp
+    src/upload.cpp
 )
     
 set (dash_h
@@ -16,6 +17,7 @@ set (dash_h
     include/http_server.h
     include/db.h
     include/notifier.h
+    include/upload.h
 )
 
 if(WIN32)

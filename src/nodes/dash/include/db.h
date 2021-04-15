@@ -119,6 +119,11 @@ namespace smf {
 
 		cyng::data_t complete(std::string const&, cyng::param_map_t&&);
 
+		/**
+		 * Search a meter record by it's meter id
+		 */
+		cyng::key_t lookup_meter_by_id(std::string const&);
+
 	private:
 		void set_start_values(std::uint64_t max_upload_size
 			, std::string const& nickname

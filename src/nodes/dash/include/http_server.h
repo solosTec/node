@@ -8,6 +8,7 @@
 #define SMF_DASH_HTTP_SERVER_H
 
 #include <db.h>
+#include <upload.h>
 
 #include <smf/http/server.h>
 #include <smf/http/auth.h>
@@ -126,6 +127,11 @@ namespace smf {
 		 * listen for incoming connections.
 		 */
 		http::server server_;
+
+		/**
+		 * manage config file uploads
+		 */
+		upload upload_;
 
 		/**
 		 * generate unique session tags

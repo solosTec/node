@@ -327,9 +327,9 @@ namespace smf {
 		case cyng::TC_UUID:			return cyng::make_object(boost::uuids::nil_uuid());
 		case cyng::TC_TIME_POINT:	return cyng::make_object(std::chrono::system_clock::now());
 		case cyng::TC_IP_ADDRESS:	return cyng::make_object(boost::asio::ip::address());
-		case cyng::TC_AES128:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes128_size>("0000000000000000"));
-		case cyng::TC_AES192:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes192_size>("000000000000000000000000"));
-		case cyng::TC_AES256:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes256_size>("00000000000000000000000000000000"));
+		case cyng::TC_AES128:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes128_size>("00000000000000000000000000000000"));
+		case cyng::TC_AES192:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes192_size>("000000000000000000000000000000000000000000000000"));
+		case cyng::TC_AES256:		return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes256_size>("0000000000000000000000000000000000000000000000000000000000000000"));
 
 		case cyng::TC_BUFFER: return cyng::make_object(cyng::buffer_t());
 		case cyng::TC_VERSION: return cyng::make_object(cyng::version());
@@ -365,6 +365,25 @@ namespace smf {
 		return cyng::make_object();
 	}
 
+	cyng::key_t db::lookup_meter_by_id(std::string const& id) {
+
+		cyng::key_t key;
+		cache_.access([&](cyng::table const* tbl) {
+			tbl->loop([&](cyng::record&& rec, std::size_t) -> bool {
+
+				auto const meter = rec.value("meter", "");
+				if (boost::algorithm::equals(meter, id)) {
+					//	found
+					key = rec.key();
+					return false;
+				}
+				
+				return true;
+				});
+			}, cyng::access::read("meter"));
+
+		return key;
+	}
 
 	db::rel::rel(std::string table, std::string channel, std::string counter)
 		: table_(table)

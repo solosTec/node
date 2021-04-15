@@ -14,6 +14,8 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
 
+#include <smfsec/hash/base64.h>
+
 #include <boost/uuid/uuid_io.hpp>
 
 namespace smf {
@@ -34,6 +36,7 @@ namespace smf {
 		, redirects_intrinsic_(redirects_intrinsic.begin(), redirects_intrinsic.end())
 		, auths_(auths)
 		, server_(ioc, logger, std::bind(&http_server::accept, this, std::placeholders::_1))
+		, upload_(logger, db_)
 		, uidgen_()
 		, ws_map_()
 	{
@@ -230,6 +233,17 @@ namespace smf {
 			CYNG_LOG_TRACE(logger_, "[HTTP] insert request for table " << rel.table_ << ": " << data);
 			cluster_bus_.req_db_insert(rel.table_, key, db_.complete(rel.table_, std::move(data)), 0);
 
+		}
+		else if (boost::algorithm::equals(channel, "config.upload.bridge")) {
+			//	"rec":{"data":{"fileName"
+			//		"fileContent"
+			//	"policy":"append"
+			auto const reader = cyng::make_reader(data);
+			auto const name = cyng::value_cast(reader["fileName"].get(), "no-file");
+			auto const policy = cyng::value_cast(reader["policy"].get(), "merge");
+			auto const content = cyng::crypto::base64_decode(cyng::value_cast(reader["fileContent"].get(), ""));
+			CYNG_LOG_INFO(logger_, "[HTTP] upload (" << policy << ") [" << name << "] " << content.size() << " bytes");
+			upload_.config_bridge(name, policy, content, ',');
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "[HTTP] insert: undefined channel " << channel);

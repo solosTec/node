@@ -11,6 +11,7 @@ add_executable(unit_test
     src/test_sml.cpp
     src/test_iec.cpp
     src/test_ipt.cpp
+    src/test_mbus.cpp
     ${test-assets}
 )
 
@@ -53,6 +54,7 @@ target_link_libraries(unit_test
         smf_sml
         smf_iec
         smf_ipt
+        smf_mbus
         "$<$<PLATFORM_ID:Linux>:pthread>"
         "$<$<PLATFORM_ID:Windows>:odbc32>"
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
