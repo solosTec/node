@@ -33,10 +33,42 @@ namespace smf {
 		void config_bridge(std::string name, upload_policy policy, std::string const& content, char sep);
 
 	private:
-		void insert_iec(std::string const& server_id, std::string const& meter_id, std::string const& address, std::uint16_t port, std::string const& meter_type, std::string const& area, std::string const& name, std::string const& maker);
-		void insert_wmbus(std::string const& server_id, std::string const& meter_id, std::string const& meter_type, cyng::crypto::aes_128_key const& aes, std::string const& area, std::string const& name, std::string const& maker);
-		void update_iec(cyng::key_t, std::string const& server_id, std::string const& meter_id, std::string const& address, std::uint16_t port, std::string const& meter_type, std::string const& area, std::string const& name, std::string const& maker);
-		void update_wmbus(cyng::key_t, std::string const& server_id, std::string const& meter_id, std::string const& meter_type, cyng::crypto::aes_128_key const& aes, std::string const& area, std::string const& name, std::string const& maker);
+		void insert_iec(std::string const& mc
+			, std::string const& server_id
+			, std::string const& meter_id
+			, std::string const& address
+			, std::uint16_t port
+			, std::string const& meter_type
+			, std::string const& area
+			, std::string const& name
+			, std::string const& maker);
+		void insert_wmbus(std::string const& mc
+			, std::string const& server_id
+			, std::string const& meter_id
+			, std::string const& meter_type
+			, cyng::crypto::aes_128_key const& aes
+			, std::string const& area
+			, std::string const& name
+			, std::string const& maker);
+		void update_iec(cyng::key_t
+			, std::string const& mc
+			, std::string const& server_id
+			, std::string const& meter_id
+			, std::string const& address
+			, std::uint16_t port
+			, std::string const& meter_type
+			, std::string const& area
+			, std::string const& name
+			, std::string const& maker);
+		void update_wmbus(cyng::key_t
+			, std::string const& mc
+			, std::string const& server_id
+			, std::string const& meter_id
+			, std::string const& meter_type
+			, cyng::crypto::aes_128_key const& aes
+			, std::string const& area
+			, std::string const& name
+			, std::string const& maker);
 
 	private:
 		cyng::logger logger_;

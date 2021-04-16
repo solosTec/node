@@ -62,6 +62,12 @@ namespace smf {
 
 
 	private:
+		void update_meter_online_state(cyng::key_t const& key, bool);
+		void update_gw_online_state(cyng::key_t const& key, bool);
+		void update_meter_iec_online_state(cyng::key_t const& key, bool);
+		void update_meter_wmbus_online_state(cyng::key_t const& key, bool);
+
+	private:
 		db& db_;
 		http_server& http_server_;
 		cyng::logger logger_;

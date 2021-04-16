@@ -320,6 +320,9 @@ namespace smf {
 			else if (boost::algorithm::equals(rel.table_, "meterIEC")) {
 				return response_subscribe_channel_meterIEC(wsp, name, rel.table_);
 			}
+			else if (boost::algorithm::equals(rel.table_, "gateway")) {
+				return response_subscribe_channel_gateway(wsp, name, rel.table_);
+			}
 			else {
 				return response_subscribe_channel_def(wsp, name, rel.table_);
 			}
@@ -423,14 +426,14 @@ namespace smf {
 				auto const rec_meter = tbl_meter->lookup(rec.key());
 				if (!rec_meter.empty()) {
 					auto const meter_name = rec_meter.value("meter", "");
-					auto tpl = rec.to_tuple(cyng::param_map_factory("meter", meter_name));
+					auto tpl = rec.to_tuple(cyng::param_map_factory("meter", meter_name)("online", 0));
 					auto const str = json_insert_record(name, std::move(tpl));
 					CYNG_LOG_DEBUG(logger_, str);
 					wsp->push_msg(str);
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "[HTTP] missing meter configuration: " << rec.to_string());
-					auto tpl = rec.to_tuple(cyng::param_map_factory("meter", "no-meter"));
+					auto tpl = rec.to_tuple(cyng::param_map_factory("meter", "no-meter")("online", 0));
 					auto const str = json_insert_record(name, std::move(tpl));
 					CYNG_LOG_DEBUG(logger_, str);
 					wsp->push_msg(str);
@@ -487,14 +490,14 @@ namespace smf {
 				auto const rec_meter = tbl_meter->lookup(rec.key());
 				if (!rec_meter.empty()) {
 					auto const meter_name = rec_meter.value("meter", "");
-					auto tpl = rec.to_tuple(cyng::param_map_factory("meter", meter_name));
+					auto tpl = rec.to_tuple(cyng::param_map_factory("meter", meter_name)("online", 0));
 					auto const str = json_insert_record(name, std::move(tpl));
 					CYNG_LOG_DEBUG(logger_, str);
 					wsp->push_msg(str);
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "[HTTP] missing meter configuration: " << rec.to_string());
-					auto tpl = rec.to_tuple(cyng::param_map_factory("meter", "no-meter"));
+					auto tpl = rec.to_tuple(cyng::param_map_factory("meter", "no-meter")("online", 0));
 					auto const str = json_insert_record(name, std::move(tpl));
 					CYNG_LOG_DEBUG(logger_, str);
 					wsp->push_msg(str);
@@ -524,6 +527,83 @@ namespace smf {
 
 		return true;
 	}
+
+	bool http_server::response_subscribe_channel_gateway(ws_sptr wsp, std::string const& name, std::string const& table_name) {
+		// 
+		//	Send initial data set
+		//
+		db_.cache_.access([&](cyng::table const* tbl_wmbus, cyng::table const* tbl_dev, cyng::table const* tbl_session) -> void {
+
+			//
+			//	inform client that data upload is starting
+			//
+			wsp->push_msg(json_load_icon(name, true));
+
+			//
+			//	get total record size
+			//
+			auto total_size{ tbl_wmbus->size() };
+			std::size_t percent{ 0 }, idx{ 0 };
+
+
+			tbl_wmbus->loop([&](cyng::record&& rec, std::size_t idx) -> bool {
+
+				//
+				// get online state
+				// 
+				auto const online = tbl_session->exist(rec.key());
+
+				//
+				// get additional data from meter
+				// 
+				auto const rec_dev = tbl_dev->lookup(rec.key());
+				if (!rec_dev.empty()) {
+					auto tpl = rec.to_tuple(cyng::param_map_factory
+						("model", rec_dev.value("id", ""))
+						("vFirmware", rec_dev.value("vFirmware", ""))
+						("name", rec_dev.value("name", ""))
+						("descr", rec_dev.value("descr", ""))
+						("online", online ? 1 : 0));
+					auto const str = json_insert_record(name, std::move(tpl));
+					CYNG_LOG_DEBUG(logger_, str);
+					wsp->push_msg(str);
+				}
+				else {
+					CYNG_LOG_WARNING(logger_, "[HTTP] missing device configuration: " << rec.to_string());
+					auto tpl = rec.to_tuple(cyng::param_map_factory
+						("model", "no-model")
+						("vFirmware", "v0.0")
+						("descr", "no-configuration")
+						("online", online ? 1 : 0));
+					auto const str = json_insert_record(name, std::move(tpl));
+					CYNG_LOG_DEBUG(logger_, str);
+					wsp->push_msg(str);
+				}
+
+
+				//
+				//	update current index and percentage calculation
+				//	
+				++idx;
+				const auto prev_percent = percent;
+				percent = (100u * idx) / total_size;
+				if (prev_percent != percent) {
+					wsp->push_msg(json_load_level(name, percent));
+				}
+
+				return true;
+				});
+
+			//
+			//	inform client that data upload is finished
+			//
+			if (percent != 100)	wsp->push_msg(json_load_level(name, 100));
+			wsp->push_msg(json_load_icon(name, false));
+
+			}, cyng::access::read(table_name), cyng::access::read("device"), cyng::access::read("session"));
+		return true;
+	}
+
 
 	void http_server::response_update_channel(ws_sptr wsp, std::string const& name) {
 

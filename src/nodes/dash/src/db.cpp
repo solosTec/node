@@ -155,6 +155,8 @@ namespace smf {
 			, key
 			, std::move(attr)
 			, tag);
+
+
 	}
 
 	void db::res_remove(std::string table_name

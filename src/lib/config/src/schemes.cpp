@@ -140,7 +140,7 @@ namespace smf {
 					cyng::column("tom", cyng::TC_TIME_POINT),		//	(3) production date
 					cyng::column("factoryNr", cyng::TC_STRING),		//	(4) fabrik nummer (i.e. 06441734)
 					cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
-					cyng::column("ifData", cyng::TC_MAC48),		//	(6) MAC of WAN interface
+					cyng::column("ifData", cyng::TC_MAC48),			//	(6) MAC of WAN interface
 					//cyng::column("ifHAN", cyng::TC_STRING),		//	(6) MAC of HAN interface
 					cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
 					cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW

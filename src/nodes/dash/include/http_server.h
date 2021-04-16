@@ -98,6 +98,7 @@ namespace smf {
 		bool response_subscribe_channel_def(ws_sptr, std::string const&, std::string const&);
 		bool response_subscribe_channel_meterwMBus(ws_sptr, std::string const&, std::string const&);
 		bool response_subscribe_channel_meterIEC(ws_sptr, std::string const&, std::string const&);
+		bool response_subscribe_channel_gateway(ws_sptr, std::string const&, std::string const&);
 		void response_update_channel(ws_sptr, std::string const&);
 
 		void modify_request(std::string const& channel

@@ -57,7 +57,7 @@ namespace smf {
 		init_iec_uplink();
 		init_wmbus_uplink();
 
-#ifdef __DEBUG_MAIN
+#ifdef _DEBUG_MAIN
 		init_demo_data();
 #endif 
 	}

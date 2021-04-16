@@ -22,6 +22,8 @@
 
 #include <iostream>
 
+#include <boost/uuid/uuid_io.hpp>
+
 namespace smf {
 
 	upload::upload(cyng::logger logger, bus& cluster_bus, db& cache)
@@ -90,14 +92,13 @@ namespace smf {
 				if (!boost::algorithm::equals(protocol, "IEC 62056") 
 					&& !boost::algorithm::equals(protocol, "Wireless MBUS")) {
 
-					cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[upload] no protocol specified for meter[", meter_id, "]", meter_type);
+					cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[upload] no or unknown protocol specified for meter[", meter_id, "]", meter_type);
 					return;
 				}
 				auto const area = vec.at(7);
 				auto const name = vec.at(8);
 
 				auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>(vec.at(10).size() == 32 ? vec.at(10) : "00000000000000000000000000000000");
-
 
 				//
 				//	Search for an existing meter with the same ID.
@@ -110,10 +111,10 @@ namespace smf {
 					//	key = cyng::key_generator(uidgen_());
 					CYNG_LOG_DEBUG(logger_, "[upload] #" << counter << ": append " << meter_id);
 					if (boost::algorithm::equals(protocol, "IEC 62056")) {
-						insert_iec(server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+						insert_iec(mc, server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
 					}
 					else {
-						insert_wmbus(server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+						insert_wmbus(mc, server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
 					}
 					break;
 				case upload_policy::MERGE:
@@ -121,20 +122,20 @@ namespace smf {
 						//	insert
 						CYNG_LOG_DEBUG(logger_, "[upload] #" << counter << ": insert " << meter_id);
 						if (boost::algorithm::equals(protocol, "IEC 62056")) {
-							insert_iec(server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+							insert_iec(mc, server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
 						}
 						else {
-							insert_wmbus(server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+							insert_wmbus(mc, server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
 						}
 					}
 					else {
 						//	update
 						CYNG_LOG_DEBUG(logger_, "[upload] #" << counter << ": update " << meter_id);
 						if (boost::algorithm::equals(protocol, "IEC 62056")) {
-							update_iec(key, server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+							update_iec(key, mc, server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
 						}
 						else {
-							update_wmbus(key, server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+							update_wmbus(key, mc, server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
 						}
 					}
 					break;
@@ -147,11 +148,11 @@ namespace smf {
 						cluster_bus_.req_db_remove("meter", key);
 						if (boost::algorithm::equals(protocol, "IEC 62056")) {
 							cluster_bus_.req_db_remove("meterIEC", key);
-							insert_iec(server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+							insert_iec(mc, server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
 						}
 						else {
 							cluster_bus_.req_db_remove("meterwMBus", key);
-							insert_wmbus(server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+							insert_wmbus(mc, server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
 						}
 					}
 					else {
@@ -167,7 +168,8 @@ namespace smf {
 		p.read(content.begin(), content.end());
 	}
 
-	void upload::insert_iec(std::string const& server_id
+	void upload::insert_iec(std::string const& mc
+		, std::string const& server_id
 		, std::string const& meter_id
 		, std::string const& address
 		, std::uint16_t port
@@ -179,8 +181,8 @@ namespace smf {
 		auto const tag = uidgen_();
 		auto const key = cyng::key_generator(tag);
 
-		auto country_code = db_.cfg_.get_value("country-code", "CH");
-		auto const mc = gen_metering_code(country_code, tag);
+		//auto country_code = db_.cfg_.get_value("country-code", "CH");
+		//auto const mc = gen_metering_code(country_code, tag);
 
 		//
 		//	convert data types
@@ -188,12 +190,18 @@ namespace smf {
 		CYNG_LOG_TRACE(logger_, "[upload] insert IEC device " << mc);
 		cluster_bus_.req_db_insert("device"
 			, key
-			, db_.complete("device", cyng::param_map_factory("name", mc)("pwd", meter_id)("msisdn", meter_id)("descr", name)("id", meter_type)("enabled", true))
+			, db_.complete("device", cyng::param_map_factory
+				("name", mc)
+				("pwd", meter_id)
+				("msisdn", meter_id)
+				("descr", area + ", " + name)
+				("id", meter_type)
+				("enabled", true))
 			, 0);
 
 		cluster_bus_.req_db_insert("meter"
 			, key
-			, db_.complete("meter", cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)("protocol", "IEC"))
+			, db_.complete("meter", cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)("protocol", "IEC:62056")("item", boost::uuids::to_string(tag)))
 			, 0);
 
 		cluster_bus_.req_db_insert("meterIEC"
@@ -202,7 +210,8 @@ namespace smf {
 			, 0);
 
 	}
-	void upload::insert_wmbus(std::string const& server_id
+	void upload::insert_wmbus(std::string const& mc
+		, std::string const& server_id
 		, std::string const& meter_id
 		, std::string const& meter_type
 		, cyng::crypto::aes_128_key const& aes
@@ -210,20 +219,32 @@ namespace smf {
 		, std::string const& name
 		, std::string const& maker) {
 
+		//
+		// 
+		// check AES consistency
+		auto const buffer = cyng::to_buffer(aes);
+		if (cyng::is_ascii(buffer)) {
+			std::string const str(buffer.begin(), buffer.end());
+			cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[upload] AES key for meter[", meter_id, "] is most likely wrong - did you mean ", str);
+		}
+
 		auto const tag = uidgen_();
 		auto const key = cyng::key_generator(tag);
-
-		auto country_code = db_.cfg_.get_value("country-code", "CH");
-		auto const mc = gen_metering_code(country_code, tag);
 
 		CYNG_LOG_TRACE(logger_, "[upload] insert wM-Bus device " << mc);
 		cluster_bus_.req_db_insert("device"
 			, key
-			, db_.complete("device", cyng::param_map_factory("name", mc)("pwd", meter_id)("msisdn", meter_id)("descr", name)("id", meter_type)("enabled", true))
+			, db_.complete("device", cyng::param_map_factory
+				("name", mc)
+				("pwd", meter_id)
+				("msisdn", meter_id)
+				("descr", area + ", " + name)
+				("id", meter_type)
+				("enabled", true))
 			, 0);
 		cluster_bus_.req_db_insert("meter"
 			, key
-			, db_.complete("meter", cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)("protocol", "wM-Bus"))
+			, db_.complete("meter", cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)("protocol", "wM-Bus:EN13757-4")("item", boost::uuids::to_string(tag)))
 			, 0);
 		cluster_bus_.req_db_insert("meterwMBus"
 			, key
@@ -233,6 +254,7 @@ namespace smf {
 	}
 
 	void upload::update_iec(cyng::key_t key
+		, std::string const& mc
 		, std::string const& server_id
 		, std::string const& meter_id
 		, std::string const& address
@@ -241,9 +263,29 @@ namespace smf {
 		, std::string const& area
 		, std::string const& name
 		, std::string const& maker) {
+
+		CYNG_LOG_TRACE(logger_, "[upload] update IEC device " << mc);
+		//cluster_bus_.req_db_update("device", key, cyng::param_map_factory
+		//	("name", mc)
+		//	("pwd", meter_id)
+		//	("msisdn", meter_id)
+		//	("descr", name)
+		//	("id", meter_type));
+		
+		cluster_bus_.req_db_update("meter", key, cyng::param_map_factory
+			("ident", server_id)
+			("meter", meter_id)
+			("code", mc)
+			("maker", maker)
+			("protocol", "IEC:62056"));
+
+		cluster_bus_.req_db_update("meterIEC", key, cyng::param_map_factory
+			("host", address)("port", port));
+
 	}
 
 	void upload::update_wmbus(cyng::key_t key
+		, std::string const& mc
 		, std::string const& server_id
 		, std::string const& meter_id
 		, std::string const& meter_type
@@ -251,6 +293,22 @@ namespace smf {
 		, std::string const& area
 		, std::string const& name
 		, std::string const& maker) {
+
+		CYNG_LOG_TRACE(logger_, "[upload] update wM-Bus device " << mc);
+		//cluster_bus_.req_db_update("device", key, cyng::param_map_factory
+		//	("name", mc)
+		//	("pwd", meter_id)
+		//	("msisdn", meter_id)
+		//	("descr", name)
+		//	("id", meter_type));
+		cluster_bus_.req_db_update("meter", key, cyng::param_map_factory
+			("ident", server_id)
+			("meter", meter_id)
+			("code", mc)
+			("maker", maker)
+			("protocol", "wM-Bus:EN13757-4"));
+		cluster_bus_.req_db_update("meterwMBus", key, cyng::param_map_factory("aes", aes));
+
 	}
 
 	std::string cleanup_manufacturer_code(std::string manufacturer)
