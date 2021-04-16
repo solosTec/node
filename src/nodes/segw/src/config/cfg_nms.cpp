@@ -11,6 +11,8 @@
 #include <iostream>
 #endif
 
+#include <boost/predef.h>
+
 
 namespace smf {
 
@@ -102,7 +104,13 @@ namespace smf {
 	}
 
 	std::filesystem::path cfg_nms::get_script_path() const {
-		return cfg_.get_value(script_path(), std::filesystem::temp_directory_path());
+		return cfg_.get_value(script_path(), 
+#if defined(BOOST_OS_LINUX_AVAILABLE)
+			std::filesystem::path("/tmp/update-script.sh")
+#else 
+			std::filesystem::temp_directory_path()
+#endif
+		);
 	}
 
 	bool cfg_nms::check_credentials(std::string const& user, std::string const& pwd) {

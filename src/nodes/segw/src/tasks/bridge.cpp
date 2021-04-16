@@ -444,6 +444,7 @@ namespace smf {
 	void bridge::init_nms_server() {
 		cfg_nms cfg(cfg_);
 		if (cfg.is_enabled()) {
+			//	Error: wrong endpoint!
 			auto const ep = cfg.get_ep();
 			CYNG_LOG_INFO(logger_, "start NMS server " << ep);
 			nms_.start(ep);

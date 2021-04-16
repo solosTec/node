@@ -26,6 +26,7 @@
 #include <fstream>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/predef.h>
 
 namespace smf {
 	namespace nms {
@@ -116,7 +117,7 @@ namespace smf {
 			}
 			else if (boost::algorithm::equals(cmd, "reboot")
 				|| boost::algorithm::equals(cmd, "restart")) {
-				//return cmd_reboot(cmd, tag);
+				return cmd_reboot(cmd, tag);
 			}
 			else if (boost::algorithm::equals(cmd, "fwversion")
 				|| boost::algorithm::equals(cmd, "version")
@@ -554,7 +555,7 @@ namespace smf {
 			//	read file "/usr/local/CLS/etc/firmwareupdate.conf"
 			//
 			std::filesystem::path const path(
-#if BOOST_OS_LINUX
+#if defined(BOOST_OS_LINUX_AVAILABLE)
 				"/usr/local/CLS/etc/firmwareupdate.conf"
 #else
 				"firmwareupdate.conf"
@@ -644,6 +645,59 @@ namespace smf {
 				("name", cyng::sys::get_os_name())
 				("release", cyng::sys::get_os_release())
 				;
+
+		}
+
+		cyng::param_map_t reader::cmd_reboot(std::string const& cmd, boost::uuids::uuid tag) {
+#if defined(BOOST_OS_LINUX_AVAILABLE)
+			cfg_nms nms_cfg(cfg_);
+			auto const path = nms_cfg.get_script_path();
+
+			//
+			//	remove old file
+			//
+			std::error_code ec;
+			std::filesystem::remove(path, ec);
+
+			std::fstream fs(path.string(), std::fstream::trunc | std::fstream::out);
+			if (fs.is_open()) {
+				fs
+					<< "#!/bin/bash"
+					<< std::endl
+					<< "reboot.sh"
+					<< std::endl
+					;
+				fs.close();
+
+				//
+				//	set permissions
+				//
+				std::filesystem::permissions(path
+					, std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec
+					, std::filesystem::perm_options::add
+					, ec);
+			}
+
+			return cyng::param_map_factory
+			("command", cmd)
+				("ec", (!ec) ? "ok" : ec.message())
+				("version", protocol_version_)
+				("source", tag)
+				("rc", "reboot scheduled")
+				;
+
+
+#else
+			//	after 1 minute
+			auto const rc = std::system("shutdown -r +1");
+			return cyng::param_map_factory
+			("command", cmd)
+				("ec", "error: command not available on windows systems")
+				("version", protocol_version_)
+				("source", tag)
+				("rc", rc)
+				;
+#endif
 
 		}
 

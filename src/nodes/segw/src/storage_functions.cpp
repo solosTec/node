@@ -483,7 +483,7 @@ namespace smf {
 			if (boost::algorithm::equals(param.first, "address")) {
 
 				boost::system::error_code ec;
-				auto const address = boost::asio::ip::make_address(cyng::value_cast(param.second, "0.0.0.0"), ec);
+				auto const address = cyng::value_cast(param.second, "0.0.0.0");
 				insert_config_record(stmt
 					, cyng::to_path(cfg::sep, "nms",	param.first)
 					, cyng::make_object(address)
@@ -694,7 +694,7 @@ namespace smf {
 			for (auto const& broker : pmap) {
 				if (boost::algorithm::equals(broker.first, "port")) {
 
-					auto const broker_port = cyng::numeric_cast<std::uint16_t>(broker.second, 12000 + broker_index);
+					auto const broker_port = cyng::numeric_cast<std::uint16_t>(broker.second, static_cast<std::uint16_t>(12000 + broker_index));
 					insert_config_record(stmt
 						, cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), broker.first)
 						, cyng::make_object(broker_port)

@@ -266,8 +266,8 @@ namespace smf {
 				m.at(2),
 				m.at(1),
 				m.at(0),
-				version,	//	version
-				medium		//	2 == electricity
+				static_cast<char>(version),	//	version
+				static_cast<char>(medium)		//	2 == electricity
 			};
 
 			return srv_id_to_str(server_id);
