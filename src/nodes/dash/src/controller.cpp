@@ -41,6 +41,9 @@ namespace smf {
 		auto const reader = cyng::make_reader(cfg);
 		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
 
+		auto const country_code = cyng::value_cast(reader["country-code"].get(), "CH");
+		auto const lang_code = cyng::value_cast(reader["language-code"].get(), "en-GB");
+
 		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
 		BOOST_ASSERT(!tgl.empty());
 		if (tgl.empty()) {
@@ -83,6 +86,8 @@ namespace smf {
 			, max_upload_size
 			, nickname
 			, timeout
+			, country_code
+			, lang_code
 			, std::move(blocklist)
 			, std::move(redirects_intrinsic)
 			, auths);
@@ -101,6 +106,8 @@ namespace smf {
 		, std::uint64_t max_upload_size
 		, std::string const& nickname
 		, std::chrono::seconds timeout
+		, std::string const& country_code
+		, std::string const& lang_code
 		, blocklist_type&& blocklist
 		, std::map<std::string, std::string>&& redirects_intrinsic
 		, http::auth_dirs const& auths)
@@ -120,6 +127,8 @@ namespace smf {
 			, max_upload_size
 			, nickname
 			, timeout		
+			, country_code
+			, lang_code
 			, std::move(blocklist)
 			, std::move(redirects_intrinsic)
 			, auths);

@@ -25,6 +25,8 @@ namespace smf {
 		, std::uint64_t max_upload_size
 		, std::string const& nickname
 		, std::chrono::seconds timeout
+		, std::string const& country_code
+		, std::string const& lang_code
 		, http_server::blocklist_type&& blocklist
 		, std::map<std::string, std::string>&& redirects_intrinsic
 		, http::auth_dirs const& auths)
@@ -58,7 +60,7 @@ namespace smf {
 		}
 
 		auto slot = std::static_pointer_cast<cyng::slot_interface>(std::make_shared<notifier>(db_, http_server_, logger));
-		db_.init(max_upload_size, nickname, timeout, slot);
+		db_.init(max_upload_size, nickname, timeout, country_code, lang_code, slot);
 
 
 	}

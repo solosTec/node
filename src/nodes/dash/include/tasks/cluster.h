@@ -50,6 +50,8 @@ namespace smf {
 			, std::uint64_t max_upload_size
 			, std::string const& nickname
 			, std::chrono::seconds timeout
+			, std::string const& country_code
+			, std::string const& lang_code
 			, http_server::blocklist_type&&
 			, std::map<std::string, std::string>&&
 			, http::auth_dirs const&);

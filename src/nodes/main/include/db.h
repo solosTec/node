@@ -200,6 +200,7 @@ namespace smf {
 		void init_LoRa_uplink();
 		void init_iec_uplink();
 		void init_wmbus_uplink();
+		void init_demo_data();
 
 		std::pair<cyng::key_list_t, std::uint16_t> get_matching_targets(cyng::table const* tbl
 			, std::string name

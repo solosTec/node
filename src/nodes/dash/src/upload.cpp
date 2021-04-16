@@ -12,43 +12,45 @@
 #include <smf/mbus/server_id.h>
 
 #include <cyng/log/record.h>
+#include <cyng/obj/value_cast.hpp>
+#include <cyng/obj/array_cast.hpp>
+#include <cyng/obj/container_factory.hpp>
 #include <cyng/io/ostream.h>
 #include <cyng/parse/csv/csv_parser.h>
 #include <cyng/parse/csv/line_cast.hpp>
-#include <cyng/obj/value_cast.hpp>
-#include <cyng/obj/array_cast.hpp>
 #include <cyng/parse/string.h>
 
 #include <iostream>
 
 namespace smf {
 
-	upload::upload(cyng::logger logger, db& cache)
+	upload::upload(cyng::logger logger, bus& cluster_bus, db& cache)
 	: logger_(logger)
+		, cluster_bus_(cluster_bus)
 		, db_(cache)
 		, uidgen_()
 	{}
 
-	void upload::config_bridge(std::string name, std::string policy, std::string const& content, char sep) {
+	void upload::config_bridge(std::string name, upload_policy policy, std::string const& content, char sep) {
 
 		std::size_t counter{ 0 };
 		cyng::csv::parser p(sep, [&, this](cyng::csv::line_t&& vec) {
 			if (counter != 0 && vec.size() > 10) {
-				CYNG_LOG_DEBUG(logger_, "[upload] #" << counter << ": " << vec.size());
 
-				//	Meter_ID,Ift_Type,GWY_IP,Manufacturer,Meter_Type,Protocol,Area,Name,In_enDS,Key,AMR Address,Comments
+				//	Meter_ID,Ift_Type,GWY_IP,Port,Manufacturer,Meter_Type,Protocol,Area,Name,In_enDS,Key,AMR Address,Comments
 				//	[0] Meter_ID (MA0000000000000000000000004354752)
 				//	[1] Ift_Type (wMBus)
 				//	[2] GWY_IP (10.132.32.142)
-				//	[3]	Manufacturer (EMH)
-				//	[4] Meter_Type (EMH ED100L)
-				//	[5] Protocol (Wireless MBUS)
-				//	[6] Area (Moumnat,Maison 44)
-				//	[7] Name (Yes)
-				//	[8] In_enDS (2BFFCB61D7E8DC439239555D3DFE1B1D)
-				//	[9] Key,
-				//	[10] AMR Address,
-				//	[11] Comments
+				//	[3] Port (6000)
+				//	[4]	Manufacturer (EMH)
+				//	[5] Meter_Type (EMH ED100L)
+				//	[6] Protocol [Wireless MBUS|IEC]
+				//	[7] Area (Moumnat)
+				//  [8] Name (Maison 44)
+				//	[9] In_enDS (Yes)
+				//	[10] Key (2BFFCB61D7E8DC439239555D3DFE1B1D)
+				//	[11] AMR Address,
+				//	[12] Comments
 
 				//
 				//	extract Meter_ID
@@ -64,37 +66,191 @@ namespace smf {
 					: mc
 					;
 
-				//
-				//	Search for an existing meter with the same ID.
-				//	If meter ID already exists use this PK otherwise create a new one.
-				//
-				auto key = db_.lookup_meter_by_id(meter_id);
-				if (key.empty()) {
-					key = cyng::key_generator(uidgen_());
-				}
-
 				//	Ift_Type [RS485|wMBus]
 				auto const adapter_type = vec.at(1);
+
+				//	ip address
+				auto const address = vec.at(2);
+				//auto const address = cyng::to_ip_address(vec.at(2));
+				auto const port = cyng::to_numeric<std::uint16_t>(vec.at(3));
 
 				//	Manufacturer
 				auto const manufacturer_code = cleanup_manufacturer_code(vec.at(4));
 
+				//	get the server ID
 				auto const server_id = cleanup_server_id(meter_id
 					, manufacturer_code
 					, boost::algorithm::equals(adapter_type, "RS485")	//	true == wired 
 					, 1		//	version
 					, 2		//	electricity
 				);
-				auto const meter_type = vec.at(4);
-				auto const protocol = vec.at(5);
+
+				auto const meter_type = vec.at(5);
+				auto const protocol = vec.at(6);
+				if (!boost::algorithm::equals(protocol, "IEC 62056") 
+					&& !boost::algorithm::equals(protocol, "Wireless MBUS")) {
+
+					cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[upload] no protocol specified for meter[", meter_id, "]", meter_type);
+					return;
+				}
+				auto const area = vec.at(7);
+				auto const name = vec.at(8);
 
 				auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>(vec.at(10).size() == 32 ? vec.at(10) : "00000000000000000000000000000000");
+
+
+				//
+				//	Search for an existing meter with the same ID.
+				//	If meter ID already exists use this PK otherwise create a new one.
+				//
+				auto key = db_.lookup_meter_by_id(meter_id);
+				switch (policy) {
+				case upload_policy::APPEND:
+					//	generate new key
+					//	key = cyng::key_generator(uidgen_());
+					CYNG_LOG_DEBUG(logger_, "[upload] #" << counter << ": append " << meter_id);
+					if (boost::algorithm::equals(protocol, "IEC 62056")) {
+						insert_iec(server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+					}
+					else {
+						insert_wmbus(server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+					}
+					break;
+				case upload_policy::MERGE:
+					if (key.empty()) {
+						//	insert
+						CYNG_LOG_DEBUG(logger_, "[upload] #" << counter << ": insert " << meter_id);
+						if (boost::algorithm::equals(protocol, "IEC 62056")) {
+							insert_iec(server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+						}
+						else {
+							insert_wmbus(server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+						}
+					}
+					else {
+						//	update
+						CYNG_LOG_DEBUG(logger_, "[upload] #" << counter << ": update " << meter_id);
+						if (boost::algorithm::equals(protocol, "IEC 62056")) {
+							update_iec(key, server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+						}
+						else {
+							update_wmbus(key, server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+						}
+					}
+					break;
+				case upload_policy::OVERWRITE:
+					if (!key.empty()) {
+						//	remove
+						//	insert again
+						CYNG_LOG_DEBUG(logger_, "[upload] #" << counter << ": overwrite " << meter_id);
+						cluster_bus_.req_db_remove("device", key);
+						cluster_bus_.req_db_remove("meter", key);
+						if (boost::algorithm::equals(protocol, "IEC 62056")) {
+							cluster_bus_.req_db_remove("meterIEC", key);
+							insert_iec(server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+						}
+						else {
+							cluster_bus_.req_db_remove("meterwMBus", key);
+							insert_wmbus(server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+						}
+					}
+					else {
+						CYNG_LOG_WARNING(logger_, "[upload] overwrite " << meter_id << " not found");
+					}
+					break;
+				}
 
 			}
 			++counter;
 			});
 
 		p.read(content.begin(), content.end());
+	}
+
+	void upload::insert_iec(std::string const& server_id
+		, std::string const& meter_id
+		, std::string const& address
+		, std::uint16_t port
+		, std::string const& meter_type
+		, std::string const& area
+		, std::string const& name
+		, std::string const& maker) {
+
+		auto const tag = uidgen_();
+		auto const key = cyng::key_generator(tag);
+
+		auto country_code = db_.cfg_.get_value("country-code", "CH");
+		auto const mc = gen_metering_code(country_code, tag);
+
+		//
+		//	convert data types
+		//
+		CYNG_LOG_TRACE(logger_, "[upload] insert IEC device " << mc);
+		cluster_bus_.req_db_insert("device"
+			, key
+			, db_.complete("device", cyng::param_map_factory("name", mc)("pwd", meter_id)("msisdn", meter_id)("descr", name)("id", meter_type)("enabled", true))
+			, 0);
+
+		cluster_bus_.req_db_insert("meter"
+			, key
+			, db_.complete("meter", cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)("protocol", "IEC"))
+			, 0);
+
+		cluster_bus_.req_db_insert("meterIEC"
+			, key
+			, db_.complete("meterIEC", cyng::param_map_factory("host", address)("port", port)("interval", std::chrono::seconds(60 * 60)))
+			, 0);
+
+	}
+	void upload::insert_wmbus(std::string const& server_id
+		, std::string const& meter_id
+		, std::string const& meter_type
+		, cyng::crypto::aes_128_key const& aes
+		, std::string const& area
+		, std::string const& name
+		, std::string const& maker) {
+
+		auto const tag = uidgen_();
+		auto const key = cyng::key_generator(tag);
+
+		auto country_code = db_.cfg_.get_value("country-code", "CH");
+		auto const mc = gen_metering_code(country_code, tag);
+
+		CYNG_LOG_TRACE(logger_, "[upload] insert wM-Bus device " << mc);
+		cluster_bus_.req_db_insert("device"
+			, key
+			, db_.complete("device", cyng::param_map_factory("name", mc)("pwd", meter_id)("msisdn", meter_id)("descr", name)("id", meter_type)("enabled", true))
+			, 0);
+		cluster_bus_.req_db_insert("meter"
+			, key
+			, db_.complete("meter", cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)("protocol", "wM-Bus"))
+			, 0);
+		cluster_bus_.req_db_insert("meterwMBus"
+			, key
+			, db_.complete("meterwMBus", cyng::param_map_factory("host", boost::asio::ip::make_address("0.0.0.0"))("aes", aes))
+			, 0);
+
+	}
+
+	void upload::update_iec(cyng::key_t key
+		, std::string const& server_id
+		, std::string const& meter_id
+		, std::string const& address
+		, std::uint16_t port
+		, std::string const& meter_type
+		, std::string const& area
+		, std::string const& name
+		, std::string const& maker) {
+	}
+
+	void upload::update_wmbus(cyng::key_t key
+		, std::string const& server_id
+		, std::string const& meter_id
+		, std::string const& meter_type
+		, cyng::crypto::aes_128_key const& aes
+		, std::string const& area
+		, std::string const& name
+		, std::string const& maker) {
 	}
 
 	std::string cleanup_manufacturer_code(std::string manufacturer)
@@ -259,8 +415,8 @@ namespace smf {
 			//	build server id
 			//
 			std::array<char, 9>	server_id = {
-				(wired ? 2 : 1),	//	wired M-Bus
-				static_cast<char>(ac.at(0)),	//	manufacturer
+				static_cast<char>(wired ? 2 : 1),	//	wired M-Bus
+				static_cast<char>(ac.at(0)),		//	manufacturer
 				static_cast<char>(ac.at(1)),
 				m.at(3),	//	meter ID (reverse)
 				m.at(2),
@@ -274,6 +430,12 @@ namespace smf {
 		}
 
 		return meter_id;
+	}
+
+	upload_policy to_upload_policy(std::string str) {
+		if (boost::algorithm::equals(str, "append"))	return upload_policy::APPEND;
+		else if (boost::algorithm::equals(str, "subst"))	return upload_policy::OVERWRITE;
+		/*else */return upload_policy::MERGE;
 	}
 
 }

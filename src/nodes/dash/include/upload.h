@@ -7,8 +7,10 @@
 #ifndef SMF_DASH_UPLOAD_H
 #define SMF_DASH_UPLOAD_H
 
+#include <smf/cluster/bus.h>
 
 #include <cyng/log/logger.h>
+
 #include <boost/uuid/random_generator.hpp>
 
 namespace smf {
@@ -19,17 +21,26 @@ namespace smf {
 		OVERWRITE	//	"subst"
 	};
 
+	upload_policy to_upload_policy(std::string);
+
 	class db;
 	class upload
 	{
 
 	public:
-		upload(cyng::logger, db&);
+		upload(cyng::logger, bus&, db&);
 
-		void config_bridge(std::string name, std::string policy, std::string const& content, char sep);
+		void config_bridge(std::string name, upload_policy policy, std::string const& content, char sep);
+
+	private:
+		void insert_iec(std::string const& server_id, std::string const& meter_id, std::string const& address, std::uint16_t port, std::string const& meter_type, std::string const& area, std::string const& name, std::string const& maker);
+		void insert_wmbus(std::string const& server_id, std::string const& meter_id, std::string const& meter_type, cyng::crypto::aes_128_key const& aes, std::string const& area, std::string const& name, std::string const& maker);
+		void update_iec(cyng::key_t, std::string const& server_id, std::string const& meter_id, std::string const& address, std::uint16_t port, std::string const& meter_type, std::string const& area, std::string const& name, std::string const& maker);
+		void update_wmbus(cyng::key_t, std::string const& server_id, std::string const& meter_id, std::string const& meter_type, cyng::crypto::aes_128_key const& aes, std::string const& area, std::string const& name, std::string const& maker);
 
 	private:
 		cyng::logger logger_;
+		bus& cluster_bus_;
 		db& db_;
 
 		/**

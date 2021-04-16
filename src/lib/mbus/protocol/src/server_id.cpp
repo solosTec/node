@@ -90,6 +90,21 @@ namespace smf
 		return ss.str();
 	}
 
+	std::string gen_metering_code(std::string const& country_code
+		, boost::uuids::uuid tag) {
+
+		BOOST_ASSERT_MSG(country_code.size() == 2, "invalid country code");
+
+		std::stringstream ss;
+		ss
+			<< country_code
+			;
+		for (auto const c : tag.data) {
+			ss << +c;
+		}
+		return ss.str();
+	}
+
 }
 
 

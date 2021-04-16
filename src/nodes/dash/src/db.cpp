@@ -34,6 +34,8 @@ namespace smf {
 	void db::init(std::uint64_t max_upload_size
 		, std::string const& nickname
 		, std::chrono::seconds timeout
+		, std::string const& country_code
+		, std::string const& lang_code
 		, cyng::slot_ptr slot)
 	{
 		//
@@ -51,18 +53,22 @@ namespace smf {
 		//
 		//	set start values
 		//
-		set_start_values(max_upload_size, nickname, timeout);
+		set_start_values(max_upload_size, nickname, timeout, country_code, lang_code);
 
 	}
 
 	void db::set_start_values(std::uint64_t max_upload_size
 		, std::string const& nickname
-		, std::chrono::seconds timeout) {
+		, std::chrono::seconds timeout
+		, std::string const& country_code
+		, std::string const& lang_code) {
 
 		cfg_.set_value("http-session-timeout", timeout);
 		cfg_.set_value("http-max-upload-size", max_upload_size);	//	10.485.760 bytes
 		cfg_.set_value("http-server-nickname", nickname);	//	X-ServerNickName
 		cfg_.set_value("https-redirect", false);	//	redirect HTTP traffic to HTTPS port
+		cfg_.set_value("country-code", country_code);	
+		cfg_.set_value("language-code", lang_code);	
 	}
 
 	db::rel db::by_table(std::string const& name) const {
@@ -478,33 +484,35 @@ namespace smf {
 	}
 
 	cyng::object convert_to_uuid(cyng::object& obj) {
-		//BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+		if (obj.rtti().tag() == cyng::TC_UUID)	return obj;
+		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		if (obj.rtti().tag() == cyng::TC_STRING) {
 			auto const str = cyng::io::to_plain(obj);
 			return cyng::make_object(cyng::to_uuid(str));
-		}
-		else if (obj.rtti().tag() == cyng::TC_UUID) {
-			return obj;	//	nothing to do
 		}
 		return  cyng::make_object(boost::uuids::nil_uuid());
 	}
 
 	cyng::object convert_to_tp(cyng::object& obj) {
-		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
-		auto const str = cyng::io::to_plain(obj);
-
-		return cyng::make_object(cyng::to_tp_iso8601(str));
-
+		if (obj.rtti().tag() == cyng::TC_TIME_POINT)	return obj;
+		if (obj.rtti().tag() == cyng::TC_STRING) {
+			auto const str = cyng::io::to_plain(obj);
+			return cyng::make_object(cyng::to_tp_iso8601(str));
+		}
+		return cyng::make_object(std::chrono::system_clock::now());
 	}
 
 	cyng::object convert_to_ip_address(cyng::object& obj) {
-		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
-		auto const str = cyng::io::to_plain(obj);
-
-		return cyng::make_object(cyng::to_ip_address(str));
+		if (obj.rtti().tag() == cyng::TC_IP_ADDRESS)	return obj;
+		if (obj.rtti().tag() == cyng::TC_STRING) {
+			auto const str = cyng::io::to_plain(obj);
+			return cyng::make_object(cyng::to_ip_address(str));
+		}
+		return cyng::make_object(boost::asio::ip::make_address("0.0.0.0"));
 	}
 
 	cyng::object convert_to_aes128(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_AES128)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_128_key::hex_size(), "aes128 key has wrong size");
@@ -513,6 +521,7 @@ namespace smf {
 			: cyng::make_object(cyng::crypto::aes_128_key());
 	}
 	cyng::object convert_to_aes192(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_AES192)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_192_key::hex_size(), "aes192 key has wrong size");
@@ -521,6 +530,7 @@ namespace smf {
 			: cyng::make_object(cyng::crypto::aes_192_key());
 	}
 	cyng::object convert_to_aes256(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_AES256)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_256_key::hex_size(), "aes256 key has wrong size");
@@ -530,36 +540,42 @@ namespace smf {
 	}
 
 	cyng::object convert_to_nanoseconds(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_NANO_SECOND)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		return obj;
 	}
 
 	cyng::object convert_to_microseconds(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_MICRO_SECOND)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		return cyng::make_object(cyng::to_microseconds(str));
 	}
 
 	cyng::object convert_to_milliseconds(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_MILLI_SECOND)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		return cyng::make_object(cyng::to_milliseconds(str));
 	}
 
 	cyng::object convert_to_seconds(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_SECOND)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		return cyng::make_object(cyng::to_seconds(str));
 	}
 
 	cyng::object convert_to_minutes(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_MINUTE)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		return cyng::make_object(cyng::to_minutes(str));
 	}
 
 	cyng::object convert_to_hours(cyng::object& obj) {
+		if (obj.rtti().tag() == cyng::TC_HOUR)	return obj;
 		BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
 		auto const str = cyng::io::to_plain(obj);
 		return cyng::make_object(cyng::to_hours(str));

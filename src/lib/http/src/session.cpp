@@ -616,6 +616,7 @@ namespace smf {
                 std::make_tuple(boost::beast::http::status::ok, version) };
             res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
             res.set(boost::beast::http::field::content_type, mime_type(path));
+            //  ToDo: Permissions-Policy: interest-cohort=()
             res.insert("X-ServerNickName", nickname_);
             res.content_length(size);
             res.keep_alive(keep_alive);

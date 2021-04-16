@@ -46,6 +46,8 @@ namespace smf {
 		void init(std::uint64_t max_upload_size
 			, std::string const& nickname
 			, std::chrono::seconds timeout
+			, std::string const& country_code
+			, std::string const& lang_code
 			, cyng::slot_ptr);
 
 		void res_insert(std::string table_name
@@ -127,7 +129,9 @@ namespace smf {
 	private:
 		void set_start_values(std::uint64_t max_upload_size
 			, std::string const& nickname
-			, std::chrono::seconds timeout);
+			, std::chrono::seconds timeout
+			, std::string const& country_code
+			, std::string const& lang_code);
 
 		/**
 		 * @return object of the specified type with a generic NULL value

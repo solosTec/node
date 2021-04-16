@@ -36,7 +36,7 @@ namespace smf {
 		, redirects_intrinsic_(redirects_intrinsic.begin(), redirects_intrinsic.end())
 		, auths_(auths)
 		, server_(ioc, logger, std::bind(&http_server::accept, this, std::placeholders::_1))
-		, upload_(logger, db_)
+		, upload_(logger, cluster_bus_, db_)
 		, uidgen_()
 		, ws_map_()
 	{
@@ -243,7 +243,7 @@ namespace smf {
 			auto const policy = cyng::value_cast(reader["policy"].get(), "merge");
 			auto const content = cyng::crypto::base64_decode(cyng::value_cast(reader["fileContent"].get(), ""));
 			CYNG_LOG_INFO(logger_, "[HTTP] upload (" << policy << ") [" << name << "] " << content.size() << " bytes");
-			upload_.config_bridge(name, policy, content, ',');
+			upload_.config_bridge(name, to_upload_policy(policy), content, ',');
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "[HTTP] insert: undefined channel " << channel);
