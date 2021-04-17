@@ -22,6 +22,7 @@ namespace smf
 				, cb_(cb)
 				, pos_{ 0 }
 				, header_{}
+				, tpl_()
 				, payload_()
 			{}
 
@@ -30,6 +31,9 @@ namespace smf
 				switch (state_) {
 				case state::HEADER:
 					state_ = state_header(c);
+					break;
+				case state::TPL:
+					state_ = state_tpl(c);
 					break;
 				case state::DATA:
 					state_ = state_data(c);
@@ -46,12 +50,23 @@ namespace smf
 				if (pos_ == header::size()) {
 					pos_ = 0;
 					payload_.clear();
-					payload_.push_back(c);	//	application type (CI)
+					//payload_.push_back(c);	//	application type (CI)
 					if (header_.payload_size() < 3) {
-						cb_(header_, payload_);
+						cb_(header_, tpl_, payload_);
+						tpl_.reset();
 						return state::HEADER;
 					}
 					payload_.reserve(header_.payload_size());
+					return state::TPL;
+				}
+				return state_;
+			}
+
+			parser::state parser::state_tpl(char c) {
+
+				tpl_.data_[pos_++] = c;
+				if (pos_ == tpl::size()) {
+					pos_ = 0;
 					return state::DATA;
 				}
 				return state_;
@@ -60,14 +75,17 @@ namespace smf
 			parser::state parser::state_data(char c) {
 				payload_.push_back(c);
 				BOOST_ASSERT(payload_.back() == c);
-				if (payload_.size() == header_.payload_size()) {
+				auto const total = header_.payload_size() - tpl::size();
+				if (payload_.size() == header_.payload_size() - tpl::size() - 1) {
 					BOOST_ASSERT(!payload_.empty());
 #ifdef _DEBUG
-					auto const fth = header_.get_frame_type();
-					auto const ftp = payload_.at(0);
-					BOOST_ASSERT(fth == ftp);
+					auto const sm = tpl_.get_security_mode();
+					//auto const fth = header_.get_frame_type();
+					//auto const ftp = payload_.at(0);
+					//BOOST_ASSERT(fth == ftp);
 #endif
-					cb_(header_, payload_);
+					cb_(header_, tpl_, payload_);
+					tpl_.reset();
 					return state::HEADER;
 				}
 				return state_;

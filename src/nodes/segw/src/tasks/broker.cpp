@@ -26,31 +26,29 @@ namespace smf {
 		, cyng::controller& ctl
 		, cyng::logger logger
 		, target const& t
-		, std::chrono::seconds timeout
 		, bool login)
 	: state_(state::START)
 		, sigs_{
-			std::bind(&broker::stop, this, std::placeholders::_1),
 			std::bind(&broker::receive, this, std::placeholders::_1),
-			std::bind(&broker::start, this)
-		}	
+			std::bind(&broker::check_status, this, std::placeholders::_1),
+			std::bind(&broker::stop, this, std::placeholders::_1)
+	}
 		, channel_(wp)
 		, ctl_(ctl)
 		, logger_(logger)
 		, target_(t)
-		, timeout_(timeout)
 		, login_(login)
 		, endpoints_()
 		, socket_(ctl.get_ctx())
-		, timer_(ctl.get_ctx())
 		, dispatcher_(ctl.get_ctx())
 		, input_buffer_()
 		, buffer_write_()
 	{
 		auto sp = channel_.lock();
 		if (sp) {
-			sp->set_channel_name("receive", 1);
-			sp->set_channel_name("start", 2);
+			std::size_t slot{ 0 };
+			sp->set_channel_name("receive", slot++);
+			sp->set_channel_name("check-status", slot++);
 			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
 		}
 
@@ -70,7 +68,6 @@ namespace smf {
 			});
 		boost::system::error_code ignored_ec;
 		socket_.close(ignored_ec);
-		timer_.cancel();
 		state_ = state::START;
 	}
 
@@ -119,19 +116,12 @@ namespace smf {
 		endpoints_ = endpoints;
 		start_connect(endpoints_.begin());
 
-		// Start the deadline actor. You will note that we're not setting any
-		// particular deadline here. Instead, the connect and input actors will
-		// update the deadline prior to each asynchronous operation.
-		timer_.async_wait(boost::bind(&broker::check_deadline, this, boost::asio::placeholders::error));
 	}
 
 	void broker::start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
 
 		if (endpoint_iter != endpoints_.end())	{
 			CYNG_LOG_TRACE(logger_, "[broker] trying " << endpoint_iter->endpoint() << "...");
-
-			//	Set a deadline for the connect operation.
-			timer_.expires_after(std::chrono::seconds(12));
 
 			// Start the asynchronous connect operation.
 			socket_.async_connect(endpoint_iter->endpoint(),
@@ -145,41 +135,32 @@ namespace smf {
 			//
 			reset();
 
-			//
-			//	reconnect after 20 seconds
-			//
-			timer_.expires_after(boost::asio::chrono::seconds(20));
-			timer_.async_wait(boost::bind(&broker::check_deadline, this, boost::asio::placeholders::error));
-
 		}
 	}
 
-	void broker::check_deadline(const boost::system::error_code& ec) {
-		if (is_stopped())	return;
-		CYNG_LOG_TRACE(logger_, "[broker] check deadline " << ec);
+	void broker::check_status(std::chrono::seconds timeout) {
 
-		if (!ec) {
-			switch (state_) {
-			case state::START:
-				CYNG_LOG_TRACE(logger_, "[broker] check deadline: start");
-				start();
-				break;
-			case state::CONNECTED:
-				CYNG_LOG_TRACE(logger_, "[broker] check deadline: connected");
-				break;
-			case state::WAIT:
-				CYNG_LOG_TRACE(logger_, "[broker] check deadline: waiting");
-				start();
-				break;
-			default:
-				CYNG_LOG_TRACE(logger_, "[broker] check deadline: other");
-				BOOST_ASSERT_MSG(false, "invalid state");
-				break;
-			}
+		switch (state_) {
+		case state::START:
+			CYNG_LOG_TRACE(logger_, "[broker] check deadline: start");
+			start();
+			break;
+		case state::CONNECTED:
+			CYNG_LOG_TRACE(logger_, "[broker] check deadline: connected");
+			break;
+		case state::WAIT:
+			CYNG_LOG_TRACE(logger_, "[broker] check deadline: waiting");
+			start();
+			break;
+		default:
+			CYNG_LOG_ERROR(logger_, "[broker] check deadline: invalid state");
+			BOOST_ASSERT_MSG(false, "invalid state");
+			break;
 		}
-		else {
-			CYNG_LOG_TRACE(logger_, "[broker] check deadline timer cancelled");
-		}
+		
+		auto sp = channel_.lock();
+		if (sp)	sp->suspend(timeout, "check-status", cyng::make_tuple(timeout < std::chrono::seconds(10) ? std::chrono::seconds(10) : timeout));
+
 	}
 
 	void broker::handle_connect(const boost::system::error_code& ec,
@@ -272,11 +253,6 @@ namespace smf {
 		{
 			CYNG_LOG_ERROR(logger_, "[broker] " << target_ << " read " << ec.value() << ": " << ec.message());
 			reset();
-
-			timer_.expires_after((ec == boost::asio::error::connection_reset)
-				? boost::asio::chrono::seconds(10)
-				: boost::asio::chrono::seconds(20));
-			timer_.async_wait(boost::bind(&broker::check_deadline, this, boost::asio::placeholders::error));
 		}
 	}
 
@@ -301,12 +277,6 @@ namespace smf {
 			buffer_write_.pop_front();
 			if (!buffer_write_.empty()) {
 				do_write();
-			}
-			else {
-
-				//	Wait 10 seconds before sending the next heartbeat.
-				//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
-				//heartbeat_timer_.async_wait(std::bind(&broker::check_connection_state, this));
 			}
 		}
 		else	{

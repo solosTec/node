@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Sylko Olzscher
+ * Copyright (c) 2021 Sylko Olzscher
  *
  */
 
@@ -65,11 +65,23 @@ namespace smf
 				data_.fill(0);
 			}
 
-			cyng::buffer_t restore_data(header const& h, cyng::buffer_t const& payload) {
-				cyng::buffer_t res(&h.data_[0], &h.data_[header::size() - 1]);	//	without frame type
-				res.insert(res.end(), payload.begin(), payload.end());
+			cyng::buffer_t restore_data(header const& h, tpl const& t, cyng::buffer_t const& payload) {
+				cyng::buffer_t res;
+				res.reserve(h.total_size() + 1);
+				res.insert(res.end(), h.data_.begin(), h.data_.end());	//	header
+				res.insert(res.end(), t.data_.begin(), t.data_.end());	//	tpl
+				res.insert(res.end(), payload.begin(), payload.end());		//	payload
 				return res;
 			}
+
+			tpl::tpl()
+				: data_{ 0 }
+			{}
+
+			void tpl::reset() {
+				data_.fill(0);
+			}
+
 		}
 
 		std::string dev_id_to_str(std::uint32_t id) {
@@ -87,6 +99,8 @@ namespace smf
 			ss << h;
 			return ss.str();
 		}
+
+
 	}
 }
 

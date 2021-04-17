@@ -29,8 +29,10 @@ set (mbus_h
 set (mbus_radio
     include/smf/mbus/radio/header.h
     include/smf/mbus/radio/parser.h
+    include/smf/mbus/radio/decode.h
     src/lib/mbus/protocol/src/radio/header.cpp
     src/lib/mbus/protocol/src/radio/parser.cpp
+    src/lib/mbus/protocol/src/radio/decode.cpp
 )
 set (mbus_wired
 )

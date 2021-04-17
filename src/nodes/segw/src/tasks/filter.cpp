@@ -39,7 +39,7 @@ namespace smf
 		, logger_(logger)
 		, cfg_blocklist_(config, type)
 		, cfg_gpio_(config)
-		, parser_([this](mbus::radio::header const& h, cyng::buffer_t const& data) {
+		, parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
 			auto const flag_id = h.get_manufacturer_code();
 			CYNG_LOG_TRACE(logger_, "[filter] meter: " << h.get_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
 #ifdef _DEBUG_SEGW
@@ -50,7 +50,7 @@ namespace smf
 				CYNG_LOG_DEBUG(logger_, "[" << h.get_dev_id() << "] " << data.size() << " bytes:\n" << ss.str());
 			}
 #endif
-			this->check(h, data);
+			this->check(h, t, data);
 		})
 		, targets_()
 		, access_times_()
@@ -128,7 +128,7 @@ namespace smf
 		CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "] has " << targets_.size() << " x target(s): " << name);
 	}
 
-	void filter::check(mbus::radio::header const& h, cyng::buffer_t const& payload) {
+	void filter::check(mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& payload) {
 
 		auto const id = h.get_id();
 		if (cfg_blocklist_.is_listed(id)) {
@@ -142,7 +142,7 @@ namespace smf
 					accumulated_bytes_ += payload.size();
 
 					for (auto target : targets_) {
-						target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, payload)));
+						target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, t, payload)));
 					}
 				}
 			}
@@ -160,7 +160,7 @@ namespace smf
 				accumulated_bytes_ += payload.size();
 				if (check_frequency(id)) {
 					for (auto target : targets_) {
-						target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, payload)));
+						target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, t, payload)));
 					}
 				}
 			}

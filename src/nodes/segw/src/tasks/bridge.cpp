@@ -352,10 +352,10 @@ namespace smf {
 					, ctl_
 					, logger_
 					, trg
-					, timeout
 					, login);
 				BOOST_ASSERT(channel->is_open());
-				channel->dispatch("start", cyng::make_tuple());
+				//channel->dispatch("start", cyng::make_tuple());
+				channel->dispatch("check-status", cyng::make_tuple(std::chrono::seconds(timeout)));
 
 			}
 		}

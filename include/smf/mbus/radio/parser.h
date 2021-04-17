@@ -25,11 +25,12 @@ namespace smf
 			class parser
 			{
 			public:
-				using cb_t = std::function<void(header const&, cyng::buffer_t const&)>;
+				using cb_t = std::function<void(header const&, tpl const&, cyng::buffer_t const&)>;
 
 			private:
 				enum class state {
 					HEADER,
+					TPL,
 					DATA
 				} state_;
 
@@ -42,8 +43,9 @@ namespace smf
 				template < typename I >
 				void read(I start, I end)
 				{
-					static_assert(std::is_same_v<char, typename std::iterator_traits<I>::value_type>, "data type char expected");
-					std::for_each(start, end, [this](char c)
+					using value_type = typename std::iterator_traits<I>::value_type;
+					static_assert(std::is_same_v<char, value_type>, "data type char expected");
+					std::for_each(start, end, [this](value_type c)
 						{
 							//
 							//	parse
@@ -62,12 +64,14 @@ namespace smf
 				void put(char);
 
 				state state_header(char c);
+				state state_tpl(char c);
 				state state_data(char c);
 
 			private:
 				cb_t cb_;
 				std::size_t pos_;
 				header header_;
+				tpl tpl_;
 				cyng::buffer_t payload_;
 			};
 		}

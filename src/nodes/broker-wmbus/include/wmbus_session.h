@@ -36,7 +36,9 @@ namespace smf {
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);
 
-		void decode(mbus::radio::header const& h, cyng::buffer_t const& data);
+		void decode(mbus::radio::header const& h
+			, mbus::radio::tpl const& t
+			, cyng::buffer_t const& data);
 
 	private:
 		boost::asio::ip::tcp::socket socket_;

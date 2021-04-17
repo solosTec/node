@@ -53,7 +53,7 @@ namespace smf
 		void update_statistics();
 		void flash_led(std::chrono::milliseconds, std::size_t);
 
-		void check(mbus::radio::header const& h, cyng::buffer_t const& data);
+		void check(mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data);
 		bool check_frequency(std::string const& id);
 
 

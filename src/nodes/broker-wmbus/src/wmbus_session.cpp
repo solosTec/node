@@ -32,8 +32,8 @@ namespace smf {
 		, bus_(cluster_bus)
 		, buffer_()
 		, buffer_write_()
-		, parser_([this](mbus::radio::header const& h, cyng::buffer_t const& data) {
-			this->decode(h, data);
+		, parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
+			this->decode(h, t, data);
 		})
 	{
 	}
@@ -133,7 +133,7 @@ namespace smf {
 		}
 	}
 
-	void wmbus_session::decode(mbus::radio::header const& h, cyng::buffer_t const& data) {
+	void wmbus_session::decode(mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
 
 		auto const flag_id = h.get_manufacturer_code();
 		auto const manufacturer = mbus::decode(flag_id.first, flag_id.second);
@@ -168,12 +168,6 @@ namespace smf {
 				bus_.req_db_update("meterwMBus"
 					, cyng::key_generator(tag)
 					, cyng::param_map_factory()("address", ep.address())("port", ep.port())("lastSeen", std::chrono::system_clock::now()));
-				//bus_.req_db_update("meterwMBus"
-				//	, cyng::key_generator(tag)
-				//	, cyng::param_map_factory()("port", ep.port()));
-				//bus_.req_db_update("meterwMBus"
-				//	, cyng::key_generator(tag)
-				//	, cyng::param_map_factory()("lastSeen", std::chrono::system_clock::now()));
 
 			}
 			else {

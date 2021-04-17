@@ -14,6 +14,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <boost/assert.hpp>
+
 namespace smf
 {
 	namespace mbus	
@@ -28,11 +30,12 @@ namespace smf
 		{
 			class parser;
 			class header;
+			class tpl;
 
 			/**
 			 * Takes header data and payload and restores the original (unparsed) message
 			 */
-			cyng::buffer_t restore_data(header const&, cyng::buffer_t const&);
+			cyng::buffer_t restore_data(header const&, tpl const&, cyng::buffer_t const&);
 
 
 			/**
@@ -47,7 +50,7 @@ namespace smf
 			class header
 			{
 				friend class parser;
-				friend cyng::buffer_t restore_data(header const&, cyng::buffer_t const&);
+				friend cyng::buffer_t restore_data(header const&, tpl const&, cyng::buffer_t const&);
 
 				using value_type = std::uint8_t;
 				using SIZE = std::integral_constant<std::size_t, 11>;
@@ -101,6 +104,12 @@ namespace smf
 				std::string get_id() const;
 				std::uint32_t get_dev_id() const;
 
+				/**
+				 * application type (CI)
+				 * <li><0x72, 0x7A: response M-Bus/li>
+				 * <li><0x7C, 0x7D: response DLMS/li>
+				 * <li><0x7E, 0x7F: response SML/li>
+				 */
 				constexpr std::uint8_t get_frame_type() const noexcept {
 					return data_.at(10);
 				}
@@ -134,6 +143,83 @@ namespace smf
 						data_.at(8),
 						data_.at(9)
 					};
+				}
+
+			private:
+				data_type	data_;
+			};
+
+			enum class security_mode : std::uint8_t {
+				NONE = 0, 
+				SYMMETRIC = 5, //	AES128 with CBC
+				ADVANCED = 7,
+				ASSYMETRIC = 13,
+			};
+
+			/**
+			 * Context data required to decrypt wireless mBus data.
+			 * Part of the mBus wireless header.
+			 * Same for short and long TPL headers
+			 * 
+			 * The Access Number together with the transmitter address
+			 * is used to identify a datagram.
+			 * 
+			 * It will be distinguished between "Gateway Status" and "Meter Status" depending from
+			 * the CI field.
+			 *
+			 * Security Mode
+			 *
+			 * length of encrypted data
+			 */
+			class tpl 
+			{
+				friend class parser;
+				friend cyng::buffer_t restore_data(header const&, tpl const&, cyng::buffer_t const&);
+
+				using value_type = std::uint8_t;
+				using SIZE = std::integral_constant<std::size_t, 4>;
+				//	internal data type
+				using data_type = std::array< value_type, SIZE::value >;
+
+			public:
+
+				constexpr static std::size_t size() noexcept {
+					return SIZE::value;
+				}
+
+				tpl();
+
+				void reset();
+
+				constexpr security_mode get_security_mode() const noexcept {
+					//	take only the first 5 bits
+					switch (data_.at(3) & 0x1F) {
+					case 0: return security_mode::NONE;
+					case 5:	return security_mode::SYMMETRIC;
+					case 7:	return security_mode::ADVANCED;
+					case 13: return security_mode::ASSYMETRIC;
+					default: break;
+					}
+					BOOST_ASSERT_MSG(false, "security mode not supported");
+					return security_mode::NONE;
+				}
+
+				constexpr std::uint8_t get_access_no() const noexcept {
+					return data_.at(0);
+				}
+
+				constexpr std::uint8_t get_meter_stats() const noexcept {
+					return data_.at(1);
+				}
+
+				constexpr std::uint8_t get_block_count() const noexcept {
+					switch (get_security_mode()) {
+					case security_mode::ASSYMETRIC:
+						return data_.at(2);
+					default:
+						break;
+					}
+					return (data_.at(2) & 0xF0) >> 4;
 				}
 
 			private:

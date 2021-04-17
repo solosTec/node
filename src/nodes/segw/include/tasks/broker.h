@@ -27,9 +27,9 @@ namespace smf {
 		friend class cyng::task;
 
 		using signatures_t = std::tuple<
-			std::function<void(cyng::eod)>,
 			std::function<void(cyng::buffer_t)>,
-			std::function<void()>
+			std::function<void(std::chrono::seconds)>,
+			std::function<void(cyng::eod)>
 		>;
 
 		enum class state {
@@ -44,7 +44,6 @@ namespace smf {
 			, cyng::controller& ctl
 			, cyng::logger
 			, target const&
-			, std::chrono::seconds
 			, bool login);
 
 	private:
@@ -64,7 +63,8 @@ namespace smf {
 		void handle_read(const boost::system::error_code& ec, std::size_t n);
 		void do_write();
 		void handle_write(const boost::system::error_code& ec);
-		void check_deadline(const boost::system::error_code& ec);
+		//void check_deadline(const boost::system::error_code& ec);
+		void check_status(std::chrono::seconds);
 
 		constexpr bool is_stopped() const {
 			return state_ == state::STOPPED;
@@ -81,12 +81,11 @@ namespace smf {
 		cyng::controller& ctl_;
 		cyng::logger logger_;
 		target const target_;
-		std::chrono::seconds const timeout_;
 		bool const login_;
 
 		boost::asio::ip::tcp::resolver::results_type endpoints_;
 		boost::asio::ip::tcp::socket socket_;
-		boost::asio::steady_timer timer_;
+		//boost::asio::steady_timer timer_;
 		boost::asio::io_context::strand dispatcher_;
 
 		std::string input_buffer_;
