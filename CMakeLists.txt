@@ -468,6 +468,7 @@ target_compile_definitions(smf_mbus
 
 target_link_libraries(smf_mbus 
     PRIVATE 
+        "$<$<PLATFORM_ID:Linux>:${OPENSSL_LIBRARIES}>"
         Boost::boost 
 )
 
