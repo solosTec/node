@@ -27,7 +27,8 @@ namespace smf
 				//
 				//	M-field + A-field
 				//
-				auto pos = ++srv_id.begin();
+				auto pos = srv_id.begin();
+				++pos;
 				std::copy(pos, srv_id.end(), iv.begin());
 
 				BOOST_ASSERT(iv.at(8) == access_nr);
