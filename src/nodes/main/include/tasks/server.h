@@ -36,6 +36,8 @@ namespace smf {
 		server(std::weak_ptr<cyng::channel>
 			, cyng::controller& ctl
 			, boost::uuids::uuid tag
+			, std::string const& country_code
+			, std::string const& lang_code
 			, cyng::logger
 			, std::string const& account
 			, std::string const& pwd

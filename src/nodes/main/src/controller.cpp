@@ -67,7 +67,7 @@ namespace smf {
 		return cyng::make_param("session", cyng::make_tuple(
 			cyng::make_param("auto-login", false),
 			cyng::make_param("auto-enabled", true),
-			cyng::make_param("supersede", true),
+			cyng::make_param("superseede", true),
 			cyng::make_param("gw-cache", true),
 			cyng::make_param("generate-time-series", false),
 			cyng::make_param("catch-meters", false),
@@ -90,6 +90,9 @@ namespace smf {
 		auto const reader = cyng::make_reader(cfg);
 		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
 
+		auto const country_code = cyng::value_cast(reader["country-code"].get(), "CH");
+		auto const lang_code = cyng::value_cast(reader["language-code"].get(), "en-GB");
+
 		auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
 		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 7701);
 		auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
@@ -104,6 +107,8 @@ namespace smf {
 		auto channel = ctl.create_named_channel_with_ref<server>("main"
 			, ctl
 			, tag
+			, country_code
+			, lang_code
 			, logger
 			, account
 			, pwd

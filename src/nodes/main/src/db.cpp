@@ -30,7 +30,9 @@ namespace smf {
 		, channel_pty_(1)	//	ip-t channel id
 	{}
 
-	void db::init(cyng::param_map_t const& session_cfg) {
+	void db::init(cyng::param_map_t const& session_cfg
+		, std::string const& country_code
+		, std::string const& lang_code) {
 
 		//
 		//	initialize cache
@@ -47,7 +49,7 @@ namespace smf {
 		//
 		//	set start values
 		//
-		set_start_values(session_cfg);
+		set_start_values(session_cfg, country_code, lang_code);
 
 		//
 		//	create auto tables
@@ -62,13 +64,19 @@ namespace smf {
 #endif 
 	}
 
-	void db::set_start_values(cyng::param_map_t const& session_cfg) {
+	void db::set_start_values(cyng::param_map_t const& session_cfg
+		, std::string const& country_code
+		, std::string const& lang_code) {
 
 		cfg_.set_value("startup", std::chrono::system_clock::now());
 
 		cfg_.set_value("smf-version", SMF_VERSION_NAME);
 		cfg_.set_value("boost-version", SMF_BOOST_VERSION);
 		cfg_.set_value("ssl-version", SMF_OPEN_SSL_VERSION);
+		cfg_.set_value("compiler-version", SMF_COMPILER_VERSION);
+
+		cfg_.set_value("country-code", country_code);
+		cfg_.set_value("language-code", lang_code);
 
 		//
 		//	load session configuration from config file

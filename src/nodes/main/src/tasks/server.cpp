@@ -18,6 +18,8 @@ namespace smf {
 	server::server(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, boost::uuids::uuid tag
+		, std::string const& country_code
+		, std::string const& lang_code
 		, cyng::logger logger
 		, std::string const& account
 		, std::string const& pwd
@@ -50,7 +52,7 @@ namespace smf {
 		//
 		//	create all tables and set initial values
 		//
-		cache_.init(session_cfg);
+		cache_.init(session_cfg, country_code, lang_code);
 	}
 
 	server::~server()

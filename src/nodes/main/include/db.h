@@ -60,7 +60,9 @@ namespace smf {
 		/**
 		 * fill store map and create all tables
 		 */
-		void init(cyng::param_map_t const&);
+		void init(cyng::param_map_t const&
+			, std::string const& country_code
+			, std::string const& lang_code);
 
 		/**
 		 * Add a new cluster node into table "cluster"
@@ -195,7 +197,9 @@ namespace smf {
 		std::size_t close_channel(std::uint32_t);
 
 	private:
-		void set_start_values(cyng::param_map_t const& session_cfg);
+		void set_start_values(cyng::param_map_t const& session_cfg
+			, std::string const& country_code
+			, std::string const& lang_code);
 		void init_sys_msg();
 		void init_LoRa_uplink();
 		void init_iec_uplink();
