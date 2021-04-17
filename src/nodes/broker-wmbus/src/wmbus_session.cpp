@@ -8,6 +8,7 @@
 
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/radio/header.h>
+#include <smf/mbus/radio/decode.h>
 
 #include <cyng/log/record.h>
 #include <cyng/io/io_buffer.h>
@@ -147,6 +148,11 @@ namespace smf {
 			auto const[key, tag] = db_->lookup_meter(h.get_id());
 			if (!tag.is_nil()) {
 
+				auto const payload = mbus::radio::decode(h.get_server_id()
+					, t.get_access_no()
+					, key
+					, data);
+
 				//
 				//	insert uplink data
 				//
@@ -156,7 +162,7 @@ namespace smf {
 					h.get_medium(),
 					manufacturer,
 					h.get_frame_type(),
-					cyng::io::to_hex(data),	//	"payload",
+					cyng::io::to_hex(payload),	//	"payload",
 					boost::uuids::nil_uuid()
 				));
 

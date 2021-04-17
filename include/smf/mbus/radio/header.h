@@ -196,11 +196,16 @@ namespace smf
 					switch (data_.at(3) & 0x1F) {
 					case 0: return security_mode::NONE;
 					case 5:	return security_mode::SYMMETRIC;
-					case 7:	return security_mode::ADVANCED;
+					case 4:	
+						//	deprecated
+						BOOST_ASSERT_MSG(false, "security mode 4 is deprecated");
+						break;
+					case 7:	return security_mode::ADVANCED;		//	requires a Configuration Field Extension
 					case 13: return security_mode::ASSYMETRIC;
 					default: break;
 					}
-					BOOST_ASSERT_MSG(false, "security mode not supported");
+					//BOOST_ASSERT_MSG(false, "security mode not supported");
+					//BOOST_ASSERT((data_.at(3) & 0x0c) == 0);	//	these bits should be zero
 					return security_mode::NONE;
 				}
 
