@@ -17,11 +17,11 @@
 
 #include <boost/uuid/nil_generator.hpp>
 
-#ifdef _DEBUG_BROKER_IEC
+//#ifdef _DEBUG_BROKER_IEC
 #include <iostream>
 #include <sstream>
 #include <cyng/io/hex_dump.hpp>
-#endif
+//#endif
 
 
 namespace smf {
