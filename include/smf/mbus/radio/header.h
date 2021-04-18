@@ -8,7 +8,9 @@
 #define SMF_MBUS_RADIO_HEADER_H
 
 #include <cyng/obj/intrinsics/buffer.h>
+
 #include <smf/mbus/server_id.h>
+#include <smf/mbus/field_definitions.h>
 
 #include <type_traits>
 #include <iostream>
@@ -79,6 +81,17 @@ namespace smf
 				 */
 				constexpr std::uint8_t payload_size() const noexcept {
 					return static_cast<std::uint8_t>(total_size() - 0x09);
+				}
+
+				constexpr std::uint8_t effective_payload_size() const noexcept {
+
+					switch (get_tpl_type(get_frame_type())) {
+					case tpl_type::SHORT:	return payload_size() - 5;
+					case tpl_type::LONG:	return payload_size() - 13;
+					default:
+						break;
+					}
+					return payload_size() - 1;
 				}
 
 				/**
@@ -156,6 +169,7 @@ namespace smf
 				ASSYMETRIC = 13,
 			};
 
+
 			/**
 			 * Context data required to decrypt wireless mBus data.
 			 * Part of the mBus wireless header.
@@ -177,7 +191,8 @@ namespace smf
 				friend cyng::buffer_t restore_data(header const&, tpl const&, cyng::buffer_t const&);
 
 				using value_type = std::uint8_t;
-				using SIZE = std::integral_constant<std::size_t, 4>;
+				//	first 8 bytes only in long TPLs
+				using SIZE = std::integral_constant<std::size_t, 8 + 4>;
 				//	internal data type
 				using data_type = std::array< value_type, SIZE::value >;
 
@@ -193,7 +208,7 @@ namespace smf
 
 				constexpr security_mode get_security_mode() const noexcept {
 					//	take only the first 5 bits
-					switch (data_.at(3) & 0x1F) {
+					switch (data_.at(8 + 3) & 0x1F) {
 					case 0: return security_mode::NONE;
 					case 5:	return security_mode::SYMMETRIC;
 					case 4:	
@@ -210,21 +225,21 @@ namespace smf
 				}
 
 				constexpr std::uint8_t get_access_no() const noexcept {
-					return data_.at(0);
+					return data_.at(8 + 0);
 				}
 
 				constexpr std::uint8_t get_meter_stats() const noexcept {
-					return data_.at(1);
+					return data_.at(8 + 1);
 				}
 
 				constexpr std::uint8_t get_block_count() const noexcept {
 					switch (get_security_mode()) {
 					case security_mode::ASSYMETRIC:
-						return data_.at(2);
+						return data_.at(8 + 2);
 					default:
 						break;
 					}
-					return (data_.at(2) & 0xF0) >> 4;
+					return (data_.at(8 + 2) & 0xF0) >> 4;
 				}
 
 			private:

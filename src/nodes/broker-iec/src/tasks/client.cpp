@@ -57,6 +57,7 @@ namespace smf {
 				auto const name = meters_.at(meter_index_);
 				CYNG_LOG_TRACE(logger_, "[iec] data " << name << " - " << code << ": " << value << " " << unit);
 				writer_->dispatch("store", cyng::make_tuple(code, value, unit));
+				++entries_;
 
 			}, [this](std::string dev, bool crc) {
 
@@ -66,10 +67,15 @@ namespace smf {
 
 				bus_.req_db_insert_auto("iecUplink", cyng::data_generator(
 					std::chrono::system_clock::now(),
-					"readout complete: " + name + " (" + dev + ")" ,
+					"readout complete: " + name + " (" + dev + ") #" + std::to_string(entries_),
 					socket_.remote_endpoint(),
 					boost::uuids::nil_uuid()
 				));
+
+				//
+				//	reset
+				//
+				entries_ = 0;
 
 				//
 				//	next meter
@@ -81,6 +87,7 @@ namespace smf {
 
 			}, 1u)
 		, writer_(ctl_.create_channel_with_ref<writer>(logger_, out))
+		, entries_{ 0 }
 	{
 		auto sp = channel_.lock();
 		if (sp) {
@@ -246,14 +253,14 @@ namespace smf {
 			//
 			std::stringstream ss;
 			ss << "[client] received " << bytes_transferred << " bytes";
-#ifdef _DEBUG_BROKER_IEC
+//#ifdef _DEBUG_BROKER_IEC
 			{
 				std::stringstream ss;
 				cyng::io::hex_dump<8> hd;
 				hd(ss, input_buffer_.data(), input_buffer_.data() + bytes_transferred);
-				CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes:\n" << ss.str());
+				CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes:\n" << ss.str());
 			}
-#endif
+//#endif
 
 			parser_.read(input_buffer_.data(), input_buffer_.data() + bytes_transferred);
 

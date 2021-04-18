@@ -6,6 +6,7 @@
  */
 
 #include <smf/mbus/radio/parser.h>
+#include <smf/mbus/field_definitions.h>
 
 #include <boost/assert.hpp>
 
@@ -32,7 +33,10 @@ namespace smf
 				case state::HEADER:
 					state_ = state_header(c);
 					break;
-				case state::TPL:
+				case state::TPL_SHORT:
+					state_ = state_tpl(c);
+					break;
+				case state::TPL_LONG:
 					state_ = state_tpl(c);
 					break;
 				case state::DATA:
@@ -50,14 +54,22 @@ namespace smf
 				if (pos_ == header::size()) {
 					pos_ = 0;
 					payload_.clear();
-					//payload_.push_back(c);	//	application type (CI)
 					if (header_.payload_size() < 3) {
 						cb_(header_, tpl_, payload_);
 						tpl_.reset();
 						return state::HEADER;
 					}
 					payload_.reserve(header_.payload_size());
-					return state::TPL;
+					switch (get_tpl_type(header_.get_frame_type())) {
+					case tpl_type::SHORT:
+						pos_ = 8;	//	skip secondary address
+						return state::TPL_SHORT;
+					case tpl_type::LONG:
+						return state::TPL_LONG;
+					default:
+						break;
+					}
+					return state::DATA;
 				}
 				return state_;
 			}
@@ -75,8 +87,8 @@ namespace smf
 			parser::state parser::state_data(char c) {
 				payload_.push_back(c);
 				BOOST_ASSERT(payload_.back() == c);
-				auto const total = header_.payload_size() - tpl::size();
-				if (payload_.size() == header_.payload_size() - tpl::size() - 1) {
+				auto const total = header_.effective_payload_size();
+				if (payload_.size() == header_.effective_payload_size())	{
 					BOOST_ASSERT(!payload_.empty());
 #ifdef _DEBUG
 					auto const sm = tpl_.get_security_mode();

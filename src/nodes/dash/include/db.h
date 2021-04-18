@@ -178,7 +178,7 @@ namespace smf {
 
 	template <typename T>
 	cyng::object convert_to_numeric(cyng::object& obj) {
-		if (obj.rtti().tag() == cyng::TC_NULL)	return T(0);
+		if (obj.rtti().tag() == cyng::TC_NULL)	return cyng::make_object(T(0));
 		BOOST_ASSERT(obj.rtti().is_integral());
 		return cyng::make_object(cyng::numeric_cast<T>(obj, T(0)));
 	}

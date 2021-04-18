@@ -69,7 +69,18 @@ namespace smf
 				cyng::buffer_t res;
 				res.reserve(h.total_size() + 1);
 				res.insert(res.end(), h.data_.begin(), h.data_.end());	//	header
-				res.insert(res.end(), t.data_.begin(), t.data_.end());	//	tpl
+				switch (get_tpl_type(h.get_frame_type())) {
+				case tpl_type::SHORT:
+					//	skip secondary address
+					res.insert(res.end(), t.data_.begin() + 8, t.data_.end());	//	tpl short
+					break;
+				case tpl_type::LONG:
+					res.insert(res.end(), t.data_.begin(), t.data_.end());	//	tpl long
+					break;
+				default:
+					//	no tpl
+					break;
+				}
 				res.insert(res.end(), payload.begin(), payload.end());		//	payload
 				return res;
 			}
@@ -99,7 +110,6 @@ namespace smf
 			ss << h;
 			return ss.str();
 		}
-
 
 	}
 }

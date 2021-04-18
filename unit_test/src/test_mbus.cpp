@@ -44,9 +44,8 @@ BOOST_AUTO_TEST_CASE(id)
 
 BOOST_AUTO_TEST_CASE(parser)
 {
-	auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>("23A84B07EBCBAF948895DF0E9133520D");
 
-	//00684279 has AES key : 6140b8c066edde3773edf7f8007a45ab
+	//	short header
 	//	[0000]  ce 44 a8 15 74 31 45 04  01 02 7f 46 00 c0 05 57  .D..t1E. ...F...W
 	//	[0010]  35 f1 07 c8 b4 a7 67 21  17 90 97 fa bf cd 22 92  5.....g! ......".
 	//	[0020]  ee c5 15 c5 7b 73 8a e3  29 7f 52 9c b1 ea d9 a4  ....{s.. ).R.....
@@ -61,7 +60,7 @@ BOOST_AUTO_TEST_CASE(parser)
 	//	[00b0]  29 15 30 b1 cc 35 7a 97  b4 6e 7e 41 02 10 b1 50  ).0..5z. .n~A...P
 	//	[00c0]  c4 64 80 3d 6b d6 be c0  b1 45 1f 90 cc c2 cf     .d.=k... .E.....
 	auto const inp = cyng::make_buffer({
-		0xce, 0x44, 0xa8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02, 0x7f, /* header complete */ 0x46, 0x00, 0xc0, 0x05, 0x57,
+		0xce, 0x44, 0xa8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02, 0x7f, /* header complete */ 0x46, 0x00, 0xc0, 0x05, /* data */ 0x57,
 		0x35, 0xf1, 0x07, 0xc8, 0xb4, 0xa7, 0x67, 0x21, 0x17, 0x90, 0x97, 0xfa, 0xbf, 0xcd, 0x22, 0x92,
 		0xee, 0xc5, 0x15, 0xc5, 0x7b, 0x73, 0x8a, 0xe3, 0x29, 0x7f, 0x52, 0x9c, 0xb1, 0xea, 0xd9, 0xa4,
 		0x1c, 0xed, 0xc9, 0xab, 0x75, 0x73, 0x4f, 0x8a, 0x3b, 0x4b, 0x42, 0x8b, 0xe8, 0x9d, 0x40, 0x02,
@@ -79,6 +78,8 @@ BOOST_AUTO_TEST_CASE(parser)
 
 	smf::mbus::radio::parser p([&](smf::mbus::radio::header const& h, smf::mbus::radio::tpl const& t, cyng::buffer_t const& payload) {
 		std::cout << smf::mbus::to_str(h) << std::endl;
+
+		auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>("23A84B07EBCBAF948895DF0E9133520D");
 
 		auto const res = smf::mbus::radio::decode(h.get_server_id()
 			, t.get_access_no()
@@ -98,6 +99,38 @@ BOOST_AUTO_TEST_CASE(parser)
 
 		});
 	p.read(std::begin(inp), std::end(inp));
+
+	//	long header
+	auto const inp_long = cyng::make_buffer({
+		0x36, 0x44, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e, 0x72, /* header complete */ 0x57, 0x14, 0x06, 0x21, 0xe6,
+		0x1e, 0x36, 0x03, 0xf3, 0x00, 0x20, 0x65, /* secondary complate */ 0xd4, 0xfc, 0xa9, 0xb9, 0x37, 0x81, 0x3f, 0xf1, 0x45,
+		0xf0, 0x4c, 0x61, 0x1e, 0x65, 0x13, 0x43, 0x69, 0x60, 0x69, 0x43, 0x08, 0x86, 0x1c, 0xbc, 0x98,
+		0x2d, 0xb5, 0x4a, 0xbb, 0x76, 0xb3, 0xa3 });
+
+	smf::mbus::radio::parser p_long([&](smf::mbus::radio::header const& h, smf::mbus::radio::tpl const& t, cyng::buffer_t const& payload) {
+		std::cout << smf::mbus::to_str(h) << std::endl;
+
+		auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>("6140B8C066EDDE3773EDF7F8007A45AB");
+
+		auto const res = smf::mbus::radio::decode(h.get_server_id()
+			, t.get_access_no()
+			, aes
+			, payload);
+
+		BOOST_REQUIRE_EQUAL(res.size(), 0x20);
+		BOOST_REQUIRE_EQUAL(res.at(0), 0x2f);
+		BOOST_REQUIRE_EQUAL(res.at(1), 0x2f);
+
+		auto const clone = smf::mbus::radio::restore_data(h, t, payload);
+		BOOST_REQUIRE_EQUAL(clone.size(), inp_long.size());
+		for (std::size_t idx = 0; idx < inp_long.size(); ++idx) {
+			BOOST_REQUIRE_EQUAL(clone.at(idx), inp_long.at(idx));
+		}
+
+
+		});
+	p_long.read(std::begin(inp_long), std::end(inp_long));
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -86,6 +86,7 @@ namespace smf {
 
 		iec::parser parser_;
 		cyng::channel_ptr	writer_;
+		std::size_t entries_;	//	per readount
 	};
 
 	/**

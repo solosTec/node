@@ -30,7 +30,8 @@ namespace smf
 			private:
 				enum class state {
 					HEADER,
-					TPL,
+					TPL_SHORT,
+					TPL_LONG,
 					DATA
 				} state_;
 

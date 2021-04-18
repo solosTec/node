@@ -146,6 +146,48 @@ namespace smf
 			FIELD_CI_NULL = 0xFF, //!<	No CI-field transmitted.
 		};
 
+		enum class tpl_type {
+			NONE,
+			SHORT,
+			LONG
+		};
+
+		/**
+		 * use the CI field to determine the TPL field type
+		 */
+		constexpr tpl_type get_tpl_type(std::uint8_t ci) noexcept {
+			switch (ci) {
+			case FIELD_CI_CMD_TO_DEVICE_SHORT:
+			case FIELD_CI_CMD_DLMS_SHORT:
+			case FIELD_CI_CMD_SML_SHORT:
+			case FIELD_CI_APL_ERROR_SHORT:
+			case FIELD_CI_APL_ALARM_SHORT:
+			case FIELD_CI_HEADER_SHORT:
+			case FIELD_CI_RES_SHORT_DLSM:
+			case FIELD_CI_LINK_FROM_DEVICE_SHORT:
+			case FIELD_CI_RES_TLS_SHORT:
+			case FIELD_CI_RES_SHORT_SML:
+				return tpl_type::SHORT;
+			case FIELD_CI_HEADER_LONG:
+			case FIELD_CI_CMD_SML_LONG:
+			case FIELD_CI_CMD_DLMS_LONG:
+			case FIELD_CI_CMD_TO_DEVICE_LONG:
+			case FIELD_CI_APL_ERROR_LONG:
+			case FIELD_CI_APL_ALARM_LONG:
+			case FIELD_CI_RES_LONG_SML:
+			case FIELD_CI_RES_TLS_LONG:
+				return tpl_type::LONG;
+			case FIELD_CI_HEADER_NO:
+				break;
+			default:
+				break;
+
+			}
+
+			return tpl_type::NONE;
+		}
+
+
 		//
 		//	81 06 19 07 04 FF - transmision power
 		//
