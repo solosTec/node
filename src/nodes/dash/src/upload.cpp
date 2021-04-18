@@ -472,16 +472,16 @@ namespace smf {
 			//
 			//	build server id
 			//
-			std::array<char, 9>	server_id = {
-				static_cast<char>(wired ? 2 : 1),	//	wired M-Bus
-				static_cast<char>(ac.at(0)),		//	manufacturer
-				static_cast<char>(ac.at(1)),
+			srv_id_t	server_id = {
+				static_cast<std::uint8_t>(wired ? 2 : 1),	//	wired M-Bus
+				ac.at(0),		//	manufacturer
+				ac.at(1),
 				m.at(3),	//	meter ID (reverse)
 				m.at(2),
 				m.at(1),
 				m.at(0),
-				static_cast<char>(version),	//	version
-				static_cast<char>(medium)		//	2 == electricity
+				version,	//	version
+				medium		//	2 == electricity
 			};
 
 			return srv_id_to_str(server_id);

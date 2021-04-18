@@ -39,6 +39,10 @@ namespace smf {
 		void decode(mbus::radio::header const& h
 			, mbus::radio::tpl const& t
 			, cyng::buffer_t const& data);
+		void decode(srv_id_t id
+			, std::uint8_t access_no
+			, std::uint8_t frame_type
+			, cyng::buffer_t const& data);
 
 	private:
 		boost::asio::ip::tcp::socket socket_;

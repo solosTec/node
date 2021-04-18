@@ -83,6 +83,9 @@ namespace smf
 					return static_cast<std::uint8_t>(total_size() - 0x09);
 				}
 
+				/**
+				 * payload size without TPL
+				 */
 				constexpr std::uint8_t effective_payload_size() const noexcept {
 
 					switch (get_tpl_type(get_frame_type())) {
@@ -95,27 +98,22 @@ namespace smf
 				}
 
 				/**
+				 * @true for long TPL
+				 */
+				constexpr bool has_secondary_address() const noexcept {
+					return get_tpl_type(get_frame_type()) == tpl_type::LONG;
+				}
+
+				/**
 				 * @return packet type
 				 */
 				constexpr std::uint8_t get_c_field() const noexcept {
 					 return data_.at(1);
 				}
 
-				/**
-				 * @return 2 byte code
-				 */
-				std::pair<char, char> get_manufacturer_code() const;
-
 				constexpr std::uint8_t get_version() const noexcept {
 					return data_.at(8);
 				}
-
-				constexpr std::uint8_t get_medium() const noexcept {
-					return data_.at(9);
-				}
-
-				std::string get_id() const;
-				std::uint32_t get_dev_id() const;
 
 				/**
 				 * application type (CI)
@@ -240,6 +238,37 @@ namespace smf
 						break;
 					}
 					return (data_.at(8 + 2) & 0xF0) >> 4;
+				}
+
+				/**
+				 * [0] 1 byte 01/02 01 == wireless, 02 == wired
+				 * [1-2] 2 bytes manufacturer ID
+				 * [3-6] 4 bytes serial number
+				 * [7] 1 byte device type / media
+				 * [8] 1 byte product revision
+				 *
+				 * 9 bytes in total
+				 * example: 01-e61e-13090016-3c-07
+				 *
+				 */
+				constexpr srv_id_t get_secondary_address() const noexcept {
+
+					return srv_id_t {
+						1,	//	wireless M-Bus
+
+						//	[4-5] 2 bytes manufacturer acronym
+						data_.at(4),
+						data_.at(5),
+
+						//	[1-4] 4 bytes serial number (reversed)
+						data_.at(0),
+						data_.at(1),
+						data_.at(2),
+						data_.at(3),
+
+						data_.at(6),	//	version/generation
+						data_.at(7)		//	device type/medium
+					};
 				}
 
 			private:

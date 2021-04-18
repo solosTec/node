@@ -35,9 +35,27 @@ namespace smf
 	 * Produce a string with the format: 
 	 * mmmm-nnnnnnnn-vv-uu
 	 */
-	std::string srv_id_to_str(std::array<char, 9>);
+	std::string srv_id_to_str(srv_id_t);
 	std::string srv_id_to_str(cyng::buffer_t);
 
+	/**
+	 * @return meter id as string
+	 */
+	std::string get_id(srv_id_t);
+
+	/**
+	 * @return meter id as integer
+	 */
+	std::uint32_t get_dev_id(srv_id_t);
+
+	/**
+	 * @return 2 byte code
+	 */
+	std::pair<char, char> get_manufacturer_code(srv_id_t);
+
+	constexpr std::uint8_t get_medium(srv_id_t address) noexcept {
+		return address.at(8);
+	}
 
 	/**
 	 * generates a metering code

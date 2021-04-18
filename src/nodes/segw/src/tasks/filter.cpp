@@ -40,14 +40,14 @@ namespace smf
 		, cfg_blocklist_(config, type)
 		, cfg_gpio_(config)
 		, parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
-			auto const flag_id = h.get_manufacturer_code();
-			CYNG_LOG_TRACE(logger_, "[filter] meter: " << h.get_id() << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+			auto const flag_id = get_manufacturer_code(h.get_server_id());
+			CYNG_LOG_TRACE(logger_, "[filter] meter: " << get_id(h.get_server_id()) << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
 #ifdef _DEBUG_SEGW
 			{
 				std::stringstream ss;
 				cyng::io::hex_dump<8> hd;
 				hd(ss, std::begin(data), std::end(data));
-				CYNG_LOG_DEBUG(logger_, "[" << h.get_dev_id() << "] " << data.size() << " bytes:\n" << ss.str());
+				CYNG_LOG_DEBUG(logger_, "[" << get_dev_id(h.get_server_id()) << "] " << data.size() << " bytes:\n" << ss.str());
 			}
 #endif
 			this->check(h, t, data);
@@ -130,7 +130,7 @@ namespace smf
 
 	void filter::check(mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& payload) {
 
-		auto const id = h.get_id();
+		auto const id = get_id(h.get_server_id());
 		if (cfg_blocklist_.is_listed(id)) {
 			if (!cfg_blocklist_.is_drop_mode()) {
 
@@ -148,7 +148,7 @@ namespace smf
 			}
 			else {
 				//	drop meter
-				CYNG_LOG_WARNING(logger_, "[" << cfg_blocklist_.get_task_name() << "] blocks meter " << h.get_dev_id());
+				CYNG_LOG_WARNING(logger_, "[" << cfg_blocklist_.get_task_name() << "] blocks meter " << get_dev_id(h.get_server_id()));
 			}
 		}
 		else {
@@ -166,7 +166,7 @@ namespace smf
 			}
 			else {
 				//	drop meter
-				CYNG_LOG_WARNING(logger_, "[" << cfg_blocklist_.get_task_name() << "] doesn't accept meter " << h.get_dev_id());
+				CYNG_LOG_WARNING(logger_, "[" << cfg_blocklist_.get_task_name() << "] doesn't accept meter " << get_dev_id(h.get_server_id()));
 			}
 		}
 	}

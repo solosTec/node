@@ -55,7 +55,7 @@ namespace smf
 		return r;
 	}
 
-	std::string srv_id_to_str(std::array<char, 9> a) {
+	std::string srv_id_to_str(srv_id_t a) {
 		return srv_id_to_str(cyng::buffer_t(a.begin(), a.end()));
 	}
 
@@ -88,6 +88,44 @@ namespace smf
 			}
 		}
 		return ss.str();
+	}
+
+	std::string get_id(srv_id_t address) {
+
+		std::uint32_t id{ 0 };
+
+		//
+		//	get the device ID as u32 value
+		//
+		std::memcpy(&id, &address.at(3), sizeof(id));
+
+		//
+		//	read this value as a hex value
+		//
+		std::stringstream ss;
+		ss.fill('0');
+		ss
+			<< std::setw(8)
+			<< std::setbase(16)
+			<< id;
+
+		return ss.str();
+
+	}
+
+	std::uint32_t get_dev_id(srv_id_t address) {
+		std::uint32_t id{ 0 };
+		std::stringstream ss(get_id(address));
+		ss >> id;
+		return id;
+	}
+
+	std::pair<char, char> get_manufacturer_code(srv_id_t address) {
+
+		return {
+			static_cast<char>(address.at(1)),
+			static_cast<char>(address.at(2))
+		};
 	}
 
 	std::string gen_metering_code(std::string const& country_code

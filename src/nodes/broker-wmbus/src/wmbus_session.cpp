@@ -136,20 +136,34 @@ namespace smf {
 
 	void wmbus_session::decode(mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
 
-		auto const flag_id = h.get_manufacturer_code();
+		CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h));
+
+		if (h.has_secondary_address()) {
+			decode(t.get_secondary_address(), t.get_access_no(), h.get_frame_type(), data);
+		}
+		else {
+			decode(h.get_server_id(), t.get_access_no(), h.get_frame_type(), data);
+		}
+	}
+
+	void wmbus_session::decode(srv_id_t address
+		, std::uint8_t access_no
+		, std::uint8_t frame_type
+		, cyng::buffer_t const& data) {
+
+		auto const flag_id = get_manufacturer_code(address);
 		auto const manufacturer = mbus::decode(flag_id.first, flag_id.second);
-		CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h) << " (" << manufacturer << ")");
 
 		if (db_) {
 
 			//
 			//	if tag is "nil" no meter configuration was found
 			//
-			auto const[key, tag] = db_->lookup_meter(h.get_id());
+			auto const [key, tag] = db_->lookup_meter(get_id(address));
 			if (!tag.is_nil()) {
 
-				auto const payload = mbus::radio::decode(h.get_server_id()
-					, t.get_access_no()
+				auto const payload = mbus::radio::decode(address
+					, access_no
 					, key
 					, data);
 
@@ -158,10 +172,10 @@ namespace smf {
 				//
 				bus_.req_db_insert_auto("wMBusUplink", cyng::data_generator(
 					std::chrono::system_clock::now(),
-					h.get_id(),	//	mbus::to_str(h),
-					h.get_medium(),
+					get_id(address),	//	mbus::to_str(h),
+					get_medium(address),
 					manufacturer,
-					h.get_frame_type(),
+					frame_type,
 					cyng::io::to_hex(payload),	//	"payload",
 					boost::uuids::nil_uuid()
 				));
@@ -177,13 +191,14 @@ namespace smf {
 
 			}
 			else {
-				bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", mbus::to_str(h), "has no AES key");
+				bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", srv_id_to_str(address), "has no AES key");
 			}
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "[wmbus] no database");
 			bus_.sys_msg(cyng::severity::LEVEL_ERROR, "[wmbus] no database");
 		}
+
 	}
 
 }
