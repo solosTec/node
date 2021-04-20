@@ -489,7 +489,11 @@ namespace smf {
 			//
 			//	create a script file
 			//
-			std::filesystem::path const script(script_path);
+			std::string script_path_without_quotes = script_path.string();
+			boost::replace_all(script_path_without_quotes, "\"", "");
+
+
+			std::filesystem::path const script(script_path_without_quotes);
 			std::error_code ec;
 
 			//
@@ -497,7 +501,9 @@ namespace smf {
 			//
 			std::filesystem::remove(script, ec);
 
-			std::fstream fs(script_path, std::fstream::trunc | std::fstream::out);
+
+			std::fstream fs(script_path_without_quotes , std::fstream::trunc | std::fstream::out);
+
 			if (fs.is_open()) {
 				fs
 					<< "#!/bin/bash"
@@ -515,7 +521,7 @@ namespace smf {
 					<< ' '
 					<< enclose_quotation_marks(ca_path_vendor)
 					<< ' '
-					<< enclose_quotation_marks(path_firmware)
+					<< enclose_quotation_marks(script_path_without_quotes)
 					<< ' '
 					<< port
 					<< std::endl
@@ -539,7 +545,7 @@ namespace smf {
 				("ec", !ec ? "ok" : ec.message())
 				("version", protocol_version_)
 				("source", tag)
-				("script-path", script_path)
+				("script-path", script_path_without_quotes)
 				("address", address)
 				("port", port)
 				("user", username)
