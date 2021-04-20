@@ -4,7 +4,7 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-
+#include <iostream>
 #include <nms/reader.h>
 #include <config/cfg_nms.h>
 #include <config/cfg_broker.h>
@@ -657,15 +657,19 @@ namespace smf {
 		cyng::param_map_t reader::cmd_reboot(std::string const& cmd, boost::uuids::uuid tag) {
 #if defined(BOOST_OS_LINUX_AVAILABLE)
 			cfg_nms nms_cfg(cfg_);
-			auto const path = nms_cfg.get_script_path();
+
+			auto const script_path = nms_cfg.get_script_path();
+
+			std::string script_path_without_quotes = script_path.string();
+			boost::replace_all(script_path_without_quotes, "\"", "");
 
 			//
 			//	remove old file
 			//
 			std::error_code ec;
-			std::filesystem::remove(path, ec);
+			std::filesystem::remove(script_path, ec);
 
-			std::fstream fs(path.string(), std::fstream::trunc | std::fstream::out);
+			std::fstream fs(script_path_without_quotes, std::fstream::trunc | std::fstream::out);
 			if (fs.is_open()) {
 				fs
 					<< "#!/bin/bash"
@@ -678,10 +682,13 @@ namespace smf {
 				//
 				//	set permissions
 				//
-				std::filesystem::permissions(path
+				std::filesystem::permissions(script_path_without_quotes
 					, std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec
 					, std::filesystem::perm_options::add
 					, ec);
+			}else
+			{
+				std::cout << "file could not be opened." << std::endl;
 			}
 
 			return cyng::param_map_factory
