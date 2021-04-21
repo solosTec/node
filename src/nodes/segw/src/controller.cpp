@@ -632,14 +632,38 @@ namespace smf {
 
 	std::string get_nms_address() {
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-//		return cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string();
+
+		std::cout << std::endl << "xx ipv6 with linklocal " \
+						<< cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string() << std::endl;
+
+
 		auto const pres = cyng::sys::get_nic_prefix();
-		//	br0
 		auto const pos = std::find(pres.begin(), pres.end(), "br0");
-		return (pos != pres.end()) 
-			//? cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string()
-			? cyng::sys::get_address_IPv6("br0").to_string() + "%br0"
-			: "0.0.0.0";
+
+		if(pos != pres.end())
+		{
+			//address may contain the "%32" as surfix
+			std::string local_address_with_scope = cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string();
+
+			//check if the local address ends with "%xy". We dont check directly for %32"
+			//to be flexible if the number changes.
+			//
+			int length_of_scope = 3;
+			std::string tmpStr= local_address_with_scope.substr(local_address_with_scope.length()-length_of_scope, 1);
+
+			if (tmpStr == "%")
+			{
+				//std::cout << std::endl << "scope found in address: " <<std::endl;
+				//get rid of the "%32"
+				local_address_with_scope.erase(local_address_with_scope.length()-length_of_scope, length_of_scope);
+ 			}
+			else
+			{
+				std::cout << std::endl << "scope not found in address. tmpStr is " << tmpStr << std::endl;
+ 			}
+			return local_address_with_scope + "%br0";
+		}
+		return "0.0.0.0";
 		
 #else
 		return "0.0.0.0";
