@@ -521,7 +521,7 @@ namespace smf {
 					<< ' '
 					<< enclose_quotation_marks(ca_path_vendor)
 					<< ' '
-					<< enclose_quotation_marks(script_path_without_quotes)
+					<< enclose_quotation_marks(path_firmware)
 					<< ' '
 					<< port
 					<< std::endl
