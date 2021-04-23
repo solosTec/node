@@ -633,10 +633,6 @@ namespace smf {
 	std::string get_nms_address() {
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
 
-		std::cout << std::endl << "xx ipv6 with linklocal " \
-						<< cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string() << std::endl;
-
-
 		auto const pres = cyng::sys::get_nic_prefix();
 		auto const pos = std::find(pres.begin(), pres.end(), "br0");
 
