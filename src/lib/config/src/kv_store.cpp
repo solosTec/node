@@ -23,7 +23,7 @@ namespace smf {
 
 
 	cyng::object kv_store::get_obj(std::string path) {
-		return cache_.get_object("config", "val", path);
+		return cache_.get_object("config", "value", path);
 	}
 
 	bool kv_store::set_obj(std::string name, cyng::object&& obj) {

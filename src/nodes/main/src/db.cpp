@@ -503,42 +503,107 @@ namespace smf {
 	}
 
 	void db::init_sys_msg() {
+
+		auto const max_msg = cfg_.get_value<std::int64_t>("max-messages", 1000);
+		auto const tag = get_cfg().get_tag();
+
 		auto const ms = config::get_store_sys_msg();
 		auto const start_key = cyng::key_generator(static_cast<std::uint64_t>(0));
-		cache_.create_auto_table(ms, start_key, [this](cyng::key_t const& key) {
+		cache_.create_auto_table(ms, start_key, [this, max_msg, tag](cyng::table* tbl, cyng::key_t const& key) {
 			BOOST_ASSERT(key.size() == 1);
-			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
+
+			auto const n = cyng::value_cast<std::uint64_t>(key.at(0), 0);
+			if (tbl->size() > max_msg) {
+
+
+				//
+				//	reduce table size
+				//
+				auto last = n - max_msg;
+				while (tbl->erase(cyng::key_generator(last), tag)) {
+					--last;
+				}
+			}
+			return cyng::key_generator(n + 1);
 		});
 	}
 
 	void db::init_LoRa_uplink() {
 
+		auto const max_msg = cfg_.get_value<std::int64_t>("max-LoRa-records", 500);
+		auto const tag = get_cfg().get_tag();
+
 		auto const ms = config::get_store_uplink_lora();
 		auto const start_key = cyng::key_generator(static_cast<std::uint64_t>(0));
-		cache_.create_auto_table(ms, start_key, [this](cyng::key_t const& key) {
+		cache_.create_auto_table(ms, start_key, [this, max_msg, tag](cyng::table* tbl, cyng::key_t const& key) {
 			BOOST_ASSERT(key.size() == 1);
-			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
-			});
 
+			auto const n = cyng::value_cast<std::uint64_t>(key.at(0), 0);
+			if (tbl->size() > max_msg) {
+
+
+				//
+				//	reduce table size
+				//
+				auto last = n - max_msg;
+				while (tbl->erase(cyng::key_generator(last), tag)) {
+					--last;
+				}
+			}
+			return cyng::key_generator(n + 1);
+			});
 	}
 
 	void db::init_iec_uplink() {
 
+		auto const max_msg = cfg_.get_value<std::int64_t>("max-IEC-records", 600);
+		auto const tag = get_cfg().get_tag();
+
 		auto const ms = config::get_store_uplink_iec();
 		auto const start_key = cyng::key_generator(static_cast<std::uint64_t>(0));
-		cache_.create_auto_table(ms, start_key, [this](cyng::key_t const& key) {
+		cache_.create_auto_table(ms, start_key, [this, max_msg, tag](cyng::table* tbl, cyng::key_t const& key) {
 			BOOST_ASSERT(key.size() == 1);
-			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
+
+			auto const n = cyng::value_cast<std::uint64_t>(key.at(0), 0);
+			if (tbl->size() > max_msg) {
+
+
+				//
+				//	reduce table size
+				//
+				auto last = n - max_msg;
+				while (tbl->erase(cyng::key_generator(last), tag)) {
+					--last;
+				}
+			}
+			return cyng::key_generator(n + 1);
+
 			});
 	}
 
 	void db::init_wmbus_uplink() {
 
+		auto const max_msg = cfg_.get_value<std::int64_t>("max-wMBus-records", 500);
+		auto const tag = get_cfg().get_tag();
+
 		auto const ms = config::get_store_uplink_wmbus();
 		auto const start_key = cyng::key_generator(static_cast<std::uint64_t>(0));
-		cache_.create_auto_table(ms, start_key, [this](cyng::key_t const& key) {
+		cache_.create_auto_table(ms, start_key, [this, max_msg, tag](cyng::table* tbl, cyng::key_t const& key) {
 			BOOST_ASSERT(key.size() == 1);
-			return cyng::key_generator(cyng::value_cast<std::uint64_t>(key.at(0), 0) + 1);
+
+			auto const n = cyng::value_cast<std::uint64_t>(key.at(0), 0);
+			if (tbl->size() > max_msg) {
+
+
+				//
+				//	reduce table size
+				//
+				auto last = n - max_msg;
+				while (tbl->erase(cyng::key_generator(last), tag)) {
+					--last;
+				}
+			}
+			return cyng::key_generator(n + 1);
 			});
 	}
 

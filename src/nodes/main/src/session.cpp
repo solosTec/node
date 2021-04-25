@@ -256,6 +256,15 @@ namespace smf {
 			<< data);
 
 		cache_.get_store().insert_auto(table_name, std::move(data), tag);
+
+		//
+		//	check table size
+		//
+		//init_sys_msg();
+		//init_LoRa_uplink();
+		//init_iec_uplink();
+		//init_wmbus_uplink();
+
 	}
 
 	void session::db_req_update(std::string const& table_name

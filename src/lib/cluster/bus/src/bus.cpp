@@ -114,7 +114,7 @@ namespace smf {
 				start();
 				break;
 			case state::CONNECTED:
-				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: connected");
+				//CYNG_LOG_DEBUG(logger_, "[cluster] check deadline: connected");
 				break;
 			case state::WAIT:
 				CYNG_LOG_TRACE(logger_, "[cluster] check deadline: waiting");

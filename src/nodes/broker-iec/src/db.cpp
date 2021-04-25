@@ -128,7 +128,9 @@ namespace smf {
 		, boost::uuids::uuid tag) {
 
 		CYNG_LOG_TRACE(logger_, "[db] insert: "
-			<< tbl->meta().get_name());
+			<< tbl->meta().get_name()
+			<< " - "
+			<< data);
 
 		return true;
 	}
@@ -143,7 +145,12 @@ namespace smf {
 		, boost::uuids::uuid tag) {
 
 		CYNG_LOG_TRACE(logger_, "[db] update: "
-			<< tbl->meta().get_name());
+			<< tbl->meta().get_name() 
+			<< " - "
+			<< attr.first
+			<< " => "
+			<< attr.second);
+
 
 		//
 		//	update tasks/clients

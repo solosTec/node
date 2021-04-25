@@ -182,11 +182,6 @@ namespace smf {
 		std::reverse(key.begin(), key.end());
 		std::reverse(data.begin(), data.end());
 
-		//CYNG_LOG_TRACE(logger_, "[cluster] insert: "
-		//	<< table_name
-		//	<< " - "
-		//	<< data);
-
 		//
 		//	start/update client
 		//
@@ -195,6 +190,8 @@ namespace smf {
 			if (boost::algorithm::equals(table_name, "meterIEC")) {
 				cyng::record rec(db_->get_meta_iec(), key, data, gen);
 
+				CYNG_LOG_INFO(logger_, "[cluster] check client: "
+					<< data);
 				check_client(rec);
 			}
 			db_->res_insert(table_name, key, data, gen, tag);
