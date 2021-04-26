@@ -10,6 +10,7 @@
 #include <cyng/parse/json/json_parser.h>
 #include <cyng/io/ostream.h>
 #include <cyng/sys/memory.h>
+#include <cyng/sys/cpu.h>
 #include <cyng/rnd/rnd.hpp>
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
@@ -17,6 +18,7 @@
 #include <smfsec/hash/base64.h>
 
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/predef.h>
 
 namespace smf {
 
@@ -608,8 +610,13 @@ namespace smf {
 	void http_server::response_update_channel(ws_sptr wsp, std::string const& name) {
 
 		if (boost::algorithm::starts_with(name, "sys.cpu.usage.total"))	{
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+			auto const load = cyng::sys::get_cpu_load(0);
+			wsp->push_msg(json_update_channel(name, load));
+#else
 			auto rnd = cyng::crypto::make_rnd(0, 100);
 			wsp->push_msg(json_update_channel(name, rnd()));
+#endif
 		}
 		else if (boost::algorithm::starts_with(name, "sys.cpu.count"))	{
 			wsp->push_msg(json_update_channel(name, std::thread::hardware_concurrency()));
@@ -621,7 +628,7 @@ namespace smf {
 			wsp->push_msg(json_update_channel(name, cyng::sys::get_used_ram()));
 		}
 		else if (boost::algorithm::starts_with(name, "sys.mem.virtual.stat"))	{
-			wsp->push_msg(json_update_channel(name, 402));
+			wsp->push_msg(json_update_channel(name, cyng::sys::get_used_ram()));
 		}
 		else
 		{
