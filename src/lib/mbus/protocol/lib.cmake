@@ -11,6 +11,7 @@ set (mbus_cpp
     src/lib/mbus/protocol/src/dif.cpp
     src/lib/mbus/protocol/src/vif.cpp
     src/lib/mbus/protocol/src/server_id.cpp
+    src/lib/mbus/protocol/src/reader.cpp
 )
     
 set (mbus_h
@@ -24,6 +25,7 @@ set (mbus_h
     include/smf/mbus/dif.h
     include/smf/mbus/vif.h
     include/smf/mbus/server_id.h
+    include/smf/mbus/reader.h
 )
 
 set (mbus_radio

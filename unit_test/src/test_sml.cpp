@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_SUITE(sml_suite)
 
 BOOST_AUTO_TEST_CASE(tokenizer)
 {
-	std::ifstream ifile("..\\..\\unit_test\\assets\\smf--SML-202012T071425-power@solostec8bbb6264-bc4a4b92.sml", std::ios::binary | std::ios::app);
+	std::ifstream ifile("..\\..\\unit_test\\assets\\smf--SML-202012T071425-power@solostec8bbb6264-bc4a4b92.sml", std::ios::binary);
 	BOOST_CHECK(ifile.is_open());
 	if (ifile.is_open())
 	{
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(tokenizer)
 
 BOOST_AUTO_TEST_CASE(parser)
 {
-	std::ifstream ifile("..\\..\\unit_test\\assets\\smf--SML-202012T071425-power@solostec8bbb6264-bc4a4b92.sml", std::ios::binary | std::ios::app);
+	std::ifstream ifile("..\\..\\unit_test\\assets\\smf--SML-202012T071425-power@solostec8bbb6264-bc4a4b92.sml", std::ios::binary);
 	BOOST_CHECK(ifile.is_open());
 	if (ifile.is_open())
 	{
