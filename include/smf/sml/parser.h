@@ -43,7 +43,13 @@ namespace smf {
 			};
 
 		public:
-			parser();
+			/**
+			 * callback contains transaction id, group no, abort on error, message type, message tuple, crc.
+			 */
+			using cb = std::function<void(std::string, std::uint8_t, std::uint8_t, msg_type, cyng::tuple_t, std::uint16_t)>;
+
+		public:
+			parser(cb);
 
 			/**
 			 * parse the specified range
@@ -76,6 +82,7 @@ namespace smf {
 
 		private:
 			tokenizer	tokenizer_;
+			cb cb_;
 
 			/**
 			 * Collect nested data

@@ -67,11 +67,56 @@ namespace smf {
 			UNKNOWN,
 		};
 
+		/**
+		 * get the enum value as u16
+		 */
+		constexpr std::uint16_t to_u16(msg_type type) {
+			return static_cast<std::uint16_t>(type);
+		}
+
+		constexpr msg_type to_msg_type(std::uint16_t type) {
+			switch (type) {
+			case to_u16(msg_type::OPEN_REQUEST):				return msg_type::OPEN_REQUEST;
+			case to_u16(msg_type::OPEN_RESPONSE):				return msg_type::OPEN_RESPONSE;
+			case to_u16(msg_type::CLOSE_REQUEST):				return msg_type::CLOSE_REQUEST;
+			case to_u16(msg_type::CLOSE_RESPONSE):				return msg_type::CLOSE_RESPONSE;
+			case to_u16(msg_type::GET_PROFILE_PACK_REQUEST):	return msg_type::GET_PROFILE_PACK_REQUEST;
+			case to_u16(msg_type::GET_PROFILE_PACK_RESPONSE):	return msg_type::GET_PROFILE_PACK_RESPONSE;
+			case to_u16(msg_type::GET_PROFILE_LIST_REQUEST):	return msg_type::GET_PROFILE_LIST_REQUEST;
+			case to_u16(msg_type::GET_PROFILE_LIST_RESPONSE):	return msg_type::GET_PROFILE_LIST_RESPONSE;
+			case to_u16(msg_type::GET_PROC_PARAMETER_REQUEST):	return msg_type::GET_PROC_PARAMETER_REQUEST;
+			case to_u16(msg_type::GET_PROC_PARAMETER_RESPONSE):	return msg_type::GET_PROC_PARAMETER_RESPONSE;
+			case to_u16(msg_type::SET_PROC_PARAMETER_REQUEST):	return msg_type::SET_PROC_PARAMETER_REQUEST;
+			case to_u16(msg_type::SET_PROC_PARAMETER_RESPONSE):	return msg_type::SET_PROC_PARAMETER_RESPONSE;
+			case to_u16(msg_type::GET_LIST_REQUEST):			return msg_type::GET_LIST_REQUEST;
+			case to_u16(msg_type::GET_LIST_RESPONSE):			return msg_type::GET_LIST_RESPONSE;
+
+			//	since v1.04
+			case to_u16(msg_type::GET_COSEM_REQUEST):			return msg_type::GET_COSEM_REQUEST;
+			case to_u16(msg_type::GET_COSEM_RESPONSE):			return msg_type::GET_COSEM_RESPONSE;
+			case to_u16(msg_type::SET_COSEM_REQUEST):			return msg_type::SET_COSEM_REQUEST;
+			case to_u16(msg_type::SET_COSEM_RESPONSE):			return msg_type::SET_COSEM_RESPONSE;
+			case to_u16(msg_type::ACTION_COSEM_REQUEST):		return msg_type::ACTION_COSEM_REQUEST;
+			case to_u16(msg_type::ACTION_COSEM_RESPONSE):		return msg_type::ACTION_COSEM_RESPONSE;
+
+			case to_u16(msg_type::ATTENTION_RESPONSE):			return msg_type::ATTENTION_RESPONSE;
+			default:
+				break;
+			}
+
+			return msg_type::UNKNOWN;
+		}
+
+		/**
+		 * @return type name
+		 */
+		const char* get_name(msg_type);
+
+
 	}
 
 }
 
-//#include <smf/sml/parser.h>
 
 
 #endif

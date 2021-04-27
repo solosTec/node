@@ -9,6 +9,9 @@
 #include <cyng/obj/factory.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/buffer_cast.hpp>
+#include <cyng/obj/value_cast.hpp>
+#include <cyng/obj/numeric_cast.hpp>
+#include <cyng/obj/container_cast.hpp>
 
 #include <boost/assert.hpp>
 
@@ -20,8 +23,9 @@ namespace smf {
 	namespace sml {
 
 
-		parser::parser()
+		parser::parser(cb f)
 			: tokenizer_(std::bind(&parser::next, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
+			, cb_(f)
 			, stack_()
 		{
 			//std::cout << cyng::make_object(cyng::make_buffer("hell\ao")) << std::endl;;
@@ -78,7 +82,19 @@ namespace smf {
 			if (!stack_.empty()) {
 
 #ifdef _DEBUG_SML
-				std::cout << "push " << std::string(2 * stack_.size(), '.') << ": " << cyng::io::to_typed(obj) << std::endl;
+				std::cout << "push " << std::string(2 * stack_.size(), '.') << ": ";
+				if (obj.rtti().tag() == cyng::TC_BUFFER) {
+					auto const buf = cyng::value_cast(obj, cyng::buffer_t());
+					if (cyng::is_ascii(buf)) {
+						std::cout << std::string(buf.begin(), buf.end()) << std::endl;
+					}
+					else {
+						std::cout << cyng::io::to_typed(obj) << std::endl;
+					}
+				}
+				else {
+					std::cout << cyng::io::to_typed(obj) << std::endl;
+				}
 #endif
 
 				if (stack_.top().push(obj)) {
@@ -145,12 +161,47 @@ namespace smf {
 		}
 
 		void parser::finalize() {
-			//BOOST_ASSERT(stack_.size() == 1);
+
+			BOOST_ASSERT(stack_.size() == 1);
 			if (!stack_.empty()) {
+				BOOST_ASSERT(stack_.top().values_.size() == 5);
 #ifdef _DEBUG_SML
 				std::cout << "msg complete " << stack_.top().values_.size() << std::endl;
 #endif
-				stack_.pop();
+				if (stack_.top().values_.size() == 5) {
+					std::cout << "msg complete " << stack_.top().values_ << std::endl;
+
+					auto const trx = cyng::to_buffer(stack_.top().values_.front());
+					stack_.top().values_.pop_front();
+
+					auto const group_no = cyng::numeric_cast<std::uint8_t>(stack_.top().values_.front(), 0);
+					stack_.top().values_.pop_front();
+					auto const abort_on_error = cyng::numeric_cast<std::uint8_t>(stack_.top().values_.front(), 0);
+					stack_.top().values_.pop_front();
+
+					auto const choice = cyng::container_cast<cyng::tuple_t>(stack_.top().values_.front());
+					stack_.top().values_.pop_front();
+					BOOST_ASSERT(choice.size() == 2);
+					if ((choice.size() == 2)) {
+						auto const msg_type = to_msg_type(cyng::numeric_cast<std::uint16_t>(choice.front(), 0));
+						auto const body = cyng::container_cast<cyng::tuple_t>(choice.back());
+
+
+						auto const crc = cyng::numeric_cast<std::uint16_t>(stack_.top().values_.front(), 0);
+
+						// 
+						//
+						//	callback
+						//	std::function<void(std::string, std::uint8_t, std::uint8_t, msg_type, cyng::tuple_t, std::uint16_t)>;
+						// 
+						cb_(std::string(trx.begin(), trx.end()), group_no, abort_on_error, msg_type, body, crc);
+					}
+				}
+
+				//
+				//	clear stack
+				//
+				std::stack<list>().swap(stack_);
 			}
 		}
 

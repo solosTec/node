@@ -93,7 +93,7 @@ namespace smf
 			// Start the deadline actor. You will note that we're not setting any
 			// particular deadline here. Instead, the connect and input actors will
 			// update the deadline prior to each asynchronous operation.
-			timer_.async_wait(boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error));
+			timer_.async_wait(boost::asio::bind_executor(dispatcher_, boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error)));
 
 		}
 
@@ -123,7 +123,7 @@ namespace smf
 				//	reconnect after 20 seconds
 				//
 				timer_.expires_after(boost::asio::chrono::seconds(20));
-				timer_.async_wait(boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error));
+				timer_.async_wait(boost::asio::bind_executor(dispatcher_, boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error)));
 
 			}
 		}
@@ -203,7 +203,7 @@ namespace smf
 					start();
 					break;
 				case state::CONNECTED:
-					CYNG_LOG_TRACE(logger_, "[ipt] check deadline: connected");
+					//CYNG_LOG_DEBUG(logger_, "[ipt] check deadline: connected");
 					break;
 				case state::AUTHORIZED:
 					CYNG_LOG_TRACE(logger_, "[ipt] check deadline: authorized");
@@ -272,7 +272,7 @@ namespace smf
 				timer_.expires_after((ec == boost::asio::error::connection_reset)
 					? boost::asio::chrono::seconds(10)
 					: boost::asio::chrono::seconds(20));
-				timer_.async_wait(boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error));
+				timer_.async_wait(boost::asio::bind_executor(dispatcher_, boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error)));
 			}
 		}
 

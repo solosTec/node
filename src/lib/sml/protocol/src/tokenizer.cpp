@@ -83,7 +83,7 @@ namespace smf {
 			case sml_type::BOOLEAN:	
 				BOOST_ASSERT(length_ - 1 == 1);
 				type_ = sml_type::BOOLEAN;
-				return state::START;
+				return state::DATA;
 			case sml_type::INTEGER:
 				BOOST_ASSERT(length_ - 1 < 9);
 				type_ = sml_type::INTEGER;
@@ -149,11 +149,13 @@ namespace smf {
 			//
 			length_ *= 16;
 			length_ |= (c & 0x0f);
+			//	length header 
+			--length_;
 #ifdef _DEBUG_SML
 			std::cout << "length: " << length_ << std::endl;
 #endif
 			if ((c & 0x80) != 0x80) {
-				cb_(sml_type::LIST, length_, data_);
+				//cb_(sml_type::LIST, length_, data_);
 				return state::DATA;
 			}
 			return state_;
