@@ -19,6 +19,9 @@ echo "                      *******  **                         "
 echo "                     *     ****                           "
 echo ""                                                          
 
+ls_out=$(ls /usr/local/lib)
+echo "ls_out: $ls_out"
+
 echo "remove obsolete symbolic links"
 
 rm -f /usr/lib/libboost_chrono.so
@@ -50,43 +53,63 @@ rm -f /usr/lib/libboost_system.so.1.69.0
 echo "set symbolic links to Boost library"
 
 rm -f /usr/local/lib/libboost_program_options.so
-ln -s /usr/local/lib/libboost_program_options.so   	/usr/local/lib/libboost_program_options.so.1.75.0
+ln -s /usr/local/lib/libboost_program_options.so.1.75.0  /usr/local/lib/libboost_program_options.so 
 
 rm -f /usr/local/lib/libboost_thread.so
-ln -s /usr/local/lib/libboost_thread.so 			/usr/local/lib/libboost_thread.so.1.75.0
+ln -s /usr/local/lib/libboost_thread.so.1.75.0   /usr/local/lib/libboost_thread.so
 
-rm -f /usr/local/lib/libboost_random.so 
-ln -s /usr/local/lib/libboost_random.so 			/usr/local/lib/libboost_random.so.1.75.0
+rm -f /usr/local/lib/libboost_random.so  
+ln -s /usr/local/lib/libboost_random.so.1.75.0    /usr/local/lib/libboost_random.so
 
 rm -f /usr/local/lib/libboost_filesystem.so
-ln -s /usr/local/lib/libboost_filesystem.so 		/usr/local/lib/libboost_filesystem.so.1.75.0
-#ln -s /usr/local/lib/libboost_regex.so 			/usr/local/lib/libboost_regex.so.1.75.0
+ln -s /usr/local/lib/libboost_filesystem.so.1.75.0    /usr/local/lib/libboost_filesystem.so
+#ln -s	/usr/local/lib/libboost_regex.so.1.75.0     /usr/local/lib/libboost_regex.so 
 
 rm -f /usr/local/lib/libboost_system.so
-ln -s /usr/local/lib/libboost_system.so 			/usr/local/lib/libboost_system.so.1.75.0
+ln -s /usr/local/lib/libboost_system.so.1.75.0   /usr/local/lib/libboost_system.so 
 
 echo "${PROJECT_NAME} library (SMF project) is installed"
 
-# create lib links in /usr/lib/ /usr/local/lib/
-libfiles=$(find /usr/local/lib/ -name '*')
-for libfile in ${libfiles}; do
-	tmpfilename="/usr/lib/$(basename ${libfile})"
-	if [ ! -f ${tmpfilename} ]; then
-		ln -s ${libfile} ${tmpfilename}
-	fi
-done
 
+
+
+
+# create lib links in /usr/lib/ /usr/local/lib/
+echo " create lib links in /usr/lib/ /usr/local/lib/ "
+
+tmpfiles=$(find /tmp/ -name '*')
+echo "tmpfiles with find: $tmpfiles"
+echo ""
+
+
+ls_out=$(ls /usr/local/lib)
+echo "ls_out: $ls_out"
+
+
+for libfile in /usr/local/lib/*.so; do
+	echo "check if libfile $libfile has to be linked"
+	tmpfilename=/usr/lib/$(basename $libfile)
+	if [ ! -f $tmpfilename ]; then
+		ln -s $libfile $tmpfilename
+		echo "libfile $libfile was linked " 
+	fi
+done 
+
+echo "end of linking...."
 echo "${PROJECT_NAME} shared libraries available"
 
+
+echo "${PROJECT_NAME} backup old config and database"
+/usr/local/etc/smf/do_backup.sh
+
+
 echo "${PROJECT_NAME} create default configuration"
-if [ -f /usr/local/etc/smf/segw_v0.9.cfg ]; then
-	echo "${PROJECT_NAME} backup previous configuration"
-   	mv /usr/local/etc/smf/segw_v0.9.cfg /usr/local/etc/smf/segw_v0.9.cfg-backup
-fi
+
 /usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -D
 
 echo "${PROJECT_NAME} initialize database"
 /usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -I
+
 
 echo "ToDo: save/update config"
 echo "${PROJECT_NAME} remove previous configuration"
@@ -94,9 +117,17 @@ echo "${PROJECT_NAME} remove previous configuration"
 
 echo "${PROJECT_NAME} load default configuration into database"
 /usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -T
+echo "wait some seconds"
+sleep 5
+
+echo "${PROJECT_NAME} restore old data if available.."
+/usr/local/etc/smf/restore_data.sh
+
 
 echo "start segw service"
 systemctl daemon-reload
-systemctl start segw
+systemctl restart segw
+
+
 
 echo "service configuration updated"

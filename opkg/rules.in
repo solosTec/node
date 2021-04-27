@@ -55,9 +55,15 @@ install: build
 
 	install -d $(INSTALLDIR)/usr/local/etc/smf
 	install -m 644 @PROJECT_BINARY_DIR@/config/segw_v0.9.cfg $(INSTALLDIR)/usr/local/etc
+	
 
 #Any .service file found in /usr/local/lib/systemd/system is hooked into the systemd infrastructure on startup and will be executed.
 	install -d $(INSTALLDIR)/usr/local/lib/systemd/system
 	install -m 644 @PROJECT_BINARY_DIR@/config/segw.service $(INSTALLDIR)/usr/local/lib/systemd/system
+
+#additional scripts
+	install -m 755 @PROJECT_SOURCE_DIR@/scripts/do_backup.sh $(INSTALLDIR)/usr/local/etc/smf
+	install -m 755 @PROJECT_SOURCE_DIR@/scripts/restore_data.sh $(INSTALLDIR)/usr/local/etc/smf
+
 
 .PHONY: build clean install
