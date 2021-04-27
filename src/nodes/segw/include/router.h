@@ -29,6 +29,7 @@
 		 void ipt_stream(cyng::buffer_t&&);
 		 void auth_state(bool);
 
+
 	 private:
 		 cyng::controller& ctl_;
 		 cfg& cfg_;

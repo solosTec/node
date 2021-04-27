@@ -53,6 +53,11 @@ namespace smf
 					 +-----------+
 		 * @endcode
 		 *
+		 *	Whenever a IP-T command is complete a callback is triggered to process
+		 *	the generated instructions. This is to guarantee to stay in the
+		 *	correct state (since IP-T is statefull protocol). Especially the scrambled
+		 *	login requires special consideration, because of the  provided scramble key.
+		 *	In addition after a failed login no more instructions should be processed.
 		 */
 		class parser
 		{

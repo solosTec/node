@@ -27,8 +27,15 @@ namespace smf {
 			: tokenizer_(std::bind(&parser::next, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
 			, cb_(f)
 			, stack_()
+			, last_type_(msg_type::UNKNOWN)
 		{
 			//std::cout << cyng::make_object(cyng::make_buffer("hell\ao")) << std::endl;;
+		}
+
+		bool parser::is_closed() const {
+			return (last_type_ == msg_type::CLOSE_REQUEST)
+				|| (last_type_ == msg_type::CLOSE_RESPONSE)
+				;
 		}
 
 		void parser::next(sml_type type, std::size_t size, cyng::buffer_t data) {
@@ -169,7 +176,7 @@ namespace smf {
 				std::cout << "msg complete " << stack_.top().values_.size() << std::endl;
 #endif
 				if (stack_.top().values_.size() == 5) {
-					std::cout << "msg complete " << stack_.top().values_ << std::endl;
+					//std::cout << "msg complete " << stack_.top().values_ << std::endl;
 
 					auto const trx = cyng::to_buffer(stack_.top().values_.front());
 					stack_.top().values_.pop_front();
@@ -183,7 +190,7 @@ namespace smf {
 					stack_.top().values_.pop_front();
 					BOOST_ASSERT(choice.size() == 2);
 					if ((choice.size() == 2)) {
-						auto const msg_type = to_msg_type(cyng::numeric_cast<std::uint16_t>(choice.front(), 0));
+						last_type_ = to_msg_type(cyng::numeric_cast<std::uint16_t>(choice.front(), 0));
 						auto const body = cyng::container_cast<cyng::tuple_t>(choice.back());
 
 
@@ -194,7 +201,7 @@ namespace smf {
 						//	callback
 						//	std::function<void(std::string, std::uint8_t, std::uint8_t, msg_type, cyng::tuple_t, std::uint16_t)>;
 						// 
-						cb_(std::string(trx.begin(), trx.end()), group_no, abort_on_error, msg_type, body, crc);
+						cb_(std::string(trx.begin(), trx.end()), group_no, abort_on_error, last_type_, body, crc);
 					}
 				}
 

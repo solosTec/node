@@ -327,13 +327,13 @@ namespace smf
 				cb_cmd_(h, std::move(body));
 				break;
 			case code::TP_REQ_OPEN_CONNECTION:
-				cb_cmd_(h, std::move(body));
+				open_connection(tp_req_open_connection(std::move(body)), h.sequence_);
 				break;
 			case code::TP_RES_OPEN_CONNECTION:
 				cb_cmd_(h, std::move(body));
 				break;
 			case code::TP_REQ_CLOSE_CONNECTION:
-				cb_cmd_(h, std::move(body));
+				close_connection(h.sequence_);
 				break;
 			case code::TP_RES_CLOSE_CONNECTION:
 				cb_cmd_(h, std::move(body));
@@ -516,6 +516,29 @@ namespace smf
 			send(serializer_.res_watchdog(h.sequence_));
 		}
 
+
+		void bus::open_connection(std::string number, sequence_t seq) {
+
+			if (state_ == state::AUTHORIZED) {
+				state_ = state::LINKED;
+				CYNG_LOG_TRACE(logger_, "[ipt] linked to " << number);
+				send(serializer_.res_open_connection(seq, tp_res_open_connection_policy::DIALUP_SUCCESS));
+			}
+			else {
+				send(serializer_.res_open_connection(seq, tp_res_open_connection_policy::BUSY));
+			}
+		}
+
+		void bus::close_connection(sequence_t seq) {
+			if (state_ == state::LINKED) {
+				state_ = state::AUTHORIZED;
+				send(serializer_.res_close_connection(seq, tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED));
+				CYNG_LOG_TRACE(logger_, "[ipt] unlinked");
+			}
+			else {
+				send(serializer_.res_close_connection(seq, tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
+			}
+		}
 
 	}	//	ipt
 }

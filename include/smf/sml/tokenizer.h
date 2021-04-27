@@ -20,6 +20,7 @@ namespace smf {
 	namespace sml {
 
 		class parser;
+		class unpack;
 
 		/**
 		 * Low level parser for SML data types
@@ -27,6 +28,7 @@ namespace smf {
 		class tokenizer
 		{
 			friend class parser;
+			friend class unpack;
 
 			/**
 			 * This enum stores the global state

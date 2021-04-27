@@ -53,17 +53,18 @@ namespace smf
 			 * parse the specified range
 			 */
 			template < typename I >
-			void read(I start, I end)
+			std::size_t read(I start, I end)
 			{
-				static_assert(std::is_same_v<char, typename std::iterator_traits<I>::value_type>, "data type char expected");
-				std::for_each(start, end, [this](char c)
+				using value_type = typename std::iterator_traits<I>::value_type;
+				static_assert(std::is_same_v<char, value_type, "data type char expected");
+				std::for_each(start, end, [this](value_type c)
 					{
 						//
 						//	parse
 						//
 						this->put(c);
 					});
-
+				return std::distance(start, end);
 			}
 
 		private:

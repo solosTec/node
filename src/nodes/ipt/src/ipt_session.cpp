@@ -334,6 +334,9 @@ namespace smf {
 				CYNG_LOG_WARNING(logger_, "[ipt] response open push channel " << channel << ':' << source << ": " << ipt::tp_res_open_push_channel_policy::get_response_name(res));
 			}
 			break;
+		case ipt::code::UNKNOWN:
+			CYNG_LOG_WARNING(logger_, "[ipt] unknown command " << ipt::ctrl_res_unknown_cmd(std::move(body)));
+			break;
 		default:
 			CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " dropped");
 			ipt_send(serializer_.res_unknown_command(h.sequence_, h.command_));

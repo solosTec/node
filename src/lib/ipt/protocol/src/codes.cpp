@@ -111,7 +111,7 @@ namespace smf {
 			case code::UNKNOWN:	return "UNKNOWN";
 
 			default:
-				BOOST_ASSERT_MSG(false, "undefined IP-T command");
+				//BOOST_ASSERT_MSG(false, "undefined IP-T command");
 				break;
 			}
 

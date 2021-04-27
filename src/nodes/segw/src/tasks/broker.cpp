@@ -146,7 +146,7 @@ namespace smf {
 			start();
 			break;
 		case state::CONNECTED:
-			CYNG_LOG_TRACE(logger_, "[broker] check deadline: connected");
+			//CYNG_LOG_DEBUG(logger_, "[broker] check deadline: connected");
 			break;
 		case state::WAIT:
 			CYNG_LOG_TRACE(logger_, "[broker] check deadline: waiting");

@@ -20,11 +20,15 @@ namespace smf {
 	namespace sml {
 
 
+		class unpack;
+
 		/**
 		 * This parser generates complete SML messages
 		 */
 		class parser
 		{
+			friend class unpack;
+
 			/**
 			 * collect elements of an SML list
 			 */
@@ -67,6 +71,11 @@ namespace smf {
 					});
 			}
 
+			/**
+			 * @return true if last message is of type CLOSE_REQUEST or CLOSE_RESPONSE.
+			 */
+			bool is_closed() const;
+
 		private:
 			/**
 			 * callback from tokenizer
@@ -89,7 +98,10 @@ namespace smf {
 			 */
 			std::stack<list>	stack_;
 
-
+			/**
+			 * last SML message type
+			 */
+			msg_type last_type_;
 		};
 
 	}

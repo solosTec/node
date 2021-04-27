@@ -73,6 +73,10 @@ namespace smf
 
 			void req_watchdog(header const&, cyng::buffer_t&&);
 
+			void open_connection(std::string, sequence_t);
+			void close_connection(sequence_t);
+
+
 		private:
 			cyng::logger logger_;
 			toggle tgl_;

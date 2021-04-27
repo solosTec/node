@@ -9,8 +9,17 @@
 #include <config/cfg_ipt.h>
 #include <config/cfg_hardware.h>
 
+#include <smf/ipt/codes.h>
+#include <smf/ipt/transpiler.h>
+
 #include <cyng/task/controller.h>
 #include <cyng/log/record.h>
+
+#ifdef _DEBUG_SEGW
+#include <iostream>
+#include <sstream>
+#include <cyng/io/hex_dump.hpp>
+#endif
 
 namespace smf {
 
@@ -57,11 +66,21 @@ namespace smf {
 
 	void router::ipt_cmd(ipt::header const& h, cyng::buffer_t&& body) {
 
-		CYNG_LOG_TRACE(logger_, "[ipt]  cmd " << ipt::command_name(h.command_));
+		CYNG_LOG_INFO(logger_, "[ipt]  cmd " << ipt::command_name(h.command_));
 
 	}
+
 	void router::ipt_stream(cyng::buffer_t&& data) {
 		CYNG_LOG_TRACE(logger_, "[ipt]  stream " << data.size() << " byte");
+
+#ifdef _DEBUG_SEGW
+		{
+			std::stringstream ss;
+			cyng::io::hex_dump<8> hd;
+			hd(ss, std::begin(data), std::end(data));
+			CYNG_LOG_DEBUG(logger_, "[ipt]  stream " << data.size() << " bytes:\n" << ss.str());
+		}
+#endif
 
 	}
 
