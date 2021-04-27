@@ -12,6 +12,8 @@
 
 #include <iostream>
 
+#include <boost/algorithm/string.hpp>
+
 namespace smf {
 
 	sml_target::sml_target(cyng::channel_weak wp
@@ -20,7 +22,7 @@ namespace smf {
 		, ipt::bus& bus)
 	: sigs_{ 
 		std::bind(&sml_target::register_target, this, std::placeholders::_1),
-		std::bind(&sml_target::receive, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+		std::bind(&sml_target::receive, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4),
 		std::bind(&sml_target::stop, this, std::placeholders::_1)
 	}
 		, channel_(wp)
@@ -52,9 +54,10 @@ namespace smf {
 		bus_.register_target(name, channel_);
 	}
 
-	void sml_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t&& data) {
+	void sml_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t&& data, std::string target) {
 
 		CYNG_LOG_TRACE(logger_, "[sml] " << channel_.lock()->get_name() << " receive " << data.size() << " bytes");
+		BOOST_ASSERT(boost::algorithm::equals(channel_.lock()->get_name(), target));
 
 	}
 

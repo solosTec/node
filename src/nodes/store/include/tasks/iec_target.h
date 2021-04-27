@@ -24,7 +24,7 @@ namespace smf {
 
 		using signatures_t = std::tuple<
 			std::function<void(std::string)>,
-			std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t data)>,
+			std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t data, std::string)>,
 			std::function<void(cyng::eod)>
 		>;
 
@@ -39,7 +39,7 @@ namespace smf {
 
 	private:
 		void register_target(std::string);
-		void receive(std::uint32_t, std::uint32_t, cyng::buffer_t data);
+		void receive(std::uint32_t, std::uint32_t, cyng::buffer_t data, std::string);
 
 	private:
 		signatures_t sigs_;

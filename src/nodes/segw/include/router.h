@@ -8,7 +8,10 @@
 #define SMF_SEGW_ROUTER_H
 
 #include <cfg.h>
+
 #include <smf/ipt/bus.h>
+#include <smf/sml/unpack.h>
+#include <smf/sml/msg.h>
 
 #include <cyng/task/task_fwd.h>
 #include <cyng/vm/vm_fwd.h>
@@ -28,13 +31,15 @@
 		 void ipt_cmd(ipt::header const&, cyng::buffer_t&&);
 		 void ipt_stream(cyng::buffer_t&&);
 		 void auth_state(bool);
-
+		 void register_targets();
 
 	 private:
 		 cyng::controller& ctl_;
 		 cfg& cfg_;
 		 cyng::logger logger_;
 		 std::unique_ptr<ipt::bus>	bus_;
+		 sml::unpack parser_;
+		 sml::messages_t messages_;	//	sml response
 	 };
 }
 

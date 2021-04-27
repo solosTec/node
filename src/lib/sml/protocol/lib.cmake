@@ -23,10 +23,20 @@ set (sml_h
     include/smf/sml/event.h
 )
 
+set (sml_producer
+    include/smf/sml/msg.h
+    include/smf/sml/value.hpp
+    src/lib/sml/protocol/src/msg.cpp
+    src/lib/sml/protocol/src/value.cpp
+)
+
+source_group("producer" FILES ${sml_producer})
+
 
 # define the sml lib
 set (sml_lib
-  ${sml_cpp}
-  ${sml_h}
+    ${sml_cpp}
+    ${sml_h}
+    ${sml_producer}
 )
 

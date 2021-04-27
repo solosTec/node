@@ -27,6 +27,11 @@ namespace smf
 				STOPPED,
 			} state_;
 
+			/**
+			 * Use this to store a (target) name - channel relation
+			 */
+			using name_channel_t = std::pair<std::string, cyng::channel_weak>;
+
 		public:
 			//	call back to signal changed IP-T authorization state
 			using auth_cb = std::function<void(bool)>;
@@ -39,8 +44,10 @@ namespace smf
 				, parser::command_cb
 				, parser::data_cb
 				, auth_cb);
+
 			void start();
 			void stop();
+			bool is_authorized() const;
 
 			void register_target(std::string, cyng::channel_weak);
 
@@ -98,8 +105,8 @@ namespace smf
 			 * After receiving a response the stored callback will be moved
 			 * to the channel => callback map.
 			 */
-			std::map< ipt::sequence_t, cyng::channel_weak >	registrant_;
-			std::map< std::uint32_t, cyng::channel_weak >	targets_;
+			std::map< ipt::sequence_t, name_channel_t >	registrant_;
+			std::map< std::uint32_t, name_channel_t >	targets_;
 
 		};
 	}	//	ipt

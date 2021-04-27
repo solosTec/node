@@ -28,7 +28,24 @@ namespace smf {
 		, cfg_(config)
 		, logger_(logger)
 		, bus_()
-	{	}
+		, parser_([this](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+
+			CYNG_LOG_TRACE(logger_, smf::sml::get_name(type) << ": " << trx << ", " << msg);
+			switch (type) {
+			case sml::msg_type::OPEN_REQUEST:
+				break;
+			case sml::msg_type::GET_PROC_PARAMETER_REQUEST:
+				break;
+			case sml::msg_type::CLOSE_REQUEST:
+				break;
+			default:
+				CYNG_LOG_WARNING(logger_, "message type " << smf::sml::get_name(type) << " is not supported yet");
+				break;
+			}
+
+		}),
+		messages_()
+	{}
 
 	void router::start() {
 
@@ -82,17 +99,22 @@ namespace smf {
 		}
 #endif
 
+		parser_.read(data.begin(), data.end());
+
 	}
 
 	void router::auth_state(bool auth) {
 		if (auth) {
 			CYNG_LOG_INFO(logger_, "[ipt] authorized");
-			//register_targets();
+			register_targets();
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "[ipt] authorization lost");
 		}
 	}
 
+	void router::register_targets() {
+
+	}
 
 }

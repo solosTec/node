@@ -56,7 +56,7 @@ namespace smf
 			std::size_t read(I start, I end)
 			{
 				using value_type = typename std::iterator_traits<I>::value_type;
-				static_assert(std::is_same_v<char, value_type, "data type char expected");
+				static_assert(std::is_same_v<char, value_type>, "data type char expected");
 				std::for_each(start, end, [this](value_type c)
 					{
 						//

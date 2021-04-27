@@ -67,6 +67,13 @@ namespace smf
 			state_ = state::STOPPED;
 		}
 
+		bool bus::is_authorized() const {
+
+			return (state_ == state::AUTHORIZED)
+				|| (state_ == state::LINKED)
+				;
+		}
+
 		void bus::reset() {
 			buffer_write_.clear();
 			boost::system::error_code ignored_ec;
@@ -437,7 +444,7 @@ namespace smf
 				//
 				//	send register command to ip-t server
 				//
-				registrant_.emplace(r.second, wp);
+				registrant_.emplace(r.second, std::make_pair(name, wp));
 				buffer_write_.push_back(r.first);
 
 				//
@@ -449,39 +456,51 @@ namespace smf
 		}
 
 		void bus::res_register_target(header const& h, cyng::buffer_t&& body) {
-			auto const pos = registrant_.find(h.sequence_);
-			if (pos != registrant_.end()) {
 
-				auto const [res, channel] = ctrl_res_register_target(std::move(body));
-				CYNG_LOG_INFO(logger_, "[ipt] cmd " 
-					<< ipt::command_name(h.command_) 
-					<< ": " 
-					<< ctrl_res_register_target_policy::get_response_name(res)
-					<< ", channel: "
-					<< channel);
+			//
+			//	read message body
+			//
+			auto const [res, channel] = ctrl_res_register_target(std::move(body));
 
-				auto sp = pos->second.lock();
-				if (sp) {
-					if (ctrl_res_register_target_policy::is_success(res)) {
-						registrant_.emplace(channel, std::move(pos->second));
+			//
+			//	sync with strand
+			//
+			boost::asio::post(dispatcher_, [this, h, res, channel]() {
+
+				auto const pos = registrant_.find(h.sequence_);
+				if (pos != registrant_.end()) {
+
+					CYNG_LOG_INFO(logger_, "[ipt] cmd "
+						<< ipt::command_name(h.command_)
+						<< ": "
+						<< ctrl_res_register_target_policy::get_response_name(res)
+						<< ", channel: "
+						<< channel);
+
+					//	name/channel
+					auto sp = pos->second.second.lock();
+					if (sp) {
+						if (ctrl_res_register_target_policy::is_success(res)) {
+							targets_.emplace(channel, std::move(pos->second));
+						}
+						else {
+							//
+							//	stop task
+							//
+							sp->stop();
+						}
 					}
-					else {
-						//
-						//	stop task
-						//
-						sp->stop();
-					}
+
+					//
+					//	cleanup list
+					//
+					registrant_.erase(pos);
 				}
+				else {
+					CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing registrant");
+				}
+			});
 
-				//
-				//	cleanup list
-				//
-				registrant_.erase(pos);
-			}
-			else {
-				CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing registrant");
-				cb_cmd_(h, std::move(body));
-			}
 		}
 
 		void bus::pushdata_transfer(header const& h, cyng::buffer_t&& body) {
@@ -491,23 +510,30 @@ namespace smf
 			 */
 			auto [channel, source, status, block, data] = tp_req_pushdata_transfer(std::move(body));
 
-			auto const pos = targets_.find(channel);
-			if (pos != targets_.end()) {
-				CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " - " << data.size() << " bytes");
-				auto sp = pos->second.lock();
-				if (sp) {
-					sp->dispatch("receive", cyng::make_tuple(channel, source, data));
+			//
+			//	sync with strand
+			//
+			boost::asio::post(dispatcher_, [this, h, channel, source, status, block, data]() {
+
+				auto const pos = targets_.find(channel);
+				if (pos != targets_.end()) {
+					CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " - " << data.size() << " bytes");
+					//	name/channel
+					auto sp = pos->second.second.lock();
+					if (sp) {
+						sp->dispatch("receive", cyng::make_tuple(channel, source, data, pos->second.first));
+					}
+					else {
+						//
+						//	task removed - clean up
+						//
+						targets_.erase(pos);
+					}
 				}
 				else {
-					//
-					//	task removed - clean up
-					//
-					targets_.erase(pos);
+					CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " dropped");
 				}
-			}
-			else {
-				CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " dropped");
-			}
+				});
 		}
 
 		void bus::req_watchdog(header const& h, cyng::buffer_t&& body) {

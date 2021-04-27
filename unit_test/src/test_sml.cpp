@@ -50,17 +50,10 @@ BOOST_AUTO_TEST_CASE(parser)
 	{
 		//	dont skip whitespaces
 		ifile >> std::noskipws;
-		smf::sml::parser p([](std::string, std::uint8_t, std::uint8_t, smf::sml::msg_type, cyng::tuple_t, std::uint16_t) {
+		smf::sml::parser p([](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t) {
+			std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
 			});
 
-		//	std::cout 
-		//		<< smf::sml::get_name(type) 
-		//		<< '['
-		//		<< size
-		//		<< '/'
-		//		<< data.size() 
-		//		<< ']'
-		//		<< std::endl;
 
 		//	});
 		p.read(std::istream_iterator<char>(ifile), std::istream_iterator<char>());
@@ -98,6 +91,7 @@ BOOST_AUTO_TEST_CASE(login)
 
 		});
 	p.read(std::begin(inp), std::end(inp));
+	BOOST_REQUIRE(p.get_parser().is_closed());
 
 /*
 ### Message ###

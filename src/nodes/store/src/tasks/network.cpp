@@ -90,6 +90,7 @@ namespace smf {
 	void network::auth_state(bool auth) {
 		if (auth) {
 			CYNG_LOG_INFO(logger_, "[ipt] authorized");
+			BOOST_ASSERT(bus_.is_authorized());
 			register_targets();
 		}
 		else {

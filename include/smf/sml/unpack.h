@@ -48,6 +48,8 @@ namespace smf {
 				return std::distance(start, end);
 			}
 
+			parser const& get_parser() const;
+
 		private:
 
 			/**

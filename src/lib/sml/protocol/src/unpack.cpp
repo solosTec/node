@@ -17,6 +17,10 @@ namespace smf {
 			, crc_{ 0 }
 		{}
 
+		parser const& unpack::get_parser() const {
+			return parser_;
+		}
+
 		void unpack::put(char c) {
 
 			switch (state_) {

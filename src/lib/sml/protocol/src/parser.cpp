@@ -169,7 +169,7 @@ namespace smf {
 
 		void parser::finalize() {
 
-			BOOST_ASSERT(stack_.size() == 1);
+			//BOOST_ASSERT(stack_.size() == 1);
 			if (!stack_.empty()) {
 				BOOST_ASSERT(stack_.top().values_.size() == 5);
 #ifdef _DEBUG_SML
