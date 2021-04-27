@@ -1,0 +1,131 @@
+open database file [/usr/local/etc/smf/segw.database]
+------------------------------------------  [81490d0700ff]
+81490d0700ff/814827320601.................: 00:00:1.000000 (00:00:1.000000:chrono:sec) - reconnect timer (seconds)
+81490d0700ff/814831320201.................: 00000014 (14000000:u32) - reconnect counter
+81490d0700ff/81490d070001/814917070001....: segw.ch (segw.ch:s) - IP-T server address
+81490d0700ff/81490d070001/814919070001....: 0000 (0000:u16) - IP-T server source port
+81490d0700ff/81490d070001/81491a070001....: 26862 (26862:s) - IP-T server target port
+81490d0700ff/81490d070001/8149633c0101....: 002518a00a63.eui (002518a00a63.eui:s) - login account
+81490d0700ff/81490d070001/8149633c0201....: NODE_PWD (NODE_PWD:s) - login password
+81490d0700ff/81490d070001/8149633c0301....: true (true:bool) - scrambled login
+81490d0700ff/81490d070001/sk..............: 0102030405060708090001020304050607080900010203040506070809000001 (0102030405060708090001020304050607080900010203040506070809000001:s) - scramble key
+81490d0700ff/81490d070002/814917070002....: 192.168.1.100 (192.168.1.100:s) - IP-T server address
+81490d0700ff/81490d070002/814919070002....: 0000 (0000:u16) - IP-T server source port
+81490d0700ff/81490d070002/81491a070002....: 26862 (26862:s) - IP-T server target port
+81490d0700ff/81490d070002/8149633c0102....: 002518a00a63.eui (002518a00a63.eui:s) - login account
+81490d0700ff/81490d070002/8149633c0202....: NODE_PWD (NODE_PWD:s) - login password
+81490d0700ff/81490d070002/8149633c0302....: true (true:bool) - scrambled login
+81490d0700ff/81490d070002/sk..............: 0102030405060708090001020304050607080900010203040506070809000001 (0102030405060708090001020304050607080900010203040506070809000001:s) - scramble key
+81490d0700ff/81490d0700ff.................: false (false:bool) - SSL support
+81490d0700ff/enabled......................: false (false:bool) - IP-T enabled
+------------------------------------------  [8181c78204ff]
+8181c78204ff..............................: 05002518a00a62 (05002518a00a62:s) - Server ID
+------------------------------------------  [blocklist]
+blocklist/0/enabled.......................: [true/false] (true:bool) - blocklist: enabled
+blocklist/0/mode..........................: drop (drop:s) - mode: 
+blocklist/0/period........................: [00:05:0.000000/00:00:30.000000] (00:50:0.000000:chrono:sec) - blocklist: period
+blocklist/0/size..........................: 00000000 (00000000:u32) - blocklist size
+blocklist/1/enabled.......................: false (false:bool) - blocklist: enabled
+blocklist/1/mode..........................: drop (drop:s) - s
+blocklist/1/period........................: 00:00:5.000000 (00:00:5.000000:chrono:sec) - chrono:sec
+blocklist/1/size..........................: 00000000 (00000000:u32) - u32
+------------------------------------------  [broker]
+broker/0/0/account........................: 002518a00a63.eui (002518a00a63.eui:s) - broker: account
+broker/0/0/address........................: [192.168.230.210/192.168.230.208] (192.168.230.210:s) - broker: address
+broker/0/0/port...........................: 0bb8 (bb80:u16) - broker port 3000
+broker/0/0/pwd............................: wM-Bus (wM-Bus:s) - broker: pwd
+broker/0/1/address........................: 192.168.230.210 (192.168.230.210:s) - s
+broker/0/1/port...........................: 0bb8 (bb80:u16) - u16
+broker/0/count............................: [00000002/00000001] (20000000:u32) - broker count
+broker/1/0/account........................: 002518a00a63.eui (002518a00a63.eui:s) - broker: account
+broker/1/0/address........................: segw.ch (segw.ch:s) - broker: address
+broker/1/0/port...........................: 2ee2 (2ee2:u16) - broker port 12002
+broker/1/0/pwd............................: rs485 (rs485:s) - broker: pwd
+broker/1/1/address........................: 192.168.230.210 (192.168.230.210:s) - s
+broker/1/1/port...........................: 2ee2 (2ee2:u16) - u16
+broker/1/count............................: [00000002/00000001] (20000000:u32) - broker count
+------------------------------------------  [country-code]
+country-code..............................: CH (CH:s) - country code
+------------------------------------------  [generate-profile]
+generate-profile..........................: false (false:bool) - generate profiles
+------------------------------------------  [gpio]
+gpio/enabled..............................: true (true:bool) - GPIO enabled
+gpio/path.................................: "/sys/class/gpio" ("\"/sys/class/gpio\"":fs:path) - virtual path
+gpio/pin/1................................: 46 (46:i64) - GPIO pin
+gpio/pin/2................................: 47 (47:i64) - GPIO pin
+gpio/pin/3................................: 50 (50:i64) - GPIO pin
+gpio/pin/4................................: 53 (53:i64) - GPIO pin
+------------------------------------------  [hw]
+hw/class..................................: 129-129:199.130.83*255 (129-129:199.130.83*255:s) - hardware: class
+hw/manufacturer...........................: PPC (PPC:s) - hardware: manufacturer
+hw/model..................................: virtual.gateway (virtual.gateway:s) - hardware: model
+hw/serial.................................: 02568635 (25686350:u32) - serial number 39224885
+------------------------------------------  [language-code]
+language-code.............................: ch (ch:s) - language code
+------------------------------------------  [listener]
+listener/0/port...........................: 0000 (0000:u16) - u16
+listener/0/timeout........................: 02:46:40.000000 (20:46:40.000000:chrono:sec) - chrono:sec
+listener/1/address........................: 0.0.0.0 (0.0.0.0:ip:address) - listener bind address 0.0.0.0
+listener/1/enabled........................: true (true:bool) - listener: enabled
+listener/1/login..........................: false (false:bool) - listener: login
+listener/1/port...........................: 1776 (1776:u16) - default listener port 6006
+listener/1/timeout........................: 00:00:30.000000 (00:00:30.000000:s) - listener: timeout
+------------------------------------------  [lmn]
+lmn/0/HCI.................................: none (none:s) - HCI
+lmn/0/broker-enabled......................: true (true:bool) - broker-enabled
+lmn/0/broker-login........................: false (false:bool) - broker-login
+lmn/0/broker-timeout......................: 00:00:12.000000 (00:00:12.000000:chrono:sec) - reconnect time in seconds (12)
+lmn/0/databits............................: 8 (8:u8) - databits (7, 8)
+lmn/0/enabled.............................: true (true:bool) - enabled
+lmn/0/flow-control........................: none (none:s) - flow-control
+lmn/0/hex-dump............................: false (false:bool) - hex-dump
+lmn/0/parity..............................: none (none:s) - parity
+lmn/0/port................................: /dev/ttyAPP0 (/dev/ttyAPP0:s) - port
+lmn/0/protocol............................: [raw/wM-Bus:EN13757-4] (raw:s) - protocol
+lmn/0/speed...............................: 0001c200 (1c200000:u32) - speed in bauds (115200)
+lmn/0/stopbits............................: one (one:s) - stopbits
+lmn/0/type................................: wireless M-Bus (wireless M-Bus:s) - type
+lmn/1/broker-enabled......................: false (false:bool) - broker-enabled
+lmn/1/broker-login........................: false (false:bool) - broker-login
+lmn/1/broker-reconnect....................: 12 (12:i64) - broker-reconnect
+lmn/1/databits............................: 7 (7:u8) - databits (7, 8)
+lmn/1/enabled.............................: true (true:bool) - enabled
+lmn/1/flow-control........................: none (none:s) - flow-control
+lmn/1/hex-dump............................: false (false:bool) - hex-dump
+lmn/1/parity..............................: even (even:s) - parity
+lmn/1/port................................: /dev/ttyAPP1 (/dev/ttyAPP1:s) - port
+lmn/1/protocol............................: raw (raw:s) - protocol
+lmn/1/speed...............................: 00002580 (25800000:u32) - speed in bauds (9600)
+lmn/1/stopbits............................: two (two:s) - stopbits
+lmn/1/type................................: RS-485 (RS-485:s) - type
+lmn/count.................................: 00000002 (20000000:u32) - LMN count
+------------------------------------------  [net]
+net/local-link/1..........................: fe80::225:18ff:fea0:a62 (fe80::225:18ff:fea0:a62:s) - local link (computed)
+net/local-link/2..........................: fe80::225:18ff:fea0:a64 (fe80::225:18ff:fea0:a64:s) - local link (computed)
+net/local-link/3..........................: fe80::225:18ff:fea0:a63 (fe80::225:18ff:fea0:a63:s) - local link (computed)
+net/local-link/4..........................: fe80::225:18ff:fea0:a62 (fe80::225:18ff:fea0:a62:s) - local link (computed)
+net/mac...................................: 00:25:18:a0:0a:62 (00:25:18:a0:0a:62:s) - HAN MAC
+------------------------------------------  [nms]
+nms/account...............................: operator (operator:s) - NMS: account
+nms/address...............................: fe80::225:18ff:fea0:a62%br0 (fe80::225:18ff:fea0:a62%br0:s) - NMS bind address
+nms/debug.................................: false (false:bool) - NMS: debug
+nms/enabled...............................: true (true:bool) - NMS: enabled
+nms/port..................................: 1d8a (1d8a:u16) - default NMS listener port (7562)
+nms/pwd...................................: operator (operator:s) - NMS: pwd
+nms/script-path...........................: "/tmp/update-script.sh" ("\"/tmp/update-script.sh\"":fs:path) - path to update script
+------------------------------------------  [sml]
+sml/accept-all-ids........................: false (false:bool) - SML: accept-all-ids
+sml/account...............................: operator (operator:s) - SML: account
+sml/address...............................: 0.0.0.0 (0.0.0.0:ip:address) - SML bind address
+sml/discover..............................: 16a6 (16a6:u16) - SML discovery port (5798)
+sml/enabled...............................: false (false:bool) - SML: enabled
+sml/port..................................: 1c5b (1c5b:u16) - default SML listener port (7259)
+sml/pwd...................................: operator (operator:s) - SML: pwd
+------------------------------------------  [tag]
+tag.......................................: e1bf6a50-281a-4e88-9f03-3305e1b9561a (e1bf6a50-281a-4e88-9f30-3350e1b9561a:uuid) - unique app id
+------------------------------------------  [vmeter]
+vmeter/enabled............................: false (false:bool) - virtual meter: enabled
+vmeter/interval...........................: 07:13:20.000000 (70:13:20.000000:chrono:sec) - virtual meter interval (sec) 26000
+vmeter/port-index.........................: 00000001 (10000000:u32) - virtual meter port index 1
+vmeter/protocol...........................: iec (iec:s) - virtual meter: protocol
+vmeter/server.............................: 01-d81c-10000001-3c-02 (01-d81c-10000001-3c-02:s) - virtual meter: server
