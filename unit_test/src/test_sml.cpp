@@ -7,8 +7,11 @@
 #include <smf/sml/parser.h>
 #include <smf/sml/tokenizer.h>
 #include <smf/sml/unpack.h>
+#include <smf/sml/value.hpp>
 
 #include <cyng/io/ostream.h>
+#include <cyng/parse/buffer.h>
+#include <cyng/parse/string.h>
 
 #include <iostream>
 #include <fstream>
@@ -156,4 +159,22 @@ BOOST_AUTO_TEST_CASE(login)
   00                                              endOfSmlMsg: 00
 */
 }
+
+BOOST_AUTO_TEST_CASE(value)
+{
+	auto const tpl_01 = smf::sml::make_value(1);
+	BOOST_REQUIRE_EQUAL(tpl_01.size(), 2);
+
+	auto const tpl_02 = smf::sml::make_value("hello");
+	BOOST_REQUIRE_EQUAL(tpl_02.size(), 2);
+
+	const char s[6] = { 'w', 'o', 'r', 'l', 'd', '!' };
+	auto const tpl_03 = smf::sml::make_value(s);
+	BOOST_REQUIRE_EQUAL(tpl_03.size(), 2);
+
+	auto const key = cyng::make_aes_key<cyng::crypto::aes128_size>(cyng::hex_to_buffer("6E3272357538782F413F4428472B4B62"));
+	auto const tpl_04 = smf::sml::make_value(key);
+	BOOST_REQUIRE_EQUAL(tpl_04.size(), 2);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

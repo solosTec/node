@@ -43,7 +43,6 @@ namespace smf {
 			//
 			for (auto const& msg : inp) {
 				buf.insert(buf.end(), msg.begin(), msg.end());
-
 			}
 
 			//
@@ -68,7 +67,7 @@ namespace smf {
 			//
 			crc_16_data crc;
 			BOOST_ASSERT(buf.size() < std::numeric_limits<int>::max());
-			crc.crc_ = crc16_calculate(buf);
+			crc.crc_ = crc16_calculate(reinterpret_cast<const unsigned char*>(buf.data()), buf.size());
 
 			//	network order
 			buf.push_back(crc.data_[1]);
