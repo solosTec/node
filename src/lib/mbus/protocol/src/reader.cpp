@@ -141,7 +141,7 @@ namespace smf
 			return std::chrono::system_clock::from_time_t(::_mkgmtime(&t));
 #else
 			//	nonstandard GNU extension, also present on the BSDs
-			return return std::chrono::system_clock::from_time_t(::timegm(&t));
+			return std::chrono::system_clock::from_time_t(::timegm(&t));
 #endif
 		}
 
