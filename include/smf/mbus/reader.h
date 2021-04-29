@@ -11,6 +11,7 @@
 #include <smf/mbus/vif.h>
 
 #include <cyng/obj/intrinsics/buffer.h>
+#include <cyng/obj/object.h>
 
 #include <cstdint>
 #include <chrono>
@@ -33,6 +34,11 @@ namespace smf
 		 * convert 3 bytes to a date
 		 */
 		std::chrono::system_clock::time_point convert_to_tp(char, char, char, char);
+
+		/**
+		 * produce an integer value
+		 */
+		cyng::object make_i24_value(char, char, char);
 	}
 }
 

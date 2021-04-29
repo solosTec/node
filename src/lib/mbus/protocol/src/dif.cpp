@@ -11,6 +11,31 @@ namespace smf
 {
 	namespace mbus
 	{
+		const char* get_name(data_field_code dfc) {
+			switch (dfc) {
+			case data_field_code::DFC_NO_DATA:		return "DFC_NO_DATA";
+			case data_field_code::DFC_8_BIT_INT:	return "DFC_8_BIT_INT";
+			case data_field_code::DFC_16_BIT_INT:	return "DFC_16_BIT_INT";
+			case data_field_code::DFC_24_BIT_INT:	return "DFC_24_BIT_INT";
+			case data_field_code::DFC_32_BIT_INT:	return "DFC_32_BIT_INT";
+			case data_field_code::DFC_32_BIT_REAL:	return "DFC_32_BIT_REAL";
+			case data_field_code::DFC_48_BIT_INT:	return "DFC_48_BIT_INT";
+			case data_field_code::DFC_64_BIT_INT:	return "DFC_64_BIT_INT";
+			case data_field_code::DFC_READOUT:		return "DFC_READOUT";
+			case data_field_code::DFC_2_DIGIT_BCD:	return "DFC_2_DIGIT_BCD";
+			case data_field_code::DFC_4_DIGIT_BCD:	return "DFC_4_DIGIT_BCD";
+			case data_field_code::DFC_6_DIGIT_BCD:	return "DFC_6_DIGIT_BCD";
+			case data_field_code::DFC_8_DIGIT_BCD:	return "DFC_8_DIGIT_BCD";
+			case data_field_code::DFC_VAR:			return "DFC_VAR";
+			case data_field_code::DFC_12_DIGIT_BCD:	return "DFC_12_DIGIT_BCD";
+			case data_field_code::DFC_SPECIAL:		return "DFC_SPECIAL";
+			default:
+				break;
+			}
+			return "unknown";
+
+		}
+
 		dif::dif(char c)
 			: value_(static_cast<std::uint8_t>(c))
 		{}

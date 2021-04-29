@@ -112,4 +112,40 @@ BOOST_AUTO_TEST_CASE(parser)
 	p.read(std::begin(inp), std::end(inp));
 }
 
+BOOST_AUTO_TEST_CASE(convert)
+{
+	//
+	//	convert EDIS => OBIS code
+	//
+	std::ifstream ifile("..\\..\\unit_test\\assets\\iec.log");
+	BOOST_CHECK(ifile.is_open());
+	if (ifile.is_open())
+	{
+		//
+		//	read line by line
+		//
+		std::string line;
+		while (std::getline(ifile, line)) {
+			std::cout << line;
+			auto const r = smf::iec::split_line(line);
+			if (r.size() == 2) {
+				//convert(r.at(0), r.at(1));
+				auto const code = smf::iec::to_obis(r.at(0), 1);
+				std::cout << " => " << cyng::to_str(code) << ": " << r.at(1) << std::endl;
+
+			}
+			else if (r.size() == 3) {
+				//convert(r.at(0), r.at(1), r.at(2));
+				auto const code = smf::iec::to_obis(r.at(0), 1);
+				std::cout << " => " << cyng::to_str(code) << ": " << r.at(1) << ", " << r.at(2) << std::endl;
+			}
+			else {
+				std::cout << "ERROR" << std::endl;
+			}
+
+		}
+
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()
