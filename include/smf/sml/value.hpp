@@ -179,7 +179,6 @@ namespace smf {
 
 			using type = typename std::remove_const<T>::type;
 			return detail::factory_policy<type>::create(std::forward<T>(v));
-			//return detail::factory_policy<T>::create(std::forward<T>(v));
 		}
 
 		/**

@@ -8,6 +8,9 @@
 #include <smf/mbus/radio/parser.h>
 #include <smf/mbus/radio/header.h>
 #include <smf/mbus/radio/decode.h>
+#include <smf/mbus/reader.h>
+#include <smf/mbus/bcd.hpp>
+#include <smf/sml/unpack.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/parse/string.h>
@@ -45,7 +48,7 @@ BOOST_AUTO_TEST_CASE(id)
 BOOST_AUTO_TEST_CASE(parser)
 {
 
-	//	short header
+	//	SML data
 	//	[0000]  ce 44 a8 15 74 31 45 04  01 02 7f 46 00 c0 05 57  .D..t1E. ...F...W
 	//	[0010]  35 f1 07 c8 b4 a7 67 21  17 90 97 fa bf cd 22 92  5.....g! ......".
 	//	[0020]  ee c5 15 c5 7b 73 8a e3  29 7f 52 9c b1 ea d9 a4  ....{s.. ).R.....
@@ -80,8 +83,8 @@ BOOST_AUTO_TEST_CASE(parser)
 		std::cout << smf::mbus::to_str(h) << std::endl;
 
 		auto mc = smf::get_manufacturer_code(h.get_server_id());
-		BOOST_REQUIRE_EQUAL(mc.first, 0x0a8);
-		BOOST_REQUIRE_EQUAL(mc.second, 0x015);
+		BOOST_REQUIRE_EQUAL(mc.first, static_cast<char>(0x0a8));
+		BOOST_REQUIRE_EQUAL(mc.second, static_cast<char>(0x015));
 
 		auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>("23A84B07EBCBAF948895DF0E9133520D");
 
@@ -93,6 +96,16 @@ BOOST_AUTO_TEST_CASE(parser)
 		BOOST_REQUIRE_EQUAL(res.size(), 0xc0);
 		BOOST_REQUIRE_EQUAL(res.at(0), 0x2f);
 		BOOST_REQUIRE_EQUAL(res.at(1), 0x2f);
+
+		//
+		//	read SML data
+		// 
+		smf::sml::unpack p([](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+
+			std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
+
+			});
+		p.read(res.begin() + 2, res.end());
 
 		auto const clone = smf::mbus::radio::restore_data(h, t, payload);
 		BOOST_REQUIRE_EQUAL(clone.size(), inp.size());
@@ -107,14 +120,14 @@ BOOST_AUTO_TEST_CASE(parser)
 	//	long header
 	auto const inp_long = cyng::make_buffer({
 		0x36, 0x44, 0xe6, 0x1e, 0x79, 0x42, 0x68, 0x00, 0x02, 0x0e, 0x72, /* header complete */ 0x57, 0x14, 0x06, 0x21, 0xe6,
-		0x1e, 0x36, 0x03, 0xf3, 0x00, 0x20, 0x65, /* secondary complate */ 0xd4, 0xfc, 0xa9, 0xb9, 0x37, 0x81, 0x3f, 0xf1, 0x45,
+		0x1e, 0x36, 0x03, 0xf3, 0x00, 0x20, 0x65, /* secondary complete */ 0xd4, 0xfc, 0xa9, 0xb9, 0x37, 0x81, 0x3f, 0xf1, 0x45,
 		0xf0, 0x4c, 0x61, 0x1e, 0x65, 0x13, 0x43, 0x69, 0x60, 0x69, 0x43, 0x08, 0x86, 0x1c, 0xbc, 0x98,
 		0x2d, 0xb5, 0x4a, 0xbb, 0x76, 0xb3, 0xa3 });
 
 	smf::mbus::radio::parser p_long([&](smf::mbus::radio::header const& h, smf::mbus::radio::tpl const& t, cyng::buffer_t const& payload) {
 		std::cout << smf::mbus::to_str(h) << std::endl;
 		auto const sec = t.get_secondary_address();
-		std::cout << smf::srv_id_to_str(sec);
+		std::cout << smf::srv_id_to_str(sec) << std::endl;
 
 		BOOST_REQUIRE_EQUAL(smf::srv_id_to_str(sec), "01-e61e-57140621-36-03");
 
@@ -129,6 +142,8 @@ BOOST_AUTO_TEST_CASE(parser)
 		BOOST_REQUIRE_EQUAL(res.at(0), 0x2f);
 		BOOST_REQUIRE_EQUAL(res.at(1), 0x2f);
 
+		//smf::mbus::read(res, 2);
+
 		auto const clone = smf::mbus::radio::restore_data(h, t, payload);
 		BOOST_REQUIRE_EQUAL(clone.size(), inp_long.size());
 		for (std::size_t idx = 0; idx < inp_long.size(); ++idx) {
@@ -138,6 +153,253 @@ BOOST_AUTO_TEST_CASE(parser)
 
 		});
 	p_long.read(std::begin(inp_long), std::end(inp_long));
+
+	auto const inp_short = cyng::make_buffer({
+		0x2e,	//	length (46 bytes)
+		0x44,	//	C-field (send/no reply)
+		0x93,	//	manufacturer
+		0x15,
+		0x78,	//	address
+		0x56,
+		0x34,
+		0x12,
+		0x33,	//	version
+		0x03,	//	device type (gas)
+		0x7a,	//	CI (short header)
+		0x2a,	//	access no
+		0x00,	//	status
+		0x20,	//	config
+		0x25,
+/*18*/	0x59,	//	- 0x2f, AES verify
+/*19*/	0x23,	//	- 0x2f, AES verify
+/*20*/	0xc9,	//	- 0x0c, DIF (8 digit BCD
+/*21*/	0x5a,	//	- 0x14, VIF (Volume 0,01 cubic meter) 
+/*22*/	0xaa,	//	- 0x27, Value LSB 
+
+/*23*/	0x26,	//	- 
+/*24*/	0xd1,	//	- 
+/*25*/	0xb2,	//	- 
+		0xe7,	//	- DIF (Time at readout; Type F)
+		0x49,	//	- 
+		0x3b,	//	- 
+		0x01,	//	- 
+		0x3e,	//	- 
+		0xc4,	//	- 
+		0xa6,	//	- DIF (2 byte integer)
+		0xf6,	//	- 
+		0xd3,	//	- 
+		0x52,	//	- 
+		0x9b,	//
+/*39*/	0x52,	//	- 0x2f, AES fill bytes
+		0x0e,	//	- 0x2f, AES fill bytes
+		0xdf,	//	- 0x2f, AES fill bytes
+		0xf0,	//	- 0x2f, AES fill bytes
+		0xea,	//	- 0x2f, AES fill bytes
+		0x6d,	//	- 0x2f, AES fill bytes
+		0xef,	//	- 0x2f, AES fill bytes
+		0xc9,	//	- 0x2f, AES fill bytes
+		0x9d,	//	- 0x2f, AES fill bytes
+		0x6d,	//	- 0x2f, AES fill bytes
+		0x69,	//	- 0x2f, AES fill bytes
+		0xeb,	//	- 0x2f, AES fill bytes
+		0xf3,	//	- 0x2f, AES fill bytes
+		});
+
+	smf::mbus::radio::parser p_short([&](smf::mbus::radio::header const& h, smf::mbus::radio::tpl const& t, cyng::buffer_t const& payload) {
+		std::cout << smf::mbus::to_str(h) << std::endl;
+
+		auto mc = smf::get_manufacturer_code(h.get_server_id());
+		BOOST_REQUIRE_EQUAL(mc.first, static_cast<char>(0x93));
+		BOOST_REQUIRE_EQUAL(mc.second, static_cast<char>(0x15));
+
+		auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>("0102030405060708090A0B0C0D0E0F11");
+
+		auto const res = smf::mbus::radio::decode(h.get_server_id()
+			, t.get_access_no()
+			, aes
+			, payload);
+
+		BOOST_REQUIRE_EQUAL(res.size(), h.effective_payload_size());
+		BOOST_REQUIRE_EQUAL(res.at(0), 0x2f);
+		BOOST_REQUIRE_EQUAL(res.at(1), 0x2f);
+
+		//
+		//	clear dummy bytes
+		//
+
+		std::size_t offset = 2;
+		while (offset < res.size()) {
+			offset = smf::mbus::read(res, offset);
+		}
+
+		});
+	p_short.read(std::begin(inp_short), std::end(inp_short));
+
+}
+
+BOOST_AUTO_TEST_CASE(dif)
+{
+	smf::mbus::dif d1(static_cast<std::uint8_t>(12u));
+	BOOST_REQUIRE(d1.get_data_field_code() == smf::mbus::data_field_code::DFC_8_DIGIT_BCD);
+	BOOST_REQUIRE(d1.get_function_field_code() == smf::mbus::function_field_code::INSTANT);
+	BOOST_REQUIRE(!d1.is_extended());
+
+	smf::mbus::dif d2(static_cast<std::uint8_t>(4u));
+	BOOST_REQUIRE(d2.get_data_field_code() == smf::mbus::data_field_code::DFC_32_BIT_INT);	//	(Time at readout; Type F)
+	BOOST_REQUIRE(d2.get_function_field_code() == smf::mbus::function_field_code::INSTANT);
+	BOOST_REQUIRE(!d2.is_extended());
+
+	smf::mbus::dif d3(static_cast<std::uint8_t>(2u));
+	BOOST_REQUIRE(d3.get_data_field_code() == smf::mbus::data_field_code::DFC_16_BIT_INT);
+	BOOST_REQUIRE(d3.get_function_field_code() == smf::mbus::function_field_code::INSTANT);
+	BOOST_REQUIRE(!d3.is_extended());
+
+	smf::mbus::dif d4(static_cast<std::uint8_t>(0x4c));
+	BOOST_REQUIRE(d4.get_data_field_code() == smf::mbus::data_field_code::DFC_8_DIGIT_BCD);
+	BOOST_REQUIRE(d4.get_function_field_code() == smf::mbus::function_field_code::INSTANT);
+	BOOST_REQUIRE(d4.is_storage());
+	BOOST_REQUIRE(!d4.is_extended());
+
+	smf::mbus::dif d5(static_cast<std::uint8_t>(0x82));
+	BOOST_REQUIRE(d5.get_data_field_code() == smf::mbus::data_field_code::DFC_16_BIT_INT);
+	BOOST_REQUIRE(d5.get_function_field_code() == smf::mbus::function_field_code::INSTANT);
+	BOOST_REQUIRE(!d5.is_storage());
+	BOOST_REQUIRE(d5.is_extended());
+
+	smf::mbus::dif d6(static_cast<std::uint8_t>(0x8C));
+	BOOST_REQUIRE(d6.get_data_field_code() == smf::mbus::data_field_code::DFC_8_DIGIT_BCD);
+	BOOST_REQUIRE(d6.get_function_field_code() == smf::mbus::function_field_code::INSTANT);
+	BOOST_REQUIRE(!d6.is_storage());
+	BOOST_REQUIRE(d6.is_extended());
+
+	smf::mbus::dif d7(static_cast<std::uint8_t>(0x8D));
+	BOOST_REQUIRE(d7.get_data_field_code() == smf::mbus::data_field_code::DFC_VAR);	//	variable length
+	BOOST_REQUIRE(d7.get_function_field_code() == smf::mbus::function_field_code::INSTANT);
+	BOOST_REQUIRE(!d7.is_storage());
+	BOOST_REQUIRE(d7.is_extended());
+
+}
+
+BOOST_AUTO_TEST_CASE(reader)
+{
+	//
+	//	Example from Annex P
+	//	Table P.5 — SND-NR - Heat meter (wM-Bus) 
+	//
+	auto const inp = cyng::make_buffer(
+		{ 0x0C	//	DIF (8 digit BCD)
+		, 0x06	//	VIE (Energy kWh)
+		, 0x27	//	Value LSB
+		, 0x04	//	Value ( = 2850427 ==  002b7e7b)
+		, 0x85	//	Value
+		, 0x02	//	Value MSB
+
+		//	-- record 2
+		, 0x0C	//	DIE (8 digit BCD)
+		, 0x13	//	VIE (Volume liter)
+		, 0x76	//	Value LSB
+		, 0x34	//	Value ( = 703476 == 000abbf4)
+		, 0x70	//	Value
+		, 0x00	//	Value MSB
+
+		//	-- record 3
+		, 0x4C	//	DIF (8 digit BCD, StorageNo 1)
+		, 0x06	//	VIE (Energy kWh)
+		, 0x19	//	Value LSB
+		, 0x54	//	Value ( = 1445419 == 00160e2b)
+		, 0x44	//	Value
+		, 0x01	//	Value MSB
+
+		//	-- record 4
+		, 0x42	//	DIE (Data type G, StorageNo 1)
+		, 0x6C	//	VIE (Date)
+		, 0xFF	//	Value LSB
+		, 0x0C	//	Value MSB ( = 31.12.2007)
+
+		//	-- record 5
+		, 0x0B	//	DIF (6 digit BCD)
+		, 0x3B	//	VIF (Volume flow l/h)
+		, 0x27	//	Value LSB	
+		, 0x01	//	Value ( = 127 == 0000007f)
+		, 0x00	//	Value MSB
+
+		//	-- record 6
+		, 0x0B	//	DIF (6 digit BCD)
+		, 0x2A	//	VIF (Power 100 mW)
+		, 0x97	//	Value LSB
+		, 0x32	//	Value ( = 3297 == 00000ce1)
+		, 0x00	//	Value MSB
+
+		//	-- record 7
+		, 0x0A	//	DIF (4 digit BCD)
+		, 0x5A	//	VIF (Flow Temp. °C)
+		, 0x43	//	Value LSB
+		, 0x04	//	Value MSB ( = 443 == 01bb)
+
+		//	-- record 8
+		, 0x0A	//	DIF (4 digit BCD)
+		, 0x5E	//	VIE (Return Temp. 100 m°C)
+		, 0x51	//	Value LSB
+		, 0x02	//	Value MSB ( = 251 == 00fb)
+
+		//	-- record 9
+		, 0x02	//	DIF (2 byte integer)
+		, 0xFD	//	VIF (FD-Table)
+		, 0x17	//	VIFE (error flag)
+		, 0x00	//	Value LSB
+		, 0x00	//	Value MSB ( = 0)
+		//, 0x27	//	Fill Byte due to AES
+		});
+
+	smf::mbus::read(inp, 0);
+
+}
+
+BOOST_AUTO_TEST_CASE(bcd)
+{
+	auto const v1 = smf::mbus::bcd_to_n<std::uint32_t>(cyng::make_buffer(
+		{ 0x27	//	Value LSB
+		, 0x04	//	Value ( = 2850427 ==  002b7e7b)
+		, 0x85	//	Value
+		, 0x02	//	Value MSB
+		}));
+	BOOST_REQUIRE_EQUAL(v1, 2850427);
+	auto const v2 = smf::mbus::bcd_to_n<std::uint32_t>(cyng::make_buffer(
+		{ 0x76	//	Value LSB
+		, 0x34	//	Value ( = 703476 == 000abbf4)
+		, 0x70	//	Value
+		, 0x00	//	Value MSB
+		}));
+	BOOST_REQUIRE_EQUAL(v2, 703476);
+	auto const v3 = smf::mbus::bcd_to_n<std::uint32_t>(cyng::make_buffer(
+		{ 0x19	//	Value LSB
+		, 0x54	//	Value ( = 1445419 == 00160e2b)
+		, 0x44	//	Value
+		, 0x01	//	Value MSB
+		}));
+	BOOST_REQUIRE_EQUAL(v3, 1445419);
+	auto const v5 = smf::mbus::bcd_to_n<std::uint16_t>(cyng::make_buffer(
+		{ 0x27	//	Value LSB	
+		, 0x01	//	Value ( = 127 == 0000007f)
+		, 0x00	//	Value MSB
+		}));
+	BOOST_REQUIRE_EQUAL(v5, 127);
+	auto const v6 = smf::mbus::bcd_to_n<std::uint16_t>(cyng::make_buffer(
+		{ 0x97	//	Value LSB
+		, 0x32	//	Value ( = 3297 == 00000ce1)
+		, 0x00	//	Value MSB
+		}));
+	BOOST_REQUIRE_EQUAL(v6, 3297);
+	auto const v7 = smf::mbus::bcd_to_n<std::uint16_t>(cyng::make_buffer(
+		{ 0x43	//	Value LSB
+		, 0x04	//	Value MSB ( = 443 == 01bb)
+		}));
+	BOOST_REQUIRE_EQUAL(v7, 443);
+	auto const v8 = smf::mbus::bcd_to_n<std::uint16_t>(cyng::make_buffer(
+		{ 0x51	//	Value LSB
+		, 0x02	//	Value MSB ( = 251 == 00fb)
+		}));
+	BOOST_REQUIRE_EQUAL(v8, 251);
 
 }
 

@@ -101,6 +101,14 @@ namespace smf {
 			, cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
 	}
 
+	void controller::shutdown(cyng::logger logger, cyng::registry& reg) {
+
+		//
+		//	stop all running tasks
+		//
+		reg.shutdown();
+	}
+
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag

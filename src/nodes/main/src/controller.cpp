@@ -121,4 +121,14 @@ namespace smf {
 
 	}
 
+	void controller::shutdown(cyng::logger logger, cyng::registry& reg) {
+
+		config::stop_tasks(logger, reg, "main");
+
+		//
+		//	stop all running tasks
+		//
+		reg.shutdown();
+	}
+
 }

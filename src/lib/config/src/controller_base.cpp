@@ -169,7 +169,7 @@ namespace smf {
 					// Capture SIGINT and SIGTERM to perform a clean shutdown
 					boost::asio::signal_set signals(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
 					signals.async_wait(
-						[&](boost::system::error_code const&, int sig)
+						[&, this](boost::system::error_code const&, int sig)
 						{
 							// Stop the `io_context`. This will cause `run()`
 							// to return immediately, eventually destroying the
@@ -179,17 +179,11 @@ namespace smf {
 							const auto uptime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - now);
 
 							CYNG_LOG_INFO(logger, "shutdown " << config_.node_ << " - uptime: " << uptime);
+
+							//	stop all running tasks
+							this->shutdown(logger, ctl.get_registry());
 							logger.stop();
 
-							//
-							//	stop all running tasks
-							//	and stops the IO context.
-							//
-							//ctl.shutdown();
-							ctl.get_registry().shutdown();
-							std::this_thread::sleep_for(std::chrono::seconds(1));
-							std::this_thread::sleep_for(std::chrono::seconds(1));
-							std::this_thread::sleep_for(std::chrono::seconds(1));
 						});
 
 					CYNG_LOG_INFO(logger, "startup " << config_.node_);
@@ -203,8 +197,6 @@ namespace smf {
 					//	wait for pending requests
 					//
 					ctl.stop();
-					std::this_thread::sleep_for(std::chrono::seconds(1));
-					std::this_thread::sleep_for(std::chrono::seconds(1));
 					std::this_thread::sleep_for(std::chrono::seconds(1));
 				}
 
@@ -238,6 +230,16 @@ namespace smf {
 			BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
 
 			cyng::io::serialize_json_pretty(os, cfg);
+
+		}
+
+		void stop_tasks(cyng::logger logger, cyng::registry& reg, std::string name) {
+
+			auto const channels = reg.lookup(name);
+			CYNG_LOG_INFO(logger, "stop " << channels.size() << " task(s) [" << name << "]");
+			for (auto channel : channels) {
+				channel->stop();
+			}
 
 		}
 

@@ -43,6 +43,7 @@ namespace smf {
 			virtual void print_configuration(std::ostream&);
 
 			virtual void run(cyng::controller&, cyng::logger, cyng::object const& cfg, std::string const& node_name) = 0;
+			virtual void shutdown(cyng::logger, cyng::registry&) = 0;
 
 
 			void write_config(cyng::vector_t&&);
@@ -61,6 +62,8 @@ namespace smf {
 			mutable boost::uuids::random_generator_mt19937 uidgen_;
 
 		};
+
+		void stop_tasks(cyng::logger, cyng::registry&, std::string);
 	}
 }
 

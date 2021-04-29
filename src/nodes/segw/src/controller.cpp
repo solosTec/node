@@ -667,4 +667,28 @@ namespace smf {
 
 	}
 
+	void controller::shutdown(cyng::logger logger, cyng::registry& reg) {
+
+		config::stop_tasks(logger, reg, "persistence");
+
+		//
+		//	ToDo: stop LMN tasks
+		//	ToDo: stop broker tasks
+		//	ToDo: stop filter tasks
+		//	ToDo: stop gpio tasks
+		//
+
+		config::stop_tasks(logger, reg, "CP210x");
+
+		//
+		//	main task
+		//
+		config::stop_tasks(logger, reg, "bridge");
+
+		//
+		//	stop all running tasks
+		//
+		reg.shutdown();
+	}
+
 }

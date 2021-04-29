@@ -16,20 +16,68 @@ namespace smf
 		/**
 		 * value information field
 		 */
-		struct vif
+		class vif
 		{
-			std::uint8_t val_ : 7;	//	[0..6] Unit and multiplier (value)
-			std::uint8_t ext_ : 1;	//	[7] extension bit - Specifies if a VIFE Byte follows
+		public:
+			explicit vif(char);
+			explicit vif(std::uint8_t);
+			vif() = delete;
+
+			/**
+			 * bit [0..6] Unit and multiplier (value)
+			 */
+			std::uint8_t get_unit() const;
+
+			std::int8_t get_scaler() const;
+
+			/**
+			 * bit [7]
+			 */
+			bool is_extended() const;
+
+			/**
+			 *  E111 1001 (Enhanced Identification)
+			 *	Data = Identification No. (8 digit BCD)
+			 */
+			bool has_enhanced_id() const;
+
+			/**
+			 *  E111 1011 Extension of VIF-codes (true VIF is given in the first VIFE)
+			 */
+			bool is_ext_7B() const;
+
+			/**
+			 *  E111 1101 Extension of VIF-codes (true VIF is given in the first VIFE)
+			 *	Multiplicative correction factor for value (not unit)
+			 */
+			bool is_ext_7D() const;
+
+			/**
+			 * E111 1111 (Manufacturer Specific)
+			 */
+			bool is_man_specific() const;
+
+		private:
+			std::uint8_t value_;
 		};
+
+		/**
+		 * value information field
+		 */
+		//struct vif
+		//{
+		//	std::uint8_t val_ : 7;	//	[0..6] Unit and multiplier (value)
+		//	std::uint8_t ext_ : 1;	//	[7] extension bit - Specifies if a VIFE Byte follows
+		//};
 
 		/**
 		 * map union over dif bit field
 		 */
-		union uvif
-		{
-			std::uint8_t raw_;
-			vif vif_;
-		};
+		//union uvif
+		//{
+		//	std::uint8_t raw_;
+		//	vif vif_;
+		//};
 
 		/**
 		 * Up to 10 bytes

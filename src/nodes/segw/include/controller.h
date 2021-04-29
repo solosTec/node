@@ -29,10 +29,12 @@ namespace cyng {
 			, std::filesystem::path&& tmp
 			, std::filesystem::path&& cwd) override;
 
-		void run(cyng::controller&
+		virtual void run(cyng::controller&
 			, cyng::logger
 			, cyng::object const& cfg
 			, std::string const& node_name) override;
+
+		virtual void shutdown(cyng::logger, cyng::registry&) override;
 
 	private:
 		cyng::tuple_t create_wireless_spec(std::string const& hostname) const;

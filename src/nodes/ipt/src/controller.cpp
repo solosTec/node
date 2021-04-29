@@ -114,6 +114,16 @@ namespace smf {
 			, std::chrono::seconds(timeout));
 	}
 
+	void controller::shutdown(cyng::logger logger, cyng::registry& reg) {
+
+		config::stop_tasks(logger, reg, "cluster");
+
+		//
+		//	stop all running tasks
+		//
+		reg.shutdown();
+	}
+
 	void controller::join_cluster(cyng::controller& ctl
 		, cyng::logger logger
 		, boost::uuids::uuid tag

@@ -11,6 +11,7 @@
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/sys/locale.h>
+#include <cyng/task/registry.h>
 
 #include <locale>
 #include <iostream>
@@ -23,6 +24,13 @@ namespace smf {
 
 	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg, std::string const& node_name) {
 
+	}
+	void controller::shutdown(cyng::logger logger, cyng::registry& reg) {
+
+		//
+		//	stop all running tasks
+		//
+		reg.shutdown();
 	}
 
 	cyng::vector_t controller::create_default_config(std::chrono::system_clock::time_point&& now
