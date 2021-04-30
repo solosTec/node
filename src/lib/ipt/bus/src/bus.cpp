@@ -259,16 +259,25 @@ namespace smf
 			}
 			else
 			{
-				CYNG_LOG_ERROR(logger_, "ipt [" << tgl_.get() << "] on receive: " << ec.message());
+				CYNG_LOG_ERROR(logger_, "ipt [" << tgl_.get() << "] on receive " << ec.value() << ": s" << ec.message());
 
 				reset();
 
 				//
 				//	reconnect after 10/20 seconds
 				//
-				set_reconnect_timer((ec == boost::asio::error::connection_reset)
-					? boost::asio::chrono::seconds(10)
-					: boost::asio::chrono::seconds(20));
+				switch (ec.value()) {
+				case boost::asio::error::bad_descriptor:
+					//	closed by itself
+					set_reconnect_timer(boost::asio::chrono::seconds(100));
+					break;
+				case boost::asio::error::connection_reset:
+					set_reconnect_timer(boost::asio::chrono::seconds(10));
+					break;
+				default:
+					set_reconnect_timer(boost::asio::chrono::seconds(20));
+					break;
+				}
 			}
 		}
 
@@ -412,6 +421,8 @@ namespace smf
 			}
 			else {
 				CYNG_LOG_WARNING(logger_, "ipt [" << tgl_.get() << "] login failed: " << r.get_response_name());
+				boost::system::error_code ignored_ec;
+				socket_.close(ignored_ec);
 			}
 		}
 
