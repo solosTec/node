@@ -5,6 +5,7 @@
  *
  */
 #include <tasks/cluster.h>
+
 #include <cyng/task/channel.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
@@ -85,6 +86,7 @@ namespace smf {
 			db_->loop([this](cyng::meta_store const& m) {
 				bus_.req_subscribe(m.get_name());
 				});
+
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "[cluster] joining failed");
@@ -95,7 +97,7 @@ namespace smf {
 		CYNG_LOG_WARNING(logger_, "[cluster] disconnect: " << msg);
 		auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
 		db_->disconnect(slot);
-		//db_.reset();
+
 	}
 
 	void cluster::db_res_insert(std::string table_name

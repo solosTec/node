@@ -44,6 +44,10 @@ namespace smf {
 			, std::uint8_t frame_type
 			, cyng::buffer_t const& data);
 
+		void push_sml_data(cyng::buffer_t const& payload);
+		void push_dlsm_data(cyng::buffer_t const& payload);
+		void push_data(cyng::buffer_t const& payload);
+
 	private:
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logger logger_;

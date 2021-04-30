@@ -47,9 +47,25 @@ namespace smf
 
 			void start();
 			void stop();
-			bool is_authorized() const;
 
+			constexpr bool is_authorized() const {
+
+				return (state_ == state::AUTHORIZED)
+					|| (state_ == state::LINKED)
+					;
+			}
+
+
+			/**
+			 * initiate a sequence to register a push target
+			 */
 			void register_target(std::string, cyng::channel_weak);
+
+			/**
+			 * open a push channel
+			 */
+			void open_channel(push_channel);
+
 
 		private:
 			constexpr bool is_stopped() const {
@@ -60,7 +76,7 @@ namespace smf
 			void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
 			void handle_connect(boost::system::error_code const& ec,
 				boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-			void check_deadline(boost::system::error_code const&);
+			void reconnect_timeout(boost::system::error_code const&);
 			void do_read();
 			void do_write();
 			void handle_read(boost::system::error_code const& ec, std::size_t n);
@@ -83,8 +99,10 @@ namespace smf
 			void open_connection(std::string, sequence_t);
 			void close_connection(sequence_t);
 
+			void set_reconnect_timer(std::chrono::seconds);
 
 		private:
+			boost::asio::io_context& ctx_;
 			cyng::logger logger_;
 			toggle tgl_;
 			std::string const model_;

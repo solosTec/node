@@ -38,6 +38,8 @@ target_link_libraries(broker-iec
         smf_config
         smf_cluster_bus
         smf_iec
+        smf_ipt_bus
+        smf_ipt
         ${CYNG_LIBRARIES} 
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>

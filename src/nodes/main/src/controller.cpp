@@ -88,7 +88,7 @@ namespace smf {
 		CYNG_LOG_INFO(logger, cfg);
 #endif
 		auto const reader = cyng::make_reader(cfg);
-		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+		auto const tag = read_tag(reader["tag"].get());
 
 		auto const country_code = cyng::value_cast(reader["country-code"].get(), "CH");
 		auto const lang_code = cyng::value_cast(reader["language-code"].get(), "en-GB");

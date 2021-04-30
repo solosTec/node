@@ -51,8 +51,16 @@ namespace smf {
 			/**
 			 * generate a random UUID without requiring system entropy
 			 */
+			[[nodiscard]]
 			boost::uuids::uuid get_random_tag() const;
 
+			/**
+			 * Convert an object of type string into an UUID
+			 */
+			[[nodiscard]]
+			boost::uuids::uuid read_tag(cyng::object) const;
+
+			[[nodiscard]]
 			cyng::object read_config_section(std::string const& json_path, std::size_t config_index);
 
 		protected:

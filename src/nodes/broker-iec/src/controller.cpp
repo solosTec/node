@@ -7,6 +7,7 @@
 
 #include <controller.h>
 #include <tasks/cluster.h>
+#include <tasks/push.h>
 
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/container_factory.hpp>
@@ -18,6 +19,7 @@
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/log/record.h>
 #include <cyng/task/controller.h>
+#include <smf/ipt/scramble_key_format.h>
 
 #include <locale>
 #include <iostream>
@@ -37,15 +39,19 @@ namespace smf {
 		std::locale loc(std::locale(), new std::ctype<char>);
 		std::cout << std::locale("").name().c_str() << std::endl;
 
+		auto const tag = get_random_tag();
+
 		return cyng::make_vector({
 			cyng::make_tuple(
 				cyng::make_param("generated", now),
 				cyng::make_param("log-dir", tmp.string()),
-				cyng::make_param("tag", get_random_tag()),
+				cyng::make_param("tag", tag),
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
 				create_client_spec(),
-				create_cluster_spec()
+				create_cluster_spec(),
+				create_ipt_spec(tag),
+				create_push_spec()
 			)
 		});
 	}
@@ -55,12 +61,12 @@ namespace smf {
 		CYNG_LOG_INFO(logger, cfg);
 #endif
 		auto const reader = cyng::make_reader(cfg);
-		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+		auto const tag = read_tag(reader["tag"].get());
 
 
-		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
-		BOOST_ASSERT(!tgl.empty());
-		if (tgl.empty()) {
+		auto tgl_cluster = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
+		BOOST_ASSERT(!tgl_cluster.empty());
+		if (tgl_cluster.empty()) {
 			CYNG_LOG_FATAL(logger, "no cluster data configured");
 		}
 
@@ -83,10 +89,64 @@ namespace smf {
 			, logger
 			, tag
 			, node_name
-			, std::move(tgl)
+			, std::move(tgl_cluster)
 			, client_login
 			, client_target
 			, client_out);
+
+		auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
+		auto tgl_ipt = ipt::read_config(ipt_vec);
+		if (tgl_ipt.empty()) {
+
+			CYNG_LOG_FATAL(logger, "no ip-t server configured");
+
+			auto const pwd = boost::uuids::to_string(tag);
+			CYNG_LOG_INFO(logger, "use fallback configuration broker-wmbus:" << pwd << "@localhost:26862");
+
+			tgl_ipt.push_back(ipt::server("localhost"
+				, "26862"
+				, "broker-iec"
+				, pwd
+				, ipt::to_sk("0102030405060708090001020304050607080900010203040506070809000001")
+				, false
+				, 12));
+
+			tgl_ipt.push_back(ipt::server("ipt"
+				, "26862"
+				, "broker-iec"
+				, pwd
+				, ipt::to_sk("0102030405060708090001020304050607080900010203040506070809000001")
+				, false
+				, 12));
+
+		}
+
+		//
+		//	connect to ip-t server
+		//
+		join_network(ctl
+			, logger
+			, tag
+			, node_name
+			, std::move(tgl_ipt)
+			, ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"].get())));
+
+	}
+
+	void controller::join_network(cyng::controller& ctl
+		, cyng::logger logger
+		, boost::uuids::uuid tag
+		, std::string const& node_name
+		, ipt::toggle::server_vec_t&& tgl
+		, ipt::push_channel&& pcc) {
+
+		auto channel = ctl.create_named_channel_with_ref<push>("push"
+			, ctl
+			, logger
+			, std::move(tgl)
+			, std::move(pcc));
+		BOOST_ASSERT(channel->is_open());
+		channel->dispatch("connect", cyng::make_tuple());
 
 	}
 
@@ -145,6 +205,41 @@ namespace smf {
 #endif
 
 		));
+	}
+
+	cyng::param_t controller::create_push_spec() {
+		return cyng::make_param("push-channel", cyng::make_tuple(
+			cyng::make_param("target", "iec@power"),
+			cyng::make_param("account", ""),
+			cyng::make_param("number", ""),
+			cyng::make_param("version", ""),
+			cyng::make_param("id", ""),
+			cyng::make_param("timeout", 30)
+		));
+	}
+
+	cyng::param_t controller::create_ipt_spec(boost::uuids::uuid tag) {
+
+		auto const pwd = boost::uuids::to_string(tag);
+
+		return cyng::make_param("ipt", cyng::make_vector({
+			cyng::make_tuple(
+				cyng::make_param("host", "localhost"),
+				cyng::make_param("service", "26862"),
+				cyng::make_param("account", "broker-iec"),
+				cyng::make_param("pwd", pwd),
+				cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
+				cyng::make_param("scrambled", true)
+			),
+			cyng::make_tuple(
+				cyng::make_param("host", "ipt"),
+				cyng::make_param("service", "26862"),
+				cyng::make_param("account", "broker-iec"),
+				cyng::make_param("pwd", pwd),
+				cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
+				cyng::make_param("scrambled", false)
+			) })
+		);
 	}
 
 }

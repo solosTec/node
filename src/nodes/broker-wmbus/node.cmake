@@ -33,8 +33,10 @@ else()
 endif()
 
 set (broker-wmbus_tasks
-  include/tasks/cluster.h
-  src/tasks/cluster.cpp
+    include/tasks/cluster.h
+    include/tasks/push.h
+    src/tasks/cluster.cpp
+    src/tasks/push.cpp
 )
 
 source_group("broker-wmbus-assets" FILES ${broker-wmbus_assets})

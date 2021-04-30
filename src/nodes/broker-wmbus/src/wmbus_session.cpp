@@ -20,6 +20,7 @@
 #include <iostream>
 #include <sstream>
 #include <cyng/io/hex_dump.hpp>
+#include <smf/sml/unpack.h>
 #endif
 
 #include <boost/uuid/nil_generator.hpp>
@@ -189,6 +190,24 @@ namespace smf {
 					, cyng::key_generator(tag)
 					, cyng::param_map_factory()("address", ep.address())("port", ep.port())("lastSeen", std::chrono::system_clock::now()));
 
+				switch (frame_type) {
+				case mbus::FIELD_CI_RES_LONG_SML:	//	0x7E - long header
+				case mbus::FIELD_CI_RES_SHORT_SML:	//	0x7F - short header
+					push_sml_data(payload);
+					break;
+				case mbus::FIELD_CI_RES_LONG_DLMS:	// 0x7C
+				case mbus::FIELD_CI_RES_SHORT_DLSM: //	0x7D - short header
+					push_dlsm_data(payload);
+					break;
+				case mbus::FIELD_CI_HEADER_LONG:	//	0x72 - 12 byte header followed by variable format data (EN 13757-3)
+				case mbus::FIELD_CI_HEADER_SHORT:	//	0x7A - 4 byte header followed by variable format data (EN 13757-3)
+					push_data(payload);
+					break;
+
+				default:
+					break;
+				}
+
 			}
 			else {
 				bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", srv_id_to_str(address), "has no AES key");
@@ -198,6 +217,26 @@ namespace smf {
 			CYNG_LOG_ERROR(logger_, "[wmbus] no database");
 			bus_.sys_msg(cyng::severity::LEVEL_ERROR, "[wmbus] no database");
 		}
+	}
+
+	void wmbus_session::push_sml_data(cyng::buffer_t const& payload) {
+#ifdef _DEBUG_BROKER_WMBUS
+		//
+		//	read SML data
+		// 
+		smf::sml::unpack p([this](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+
+			CYNG_LOG_DEBUG(logger_, "SML> " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+
+			});
+		p.read(payload.begin() + 2, payload.end());
+#endif
+
+	}
+	void wmbus_session::push_dlsm_data(cyng::buffer_t const& payload) {
+
+	}
+	void wmbus_session::push_data(cyng::buffer_t const& payload) {
 
 	}
 

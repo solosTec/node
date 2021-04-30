@@ -31,6 +31,7 @@ namespace smf
 			, parser::data_cb cb_stream
 			, auth_cb cb_auth)
 		: state_(state::START)
+			, ctx_(ctx)
 			, logger_(logger)
 			, tgl_(std::move(tgl))
 			, model_(model)
@@ -52,13 +53,26 @@ namespace smf
 		void bus::start() {
 			BOOST_ASSERT(state_ == state::START);
 
-			CYNG_LOG_INFO(logger_, "start IP-T client [" << tgl_.get() << "]");
+			CYNG_LOG_INFO(logger_, "[ipt] start client [" << tgl_.get() << "]");
 
 			//
 			//	connect to IP-T server
 			//
-			boost::asio::ip::tcp::resolver r(socket_.get_executor());
-			connect(r.resolve(tgl_.get().host_, tgl_.get().service_));
+			try {
+				boost::asio::ip::tcp::resolver r(ctx_);
+				connect(r.resolve(tgl_.get().host_, tgl_.get().service_));
+			}
+			catch (std::exception const& ex) {
+				CYNG_LOG_ERROR(logger_, "[ipt] start client: " << ex.what());
+
+				//
+				//	switch redundancy
+				//
+				tgl_.changeover();
+				CYNG_LOG_WARNING(logger_, "[ipt] connect failed - switch to " << tgl_.get());
+
+				set_reconnect_timer(std::chrono::seconds(60));
+			}
 
 		}
 
@@ -67,20 +81,14 @@ namespace smf
 			state_ = state::STOPPED;
 		}
 
-		bool bus::is_authorized() const {
-
-			return (state_ == state::AUTHORIZED)
-				|| (state_ == state::LINKED)
-				;
-		}
-
 		void bus::reset() {
 			buffer_write_.clear();
 			boost::system::error_code ignored_ec;
 			socket_.close(ignored_ec);
 			timer_.cancel();
 
-			if (state_ == state::AUTHORIZED) {
+			if (is_authorized()) {
+
 				//
 				//	signal changed authorization state
 				//
@@ -90,6 +98,14 @@ namespace smf
 			state_ = state::START;
 		}
 
+		void bus::set_reconnect_timer(std::chrono::seconds delay) {
+
+			if (!is_stopped()) {
+				CYNG_LOG_TRACE(logger_, "[ipt] set reconnect timer: " << delay.count() << " seconds");
+				timer_.expires_after(delay);
+				timer_.async_wait(boost::asio::bind_executor(dispatcher_, boost::bind(&bus::reconnect_timeout, this, boost::asio::placeholders::error)));
+			}
+		}
 
 		void bus::connect(boost::asio::ip::tcp::resolver::results_type endpoints) {
 
@@ -97,19 +113,12 @@ namespace smf
 			endpoints_ = endpoints;
 			start_connect(endpoints_.begin());
 
-			// Start the deadline actor. You will note that we're not setting any
-			// particular deadline here. Instead, the connect and input actors will
-			// update the deadline prior to each asynchronous operation.
-			timer_.async_wait(boost::asio::bind_executor(dispatcher_, boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error)));
-
 		}
 
 		void bus::start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
 			if (endpoint_iter != endpoints_.end()) {
-				//CYNG_LOG_TRACE(logger_, "broker [" << target_ << "] trying " << endpoint_iter->endpoint() << "...");
 
-				// Set a deadline for the connect operation.
-				timer_.expires_after(std::chrono::seconds(60));
+				CYNG_LOG_INFO(logger_, "[ipt] connect to " << endpoint_iter->endpoint());
 
 				// Start the asynchronous connect operation.
 				socket_.async_connect(endpoint_iter->endpoint(),
@@ -117,6 +126,7 @@ namespace smf
 						std::placeholders::_1, endpoint_iter));
 			}
 			else {
+
 				// There are no more endpoints to try. Shut down the client.
 				reset();
 				
@@ -129,8 +139,7 @@ namespace smf
 				//
 				//	reconnect after 20 seconds
 				//
-				timer_.expires_after(boost::asio::chrono::seconds(20));
-				timer_.async_wait(boost::asio::bind_executor(dispatcher_, boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error)));
+				set_reconnect_timer(boost::asio::chrono::seconds(20));
 
 			}
 		}
@@ -199,42 +208,23 @@ namespace smf
 			}
 		}
 
-		void bus::check_deadline(boost::system::error_code const& ec)
+		void bus::reconnect_timeout(boost::system::error_code const& ec)
 		{
 			if (is_stopped())	return;
-			CYNG_LOG_TRACE(logger_, "[ipt] check deadline " << ec);
+
 			if (!ec) {
-				switch (state_) {
-				case state::START:
-					CYNG_LOG_TRACE(logger_, "[ipt] check deadline: start");
+				CYNG_LOG_TRACE(logger_, "[ipt] reconnect timeout " << ec);
+				if (!is_authorized()) {
 					start();
-					break;
-				case state::CONNECTED:
-					//CYNG_LOG_DEBUG(logger_, "[ipt] check deadline: connected");
-					break;
-				case state::AUTHORIZED:
-					CYNG_LOG_TRACE(logger_, "[ipt] check deadline: authorized");
-					break;
-				case state::LINKED:
-					CYNG_LOG_TRACE(logger_, "[ipt] check deadline: linked");
-					break;
-				case state::STOPPED:
-					CYNG_LOG_TRACE(logger_, "[ipt] check deadline: stopped");
-					break;
-				default:
-					break;
 				}
 			}
 			else {
-				CYNG_LOG_TRACE(logger_, "[ipt] check deadline timer cancelled");
+				CYNG_LOG_TRACE(logger_, "[ipt] reconnect timer cancelled");
 			}
 		}
 
 		void bus::do_read()
 		{
-			// Set a deadline for the read operation.
-			timer_.expires_after(std::chrono::minutes(20));
-
 			// Start an asynchronous operation to read a newline-delimited message.
 			socket_.async_read_some(boost::asio::buffer(input_buffer_), std::bind(&bus::handle_read, this,
 				std::placeholders::_1, std::placeholders::_2));
@@ -276,10 +266,9 @@ namespace smf
 				//
 				//	reconnect after 10/20 seconds
 				//
-				timer_.expires_after((ec == boost::asio::error::connection_reset)
+				set_reconnect_timer((ec == boost::asio::error::connection_reset)
 					? boost::asio::chrono::seconds(10)
 					: boost::asio::chrono::seconds(20));
-				timer_.async_wait(boost::asio::bind_executor(dispatcher_, boost::bind(&bus::check_deadline, this, boost::asio::placeholders::error)));
 			}
 		}
 
@@ -292,12 +281,6 @@ namespace smf
 				buffer_write_.pop_front();
 				if (!buffer_write_.empty()) {
 					do_write();
-				}
-				else {
-
-					// Wait 10 seconds before sending the next heartbeat.
-					//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
-					//heartbeat_timer_.async_wait(std::bind(&bus::do_write, this));
 				}
 			}
 			else {
@@ -445,6 +428,31 @@ namespace smf
 				//	send register command to ip-t server
 				//
 				registrant_.emplace(r.second, std::make_pair(name, wp));
+				buffer_write_.push_back(r.first);
+
+				//
+				//	send request
+				//
+				if (b)	do_write();
+				});
+
+		}
+
+		void bus::open_channel(push_channel pcc) {
+
+			boost::asio::post(dispatcher_, [this, pcc]() {
+
+				bool const b = buffer_write_.empty();
+				auto r = serializer_.req_open_push_channel(pcc.target_
+					, pcc.account_
+					, pcc.number_
+					, pcc.version_
+					, pcc.id_
+					, pcc.timeout_);
+
+				//
+				//	send "open push channel" command to ip-t server
+				//
 				buffer_write_.push_back(r.first);
 
 				//

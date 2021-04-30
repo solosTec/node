@@ -171,9 +171,22 @@ namespace smf
 		 * format is "a.b.c"
 		 */
 		cyng::obis to_obis(std::string, std::uint8_t medium);
+
+		/**
+		 * convert 3 strings into u8 values
+		 */
 		std::tuple<std::uint8_t, std::uint8_t, std::uint8_t> to_u8(std::string, std::string, std::string);
+
+		/**
+		 * convert 4 strings into u8 values
+		 */
 		std::tuple<std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t> to_u8(std::string, std::string, std::string, std::string);
+
+		/**
+		 * Split a string over the '*' symbol
+		 */
 		std::tuple<std::string, std::string> split_edis_value(std::string);
+
 	}
 }
 

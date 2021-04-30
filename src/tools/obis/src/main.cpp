@@ -327,6 +327,8 @@ int main(int argc, char** argv) {
 		{ cyng::edis(0x60, 51, 28), {"REG_EVT_28", "Event fraud start", "timestamp" } },
 		{ cyng::edis(0x60, 51, 29), {"REG_EVT_29", "Event fraud stop", "counter" } },
 		{ cyng::edis(0x60, 51, 30), {"REG_EVT_30", "Event fraud stop", "timestamp" } },
+		{ cyng::edis(0x60, 87, 0), {"REG_ACTIVE_TARFIFF", "Active tariff", "" } },
+		{ cyng::edis(0x60, 0x60, 9), {"REG_FRAUD_FLAG", "Fraud flag", "" } },
 
 		//13. Miscellaneous registers used in sequences
 		{ cyng::edis(0, 9, 1), {"REG_CURRENT_TIME", "Current time(hh:mm:ss)", "" }},
@@ -340,17 +342,8 @@ int main(int argc, char** argv) {
 		{ cyng::edis(0, 1, 2), {"REG_MD_RESET_TIMESTAMP", "MD reset timestamp", "" }},
 		//{ cyng::edis(0, 2, 0), {"REG_FIRMWARE", "Firmware version", "" }},	//	duplicate SOFTWARE_ID
 		{ cyng::edis(0, 2, 2), {"REG_TARIFF", "Tariff program ID", "" }},
-		{ cyng::edis(0x60, 1, 0), {"REG_SERIAL_NUMBER", "Meter serial number (C.1.0)", "" }},
-		{ cyng::edis(0x60, 1, 2), {"REG_PARAMETERS_FILE_CODE", "Parameters file code", "" }},
-		{ cyng::edis(0x60, 1, 4), {"REG_PARAMETERS_CHECK_SUM", "Parameters check sum", "" }},
-		{ cyng::edis(0x60, 1, 5), {"REG_FIRMWARE_BUILD_DATE", "Firmware built date", "" }},
-		{ cyng::edis(0x60, 1, 6), {"REG_FIRMWARE_CHECK_SUM", "Firmware check sum", "" }},
-		{ cyng::edis(0x60, 6, 0), {"REG_POWER_DOWN_TIME_COUNTER", "Power down time counter", "" }},
-		{ cyng::edis(0x60, 6, 1), {"REG_BATTERY_REMAINING_CAPACITY", "Battery remaining capacity", "" }},
 		{ cyng::edis(61, 0x61, 0), {"REG_FATAL_ERROR_METER_STATUS", "Fatal error meter status", "" }},
-		{ cyng::edis(0x60, 87, 0), {"REG_ACTIVE_TARFIFF", "Active tariff", "" }},
 		{ cyng::edis(0, 2, 1), {"REG_PARAMETERS_SCHEME_ID", "Parameters scheme ID", "" }},
-		{ cyng::edis(0x60, 0x60, 9), {"REG_FRAUD_FLAG", "Fraud flag", "" }},
 		{ cyng::edis(0, 3, 0), {"REG_ACTIVE_ENERGY_METER_CONSTANT", "Active energy meter constant", "" }},
 		{ cyng::edis(0, 3, 2), {"REG_SM_PULSE_VALUE", "S0- Impulswertigkeit (0.3.2)", "" } },
 		{ cyng::edis(0, 3, 3), {"REG_SM_PULSE_DURATION", "Pulse length (0.3.3)", "" } },
@@ -370,13 +363,23 @@ int main(int argc, char** argv) {
 		{ DEFINE_OBIS(00, 00, 00, 01, 00, ff), {"RESET_COUNTER", cyng::TC_UINT32, "0.1.0" }},
 		{ DEFINE_OBIS(00, 00, 00, 02, 00, ff), {"FIRMWARE_VERSION", cyng::TC_NULL, "COSEM class id 1" }},
 		{ DEFINE_OBIS(00, 00, 01, 00, 00, ff), {"REAL_TIME_CLOCK", cyng::TC_NULL, "current time" }},
+
 		{ DEFINE_OBIS(00, 00, 60, 01, 00, ff), {"SERIAL_NR", cyng::TC_NULL, "(C.1.0) Serial number I (assigned by the manufacturer)" }},
 		{ DEFINE_OBIS(00, 00, 60, 01, 01, ff), {"SERIAL_NR_SECOND", cyng::TC_NULL, "Serial number II (assigned by the manufacturer)." }},
-		{ DEFINE_OBIS(00, 00, 60, 01, 03, ff), {"PRODUCTION_DATE", cyng::TC_NULL, "(C.1.3) date of manufacture" }},
+		{ DEFINE_OBIS(00, 00, 60, 01, 02, ff), {"PARAMETERS_FILE_CODE", cyng::TC_NULL, "Parameters file code (C.1.2)" }},
+		{ DEFINE_OBIS(00, 00, 60, 01, 03, ff), {"PRODUCTION_DATE", cyng::TC_NULL, "date of manufacture (C.1.3)" }},
+		{ DEFINE_OBIS(00, 00, 60, 01, 04, ff), {"PARAMETERS_CHECK_SUM", cyng::TC_NULL, "Parameters check sum (C.1.4)" }},
+		{ DEFINE_OBIS(00, 00, 60, 01, 05, ff), {"FIRMWARE_BUILD_DATE", cyng::TC_NULL, "Firmware built date (C.1.5)" }},
+		{ DEFINE_OBIS(00, 00, 60, 01, 06, ff), {"FIRMWARE_CHECK_SUM", cyng::TC_NULL, "Firmware check sum (C.1.6)" }},
+
 		{ DEFINE_OBIS(00, 00, 60, 01, ff, ff), {"FABRICATION_NR", cyng::TC_NULL, "fabrication number" }},
 		{ DEFINE_OBIS(00, 00, 60, 02, 01, ff), {"DATE_TIME_PARAMETERISATION", cyng::TC_NULL, "Date of last parameterisation (00-03-26)" }},
 		{ DEFINE_OBIS(00, 00, 60, 03, 00, ff), {"PULSE_CONST_ACTIVE", cyng::TC_UINT32, "Active pulse constant (C.3.0)" }},
 		{ DEFINE_OBIS(00, 00, 60, 03, 01, ff), {"PULSE_CONST_REACTIVE", cyng::TC_UINT32, "Reactive pulse constant (C.3.1)" }},
+
+		{ DEFINE_OBIS(00, 00, 60, 06, 00, ff), {"COUNTER_POWER_DOWN_TIME", cyng::TC_UINT32, "Power down time counter (C.6.0)" }},
+		{ DEFINE_OBIS(00, 00, 60, 06, 01, ff), {"BATTERY_REMAINING_CAPACITY", cyng::TC_UINT32, "Battery remaining capacity (C.6.1)" }},
+
 		{ DEFINE_OBIS(00, 00, 60, 07, 00, ff), {"POWER_OUTAGES", cyng::TC_UINT32, "Number of power failures " }},
 		{ DEFINE_OBIS(00, 00, 60, 08, 00, ff), {"SECONDS_INDEX", cyng::TC_NULL, "[SML_Time] seconds index" }},
 		{ DEFINE_OBIS(00, 00, 60, 10, 00, ff), {"LOGICAL_NAME", cyng::TC_NULL, "" }},

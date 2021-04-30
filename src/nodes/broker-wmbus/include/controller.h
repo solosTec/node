@@ -10,6 +10,7 @@
 
 #include <smf/controller_base.h>
 #include <smf/cluster/config.h>
+#include <smf/ipt/config.h>
 
  namespace smf {
 
@@ -40,10 +41,18 @@
 			, std::uint16_t port
 			, bool client_login);
 
+		void join_network(cyng::controller& ctl
+			, cyng::logger logger
+			, boost::uuids::uuid tag
+			, std::string const& node_name
+			, ipt::toggle::server_vec_t&& tgl
+			, ipt::push_channel&&);
+
 	private:
-		cyng::param_t create_server_spec(std::filesystem::path const& cwd);
+		cyng::param_t create_push_spec();
 		cyng::param_t create_cluster_spec();
 		cyng::param_t create_client_spec();
+		cyng::param_t create_ipt_spec(boost::uuids::uuid tag);
 
 	};
 }

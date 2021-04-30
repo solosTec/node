@@ -1,5 +1,5 @@
-	// generated at 2021-04-29 21:29:15
-	// 557 OBIS codes (3342 Bytes)
+	// generated at 2021-04-29 22:29:23
+	// 556 OBIS codes (3336 Bytes)
 
 	// #1
 	// Abstract objects
@@ -12,11 +12,17 @@
 	OBIS_CODE_DEFINITION(00, 00, 01, 00, 00, ff, REAL_TIME_CLOCK);	// current time
 	OBIS_CODE_DEFINITION(00, 00, 60, 01, 00, ff, SERIAL_NR);	// (C.1.0) Serial number I (assigned by the manufacturer)
 	OBIS_CODE_DEFINITION(00, 00, 60, 01, 01, ff, SERIAL_NR_SECOND);	// Serial number II (assigned by the manufacturer).
-	OBIS_CODE_DEFINITION(00, 00, 60, 01, 03, ff, PRODUCTION_DATE);	// (C.1.3) date of manufacture
+	OBIS_CODE_DEFINITION(00, 00, 60, 01, 02, ff, PARAMETERS_FILE_CODE);	// Parameters file code (C.1.2)
+	OBIS_CODE_DEFINITION(00, 00, 60, 01, 03, ff, PRODUCTION_DATE);	// date of manufacture (C.1.3)
+	OBIS_CODE_DEFINITION(00, 00, 60, 01, 04, ff, PARAMETERS_CHECK_SUM);	// Parameters check sum (C.1.4)
+	OBIS_CODE_DEFINITION(00, 00, 60, 01, 05, ff, FIRMWARE_BUILD_DATE);	// Firmware built date (C.1.5)
+	OBIS_CODE_DEFINITION(00, 00, 60, 01, 06, ff, FIRMWARE_CHECK_SUM);	// Firmware check sum (C.1.6)
 	OBIS_CODE_DEFINITION(00, 00, 60, 01, ff, ff, FABRICATION_NR);	// fabrication number
 	OBIS_CODE_DEFINITION(00, 00, 60, 02, 01, ff, DATE_TIME_PARAMETERISATION);	// Date of last parameterisation (00-03-26)
 	OBIS_CODE_DEFINITION(00, 00, 60, 03, 00, ff, PULSE_CONST_ACTIVE);	// u32 - Active pulse constant (C.3.0)
 	OBIS_CODE_DEFINITION(00, 00, 60, 03, 01, ff, PULSE_CONST_REACTIVE);	// u32 - Reactive pulse constant (C.3.1)
+	OBIS_CODE_DEFINITION(00, 00, 60, 06, 00, ff, COUNTER_POWER_DOWN_TIME);	// u32 - Power down time counter (C.6.0)
+	OBIS_CODE_DEFINITION(00, 00, 60, 06, 01, ff, BATTERY_REMAINING_CAPACITY);	// u32 - Battery remaining capacity (C.6.1)
 	OBIS_CODE_DEFINITION(00, 00, 60, 07, 00, ff, POWER_OUTAGES);	// u32 - Number of power failures 
 	OBIS_CODE_DEFINITION(00, 00, 60, 08, 00, ff, SECONDS_INDEX);	// [SML_Time] seconds index
 	OBIS_CODE_DEFINITION(00, 00, 60, 10, 00, ff, LOGICAL_NAME);
@@ -62,7 +68,7 @@
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 03, CLASS_MBUS_SEARCH_DEVICE);	// bool - search device now and by restart
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 04, CLASS_MBUS_AUTO_ACTIVATE);	// bool - automatic activation of meters
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 05, CLASS_MBUS_BITRATE);	// used baud rates(bitmap)
-	// #60
+	// #66
 	// Electricity
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 00, ff, SERVER_ID_1_1);	// Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 01, ff, SERVER_ID_1_2);	// Identifikationsnummer 1.2
@@ -228,15 +234,8 @@
 	OBIS_CODE_DEFINITION(01, 00, 4c, 07, 00, ff, REG_SIPL3);	// Sum active instantaneous power(A + -A - ) in phase L3
 	OBIS_CODE_DEFINITION(01, 00, 5b, 06, 00, ff, REG_MCN);	// Maximum current(I max) in neutral
 	OBIS_CODE_DEFINITION(01, 00, 5b, 07, 00, ff, REG_ICN);	// Instantaneous current(I) in neutral
-	OBIS_CODE_DEFINITION(01, 00, 60, 01, 00, ff, REG_SERIAL_NUMBER);	// Meter serial number (C.1.0)
-	OBIS_CODE_DEFINITION(01, 00, 60, 01, 02, ff, REG_PARAMETERS_FILE_CODE);	// Parameters file code
-	OBIS_CODE_DEFINITION(01, 00, 60, 01, 04, ff, REG_PARAMETERS_CHECK_SUM);	// Parameters check sum
-	OBIS_CODE_DEFINITION(01, 00, 60, 01, 05, ff, REG_FIRMWARE_BUILD_DATE);	// Firmware built date
-	OBIS_CODE_DEFINITION(01, 00, 60, 01, 06, ff, REG_FIRMWARE_CHECK_SUM);	// Firmware check sum
 	OBIS_CODE_DEFINITION(01, 00, 60, 02, 00, ff, REG_EVT_PARAM_CHANGED_COUNTER);	// Event parameters change
 	OBIS_CODE_DEFINITION(01, 00, 60, 02, 01, ff, REG_EVT_PARAM_CHANGED_TIMESTAMP);	// Event parameters change
-	OBIS_CODE_DEFINITION(01, 00, 60, 06, 00, ff, REG_POWER_DOWN_TIME_COUNTER);	// Power down time counter
-	OBIS_CODE_DEFINITION(01, 00, 60, 06, 01, ff, REG_BATTERY_REMAINING_CAPACITY);	// Battery remaining capacity
 	OBIS_CODE_DEFINITION(01, 00, 60, 07, 00, ff, REG_EVT_POWER_DOWN_COUNTER);	// Event power down
 	OBIS_CODE_DEFINITION(01, 00, 60, 07, 0a, ff, REG_EVT_POWER_DOWN_TIMESTAMP);	// Event power down
 	OBIS_CODE_DEFINITION(01, 00, 60, 33, 01, ff, REG_EVT_1);	// Event terminal cover opened
@@ -274,7 +273,7 @@
 	OBIS_CODE_DEFINITION(01, 00, 60, 57, 00, ff, REG_ACTIVE_TARFIFF);	// Active tariff
 	OBIS_CODE_DEFINITION(01, 00, 60, 60, 09, ff, REG_FRAUD_FLAG);	// Fraud flag
 	OBIS_CODE_DEFINITION(01, 01, 62, 17, 00, ff, REG_SM_POWER_THRESHOLD);	// Power threshold (D.23.0)
-	// #270
+	// #269
 	// next group
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 00, ACT_SENSOR_TIME);	// actSensorTime - current UTC time
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 01, TZ_OFFSET);	// u16 - offset to actual time zone in minutes (-720 .. +720)
@@ -533,7 +532,7 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 12, ATTENTION_END_LIMIT_BEFORE_START);
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	// range is empty - not the profile
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 14, ATTENTION_MISSING_CLOSE_MSG);
-	// #527
+	// #526
 	// next group
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 00, ff, ROOT_BROKER);	// 90 00 00 00 00 NN - broker list
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 01, ff, BROKER_LOGIN);
@@ -543,7 +542,7 @@
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 05, ff, BROKER_PWD);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 06, ff, BROKER_TIMEOUT);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, a0, ff, BROKER_BLOCKLIST);
-	// #535
+	// #534
 	// next group
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 00, ff, ROOT_SERIAL);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 01, ff, SERIAL_NAME);	// example: /dev/ttyAPP0
@@ -553,7 +552,7 @@
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 05, ff, SERIAL_STOPBITS);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 06, ff, SERIAL_SPEED);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 07, ff, SERIAL_TASK);	// LMN port task
-	// #543
+	// #542
 	// next group
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 00, ff, ROOT_NMS);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 01, ff, NMS_ADDRESS);
@@ -561,7 +560,7 @@
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 03, ff, NMS_USER);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 04, ff, NMS_PWD);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 05, ff, NMS_ENABLED);
-	// #549
+	// #548
 	// next group
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 00, ff, ROOT_REDIRECTOR);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 01, ff, REDIRECTOR_LOGIN);
@@ -569,7 +568,7 @@
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 03, ff, REDIRECTOR_SERVICE);	// u16 - port
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 04, ff, REDIRECTOR_USER);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 05, ff, REDIRECTOR_PWD);
-	// #555
+	// #554
 	// next group
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	// current data set
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 04, LIST_SERVICES);

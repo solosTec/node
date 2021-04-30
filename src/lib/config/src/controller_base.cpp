@@ -15,6 +15,7 @@
 #include <cyng/io/serialize.h>
 #include <cyng/task/controller.h>
 #include <cyng/parse/json.h>
+#include <cyng/parse/string.h>
 #include <cyng/log/log.h>
 #include <cyng/log/record.h>
 
@@ -23,6 +24,7 @@
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/string_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <boost/asio.hpp>
 
 namespace smf {
@@ -96,6 +98,12 @@ namespace smf {
 
 		boost::uuids::uuid controller_base::get_random_tag() const {
 			return uidgen_();
+		}
+
+		boost::uuids::uuid controller_base::read_tag(cyng::object obj) const {
+			auto const rnd = get_random_tag();
+			auto const str = cyng::value_cast(obj, boost::uuids::to_string(rnd));
+			return cyng::to_uuid(str, rnd);
 		}
 
 		int controller_base::run() {

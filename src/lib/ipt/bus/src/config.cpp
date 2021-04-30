@@ -98,6 +98,42 @@ namespace smf
 			return srv_vec;
 		}
 
+
+		push_channel::push_channel()
+			: target_()
+			, account_()
+			, number_()
+			, id_()
+			, version_()
+			, timeout_(20)
+		{}
+
+		push_channel::push_channel(std::string const& target
+			, std::string const& account
+			, std::string const& number
+			, std::string const& id
+			, std::string const& version
+			, std::uint16_t timeout)
+		: target_(target)
+			, account_(account)
+			, number_(number)
+			, id_(id)
+			, version_(version)
+			, timeout_(timeout)
+		{}
+
+		push_channel read_push_channel_config(cyng::param_map_t const& pmap) {
+
+			return push_channel(
+				cyng::find_value(pmap, std::string("target"), std::string("power@solostec")),
+				cyng::find_value(pmap, std::string("account"), std::string()),
+				cyng::find_value(pmap, std::string("number"), std::string()),
+				cyng::find_value(pmap, std::string("version"), std::string()),
+				cyng::find_value(pmap, std::string("id"), std::string()),
+				cyng::find_value<std::int64_t>(pmap, std::string("monitor"), 12)
+			);
+		}
+
 	}	//	ipt
 }
 

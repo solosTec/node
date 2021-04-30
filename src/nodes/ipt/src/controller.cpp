@@ -81,7 +81,7 @@ namespace smf {
 		CYNG_LOG_INFO(logger, cfg);
 #endif
 		auto const reader = cyng::make_reader(cfg);
-		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+		auto const tag = read_tag(reader["tag"].get());
 		auto const query = cyng::numeric_cast<std::uint32_t>(reader["query"].get(), 6u);
 
 	

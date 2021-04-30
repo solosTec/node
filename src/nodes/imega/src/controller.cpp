@@ -11,6 +11,7 @@
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/sys/locale.h>
+#include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/task/registry.h>
 
 #include <locale>
@@ -23,6 +24,9 @@ namespace smf {
 	{}
 
 	void controller::run(cyng::controller&, cyng::logger, cyng::object const& cfg, std::string const& node_name) {
+
+		auto const reader = cyng::make_reader(cfg);
+		auto const tag = read_tag(reader["tag"].get());
 
 	}
 	void controller::shutdown(cyng::logger logger, cyng::registry& reg) {

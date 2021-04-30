@@ -213,7 +213,9 @@ namespace smf
 		void do_write();
 		void handle_read(boost::system::error_code const&, std::size_t n);
 		void handle_write(boost::system::error_code const&);
-		void check_deadline(boost::system::error_code const&);
+		void reconnect_timeout(boost::system::error_code const&);
+
+		void set_reconnect_timer(std::chrono::seconds);
 
 		constexpr bool is_stopped() const {
 			return state_ == state::STOPPED;

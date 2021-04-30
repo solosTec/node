@@ -136,23 +136,20 @@ namespace smf {
 				)),
 				cyng::make_param("ipt", cyng::make_vector({
 					cyng::make_tuple(
-						cyng::make_param("host", "127.0.0.1"),
+						cyng::make_param("host", "localhost"),
 						cyng::make_param("service", "26862"),
 						cyng::make_param("account", "data-store"),
 						cyng::make_param("pwd", "to-define"),
 						cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::make_param("scrambled", true)
-						//cyng::param_factory("monitor", rng())),	//	seconds
 					),
 					cyng::make_tuple(
-						cyng::make_param("host", "127.0.0.1"),
+						cyng::make_param("host", "localhost"),
 						cyng::make_param("service", "26863"),
 						cyng::make_param("account", "data-store"),
 						cyng::make_param("pwd", "to-define"),
 						cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"),	//	scramble key
 						cyng::make_param("scrambled", false)
-						//cyng::make_param("monitor", rng()))
-						//cyng::make_param("monitor", rng())),	//	seconds
 					)})
 				),
 				cyng::make_param("targets", cyng::make_tuple(
@@ -165,7 +162,7 @@ namespace smf {
 	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
 
 		auto const reader = cyng::make_reader(cfg);
-		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+		auto const tag = read_tag(reader["tag"].get());
 		auto const config_types = cyng::vector_cast<std::string>(reader["output"].get(), "ALL:BIN");
 		auto const model = cyng::value_cast(reader["model"].get(), "smf.store");
 

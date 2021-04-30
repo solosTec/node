@@ -38,6 +38,9 @@ target_link_libraries(broker-wmbus
         smf_config
         smf_cluster_bus
         smf_mbus
+        smf_sml
+        smf_ipt_bus
+        smf_ipt
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
