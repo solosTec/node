@@ -19,7 +19,9 @@ namespace smf {
 		, boost::uuids::uuid tag
 		, std::string const& node_name
 		, cyng::logger logger
-		, toggle::server_vec_t&& cfg)
+		, toggle::server_vec_t&& cfg
+		, bool client_login
+		, std::chrono::seconds client_timeout)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&wmbus_server::listen, &server_, std::placeholders::_1),
@@ -33,7 +35,7 @@ namespace smf {
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_))
-		, server_(ctl.get_ctx(), logger, bus_, db_)
+		, server_(ctl, logger, bus_, db_, client_timeout)
 	{
 		auto sp = channel_.lock();
 		if (sp) {

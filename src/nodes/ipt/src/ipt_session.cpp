@@ -5,6 +5,7 @@
  *
  */
 #include <ipt_session.h>
+#include <tasks/gatekeeper.h>
 
 #include <smf/ipt/codes.h>
 #include <smf/ipt/response.hpp>
@@ -34,7 +35,8 @@ namespace smf {
 		, ipt::scramble_key const& sk
 		, std::uint32_t query
 		, cyng::logger logger)
-	: socket_(std::move(socket))
+	: ctl_(fabric.get_ctl())
+		, socket_(std::move(socket))
 		, logger_(logger)
 		, cluster_bus_(cluster_bus)
 		, query_(query)
@@ -50,7 +52,8 @@ namespace smf {
 		, serializer_(sk)
 		, vm_()
 		, dev_(boost::uuids::nil_uuid())
-		, oce_map_()
+		, oce_map_()	//	store temporary data during connection establishment
+		, gatekeeper_()
 	{
 		vm_ = fabric.create_proxy(cluster_bus_.get_tag()
 			, get_vm_func_pty_res_login(this)
@@ -106,9 +109,11 @@ namespace smf {
 		cluster_bus_.pty_logout(dev_, vm_.get_tag());
 	}
 
-	void ipt_session::start()
+	void ipt_session::start(std::chrono::seconds timeout)
 	{
 		do_read();
+		gatekeeper_ = ctl_.create_channel_with_ref<gatekeeper>(logger_, timeout, this->shared_from_this());
+		BOOST_ASSERT(gatekeeper_->is_open());
 	}
 
 	void ipt_session::do_read() {
@@ -486,6 +491,12 @@ namespace smf {
 	}
 
 	void ipt_session::pty_res_login(bool success, boost::uuids::uuid dev) {
+
+		//
+		//	stop gatekeeper
+		//
+		gatekeeper_->stop();
+
 		if (success) {
 
 			//

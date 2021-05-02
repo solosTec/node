@@ -49,6 +49,7 @@ namespace smf {
 				cyng::make_param("tag", tag),
 				cyng::make_param("country-code", "CH"),
 				cyng::make_param("language-code", cyng::sys::get_system_locale()),
+				create_server_spec(cwd),
 				create_push_spec(),
 				create_client_spec(),
 				create_cluster_spec(),
@@ -75,6 +76,7 @@ namespace smf {
 		auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
 		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["service"].get(), 12002);
 		auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
+		std::chrono::seconds client_timeout(cyng::numeric_cast<std::uint32_t>(reader["client"]["timeout"].get(), 32));
 
 		//
 		//	connect to cluster
@@ -86,7 +88,8 @@ namespace smf {
 			, std::move(tgl_cluster)
 			, address
 			, port
-			, client_login);
+			, client_login
+			, client_timeout);
 
 
 		auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
@@ -158,14 +161,17 @@ namespace smf {
 		, toggle::server_vec_t&& tgl
 		, std::string const& address
 		, std::uint16_t port
-		, bool client_login) {
+		, bool client_login
+		, std::chrono::seconds client_timeout) {
 
 		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster"
 			, ctl
 			, tag
 			, node_name
 			, logger
-			, std::move(tgl));
+			, std::move(tgl)
+			, client_login
+			, client_timeout);
 
 		auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
 		channel->dispatch("connect", cyng::make_tuple());
@@ -173,6 +179,12 @@ namespace smf {
 
 	}
 
+	cyng::param_t controller::create_server_spec(std::filesystem::path const& cwd) {
+		return cyng::make_param("server", cyng::make_tuple(
+			cyng::make_param("address", "0.0.0.0"),
+			cyng::make_param("service", "12000")
+		));
+	}
 	cyng::param_t controller::create_push_spec() {
 		return cyng::make_param("push-channel", cyng::make_tuple(
 			cyng::make_param("target", "power@solostec"),
@@ -199,7 +211,8 @@ namespace smf {
 
 	cyng::param_t controller::create_client_spec() {
 		return cyng::make_param("client", cyng::make_tuple(
-			cyng::make_param("login", false)
+			cyng::make_param("login", false),
+			cyng::make_param("timeout", std::chrono::seconds(32))	//	gatekeeper
 		));
 	}
 

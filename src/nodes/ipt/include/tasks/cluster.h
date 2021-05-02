@@ -83,7 +83,7 @@ namespace smf {
 
 	private:
 		signatures_t sigs_;
-		std::weak_ptr<cyng::channel> channel_;
+		cyng::channel_weak channel_;
 		cyng::controller& ctl_;
 		cyng::logger logger_;
 		cyng::mesh fabric_;

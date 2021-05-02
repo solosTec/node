@@ -39,7 +39,8 @@
 			, toggle::server_vec_t&& tgl
 			, std::string const& address
 			, std::uint16_t port
-			, bool client_login);
+			, bool client_login
+			, std::chrono::seconds client_timeout);
 
 		void join_network(cyng::controller& ctl
 			, cyng::logger logger
@@ -49,6 +50,7 @@
 			, ipt::push_channel&&);
 
 	private:
+		cyng::param_t create_server_spec(std::filesystem::path const& cwd);
 		cyng::param_t create_push_spec();
 		cyng::param_t create_cluster_spec();
 		cyng::param_t create_client_spec();

@@ -281,7 +281,7 @@ namespace smf {
 		BOOST_ASSERT_MSG(!key.empty(), "no modify key");
 		BOOST_ASSERT_MSG(!data.empty(), "no modify data");
 		auto const rel = db_.by_channel(channel);
-		if (!rel.empty()) {
+		if (!rel.empty() && !key.empty()) {
 
 			BOOST_ASSERT(boost::algorithm::equals(channel, rel.channel_));
 
@@ -301,7 +301,7 @@ namespace smf {
 			cluster_bus_.req_db_update(rel.table_, key, data);
 		}
 		else {
-			CYNG_LOG_WARNING(logger_, "[HTTP] modify: undefined channel " << channel);
+			CYNG_LOG_WARNING(logger_, "[HTTP] modify: undefined channel or empty key" << channel);
 		}
 	}
 

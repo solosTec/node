@@ -16,6 +16,7 @@
 #include <cyng/io/parser/parser.h>
 #include <cyng/vm/proxy.h>
 #include <cyng/obj/intrinsics/pid.h>
+#include <cyng/task/controller.h>
 
 #include <memory>
 #include <array>
@@ -25,10 +26,14 @@ namespace smf {
 	class wmbus_session : public std::enable_shared_from_this<wmbus_session>
 	{
 	public:
-		wmbus_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<db>, cyng::logger, bus&);
+		wmbus_session(cyng::controller& ctl
+			, boost::asio::ip::tcp::socket socket
+			, std::shared_ptr<db>
+			, cyng::logger
+			, bus&);
 		~wmbus_session();
 
-		void start();
+		void start(std::chrono::seconds timeout);
 		void stop();
 
 	private:
@@ -49,6 +54,7 @@ namespace smf {
 		void push_data(cyng::buffer_t const& payload);
 
 	private:
+		cyng::controller& ctl_;
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logger logger_;
 		bus& bus_;
@@ -69,6 +75,10 @@ namespace smf {
 		 */
 		mbus::radio::parser parser_;
 
+		/**
+		 * gatekeeper
+		 */
+		cyng::channel_ptr gatekeeper_;
 
 	};
 

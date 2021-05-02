@@ -8,18 +8,20 @@
 
 namespace smf {
 
-	wmbus_server::wmbus_server(boost::asio::io_context& ioc
+	wmbus_server::wmbus_server(cyng::controller& ctl
 		, cyng::logger logger
 		, bus& cluster_bus
-		, std::shared_ptr<db> db)
-	: logger_(logger)
+		, std::shared_ptr<db> db
+		, std::chrono::seconds client_timeout)
+	: ctl_(ctl)
+		, logger_(logger)
 		, bus_(cluster_bus)
-		, acceptor_(ioc)
+		, acceptor_(ctl.get_ctx())
 		, db_(db)
+		, client_timeout_(client_timeout)
 		, session_counter_{ 0 }
 	{
 		CYNG_LOG_INFO(logger_, "[server] created");
-
 	}
 
 	wmbus_server::~wmbus_server()
@@ -55,6 +57,7 @@ namespace smf {
 				CYNG_LOG_INFO(logger_, "[server] new session " << socket.remote_endpoint());
 
 				auto sp = std::shared_ptr<wmbus_session>(new wmbus_session(
+					ctl_,
 					std::move(socket),
 					db_,
 					logger_,
@@ -78,7 +81,7 @@ namespace smf {
 					//
 					//	start session
 					//
-					sp->start();
+					sp->start(client_timeout_);
 
 					//
 					//	update session counter

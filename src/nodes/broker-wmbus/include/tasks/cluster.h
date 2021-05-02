@@ -43,7 +43,9 @@ namespace smf {
 			, boost::uuids::uuid tag
 			, std::string const& node_name
 			, cyng::logger
-			, toggle::server_vec_t&&);
+			, toggle::server_vec_t&&
+			, bool client_login
+			, std::chrono::seconds client_timeout);
 		~cluster();
 
 		void connect();

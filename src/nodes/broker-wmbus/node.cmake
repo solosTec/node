@@ -35,8 +35,10 @@ endif()
 set (broker-wmbus_tasks
     include/tasks/cluster.h
     include/tasks/push.h
+    include/tasks/gatekeeper.h
     src/tasks/cluster.cpp
     src/tasks/push.cpp
+    src/tasks/gatekeeper.cpp
 )
 
 source_group("broker-wmbus-assets" FILES ${broker-wmbus_assets})

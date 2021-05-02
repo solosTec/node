@@ -5,6 +5,7 @@
  *
  */
 #include <wmbus_session.h>
+#include <tasks/gatekeeper.h>
 
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/radio/header.h>
@@ -27,8 +28,13 @@
 
 namespace smf {
 
-	wmbus_session::wmbus_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<db> db, cyng::logger logger, bus& cluster_bus)
-	: socket_(std::move(socket))
+	wmbus_session::wmbus_session(cyng::controller& ctl
+		, boost::asio::ip::tcp::socket socket
+		, std::shared_ptr<db> db
+		, cyng::logger logger
+		, bus& cluster_bus)
+	: ctl_(ctl)
+		, socket_(std::move(socket))
 		, logger_(logger)
 		, db_(db)
 		, bus_(cluster_bus)
@@ -37,8 +43,8 @@ namespace smf {
 		, parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
 			this->decode(h, t, data);
 		})
-	{
-	}
+		, gatekeeper_()
+	{	}
 
 	wmbus_session::~wmbus_session()
 	{
@@ -46,7 +52,6 @@ namespace smf {
 		std::cout << "wmbus_session(~)" << std::endl;
 #endif
 	}
-
 
 	void wmbus_session::stop()
 	{
@@ -57,12 +62,14 @@ namespace smf {
 		socket_.close(ec);
 	}
 
-	void wmbus_session::start()
+	void wmbus_session::start(std::chrono::seconds timeout)
 	{
 		//
 		//	start reading
 		//
 		do_read();
+
+		gatekeeper_ = ctl_.create_channel_with_ref<gatekeeper>(logger_, timeout, this->shared_from_this());
 
 	}
 
@@ -96,6 +103,7 @@ namespace smf {
 				}
 				else {
 					CYNG_LOG_WARNING(logger_, "[session] read: " << ec.message());
+					gatekeeper_->stop();
 				}
 
 		});
@@ -103,8 +111,6 @@ namespace smf {
 
 	void wmbus_session::do_write()
 	{
-		//if (is_stopped())	return;
-
 		// Start an asynchronous operation to send a heartbeat message.
 		boost::asio::async_write(socket_,
 			boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
@@ -113,25 +119,15 @@ namespace smf {
 
 	void wmbus_session::handle_write(const boost::system::error_code& ec)
 	{
-		//if (is_stopped())	return;
-
 		if (!ec) {
 
 			buffer_write_.pop_front();
 			if (!buffer_write_.empty()) {
 				do_write();
 			}
-			else {
-
-				// Wait 10 seconds before sending the next heartbeat.
-				//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
-				//heartbeat_timer_.async_wait(std::bind(&bus::do_write, this));
-			}
 		}
 		else {
 			CYNG_LOG_ERROR(logger_, "[session] write: " << ec.message());
-
-			//reset();
 		}
 	}
 
