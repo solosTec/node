@@ -101,7 +101,7 @@ namespace smf
 			id_.clear();
 			data_.clear();
 			bbc_ = 0;
-			BOOST_ASSERT(start_c == c);
+			//BOOST_ASSERT(start_c == c);
 			if (start_c == c)	return state::DEVICE_ID;
 			return state_;	//	wait for valid character
 		}

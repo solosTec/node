@@ -39,6 +39,7 @@ namespace smf {
 		, auths_(auths)
 		, server_(ioc, logger, std::bind(&http_server::accept, this, std::placeholders::_1))
 		, upload_(logger, cluster_bus_, db_)
+		, download_(logger, cluster_bus_, db_)
 		, uidgen_()
 		, ws_map_()
 	{
@@ -93,7 +94,8 @@ namespace smf {
 			db_.cfg_.get_value("http-max-upload-size", static_cast<std::uint64_t>(0xA00000)),
 			db_.cfg_.get_value("http-server-nickname", "coraline"),
 			db_.cfg_.get_value("http-session-timeout", std::chrono::seconds(30)),
-			std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders::_2))->run();
+			std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders::_2),
+			std::bind(&http_server::post, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))->run();
 	}
 
 	void http_server::upgrade(boost::asio::ip::tcp::socket s
@@ -106,6 +108,55 @@ namespace smf {
 			, server_.ioc_
 			, logger_
 			, std::bind(&http_server::on_msg, this, tag, std::placeholders::_1))).first->second.lock()->do_accept(std::move(req));
+	}
+
+	std::filesystem::path http_server::post(std::string target, std::string content, std::string type) {
+
+		std::filesystem::path download;
+		if (boost::algorithm::starts_with(type, "application/json")) {
+			CYNG_LOG_INFO(logger_, "post: " << target << ", content_type: " << type << ", content: " << content);
+			cyng::json::parser parser([this, target, &download](cyng::object&& obj) {
+				CYNG_LOG_TRACE(logger_, obj);
+				//	example: %(("fmt":JSON),("type":dev),("version":v50))
+				auto const reader = cyng::make_reader(obj);
+				auto const type = cyng::value_cast(reader.get("type"), "");
+				auto const fmt = cyng::value_cast(reader.get("fmt"), "");
+				if (boost::algorithm::equals(type, "dev")) {
+					//	/download.devices
+					BOOST_ASSERT(boost::algorithm::equals(target, "/download.devices"));
+					//download = "C:\\Users\\Sylko\\Documents\\teko-2021\\Physics\\chapter-05.pdf";
+					download = download_.generate("device", fmt);
+				}
+				else if (boost::algorithm::equals(type, "meter")) {
+					//	/download.meters
+					BOOST_ASSERT(boost::algorithm::equals(target, "/download.meters"));
+					download = download_.generate("meter", fmt);
+				}
+				else if (boost::algorithm::equals(type, "gw")) {
+					BOOST_ASSERT(boost::algorithm::equals(target, "/download.gateways"));
+					download = download_.generate("gateway", fmt);
+				}
+				else if (boost::algorithm::equals(type, "msg")) {
+					BOOST_ASSERT(boost::algorithm::equals(target, "/download.messages"));
+					download = download_.generate("sysMsg", fmt);
+				}
+				else if (boost::algorithm::equals(type, "iec")) {
+					BOOST_ASSERT(boost::algorithm::equals(target, "/download.iec"));
+					download = download_.generate("meterIEC", fmt);
+				}
+				else if (boost::algorithm::equals(type, "wMBus")) {
+					BOOST_ASSERT(boost::algorithm::equals(target, "/download.wMBus"));
+					download = download_.generate("meterwMBus", fmt);
+				}
+
+				});
+			parser.read(content.begin(), content.end());
+
+		}
+		else {
+			CYNG_LOG_WARNING(logger_, "post: " << target << ", content_type: [" << type << "] not supported, content: " << content);
+		}
+		return download;
 	}
 
 	void http_server::on_msg(boost::uuids::uuid tag, std::string msg) {
