@@ -11,6 +11,7 @@
 #include <smf/mbus/reader.h>
 #include <smf/mbus/bcd.hpp>
 #include <smf/sml/unpack.h>
+#include <smf/sml/reader.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/parse/string.h>
@@ -228,8 +229,12 @@ BOOST_AUTO_TEST_CASE(parser)
 		//
 
 		std::size_t offset = 2;
+		cyng::obis code;
+		cyng::object obj;
+		std::int8_t scaler = 0; 
+		smf::mbus::unit u;
 		while (offset < res.size()) {
-			offset = smf::mbus::read(res, offset);
+			std::tie(offset, code, obj, scaler, u) = smf::mbus::read(res, offset, 1);
 		}
 
 		});
@@ -348,12 +353,18 @@ BOOST_AUTO_TEST_CASE(reader)
 		, 0x17	//	VIFE (error flag)
 		, 0x00	//	Value LSB
 		, 0x00	//	Value MSB ( = 0)
-		//, 0x27	//	Fill Byte due to AES
+
+		, 0x2f	//	Fill Byte due to AES
 		});
 
 	std::size_t offset = 0;
-	while (offset < inp.size()) {
-		offset = smf::mbus::read(inp, offset);
+	cyng::obis code;
+	cyng::object obj;
+	std::int8_t scaler = 0;
+	smf::mbus::unit u;
+	while (offset + 4 < inp.size()) {
+		std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp, offset, 1);
+		std::cout<< obj <<  " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
 	}
 
 	//
@@ -368,10 +379,80 @@ BOOST_AUTO_TEST_CASE(reader)
 		0x2f, 0x2f, 0x2f, 0x2f, 0x2f, 0x2f, 0x2f, 0x2f
 		});
 
-	offset = 2;
-	while (offset < inp_01.size()) {
-		offset = smf::mbus::read(inp_01, offset);
-	}
+	//	SML code
+	//	ServerId: 01 A8 15 53 47 35 04 01 02 
+	//	01 00 01 08 00 FF : 16'432'223.9 Wh
+	//	01 00 01 08 01 FF : 16'432'223.9 Wh
+	//	01 00 01 08 02 FF : 0.0 Wh
+	//	01 00 10 07 00 FF : 10.1 W
+	//
+	//	### Message ###
+	//76                                                SML_Message(Sequence): 
+	//  02C2                                            transactionId: _
+	//  6200                                            groupNo: 0
+	//  6200                                            abortOnError: 0
+	//  72                                              messageBody(Choice): 
+	//	630701                                        messageBody: 1793 => SML_GetList_Res (0x00000701)
+	//	77                                            SML_GetList_Res(Sequence): 
+	//	  01                                          clientId: not set
+	//	  0A01A815534735040102                        serverId: 01 A8 15 53 47 35 04 01 02 
+	//	  01                                          listName: not set
+	//	  01                                          actSensorTime: not set
+	//	  74                                          valList(SequenceOf): 
+	//		77                                        valListEntry(Sequence): 
+	//		  070100010800FF                          objName: 01 00 01 08 00 FF 
+	//		  64000180                                status: 384
+	//		  01                                      valTime: not set
+	//		  621E                                    unit: 30
+	//		  52FF                                    scaler: -1
+	//		  560009CB5BBF                            value: 164322239
+	//		  01                                      valueSignature: not set
+	//		77                                        valListEntry(Sequence): 
+	//		  070100010801FF                          objName: 01 00 01 08 01 FF 
+	//		  01                                      status: not set
+	//		  01                                      valTime: not set
+	//		  621E                                    unit: 30
+	//		  52FF                                    scaler: -1
+	//		  560009CB5BBF                            value: 164322239
+	//		  01                                      valueSignature: not set
+	//		77                                        valListEntry(Sequence): 
+	//		  070100010802FF                          objName: 01 00 01 08 02 FF 
+	//		  01                                      status: not set
+	//		  01                                      valTime: not set
+	//		  621E                                    unit: 30
+	//		  52FF                                    scaler: -1
+	//		  560000000000                            value: 0
+	//		  01                                      valueSignature: not set
+	//		77                                        valListEntry(Sequence): 
+	//		  070100100700FF                          objName: 01 00 10 07 00 FF 
+	//		  01                                      status: not set
+	//		  01                                      valTime: not set
+	//		  621B                                    unit: 27
+	//		  52FF                                    scaler: -1
+	//		  5500000065                              value: 101
+	//		  01                                      valueSignature: not set
+	//	  01                                          listSignature: not set
+	//	  01                                          actGatewayTime: not set
+	//  637AC7                                          crc16: 31431
+	//  00                                              endOfSmlMsg: 00 
+
+	//while (offset + 4 < inp_01.size()) {
+	//	std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp_01, offset, 1);
+	//	std::cout << obj << " " << smf::mbus::get_unit_name(u) << std::endl;
+	//}
+	smf::sml::unpack p([](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+
+		std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
+		//std::tuple<cyng::buffer_t, cyng::buffer_t, cyng::obis, cyng::object, cyng::object, std::map<cyng::obis, cyng::param_map_t>>
+		//	read_get_list_response(cyng::tuple_t msg);
+		auto const[client, server, code, tp1, tp2, data] = smf::sml::read_get_list_response(msg);
+		for (auto const& m : data) {
+			std::cout << ">> " << m.first << ": " << m.second << std::endl;
+		}
+
+		});
+	p.read(inp_01.begin() + 2, inp_01.end());
+
 
 	//	original SML data
 	//	"2f2f7602fa620062007263070177010a01a81549473504010201017477070100010800ff6400018201621e52ff560006a474f10177070100010801ff0101621e52ff560006a474f10177070100010802ff0101621e52ff5600000000000177070100100700ff0101621b52ff5500000a2a01010163d274002f2f2f2f2f2f2f2f"
@@ -424,5 +505,22 @@ BOOST_AUTO_TEST_CASE(bcd)
 	BOOST_REQUIRE_EQUAL(v8, 251);
 
 }
+BOOST_AUTO_TEST_CASE(date)
+{
+	//	2008-05-31T23:50:00+0100
+	std::chrono::system_clock::time_point tp1 = smf::mbus::convert_to_tp(0x32, 0x37, 0x1f, 0x15);
+	using cyng::operator<<;
+	//std::cout << tp1 << std::endl;
+	std::stringstream ss;
+	ss << tp1;
+	BOOST_REQUIRE_EQUAL(ss.str(), "2008-05-31T23:50:00+0100");
 
+	//	2013-08-18T00:00:00+0100
+	std::chrono::system_clock::time_point tp2 = smf::mbus::convert_to_tp(0xb2, 0x18);
+	//std::cout << tp2 << std::endl;
+	ss.str("");
+	ss << tp2;
+	BOOST_REQUIRE_EQUAL(ss.str(), "2013-08-18T00:00:00+0100");
+
+}
 BOOST_AUTO_TEST_SUITE_END()

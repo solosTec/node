@@ -21,7 +21,8 @@ namespace smf {
 		, cyng::logger logger
 		, toggle::server_vec_t&& cfg
 		, bool client_login
-		, std::chrono::seconds client_timeout)
+		, std::chrono::seconds client_timeout
+		, std::filesystem::path client_out)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&wmbus_server::listen, &server_, std::placeholders::_1),
@@ -35,7 +36,7 @@ namespace smf {
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_))
-		, server_(ctl, logger, bus_, db_, client_timeout)
+		, server_(ctl, logger, bus_, db_, client_timeout, client_out)
 	{
 		auto sp = channel_.lock();
 		if (sp) {

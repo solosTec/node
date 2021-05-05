@@ -32,7 +32,8 @@ namespace smf {
 			, cyng::logger
 			, bus&
 			, std::shared_ptr<db>
-			, std::chrono::seconds client_timeout);
+			, std::chrono::seconds client_timeout
+			, std::filesystem::path client_out);
 		~wmbus_server();
 
 		void stop(cyng::eod);
@@ -51,6 +52,7 @@ namespace smf {
 		bus& bus_;
 		std::shared_ptr<db> db_;
 		std::chrono::seconds const client_timeout_;
+		std::filesystem::path const client_out_;
 		boost::asio::ip::tcp::acceptor acceptor_;
 		std::uint64_t session_counter_;
 

@@ -146,8 +146,9 @@ namespace smf
 			 * bit [0..3] storage number
 			 */
 			std::uint8_t get_storage_nr() const;
+
 			/**
-			 * bit [4..5] tariff 0 = total, 1 = tariff 1, 2 = traiff 2
+			 * bit [4..5] tariff 0 = total, 1 = tariff 1, 2 = tariff 2
 			 */
 			std::uint8_t get_tariff() const;
 

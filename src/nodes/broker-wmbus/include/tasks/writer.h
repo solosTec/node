@@ -4,18 +4,16 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_IEC_TASK_WRITER_H
-#define SMF_IEC_TASK_WRITER_H
+#ifndef SMF_WMBUS_TASK_WRITER_H
+#define SMF_WMBUS_TASK_WRITER_H
 
 #include <db.h>
 
 #include <smf/cluster/bus.h>
-#include <smf/iec/parser.h>
 
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
-#include <cyng/store/key.hpp>
 
 #include <fstream>
 

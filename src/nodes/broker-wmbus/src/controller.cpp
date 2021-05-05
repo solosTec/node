@@ -26,6 +26,7 @@
 #include <locale>
 #include <iostream>
 
+#include <boost/predef.h>
 
 namespace smf {
 
@@ -77,6 +78,11 @@ namespace smf {
 		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["service"].get(), 12002);
 		auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
 		std::chrono::seconds client_timeout(cyng::numeric_cast<std::uint32_t>(reader["client"]["timeout"].get(), 32));
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+		std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "D:\\projects\\data\\csv");
+#else 
+		std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "/data/csv");
+#endif
 
 		//
 		//	connect to cluster
@@ -89,7 +95,8 @@ namespace smf {
 			, address
 			, port
 			, client_login
-			, client_timeout);
+			, client_timeout
+			, client_out);
 
 
 		auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
@@ -162,7 +169,8 @@ namespace smf {
 		, std::string const& address
 		, std::uint16_t port
 		, bool client_login
-		, std::chrono::seconds client_timeout) {
+		, std::chrono::seconds client_timeout
+		, std::filesystem::path client_out) {
 
 		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster"
 			, ctl
@@ -171,7 +179,8 @@ namespace smf {
 			, logger
 			, std::move(tgl)
 			, client_login
-			, client_timeout);
+			, client_timeout
+			, client_out);
 
 		auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
 		channel->dispatch("connect", cyng::make_tuple());
@@ -212,7 +221,13 @@ namespace smf {
 	cyng::param_t controller::create_client_spec() {
 		return cyng::make_param("client", cyng::make_tuple(
 			cyng::make_param("login", false),
-			cyng::make_param("timeout", std::chrono::seconds(32))	//	gatekeeper
+			cyng::make_param("timeout", std::chrono::seconds(32)),	//	gatekeeper
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+			cyng::make_param("out", "D:\\projects\\data\\csv")	//	output path
+#else
+			cyng::make_param("out", "/data/csv")	//	output path
+#endif
+
 		));
 	}
 

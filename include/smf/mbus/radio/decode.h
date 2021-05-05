@@ -34,6 +34,11 @@ namespace smf
 				, std::uint8_t access_nr
 				, cyng::crypto::aes_128_key key
 				, cyng::buffer_t const&);
+
+			/**
+			 * @return true if the first two bytes are 0x2f
+			 */
+			bool is_decoded(cyng::buffer_t const&);
 		}
 	}
 }

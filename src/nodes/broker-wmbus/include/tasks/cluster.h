@@ -45,7 +45,8 @@ namespace smf {
 			, cyng::logger
 			, toggle::server_vec_t&&
 			, bool client_login
-			, std::chrono::seconds client_timeout);
+			, std::chrono::seconds client_timeout
+			, std::filesystem::path client_out);
 		~cluster();
 
 		void connect();

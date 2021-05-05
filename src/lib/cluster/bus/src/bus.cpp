@@ -11,11 +11,12 @@
 #include <cyng/log/record.h>
 #include <cyng/vm/linearize.hpp>
 #include <cyng/vm/generator.hpp>
-#include <cyng/sys/process.h>
-#include <cyng/io/serialize.h>
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
+#include <cyng/sys/process.h>
+#include <cyng/io/serialize.h>
 #include <cyng/obj/algorithm/add.hpp>
+#include <cyng/obj/container_factory.hpp>
 
 #include <boost/bind.hpp>
 
@@ -108,6 +109,7 @@ namespace smf {
 		socket_.close(ignored_ec);
 		state_ = state::START;
 		timer_.cancel();
+		buffer_write_.clear();
 
 	}
 
@@ -303,19 +305,10 @@ namespace smf {
 			if (!buffer_write_.empty()) {
 				do_write();
 			}
-			else {
-
-				// Wait 10 seconds before sending the next heartbeat.
-				//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
-				//heartbeat_timer_.async_wait(std::bind(&bus::do_write, this));
-			}
 		}
 		else {
-			CYNG_LOG_ERROR(logger_, "[cluster] " << tgl_.get() << " on heartbeat: " << ec.message());
-
+			CYNG_LOG_ERROR(logger_, "[cluster] " << tgl_.get() << " on write: " << ec.message());
 			reset();
-			//auto sp = channel_.lock();
-			//if (sp)	sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple());
 		}
 	}
 
@@ -550,6 +543,13 @@ namespace smf {
 			if (b)	do_write();
 			});
 
+	}
+
+	void bus::update_pty_counter(std::uint64_t count) {
+
+		req_db_update("cluster"
+			, cyng::key_generator(tag_)
+			, cyng::param_map_factory("clients", count));
 	}
 
 	std::function<void(bool)>

@@ -32,7 +32,15 @@ set (sml_producer
     src/lib/sml/protocol/src/writer.cpp
 )
 
+set (sml_consumer
+    include/smf/sml/reader.h
+    include/smf/sml/readout.h
+    src/lib/sml/protocol/src/reader.cpp
+    src/lib/sml/protocol/src/readout.cpp
+)
+
 source_group("producer" FILES ${sml_producer})
+source_group("consumer" FILES ${sml_consumer})
 
 
 # define the sml lib
@@ -40,5 +48,6 @@ set (sml_lib
     ${sml_cpp}
     ${sml_h}
     ${sml_producer}
+    ${sml_consumer}
 )
 

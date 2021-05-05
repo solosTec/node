@@ -30,7 +30,8 @@ namespace smf {
 			, boost::asio::ip::tcp::socket socket
 			, std::shared_ptr<db>
 			, cyng::logger
-			, bus&);
+			, bus&
+			, cyng::channel_ptr writer);
 		~wmbus_session();
 
 		void start(std::chrono::seconds timeout);
@@ -53,12 +54,20 @@ namespace smf {
 		void push_dlsm_data(cyng::buffer_t const& payload);
 		void push_data(cyng::buffer_t const& payload);
 
+		void read_mbus(srv_id_t const& address, cyng::buffer_t const& payload);
+
+		/**
+		 * @return number of data records
+		 */
+		std::size_t read_sml(srv_id_t const& address, cyng::buffer_t const& payload);
+
 	private:
 		cyng::controller& ctl_;
 		boost::asio::ip::tcp::socket socket_;
+		std::shared_ptr<db> db_;
 		cyng::logger logger_;
 		bus& bus_;
-		std::shared_ptr<db> db_;
+		cyng::channel_ptr writer_;
 
 		/**
 		 * Buffer for incoming data.

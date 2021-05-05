@@ -46,14 +46,14 @@ namespace smf {
 
 	void gatekeeper::timeout() {
 		CYNG_LOG_WARNING(logger_, "[gatekeeper] timeout");
-		wmbussp_->stop();
+		//wmbussp_->stop();
 		auto sp = channel_.lock();
 		if (sp) sp->stop();
 	}
 
 	void gatekeeper::stop(cyng::eod)
 	{
-		CYNG_LOG_WARNING(logger_, "stop push task");
+		CYNG_LOG_INFO(logger_, "[gatekeeper] stop");
 	}
 
 }

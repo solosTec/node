@@ -331,35 +331,32 @@ int main(int argc, char** argv) {
 		{ cyng::edis(0x60, 0x60, 9), {"REG_FRAUD_FLAG", "Fraud flag", "" } },
 
 		//13. Miscellaneous registers used in sequences
-		{ cyng::edis(0, 9, 1), {"REG_CURRENT_TIME", "Current time(hh:mm:ss)", "" }},
-		{ cyng::edis(0, 9, 2), {"REG_DATE", "Date(YY.MM.DD or DD.MM.YY)", "" }},
-		{ cyng::edis(0, 9, 4), {"REG_DATE_TIME", "Date and Time(YYMMDDhhmmss)", "" }},
-		{ cyng::edis(0, 8, 0), {"REG_DEMAN_PERIOD", "Demand period", "min" }},
-		{ cyng::edis(0, 8, 4), {"REG_LOAD_PROFILE_PERIOD", "Load profile period", "min" }},
-		//{ cyng::edis(0, 0, 0), {"REG_DEVICE_ADDRESS_1", "Device address 1", "" }},	//	duplicate SERVER_ID_1_1
-		//{ cyng::edis(0, 0, 1), {"REG_DEVICE_ADDRESS_2", "Device address 2", "" }},	//	duplicate SERVER_ID_1_2
-		{ cyng::edis(0, 1, 0), {"REG_MD_RESET_COUNTER", "MD reset counter", "" }},
-		{ cyng::edis(0, 1, 2), {"REG_MD_RESET_TIMESTAMP", "MD reset timestamp", "" }},
-		//{ cyng::edis(0, 2, 0), {"REG_FIRMWARE", "Firmware version", "" }},	//	duplicate SOFTWARE_ID
-		{ cyng::edis(0, 2, 2), {"REG_TARIFF", "Tariff program ID", "" }},
-		{ cyng::edis(61, 0x61, 0), {"REG_FATAL_ERROR_METER_STATUS", "Fatal error meter status", "" }},
-		{ cyng::edis(0, 2, 1), {"REG_PARAMETERS_SCHEME_ID", "Parameters scheme ID", "" }},
-		{ cyng::edis(0, 3, 0), {"REG_ACTIVE_ENERGY_METER_CONSTANT", "Active energy meter constant", "" }},
+		{ cyng::edis(0, 1, 0), {"REG_MD_RESET_COUNTER", "MD reset counter", "" } },
+		{ cyng::edis(0, 1, 2), {"REG_MD_RESET_TIMESTAMP", "MD reset timestamp", "" } },
+		{ cyng::edis(0, 2, 1), {"REG_PARAMETERS_SCHEME_ID", "Parameters scheme ID", "" } },
+		{ cyng::edis(0, 2, 2), {"REG_TARIFF", "Tariff program ID", "" } },
+		{ cyng::edis(0, 3, 0), {"REG_ACTIVE_ENERGY_METER_CONSTANT", "Active energy meter constant", "" } },
 		{ cyng::edis(0, 3, 2), {"REG_SM_PULSE_VALUE", "S0- Impulswertigkeit (0.3.2)", "" } },
 		{ cyng::edis(0, 3, 3), {"REG_SM_PULSE_DURATION", "Pulse length (0.3.3)", "" } },
-		{ cyng::edis(0, 4, 2), {"REG_SM_RATIO_CONVERTER", "Converter factor (0.4.2)", "ratio" }},
-		{ cyng::edis(0, 4, 3), {"REG_SM_RATIO_VOLTAGE", "Voltage transformer (0.4.3)", "ratio" }},
-		{ cyng::edis(0, 5, 2), {"REG_SM_MEASURING_PERIOD", "Measuring period (0.2.2)", "" }}
+		{ cyng::edis(0, 4, 2), {"REG_SM_RATIO_CONVERTER", "Converter factor (0.4.2)", "ratio" } },
+		{ cyng::edis(0, 4, 3), {"REG_SM_RATIO_VOLTAGE", "Voltage transformer (0.4.3)", "ratio" } },
+		{ cyng::edis(0, 5, 2), {"REG_SM_MEASURING_PERIOD", "Measuring period (0.2.2)", "" } },
+		{ cyng::edis(0, 8, 0), {"REG_DP2_DEMAND_INTERVAL", "Duration of measurement interval for current power value (1-0.0:8.0*255)", "min" } },
+		{ cyng::edis(0, 8, 4), {"REG_LOAD_PROFILE_PERIOD", "Load profile period", "min" } },
+		{ cyng::edis(0, 9, 1), {"REG_DT_CURRENT_TIME", "Current time at time of transmission (hh:mm:ss)", "" }},
+		{ cyng::edis(0, 9, 2), {"REG_DATE", "Date(YY.MM.DD or DD.MM.YY)", "" }},
+		{ cyng::edis(0, 9, 4), {"REG_DATE_TIME", "Date and Time(YYMMDDhhmmss)", "" }},
+		{ cyng::edis(61, 0x61, 0), {"REG_FATAL_ERROR_METER_STATUS", "Fatal error meter status", "" }}
 	};
 
 
 	using obis_map_t = std::map< cyng::obis, obis_ctx >;
 	obis_map_t obis_map {
 
-		{ DEFINE_OBIS(00, 00, 00, 00, 00, ff), {"METER_ADDRESS", cyng::TC_NULL, "" }},
-		{ DEFINE_OBIS(00, 00, 00, 00, 01, ff), {"IDENTITY_NR_1", cyng::TC_NULL, "" }},
-		{ DEFINE_OBIS(00, 00, 00, 00, 02, ff), {"IDENTITY_NR_2", cyng::TC_NULL, "" }},
-		{ DEFINE_OBIS(00, 00, 00, 00, 03, ff), {"IDENTITY_NR_3", cyng::TC_NULL, "" }},
+		{ DEFINE_OBIS(00, 00, 00, 00, 00, ff), {"METER_ADDRESS", cyng::TC_NULL, "0-0:0.0.0.255" }},
+		{ DEFINE_OBIS(00, 00, 00, 00, 01, ff), {"IDENTITY_NR_1", cyng::TC_NULL, "0-0:0.0.1.255" }},
+		{ DEFINE_OBIS(00, 00, 00, 00, 02, ff), {"IDENTITY_NR_2", cyng::TC_NULL, "0-0:0.0.2.255" }},
+		{ DEFINE_OBIS(00, 00, 00, 00, 03, ff), {"IDENTITY_NR_3", cyng::TC_NULL, "0-0:0.0.3.255" }},
 		{ DEFINE_OBIS(00, 00, 00, 01, 00, ff), {"RESET_COUNTER", cyng::TC_UINT32, "0.1.0" }},
 		{ DEFINE_OBIS(00, 00, 00, 02, 00, ff), {"FIRMWARE_VERSION", cyng::TC_NULL, "COSEM class id 1" }},
 		{ DEFINE_OBIS(00, 00, 01, 00, 00, ff), {"REAL_TIME_CLOCK", cyng::TC_NULL, "current time" }},
@@ -938,8 +935,41 @@ int main(int argc, char** argv) {
 	//			<< std::endl;
 	//	}
 	//}
+
 #endif
 
+	std::filesystem::path p = std::filesystem::path(__OUTPUT_PATH).replace_filename("db.ipp");	// .replace_extension(".cpp");
+	std::ofstream ofs2(p.string(), std::ios::trunc);
+	if (ofs2.is_open()) {
+
+		ofs2 << std::hex;
+		//ofs2 << "switch (code) {" << std::endl;
+
+		for (auto const& ctx : obis_map) {
+
+			ofs2
+				<< "case 0x"
+				<< ctx.first.to_uint64()
+				<< ": return \""
+				<< ctx.second.get_name()
+				<< "\";"
+				;
+
+			std::string const desc(ctx.second.get_desc());
+			if (!desc.empty()) {
+				ofs2
+					<< "\t// "
+					<< desc
+					;
+			}
+
+			ofs2
+				<< std::endl;
+
+		}
+		//ofs2 << "default: break;" << std::endl << "}" << std::endl;
+		ofs2.close();
+	}
 	//std::cout << __OUTPUT_PATH << std::endl;
 	return EXIT_SUCCESS;
 }

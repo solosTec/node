@@ -48,6 +48,17 @@ namespace smf
 				return cyng::crypto::aes::decrypt(data, key, build_initial_vector(srv_id, access_nr));
 			}
 
+			bool is_decoded(cyng::buffer_t const& buffer) {
+
+				if (buffer.size() > 2) {
+					return (buffer.at(0) == static_cast<char>(0x2f))
+						&& (buffer.at(1) == static_cast<char>(0x2f))
+						;
+				}
+				return false;
+
+			}
+
 		}
 	}
 }

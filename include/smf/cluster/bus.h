@@ -202,6 +202,10 @@ namespace smf
 		}
 		void push_sys_msg(std::string, cyng::severity level);
 
+		/**
+		 * send an update request for "cluster" table to main node
+		 */
+		void update_pty_counter(std::uint64_t);
 
 	private:
 		void reset();

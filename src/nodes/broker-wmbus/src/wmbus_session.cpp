@@ -10,10 +10,14 @@
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/radio/header.h>
 #include <smf/mbus/radio/decode.h>
+#include <smf/sml/unpack.h>
+#include <smf/sml/reader.h>
 
 #include <cyng/log/record.h>
 #include <cyng/io/io_buffer.h>
+#include <cyng/io/serialize.h>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/algorithm/reader.hpp>
 
 #include <iostream>
 
@@ -32,12 +36,14 @@ namespace smf {
 		, boost::asio::ip::tcp::socket socket
 		, std::shared_ptr<db> db
 		, cyng::logger logger
-		, bus& cluster_bus)
+		, bus& cluster_bus
+		, cyng::channel_ptr writer)
 	: ctl_(ctl)
 		, socket_(std::move(socket))
 		, logger_(logger)
 		, db_(db)
 		, bus_(cluster_bus)
+		, writer_(writer)
 		, buffer_()
 		, buffer_write_()
 		, parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
@@ -133,13 +139,19 @@ namespace smf {
 
 	void wmbus_session::decode(mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
 
-		CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h));
+		if (bus_.is_connected()) {
 
-		if (h.has_secondary_address()) {
-			decode(t.get_secondary_address(), t.get_access_no(), h.get_frame_type(), data);
+			CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h));
+
+			if (h.has_secondary_address()) {
+				decode(t.get_secondary_address(), t.get_access_no(), h.get_frame_type(), data);
+			}
+			else {
+				decode(h.get_server_id(), t.get_access_no(), h.get_frame_type(), data);
+			}
 		}
 		else {
-			decode(h.get_server_id(), t.get_access_no(), h.get_frame_type(), data);
+			CYNG_LOG_WARNING(logger_, "[wmbus] meter: " << mbus::to_str(h) << " cannot decode data since offline");
 		}
 	}
 
@@ -156,7 +168,8 @@ namespace smf {
 			//
 			//	if tag is "nil" no meter configuration was found
 			//
-			auto const [key, tag] = db_->lookup_meter(get_id(address));
+			auto const id = get_id(address);
+			auto const [key, tag] = db_->lookup_meter(id);
 			if (!tag.is_nil()) {
 
 				auto const payload = mbus::radio::decode(address
@@ -164,18 +177,59 @@ namespace smf {
 					, key
 					, data);
 
-				//
-				//	insert uplink data
-				//
-				bus_.req_db_insert_auto("wMBusUplink", cyng::data_generator(
-					std::chrono::system_clock::now(),
-					get_id(address),	//	mbus::to_str(h),
-					get_medium(address),
-					manufacturer,
-					frame_type,
-					cyng::io::to_hex(payload),	//	"payload",
-					boost::uuids::nil_uuid()
-				));
+				if (mbus::radio::is_decoded(payload)) {
+
+					switch (frame_type) {
+					case mbus::FIELD_CI_HEADER_LONG:
+					case mbus::FIELD_CI_HEADER_SHORT:
+						read_mbus(address, payload);
+						//
+						//	insert uplink data
+						//
+						bus_.req_db_insert_auto("wMBusUplink", cyng::data_generator(
+							std::chrono::system_clock::now(),
+							id,	//	meter id
+							get_medium(address),
+							manufacturer,
+							frame_type,
+							cyng::io::to_hex(payload),	//	"payload",
+							boost::uuids::nil_uuid()
+						));
+						break;
+					case mbus::FIELD_CI_RES_LONG_SML:
+					case mbus::FIELD_CI_RES_SHORT_SML:
+					{
+						auto const count = read_sml(address, payload);
+						bus_.req_db_insert_auto("wMBusUplink", cyng::data_generator(
+							std::chrono::system_clock::now(),
+							id,	//	meter id
+							get_medium(address),
+							manufacturer,
+							frame_type,
+							std::to_string(count) + " records: " + cyng::io::to_hex(payload),
+							boost::uuids::nil_uuid()
+						));
+					}
+						break;
+					default:
+						//	unknown frame type
+						//
+						//	insert uplink data
+						//
+						bus_.req_db_insert_auto("wMBusUplink", cyng::data_generator(
+							std::chrono::system_clock::now(),
+							id,	//	meter id
+							get_medium(address),
+							manufacturer,
+							frame_type,
+							cyng::io::to_hex(payload),	//	"payload",
+							boost::uuids::nil_uuid()
+						));
+
+						break;
+					}
+				}
+
 
 				//
 				//	update config data
@@ -220,12 +274,12 @@ namespace smf {
 		//
 		//	read SML data
 		// 
-		smf::sml::unpack p([this](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+		//smf::sml::unpack p([this](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
 
-			CYNG_LOG_DEBUG(logger_, "SML> " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+		//	CYNG_LOG_DEBUG(logger_, "SML> " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
 
-			});
-		p.read(payload.begin() + 2, payload.end());
+		//	});
+		//p.read(payload.begin() + 2, payload.end());
 #endif
 
 	}
@@ -234,6 +288,57 @@ namespace smf {
 	}
 	void wmbus_session::push_data(cyng::buffer_t const& payload) {
 
+	}
+
+	void wmbus_session::read_mbus(srv_id_t const& address, cyng::buffer_t const& payload) {
+
+	}
+
+	std::size_t wmbus_session::read_sml(srv_id_t const& address, cyng::buffer_t const& payload) {
+
+		//
+		//	get meter id
+		//
+		auto const id = get_id(address);
+
+		//
+		//	open CSV file
+		//
+		writer_->dispatch("open", cyng::make_tuple(id));
+
+		std::size_t count{ 0 };
+		smf::sml::unpack p([this, &count](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+
+			CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+
+			auto const [client, server, code, tp1, tp2, data] = sml::read_get_list_response(msg);
+			for (auto const& m : data) {
+				CYNG_LOG_TRACE(logger_, "[sml] " << m.first << ": " << m.second);
+
+				//
+				//	extract values
+				//
+				auto const reader = cyng::make_reader(m.second);
+				auto const value = cyng::io::to_plain(reader.get("value"));
+				auto const unit_name = cyng::value_cast(reader.get("unit-name"), "");
+				
+				//
+				//	store data to csv file
+				//
+				writer_->dispatch("store", cyng::make_tuple(m.first, value, unit_name));
+
+			}
+
+			count = data.size();
+			});
+		p.read(payload.begin() + 2, payload.end());
+
+		//
+		//	close CSV file
+		//
+		writer_->dispatch("commit", cyng::make_tuple());
+
+		return count;
 	}
 
 }

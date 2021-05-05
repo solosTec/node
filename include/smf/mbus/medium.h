@@ -14,6 +14,9 @@ namespace smf
 {
 	namespace mbus	
 	{
+		/**
+		 * A field: device type
+		 */
 		enum class device_type : std::uint8_t {
 
 			OTHER = 0x00,
@@ -56,7 +59,7 @@ namespace smf
 			GARBAGE = 0x29,		//!<	Garbage	(not the band)
 			CO2 = 0x2A,		//	Reserved for Carbon dioxide
 			//	Reserved for environmental meter 0x2B to 0x2F
-			MUC = 0x31, //!< OMS MUC (OMS Vol.2 Issue 2.0.02009-07-20)
+			MUC = 0x31, //!< OMS MUC - communication controller (OMS Vol.2 Issue 2.0.02009-07-20)
 			REPEATER_UNIDIRECTIONAL = 0x32, //!< OMS unidirectional repeater (OMS Vol.2 Issue 2.0.02009-07-20)
 			REPEATER_BIDIRECTIONAL = 0x33, //!< OMS bidirectional repeater (OMS Vol.2 Issue 2.0.02009-07-20)
 

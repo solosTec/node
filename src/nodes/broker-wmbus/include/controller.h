@@ -40,7 +40,8 @@
 			, std::string const& address
 			, std::uint16_t port
 			, bool client_login
-			, std::chrono::seconds client_timeout);
+			, std::chrono::seconds client_timeout
+			, std::filesystem::path);
 
 		void join_network(cyng::controller& ctl
 			, cyng::logger logger

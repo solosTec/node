@@ -53,7 +53,7 @@ namespace smf {
 
 	void gatekeeper::stop(cyng::eod)
 	{
-		CYNG_LOG_WARNING(logger_, "stop gatekeeper");
+		CYNG_LOG_INFO(logger_, "[gatekeeper] stop");
 	}
 
 }

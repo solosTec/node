@@ -98,6 +98,23 @@ namespace smf
 
 		}
 
+		unit decode_time_unit(std::uint8_t code)
+		{
+			//	0 = second
+			//	1 = minutes
+			//	2 = hours
+			//	3 = days
+			switch (code) {
+			case 0:	return unit::SECOND;
+			case 1:	return unit::MIN;
+			case 2:	return unit::HOUR;
+			case 3:	return unit::DAY;
+			default:
+				break;
+			}
+			return unit::UNDEFINED_;
+		}
+
 	}
 }
 
