@@ -1014,6 +1014,12 @@ main()
 	systemctl daemon-reload
 	systemctl restart segw
 
+    echo ""
+    echo " ######################################################## "
+    echo " #            Post-Inst Steps Completed!                # "
+    echo " ######################################################## "
+    echo ""
+
 	return 0
 }
 
