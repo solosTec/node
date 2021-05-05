@@ -1,133 +1,1021 @@
 #!/bin/sh
 
-echo "                                   **                     "
-echo "                                   **                     "
-echo "   ****                             **    ***    ****     "
-echo "  * **** *    ***        ****        **    ***     ***  * "
-echo " **  ****    * ***      *  ***  *    **     ***     ****  "
-echo "****        *   ***    *    ****     **      **      **   "
-echo "  ***      **    ***  **     **      **      **      **   "
-echo "    ***    ********   **     **      **      **      **   "
-echo "      ***  *******    **     **      **      **      **   "
-echo " ****  **  **         **     **      **      **      *    "
-echo "* **** *   ****    *  **     **       ******* *******     "
-echo "   ****     *******    ********        *****   *****      "
-echo "             *****       *** ***                          "
-echo "                              ***                         "
-echo "                        ****   ***                        "
-echo "                      *******  **                         "
-echo "                     *     ****                           "
-echo ""                                                          
+SMF_DIR="/usr/local/etc/smf"
+BACKUP_DIR="${SMF_DIR}/backups"
+DATABASE_FILE="segw.database"
 
-ls_out=$(ls /usr/local/lib)
-echo "ls_out: $ls_out"
-
-echo "remove obsolete symbolic links"
-
-rm -f /usr/lib/libboost_chrono.so
-rm -f /usr/lib/libboost_date_time.so
-rm -f /usr/lib/libboost_filesystem.so
-rm -f /usr/lib/libboost_prg_exec_monitor.so
-rm -f /usr/lib/libboost_program_options.so
-rm -f /usr/lib/libboost_random.so
-rm -f /usr/lib/libboost_regex.so
-rm -f /usr/lib/libboost_system.so
-rm -f /usr/lib/libboost_thread.so
-rm -f /usr/lib/libboost_timer.so
-rm -f /usr/lib/libboost_unit_test_framework.so
-
-echo "remove obsolete libraries"
-
-rm -f /usr/lib/libboost_chrono.so.1.69.0               
-rm -f /usr/lib/libboost_program_options.so.1.69.0      
-rm -f /usr/lib/libboost_thread.so.1.69.0
-rm -f /usr/lib/libboost_date_time.so.1.69.0            
-rm -f /usr/lib/libboost_random.so.1.69.0               
-rm -f /usr/lib/libboost_timer.so.1.69.0
-rm -f /usr/lib/libboost_filesystem.so.1.69.0           
-rm -f /usr/lib/libboost_regex.so.1.69.0                
-rm -f /usr/lib/libboost_unit_test_framework.so.1.69.0
-rm -f /usr/lib/libboost_prg_exec_monitor.so.1.69.0     
-rm -f /usr/lib/libboost_system.so.1.69.0
-
-echo "set symbolic links to Boost library"
-
-rm -f /usr/local/lib/libboost_program_options.so
-ln -s /usr/local/lib/libboost_program_options.so.1.75.0  /usr/local/lib/libboost_program_options.so 
-
-rm -f /usr/local/lib/libboost_thread.so
-ln -s /usr/local/lib/libboost_thread.so.1.75.0   /usr/local/lib/libboost_thread.so
-
-rm -f /usr/local/lib/libboost_random.so  
-ln -s /usr/local/lib/libboost_random.so.1.75.0    /usr/local/lib/libboost_random.so
-
-rm -f /usr/local/lib/libboost_filesystem.so
-ln -s /usr/local/lib/libboost_filesystem.so.1.75.0    /usr/local/lib/libboost_filesystem.so
-#ln -s	/usr/local/lib/libboost_regex.so.1.75.0     /usr/local/lib/libboost_regex.so 
-
-rm -f /usr/local/lib/libboost_system.so
-ln -s /usr/local/lib/libboost_system.so.1.75.0   /usr/local/lib/libboost_system.so 
-
-echo "${PROJECT_NAME} library (SMF project) is installed"
+# these variables will be replaced by CMAKE
+NEW_VERSION_SHORT=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+NEW_VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}.${${PROJECT_NAME}_VERSION_TWEAK}
 
 
+####
+# Find the last installed version by checking the backups.
+# It is sufficient to do so, since the the old version is only required
+# for merging backed up data.
+# If such a version is found, the following variables are set:
+# - previous_version_long: contains the complete versioning string of the possibly older version, e.g. 0.8.3040
+# - previous_version_short: contains the main version of the possibly older version, e.g. 0.8
+####
+get_last_backed_up_version()
+{
+	echo "[POST-INSTALL] Getting previously installed version by checking backups ..."
+	avail_backups=""
+	cd_failed=0
 
+	# change to the backup directory or fail trying to do so
+	current_path=$(pwd)
+	cd "${BACKUP_DIR}" || cd_failed=1
 
-
-# create lib links in /usr/lib/ /usr/local/lib/
-echo " create lib links in /usr/lib/ /usr/local/lib/ "
-
-tmpfiles=$(find /tmp/ -name '*')
-echo "tmpfiles with find: $tmpfiles"
-echo ""
-
-
-ls_out=$(ls /usr/local/lib)
-echo "ls_out: $ls_out"
-
-
-for libfile in /usr/local/lib/*.so; do
-	echo "check if libfile $libfile has to be linked"
-	tmpfilename=/usr/lib/$(basename $libfile)
-	if [ ! -f $tmpfilename ]; then
-		ln -s $libfile $tmpfilename
-		echo "libfile $libfile was linked " 
+	if [ ${cd_failed} -ne 1 ]; then 
+		for backup in *; do
+			# collect all directory names
+			if [ -d "${backup}" ]; then
+				# only append the line break if the variable is not empty
+				avail_backups="${avail_backups:+${avail_backups}\n}${backup}"
+			fi
+		done
+		# this should never fail!
+		cd "${current_path}" || echo "Can not change back to previous folder. Why not?"
+	else 
+		echo "[POST-INSTALL] There is no such folder to check for backups: ${BACKUP_DIR}"
 	fi
-done 
 
-echo "end of linking...."
-echo "${PROJECT_NAME} shared libraries available"
+	# get the latest backup, since this is the previously installed version that can be checked
+	previous_version_long=$(echo "${avail_backups}" | sort -r | head -n 1)
+	if [ "${previous_version_long}" != "" ]; then 
+		previous_version_short=$(echo "${previous_version_long}" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
+	fi
 
+	echo "[POST-INSTALL] previous_version_long: ${previous_version_long}"
+	echo "[POST-INSTALL] previous_version_short: ${previous_version_short}"
+}
 
-echo "${PROJECT_NAME} backup old config and database"
-/usr/local/etc/smf/do_backup.sh
+####
+# Function to update the libraries that come shipped in the tool
+# Removes old library-files and symlinks, copies in the new ones 
+# and finally recreates the symlinks
+####
+update_libs()
+{
+	echo "[POST-INSTALL] Starting update of libraries ..."
+	echo "[POST-INSTALL] ... remove obsolete symbolic links and libraries ... "
 
+	# this line will remove both the library and its symlink
+	rm -f /usr/lib/libboost_chrono.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_date_time.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_filesystem.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_prg_exec_monitor.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_program_options.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_random.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_regex.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_system.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_thread.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_timer.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_unit_test_framework.so* >/dev/null 2>&1
 
-echo "${PROJECT_NAME} create default configuration"
+	echo "[POST-INSTALL] ... set symbolic links to Boost libraries ... "
 
-/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -D
+	#rm -f /usr/local/lib/libboost_date_time.so
+	#ln -s /usr/local/lib/libboost_date_time.so.1.75.0 /usr/local/lib/libboost_date_time.so
+	#rm -f /usr/local/lib/libboost_iostreams.so
+	#ln -s /usr/local/lib/libboost_iostreams.so.1.75.0 /usr/local/lib/libboost_iostreams.so
+	rm -f /usr/local/lib/libboost_filesystem.so
+	ln -s /usr/local/lib/libboost_filesystem.so.1.75.0 /usr/local/lib/libboost_filesystem.so
+	rm -f /usr/local/lib/libboost_program_options.so
+	ln -s /usr/local/lib/libboost_program_options.so.1.75.0 /usr/local/lib/libboost_program_options.so
+	rm -f /usr/local/lib/libboost_random.so
+	ln -s /usr/local/lib/libboost_random.so.1.75.0 /usr/local/lib/libboost_random.so
+	#rm -f /usr/local/lib/libboost_regex.so
+	#ln -s /usr/local/lib/libboost_regex.so.1.75.0 /usr/local/lib/libboost_regex.so
+	rm -f /usr/local/lib/libboost_system.so
+	ln -s /usr/local/lib/libboost_system.so.1.75.0 /usr/local/lib/libboost_system.so
+	#rm -f /usr/local/lib/libboost_test.so
+	#ln -s /usr/local/lib/libboost_test.so.1.75.0 /usr/local/lib/libboost_test.so
+	rm -f /usr/local/lib/libboost_thread.so
+	ln -s /usr/local/lib/libboost_thread.so.1.75.0 /usr/local/lib/libboost_thread.so
+	#rm -f /usr/local/lib/libboost_timer.so
+	#ln -s /usr/local/lib/libboost_timer.so.1.75.0 /usr/local/lib/libboost_timer.so 
 
-echo "${PROJECT_NAME} initialize database"
-/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -I
+	echo "[POST-INSTALL] ... create lib links in /usr/lib/ /usr/local/lib/ ... "
 
+	# change to the backup directory or fail trying to do so
+	current_path=$(pwd)
+	cd "/usr/local/lib/" || cd_failed=1
 
-echo "ToDo: save/update config"
-echo "${PROJECT_NAME} remove previous configuration"
-/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg --clear
+	if [ ${cd_failed} -ne 1 ]; then 
+		for libfile in *.so; do
+			tmpfilename=/usr/lib/$(basename "${libfile}")
+			# create a symlink if it does not exist yet
+			if ! [ -f "${tmpfilename}" ]; then
+				echo " ... linking ${libfile} ... " 
+				ln -s "${libfile}" "${tmpfilename}"
+			fi
+		done
+		# this should never fail!
+		cd "${current_path}" || echo "Can not change back to previous folder. Why not?"
+	else 
+		echo "[POST-INSTALL] Can not access folder /usr/local/lib/"
+	fi
 
-echo "${PROJECT_NAME} load default configuration into database"
-/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -T
-echo "wait some seconds"
-sleep 5
+    echo "[POST-INSTALL] ... library updates done."
+	return 0
+}
 
-echo "${PROJECT_NAME} restore old data if available.."
-/usr/local/etc/smf/restore_data.sh
+####
+# Select which configurations shall be used and either restore or create them.
+# In the end, both the segw.database and segw_vX.X.json file shall be present.
+# @param 0 - backup_dir: provide the directory, where the backup can be found
+####
+generate_configurations()
+{
+	echo "[POST-INSTALL] Generate configurations and database ..."
 
+	# Make sure that the correct number of parameters is passed along
+	if [ "$#" -ne 1 ]; then 
+		echo "[POST-INSTALL] Not enough parameters given. Please provide the backup_dir."
+		return 1
+	fi
 
-echo "start segw service"
-systemctl daemon-reload
-systemctl restart segw
+	backup_dir=$1
 
+	# reuse the existing configurations
+	if [ "${NEW_VERSION_SHORT}" = "${previous_version_short}" ] && [ -d "${backup_dir}" ]; then
+		# echo we did back up a database, but in general the installed version is the same
+		# thus copy back the configurations we backed up and are done with it
+		echo "[POST-INSTALL] ... Major Version (${previous_version_short}) did not change, restore configurations and database."
 
+		# change to the backup directory or fail trying to do so
+		current_path=$(pwd)
+		cd "${backup_dir}" || cd_failed=1
 
-echo "service configuration updated"
+		if [ ${cd_failed} -ne 1 ]; then 
+			for file in *; do
+
+				if [ "${file}" = "${DATABASE_FILE}" ]; then 
+					echo "[POST-INSTALL] ... restoring database ..."
+					cp "${file}" "${SMF_DIR}"
+				elif [ "$(echo "${file}" | greo json | grep -v bkp | sort | head n -1)" != "" ]; then
+					echo "[POST-INSTALL] ... restoring json configuration ..."
+					cp "${file}" "${SMF_DIR}"
+				elif [ "$(echo "${file}" | grep cfg | grep -v bkp | sort | head n -1)" = "${DATABASE_FILE}" ]; then 
+					echo "[POST-INSTALL] ... restoring cfg configuration ..."
+					cp "${file}" "usr/local/etc/"
+				fi
+			done
+			# change back to the previous dir, this should never fail!
+			cd "${current_path}" || echo "Can not change back to previous folder. Why not?"
+		else 
+			echo "[POST-INSTALL] Can not access folder /usr/local/lib/"
+		fi
+	fi	
+
+	# make sure that the files exists. Either for a new installation, or if restoring the
+	# previous settings failed
+	if ! [ -f "${SMF_DIR}/${DATABASE_FILE}" ] || ! [ -f "${SMF_DIR}/segw_v${NEW_VERSION_SHORT}.json" ]; then
+		# there are not configurations yet, so we need to create them anyways
+		# or the major versions are too different, so we need to recreate them as well
+		echo "[POST-INSTALL] ... Database and configurations need to be created ..."
+
+		# just to be sure remove the database and configurations before creating it 
+		# (pipe the output since this will most likely fail)
+		echo "[POST-INSTALL] ... Cleaning install dir"
+		rm -f ${SMF_DIR}/${DATABASE_FILE} >/dev/null 2>&1
+		rm -f ${SMF_DIR}/*.json >/dev/null 2>&1
+		rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
+
+		echo "[POST-INSTALL] ... Creating default configuations"
+		${segw_cmd} -D
+
+		echo "[POST-INSTALL] ... Initialize database"
+		${segw_cmd} -I
+
+		echo "[POST-INSTALL] ... Load default configuration into the database"
+		${segw_cmd} -T
+	fi
+
+	echo "[POST-INSTALL] Generate configurations and database is done."
+	return 0
+}
+
+####
+# Get the data type for a specific key.
+# Possible data types are:
+# - string: 		s
+# - unsigned8: 		u8
+# - unsigned16: 	u16
+# - unsigned32:		u32 
+# - boolean: 		bool
+# - time 			chrono:sec
+####
+get_datatype_by_key_id()
+{
+	key_id=$1
+
+	case "${key_id}" in 
+		###
+		# All broker settings in alphabetical order
+		###
+		broker_account)
+			echo "s"
+			;;		
+		broker_address)
+			echo "s"
+			;;
+		broker_enabled)
+			echo "bool"
+			;;
+		broker_login)
+			echo "bool"
+			;;
+		broker_port)
+			echo "u16"
+			;;
+		broker_pwd)
+			echo "s"
+			;;
+		broker_reconnect)
+			# TODO find data type
+			echo "bool"
+			;;
+		###
+		# All serial settings in alphabetical order
+		###		
+		serial_baudrate)
+			echo "u32"
+			;;		
+		serial_databits)
+			echo "u8"
+			;;
+		serial_flowcontrol)
+			echo "s"
+			;;
+		serial_name)
+			echo "s"
+			;;
+		serial_parity)
+			echo "s"
+			;;
+		serial_stopbits)
+			echo "u32"
+			;;
+		serial_type)
+			echo "s"
+			;;	
+		###
+		# All nms settings in alphabetical order
+		###	
+		nms_address)
+			echo "s"
+			;;
+		nms_debug)
+			echo "bool"
+			;;	
+		nms_enabled)
+			echo "bool"
+			;;
+		nms_port)
+			echo "u16"
+			;;
+		nms_pwd)
+			echo "s"
+			;;
+		nms_scriptpath)
+			echo "s"
+			;;
+		nms_user)
+			echo "s"
+			;;
+		###
+		# All root redirector settings in alphabetical order
+		###	
+		root_redirector_address)
+			# TODO find data type
+			echo ""
+			;;
+		root_redirector_enabled)
+			# TODO find data type
+			echo ""
+			;;
+		root_redirector_login)
+			# TODO find data type
+			echo ""
+			;;
+		root_redirector_port)
+			# TODO find data type
+			echo ""
+			;;
+		###
+		# All meter settings in alphabetical order
+		###	
+		wired_meter_enabled)
+			echo "bool"
+			;;
+		wired_meter_protocol)
+			echo "s"
+			;;
+		wireless_meter_enabled)
+			echo "bool"
+			;;
+		###
+		# All broblocklist settings in alphabetical order
+		###	
+		blocklist_enabled)
+			echo "bool"
+			;;
+		blocklist_mode)
+			echo "s"
+			;;
+		blocklist_period)
+			echo "chrono:sec"
+			;;
+	esac
+}
+
+####
+# Get the correct notation / name based on the SMF/node version
+# @param 1 - app_version: [0.8 | 0.9]
+# @param 2 - interface_num: number of the interface of that parameter. Typically 0 (unused) or 1|2
+# @param 3 - key_id: identifier of the key for which the specific string for the provided version shall be returned
+# @return the requested string. UNKNOWN for an unknown version. ERROR for insufficient parameters.
+####
+get_key_string_by_key_id()
+{
+	# check if the correct number of parameters was provided
+	if [ "$#" -ne 3 ]; then 
+		echo "ERROR"
+		return 1;
+	fi
+
+	# assign the parameters, no further checks required
+	app_version=$1
+	interface_num=$2
+	key_id=$3
+
+	# find the correct string representation for the requested version
+	# if the version is not given correctly or not known, return UNKNOWN
+	case "${key_id}" in 
+		###
+		# All broker settings in alphabetical order
+		###
+		broker_account)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000${interface_num}:900000000401"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/account"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;	
+			esac
+			;;		
+		broker_address)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000${interface_num}:900000000201"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_enabled)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000${interface_num}:enabled"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/broker-enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_login)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000${interface_num}:BROKER_LOGIN"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/broker-login"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_port)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000${interface_num}:900000000301"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/port"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_pwd)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000${interface_num}:900000000501"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/pwd"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_reconnect)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000${interface_num}:900000000601"
+					;;
+				*0.9*)
+					# SKIP copying this parameter, since it is not present any more in this version 
+					# TODO: verify
+					echo "SKIP"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All serial settings in alphabetical order
+		###		
+		serial_baudrate)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000${interface_num}:910000000601"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/speed"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;		
+		serial_databits)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000${interface_num}:910000000201"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/databits"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_flowcontrol)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000${interface_num}:910000000401"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/flow-control"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_name)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000${interface_num}:SERIAL_NAME"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/port"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_parity)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000${interface_num}:910000000301"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/parity"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_stopbits)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000${interface_num}:910000000501"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/stopbits"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_type)
+			case "${app_version}" in
+				*0.8*)
+					# SKIP copying this parameter, since it was not present in this version 
+					echo "SKIP"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/type"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		###
+		# All nms settings in alphabetical order
+		###	
+		nms_address)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_ADDRESS"
+					;;
+				*0.9*)
+					echo "nms/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_debug)
+			case "${app_version}" in
+				*0.8*)
+					# SKIP copying this parameter, since it was not present in this version 
+					echo "SKIP"
+					;;
+				*0.9*)
+					echo "nms/debug"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		nms_enabled)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_ENABLED"
+					;;
+				*0.9*)
+					echo "nms/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_port)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_PORT"
+					;;
+				*0.9*)
+					echo "nms/port"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_pwd)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_PWD"
+					;;
+				*0.9*)
+					echo "nms/pwd"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_scriptpath)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_NMS:script-path"
+					;;
+				*0.9*)
+					echo "nms/script-path"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_user)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_USER"
+					;;
+				*0.9*)
+					echo "nms/account"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All root redirector settings in alphabetical order
+		###
+		root_redirector_address)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:930000000002:930000000202"
+					;;
+				*0.9*)
+					# SKIP copying this parameter, since it is not present any more in this version 
+					# TODO: verify
+					echo "SKIP"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		root_redirector_enabled)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:930000000002:enabled"
+					;;
+				*0.9*)
+					# SKIP copying this parameter, since it is not present any more in this version 
+					# TODO: verify
+					echo "SKIP"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		root_redirector_login)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:930000000002:REDIRECTOR_LOGIN"
+					;;
+				*0.9*)
+					# SKIP copying this parameter, since it is not present any more in this version 
+					# TODO: verify
+					echo "SKIP"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		
+		root_redirector_port)
+			case "${app_version}" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:930000000002:930000000302"
+					;;
+				*0.9*)
+					# SKIP copying this parameter, since it is not present any more in this version 
+					# TODO: verify
+					echo "SKIP"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		
+		###
+		# All meter settings in alphabetical order
+		###	
+		wired_meter_enabled)
+			case "${app_version}" in
+				*0.8*)
+					echo "rs485:enabled"
+					;;
+				*0.9*)
+					echo "lmn/1/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		wired_meter_protocol)
+			case "${app_version}" in
+				*0.8*)
+					echo "rs485:protocol"
+					;;
+				*0.9*)
+					echo "lmn/1/protocol"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		wireless_meter_enabled)
+			case "${app_version}" in
+				*0.8*)
+					echo "IF_wMBUS:enabled"
+					;;
+				*0.9*)
+					echo "lmn/0/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All broblocklist settings in alphabetical order
+		###	
+		blocklist_enabled)
+			case "${app_version}" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:enabled"
+					;;
+				*0.9*)
+					echo ""
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_mode)
+			case "${app_version}" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:mode"
+					;;
+				*0.9*)
+					echo ""
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_period)
+			case "${app_version}" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:period"
+					;;
+				*0.9*)
+					echo ""
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+	esac
+}
+
+####
+# Wrapper to read values from file.
+# Read value gets echoed and stored inside val_by_key variable.
+# @param 1 - key: identifier for which the value shall be extracted
+# @param 2 - db_dump_file: path to the file, where the parameter is stored
+####
+get_val_by_key_from_db_dump()
+{
+	key=$1
+	db_dump_file=$2
+
+	# search in the file for the mentioned key and print the value of it
+	val_by_key=$(grep "${key}" "${db_dump_file}" | awk '{print $2}')
+	echo "${val_by_key}"
+	return 0
+}
+
+####
+# Import a value into the database.
+# @param 1 - key: identifier
+# @param 2 - value: value to store
+# @param 3 - datatype: datatype that gets assigned with the value
+####
+import_value()
+{
+	key=${1}
+	value=${2}
+	datatype=${3}
+
+	/usr/local/etc/segw --set-val ${key} ${value} ${datatype}
+	return 0
+}
+
+####
+# Function to sync one parameter from an old application version to a new version.
+# Both versions are required to get the correct format of the backed-up data.
+# @param 1 - app_version_old: Old version that shall be updated 
+# @param 2 - db_dump_file: path to the file to extract the value from
+# @param 3 - key_id: version independent key identifier
+# @param 4 - interface_num: number of the interface, required for e.g. serial, broker settings. Ignored for others.
+####
+sync_value_by_key_id()
+{
+	app_version_old=$1
+	db_dump_file=$2
+	key_id=$3
+	interface_num=$4
+
+	# retrieve the actual keys that need to be used for this version
+	key_old=$( get_key_string_by_key_id "${app_version_old}" "${interface_num}" "${key_id}")
+	key_new=$( get_key_string_by_key_id "${NEW_VERSION_SHORT}" "${interface_num}" "${key_id}")
+
+	# check if a migration is possible (which is not the case, if either of the keys is SKIP)
+	if [ "${key_old}" != "SKIP" ] && [ "${key_new}" != "SKIP" ]; then 
+		val=$( get_val_by_key_from_db_dump "${key_old}" "${db_dump_file}" )
+		val_type=$( get_datatype_by_key_id "${key_id}" )
+		import_value "${key_new}" "${val}" "${val_type}"
+		echo "[POST-INSTALL] ... imported: ${key_new} = ${val} (type: ${val_type}}) ..."
+	else
+		echo "[POST-INSTALL] ... skipped: ${key_new} ..."
+	fi
+}
+
+####
+# Sync all the old values into the newest configuration
+# @param 1 - app_version_old: previous version from which the configuration shall be done
+# @param 2 - db_dump_file: path to the database dump file to extract the values
+####
+sync_backed_up_values()
+{
+	app_version_old=$1
+	db_dump_file=$2
+
+	echo "[POST-INSTALL] Start synching values from the backup ..."
+
+	echo "[POST-INSTALL] ... start merging broker and serial settings for all interfaces ... "
+	# Update all settings that are done for multiple interfaces
+	# in this case the interface number is two
+	i=1; while [ $i -le 2 ]; do 
+		key_ids="broker_account:broker_address:broker_enabled:broker_login:broker_port:broker_pwd:broker_reconnect:serial_baudrate:serial_databits:serial_flowcontrol:serial_name:serial_parity:serial_stopbits:serial_type"
+		
+		# keep that colon at the end to not be stuck in an infinite loop!!
+		CDR="${key_ids}:"
+		while [ -n "$CDR" ]; do
+			# get the next keyid from the array
+			iterator_key_id=${CDR%%:*}
+			# perform the update action for this key_id
+			sync_value_by_key_id "${app_version_old}" "${db_dump_file}" $i "${iterator_key_id}"
+			# modify CDR to point to the next 
+			CDR=${CDR#*:}
+		done; 
+		unset iterator_key_id CDR
+
+		# increase the counter for the second interface
+		i=$(( i +1 ))
+	done  
+
+	echo "[POST-INSTALL] ... start merging nms and meter settings and all other interface independent stuff ... "
+
+	# Update all settings that are individual of the multiple interfaces
+	key_ids="nms_address:nms_debug:nms_enabled:nms_port:nms_pwd:nms_scriptpath:nms_user:root_redirector_address:root_redirector_enabled:root_redirector_login:root_redirector_port:wired_meter_enabled:wired_meter_protocol:wireless_meter_enabled:blocklist_enabled:blocklist_mode:blocklist_period"
+
+	# keep that colon at the end to not be stuck in an infinite loop!!
+	CDR="${key_ids}:"
+	while [ -n "$CDR" ]; do
+		# get the next keyid from the array
+		iterator_key_id=${CDR%%:*}
+		# perform the update action for this key_id
+		sync_value_by_key_id "${app_version_old}" "${db_dump_file}" 0 "${iterator_key_id}"
+		# modify CDR to point to the next 
+		CDR=${CDR#*:}
+	done; 
+	unset iterator_key_id CDR
+
+	echo "[POST-INSTALL] Completed parameter syncing."
+}
+
+####
+# Execute required update actions based on the version that is updated from
+####
+perform_update_actions()
+{
+	echo "[POST-INSTALL] Select appropriate update actions ..."
+
+	case "$previous_version_short" in 
+	*0.8*)
+		# perform updates
+		echo "[POST-INSTALL] Update actions 0.8 -> ${NEW_VERSION_SHORT} selected ..."
+		sync_backed_up_values "0.8" "${backup_dir}/database_dump.txt"
+		;;
+	*0.9*)
+		# atm there are no known update procedures required for 0.9 to a newer version
+		echo "[POST-INSTALL] Update actions 0.9 -> ${NEW_VERSION_SHORT} selected ..."
+		;;
+	*)
+		# add new cases for future versions here
+		echo "[POST-INSTALL] Update actions for this version (${previous_version_short}) have not been defined yet."
+		;;
+	esac
+
+	echo "[POST-INSTALL] Update actions completed."
+}
+
+####
+# Depending on the version the name of the application might have changed.
+# This would lead to two applications being installed simultaneously, which is not
+# advised.
+####
+remove_previous_installations()
+{
+	echo "[POST-INSTALL] Checking, if previous application versions need manual removal ..."
+
+	case "$previous_version_short" in 
+		*0.8*)
+			# at last remove the old version by tricking opkg as if not such process was running
+			# TODO: make sure that /usr/local/sbin/segw does not get removed or backup before
+			echo "[POST-INSTALL] Removing previous 0.8.X based node installation."
+			echo "[POST-INSTALL] ... Removing opkg lock to be able to trigger OPKG from inside another OPKG process"
+			rm /var/lock/opkg.lock
+			echo "[POST-INSTALL] ... Removing old node application"
+			opkg remove node
+			echo "[POST-INSTALL] ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
+			touch /var/lock/opkg.lock
+			;;
+
+		*0.9*)
+			# atm there is no version that would require removal of a 0.9 based tool
+			echo "[POST-INSTALL] No need to remove previous 0.9-based installations."
+		;;
+		*)
+			# do not do any thing
+			echo "[POST-INSTALL] Unhandled version (${previous_version_short}), skip removal stage."
+	esac
+
+	echo "[POST-INSTALL] Application removal checks done."
+	return 0
+}
+
+####
+# Main function that contains the execution order of functions
+####
+main()
+{                                                         
+	echo ""
+	echo " ######################################################## "
+	echo " #            Performing Post-Inst Steps ...            # "
+	echo " ######################################################## "
+	echo ""
+
+    # check if we need to do some update magic at all
+    # only necessary, if there are changes that would otherwise require
+    # manual intervention.
+    # This is necessary for:
+    # 1. 0.8 -> 0.9: database format has changed, configuration name has changed
+
+	# The version to update to is given within the script,
+	# the possibly older version is read from created backups
+	get_last_backed_up_version
+
+	# create variables based on the versions for later use
+	backup_dir="${BACKUP_DIR}}/${previous_version_long}"
+	segw_cmd="/usr/local/sbin/segw -C/usr/local/etc/segw_v${NEW_VERSION_SHORT}.cfg"
+
+	# first remove and update the libraries
+	update_libs
+
+	# (re)create the database and configuration file, before merging changes in the next step
+	generate_configurations "${backup_dir}"
+
+	if [ "${previous_version_long}" != "" ]; then 
+		# perform the updates on merging the data
+		perform_update_actions
+
+		# remove the node package, if the previous version was 0.8
+		remove_previous_installations
+	fi
+
+	# force the daemon to reload the modified data and restart the service
+	systemctl daemon-reload
+	systemctl restart segw
+
+	return 0
+}
+
+main
+
