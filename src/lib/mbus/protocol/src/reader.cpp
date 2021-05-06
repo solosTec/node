@@ -163,6 +163,9 @@ namespace smf
 						}
 						break;
 					case data_field_code::DFC_32_BIT_REAL:
+					    BOOST_ASSERT(value.size() == 4);
+					    if (value.size() == 4) {
+						}
 						break;
 					case data_field_code::DFC_48_BIT_INT:
 						break;

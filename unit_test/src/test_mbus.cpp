@@ -15,6 +15,7 @@
 
 #include <cyng/io/ostream.h>
 #include <cyng/parse/string.h>
+#include <cyng/parse/buffer.h>
 #include <cyng/obj/intrinsics/buffer.h>
 
 #include <iostream>
@@ -240,6 +241,31 @@ BOOST_AUTO_TEST_CASE(parser)
 		});
 	p_short.read(std::begin(inp_short), std::end(inp_short));
 
+}
+
+BOOST_AUTO_TEST_CASE(esy)
+{
+	//	{"cmd": "insert", "channel" : "monitor.wMBus", "rec" : 
+	//	{"key": {"tag":47}, 
+	//	"data" : {"frameType":122, "gen" : 1, "manufacturer" : "ESY", "medium" : 2, 
+	//	"payload" : "2f2f0702dad23f040000000004a9ff010000000004a9ff020000000004a9ff03e60500000429e60500000d7910333430323030363230313030303030302f2f2f", 
+	//	"serverId" : "10320047", "tagSession" : "00000000-0000-0000-0000-000000000000", "ts" : "2021-05-06T07:40:25+0000"}}}
+
+	auto const inp = cyng::hex_to_buffer("2f2f0702dad23f040000000004a9ff010000000004a9ff020000000004a9ff03e60500000429e60500000d791033343032303036323031"
+			    "3030303030302f2f2f");
+
+	BOOST_REQUIRE_EQUAL(inp.size(), 0x40);
+	BOOST_REQUIRE_EQUAL(inp.at(0), 0x2f);
+	BOOST_REQUIRE_EQUAL(inp.at(1), 0x2f);
+
+	std::size_t offset = 2;
+	cyng::obis code;
+	cyng::object obj;
+	std::int8_t scaler = 0;
+	smf::mbus::unit u;
+	while (offset < inp.size()) {
+	    std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp, offset, 1);
+	}
 }
 
 BOOST_AUTO_TEST_CASE(dif)

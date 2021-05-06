@@ -685,6 +685,8 @@ namespace smf {
 		//
 		config::stop_tasks(logger, reg, "bridge");
 
+		std::this_thread::sleep_for(std::chrono::seconds(2));
+
 		//
 		//	stop all running tasks
 		//
