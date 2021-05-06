@@ -22,12 +22,92 @@ namespace smf {
 		{}
 
 		void server::start(boost::asio::ip::tcp::endpoint ep) {
+			bool already_openend = false;
+			bool already_set_options= false;
+			bool already_bind =false;
+			bool already_listen = false;
+			int sleep_interval_seconds = 2;
+			int cnt = 0;
+			const int MAX_COUNT = 10;
+
 			boost::system::error_code ec;
-			acceptor_.open(ep.protocol(), ec);
-			if (!ec)	acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
-			if (!ec)	acceptor_.bind(ep, ec);
-			if (!ec)	acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
-			if (!ec) {
+
+			while ( (cnt < MAX_COUNT ) && ( !already_listen ) )  
+			{
+				CYNG_LOG_INFO(logger_, "[NMS] server: loop no.  " << cnt <<" of " << MAX_COUNT-1);
+				cnt++;
+
+				if ( !already_openend )
+				{
+					acceptor_.open(ep.protocol(), ec);
+					if (ec)
+					{
+						CYNG_LOG_INFO(logger_, "[NMS] server: open failed ")
+						CYNG_LOG_INFO(logger_, "[NMS] server: going to sleep  " << sleep_interval_seconds << " seconds")
+						sleep(sleep_interval_seconds);
+						sleep_interval_seconds *= 2;
+						continue;
+					}else {
+						already_openend = true;
+						CYNG_LOG_INFO(logger_, "[NMS] server: open sucessful ")
+					}
+
+				}else{
+					CYNG_LOG_INFO(logger_, "[NMS] server: already opened ")
+				}
+
+				if ( !already_set_options )
+				{
+						acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
+					if (ec){
+						CYNG_LOG_INFO(logger_, "[NMS] server: set option failed ")
+						CYNG_LOG_INFO(logger_, "[NMS] server: going to sleep  " << sleep_interval_seconds << " seconds");
+						sleep(sleep_interval_seconds);
+						sleep_interval_seconds *= 2;
+						continue;
+					}
+					else{
+						already_set_options= true;
+						CYNG_LOG_INFO(logger_, "[NMS] server: set options sucessful ")
+
+					}
+				}
+				if ( !already_bind )
+				{
+					acceptor_.bind(ep, ec);
+					if (ec){
+							CYNG_LOG_INFO(logger_, "[NMS] server: bind failed ")
+							CYNG_LOG_INFO(logger_, "[NMS] server: going to sleep  " << sleep_interval_seconds << " seconds");
+							sleep(sleep_interval_seconds);
+							sleep_interval_seconds *= 2;
+							continue;
+					}
+					else{
+						already_bind = true;
+						CYNG_LOG_INFO(logger_, "[NMS] server: bind sucessful ")
+
+					}
+				}
+
+				if ( !already_listen )
+				{
+					acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
+					if (ec){
+							CYNG_LOG_INFO(logger_, "[NMS] server: listen failed ")
+							CYNG_LOG_INFO(logger_, "[NMS] server: going to sleep  " << sleep_interval_seconds << " seconds");
+							sleep(sleep_interval_seconds);
+							sleep_interval_seconds *= 2;
+							continue;
+					}
+					else{
+						already_listen= true;
+						CYNG_LOG_INFO(logger_, "[NMS] server: listen sucessful ")
+
+					}
+				}
+			}
+
+			if (already_listen){
 				do_accept();
 			}
 			else {
