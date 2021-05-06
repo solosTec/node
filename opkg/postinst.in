@@ -8,7 +8,6 @@ DATABASE_FILE="segw.database"
 NEW_VERSION_SHORT=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
 NEW_VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}.${${PROJECT_NAME}_VERSION_TWEAK}
 
-
 ####
 # Find the last installed version by checking the backups.
 # It is sufficient to do so, since the the old version is only required
@@ -32,7 +31,7 @@ get_last_backed_up_version()
 			# collect all directory names
 			if [ -d "${backup}" ]; then
 				# only append the line break if the variable is not empty
-				avail_backups="${avail_backups:+${avail_backups}\n}${backup}"
+				avail_backups="${avail_backups+${avail_backups}\n}${backup}"
 			fi
 		done
 		# this should never fail!
@@ -872,19 +871,11 @@ sync_backed_up_values()
 	# Update all settings that are done for multiple interfaces
 	# in this case the interface number is two
 	i=1; while [ $i -le 2 ]; do 
-		key_ids="broker_account:broker_address:broker_enabled:broker_login:broker_port:broker_pwd:broker_reconnect:serial_baudrate:serial_databits:serial_flowcontrol:serial_name:serial_parity:serial_stopbits:serial_type"
-		
-		# keep that colon at the end to not be stuck in an infinite loop!!
-		CDR="${key_ids}:"
-		while [ -n "$CDR" ]; do
-			# get the next keyid from the array
-			iterator_key_id=${CDR%%:*}
+		key_ids="broker_account broker_address broker_enabled broker_login broker_port broker_pwd broker_reconnect serial_baudrate serial_databits serial_flowcontrol serial_name serial_parity serial_stopbits serial_type"
+		for iterator_key_id in ${key_ids}; do 
 			# perform the update action for this key_id
 			sync_value_by_key_id "${app_version_old}" "${db_dump_file}" $i "${iterator_key_id}"
-			# modify CDR to point to the next 
-			CDR=${CDR#*:}
-		done; 
-		unset iterator_key_id CDR
+		done
 
 		# increase the counter for the second interface
 		i=$(( i +1 ))
@@ -893,19 +884,12 @@ sync_backed_up_values()
 	echo "[POST-INSTALL] ... start merging nms and meter settings and all other interface independent stuff ... "
 
 	# Update all settings that are individual of the multiple interfaces
-	key_ids="nms_address:nms_debug:nms_enabled:nms_port:nms_pwd:nms_scriptpath:nms_user:root_redirector_address:root_redirector_enabled:root_redirector_login:root_redirector_port:wired_meter_enabled:wired_meter_protocol:wireless_meter_enabled:blocklist_enabled:blocklist_mode:blocklist_period"
+	key_ids="nms_address nms_debug nms_enabled nms_port nms_pwd nms_scriptpath nms_user root_redirector_address root_redirector_enabled root_redirector_login root_redirector_port wired_meter_enabled wired_meter_protocol wireless_meter_enabled blocklist_enabled blocklist_mode blocklist_period"
 
-	# keep that colon at the end to not be stuck in an infinite loop!!
-	CDR="${key_ids}:"
-	while [ -n "$CDR" ]; do
-		# get the next keyid from the array
-		iterator_key_id=${CDR%%:*}
+	for iterator_key_id in ${key_ids}; do 
 		# perform the update action for this key_id
 		sync_value_by_key_id "${app_version_old}" "${db_dump_file}" 0 "${iterator_key_id}"
-		# modify CDR to point to the next 
-		CDR=${CDR#*:}
-	done; 
-	unset iterator_key_id CDR
+	done
 
 	echo "[POST-INSTALL] Completed parameter syncing."
 }
