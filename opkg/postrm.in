@@ -19,21 +19,43 @@ VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.$
 create_backups()
 {
     bkp_dir="$1"
+    mkdir -p "$bkp_dir"
 
-    echo "[PRE-RM] Performing non-volatile backups to $bkp_dir ..."
+    echo "[POST-RM] Performing backups to $bkp_dir ..."
 
     # double check if a backup can be performed, or if by another script or manual interference we expect errors here
     if [ -f "$SMF_DIR/$DATABASE_FILE" ]; then 
-        # create database dumps first and then move the database here as well
-        # For that we do not need to provide the configuration file, this works universally
+        # move the configuration files that will be regenerated during the installation
         mkdir -p "$bkp_dir"
-        /usr/local/sbin/segw -C/usr/local/etc/segw_v"$VERSION_SHORT".cfg -l > "$bkp_dir/database_dump.txt"
-        echo "[PRE-RM] ... dumped database contents"
+        mv $SMF_DIR/$DATABASE_FILE "$bkp_dir"
+        echo "[POST-RM] ... saved database"
     else
-        echo "[PRE-RM] ... There is not file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
+        echo "[POST-RM] ... There is not file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
     fi
 
-    echo "[PRE-RM] Backups done."
+    if [ -f "$SMF_DIR/segw_v$VERSION_SHORT.json" ]; then 
+        # create backups of the json independently of the installed versions
+        # old approach: use ls and grep to get the correct files
+        #   config_files=$(ls $SMF_DIR | grep json | grep -v bkp)
+        mkdir -p "$bkp_dir"
+        mv "$SMF_DIR/segw_v$VERSION_SHORT.json" "$bkp_dir"
+        echo "[POST-RM] ... saved $SMF_DIR/segw_v$VERSION_SHORT.json"
+    else 
+        echo "[POST-RM] ... There is not file $SMF_DIR/segw_v$VERSION_SHORT.json, skipping this backup step."
+    fi
+    
+    if [ -f "/usr/local/etc/segw_v$VERSION_SHORT.cfg" ]; then 
+        # create backups of the configurations independently of the installed versions
+        # old approach: use ls and grep to get the correct files
+        #   config_files=$(ls /usr/local/etc/ | grep cfg | grep -v bkp)
+        mkdir -p "$bkp_dir"
+        mv "/usr/local/etc/segw_v$VERSION_SHORT.cfg" "$bkp_dir"
+        echo "[POST-RM] ... saved /usr/local/etc/segw_v$VERSION_SHORT.cfg"
+    else 
+        echo "[POST-RM] ... There is not file /usr/local/etc/segw_v$VERSION_SHORT.cfg, skipping this backup step."
+    fi
+
+    echo "[POST-RM] Backups done."
     return 0
 }
 
@@ -63,7 +85,7 @@ main ()
     echo ""
     echo ""
     echo " ######################################################## "
-    echo " #        Performing Pre-Removal Steps ...              # "
+    echo " #        Performing Post-Removal Steps ...              # "
     echo " ######################################################## "
     echo ""
 
@@ -75,7 +97,7 @@ main ()
 
     echo ""
     echo " ######################################################## "
-    echo " #         Pre-Removal Steps Completed!                 # "
+    echo " #         Post-Removal Steps Completed!                 # "
     echo " ######################################################## "
     echo ""
 
