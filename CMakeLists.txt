@@ -806,12 +806,24 @@ if(${CMAKE_CROSSCOMPILING})
     message(STATUS "** cross compile project       : ${OECP_NAME}")
 
 	configure_file (
-		  "opkg/control.in"
-		  "${PROJECT_BINARY_DIR}/opkg/control")
+          "opkg/control.in"
+          "${PROJECT_BINARY_DIR}/opkg/control")
+
+    configure_file (
+          "opkg/preinst.in"
+          "${PROJECT_BINARY_DIR}/opkg/preinst")
 
 	configure_file (
-		  "opkg/postinst.in"
-		  "${PROJECT_BINARY_DIR}/opkg/postinst")
+          "opkg/postinst.in"
+          "${PROJECT_BINARY_DIR}/opkg/postinst")
+
+    configure_file (
+          "opkg/prerm.in"
+          "${PROJECT_BINARY_DIR}/opkg/prerm")
+
+    configure_file (
+          "opkg/postrm.in"
+          "${PROJECT_BINARY_DIR}/opkg/postrm")
 
 	configure_file (
 		  "opkg/rules.in"
