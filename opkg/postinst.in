@@ -35,9 +35,9 @@ get_last_backed_up_version()
 			fi
 		done
 		# this should never fail!
-		cd "$current_path" || echo "Can not change back to previous folder. Why not?"
+		cd "$current_path" || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
 	else 
-		echo "[POST-INSTALL] There is no such folder to check for backups: $BACKUP_DIR"
+		echo "[POST-INSTALL] ... There is no such folder to check for backups: $BACKUP_DIR"
 	fi
 
 	# calculate 
@@ -45,8 +45,8 @@ get_last_backed_up_version()
 	 	previous_version_short=$(echo "$previous_version_long" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
 	fi
 
-	echo "[POST-INSTALL] previous_version_long: $previous_version_long"
-	echo "[POST-INSTALL] previous_version_short: $previous_version_short"
+	echo "[POST-INSTALL] ... previous_version_long: $previous_version_long"
+	echo "[POST-INSTALL] ... previous_version_short: $previous_version_short"
 }
 
 ####
@@ -106,14 +106,14 @@ update_libs()
 			tmpfilename="/usr/lib/$(basename "$libfile")"
 			# create a symlink if it does not exist yet
 			if ! [ -f "$tmpfilename" ]; then
-				echo "[POST-INSTALL] ... linking $libfile to $tmpfilename ... " 
+				echo "[POST-INSTALL]    ... linking $libfile to $tmpfilename ... " 
 				ln -s "$libfile" "$tmpfilename"
 			fi
 		done
 		# this should never fail!
-		cd "$current_path" || echo "Can not change back to previous folder. Why not?"
+		cd "$current_path" || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
 	else 
-		echo "[POST-INSTALL] Can not access folder /usr/local/lib/"
+		echo "[POST-INSTALL] ... Can not access folder /usr/local/lib/"
 	fi
 
     echo "[POST-INSTALL] ... library updates done."
@@ -131,7 +131,7 @@ generate_configurations()
 
 	# Make sure that the correct number of parameters is passed along
 	if [ "$#" -ne 1 ]; then 
-		echo "[POST-INSTALL] Not enough parameters given. Please provide the backup_dir."
+		echo "[POST-INSTALL] ... Not enough parameters given. Please provide the backup_dir."
 		return 1
 	fi
 
@@ -141,7 +141,7 @@ generate_configurations()
 	if [ "$NEW_VERSION_SHORT" = "$previous_version_short" ] && [ -d "$backup_dir" ]; then
 		# echo we did back up a database, but in general the installed version is the same
 		# thus copy back the configurations we backed up and are done with it
-		echo "[POST-INSTALL] ... Major Version ($previous_version_short) did not change, restore configurations and database."
+		echo "[POST-INSTALL] ... Major Version ($previous_version_short) did not change, try to restore configurations and database."
 
 		# change to the backup directory or fail trying to do so
 		current_path=$(pwd)
@@ -153,18 +153,18 @@ generate_configurations()
 				if [ "$file" = "$DATABASE_FILE" ]; then 
 					echo "[POST-INSTALL] ... restoring database ..."
 					cp "$file" "$SMF_DIR"
-				elif [ "$(echo "$file" | greo json | grep -v bkp | sort | head n -1)" != "" ]; then
+				elif [ "$(echo "$file" | grep json | grep -v bkp | sort | head -n 1)" != "" ]; then
 					echo "[POST-INSTALL] ... restoring json configuration ..."
 					cp "$file" "$SMF_DIR"
-				elif [ "$(echo "$file" | grep cfg | grep -v bkp | sort | head n -1)" = "$DATABASE_FILE" ]; then 
+				elif [ "$(echo "$file" | grep cfg | grep -v bkp | sort | head -n 1)" = "$DATABASE_FILE" ]; then 
 					echo "[POST-INSTALL] ... restoring cfg configuration ..."
 					cp "$file" "usr/local/etc/"
 				fi
 			done
 			# change back to the previous dir, this should never fail!
-			cd "$current_path" || echo "Can not change back to previous folder. Why not?"
+			cd "$current_path" || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
 		else 
-			echo "[POST-INSTALL] Can not access folder $backup_dir"
+			echo "[POST-INSTALL] ... Can not access folder $backup_dir"
 		fi
 	fi	
 
@@ -173,6 +173,7 @@ generate_configurations()
 	if ! [ -f "$SMF_DIR/$DATABASE_FILE" ] || ! [ -f "$SMF_DIR/segw_v$NEW_VERSION_SHORT.json" ]; then
 		# there are not configurations yet, so we need to create them anyways
 		# or the major versions are too different, so we need to recreate them as well
+		echo "[POST-INSTALL] ... Did not find $SMF_DIR/$DATABASE_FILE or $SMF_DIR/segw_v$NEW_VERSION_SHORT.json, need to create configurations ..."
 		echo "[POST-INSTALL] ... Database and configurations need to be created ..."
 
 		# just to be sure remove the database and configurations before creating it 
@@ -192,7 +193,7 @@ generate_configurations()
 		$segw_cmd -T
 	fi
 
-	echo "[POST-INSTALL] Generate configurations and database is done."
+	echo "[POST-INSTALL] ... Generate configurations and database is done."
 	return 0
 }
 
@@ -846,11 +847,16 @@ sync_value_by_key_id()
 	# check if a migration is possible (which is not the case, if either of the keys is SKIP)
 	if [ "$key_old" != "SKIP" ] && [ "$key_new" != "SKIP" ]; then 
 		val=$( get_val_by_key_from_db_dump "$key_old" "$db_dump_file" )
-		val_type=$( get_datatype_by_key_id "$key_id" )
-		import_value "$key_new" "$val" "$val_type"
-		echo "[POST-INSTALL] ... imported: $key_new = $val (type: $val_type) ..."
+		# make sure that a value is set, to not import an empty value and possibly overwrite a good setting
+		if [ "$val" = "" ]; then 
+			echo "[POST-INSTALL]    ... skipped: $key_new, as its value is empty ..."
+		else 
+			val_type=$( get_datatype_by_key_id "$key_id" )
+			import_value "$key_new" "$val" "$val_type"
+			echo "[POST-INSTALL]    ... imported: $key_new = $val (type: $val_type) ..."
+		fi
 	else
-		echo "[POST-INSTALL] ... skipped: $key_new ..."
+		echo "[POST-INSTALL]    ... skipped: $key_new, as it is marked for skipping ..."
 	fi
 }
 
@@ -866,31 +872,36 @@ sync_backed_up_values()
 
 	echo "[POST-INSTALL] Start synching values from the backup ..."
 
-	echo "[POST-INSTALL] ... start merging broker and serial settings for all interfaces ... "
-	# Update all settings that are done for multiple interfaces
-	# in this case the interface number is two
-	i=1; while [ $i -le 2 ]; do 
-		key_ids="broker_account broker_address broker_enabled broker_login broker_port broker_pwd broker_reconnect serial_baudrate serial_databits serial_flowcontrol serial_name serial_parity serial_stopbits serial_type"
+	# only perform the sync if the file is present and its size is > 0
+	if [ -s "$db_dump_file" ]; then 
+		echo "[POST-INSTALL] ... start merging broker and serial settings for all interfaces ... "
+		# Update all settings that are done for multiple interfaces
+		# in this case the interface number is two
+		i=1; while [ $i -le 2 ]; do 
+			key_ids="broker_account broker_address broker_enabled broker_login broker_port broker_pwd broker_reconnect serial_baudrate serial_databits serial_flowcontrol serial_name serial_parity serial_stopbits serial_type"
+			for iterator_key_id in $key_ids; do 
+				# perform the update action for this key_id
+				sync_value_by_key_id "$app_version_old" "$db_dump_file" $i "$iterator_key_id"
+			done
+
+			# increase the counter for the second interface
+			i=$(( i +1 ))
+		done  
+
+		echo "[POST-INSTALL] ... start merging nms and meter settings and all other interface independent stuff ... "
+
+		# Update all settings that are individual of the multiple interfaces
+		key_ids="nms_address nms_debug nms_enabled nms_port nms_pwd nms_scriptpath nms_user root_redirector_address root_redirector_enabled root_redirector_login root_redirector_port wired_meter_enabled wired_meter_protocol wireless_meter_enabled blocklist_enabled blocklist_mode blocklist_period"
+
 		for iterator_key_id in $key_ids; do 
 			# perform the update action for this key_id
-			sync_value_by_key_id "$app_version_old" "$db_dump_file" $i "$iterator_key_id"
+			sync_value_by_key_id "$app_version_old" "$db_dump_file" 0 "$iterator_key_id"
 		done
-
-		# increase the counter for the second interface
-		i=$(( i +1 ))
-	done  
-
-	echo "[POST-INSTALL] ... start merging nms and meter settings and all other interface independent stuff ... "
-
-	# Update all settings that are individual of the multiple interfaces
-	key_ids="nms_address nms_debug nms_enabled nms_port nms_pwd nms_scriptpath nms_user root_redirector_address root_redirector_enabled root_redirector_login root_redirector_port wired_meter_enabled wired_meter_protocol wireless_meter_enabled blocklist_enabled blocklist_mode blocklist_period"
-
-	for iterator_key_id in $key_ids; do 
-		# perform the update action for this key_id
-		sync_value_by_key_id "$app_version_old" "$db_dump_file" 0 "$iterator_key_id"
-	done
-
-	echo "[POST-INSTALL] Completed parameter syncing."
+	else 
+		echo "[POST-INSTALL] ... Skip syncing, file $db_dump_file can not be found or is empty!"
+	fi
+	
+	echo "[POST-INSTALL] ... Completed parameter syncing."
 }
 
 ####
@@ -900,23 +911,31 @@ perform_update_actions()
 {
 	echo "[POST-INSTALL] Select appropriate update actions ..."
 
+	if [ $# -ne 1 ]; then 
+		echo "[POST-INSTALL] ... Missing backup_dir as first function parameter."
+		return 1
+	fi
+
+	backup_dir=$1
+
 	case "$previous_version_short" in 
 	*0.8*)
 		# perform updates
-		echo "[POST-INSTALL] Update actions 0.8 -> $NEW_VERSION_SHORT selected ..."
+		echo "[POST-INSTALL] ... Update actions 0.8 -> $NEW_VERSION_SHORT selected ..."
 		sync_backed_up_values "0.8" "$backup_dir/database_dump.txt"
 		;;
 	*0.9*)
 		# atm there are no known update procedures required for 0.9 to a newer version
-		echo "[POST-INSTALL] Update actions 0.9 -> $NEW_VERSION_SHORT selected ..."
+		echo "[POST-INSTALL] ... Update actions 0.9 -> $NEW_VERSION_SHORT selected ..."
+		echo "[POST-INSTALL]    ... currently not actions required ..."
 		;;
 	*)
 		# add new cases for future versions here
-		echo "[POST-INSTALL] Update actions for this version ($previous_version_short) have not been defined yet."
+		echo "[POST-INSTALL] ... Update actions for this version ($previous_version_short) have not been defined yet."
 		;;
 	esac
 
-	echo "[POST-INSTALL] Update actions completed."
+	echo "[POST-INSTALL] ... Update actions completed."
 }
 
 ####
@@ -932,25 +951,25 @@ remove_previous_installations()
 		*0.8*)
 			# at last remove the old version by tricking opkg as if not such process was running
 			# TODO: make sure that /usr/local/sbin/segw does not get removed or backup before
-			echo "[POST-INSTALL] Removing previous 0.8.X based node installation."
-			echo "[POST-INSTALL] ... Removing opkg lock to be able to trigger OPKG from inside another OPKG process"
+			echo "[POST-INSTALL] ... Removing previous 0.8.X based node installation."
+			echo "[POST-INSTALL]    ... Removing opkg lock to be able to trigger OPKG from inside another OPKG process"
 			rm /var/lock/opkg.lock
-			echo "[POST-INSTALL] ... Removing old node application"
+			echo "[POST-INSTALL]    ... Removing old node application"
 			opkg remove node
-			echo "[POST-INSTALL] ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
+			echo "[POST-INSTALL]    ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
 			touch /var/lock/opkg.lock
 			;;
 
 		*0.9*)
 			# atm there is no version that would require removal of a 0.9 based tool
-			echo "[POST-INSTALL] No need to remove previous 0.9-based installations."
+			echo "[POST-INSTALL] ... No need to remove previous 0.9-based installations."
 		;;
 		*)
 			# do not do any thing
-			echo "[POST-INSTALL] Unhandled version ($previous_version_short), skip removal stage."
+			echo "[POST-INSTALL] ... Unhandled version ($previous_version_short), skip removal stage."
 	esac
 
-	echo "[POST-INSTALL] Application removal checks done."
+	echo "[POST-INSTALL] ... Application removal completed"
 	return 0
 }
 
@@ -987,7 +1006,7 @@ main()
 
 	if [ "$previous_version_long" != "" ]; then 
 		# perform the updates on merging the data
-		perform_update_actions
+		perform_update_actions "$backup_dir"
 
 		# remove the node package, if the previous version was 0.8
 		remove_previous_installations
