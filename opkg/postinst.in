@@ -19,7 +19,8 @@ NEW_VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINO
 get_last_backed_up_version()
 {
 	echo "[POST-INSTALL] Getting previously installed version by checking backups ..."
-	avail_backups=""
+	previous_version_long=""
+	previous_version_short=""
 	cd_failed=0
 
 	# change to the backup directory or fail trying to do so
@@ -30,14 +31,7 @@ get_last_backed_up_version()
 		for backup in *; do
 			# collect all directory names
 			if [ -d "$backup" ]; then
-				# only append the line break if the variable is not empty
-				# old approach, which does not work because of CMAKE:
-				# avail_backups="${avail_backups+${avail_backups}\n}${backup}"
-				if [ "$avail_backups" = "" ]; then
-					avail_backups="$backup\n"
-				else 
-					avail_backups="$avail_backups\n$backup"
-				fi
+				previous_version_long=$(printf "$backup\n$previous_version_long" | sort -r | head -n 1)
 			fi
 		done
 		# this should never fail!
@@ -46,10 +40,9 @@ get_last_backed_up_version()
 		echo "[POST-INSTALL] There is no such folder to check for backups: $BACKUP_DIR"
 	fi
 
-	# get the latest backup, since this is the previously installed version that can be checked
-	previous_version_long=$(echo "$avail_backups" | sort -r | head -n 1)
+	# calculate 
 	if [ "$previous_version_long" != "" ]; then 
-		previous_version_short=$(echo "$previous_version_long" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
+	 	previous_version_short=$(echo "$previous_version_long" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
 	fi
 
 	echo "[POST-INSTALL] previous_version_long: $previous_version_long"
