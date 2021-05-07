@@ -21,9 +21,9 @@ get_last_backed_up_version()
 	echo "[POST-INSTALL] Calculate previously installed version by checking backups ..."
 	previous_version_long=""
 	previous_version_short=""
-	cd_failed=0
 
 	# change to the backup directory or fail trying to do so
+	cd_failed=0
 	current_path=$(pwd)
 	cd "$BACKUP_DIR" >/dev/null 2>&1 || cd_failed=1
 
@@ -108,6 +108,7 @@ update_libs()
 	echo "[POST-INSTALL] ... create lib links in /usr/lib/ /usr/local/lib/ ... "
 
 	# change to the backup directory or fail trying to do so
+	cd_failed=0
 	current_path=$(pwd)
 	cd "/usr/local/lib/" >/dev/null 2>&1 || cd_failed=1
 
@@ -156,6 +157,7 @@ generate_configurations()
 		echo "[POST-INSTALL] ... Major Version ($previous_version_short) did not change, try to restore configurations and database."
 
 		# change to the backup directory or fail trying to do so
+		cd_failed=0
 		current_path=$(pwd)
 		cd "$backup_dir" >/dev/null 2>&1 || cd_failed=1
 
@@ -192,6 +194,7 @@ generate_configurations()
 
 		#make sure that the directory exists (should be create in preinst anyways, but just to be sure)
 		mkdir -p "$SMF_DIR"
+		cd_failed=0
 		cd "$SMF_DIR" >/dev/null 2>&1 || cd_failed=1
 
 		if [ $cd_failed -ne 1 ]; then 
