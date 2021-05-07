@@ -18,19 +18,25 @@ get_installed_versions_from_opkg()
     rm /var/lock/opkg.lock
     echo "[PRE-INSTALL] ... Readout application information"
     # we can not use a precompiled version here, since we do not know what is possible installed beforehands
-    complete_version=$(opkg list | grep 'smf\|node' | awk '{print $3}')
-    echo "[PRE-INSTALL] ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
-    touch /var/lock/opkg.lock
+    segw_versions=$(opkg list | grep 'smf\|node')
+    complete_version=$(echo "$segw_versions" | awk '{print $3}')
 
     # check if a version was installed. If not, the read out version is empty
     if [ "$complete_version" != "" ]; then 
         trimmed_version=$(echo "$complete_version" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
+
+        #echo "[PRE-INSTALL]    ... all installed segw_tools: $segw_versions"
+        echo "[PRE-INSTALL]    ... currently installed (long): $complete_version"
+        echo "[PRE-INSTALL]    ... currently installed (short): $trimmed_version"
     else
-        trimmed_version=""
+        trimmed_version="[PRE-INSTALL]    ... currently there is no installed version of node/smf"
     fi
 
-    echo "[PRE-INSTALL] ... complete version: $complete_version"
-    echo "[PRE-INSTALL] ... trimmed_version: $trimmed_version"
+    echo "[PRE-INSTALL] ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
+    touch /var/lock/opkg.lock
+
+    echo "[PRE-INSTALL] ... Readout installed version: done"
+
     return 0
 }
 
@@ -124,7 +130,7 @@ main ()
 
     # stop running instances to move configurations
     # also a name change in the IPK will still produce the same segw-tool
-    systemctl stop segw
+    systemctl stop segw >/dev/null 2>&1
 
     # create the install dir, if it is not present yet
     mkdir -p "$SMF_DIR"
@@ -133,6 +139,8 @@ main ()
     # only skip this, if no version at all is intalled at the moment
     if [ "$trimmed_version" != "" ]; then 
         create_backups "$SMF_DIR/backups/$complete_version"
+    else 
+        echo "[PRE-INSTALL] No version currently installed, skip backup creation."    
     fi
 
     echo ""

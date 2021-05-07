@@ -44,19 +44,22 @@ get_last_backed_up_version()
 				fi
 			fi
 		done
+
+		# calculate 
+		if [ "$previous_version_long" != "" ]; then 
+			previous_version_short=$(echo "$previous_version_long" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
+
+			echo "[POST-INSTALL] ... old version (long version string): $previous_version_long"
+			echo "[POST-INSTALL] ... old version (short version string): $previous_version_short"
+		else 
+			echo "[POST-INSTALL] ... no preinstalled version with backup files."
+		fi
+
 		# this should never fail!
 		cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
 	else 
-		echo "[POST-INSTALL] ... There is no such folder to check for backups: $BACKUP_DIR"
+		echo "[POST-INSTALL] ... There is no backup folder of a previous version, assuming fresh install."
 	fi
-
-	# calculate 
-	if [ "$previous_version_long" != "" ]; then 
-	 	previous_version_short=$(echo "$previous_version_long" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
-	fi
-
-	echo "[POST-INSTALL] ... previous_version_long: $previous_version_long"
-	echo "[POST-INSTALL] ... previous_version_short: $previous_version_short"
 }
 
 ####
@@ -140,7 +143,7 @@ update_libs()
 ####
 generate_configurations()
 {
-	echo "[POST-INSTALL] Generate configurations and database ..."
+	echo "[POST-INSTALL] Get configurations and database ..."
 
 	# Make sure that the correct number of parameters is passed along
 	if [ "$#" -ne 1 ]; then 
@@ -154,10 +157,11 @@ generate_configurations()
 	if [ "$NEW_VERSION_SHORT" = "$previous_version_short" ] && [ -d "$backup_dir" ]; then
 		# echo we did back up a database, but in general the installed version is the same
 		# thus copy back the configurations we backed up and are done with it
-		echo "[POST-INSTALL] ... Major Version ($previous_version_short) did not change, try to restore configurations and database."
+		echo "[POST-INSTALL] ... Major Version ($previous_version_short) did not change, try to restore configurations and database ..."
 
 		# change to the backup directory or fail trying to do so
 		cd_failed=0
+		restore_ok=0
 		current_path=$(pwd)
 		cd "$backup_dir" >/dev/null 2>&1 || cd_failed=1
 
@@ -165,16 +169,27 @@ generate_configurations()
 			for file in *; do
 
 				if [ "$file" = "$DATABASE_FILE" ]; then 
-					echo "[POST-INSTALL] ... restoring database ..."
+					echo "[POST-INSTALL]    ... restoring database ..."
 					cp "$file" "$SMF_DIR"
+					restore_ok=$(( restore_ok + 1 ))
 				elif [ "$(echo "$file" | grep json | grep -v bkp | sort | head -n 1)" != "" ]; then
-					echo "[POST-INSTALL] ... restoring json configuration ..."
+					echo "[POST-INSTALL]    ... restoring json configuration ..."
 					cp "$file" "$SMF_DIR"
+					restore_ok=$(( restore_ok + 1 ))
 				elif [ "$(echo "$file" | grep cfg | grep -v bkp | sort | head -n 1)" = "$DATABASE_FILE" ]; then 
-					echo "[POST-INSTALL] ... restoring cfg configuration ..."
+					echo "[POST-INSTALL]    ... restoring cfg configuration ..."
 					cp "$file" "/usr/local/etc/"
+					restore_ok=$(( restore_ok + 1 ))
 				fi
 			done
+
+			# restore ok muist have the value 3, if all 3 files could be backed up
+			if [ $restore_ok -eq 3 ]; then 
+				echo "[POST-INSTALL]    ... restore process succesful."
+			else 
+				echo "[POST-INSTALL]    ... restore process failed, recreate configurations."
+			fi
+
 			# change back to the previous dir, this should never fail!
 			cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
 		else 
@@ -850,8 +865,7 @@ import_value()
 	value=$2
 	datatype=$3
 
-	/usr/local/etc/segw --set-val "$key" "$value" "$datatype"
-	return 0
+	/usr/local/sbin/segw --set-val "$key" "$value" "$datatype" >/dev/null 2>&1
 }
 
 ####
@@ -873,19 +887,27 @@ sync_value_by_key_id()
 	key_old=$( get_key_string_by_key_id "$app_version_old" "$interface_num" "$key_id")
 	key_new=$( get_key_string_by_key_id "$NEW_VERSION_SHORT" "$interface_num" "$key_id")
 
-	# check if a migration is possible (which is not the case, if either of the keys is SKIP)
-	if [ "$key_old" != "SKIP" ] && [ "$key_new" != "SKIP" ]; then 
+	echo "[POST-INSTALL]    ... key id: $key_id ..."
+	echo "[POST-INSTALL]    ... key old: $key_old ..."
+	echo "[POST-INSTALL]    ... key new: $key_new ..."
+
+	# check if a migration is possible (which is not the case, if either of the keys is SKIP, UNKNOWN or empty)
+	if [ "$key_old" = "SKIP" ] || [ "$key_new" = "SKIP" ]; then 
+		echo "[POST-INSTALL]    ... skipped: $key_id, as it is marked for skipping ..."
+	elif [ "$key_old" = "UNKNOWN" ] || [ "$key_new" = "UNKNOWN" ]; then	
+		echo "[POST-INSTALL]    ... skipped: $key_id, as it is marked as unknown ..."
+	elif [ -z "$key_old" ] || [ -z "$key_new" ]; then 
+		echo "[POST-INSTALL]    ... skipped: $key_id, as it could not be found and is empty ..."
+	else
 		val=$( get_val_by_key_from_db_dump "$key_old" "$db_dump_file" )
 		# make sure that a value is set, to not import an empty value and possibly overwrite a good setting
 		if [ "$val" = "" ]; then 
-			echo "[POST-INSTALL]    ... skipped: $key_new, as its value is empty ..."
+			echo "[POST-INSTALL]    ... skipped: $key_id, as its value is empty ..."
 		else 
 			val_type=$( get_datatype_by_key_id "$key_id" )
 			import_value "$key_new" "$val" "$val_type"
 			echo "[POST-INSTALL]    ... imported: $key_new = $val (type: $val_type) ..."
 		fi
-	else
-		echo "[POST-INSTALL]    ... skipped: $key_new, as it is marked for skipping ..."
 	fi
 }
 
@@ -903,28 +925,27 @@ sync_backed_up_values()
 
 	# only perform the sync if the file is present and its size is > 0
 	if [ -s "$db_dump_file" ]; then 
-		echo "[POST-INSTALL] ... start merging broker and serial settings for all interfaces ... "
+		echo "[POST-INSTALL] ... start importing interface specific settings ... "
 		# Update all settings that are done for multiple interfaces
 		# in this case the interface number is two
 		i=1; while [ $i -le 2 ]; do 
 			key_ids="broker_account broker_address broker_enabled broker_login broker_port broker_pwd broker_reconnect serial_baudrate serial_databits serial_flowcontrol serial_name serial_parity serial_stopbits serial_type"
 			for iterator_key_id in $key_ids; do 
 				# perform the update action for this key_id
-				sync_value_by_key_id "$app_version_old" "$db_dump_file" $i "$iterator_key_id"
+				sync_value_by_key_id "$app_version_old" "$db_dump_file" "$iterator_key_id" $i
 			done
 
 			# increase the counter for the second interface
 			i=$(( i +1 ))
 		done  
 
-		echo "[POST-INSTALL] ... start merging nms and meter settings and all other interface independent stuff ... "
+		echo "[POST-INSTALL] ... start importing interface-independent specific settings ... "
 
 		# Update all settings that are individual of the multiple interfaces
 		key_ids="nms_address nms_debug nms_enabled nms_port nms_pwd nms_scriptpath nms_user root_redirector_address root_redirector_enabled root_redirector_login root_redirector_port wired_meter_enabled wired_meter_protocol wireless_meter_enabled blocklist_enabled blocklist_mode blocklist_period"
-
 		for iterator_key_id in $key_ids; do 
 			# perform the update action for this key_id
-			sync_value_by_key_id "$app_version_old" "$db_dump_file" 0 "$iterator_key_id"
+			sync_value_by_key_id "$app_version_old" "$db_dump_file" "$iterator_key_id" 0
 		done
 	else 
 		echo "[POST-INSTALL] ... Skip syncing, file $db_dump_file can not be found or is empty!"
