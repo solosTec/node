@@ -18,7 +18,7 @@ NEW_VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINO
 ####
 get_last_backed_up_version()
 {
-	echo "[POST-INSTALL] Getting previously installed version by checking backups ..."
+	echo "[POST-INSTALL] Calculate previously installed version by checking backups ..."
 	previous_version_long=""
 	previous_version_short=""
 	cd_failed=0
@@ -31,7 +31,17 @@ get_last_backed_up_version()
 		for backup in *; do
 			# collect all directory names
 			if [ -d "$backup" ]; then
-				previous_version_long=$(printf "$backup\n$previous_version_long" | sort -r | head -n 1)
+				echo "[POST-INSTALL] ... checking backup folder $backup ..."
+				# count the files within this folder and inore empty dirs
+				num_elements_in_backup_dir=$(find "$backup" -type f | wc -l)
+				if [ $num_elements_in_backup_dir -eq 0 ]; then 
+					# there is no content within the folder, so it is not a valid backup folder
+					echo "[POST-INSTALL]    ... $backup is empty, ignore ..."
+				else 
+					# identify which of both (directory name, stored version) is greater an keep only this
+					# version then gets checked again in the next iteration
+					previous_version_long=$(printf "$backup\n$previous_version_long" | sort -r | head -n 1)
+				fi
 			fi
 		done
 		# this should never fail!
@@ -102,6 +112,7 @@ update_libs()
 	cd "/usr/local/lib/" || cd_failed=1
 
 	if [ $cd_failed -ne 1 ]; then 
+		# make sure to keep the * after the so, so that both the lib with a version and the generic name will get linked
 		for libfile in *.so*; do
 			tmpfilename="/usr/lib/$(basename "$libfile")"
 			# create a symlink if it does not exist yet
