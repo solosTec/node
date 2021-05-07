@@ -126,6 +126,9 @@ main ()
     # also a name change in the IPK will still produce the same segw-tool
     systemctl stop segw
 
+    # create the install dir, if it is not present yet
+    mkdir -p "$SMF_DIR"
+
     # anyways, backups shall be created before every installation anyways
     # only skip this, if no version at all is intalled at the moment
     if [ "$trimmed_version" != "" ]; then 
