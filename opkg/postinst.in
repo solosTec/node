@@ -206,13 +206,13 @@ generate_configurations()
 			rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
 
 			echo "[POST-INSTALL] ... Creating default configuations"
-			/usr/local/sbin/segw -D
+			/usr/local/sbin/segw -D >/dev/null 2>&1
 
 			echo "[POST-INSTALL] ... Initialize database"
-			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -I
+			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -I >/dev/null 2>&1
 
 			echo "[POST-INSTALL] ... Load default configuration into the database"
-			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -T
+			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -T >/dev/null 2>&1
 
 			# change back to the previous dir, this should never fail!
 			cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
