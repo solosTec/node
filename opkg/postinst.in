@@ -169,7 +169,7 @@ generate_configurations()
 					cp "$file" "$SMF_DIR"
 				elif [ "$(echo "$file" | grep cfg | grep -v bkp | sort | head -n 1)" = "$DATABASE_FILE" ]; then 
 					echo "[POST-INSTALL] ... restoring cfg configuration ..."
-					cp "$file" "usr/local/etc/"
+					cp "$file" "/usr/local/etc/"
 				fi
 			done
 			# change back to the previous dir, this should never fail!
