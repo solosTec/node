@@ -46,14 +46,13 @@ get_installed_versions_from_opkg()
 create_backups()
 {
     bkp_dir="$1"
-    mkdir -p "$bkp_dir"
-
-    echo "[PRE-INSTALL] Performing backups to $bkp_dir ..."
+    echo "[PRE-INSTALL] Try to create backups and store them in $bkp_dir ..."
 
     # double check if a backup can be performed, or if by another script or manual interference we expect errors here
     if [ -f "$SMF_DIR/$DATABASE_FILE" ]; then 
         # create database dumps first and then move the database here as well
         # For that we do not need to provide the configuration file, this works universally
+        mkdir -p "$bkp_dir"
         /usr/local/sbin/segw -C/usr/local/etc/segw_v"$trimmed_version".cfg -l > "$bkp_dir/database_dump.txt"
         echo "[PRE-INSTALL] ... dumped database contents"
 
@@ -61,30 +60,32 @@ create_backups()
         mv $SMF_DIR/$DATABASE_FILE "$bkp_dir"
         echo "[PRE-INSTALL] ... saved database"
     else
-        echo "[PRE-INSTALL] ... There is not file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
+        echo "[PRE-INSTALL] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
     fi
 
     if [ -f "$SMF_DIR/segw_v$trimmed_version.json" ]; then 
         # create backups of the json independently of the installed versions
         # old approach: use ls and grep to get the correct files
         #   config_files=$(ls $SMF_DIR | grep json | grep -v bkp)
+        mkdir -p "$bkp_dir"
         mv "$SMF_DIR/segw_v$trimmed_version.json" "$bkp_dir"
         echo "[PRE-INSTALL] ... saved $SMF_DIR/segw_v$trimmed_version.json"
     else 
-        echo "[PRE-INSTALL] ... There is not file $SMF_DIR/segw_v$trimmed_version.json, skipping this backup step."
+        echo "[PRE-INSTALL] ... There is no such file $SMF_DIR/segw_v$trimmed_version.json, skipping this backup step."
     fi
     
     if [ -f "/usr/local/etc/segw_v$trimmed_version.cfg" ]; then 
         # create backups of the configurations independently of the installed versions
         # old approach: use ls and grep to get the correct files
         #   config_files=$(ls /usr/local/etc/ | grep cfg | grep -v bkp)
+        mkdir -p "$bkp_dir"
         mv "/usr/local/etc/segw_v$trimmed_version.cfg" "$bkp_dir"
         echo "[PRE-INSTALL] ... saved /usr/local/etc/segw_v$trimmed_version.cfg"
     else 
-        echo "[PRE-INSTALL] ... There is not file /usr/local/etc/segw_v$trimmed_version.cfg, skipping this backup step."
+        echo "[PRE-INSTALL] ... There is no such file /usr/local/etc/segw_v$trimmed_version.cfg, skipping this backup step."
     fi
 
-    echo "[PRE-INSTALL] Backups done."
+    echo "[PRE-INSTALL] ... Backup steps completed."
     return 0
 }
 
@@ -128,8 +129,7 @@ main ()
     # anyways, backups shall be created before every installation anyways
     # only skip this, if no version at all is intalled at the moment
     if [ "$trimmed_version" != "" ]; then 
-        backup_dir="$SMF_DIR/backups/$complete_version"
-        create_backups "$backup_dir"
+        create_backups "$SMF_DIR/backups/$complete_version"
     fi
 
     echo ""
