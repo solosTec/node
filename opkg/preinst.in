@@ -128,31 +128,31 @@ create_backups()
 ####
 remove_previous_installations()
 {
-	echo "[POST-INSTALL] Checking, if previous application versions need manual removal ..."
+	echo "[PRE-INSTALL] Checking, if previous application versions need manual removal ..."
 
 	case "$trimmed_version" in 
 		*0.8*)
 			# at last remove the old version by tricking opkg as if not such process was running
-			echo "[POST-INSTALL] ... Removing previous 0.8.X based node installation."
-			echo "[POST-INSTALL]    ... Removing opkg lock to be able to trigger OPKG from inside another OPKG process"
+			echo "[PRE-INSTALL] ... Removing previous 0.8.X based node installation."
+			echo "[PRE-INSTALL]    ... Removing opkg lock to be able to trigger OPKG from inside another OPKG process"
 			rm /var/lock/opkg.lock
-			echo "[POST-INSTALL]    ... Removing old node application"
+			echo "[PRE-INSTALL]    ... Removing old node application"
 			opkg remove node
             sleep 2
-			echo "[POST-INSTALL]    ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
+			echo "[PRE-INSTALL]    ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
 			touch /var/lock/opkg.lock
 			;;
 
 		*0.9*)
 			# atm there is no version that would require removal of a 0.9 based tool
-			echo "[POST-INSTALL] ... No need to remove previous 0.9-based installations."
+			echo "[PRE-INSTALL] ... No need to remove previous 0.9-based installations."
 		;;
 		*)
 			# do not do any thing
-			echo "[POST-INSTALL] ... Unhandled version ($trimmed_version), skip removal stage."
+			echo "[PRE-INSTALL] ... Unhandled version ($trimmed_version), skip removal stage."
 	esac
 
-	echo "[POST-INSTALL] ... Application removal completed"
+	echo "[PRE-INSTALL] ... Application removal completed"
 	return 0
 }
 
