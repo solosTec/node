@@ -29,13 +29,14 @@ get_installed_versions_from_opkg()
         echo "[PRE-INSTALL]    ... currently installed (long): $complete_version"
         echo "[PRE-INSTALL]    ... currently installed (short): $trimmed_version"
     else
-        trimmed_version="[PRE-INSTALL]    ... currently there is no installed version of node/smf"
+        trimmed_version=""
+        echo "[PRE-INSTALL]    ... currently there is no installed version of node/smf"
     fi
 
     echo "[PRE-INSTALL] ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
     touch /var/lock/opkg.lock
 
-    echo "[PRE-INSTALL] ... Readout installed version: done"
+    echo "[PRE-INSTALL] ... Readout installed version done"
 
     return 0
 }
@@ -52,6 +53,7 @@ get_installed_versions_from_opkg()
 create_backups()
 {
     bkp_dir="$1"
+    backup_failed_times=0
     echo "[PRE-INSTALL] Try to create backups and store them in $bkp_dir ..."
 
     # double check if a backup can be performed, or if by another script or manual interference we expect errors here
@@ -59,14 +61,25 @@ create_backups()
         # create database dumps first and then move the database here as well
         # For that we do not need to provide the configuration file, this works universally
         mkdir -p "$bkp_dir"
-        /usr/local/sbin/segw -C/usr/local/etc/segw_v"$trimmed_version".cfg -l > "$bkp_dir/database_dump.txt"
-        echo "[PRE-INSTALL] ... dumped database contents"
+        cmd_output=$(/usr/local/sbin/segw -C/usr/local/etc/segw_v"$trimmed_version".cfg -l > "$bkp_dir/database_dump.txt")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] ... dumped database contents successfully"
+        else
+            echo "[PRE-INSTALL] ... database dump creation failed for error: $cmd_output"
+            backup_failed_times=$(( backup_failed_times + 1 ))
+        fi
 
         # move the configuration files that will be regenerated during the installation
-        mv $SMF_DIR/$DATABASE_FILE "$bkp_dir"
-        echo "[PRE-INSTALL] ... saved database"
+        cmd_output=$(mv $SMF_DIR/$DATABASE_FILE "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] ... saved database successfully"
+        else
+            echo "[PRE-INSTALL] ... database save failed for error: $cmd_output"
+            backup_failed_times=$(( backup_failed_times + 1 ))
+        fi
     else
         echo "[PRE-INSTALL] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
+        backup_failed_times=$(( backup_failed_times + 1 ))
     fi
 
     if [ -f "$SMF_DIR/segw_v$trimmed_version.json" ]; then 
@@ -74,10 +87,17 @@ create_backups()
         # old approach: use ls and grep to get the correct files
         #   config_files=$(ls $SMF_DIR | grep json | grep -v bkp)
         mkdir -p "$bkp_dir"
-        mv "$SMF_DIR/segw_v$trimmed_version.json" "$bkp_dir"
-        echo "[PRE-INSTALL] ... saved $SMF_DIR/segw_v$trimmed_version.json"
+
+        cmd_output=$(mv "$SMF_DIR/segw_v$trimmed_version.json" "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] ... saved $SMF_DIR/segw_v$trimmed_version.json sucessfully"
+        else
+            echo "[PRE-INSTALL] ... saving $SMF_DIR/segw_v$trimmed_version.json failed for error: $cmd_output"
+            backup_failed_times=$(( backup_failed_times + 1 ))
+        fi
     else 
         echo "[PRE-INSTALL] ... There is no such file $SMF_DIR/segw_v$trimmed_version.json, skipping this backup step."
+        backup_failed_times=$(( backup_failed_times + 1 ))
     fi
     
     if [ -f "/usr/local/etc/segw_v$trimmed_version.cfg" ]; then 
@@ -85,14 +105,55 @@ create_backups()
         # old approach: use ls and grep to get the correct files
         #   config_files=$(ls /usr/local/etc/ | grep cfg | grep -v bkp)
         mkdir -p "$bkp_dir"
-        mv "/usr/local/etc/segw_v$trimmed_version.cfg" "$bkp_dir"
-        echo "[PRE-INSTALL] ... saved /usr/local/etc/segw_v$trimmed_version.cfg"
+        cmd_output=$(mv "/usr/local/etc/segw_v$trimmed_version.cfg" "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] ... saved /usr/local/etc/segw_v$trimmed_version.cfg successfully"
+        else
+            echo "[PRE-INSTALL] ... saving /usr/local/etc/segw_v$trimmed_version.cfg failed for reason: $cmd_output"
+            backup_failed_times=$(( backup_failed_times + 1 ))
+        fi
     else 
         echo "[PRE-INSTALL] ... There is no such file /usr/local/etc/segw_v$trimmed_version.cfg, skipping this backup step."
+        backup_failed_times=$(( backup_failed_times + 1 ))
     fi
 
     echo "[PRE-INSTALL] ... Backup steps completed."
-    return 0
+    return $backup_failed_times
+}
+
+####
+# Depending on the version the name of the application might have changed.
+# This would lead to two applications being installed simultaneously, which is not
+# advised.
+####
+remove_previous_installations()
+{
+	echo "[POST-INSTALL] Checking, if previous application versions need manual removal ..."
+
+	case "$trimmed_version" in 
+		*0.8*)
+			# at last remove the old version by tricking opkg as if not such process was running
+			echo "[POST-INSTALL] ... Removing previous 0.8.X based node installation."
+			echo "[POST-INSTALL]    ... Removing opkg lock to be able to trigger OPKG from inside another OPKG process"
+			rm /var/lock/opkg.lock
+			echo "[POST-INSTALL]    ... Removing old node application"
+			opkg remove node
+            sleep 2
+			echo "[POST-INSTALL]    ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
+			touch /var/lock/opkg.lock
+			;;
+
+		*0.9*)
+			# atm there is no version that would require removal of a 0.9 based tool
+			echo "[POST-INSTALL] ... No need to remove previous 0.9-based installations."
+		;;
+		*)
+			# do not do any thing
+			echo "[POST-INSTALL] ... Unhandled version ($trimmed_version), skip removal stage."
+	esac
+
+	echo "[POST-INSTALL] ... Application removal completed"
+	return 0
 }
 
 ####
@@ -128,10 +189,6 @@ main ()
     # see with which versions of the installed tools we are working
     get_installed_versions_from_opkg
 
-    # stop running instances to move configurations
-    # also a name change in the IPK will still produce the same segw-tool
-    systemctl stop segw >/dev/null 2>&1
-
     # create the install dir, if it is not present yet
     mkdir -p "$SMF_DIR"
 
@@ -139,6 +196,13 @@ main ()
     # only skip this, if no version at all is intalled at the moment
     if [ "$trimmed_version" != "" ]; then 
         create_backups "$SMF_DIR/backups/$complete_version"
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] Backups created successfull, check if application needs to be removed"
+            # remove the node package, if the previous version was 0.8
+		    remove_previous_installations
+        else 
+            echo "[PRE-INSTALL] Backup failed, thus skip removal step."
+        fi
     else 
         echo "[PRE-INSTALL] No version currently installed, skip backup creation."    
     fi
@@ -152,5 +216,5 @@ main ()
     return 0
 }
 
-# This is the only function call, all worflow and logic is done from within main function
+# This is the only function call, all workflow and logic is done from within main function
 main
