@@ -107,7 +107,7 @@ update_libs()
 			# create a symlink if it does not exist yet
 			if ! [ -f "$tmpfilename" ]; then
 				echo "[POST-INSTALL]    ... linking $libfile to $tmpfilename ... " 
-				ln -s "$libfile" "$tmpfilename"
+				ln -s "/usr/local/lib/$libfile" "$tmpfilename"
 			fi
 		done
 		# this should never fail!
