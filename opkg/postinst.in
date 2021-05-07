@@ -103,10 +103,10 @@ update_libs()
 
 	if [ $cd_failed -ne 1 ]; then 
 		for libfile in *.so; do
-			tmpfilename=/usr/lib/$(basename "$libfile")
+			tmpfilename="/usr/lib/$(basename "$libfile")"
 			# create a symlink if it does not exist yet
 			if ! [ -f "$tmpfilename" ]; then
-				echo " ... linking $libfile ... " 
+				echo "[POST-INSTALL] ... linking $libfile to $tmpfilename ... " 
 				ln -s "$libfile" "$tmpfilename"
 			fi
 		done
