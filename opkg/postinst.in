@@ -102,7 +102,7 @@ update_libs()
 	cd "/usr/local/lib/" || cd_failed=1
 
 	if [ $cd_failed -ne 1 ]; then 
-		for libfile in *.so; do
+		for libfile in *.so*; do
 			tmpfilename="/usr/lib/$(basename "$libfile")"
 			# create a symlink if it does not exist yet
 			if ! [ -f "$tmpfilename" ]; then
