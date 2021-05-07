@@ -25,7 +25,7 @@ get_last_backed_up_version()
 
 	# change to the backup directory or fail trying to do so
 	current_path=$(pwd)
-	cd "$BACKUP_DIR" || cd_failed=1
+	cd "$BACKUP_DIR" >/dev/null 2>&1 || cd_failed=1
 
 	if [ $cd_failed -ne 1 ]; then 
 		for backup in *; do
@@ -45,7 +45,7 @@ get_last_backed_up_version()
 			fi
 		done
 		# this should never fail!
-		cd "$current_path" || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
+		cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
 	else 
 		echo "[POST-INSTALL] ... There is no such folder to check for backups: $BACKUP_DIR"
 	fi
@@ -109,7 +109,7 @@ update_libs()
 
 	# change to the backup directory or fail trying to do so
 	current_path=$(pwd)
-	cd "/usr/local/lib/" || cd_failed=1
+	cd "/usr/local/lib/" >/dev/null 2>&1 || cd_failed=1
 
 	if [ $cd_failed -ne 1 ]; then 
 		# make sure to keep the * after the so, so that both the lib with a version and the generic name will get linked
@@ -122,9 +122,10 @@ update_libs()
 			fi
 		done
 		# this should never fail!
-		cd "$current_path" || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
+		cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
 	else 
-		echo "[POST-INSTALL] ... Can not access folder /usr/local/lib/"
+		echo "[POST-INSTALL] ... Can not access folder /usr/local/lib/. Fatal Error!"
+		exit 1
 	fi
 
     echo "[POST-INSTALL] ... library updates done."
@@ -156,7 +157,7 @@ generate_configurations()
 
 		# change to the backup directory or fail trying to do so
 		current_path=$(pwd)
-		cd "$backup_dir" || cd_failed=1
+		cd "$backup_dir" >/dev/null 2>&1 || cd_failed=1
 
 		if [ $cd_failed -ne 1 ]; then 
 			for file in *; do
@@ -173,7 +174,7 @@ generate_configurations()
 				fi
 			done
 			# change back to the previous dir, this should never fail!
-			cd "$current_path" || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
+			cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
 		else 
 			echo "[POST-INSTALL] ... Can not access folder $backup_dir"
 		fi
@@ -187,21 +188,35 @@ generate_configurations()
 		echo "[POST-INSTALL] ... Did not find $SMF_DIR/$DATABASE_FILE or $SMF_DIR/segw_v$NEW_VERSION_SHORT.json, need to create configurations ..."
 		echo "[POST-INSTALL] ... Database and configurations need to be created ..."
 
-		# just to be sure remove the database and configurations before creating it 
-		# (pipe the output since this will most likely fail)
-		echo "[POST-INSTALL] ... Cleaning install dir"
-		rm -f $SMF_DIR/$DATABASE_FILE >/dev/null 2>&1
-		rm -f $SMF_DIR/*.json >/dev/null 2>&1
-		rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
+		current_path=$(pwd)
 
-		echo "[POST-INSTALL] ... Creating default configuations"
-		$segw_cmd -D
+		#make sure that the directory exists (should be create in preinst anyways, but just to be sure)
+		mkdir -p "$SMF_DIR"
+		cd "$SMF_DIR" >/dev/null 2>&1 || cd_failed=1
 
-		echo "[POST-INSTALL] ... Initialize database"
-		$segw_cmd -I
+		if [ $cd_failed -ne 1 ]; then 
+			# just to be sure remove the database and configurations before creating it 
+			# (pipe the output since this will most likely fail)
+			echo "[POST-INSTALL] ... Cleaning install dir"
+			rm -f $SMF_DIR/$DATABASE_FILE >/dev/null 2>&1
+			rm -f $SMF_DIR/*.json >/dev/null 2>&1
+			rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
 
-		echo "[POST-INSTALL] ... Load default configuration into the database"
-		$segw_cmd -T
+			echo "[POST-INSTALL] ... Creating default configuations"
+			$segw_cmd -D
+
+			echo "[POST-INSTALL] ... Initialize database"
+			$segw_cmd -I
+
+			echo "[POST-INSTALL] ... Load default configuration into the database"
+			$segw_cmd -T
+
+			# change back to the previous dir, this should never fail!
+			cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
+		else 
+			echo "[POST-INSTALL] ... Can not access folder $SMF_DIR, could not create configurations. Fatal Error!"
+			exit 1
+		fi		
 	fi
 
 	echo "[POST-INSTALL] ... Generate configurations and database is done."
@@ -1007,7 +1022,7 @@ main()
 
 	# create variables based on the versions for later use
 	backup_dir="$BACKUP_DIR/$previous_version_long"
-	segw_cmd="/usr/local/sbin/segw -C/usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg"
+	segw_cmd="/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg"
 
 	# first remove and update the libraries
 	update_libs
