@@ -30,7 +30,7 @@ create_backups()
         /usr/local/sbin/segw -C/usr/local/etc/segw_v"$VERSION_SHORT".cfg -l > "$bkp_dir/database_dump.txt"
         echo "[PRE-RM] ... dumped database contents"
     else
-        echo "[PRE-RM] ... There is not file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
+        echo "[PRE-RM] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
     fi
 
     echo "[PRE-RM] Backups done."

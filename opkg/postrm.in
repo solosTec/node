@@ -30,7 +30,7 @@ create_backups()
         mv $SMF_DIR/$DATABASE_FILE "$bkp_dir"
         echo "[POST-RM] ... saved database"
     else
-        echo "[POST-RM] ... There is not file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
+        echo "[POST-RM] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
     fi
 
     if [ -f "$SMF_DIR/segw_v$VERSION_SHORT.json" ]; then 
@@ -41,7 +41,7 @@ create_backups()
         mv "$SMF_DIR/segw_v$VERSION_SHORT.json" "$bkp_dir"
         echo "[POST-RM] ... saved $SMF_DIR/segw_v$VERSION_SHORT.json"
     else 
-        echo "[POST-RM] ... There is not file $SMF_DIR/segw_v$VERSION_SHORT.json, skipping this backup step."
+        echo "[POST-RM] ... There is no such file $SMF_DIR/segw_v$VERSION_SHORT.json, skipping this backup step."
     fi
     
     if [ -f "/usr/local/etc/segw_v$VERSION_SHORT.cfg" ]; then 
@@ -52,7 +52,7 @@ create_backups()
         mv "/usr/local/etc/segw_v$VERSION_SHORT.cfg" "$bkp_dir"
         echo "[POST-RM] ... saved /usr/local/etc/segw_v$VERSION_SHORT.cfg"
     else 
-        echo "[POST-RM] ... There is not file /usr/local/etc/segw_v$VERSION_SHORT.cfg, skipping this backup step."
+        echo "[POST-RM] ... There is no such file /usr/local/etc/segw_v$VERSION_SHORT.cfg, skipping this backup step."
     fi
 
     echo "[POST-RM] Backups done."
@@ -65,24 +65,6 @@ create_backups()
 ####
 main ()
 {
-    echo "                                   **                     "
-    echo "                                   **                     "
-    echo "   ****                             **    ***    ****     "
-    echo "  * **** *    ***        ****        **    ***     ***  * "
-    echo " **  ****    * ***      *  ***  *    **     ***     ****  "
-    echo "****        *   ***    *    ****     **      **      **   "
-    echo "  ***      **    ***  **     **      **      **      **   "
-    echo "    ***    ********   **     **      **      **      **   "
-    echo "      ***  *******    **     **      **      **      **   "
-    echo " ****  **  **         **     **      **      **      *    "
-    echo "* **** *   ****    *  **     **       ******* *******     "
-    echo "   ****     *******    ********        *****   *****      "
-    echo "             *****       *** ***                          "
-    echo "                              ***                         "
-    echo "                        ****   ***                        "
-    echo "                      *******  **                         "
-    echo "                     *     ****                           "
-    echo ""
     echo ""
     echo " ######################################################## "
     echo " #        Performing Post-Removal Steps ...              # "
