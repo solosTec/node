@@ -206,13 +206,13 @@ generate_configurations()
 			rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
 
 			echo "[POST-INSTALL] ... Creating default configuations"
-			$segw_cmd -D
+			/usr/local/sbin/segw -D
 
 			echo "[POST-INSTALL] ... Initialize database"
-			$segw_cmd -I
+			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -I
 
 			echo "[POST-INSTALL] ... Load default configuration into the database"
-			$segw_cmd -T
+			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -T
 
 			# change back to the previous dir, this should never fail!
 			cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
@@ -1023,19 +1023,15 @@ main()
 	# the possibly older version is read from created backups
 	get_last_backed_up_version
 
-	# create variables based on the versions for later use
-	backup_dir="$BACKUP_DIR/$previous_version_long"
-	segw_cmd="/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg"
-
 	# first remove and update the libraries
 	update_libs
 
 	# (re)create the database and configuration file, before merging changes in the next step
-	generate_configurations "$backup_dir"
+	generate_configurations "$BACKUP_DIR/$previous_version_long"
 
 	if [ "$previous_version_long" != "" ]; then 
 		# perform the updates on merging the data
-		perform_update_actions "$backup_dir"
+		perform_update_actions "$BACKUP_DIR/$previous_version_long"
 
 		# remove the node package, if the previous version was 0.8
 		remove_previous_installations
