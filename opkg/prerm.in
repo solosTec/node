@@ -27,8 +27,12 @@ create_backups()
         # create database dumps first and then move the database here as well
         # For that we do not need to provide the configuration file, this works universally
         mkdir -p "$bkp_dir"
-        /usr/local/sbin/segw -C/usr/local/etc/segw_v"$VERSION_SHORT".cfg -l > "$bkp_dir/database_dump.txt"
-        echo "[PRE-RM] ... dumped database contents"
+        output=$(/usr/local/sbin/segw -C/usr/local/etc/segw_v"$VERSION_SHORT".cfg -l > "$bkp_dir/database_dump.txt")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-RM] ... dumped database contents successfully"
+        else
+            echo "[PRE-RM] ... database dump creation failed for reason: $output"
+        fi
     else
         echo "[PRE-RM] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
     fi
@@ -82,5 +86,5 @@ main ()
     return 0
 }
 
-# This is the only function call, all worflow and logic is done from within main function
+# This is the only function call, all workflow and logic is done from within main function
 main

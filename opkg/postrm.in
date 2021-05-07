@@ -27,8 +27,12 @@ create_backups()
     if [ -f "$SMF_DIR/$DATABASE_FILE" ]; then 
         # move the configuration files that will be regenerated during the installation
         mkdir -p "$bkp_dir"
-        mv $SMF_DIR/$DATABASE_FILE "$bkp_dir"
-        echo "[POST-RM] ... saved database"
+        cmd_output=$(mv $SMF_DIR/$DATABASE_FILE "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[POST-RM] ... saved database successfully"
+        else
+            echo "[POST-RM] ... saving database failed for reason: $cmd_output"
+        fi
     else
         echo "[POST-RM] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
     fi
@@ -38,8 +42,12 @@ create_backups()
         # old approach: use ls and grep to get the correct files
         #   config_files=$(ls $SMF_DIR | grep json | grep -v bkp)
         mkdir -p "$bkp_dir"
-        mv "$SMF_DIR/segw_v$VERSION_SHORT.json" "$bkp_dir"
-        echo "[POST-RM] ... saved $SMF_DIR/segw_v$VERSION_SHORT.json"
+        cmd_output=$(mv "$SMF_DIR/segw_v$VERSION_SHORT.json" "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[POST-RM] ... saved $SMF_DIR/segw_v$VERSION_SHORT.json successfully"
+        else
+            echo "[POST-RM] ... saving $SMF_DIR/segw_v$VERSION_SHORT.json failed for reason: $cmd_output"
+        fi
     else 
         echo "[POST-RM] ... There is no such file $SMF_DIR/segw_v$VERSION_SHORT.json, skipping this backup step."
     fi
@@ -49,8 +57,12 @@ create_backups()
         # old approach: use ls and grep to get the correct files
         #   config_files=$(ls /usr/local/etc/ | grep cfg | grep -v bkp)
         mkdir -p "$bkp_dir"
-        mv "/usr/local/etc/segw_v$VERSION_SHORT.cfg" "$bkp_dir"
-        echo "[POST-RM] ... saved /usr/local/etc/segw_v$VERSION_SHORT.cfg"
+        cmd_output=$(mv "/usr/local/etc/segw_v$VERSION_SHORT.cfg" "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[POST-RM] ... saved /usr/local/etc/segw_v$VERSION_SHORT.cfg successfully"
+        else
+            echo "[POST-RM] ... saving /usr/local/etc/segw_v$VERSION_SHORT.cfg failed for reason: $cmd_output"
+        fi
     else 
         echo "[POST-RM] ... There is no such file /usr/local/etc/segw_v$VERSION_SHORT.cfg, skipping this backup step."
     fi
@@ -86,5 +98,5 @@ main ()
     return 0
 }
 
-# This is the only function call, all worflow and logic is done from within main function
+# This is the only function call, all workflow and logic is done from within main function
 main
