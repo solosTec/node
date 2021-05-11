@@ -41,6 +41,17 @@ create_backups ()
     
     echo "[db dump] ... db dump: ${dump_file_path}"
 
+
+    cfg_file_v08="segw_v0.8.cfg"
+    cfg_file_path="/usr/local/etc/${cfg_file_v08}"
+
+    echo "[db dump] ... save cfg file"
+    cp ${cfg_file_path} ${backup_version_folder_path}
+
+    echo "[db dump] ... saved cfg file ${cfg_file_path} to ${backup_version_folder_path}"
+
+
+
     return 0
 }
 

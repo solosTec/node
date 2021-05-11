@@ -218,7 +218,10 @@ generate_configurations()
 			echo "[POST-INSTALL] ... Cleaning install dir"
 			rm -f $SMF_DIR/$DATABASE_FILE >/dev/null 2>&1
 			rm -f $SMF_DIR/*.json >/dev/null 2>&1
-			rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
+			
+			#do not delete the cfg file. it is not created again but brought with in the installation itself
+			#if we update from 0.9 to 0.9 it is needed anyway.
+			#rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
 
 			echo "[POST-INSTALL] ... Creating default configuations"
 			/usr/local/sbin/segw -D >/dev/null 2>&1
