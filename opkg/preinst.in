@@ -122,41 +122,6 @@ create_backups()
 }
 
 ####
-# Depending on the version the name of the application might have changed.
-# This would lead to two applications being installed simultaneously, which is not
-# advised.
-####
-remove_previous_installations()
-{
-	echo "[PRE-INSTALL] Checking, if previous application versions need manual removal ..."
-
-	case "$trimmed_version" in 
-		*0.8*)
-			# at last remove the old version by tricking opkg as if not such process was running
-			echo "[PRE-INSTALL] ... Removing previous 0.8.X based node installation."
-			echo "[PRE-INSTALL]    ... Removing opkg lock to be able to trigger OPKG from inside another OPKG process"
-			rm /var/lock/opkg.lock
-			echo "[PRE-INSTALL]    ... Removing old node application"
-			opkg remove node
-            sleep 2
-			echo "[PRE-INSTALL]    ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
-			touch /var/lock/opkg.lock
-			;;
-
-		*0.9*)
-			# atm there is no version that would require removal of a 0.9 based tool
-			echo "[PRE-INSTALL] ... No need to remove previous 0.9-based installations."
-		;;
-		*)
-			# do not do any thing
-			echo "[PRE-INSTALL] ... Unhandled version ($trimmed_version), skip removal stage."
-	esac
-
-	echo "[PRE-INSTALL] ... Application removal completed"
-	return 0
-}
-
-####
 # Main function that contains all the logic 
 # and is the starting point of the whole script
 ####
@@ -198,8 +163,6 @@ main ()
         create_backups "$SMF_DIR/backups/$complete_version"
         if [ $? -eq 0 ]; then 
             echo "[PRE-INSTALL] Backups created successfull, check if application needs to be removed"
-            # remove the node package, if the previous version was 0.8
-		    remove_previous_installations
         else 
             echo "[PRE-INSTALL] Backup failed, thus skip removal step."
         fi
