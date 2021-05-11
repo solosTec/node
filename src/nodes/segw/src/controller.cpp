@@ -625,9 +625,9 @@ namespace smf {
 		auto const reader = cyng::make_reader(cfg);
 		auto s = cyng::db::create_db_session(reader.get("DB"));
 
-		auto channel = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s);
-		BOOST_ASSERT(channel->is_open());
-		channel->dispatch("start", cyng::make_tuple());
+		bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s);
+        BOOST_ASSERT(bridge_->is_open());
+        bridge_->dispatch("start", cyng::make_tuple());
 	}
 
 	std::string get_nms_address() {
@@ -669,28 +669,20 @@ namespace smf {
 
 	void controller::shutdown(cyng::logger logger, cyng::registry& reg) {
 
-		config::stop_tasks(logger, reg, "persistence");
-
-		//
-		//	ToDo: stop LMN tasks
-		//	ToDo: stop broker tasks
-		//	ToDo: stop filter tasks
-		//	ToDo: stop gpio tasks
-		//
-
-		config::stop_tasks(logger, reg, "CP210x");
-
 		//
 		//	main task
 		//
 		config::stop_tasks(logger, reg, "bridge");
+        //logger.stop();
 
-		std::this_thread::sleep_for(std::chrono::seconds(2));
+		std::this_thread::sleep_for(std::chrono::seconds(6));
 
 		//
 		//	stop all running tasks
 		//
-		reg.shutdown();
+		//reg.shutdown();
+
+		//std::terminate();
 	}
 
 }

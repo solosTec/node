@@ -62,7 +62,8 @@ namespace cyng {
 		void list_config(cyng::object&&);
 		void set_config_value(cyng::object&&, std::string const& path, std::string const& value, std::string const& type);
 		void switch_gpio(cyng::object&& cfg, std::string const& number, std::string const& state);
-		//void readout_serial(cyng::object&& cfg, std::uint8_t);
+
+		cyng::channel_ptr bridge_;
 	};
 
 	/**

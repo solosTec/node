@@ -45,6 +45,8 @@ namespace smf
 				, parser::data_cb
 				, auth_cb);
 
+            ~bus();
+
 			void start();
 			void stop();
 

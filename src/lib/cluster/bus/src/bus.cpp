@@ -122,9 +122,12 @@ namespace smf {
 				start();
 			}
 		}
-		else {
-			CYNG_LOG_TRACE(logger_, "[cluster] check deadline timer cancelled");
-		}
+        else if (ec == boost::asio::error::operation_aborted) {
+          CYNG_LOG_TRACE(logger_, "[cluster] reconnect timer cancelled");
+        }
+        else {
+          CYNG_LOG_WARNING(logger_, "[cluster] reconnect timer: " << ec.message());
+        }
 	}
 
 	void bus::connect(boost::asio::ip::tcp::resolver::results_type endpoints) {
