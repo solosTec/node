@@ -1,5 +1,9 @@
 # Format Style Options - Created with Clang Power Tools
 ---
-BasedOnStyle: LLVM
+AlignAfterOpenBracket: AlwaysBreak
+ColumnLimit: 132
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+IndentWidth: 4
 NamespaceIndentation: All
+ObjCBlockIndentWidth: 4
 ...

@@ -190,7 +190,10 @@ namespace smf {
 
 							//	stop all running tasks
 							this->shutdown(logger, ctl.get_registry());
-							logger.stop();
+                            logger.stop();
+							std::this_thread::sleep_for(std::chrono::seconds(1));
+                            ctl.get_registry().shutdown();
+                            ctl.shutdown();
 
 						});
 
@@ -204,7 +207,8 @@ namespace smf {
 					//
 					//	wait for pending requests
 					//
-					ctl.stop();
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+                    ctl.stop();
 					std::this_thread::sleep_for(std::chrono::seconds(1));
 				}
 
