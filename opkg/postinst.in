@@ -265,6 +265,9 @@ get_datatype_by_key_id()
 		broker_address)
 			echo "s"
 			;;
+		broker_count)
+			echo "u32"
+			;;	
 		broker_enabled)
 			echo "bool"
 			;;
@@ -372,6 +375,9 @@ get_datatype_by_key_id()
 		blocklist_period)
 			echo "chrono:sec"
 			;;
+		blocklist_size)
+			echo "u32"
+			;;
 	esac
 }
 
@@ -421,6 +427,19 @@ get_key_string_by_key_id()
 					;;
 				*0.9*)
 					echo "broker/$((interface_num - 1))/0/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_count)
+			case "$app_version" in
+				*0.8*)
+					echo "SKIP"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/count"
 					;;
 				*)
 					echo "UNKNOWN"
@@ -693,9 +712,7 @@ get_key_string_by_key_id()
 					echo "ROOT_REDIRECTOR:930000000002:930000000202"
 					;;
 				*0.9*)
-					# SKIP copying this parameter, since it is not present any more in this version 
-					# TODO: verify
-					echo "SKIP"
+					echo "listener/$((interface_num - 1))/address"
 					;;
 				*)
 					echo "UNKNOWN"
@@ -708,9 +725,7 @@ get_key_string_by_key_id()
 					echo "ROOT_REDIRECTOR:930000000002:enabled"
 					;;
 				*0.9*)
-					# SKIP copying this parameter, since it is not present any more in this version 
-					# TODO: verify
-					echo "SKIP"
+					echo "listener/$((interface_num - 1))/enabled"
 					;;
 				*)
 					echo "UNKNOWN"
@@ -723,9 +738,7 @@ get_key_string_by_key_id()
 					echo "ROOT_REDIRECTOR:930000000002:REDIRECTOR_LOGIN"
 					;;
 				*0.9*)
-					# SKIP copying this parameter, since it is not present any more in this version 
-					# TODO: verify
-					echo "SKIP"
+					echo "listener/$((interface_num - 1))/login"
 					;;
 				*)
 					echo "UNKNOWN"
@@ -739,16 +752,26 @@ get_key_string_by_key_id()
 					echo "ROOT_REDIRECTOR:930000000002:930000000302"
 					;;
 				*0.9*)
-					# SKIP copying this parameter, since it is not present any more in this version 
-					# TODO: verify
-					echo "SKIP"
+					echo "listener/$((interface_num - 1))/port"
 					;;
 				*)
 					echo "UNKNOWN"
 					;;
 			esac
 			;;
-		
+		root_redirector_timeout)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:930000000002:930000000302"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/timeout"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;		
 		###
 		# All meter settings in alphabetical order
 		###	
@@ -938,7 +961,7 @@ sync_backed_up_values()
 		# Update all settings that are done for multiple interfaces
 		# in this case the interface number is two
 		i=1; while [ $i -le 2 ]; do 
-			key_ids="broker_account broker_address broker_enabled broker_login broker_port broker_pwd broker_reconnect serial_baudrate serial_databits serial_flowcontrol serial_name serial_parity serial_stopbits serial_type blocklist_enabled blocklist_mode blocklist_period blocklist_size"
+			key_ids="broker_account broker_address broker_enabled broker_count broker_login broker_port broker_pwd broker_reconnect serial_baudrate serial_databits serial_flowcontrol serial_name serial_parity serial_stopbits serial_type blocklist_enabled blocklist_mode blocklist_period blocklist_size"
 			for iterator_key_id in $key_ids; do 
 				# perform the update action for this key_id
 				sync_value_by_key_id "$app_version_old" "$db_dump_file" "$iterator_key_id" $i
