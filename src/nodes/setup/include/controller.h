@@ -34,9 +34,6 @@ namespace smf {
         void init_storage(cyng::object &&);
         void generate_access_rights(cyng::object &&cfg, std::string const &user);
         void generate_random_devs(cyng::object &&cfg, std::uint32_t count);
-
-      private:
-        cyng::channel_ptr cluster_;
     };
 } // namespace smf
 

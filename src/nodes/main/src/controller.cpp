@@ -88,11 +88,11 @@ namespace smf {
 
         auto const session_cfg = cyng::container_cast<cyng::param_map_t>(reader["session"].get());
 
-        main_ = ctl.create_named_channel_with_ref<server>(
+        auto channel = ctl.create_named_channel_with_ref<server>(
             "main", ctl, tag, country_code, lang_code, logger, account, pwd, salt, std::chrono::seconds(monitor), session_cfg);
-        BOOST_ASSERT(main_->is_open());
+        BOOST_ASSERT(channel->is_open());
 
-        main_->dispatch("start", cyng::make_tuple(ep));
+        channel->dispatch("start", cyng::make_tuple(ep));
     }
 
     void controller::shutdown(cyng::logger logger, cyng::registry &reg) {

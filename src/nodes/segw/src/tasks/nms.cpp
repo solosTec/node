@@ -23,7 +23,13 @@ namespace smf {
               cfg_(c),
               logger_(logger),
               acceptor_(ctl.get_ctx()),
-              session_counter_{0} {}
+              session_counter_{0} {
+            auto sp = channel_.lock();
+            if (sp) {
+                sp->set_channel_name("start", 0);
+                CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
+            }
+        }
 
         void server::start(boost::asio::ip::tcp::endpoint ep) {
 
