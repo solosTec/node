@@ -1,0 +1,183 @@
+#!/bin/sh
+
+SMF_DIR="/usr/local/etc/smf"
+DATABASE_FILE="segw.database"
+
+####
+# Get the version of the node/smf tool, that is installed on the device
+# if present, the following variables will be set:
+# - complete_version: contains the complete versioning string, e.g. 0.8.3040
+# - trimmed_version: contains the main version, e.g. 0.8
+# If no such tool is installed, both variables will be empty
+####
+get_installed_versions_from_opkg()
+{
+    echo "[PRE-INSTALL] Readout installed version from opkg ..."
+
+    echo "[PRE-INSTALL] ... Removing opkg lock to be able to trigger OPKG from inside another OPKG process"
+    rm /var/lock/opkg.lock
+    echo "[PRE-INSTALL] ... Readout application information"
+    # we can not use a precompiled version here, since we do not know what is possible installed beforehands
+    segw_versions=$(opkg list | grep 'smf\|node')
+    complete_version=$(echo "$segw_versions" | awk '{print $3}')
+
+    # check if a version was installed. If not, the read out version is empty
+    if [ "$complete_version" != "" ]; then 
+        trimmed_version=$(echo "$complete_version" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
+
+        #echo "[PRE-INSTALL]    ... all installed segw_tools: $segw_versions"
+        echo "[PRE-INSTALL]    ... currently installed (long): $complete_version"
+        echo "[PRE-INSTALL]    ... currently installed (short): $trimmed_version"
+    else
+        trimmed_version=""
+        echo "[PRE-INSTALL]    ... currently there is no installed version of node/smf"
+    fi
+
+    echo "[PRE-INSTALL] ... touching /var/lock/opkg.lock again for the normal OPKG process to continue"
+    touch /var/lock/opkg.lock
+
+    echo "[PRE-INSTALL] ... Readout installed version done"
+
+    return 0
+}
+
+####
+# Before the installation a backup of the current installation is done.
+# This process consists of the creation of an individual backup folder with the version tag
+# of the installed version and the backup of the following files:
+# - /usr/local/etc/segw_vX.X.cfg
+# - /usr/local/etc/smf/segw_vX.X.json
+# - /usr/local/etc/smf/segw.database
+# - a human readbale and parsable database dump called database_dump.txt
+####
+create_backups()
+{
+    bkp_dir="$1"
+    backup_failed_times=0
+    echo "[PRE-INSTALL] Try to create backups and store them in $bkp_dir ..."
+
+    # double check if a backup can be performed, or if by another script or manual interference we expect errors here
+    if [ -f "$SMF_DIR/$DATABASE_FILE" ]; then 
+        # create database dumps first and then move the database here as well
+        # For that we do not need to provide the configuration file, this works universally
+        mkdir -p "$bkp_dir"
+        cmd_output=$(/usr/local/sbin/segw -C/usr/local/etc/segw_v"$trimmed_version".cfg -l > "$bkp_dir/database_dump.txt")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] ... dumped database contents successfully"
+        else
+            echo "[PRE-INSTALL] ... database dump creation failed for error: $cmd_output"
+            backup_failed_times=$(( backup_failed_times + 1 ))
+        fi
+
+        # move the configuration files that will be regenerated during the installation
+        cmd_output=$(mv $SMF_DIR/$DATABASE_FILE "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] ... saved database successfully"
+        else
+            echo "[PRE-INSTALL] ... database save failed for error: $cmd_output"
+            backup_failed_times=$(( backup_failed_times + 1 ))
+        fi
+    else
+        echo "[PRE-INSTALL] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
+        backup_failed_times=$(( backup_failed_times + 1 ))
+    fi
+
+    if [ -f "$SMF_DIR/segw_v$trimmed_version.json" ]; then 
+        # create backups of the json independently of the installed versions
+        # old approach: use ls and grep to get the correct files
+        #   config_files=$(ls $SMF_DIR | grep json | grep -v bkp)
+        mkdir -p "$bkp_dir"
+
+        cmd_output=$(mv "$SMF_DIR/segw_v$trimmed_version.json" "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] ... saved $SMF_DIR/segw_v$trimmed_version.json sucessfully"
+        else
+            echo "[PRE-INSTALL] ... saving $SMF_DIR/segw_v$trimmed_version.json failed for error: $cmd_output"
+            backup_failed_times=$(( backup_failed_times + 1 ))
+        fi
+    else 
+        echo "[PRE-INSTALL] ... There is no such file $SMF_DIR/segw_v$trimmed_version.json, skipping this backup step."
+        backup_failed_times=$(( backup_failed_times + 1 ))
+    fi
+    
+    if [ -f "/usr/local/etc/segw_v$trimmed_version.cfg" ]; then 
+        # create backups of the configurations independently of the installed versions
+        # old approach: use ls and grep to get the correct files
+        #   config_files=$(ls /usr/local/etc/ | grep cfg | grep -v bkp)
+        mkdir -p "$bkp_dir"
+        cmd_output=$(mv "/usr/local/etc/segw_v$trimmed_version.cfg" "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] ... saved /usr/local/etc/segw_v$trimmed_version.cfg successfully"
+        else
+            echo "[PRE-INSTALL] ... saving /usr/local/etc/segw_v$trimmed_version.cfg failed for reason: $cmd_output"
+            backup_failed_times=$(( backup_failed_times + 1 ))
+        fi
+    else 
+        echo "[PRE-INSTALL] ... There is no such file /usr/local/etc/segw_v$trimmed_version.cfg, skipping this backup step."
+        backup_failed_times=$(( backup_failed_times + 1 ))
+    fi
+
+    echo "[PRE-INSTALL] ... Backup steps completed."
+    return $backup_failed_times
+}
+
+####
+# Main function that contains all the logic 
+# and is the starting point of the whole script
+####
+main ()
+{
+    echo "                                   **                     "
+    echo "                                   **                     "
+    echo "   ****                             **    ***    ****     "
+    echo "  * **** *    ***        ****        **    ***     ***  * "
+    echo " **  ****    * ***      *  ***  *    **     ***     ****  "
+    echo "****        *   ***    *    ****     **      **      **   "
+    echo "  ***      **    ***  **     **      **      **      **   "
+    echo "    ***    ********   **     **      **      **      **   "
+    echo "      ***  *******    **     **      **      **      **   "
+    echo " ****  **  **         **     **      **      **      *    "
+    echo "* **** *   ****    *  **     **       ******* *******     "
+    echo "   ****     *******    ********        *****   *****      "
+    echo "             *****       *** ***                          "
+    echo "                              ***                         "
+    echo "                        ****   ***                        "
+    echo "                      *******  **                         "
+    echo "                     *     ****                           "
+    echo ""
+    echo ""
+    echo " ######################################################## "
+    echo " #            Performing Pre-Inst Steps ...             # "
+    echo " ######################################################## "
+    echo ""
+
+    # see with which versions of the installed tools we are working
+    get_installed_versions_from_opkg
+
+    # create the install dir, if it is not present yet
+    mkdir -p "$SMF_DIR"
+
+    # anyways, backups shall be created before every installation anyways
+    # only skip this, if no version at all is intalled at the moment
+    if [ "$trimmed_version" != "" ]; then 
+        create_backups "$SMF_DIR/backups/$complete_version"
+        if [ $? -eq 0 ]; then 
+            echo "[PRE-INSTALL] Backups created successfull, check if application needs to be removed"
+        else 
+            echo "[PRE-INSTALL] Backup failed, thus skip removal step."
+        fi
+    else 
+        echo "[PRE-INSTALL] No version currently installed, skip backup creation."    
+    fi
+
+    echo ""
+    echo " ######################################################## "
+    echo " #            Pre-Inst Steps Completed!                 # "
+    echo " ######################################################## "
+    echo ""
+
+    return 0
+}
+
+# This is the only function call, all workflow and logic is done from within main function
+main

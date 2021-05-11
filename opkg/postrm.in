@@ -1,0 +1,102 @@
+#!/bin/sh
+
+SMF_DIR="/usr/local/etc/smf"
+DATABASE_FILE="segw.database"
+
+# these variables will be replaced by CMAKE
+VERSION_SHORT=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}.${${PROJECT_NAME}_VERSION_TWEAK}
+
+####
+# Before the installation a backup of the current installation is done.
+# This process consists of the creation of an individual backup folder with the version tag
+# of the installed version and the backup of the following files:
+# - /usr/local/etc/segw_vX.X.cfg
+# - /usr/local/etc/smf/segw_vX.X.json
+# - /usr/local/etc/smf/segw.database
+# - a human readbale and parsable database dump called database_dump.txt
+####
+create_backups()
+{
+    bkp_dir="$1"
+    mkdir -p "$bkp_dir"
+
+    echo "[POST-RM] Performing backups to $bkp_dir ..."
+
+    # double check if a backup can be performed, or if by another script or manual interference we expect errors here
+    if [ -f "$SMF_DIR/$DATABASE_FILE" ]; then 
+        # move the configuration files that will be regenerated during the installation
+        mkdir -p "$bkp_dir"
+        cmd_output=$(mv $SMF_DIR/$DATABASE_FILE "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[POST-RM] ... saved database successfully"
+        else
+            echo "[POST-RM] ... saving database failed for reason: $cmd_output"
+        fi
+    else
+        echo "[POST-RM] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
+    fi
+
+    if [ -f "$SMF_DIR/segw_v$VERSION_SHORT.json" ]; then 
+        # create backups of the json independently of the installed versions
+        # old approach: use ls and grep to get the correct files
+        #   config_files=$(ls $SMF_DIR | grep json | grep -v bkp)
+        mkdir -p "$bkp_dir"
+        cmd_output=$(mv "$SMF_DIR/segw_v$VERSION_SHORT.json" "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[POST-RM] ... saved $SMF_DIR/segw_v$VERSION_SHORT.json successfully"
+        else
+            echo "[POST-RM] ... saving $SMF_DIR/segw_v$VERSION_SHORT.json failed for reason: $cmd_output"
+        fi
+    else 
+        echo "[POST-RM] ... There is no such file $SMF_DIR/segw_v$VERSION_SHORT.json, skipping this backup step."
+    fi
+    
+    if [ -f "/usr/local/etc/segw_v$VERSION_SHORT.cfg" ]; then 
+        # create backups of the configurations independently of the installed versions
+        # old approach: use ls and grep to get the correct files
+        #   config_files=$(ls /usr/local/etc/ | grep cfg | grep -v bkp)
+        mkdir -p "$bkp_dir"
+        cmd_output=$(mv "/usr/local/etc/segw_v$VERSION_SHORT.cfg" "$bkp_dir")
+        if [ $? -eq 0 ]; then 
+            echo "[POST-RM] ... saved /usr/local/etc/segw_v$VERSION_SHORT.cfg successfully"
+        else
+            echo "[POST-RM] ... saving /usr/local/etc/segw_v$VERSION_SHORT.cfg failed for reason: $cmd_output"
+        fi
+    else 
+        echo "[POST-RM] ... There is no such file /usr/local/etc/segw_v$VERSION_SHORT.cfg, skipping this backup step."
+    fi
+
+    echo "[POST-RM] Backups done."
+    return 0
+}
+
+####
+# Main function that contains all the logic 
+# and is the starting point of the whole script
+####
+main ()
+{
+    echo ""
+    echo " ######################################################## "
+    echo " #        Performing Post-Removal Steps ...              # "
+    echo " ######################################################## "
+    echo ""
+
+    # create a backup of the configuration files after the application 
+    # gets removed. The same backup functionality is also called from
+    # preinst.in of the next install, but that way it is secured to 
+    # behave the same, even in the installation is performed manually
+    create_backups "$SMF_DIR/backups/$VERSION_LONG"
+
+    echo ""
+    echo " ######################################################## "
+    echo " #         Post-Removal Steps Completed!                 # "
+    echo " ######################################################## "
+    echo ""
+
+    return 0
+}
+
+# This is the only function call, all workflow and logic is done from within main function
+main
