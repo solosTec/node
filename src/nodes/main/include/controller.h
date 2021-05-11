@@ -13,27 +13,24 @@
 
  namespace smf {
 
-	class controller : public config::controller_base
-	{
-	public:
-		controller(config::startup const&);
+	class controller : public config::controller_base {
+       public:
+         controller(config::startup const &);
 
-	protected:
-		cyng::vector_t create_default_config(std::chrono::system_clock::time_point&& now
-			, std::filesystem::path&& tmp
-			, std::filesystem::path&& cwd) override;
-		virtual void run(cyng::controller&
-			, cyng::logger
-			, cyng::object const& cfg
-			, std::string const& node_name) override;
-		virtual void shutdown(cyng::logger, cyng::registry&) override;
+       protected:
+         cyng::vector_t create_default_config(
+             std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) override;
+         virtual void run(cyng::controller &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
+         virtual void shutdown(cyng::logger, cyng::registry &) override;
 
-	private:
-		cyng::param_t create_server_spec();
-		cyng::param_t create_session_spec(std::filesystem::path const& tmp);
-		cyng::param_t create_cluster_spec();
+       private:
+         cyng::param_t create_server_spec();
+         cyng::param_t create_session_spec(std::filesystem::path const &tmp);
+         cyng::param_t create_cluster_spec();
 
-	};
-}
+       private:
+         cyng::channel_ptr main_;
+     };
+ }
 
 #endif
