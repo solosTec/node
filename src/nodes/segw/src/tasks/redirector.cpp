@@ -16,7 +16,7 @@
 
 namespace smf
 {
-	redirector::redirector(std::weak_ptr<cyng::channel> wp
+    redirector::redirector(cyng::channel_weak wp
 		, cyng::registry& reg
 		, cyng::logger logger
 		, cb_f cb)
