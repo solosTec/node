@@ -1,133 +1,1635 @@
 #!/bin/sh
 
-echo "                                   **                     "
-echo "                                   **                     "
-echo "   ****                             **    ***    ****     "
-echo "  * **** *    ***        ****        **    ***     ***  * "
-echo " **  ****    * ***      *  ***  *    **     ***     ****  "
-echo "****        *   ***    *    ****     **      **      **   "
-echo "  ***      **    ***  **     **      **      **      **   "
-echo "    ***    ********   **     **      **      **      **   "
-echo "      ***  *******    **     **      **      **      **   "
-echo " ****  **  **         **     **      **      **      *    "
-echo "* **** *   ****    *  **     **       ******* *******     "
-echo "   ****     *******    ********        *****   *****      "
-echo "             *****       *** ***                          "
-echo "                              ***                         "
-echo "                        ****   ***                        "
-echo "                      *******  **                         "
-echo "                     *     ****                           "
-echo ""                                                          
+SMF_DIR="/usr/local/etc/smf"
+BACKUP_DIR="$SMF_DIR/backups"
+DATABASE_FILE="segw.database"
 
-ls_out=$(ls /usr/local/lib)
-echo "ls_out: $ls_out"
+# these variables will be replaced by CMAKE
+NEW_VERSION_SHORT=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+NEW_VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}.${${PROJECT_NAME}_VERSION_TWEAK}
 
-echo "remove obsolete symbolic links"
+####
+# Find the last installed version by checking the backups.
+# It is sufficient to do so, since the the old version is only required
+# for merging backed up data.
+# If such a version is found, the following variables are set:
+# - previous_version_long: contains the complete versioning string of the possibly older version, e.g. 0.8.3040
+# - previous_version_short: contains the main version of the possibly older version, e.g. 0.8
+####
+get_last_backed_up_version()
+{
+	echo "[POST-INSTALL] Calculate previously installed version by checking backups ..."
+	previous_version_long=""
+	previous_version_short=""
 
-rm -f /usr/lib/libboost_chrono.so
-rm -f /usr/lib/libboost_date_time.so
-rm -f /usr/lib/libboost_filesystem.so
-rm -f /usr/lib/libboost_prg_exec_monitor.so
-rm -f /usr/lib/libboost_program_options.so
-rm -f /usr/lib/libboost_random.so
-rm -f /usr/lib/libboost_regex.so
-rm -f /usr/lib/libboost_system.so
-rm -f /usr/lib/libboost_thread.so
-rm -f /usr/lib/libboost_timer.so
-rm -f /usr/lib/libboost_unit_test_framework.so
+	# change to the backup directory or fail trying to do so
+	cd_failed=0
+	current_path=$(pwd)
+	cd "$BACKUP_DIR" >/dev/null 2>&1 || cd_failed=1
 
-echo "remove obsolete libraries"
+	if [ $cd_failed -ne 1 ]; then 
+		for backup in *; do
+			# collect all directory names
+			if [ -d "$backup" ]; then
+				echo "[POST-INSTALL] ... checking backup folder $backup ..."
+				# count the files within this folder and inore empty dirs
+				num_elements_in_backup_dir=$(find "$backup" -type f | wc -l)
+				if [ $num_elements_in_backup_dir -eq 0 ]; then 
+					# there is no content within the folder, so it is not a valid backup folder
+					echo "[POST-INSTALL]    ... $backup is empty, ignore ..."
+				else 
+					# identify which of both (directory name, stored version) is greater an keep only this
+					# version then gets checked again in the next iteration
+					previous_version_long=$(printf "$backup\n$previous_version_long" | sort -r | head -n 1)
+				fi
+			fi
+		done
 
-rm -f /usr/lib/libboost_chrono.so.1.69.0               
-rm -f /usr/lib/libboost_program_options.so.1.69.0      
-rm -f /usr/lib/libboost_thread.so.1.69.0
-rm -f /usr/lib/libboost_date_time.so.1.69.0            
-rm -f /usr/lib/libboost_random.so.1.69.0               
-rm -f /usr/lib/libboost_timer.so.1.69.0
-rm -f /usr/lib/libboost_filesystem.so.1.69.0           
-rm -f /usr/lib/libboost_regex.so.1.69.0                
-rm -f /usr/lib/libboost_unit_test_framework.so.1.69.0
-rm -f /usr/lib/libboost_prg_exec_monitor.so.1.69.0     
-rm -f /usr/lib/libboost_system.so.1.69.0
+		# calculate 
+		if [ "$previous_version_long" != "" ]; then 
+			previous_version_short=$(echo "$previous_version_long" | awk '{split($0,b,"."); printf "%d.%d", b[1], b[2]}')
 
-echo "set symbolic links to Boost library"
+			echo "[POST-INSTALL] ... old version (long version string): $previous_version_long"
+			echo "[POST-INSTALL] ... old version (short version string): $previous_version_short"
+		else 
+			echo "[POST-INSTALL] ... no preinstalled version with backup files."
+		fi
 
-rm -f /usr/local/lib/libboost_program_options.so
-ln -s /usr/local/lib/libboost_program_options.so.1.75.0  /usr/local/lib/libboost_program_options.so 
-
-rm -f /usr/local/lib/libboost_thread.so
-ln -s /usr/local/lib/libboost_thread.so.1.75.0   /usr/local/lib/libboost_thread.so
-
-rm -f /usr/local/lib/libboost_random.so  
-ln -s /usr/local/lib/libboost_random.so.1.75.0    /usr/local/lib/libboost_random.so
-
-rm -f /usr/local/lib/libboost_filesystem.so
-ln -s /usr/local/lib/libboost_filesystem.so.1.75.0    /usr/local/lib/libboost_filesystem.so
-#ln -s	/usr/local/lib/libboost_regex.so.1.75.0     /usr/local/lib/libboost_regex.so 
-
-rm -f /usr/local/lib/libboost_system.so
-ln -s /usr/local/lib/libboost_system.so.1.75.0   /usr/local/lib/libboost_system.so 
-
-echo "${PROJECT_NAME} library (SMF project) is installed"
-
-
-
-
-
-# create lib links in /usr/lib/ /usr/local/lib/
-echo " create lib links in /usr/lib/ /usr/local/lib/ "
-
-tmpfiles=$(find /tmp/ -name '*')
-echo "tmpfiles with find: $tmpfiles"
-echo ""
-
-
-ls_out=$(ls /usr/local/lib)
-echo "ls_out: $ls_out"
-
-
-for libfile in /usr/local/lib/*.so; do
-	echo "check if libfile $libfile has to be linked"
-	tmpfilename=/usr/lib/$(basename $libfile)
-	if [ ! -f $tmpfilename ]; then
-		ln -s $libfile $tmpfilename
-		echo "libfile $libfile was linked " 
+		# this should never fail!
+		cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
+	else 
+		echo "[POST-INSTALL] ... There is no backup folder of a previous version, assuming fresh install."
 	fi
-done 
+}
 
-echo "end of linking...."
-echo "${PROJECT_NAME} shared libraries available"
+####
+# Function to update the libraries that come shipped in the tool
+# Removes old library-files and symlinks, copies in the new ones 
+# and finally recreates the symlinks
+####
+update_libs()
+{
+	echo "[POST-INSTALL] Starting update of libraries ..."
+	echo "[POST-INSTALL] ... remove obsolete symbolic links and libraries ... "
 
+	# this line will remove both the library and its symlink
+	rm -f /usr/lib/libboost_chrono.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_date_time.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_filesystem.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_prg_exec_monitor.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_program_options.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_random.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_regex.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_system.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_thread.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_timer.so* >/dev/null 2>&1
+	rm -f /usr/lib/libboost_unit_test_framework.so* >/dev/null 2>&1
 
-echo "${PROJECT_NAME} backup old config and database"
-/usr/local/etc/smf/do_backup.sh
+	echo "[POST-INSTALL] ... set symbolic links to Boost libraries ... "
 
+	#rm -f /usr/local/lib/libboost_date_time.so
+	#ln -s /usr/local/lib/libboost_date_time.so.1.75.0 /usr/local/lib/libboost_date_time.so
+	#rm -f /usr/local/lib/libboost_iostreams.so
+	#ln -s /usr/local/lib/libboost_iostreams.so.1.75.0 /usr/local/lib/libboost_iostreams.so
+	rm -f /usr/local/lib/libboost_filesystem.so
+	ln -s /usr/local/lib/libboost_filesystem.so.1.75.0 /usr/local/lib/libboost_filesystem.so
+	rm -f /usr/local/lib/libboost_program_options.so
+	ln -s /usr/local/lib/libboost_program_options.so.1.75.0 /usr/local/lib/libboost_program_options.so
+	rm -f /usr/local/lib/libboost_random.so
+	ln -s /usr/local/lib/libboost_random.so.1.75.0 /usr/local/lib/libboost_random.so
+	#rm -f /usr/local/lib/libboost_regex.so
+	#ln -s /usr/local/lib/libboost_regex.so.1.75.0 /usr/local/lib/libboost_regex.so
+	rm -f /usr/local/lib/libboost_system.so
+	ln -s /usr/local/lib/libboost_system.so.1.75.0 /usr/local/lib/libboost_system.so
+	#rm -f /usr/local/lib/libboost_test.so
+	#ln -s /usr/local/lib/libboost_test.so.1.75.0 /usr/local/lib/libboost_test.so
+	rm -f /usr/local/lib/libboost_thread.so
+	ln -s /usr/local/lib/libboost_thread.so.1.75.0 /usr/local/lib/libboost_thread.so
+	#rm -f /usr/local/lib/libboost_timer.so
+	#ln -s /usr/local/lib/libboost_timer.so.1.75.0 /usr/local/lib/libboost_timer.so 
 
-echo "${PROJECT_NAME} create default configuration"
+	echo "[POST-INSTALL] ... create lib links in /usr/lib/ /usr/local/lib/ ... "
 
-/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -D
+	# change to the backup directory or fail trying to do so
+	cd_failed=0
+	current_path=$(pwd)
+	cd "/usr/local/lib/" >/dev/null 2>&1 || cd_failed=1
 
-echo "${PROJECT_NAME} initialize database"
-/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -I
+	if [ $cd_failed -ne 1 ]; then 
+		# make sure to keep the * after the so, so that both the lib with a version and the generic name will get linked
+		for libfile in *.so*; do
+			tmpfilename="/usr/lib/$(basename "$libfile")"
+			# create a symlink if it does not exist yet
+			if ! [ -f "$tmpfilename" ]; then
+				echo "[POST-INSTALL]    ... linking $libfile to $tmpfilename ... " 
+				ln -s "/usr/local/lib/$libfile" "$tmpfilename"
+			fi
+		done
+		# this should never fail!
+		cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
+	else 
+		echo "[POST-INSTALL] ... Can not access folder /usr/local/lib/. Fatal Error!"
+		exit 1
+	fi
 
+    echo "[POST-INSTALL] ... library updates done."
+	return 0
+}
 
-echo "ToDo: save/update config"
-echo "${PROJECT_NAME} remove previous configuration"
-/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg --clear
+####
+# Select which configurations shall be used and either restore or create them.
+# In the end, both the segw.database and segw_vX.X.json file shall be present.
+# @param 0 - backup_dir: provide the directory, where the backup can be found
+####
+generate_configurations()
+{
+	echo "[POST-INSTALL] Get configurations and database ..."
 
-echo "${PROJECT_NAME} load default configuration into database"
-/usr/local/sbin/segw -C/usr/local/etc/segw_v0.9.cfg -T
-echo "wait some seconds"
-sleep 5
+	# Make sure that the correct number of parameters is passed along
+	if [ "$#" -ne 1 ]; then 
+		echo "[POST-INSTALL] ... Not enough parameters given. Please provide the backup_dir."
+		return 1
+	fi
 
-echo "${PROJECT_NAME} restore old data if available.."
-/usr/local/etc/smf/restore_data.sh
+	backup_dir=$1
 
+	# reuse the existing configurations
+	if [ "$NEW_VERSION_SHORT" = "$previous_version_short" ] && [ -d "$backup_dir" ]; then
+		# echo we did back up a database, but in general the installed version is the same
+		# thus copy back the configurations we backed up and are done with it
+		echo "[POST-INSTALL] ... Major Version ($previous_version_short) did not change, try to restore configurations and database ..."
 
-echo "start segw service"
-systemctl daemon-reload
-systemctl restart segw
+		# change to the backup directory or fail trying to do so
+		cd_failed=0
+		restore_ok=0
+		current_path=$(pwd)
+		cd "$backup_dir" >/dev/null 2>&1 || cd_failed=1
 
+		if [ $cd_failed -ne 1 ]; then 
+			for file in *; do
 
+				if [ "$file" = "$DATABASE_FILE" ]; then 
+					echo "[POST-INSTALL]    ... restoring database ..."
+					cp "$file" "$SMF_DIR"
+					restore_ok=$(( restore_ok + 1 ))
+				elif [ "$(echo "$file" | grep json | grep -v bkp | sort | head -n 1)" != "" ]; then
+					echo "[POST-INSTALL]    ... restoring json configuration ..."
+					cp "$file" "$SMF_DIR"
+					restore_ok=$(( restore_ok + 1 ))
+				elif [ "$(echo "$file" | grep cfg | grep -v bkp | sort | head -n 1)" = "$DATABASE_FILE" ]; then 
+					echo "[POST-INSTALL]    ... restoring cfg configuration ..."
+					cp "$file" "/usr/local/etc/"
+					restore_ok=$(( restore_ok + 1 ))
+				fi
+			done
 
-echo "service configuration updated"
+			# restore ok muist have the value 3, if all 3 files could be backed up
+			if [ $restore_ok -eq 3 ]; then 
+				echo "[POST-INSTALL]    ... restore process succesful."
+			else 
+				echo "[POST-INSTALL]    ... restore process failed, recreate configurations."
+			fi
+
+			# change back to the previous dir, this should never fail!
+			cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
+		else 
+			echo "[POST-INSTALL] ... Can not access folder $backup_dir"
+		fi
+	fi	
+
+	# make sure that the files exists. Either for a new installation, or if restoring the
+	# previous settings failed
+	if ! [ -f "$SMF_DIR/$DATABASE_FILE" ] || ! [ -f "$SMF_DIR/segw_v$NEW_VERSION_SHORT.json" ]; then
+		# there are not configurations yet, so we need to create them anyways
+		# or the major versions are too different, so we need to recreate them as well
+		echo "[POST-INSTALL] ... Did not find $SMF_DIR/$DATABASE_FILE or $SMF_DIR/segw_v$NEW_VERSION_SHORT.json, need to create configurations ..."
+		echo "[POST-INSTALL] ... Database and configurations need to be created ..."
+
+		current_path=$(pwd)
+
+		#make sure that the directory exists (should be create in preinst anyways, but just to be sure)
+		mkdir -p "$SMF_DIR"
+		cd_failed=0
+		cd "$SMF_DIR" >/dev/null 2>&1 || cd_failed=1
+
+		if [ $cd_failed -ne 1 ]; then 
+			# just to be sure remove the database and configurations before creating it 
+			# (pipe the output since this will most likely fail)
+			echo "[POST-INSTALL] ... Cleaning install dir"
+			rm -f $SMF_DIR/$DATABASE_FILE >/dev/null 2>&1
+			rm -f $SMF_DIR/*.json >/dev/null 2>&1
+			
+			#do not delete the cfg file. it is not created again but brought with in the installation itself
+			#if we update from 0.9 to 0.9 it is needed anyway.
+			#rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
+
+			echo "[POST-INSTALL] ... Creating default configuations"
+			/usr/local/sbin/segw -D >/dev/null 2>&1
+
+			echo "[POST-INSTALL] ... Initialize database"
+			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -I >/dev/null 2>&1
+
+			echo "[POST-INSTALL] ... Load default configuration into the database"
+			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -T >/dev/null 2>&1
+
+			# change back to the previous dir, this should never fail!
+			cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
+		else 
+			echo "[POST-INSTALL] ... Can not access folder $SMF_DIR, could not create configurations. Fatal Error!"
+			exit 1
+		fi		
+	fi
+
+	echo "[POST-INSTALL] ... Generate configurations and database is done."
+	return 0
+}
+
+####
+# Retrieve all key ids that correspond to interface inspecific settings
+# and that are thus called only once.
+####
+get_interface_inspecific_key_ids()
+{
+	interface_inspecific_key_ids="nms_address"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_debug"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_port"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_pwd"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_scriptpath"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_user"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids wired_meter_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids wired_meter_protocol"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids wireless_meter_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids wireless_meter_hci"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_path"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_pin_1"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_pin_2"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_pin_3"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_pin_4"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids ipt_has_ssl_config"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids ipt_wait_to_reconnect"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids ipt_tcp_connect_retries"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_accept_all_ids"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_account"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_address"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_discover"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_pwd"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_service"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids device_mac"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids device_class"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids device_manufacturer"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids device_serial_number"
+
+	echo "$interface_inspecific_key_ids"
+}
+
+####
+# Retrieve all key ids which correspond to interface specific settings,
+# thus they typically contain parts of the interface in their names and
+# are iterated multiple times.
+####
+get_interface_specific_key_ids()
+{
+	interface_specific_key_ids="broker_account"
+	interface_specific_key_ids="$interface_specific_key_ids broker_address"
+	interface_specific_key_ids="$interface_specific_key_ids broker_enabled"
+	interface_specific_key_ids="$interface_specific_key_ids broker_login"
+	interface_specific_key_ids="$interface_specific_key_ids broker_port"
+	interface_specific_key_ids="$interface_specific_key_ids broker_pwd"
+	interface_specific_key_ids="$interface_specific_key_ids serial_baudrate"
+	interface_specific_key_ids="$interface_specific_key_ids serial_databits"
+	interface_specific_key_ids="$interface_specific_key_ids serial_flowcontrol"
+	interface_specific_key_ids="$interface_specific_key_ids serial_name"
+	interface_specific_key_ids="$interface_specific_key_ids serial_parity"
+	interface_specific_key_ids="$interface_specific_key_ids serial_stopbits"
+	interface_specific_key_ids="$interface_specific_key_ids serial_type"
+	interface_specific_key_ids="$interface_specific_key_ids listener_account"
+	interface_specific_key_ids="$interface_specific_key_ids listener_address"
+	interface_specific_key_ids="$interface_specific_key_ids listener_enabled"
+	interface_specific_key_ids="$interface_specific_key_ids listener_login"
+	interface_specific_key_ids="$interface_specific_key_ids listener_port"
+	interface_specific_key_ids="$interface_specific_key_ids listener_pwd"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_enabled"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_mode"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_period"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_size"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_meter"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_address"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_src_port"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_dst_port"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_account"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_pwd"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_scrambled"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_scrambled_key"
+
+	echo "$interface_specific_key_ids"
+}
+
+####
+# Get the data type for a specific key.
+# Possible data types are:
+# - string: 		s
+# - unsigned8: 		u8
+# - unsigned16: 	u16
+# - unsigned32:		u32 
+# - signed32: 		i32
+# - boolean: 		bool
+# - time 			chrono:sec
+# - mac 			MAC
+# - obis-code 		OBIS
+####
+get_datatype_by_key_id()
+{
+	key_id=$1
+
+	case "$key_id" in 
+		###
+		# All broker settings in alphabetical order
+		###
+		broker_account)
+			echo "s"
+			;;		
+		broker_address)
+			echo "s"
+			;;	
+		broker_enabled)
+			echo "bool"
+			;;
+		broker_login)
+			echo "bool"
+			;;
+		broker_port)
+			echo "u16"
+			;;
+		broker_pwd)
+			echo "s"
+			;;
+		###
+		# All serial settings in alphabetical order
+		###		
+		serial_baudrate)
+			echo "u32"
+			;;		
+		serial_databits)
+			echo "u8"
+			;;
+		serial_flowcontrol)
+			echo "s"
+			;;
+		serial_name)
+			echo "s"
+			;;
+		serial_parity)
+			echo "s"
+			;;
+		serial_stopbits)
+			echo "u32"
+			;;
+		serial_type)
+			echo "s"
+			;;	
+		###
+		# All nms settings in alphabetical order
+		###	
+		nms_address)
+			echo "s"
+			;;
+		nms_debug)
+			echo "bool"
+			;;	
+		nms_enabled)
+			echo "bool"
+			;;
+		nms_port)
+			echo "u16"
+			;;
+		nms_pwd)
+			echo "s"
+			;;
+		nms_scriptpath)
+			echo "s"
+			;;
+		nms_user)
+			echo "s"
+			;;
+		###
+		# All root redirector settings in alphabetical order
+		###	
+		listener_account)
+			echo "s"
+			;;
+		listener_address)
+			echo "s"
+			;;
+		listener_enabled)
+			echo "bool"
+			;;
+		listener_login)
+			echo "bool"
+			;;
+		listener_port)
+			echo "u16"
+			;;
+		listener_pwd)
+			echo "u16"
+			;;
+		###
+		# All meter settings in alphabetical order
+		###	
+		wired_meter_enabled)
+			echo "bool"
+			;;
+		wired_meter_protocol)
+			echo "s"
+			;;
+		wireless_meter_enabled)
+			echo "bool"
+			;;
+		wireless_meter_hci)
+			echo "s"
+			;;	
+		###
+		# All broblocklist settings in alphabetical order
+		###	
+		blocklist_enabled)
+			echo "bool"
+			;;
+		blocklist_meter)
+			echo "s"
+			;;	
+		blocklist_mode)
+			echo "s"
+			;;
+		blocklist_period)
+			echo "chrono:sec"
+			;;
+		blocklist_size)
+			echo "u32"
+			;;
+		###
+		# All gpio settings
+		###	
+		gpio_enabled)
+			echo "bool"
+			;;
+		gpio_path)
+			echo "s"
+			;;
+		gpio_pin_1)
+			echo "i64"
+			;;
+		gpio_pin_2)
+			echo "i64"
+			;;
+		gpio_pin_3)
+			echo "i64"
+			;;
+		gpio_pin_4)
+			echo "i64"
+			;;
+		###
+		# All IPT settings
+		###	
+		ipt_account)
+			echo "s"
+			;;
+		ipt_address)
+			echo "s"
+			;;
+		ipt_dst_port)
+			echo "u16"
+			;;
+		ipt_has_ssl_config)
+			echo "bool"
+			;;
+		ipt_pwd)
+			echo "s"
+			;;
+		ipt_scrambled)
+			echo "bool"
+			;;
+		ipt_scrambled_key)
+			echo "s"
+			;;
+		ipt_src_port)
+			echo "u16"
+			;;
+		ipt_tcp_connect_retries)
+			echo "u32"
+			;;
+		ipt_wait_to_reconnect)
+			echo "chrono:sec"
+			;;
+		###
+		# All SML settings
+		###
+		sml_accept_all_ids)
+			echo "bool"
+			;;
+		sml_account)
+			echo "s"
+			;;
+		sml_address)
+			echo "s"
+			;;
+		sml_discover)
+			echo "u16"
+			;;
+		sml_enabled)
+			echo "bool"
+			;;
+		sml_pwd)
+			echo "s"
+			;;
+		sml_service)
+			echo "s"
+			;;
+		###
+		# All device settings
+		###
+		device_mac)
+			echo "MAC"
+			;;
+		device_class)
+			echo "OBIS"
+			;;
+		device_manufacturer)
+			echo "s"
+			;;
+		device_serial_number)
+			echo "u32"
+			;;
+	esac
+}
+
+####
+# Get the correct notation / name based on the SMF/node version
+# @param 1 - app_version: [0.8 | 0.9]
+# @param 2 - interface_num: number of the interface of that parameter. Typically 0 (unused) or 1|2
+# @param 3 - key_id: identifier of the key for which the specific string for the provided version shall be returned
+# @return the requested string. UNKNOWN for an unknown version. ERROR for insufficient parameters.
+####
+get_key_string_by_key_id()
+{
+	# check if the correct number of parameters was provided
+	if [ "$#" -ne 3 ]; then 
+		echo "ERROR"
+		return 1;
+	fi
+
+	# assign the parameters, no further checks required
+	app_version=$1
+	interface_num=$2
+	key_id=$3
+
+	# find the correct string representation for the requested version
+	# if the version is not given correctly or not known, return UNKNOWN
+	case "$key_id" in 
+		###
+		# All broker settings in alphabetical order
+		###
+		broker_account)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000$interface_num:900000000401"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/account"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;	
+			esac
+			;;		
+		broker_address)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000$interface_num:900000000201"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000$interface_num:enabled"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/broker-enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_login)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000$interface_num:BROKER_LOGIN"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/broker-login"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_port)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000$interface_num:900000000301"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/port"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		broker_pwd)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_BROKER:90000000000$interface_num:900000000501"
+					;;
+				*0.9*)
+					echo "broker/$((interface_num - 1))/0/pwd"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All serial settings in alphabetical order
+		###		
+		serial_baudrate)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000060$interface_num"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/speed"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;		
+		serial_databits)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000020$interface_num"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/databits"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_flowcontrol)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000040$interface_num"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/flow-control"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_name)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000$interface_num:SERIAL_NAME"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/port"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_parity)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000030$interface_num"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/parity"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_stopbits)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000050$interface_num"
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/stopbits"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		serial_type)
+			case "$app_version" in
+				*0.8*)
+					if [ $interface_num -eq 2 ]; then 
+						echo "rs485:descr"
+					else 
+						# SKIP copying this parameter, since it was not present in this version 
+						#echo "IF_wMBUS:descr"
+						echo "SKIP"
+					fi
+					;;
+				*0.9*)
+					echo "lmn/$((interface_num - 1))/type"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		###
+		# All root redirector settings in alphabetical order
+		###
+		listener_account)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000040$interface_num"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/account"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		listener_address)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000020$interface_num"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		listener_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:enabled"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		listener_login)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:REDIRECTOR_LOGIN"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/login"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		listener_port)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000030$interface_num"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/port"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		listener_pwd)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000050$interface_num"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/pwd"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		###
+		# All broblocklist settings in alphabetical order
+		###			
+		blocklist_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:enabled"
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_mode)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:mode"
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/mode"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_period)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:period"
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/period"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_size)
+			case "$app_version" in
+				*0.8*)
+					echo "SKIP"
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/size"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_meter)
+			case "$app_version" in
+				*0.8*)
+					if [ $interface_num -eq 1 ]; then 
+						echo "IF_wMBUS:blocklist:meter:1"
+					else 
+						echo "SKIP"
+					fi
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/meter/0"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;			
+		###
+		# All nms settings in alphabetical order
+		###	
+		nms_address)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_ADDRESS"
+					;;
+				*0.9*)
+					echo "nms/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_debug)
+			case "$app_version" in
+				*0.8*)
+					# SKIP copying this parameter, since it was not present in this version 
+					echo "SKIP"
+					;;
+				*0.9*)
+					echo "nms/debug"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		nms_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_ENABLED"
+					;;
+				*0.9*)
+					echo "nms/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_port)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_PORT"
+					;;
+				*0.9*)
+					echo "nms/port"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_pwd)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_PWD"
+					;;
+				*0.9*)
+					echo "nms/pwd"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_scriptpath)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_NMS:script-path"
+					;;
+				*0.9*)
+					echo "nms/script-path"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		nms_user)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_NMS:NMS_USER"
+					;;
+				*0.9*)
+					echo "nms/account"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		
+		###
+		# All meter settings in alphabetical order
+		###	
+		wired_meter_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "rs485:enabled"
+					;;
+				*0.9*)
+					echo "lmn/1/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		wired_meter_protocol)
+			case "$app_version" in
+				*0.8*)
+					echo "rs485:protocol"
+					;;
+				*0.9*)
+					echo "lmn/1/protocol"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		wireless_meter_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:enabled"
+					;;
+				*0.9*)
+					echo "lmn/0/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		wireless_meter_hci)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:HCI"
+					;;
+				*0.9*)
+					echo "lmn/0/HCI"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All gpio settings
+		###	
+		gpio_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "gpio:enabled"
+					;;
+				*0.9*)
+					echo "gpio/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		gpio_path)
+			case "$app_version" in
+				*0.8*)
+					echo "gpio:path"
+					;;
+				*0.9*)
+					echo "gpio/path"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		gpio_pin_1)
+			case "$app_version" in
+				*0.8*)
+					echo "gpio:pin:1"
+					;;
+				*0.9*)
+					echo "gpio/pin/1"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		gpio_pin_2)
+			case "$app_version" in
+				*0.8*)
+					echo "gpio:pin:2"
+					;;
+				*0.9*)
+					echo "gpio/pin/2"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		gpio_pin_3)
+			case "$app_version" in
+				*0.8*)
+					echo "gpio:pin:3"
+					;;
+				*0.9*)
+					echo "gpio/pin/3"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		gpio_pin_4)
+			case "$app_version" in
+				*0.8*)
+					echo "gpio:pin:4"
+					;;
+				*0.9*)
+					echo "gpio/pin/4"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All IPT settings
+		###	
+		ipt_address)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491707000$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/81491707000$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_src_port)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491907000$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/81491907000$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_dst_port)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491A07000$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/81491a07000$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_account)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C010$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/8149633c010$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_pwd)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C020$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/8149633c020$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_scrambled)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C030$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/8149633c030$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_scrambled_key)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:sk"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/sk"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_has_ssl_config)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:HAS_SSL_CONFIG"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d0700ff"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_wait_to_reconnect)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:TCP_WAIT_TO_RECONNECT"
+					;;
+				*0.9*)
+					echo "81490d0700ff/814827320601"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_tcp_connect_retries)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:TCP_CONNECT_RETRIES"
+					;;
+				*0.9*)
+					echo "81490d0700ff/814831320201"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;			
+		###
+		# All SML settings
+		###
+		sml_accept_all_ids)
+			case "$app_version" in
+				*0.8*)
+					echo "accept-all-ids"
+					;;
+				*0.9*)
+					echo "sml/accept-all-ids"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		sml_account)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:account"
+					;;
+				*0.9*)
+					echo "sml/account"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_address)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:address"
+					;;
+				*0.9*)
+					echo "sml/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_discover)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:discover"
+					;;
+				*0.9*)
+					echo "sml/discover"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:enabled"
+					;;
+				*0.9*)
+					echo "sml/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_pwd)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:pwd"
+					;;
+				*0.9*)
+					echo "sml/pwd"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_service)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:service"
+					;;
+				*0.9*)
+					echo "sml/service"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All device settings
+		###
+		device_mac)
+			case "$app_version" in
+				*0.8*)
+					echo "SERVER_ID"
+					;;
+				*0.9*)
+					echo "net/mac"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		device_class)
+			case "$app_version" in
+				*0.8*)
+					echo "DEVICE_CLASS"
+					;;
+				*0.9*)
+					echo "hw/class"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		device_manufacturer)
+			case "$app_version" in
+				*0.8*)
+					echo "DATA_MANUFACTURER"
+					;;
+				*0.9*)
+					echo "hw/manufacturer"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		device_serial_number)
+			case "$app_version" in
+				*0.8*)
+					echo "SERIAL_NR"
+					;;
+				*0.9*)
+					echo "hw/serial"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+	esac
+}
+
+####
+# Wrapper to read values from file.
+# Read value gets echoed and stored inside val_by_key variable.
+# @param 1 - key: identifier for which the value shall be extracted
+# @param 2 - db_dump_file: path to the file, where the parameter is stored
+####
+get_val_by_key_from_db_dump()
+{
+	key=$1
+	db_dump_file=$2
+
+	# search in the file for the mentioned key and print the value of it
+	val_by_key=$(grep "$key" "$db_dump_file" | awk '{print $2}')
+	echo "$val_by_key"
+	return 0
+}
+
+####
+# Import a value into the database.
+# @param 1 - key: identifier
+# @param 2 - value: value to store
+# @param 3 - datatype: datatype that gets assigned with the value
+####
+import_value()
+{
+	key=$1
+	value=$2
+	datatype=$3
+
+	/usr/local/sbin/segw --set-val "$key" "$value" "$datatype" >/dev/null 2>&1
+}
+
+####
+# Function to sync one parameter from an old application version to a new version.
+# Both versions are required to get the correct format of the backed-up data.
+# @param 1 - app_version_old: Old version that shall be updated 
+# @param 2 - db_dump_file: path to the file to extract the value from
+# @param 3 - key_id: version independent key identifier
+# @param 4 - interface_num: number of the interface, required for e.g. serial, broker settings. Ignored for others.
+####
+sync_value_by_key_id()
+{
+	app_version_old=$1
+	db_dump_file=$2
+	key_id=$3
+	interface_num=$4
+
+	# retrieve the actual keys that need to be used for this version
+	key_old=$( get_key_string_by_key_id "$app_version_old" "$interface_num" "$key_id")
+	key_new=$( get_key_string_by_key_id "$NEW_VERSION_SHORT" "$interface_num" "$key_id")
+
+	# check if a migration is possible (which is not the case, if either of the keys is SKIP, UNKNOWN or empty)
+	if [ "$key_old" = "SKIP" ] || [ "$key_new" = "SKIP" ]; then 
+		echo "[POST-INSTALL]    ... skipped: $key_id, as it is marked for skipping ..."
+	elif [ "$key_old" = "UNKNOWN" ] || [ "$key_new" = "UNKNOWN" ]; then	
+		echo "[POST-INSTALL]    ... skipped: $key_id, as it is marked as unknown ..."
+	elif [ -z "$key_old" ] || [ -z "$key_new" ]; then 
+		echo "[POST-INSTALL]    ... skipped: $key_id, as it could not be found and is empty ..."
+	else
+		val=$( get_val_by_key_from_db_dump "$key_old" "$db_dump_file" )
+		# make sure that a value is set, to not import an empty value and possibly overwrite a good setting
+		if [ "$val" = "" ]; then 
+			echo "[POST-INSTALL]    ... skipped: $key_id, as its value is empty ..."
+		else 
+			val_type=$( get_datatype_by_key_id "$key_id" )
+			import_value "$key_new" "$val" "$val_type"
+			echo "[POST-INSTALL]    ... imported: $key_id($key_old -> $key_new) = $val (type: $val_type) ..."
+		fi
+	fi
+}
+
+####
+# Sync all the old values into the newest configuration
+# @param 1 - app_version_old: previous version from which the configuration shall be done
+# @param 2 - db_dump_file: path to the database dump file to extract the values
+####
+sync_backed_up_values()
+{
+	app_version_old=$1
+	db_dump_file=$2
+
+	echo "[POST-INSTALL] Start synching values from the backup ..."
+
+	# only perform the sync if the file is present and its size is > 0
+	if [ -s "$db_dump_file" ]; then 
+		echo "[POST-INSTALL] ... start importing interface specific settings ... "
+		# Update all settings that are done for multiple interfaces
+		# in this case the interface number is two
+		i=1; while [ $i -le 2 ]; do 
+			key_ids=$( get_interface_specific_key_ids )
+			for iterator_key_id in $key_ids; do 
+				# perform the update action for this key_id
+				sync_value_by_key_id "$app_version_old" "$db_dump_file" "$iterator_key_id" $i
+			done
+
+			# increase the counter for the second interface
+			i=$(( i +1 ))
+		done  
+
+		echo "[POST-INSTALL] ... start importing interface-independent specific settings ... "
+
+		# Update all settings that are individual of the multiple interfaces
+		key_ids=$( get_interface_inspecific_key_ids )
+		for iterator_key_id in $key_ids; do 
+			# perform the update action for this key_id
+			sync_value_by_key_id "$app_version_old" "$db_dump_file" "$iterator_key_id" 0
+		done
+	else 
+		echo "[POST-INSTALL] ... Skip syncing, file $db_dump_file can not be found or is empty!"
+	fi
+	
+	echo "[POST-INSTALL] ... Completed parameter syncing."
+}
+
+####
+# Execute required update actions based on the version that is updated from
+####
+perform_update_actions()
+{
+	echo "[POST-INSTALL] Select appropriate update actions ..."
+
+	if [ $# -ne 1 ]; then 
+		echo "[POST-INSTALL] ... Missing backup_dir as first function parameter."
+		return 1
+	fi
+
+	backup_dir=$1
+
+	case "$previous_version_short" in 
+	*0.8*)
+		# perform updates
+		echo "[POST-INSTALL] ... Update actions 0.8 -> $NEW_VERSION_SHORT selected ..."
+		sync_backed_up_values "0.8" "$backup_dir/database_dump.txt"
+		;;
+	*0.9*)
+		# atm there are no known update procedures required for 0.9 to a newer version
+		echo "[POST-INSTALL] ... Update actions 0.9 -> $NEW_VERSION_SHORT selected ..."
+		echo "[POST-INSTALL]    ... currently not actions required ..."
+		;;
+	*)
+		# add new cases for future versions here
+		echo "[POST-INSTALL] ... Update actions for this version ($previous_version_short) have not been defined yet."
+		;;
+	esac
+
+	echo "[POST-INSTALL] ... Update actions completed."
+}
+
+####
+# Main function that contains the execution order of functions
+####
+main()
+{                                                         
+	echo ""
+	echo " ######################################################## "
+	echo " #            Performing Post-Inst Steps ...            # "
+	echo " ######################################################## "
+	echo ""
+
+    # check if we need to do some update magic at all
+    # only necessary, if there are changes that would otherwise require
+    # manual intervention.
+    # This is necessary for:
+    # 1. 0.8 -> 0.9: database format has changed, configuration name has changed
+
+	# The version to update to is given within the script,
+	# the possibly older version is read from created backups
+	get_last_backed_up_version
+
+	# first remove and update the libraries
+	update_libs
+
+	# (re)create the database and configuration file, before merging changes in the next step
+	generate_configurations "$BACKUP_DIR/$previous_version_long"
+
+	if [ "$previous_version_long" != "" ]; then 
+		# perform the updates on merging the data
+		perform_update_actions "$BACKUP_DIR/$previous_version_long"
+	fi
+
+	# force the daemon to reload the modified data and restart the service
+	systemctl daemon-reload
+	systemctl restart segw
+
+    echo ""
+    echo " ######################################################## "
+    echo " #            Post-Inst Steps Completed!                # "
+    echo " ######################################################## "
+    echo ""
+
+	return 0
+}
+
+main
+

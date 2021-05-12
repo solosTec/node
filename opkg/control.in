@@ -7,4 +7,5 @@ Package: ${OECP_NAME}
 Architecture: armel
 Installed-Size: 17334272
 Description: OECP package for ${PROJECT_NAME}
-
+Replaces: node
+Conflicts: node
