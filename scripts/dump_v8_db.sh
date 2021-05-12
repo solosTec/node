@@ -9,10 +9,6 @@
 
 SMF_DIR="/usr/local/etc/smf"
 
-# these variables will be replaced by CMAKE
-#VERSION_SHORT=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
-#VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}.${${PROJECT_NAME}_VERSION_TWEAK}
-
 create_backups ()
 {
 
@@ -68,7 +64,7 @@ main ()
     echo "[db dump] stop application"
     systemctl stop segw
 
-    create_backups "$SMF_DIR/backups/$VERSION_LONG"
+    create_backups
 
     echo ""
     echo " ######################################################## "
