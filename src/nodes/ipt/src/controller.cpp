@@ -109,13 +109,13 @@ namespace smf {
         toggle::server_vec_t &&tgl, std::string const &address, std::uint16_t port, ipt::scramble_key const &sk,
         std::chrono::minutes watchdog, std::chrono::seconds timeout) {
 
-        cluster_ = ctl.create_named_channel_with_ref<cluster>(
+        auto channel = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout);
-        BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(channel->is_open());
+        channel->dispatch("connect", cyng::make_tuple());
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-        cluster_->dispatch("listen", cyng::make_tuple(ep));
+        channel->dispatch("listen", cyng::make_tuple(ep));
     }
 
 } // namespace smf

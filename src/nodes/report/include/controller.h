@@ -30,9 +30,6 @@ namespace smf {
         void join_cluster(
             cyng::controller &, cyng::logger, boost::uuids::uuid, std::string const &node_name, toggle::server_vec_t &&,
             std::string storage_type, cyng::param_map_t &&);
-
-      private:
-        cyng::channel_ptr cluster_;
     };
 } // namespace smf
 

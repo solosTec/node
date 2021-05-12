@@ -104,9 +104,9 @@ namespace smf {
         cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name,
         ipt::toggle::server_vec_t &&tgl, ipt::push_channel &&pcc) {
 
-        network_ = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
-        BOOST_ASSERT(network_->is_open());
-        network_->dispatch("connect", cyng::make_tuple());
+        auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
+        BOOST_ASSERT(channel->is_open());
+        channel->dispatch("connect", cyng::make_tuple());
     }
 
     void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
@@ -121,10 +121,10 @@ namespace smf {
         cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name,
         toggle::server_vec_t &&tgl, bool login, std::string target, std::filesystem::path out) {
 
-        cluster_ =
+        auto channel =
             ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl), login, target, out);
-        BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(channel->is_open());
+        channel->dispatch("connect", cyng::make_tuple());
     }
 
     cyng::param_t controller::create_cluster_spec() {

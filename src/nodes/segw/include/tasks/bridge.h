@@ -9,7 +9,7 @@
 
 #include <cfg.h>
 #include <config/cfg_lmn.h>
-#include <nms/server.h>
+//#include <nms/server.h>
 #include <redirector/server.h>
 #include <router.h>
 #include <sml/server.h>
@@ -36,7 +36,7 @@ namespace smf {
             std::tuple<std::function<void(cyng::eod)>, std::function<void()>>;
 
       public:
-        bridge(std::weak_ptr<cyng::channel>, cyng::controller &ctl,
+        bridge(cyng::channel_weak, cyng::controller &ctl,
                cyng::logger, cyng::db::session);
 
       private:
@@ -57,7 +57,12 @@ namespace smf {
         void init_virtual_meter();
 
         void init_sml_server();
+
+        /**
+         * NMS server is running as task
+         */
         void init_nms_server();
+        void stop_nms_server();
 
         /**
          * start reading from serial ports
@@ -87,7 +92,7 @@ namespace smf {
 
       private:
         signatures_t sigs_;
-        std::weak_ptr<cyng::channel> channel_;
+        cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
         cyng::db::session db_;
@@ -96,7 +101,7 @@ namespace smf {
         cfg cfg_;
         cyng::mesh fabric_;
         router router_; //	SML router (incl. ip-t bus)
-        nms::server nms_;
+        //nms::server nms_;
         sml::server sml_;
         std::array<rdr::server, 2> redir_;
     };

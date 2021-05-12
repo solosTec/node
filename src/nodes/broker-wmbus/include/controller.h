@@ -42,10 +42,6 @@ namespace smf {
         cyng::param_t create_cluster_spec();
         cyng::param_t create_client_spec();
         cyng::param_t create_ipt_spec(boost::uuids::uuid tag);
-
-      private:
-        cyng::channel_ptr cluster_;
-        cyng::channel_ptr network_;
     };
 } // namespace smf
 

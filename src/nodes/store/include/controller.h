@@ -33,9 +33,6 @@ namespace smf {
       private:
         void init_storage(cyng::object &&);
         void create_influx_dbs(cyng::object &&, std::string const &cmd);
-
-      private:
-        cyng::channel_ptr network_;
     };
 } // namespace smf
 

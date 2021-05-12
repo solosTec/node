@@ -98,15 +98,15 @@ namespace smf {
             CYNG_LOG_ERROR(logger, "document root [" << document_root << "] does not exists");
         }
 
-        cluster_ = ctl.create_named_channel_with_ref<cluster>(
+        auto channel = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, node_name, logger, std::move(cfg), document_root, max_upload_size, nickname, timeout, country_code,
             lang_code, std::move(blocklist), std::move(redirects_intrinsic), auths);
 
-        BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(channel->is_open());
+        channel->dispatch("connect", cyng::make_tuple());
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-        cluster_->dispatch("listen", cyng::make_tuple(ep));
+        channel->dispatch("listen", cyng::make_tuple(ep));
     }
 
     cyng::vector_t controller::create_default_config(

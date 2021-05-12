@@ -167,10 +167,10 @@ namespace smf {
         ipt::toggle::server_vec_t &&tgl, std::vector<std::string> const &config_types, std::vector<std::string> const &sml_targets,
         std::vector<std::string> const &iec_targets) {
 
-        network_ = ctl.create_named_channel_with_ref<network>(
+        auto channel = ctl.create_named_channel_with_ref<network>(
             "network", ctl, tag, logger, node_name, model, std::move(tgl), config_types, sml_targets, iec_targets);
-        BOOST_ASSERT(network_->is_open());
-        network_->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(channel->is_open());
+        channel->dispatch("connect", cyng::make_tuple());
     }
 
     bool controller::run_options(boost::program_options::variables_map &vars) {

@@ -98,21 +98,20 @@ namespace smf {
         cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name,
         toggle::server_vec_t &&cfg_cluster, std::string storage_type, cyng::param_map_t &&cfg_db) {
 
-        cluster_ = ctl.create_named_channel_with_ref<cluster>(
+        auto channel = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, node_name, logger, std::move(cfg_cluster), storage_type, std::move(cfg_db));
-        BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(channel->is_open());
+        channel->dispatch("connect", cyng::make_tuple());
     }
 
     cyng::param_t controller::create_cluster_spec() {
         return cyng::make_param(
-            "cluster",
-            cyng::make_vector({
-                cyng::make_tuple(
-                    cyng::make_param("host", "127.0.0.1"), cyng::make_param("service", "7701"), cyng::make_param("account", "root"),
-                    cyng::make_param("pwd", "NODE_PWD"), cyng::make_param("salt", "NODE_SALT"),
-                    cyng::make_param("group", 0)) //	customer ID
-            }));
+            "cluster", cyng::make_vector({
+                           cyng::make_tuple(
+                               cyng::make_param("host", "127.0.0.1"), cyng::make_param("service", "7701"),
+                               cyng::make_param("account", "root"), cyng::make_param("pwd", "NODE_PWD"),
+                               cyng::make_param("salt", "NODE_SALT"), cyng::make_param("group", 0)) //	customer ID
+                       }));
     }
 
     bool controller::run_options(boost::program_options::variables_map &vars) {
