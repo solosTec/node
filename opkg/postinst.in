@@ -242,14 +242,100 @@ generate_configurations()
 }
 
 ####
+# Retrieve all key ids that correspond to interface inspecific settings
+# and that are thus called only once.
+####
+get_interface_inspecific_key_ids()
+{
+	interface_inspecific_key_ids="nms_address"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_debug"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_port"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_pwd"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_scriptpath"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids nms_user"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids wired_meter_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids wired_meter_protocol"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids wireless_meter_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids wireless_meter_hci"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_path"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_pin_1"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_pin_2"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_pin_3"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids gpio_pin_4"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids ipt_has_ssl_config"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids ipt_wait_to_reconnect"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids ipt_tcp_connect_retries"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_accept_all_ids"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_account"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_address"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_discover"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_enabled"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_pwd"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids sml_service"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids device_mac"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids device_class"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids device_manufacturer"
+	interface_inspecific_key_ids="$interface_inspecific_key_ids device_serial_number"
+
+	echo "$interface_inspecific_key_ids"
+}
+
+####
+# Retrieve all key ids which correspond to interface specific settings,
+# thus they typically contain parts of the interface in their names and
+# are iterated multiple times.
+####
+get_interface_specific_key_ids()
+{
+	interface_specific_key_ids="broker_account"
+	interface_specific_key_ids="$interface_specific_key_ids broker_address"
+	interface_specific_key_ids="$interface_specific_key_ids broker_enabled"
+	interface_specific_key_ids="$interface_specific_key_ids broker_login"
+	interface_specific_key_ids="$interface_specific_key_ids broker_port"
+	interface_specific_key_ids="$interface_specific_key_ids broker_pwd"
+	interface_specific_key_ids="$interface_specific_key_ids serial_baudrate"
+	interface_specific_key_ids="$interface_specific_key_ids serial_databits"
+	interface_specific_key_ids="$interface_specific_key_ids serial_flowcontrol"
+	interface_specific_key_ids="$interface_specific_key_ids serial_name"
+	interface_specific_key_ids="$interface_specific_key_ids serial_parity"
+	interface_specific_key_ids="$interface_specific_key_ids serial_stopbits"
+	interface_specific_key_ids="$interface_specific_key_ids serial_type"
+	interface_specific_key_ids="$interface_specific_key_ids listener_account"
+	interface_specific_key_ids="$interface_specific_key_ids listener_address"
+	interface_specific_key_ids="$interface_specific_key_ids listener_enabled"
+	interface_specific_key_ids="$interface_specific_key_ids listener_login"
+	interface_specific_key_ids="$interface_specific_key_ids listener_port"
+	interface_specific_key_ids="$interface_specific_key_ids listener_pwd"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_enabled"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_mode"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_period"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_size"
+	interface_specific_key_ids="$interface_specific_key_ids blocklist_meter"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_address"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_src_port"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_dst_port"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_account"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_pwd"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_scrambled"
+	interface_specific_key_ids="$interface_specific_key_ids ipt_scrambled_key"
+
+	echo "$interface_specific_key_ids"
+}
+
+####
 # Get the data type for a specific key.
 # Possible data types are:
 # - string: 		s
 # - unsigned8: 		u8
 # - unsigned16: 	u16
 # - unsigned32:		u32 
+# - signed32: 		i32
 # - boolean: 		bool
 # - time 			chrono:sec
+# - mac 			MAC
+# - obis-code 		OBIS
 ####
 get_datatype_by_key_id()
 {
@@ -264,9 +350,6 @@ get_datatype_by_key_id()
 			;;		
 		broker_address)
 			echo "s"
-			;;
-		broker_count)
-			echo "u32"
 			;;	
 		broker_enabled)
 			echo "bool"
@@ -279,10 +362,6 @@ get_datatype_by_key_id()
 			;;
 		broker_pwd)
 			echo "s"
-			;;
-		broker_reconnect)
-			# TODO find data type
-			echo "bool"
 			;;
 		###
 		# All serial settings in alphabetical order
@@ -335,21 +414,23 @@ get_datatype_by_key_id()
 		###
 		# All root redirector settings in alphabetical order
 		###	
-		root_redirector_address)
-			# TODO find data type
-			echo ""
+		listener_account)
+			echo "s"
 			;;
-		root_redirector_enabled)
-			# TODO find data type
-			echo ""
+		listener_address)
+			echo "s"
 			;;
-		root_redirector_login)
-			# TODO find data type
-			echo ""
+		listener_enabled)
+			echo "bool"
 			;;
-		root_redirector_port)
-			# TODO find data type
-			echo ""
+		listener_login)
+			echo "bool"
+			;;
+		listener_port)
+			echo "u16"
+			;;
+		listener_pwd)
+			echo "u16"
 			;;
 		###
 		# All meter settings in alphabetical order
@@ -363,12 +444,18 @@ get_datatype_by_key_id()
 		wireless_meter_enabled)
 			echo "bool"
 			;;
+		wireless_meter_hci)
+			echo "s"
+			;;	
 		###
 		# All broblocklist settings in alphabetical order
 		###	
 		blocklist_enabled)
 			echo "bool"
 			;;
+		blocklist_meter)
+			echo "s"
+			;;	
 		blocklist_mode)
 			echo "s"
 			;;
@@ -376,6 +463,99 @@ get_datatype_by_key_id()
 			echo "chrono:sec"
 			;;
 		blocklist_size)
+			echo "u32"
+			;;
+		###
+		# All gpio settings
+		###	
+		gpio_enabled)
+			echo "bool"
+			;;
+		gpio_path)
+			echo "s"
+			;;
+		gpio_pin_1)
+			echo "i64"
+			;;
+		gpio_pin_2)
+			echo "i64"
+			;;
+		gpio_pin_3)
+			echo "i64"
+			;;
+		gpio_pin_4)
+			echo "i64"
+			;;
+		###
+		# All IPT settings
+		###	
+		ipt_account)
+			echo "s"
+			;;
+		ipt_address)
+			echo "s"
+			;;
+		ipt_dst_port)
+			echo "u16"
+			;;
+		ipt_has_ssl_config)
+			echo "bool"
+			;;
+		ipt_pwd)
+			echo "s"
+			;;
+		ipt_scrambled)
+			echo "bool"
+			;;
+		ipt_scrambled_key)
+			echo "s"
+			;;
+		ipt_src_port)
+			echo "u16"
+			;;
+		ipt_tcp_connect_retries)
+			echo "u32"
+			;;
+		ipt_wait_to_reconnect)
+			echo "chrono:sec"
+			;;
+		###
+		# All SML settings
+		###
+		sml_accept_all_ids)
+			echo "bool"
+			;;
+		sml_account)
+			echo "s"
+			;;
+		sml_address)
+			echo "s"
+			;;
+		sml_discover)
+			echo "u16"
+			;;
+		sml_enabled)
+			echo "bool"
+			;;
+		sml_pwd)
+			echo "s"
+			;;
+		sml_service)
+			echo "s"
+			;;
+		###
+		# All device settings
+		###
+		device_mac)
+			echo "MAC"
+			;;
+		device_class)
+			echo "OBIS"
+			;;
+		device_manufacturer)
+			echo "s"
+			;;
+		device_serial_number)
 			echo "u32"
 			;;
 	esac
@@ -427,19 +607,6 @@ get_key_string_by_key_id()
 					;;
 				*0.9*)
 					echo "broker/$((interface_num - 1))/0/address"
-					;;
-				*)
-					echo "UNKNOWN"
-					;;
-			esac
-			;;
-		broker_count)
-			case "$app_version" in
-				*0.8*)
-					echo "SKIP"
-					;;
-				*0.9*)
-					echo "broker/$((interface_num - 1))/0/count"
 					;;
 				*)
 					echo "UNKNOWN"
@@ -498,28 +665,13 @@ get_key_string_by_key_id()
 					;;
 			esac
 			;;
-		broker_reconnect)
-			case "$app_version" in
-				*0.8*)
-					echo "ROOT_BROKER:90000000000$interface_num:900000000601"
-					;;
-				*0.9*)
-					# SKIP copying this parameter, since it is not present any more in this version 
-					# TODO: verify
-					echo "SKIP"
-					;;
-				*)
-					echo "UNKNOWN"
-					;;
-			esac
-			;;
 		###
 		# All serial settings in alphabetical order
 		###		
 		serial_baudrate)
 			case "$app_version" in
 				*0.8*)
-					echo "ROOT_SERIAL:91000000000$interface_num:910000000601"
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000060$interface_num"
 					;;
 				*0.9*)
 					echo "lmn/$((interface_num - 1))/speed"
@@ -532,7 +684,7 @@ get_key_string_by_key_id()
 		serial_databits)
 			case "$app_version" in
 				*0.8*)
-					echo "ROOT_SERIAL:91000000000$interface_num:910000000201"
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000020$interface_num"
 					;;
 				*0.9*)
 					echo "lmn/$((interface_num - 1))/databits"
@@ -545,7 +697,7 @@ get_key_string_by_key_id()
 		serial_flowcontrol)
 			case "$app_version" in
 				*0.8*)
-					echo "ROOT_SERIAL:91000000000$interface_num:910000000401"
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000040$interface_num"
 					;;
 				*0.9*)
 					echo "lmn/$((interface_num - 1))/flow-control"
@@ -571,7 +723,7 @@ get_key_string_by_key_id()
 		serial_parity)
 			case "$app_version" in
 				*0.8*)
-					echo "ROOT_SERIAL:91000000000$interface_num:910000000301"
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000030$interface_num"
 					;;
 				*0.9*)
 					echo "lmn/$((interface_num - 1))/parity"
@@ -584,7 +736,7 @@ get_key_string_by_key_id()
 		serial_stopbits)
 			case "$app_version" in
 				*0.8*)
-					echo "ROOT_SERIAL:91000000000$interface_num:910000000501"
+					echo "ROOT_SERIAL:91000000000$interface_num:91000000050$interface_num"
 					;;
 				*0.9*)
 					echo "lmn/$((interface_num - 1))/stopbits"
@@ -597,8 +749,13 @@ get_key_string_by_key_id()
 		serial_type)
 			case "$app_version" in
 				*0.8*)
-					# SKIP copying this parameter, since it was not present in this version 
-					echo "SKIP"
+					if [ $interface_num -eq 2 ]; then 
+						echo "rs485:descr"
+					else 
+						# SKIP copying this parameter, since it was not present in this version 
+						#echo "IF_wMBUS:descr"
+						echo "SKIP"
+					fi
 					;;
 				*0.9*)
 					echo "lmn/$((interface_num - 1))/type"
@@ -608,6 +765,159 @@ get_key_string_by_key_id()
 					;;
 			esac
 			;;	
+		###
+		# All root redirector settings in alphabetical order
+		###
+		listener_account)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000040$interface_num"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/account"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		listener_address)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000020$interface_num"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		listener_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:enabled"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		listener_login)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:REDIRECTOR_LOGIN"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/login"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		listener_port)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000030$interface_num"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/port"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		listener_pwd)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000050$interface_num"
+					;;
+				*0.9*)
+					echo "listener/$((interface_num - 1))/pwd"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		###
+		# All broblocklist settings in alphabetical order
+		###			
+		blocklist_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:enabled"
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_mode)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:mode"
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/mode"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_period)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:blocklist:period"
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/period"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_size)
+			case "$app_version" in
+				*0.8*)
+					echo "SKIP"
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/size"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		blocklist_meter)
+			case "$app_version" in
+				*0.8*)
+					if [ $interface_num -eq 1 ]; then 
+						echo "IF_wMBUS:blocklist:meter:1"
+					else 
+						echo "SKIP"
+					fi
+					;;
+				*0.9*)
+					echo "blocklist/$((interface_num - 1))/meter/0"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;			
 		###
 		# All nms settings in alphabetical order
 		###	
@@ -703,75 +1013,7 @@ get_key_string_by_key_id()
 					;;
 			esac
 			;;
-		###
-		# All root redirector settings in alphabetical order
-		###
-		root_redirector_address)
-			case "$app_version" in
-				*0.8*)
-					echo "ROOT_REDIRECTOR:930000000002:930000000202"
-					;;
-				*0.9*)
-					echo "listener/$((interface_num - 1))/address"
-					;;
-				*)
-					echo "UNKNOWN"
-					;;
-			esac
-			;;
-		root_redirector_enabled)
-			case "$app_version" in
-				*0.8*)
-					echo "ROOT_REDIRECTOR:930000000002:enabled"
-					;;
-				*0.9*)
-					echo "listener/$((interface_num - 1))/enabled"
-					;;
-				*)
-					echo "UNKNOWN"
-					;;
-			esac
-			;;	
-		root_redirector_login)
-			case "$app_version" in
-				*0.8*)
-					echo "ROOT_REDIRECTOR:930000000002:REDIRECTOR_LOGIN"
-					;;
-				*0.9*)
-					echo "listener/$((interface_num - 1))/login"
-					;;
-				*)
-					echo "UNKNOWN"
-					;;
-			esac
-			;;
 		
-		root_redirector_port)
-			case "$app_version" in
-				*0.8*)
-					echo "ROOT_REDIRECTOR:930000000002:930000000302"
-					;;
-				*0.9*)
-					echo "listener/$((interface_num - 1))/port"
-					;;
-				*)
-					echo "UNKNOWN"
-					;;
-			esac
-			;;
-		root_redirector_timeout)
-			case "$app_version" in
-				*0.8*)
-					echo "ROOT_REDIRECTOR:930000000002:930000000302"
-					;;
-				*0.9*)
-					echo "listener/$((interface_num - 1))/timeout"
-					;;
-				*)
-					echo "UNKNOWN"
-					;;
-			esac
-			;;		
 		###
 		# All meter settings in alphabetical order
 		###	
@@ -814,55 +1056,376 @@ get_key_string_by_key_id()
 					;;
 			esac
 			;;
+		wireless_meter_hci)
+			case "$app_version" in
+				*0.8*)
+					echo "IF_wMBUS:HCI"
+					;;
+				*0.9*)
+					echo "lmn/0/HCI"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
 		###
-		# All broblocklist settings in alphabetical order
+		# All gpio settings
 		###	
-		blocklist_enabled)
+		gpio_enabled)
 			case "$app_version" in
 				*0.8*)
-					echo "IF_wMBUS:blocklist:enabled"
+					echo "gpio:enabled"
 					;;
 				*0.9*)
-					echo "blocklist/$((interface_num - 1))/enabled"
+					echo "gpio/enabled"
 					;;
 				*)
 					echo "UNKNOWN"
 					;;
 			esac
 			;;
-		blocklist_mode)
+		gpio_path)
 			case "$app_version" in
 				*0.8*)
-					echo "IF_wMBUS:blocklist:mode"
+					echo "gpio:path"
 					;;
 				*0.9*)
-					echo "blocklist/$((interface_num - 1))/mode"
+					echo "gpio/path"
 					;;
 				*)
 					echo "UNKNOWN"
 					;;
 			esac
 			;;
-		blocklist_period)
+		gpio_pin_1)
 			case "$app_version" in
 				*0.8*)
-					echo "IF_wMBUS:blocklist:period"
+					echo "gpio:pin:1"
 					;;
 				*0.9*)
-					echo "blocklist/$((interface_num - 1))/period"
+					echo "gpio/pin/1"
 					;;
 				*)
 					echo "UNKNOWN"
 					;;
 			esac
 			;;
-		blocklist_size)
+		gpio_pin_2)
 			case "$app_version" in
 				*0.8*)
-					echo "SKIP"
+					echo "gpio:pin:2"
 					;;
 				*0.9*)
-					echo "blocklist/$((interface_num - 1))/size"
+					echo "gpio/pin/2"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		gpio_pin_3)
+			case "$app_version" in
+				*0.8*)
+					echo "gpio:pin:3"
+					;;
+				*0.9*)
+					echo "gpio/pin/3"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		gpio_pin_4)
+			case "$app_version" in
+				*0.8*)
+					echo "gpio:pin:4"
+					;;
+				*0.9*)
+					echo "gpio/pin/4"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All IPT settings
+		###	
+		ipt_address)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491707000$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/81491707000$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_src_port)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491907000$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/81491907000$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_dst_port)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491A07000$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/81491a07000$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_account)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C010$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/8149633c010$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_pwd)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C020$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/8149633c020$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_scrambled)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C030$interface_num"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/8149633c030$interface_num"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_scrambled_key)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:81490D07000$interface_num:sk"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d07000$interface_num/sk"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_has_ssl_config)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:HAS_SSL_CONFIG"
+					;;
+				*0.9*)
+					echo "81490d0700ff/81490d0700ff"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_wait_to_reconnect)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:TCP_WAIT_TO_RECONNECT"
+					;;
+				*0.9*)
+					echo "81490d0700ff/814827320601"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		ipt_tcp_connect_retries)
+			case "$app_version" in
+				*0.8*)
+					echo "ROOT_IPT_PARAM:TCP_CONNECT_RETRIES"
+					;;
+				*0.9*)
+					echo "81490d0700ff/814831320201"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;			
+		###
+		# All SML settings
+		###
+		sml_accept_all_ids)
+			case "$app_version" in
+				*0.8*)
+					echo "accept-all-ids"
+					;;
+				*0.9*)
+					echo "sml/accept-all-ids"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		sml_account)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:account"
+					;;
+				*0.9*)
+					echo "sml/account"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_address)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:address"
+					;;
+				*0.9*)
+					echo "sml/address"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_discover)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:discover"
+					;;
+				*0.9*)
+					echo "sml/discover"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_enabled)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:enabled"
+					;;
+				*0.9*)
+					echo "sml/enabled"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_pwd)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:pwd"
+					;;
+				*0.9*)
+					echo "sml/pwd"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		sml_service)
+			case "$app_version" in
+				*0.8*)
+					echo "sml:service"
+					;;
+				*0.9*)
+					echo "sml/service"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		###
+		# All device settings
+		###
+		device_mac)
+			case "$app_version" in
+				*0.8*)
+					echo "SERVER_ID"
+					;;
+				*0.9*)
+					echo "net/mac"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;	
+		device_class)
+			case "$app_version" in
+				*0.8*)
+					echo "DEVICE_CLASS"
+					;;
+				*0.9*)
+					echo "hw/class"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		device_manufacturer)
+			case "$app_version" in
+				*0.8*)
+					echo "DATA_MANUFACTURER"
+					;;
+				*0.9*)
+					echo "hw/manufacturer"
+					;;
+				*)
+					echo "UNKNOWN"
+					;;
+			esac
+			;;
+		device_serial_number)
+			case "$app_version" in
+				*0.8*)
+					echo "SERIAL_NR"
+					;;
+				*0.9*)
+					echo "hw/serial"
 					;;
 				*)
 					echo "UNKNOWN"
@@ -961,7 +1524,7 @@ sync_backed_up_values()
 		# Update all settings that are done for multiple interfaces
 		# in this case the interface number is two
 		i=1; while [ $i -le 2 ]; do 
-			key_ids="broker_account broker_address broker_enabled broker_count broker_login broker_port broker_pwd broker_reconnect serial_baudrate serial_databits serial_flowcontrol serial_name serial_parity serial_stopbits serial_type blocklist_enabled blocklist_mode blocklist_period blocklist_size"
+			key_ids=$( get_interface_specific_key_ids )
 			for iterator_key_id in $key_ids; do 
 				# perform the update action for this key_id
 				sync_value_by_key_id "$app_version_old" "$db_dump_file" "$iterator_key_id" $i
@@ -974,7 +1537,7 @@ sync_backed_up_values()
 		echo "[POST-INSTALL] ... start importing interface-independent specific settings ... "
 
 		# Update all settings that are individual of the multiple interfaces
-		key_ids="nms_address nms_debug nms_enabled nms_port nms_pwd nms_scriptpath nms_user root_redirector_address root_redirector_enabled root_redirector_login root_redirector_port wired_meter_enabled wired_meter_protocol wireless_meter_enabled "
+		key_ids=$( get_interface_inspecific_key_ids )
 		for iterator_key_id in $key_ids; do 
 			# perform the update action for this key_id
 			sync_value_by_key_id "$app_version_old" "$db_dump_file" "$iterator_key_id" 0
