@@ -31,6 +31,9 @@ namespace smf {
             cyng::controller &, cyng::logger, boost::uuids::uuid, std::uint32_t query, std::string const &node_name,
             toggle::server_vec_t &&cfg, std::string const &address, std::uint16_t port, ipt::scramble_key const &,
             std::chrono::minutes watchdog, std::chrono::seconds timeout);
+
+      private:
+        cyng::channel_ptr cluster_;
     };
 } // namespace smf
 

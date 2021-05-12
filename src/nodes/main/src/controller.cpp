@@ -23,7 +23,7 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config) : controller_base(config), cluster_() {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
@@ -88,11 +88,11 @@ namespace smf {
 
         auto const session_cfg = cyng::container_cast<cyng::param_map_t>(reader["session"].get());
 
-        auto channel = ctl.create_named_channel_with_ref<server>(
+        cluster_ = ctl.create_named_channel_with_ref<server>(
             "main", ctl, tag, country_code, lang_code, logger, account, pwd, salt, std::chrono::seconds(monitor), session_cfg);
-        BOOST_ASSERT(channel->is_open());
+        BOOST_ASSERT(cluster_->is_open());
 
-        channel->dispatch("start", cyng::make_tuple(ep));
+        cluster_->dispatch("start", cyng::make_tuple(ep));
     }
 
     void controller::shutdown(cyng::logger logger, cyng::registry &reg) {

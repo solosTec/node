@@ -29,7 +29,7 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config) : controller_base(config), network_() {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
@@ -156,6 +156,8 @@ namespace smf {
 
     void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
 
+        config::stop_tasks(logger, reg, "network");
+
         //
         //	stop all running tasks
         //
@@ -167,10 +169,10 @@ namespace smf {
         ipt::toggle::server_vec_t &&tgl, std::vector<std::string> const &config_types, std::vector<std::string> const &sml_targets,
         std::vector<std::string> const &iec_targets) {
 
-        auto channel = ctl.create_named_channel_with_ref<network>(
+        network_ = ctl.create_named_channel_with_ref<network>(
             "network", ctl, tag, logger, node_name, model, std::move(tgl), config_types, sml_targets, iec_targets);
-        BOOST_ASSERT(channel->is_open());
-        channel->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(network_->is_open());
+        network_->dispatch("connect", cyng::make_tuple());
     }
 
     bool controller::run_options(boost::program_options::variables_map &vars) {

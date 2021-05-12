@@ -53,7 +53,6 @@ namespace smf {
 		, cfg_(logger, cache_)
 		, fabric_(ctl)
 		, router_(ctl, cfg_, logger)
-		//, nms_(ctl, cfg_, logger)
 		, sml_(ctl, cfg_, logger)
 		, redir_{ { 
 				//	the array index is repeated in the LMN type.
@@ -61,6 +60,7 @@ namespace smf {
 			{ctl, cfg_, logger, lmn_type::WIRELESS}, 
 			{ctl, cfg_, logger, lmn_type::WIRED} 
 			} }
+        , stash_(ctl.get_ctx())
 	{
         auto sp = channel_.lock();
         if (sp) {
@@ -134,6 +134,11 @@ namespace smf {
         //
         CYNG_LOG_INFO(logger_, "stop: persistent data");
         stop_cache_persistence();
+
+        //
+        //  release all remaining references
+        //
+        stash_.clear();
     }
 
     void bridge::start() {
@@ -248,6 +253,7 @@ namespace smf {
         //
         auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", ctl_, logger_, cfg_, storage_);
         BOOST_ASSERT(channel->is_open());
+        stash_.lock(channel);
         channel->dispatch("power-return", cyng::make_tuple());
     }
 
@@ -256,6 +262,7 @@ namespace smf {
         auto scp = ctl_.get_registry().lookup("persistence");
         for (auto sp : scp) {
             CYNG_LOG_INFO(logger_, "[persistence] stop #" << sp->get_id());
+            stash_.unlock(sp->get_id());
             sp->stop();
         }
     }
@@ -330,6 +337,7 @@ namespace smf {
             CYNG_LOG_INFO(logger_, "init LMN [" << port << "]");
             auto channel = ctl_.create_named_channel_with_ref<lmn>(port, ctl_, logger_, cfg_, type);
             BOOST_ASSERT(channel->is_open());
+            stash_.lock(channel);
 
             cfg_blocklist blocklist(cfg_, type);
 
@@ -341,6 +349,8 @@ namespace smf {
                 //	start CP210x parser
                 //
                 auto hci = ctl_.create_named_channel_with_ref<CP210x>("CP210x", ctl_, logger_);
+                BOOST_ASSERT(hci->is_open());
+                stash_.lock(hci);
 
                 //
                 //	init CP210x
@@ -386,6 +396,7 @@ namespace smf {
             auto scp = ctl_.get_registry().lookup(port);
             for (auto sp : scp) {
                 CYNG_LOG_INFO(logger_, "stop LMN [" << port << "] #" << sp->get_id());
+                stash_.unlock(sp->get_id());
                 sp->stop();
             }
 
@@ -401,6 +412,7 @@ namespace smf {
                 auto scp = ctl_.get_registry().lookup("CP210x");
                 for (auto sp : scp) {
                     CYNG_LOG_INFO(logger_, "[CP210x] stop #" << sp->get_id());
+                    stash_.unlock(sp->get_id());
                     sp->stop();
                 }
             }
@@ -449,8 +461,8 @@ namespace smf {
                 //
                 auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, trg, login);
                 BOOST_ASSERT(channel->is_open());
+                stash_.lock(channel);
                 channel->dispatch("check-status", cyng::make_tuple(std::chrono::seconds(timeout)));
-
             }
         } else {
             CYNG_LOG_WARNING(logger_, "broker for [" << port << "] is not enabled");
@@ -474,6 +486,7 @@ namespace smf {
             auto scp = ctl_.get_registry().lookup(name);
             for (auto sp : scp) {
                 CYNG_LOG_INFO(logger_, "[broker " << name << "] stop #" << sp->get_id());
+                stash_.unlock(sp->get_id());
                 sp->stop();
             }
 
@@ -496,6 +509,7 @@ namespace smf {
 
         auto channel = ctl_.create_named_channel_with_ref<filter>(cfg.get_task_name(), ctl_, logger_, cfg_, type);
         BOOST_ASSERT(channel->is_open());
+        stash_.lock(channel);
 
         //
         //	broker tasks are target channels
@@ -519,6 +533,7 @@ namespace smf {
         for (auto sp : scp) {
             if (sp) {
                 CYNG_LOG_INFO(logger_, "[filter " << cfg.get_task_name() << "] stop #" << sp->get_id());
+                stash_.unlock(sp->get_id());
                 sp->stop();
             }
         }
@@ -539,6 +554,8 @@ namespace smf {
                 auto const name = cfg_gpio::get_name(pin);
                 CYNG_LOG_INFO(logger_, "init GPIO [" << name << "]");
                 auto channel = ctl_.create_named_channel_with_ref<gpio>(name, logger_, sp);
+                BOOST_ASSERT(channel->is_open());
+                stash_.lock(channel);
                 channel->dispatch("blinking", cyng::make_tuple(std::chrono::milliseconds(500)));
             }
         } else {
@@ -561,6 +578,7 @@ namespace smf {
                 for (auto sp : scp) {
                     if (sp) {
                         CYNG_LOG_INFO(logger_, "[gpio " << name << "] stop #" << sp->get_id());
+                        stash_.unlock(sp->get_id());
                         sp->stop();
                     }
                 }
@@ -603,6 +621,8 @@ namespace smf {
 
             //  cyng::channel_weak wp, cyng::controller &ctl, cfg &, cyng::logger
             auto channel = ctl_.create_named_channel_with_ref<nms::server>("nms", ctl_, cfg_, logger_);
+            BOOST_ASSERT(channel->is_open());
+            stash_.lock(channel);
 
             //	get endpoint
             auto const ep = cfg.get_ep();
@@ -621,6 +641,7 @@ namespace smf {
             for (auto sp : scp) {
                 if (sp) {
                     CYNG_LOG_INFO(logger_, "[NMS] stop #" << sp->get_id());
+                    stash_.unlock(sp->get_id());
                     sp->stop();
                 }
             }

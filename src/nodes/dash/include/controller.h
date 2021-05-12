@@ -45,6 +45,9 @@ namespace smf {
             std::string const &address, std::uint16_t port, std::string const &document_root, std::uint64_t max_upload_size,
             std::string const &nickname, std::chrono::seconds timeout, std::string const &country_code,
             std::string const &lang_code, blocklist_type &&, std::map<std::string, std::string> &&, http::auth_dirs const &);
+
+      private:
+        cyng::channel_ptr cluster_;
     };
 
     blocklist_type convert_to_blocklist(std::vector<std::string> &&);

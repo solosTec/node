@@ -9,7 +9,6 @@
 
 #include <cfg.h>
 #include <config/cfg_lmn.h>
-//#include <nms/server.h>
 #include <redirector/server.h>
 #include <router.h>
 #include <sml/server.h>
@@ -21,6 +20,7 @@
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/store/db.h>
+#include <cyng/task/stash.h>
 #include <cyng/task/task_fwd.h>
 #include <cyng/vm/mesh.h>
 
@@ -32,12 +32,10 @@ namespace smf {
     class bridge {
         template <typename T> friend class cyng::task;
 
-        using signatures_t =
-            std::tuple<std::function<void(cyng::eod)>, std::function<void()>>;
+        using signatures_t = std::tuple<std::function<void(cyng::eod)>, std::function<void()>>;
 
       public:
-        bridge(cyng::channel_weak, cyng::controller &ctl,
-               cyng::logger, cyng::db::session);
+        bridge(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cyng::db::session);
 
       private:
         void stop(cyng::eod);
@@ -101,9 +99,9 @@ namespace smf {
         cfg cfg_;
         cyng::mesh fabric_;
         router router_; //	SML router (incl. ip-t bus)
-        //nms::server nms_;
         sml::server sml_;
         std::array<rdr::server, 2> redir_;
+        cyng::stash stash_;
     };
 } // namespace smf
 

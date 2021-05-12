@@ -28,7 +28,7 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config) : controller_base(config), cluster_() {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
@@ -88,6 +88,8 @@ namespace smf {
 
     void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
 
+        config::stop_tasks(logger, reg, "cluster");
+
         //
         //	stop all running tasks
         //
@@ -98,10 +100,10 @@ namespace smf {
         cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name,
         toggle::server_vec_t &&cfg_cluster, std::string storage_type, cyng::param_map_t &&cfg_db) {
 
-        auto channel = ctl.create_named_channel_with_ref<cluster>(
+        cluster_ = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, node_name, logger, std::move(cfg_cluster), storage_type, std::move(cfg_db));
-        BOOST_ASSERT(channel->is_open());
-        channel->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(cluster_->is_open());
+        cluster_->dispatch("connect", cyng::make_tuple());
     }
 
     cyng::param_t controller::create_cluster_spec() {
