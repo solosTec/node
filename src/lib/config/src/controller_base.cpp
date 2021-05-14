@@ -5,256 +5,232 @@
  *
  */
 
-#include <smf/controller_base.h>
 #include <smf.h>
+#include <smf/controller_base.h>
 
-#include <cyng/obj/factory.hpp>
-#include <cyng/obj/container_cast.hpp>
-#include <cyng/obj/util.hpp>
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
-#include <cyng/task/controller.h>
-#include <cyng/parse/json.h>
-#include <cyng/parse/string.h>
 #include <cyng/log/log.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/container_cast.hpp>
+#include <cyng/obj/factory.hpp>
+#include <cyng/obj/util.hpp>
+#include <cyng/parse/json.h>
+#include <cyng/parse/string.h>
+#include <cyng/task/controller.h>
+#include <cyng/task/stash.h>
 
 #include <fstream>
 #include <iostream>
 
+#include <boost/asio.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <boost/asio.hpp>
 
 namespace smf {
-	namespace config {
+    namespace config {
 
-		controller_base::controller_base(startup const& config)
-			: config_(config)
-			, uidgen_()
-		{}
+        controller_base::controller_base(startup const &config) : config_(config), uidgen_() {}
 
-		bool controller_base::run_options(boost::program_options::variables_map& vars) {
+        bool controller_base::run_options(boost::program_options::variables_map &vars) {
 
-			if (vars["default"].as< bool >())	{
-				//	write default configuration
-				write_config(create_default_config(std::chrono::system_clock::now()
-					, std::filesystem::temp_directory_path()
-					, std::filesystem::current_path()));
-				return true;
-			}
-			if (vars["show"].as< bool >())	{
-				//	show configuration
-				print_configuration(std::cout);
-				return true;
-			}
+            if (vars["default"].as<bool>()) {
+                //	write default configuration
+                write_config(create_default_config(
+                    std::chrono::system_clock::now(), std::filesystem::temp_directory_path(), std::filesystem::current_path()));
+                return true;
+            }
+            if (vars["show"].as<bool>()) {
+                //	show configuration
+                print_configuration(std::cout);
+                return true;
+            }
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
-			if (vars["service.enabled"].as< bool >()) {
-				//	run as service 
-				//::OutputDebugString("start master node");
-				//const std::string srv_name = vm["service.name"].as< std::string >();
-				//::OutputDebugString(srv_name.c_str());
-				//return node::run_as_service(std::move(ctrl), srv_name);
-			}
+            if (vars["service.enabled"].as<bool>()) {
+                //	run as service
+                //::OutputDebugString("start master node");
+                // const std::string srv_name = vm["service.name"].as< std::string >();
+                //::OutputDebugString(srv_name.c_str());
+                // return node::run_as_service(std::move(ctrl), srv_name);
+            }
 #endif
 
-			return false;
-		}
+            return false;
+        }
 
-		void controller_base::write_config(cyng::vector_t&& vec) {
+        void controller_base::write_config(cyng::vector_t &&vec) {
 
-			//std::cout << cyng::to_string(vec) << std::endl;
+            // std::cout << cyng::to_string(vec) << std::endl;
 
-			std::fstream fso(config_.json_path_, std::ios::trunc | std::ios::out);
-			if (fso.is_open()) {
+            std::fstream fso(config_.json_path_, std::ios::trunc | std::ios::out);
+            if (fso.is_open()) {
 
-				std::cout
-					<< "write to file "
-					<< config_.json_path_
-					<< std::endl;
+                std::cout << "write to file " << config_.json_path_ << std::endl;
 
-				//
-				//	get default values
-				//
-				if (vec.empty()) {
-					std::cerr
-						<< "** warning: configuration is empty"
-						<< std::endl;
-				}
-				auto const obj = cyng::make_object(std::move(vec));
-				cyng::io::serialize_json(fso, obj);
-				cyng::io::serialize_json(std::cout, obj);
-				std::cout << std::endl;
-			}
-			else
-			{
-				std::cerr
-					<< "** error: unable to open file "
-					<< config_.json_path_
-					<< std::endl;
-			}
-		}
+                //
+                //	get default values
+                //
+                if (vec.empty()) {
+                    std::cerr << "** warning: configuration is empty" << std::endl;
+                }
+                auto const obj = cyng::make_object(std::move(vec));
+                cyng::io::serialize_json(fso, obj);
+                cyng::io::serialize_json(std::cout, obj);
+                std::cout << std::endl;
+            } else {
+                std::cerr << "** error: unable to open file " << config_.json_path_ << std::endl;
+            }
+        }
 
-		boost::uuids::uuid controller_base::get_random_tag() const {
-			return uidgen_();
-		}
+        boost::uuids::uuid controller_base::get_random_tag() const { return uidgen_(); }
 
-		boost::uuids::uuid controller_base::read_tag(cyng::object obj) const {
-			auto const rnd = get_random_tag();
-			auto const str = cyng::value_cast(obj, boost::uuids::to_string(rnd));
-			return cyng::to_uuid(str, rnd);
-		}
+        boost::uuids::uuid controller_base::read_tag(cyng::object obj) const {
+            auto const rnd = get_random_tag();
+            auto const str = cyng::value_cast(obj, boost::uuids::to_string(rnd));
+            return cyng::to_uuid(str, rnd);
+        }
 
-		int controller_base::run() {
+        int controller_base::run() {
 
-			//
-			//	to calculate uptime
-			//
-			auto const now = std::chrono::system_clock::now();
+            //
+            //	to calculate uptime
+            //
+            auto const now = std::chrono::system_clock::now();
 
-			//
-			//	controller loop
-			//
-			try {
+            //
+            //	controller loop
+            //
+            try {
 
-				//
-				//	controller loop
-				//
-				bool shutdown{ false };
-				while (!shutdown) {
+                //
+                //	controller loop
+                //
+                bool shutdown{false};
+                while (!shutdown) {
 
-					//
-					//	Create an I/O controller with specified size
-					//	of the thread pool.
-					//
-					cyng::controller ctl(config_.pool_size_);
+                    //
+                    //	Create an I/O controller with specified size
+                    //	of the thread pool.
+                    //
+                    cyng::controller ctl(config_.pool_size_);
 
-					//
-					//	read configuration file
-					//	start application
-					//
-					auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
+                    //
+                    //	read configuration file
+                    //	start application
+                    //
+                    auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
 
-					//std::cout << cfg << std::endl;
-					BOOST_ASSERT_MSG(cfg, "no configiration data");
-					BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
-					shutdown = !cfg;
-					if (shutdown) {
-						std::cerr
-							<< "use option -D to generate a configuration file"
-							<< std::endl;
-						return EXIT_FAILURE;
-					}
+                    // std::cout << cfg << std::endl;
+                    BOOST_ASSERT_MSG(cfg, "no configiration data");
+                    BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
+                    shutdown = !cfg;
+                    if (shutdown) {
+                        std::cerr << "use option -D to generate a configuration file" << std::endl;
+                        return EXIT_FAILURE;
+                    }
 
-					//
-					//	setup logging
-					//
-					cyng::logger logger(ctl.create_channel<cyng::log>());
+                    //
+                    //	setup logging
+                    //
+                    cyng::logger logger(ctl.create_channel<cyng::log>());
 
-					//
-					//	log level
-					//
-					logger.set_level(config_.get_log_level());
+                    //
+                    //	log level
+                    //
+                    logger.set_level(config_.get_log_level());
 
-					//
-					//	set appender
-					//
- 					if (config_.log_console_) {
-						//	enable console logging
-						logger.start_console_logger();
-					}
-					if (config_.log_file_) {
-						logger.start_file_logger(config_.log_file_path_, config_.log_file_size_);
-					}
-					
+                    //
+                    //	set appender
+                    //
+                    if (config_.log_console_) {
+                        //	enable console logging
+                        logger.start_console_logger();
+                    }
+                    if (config_.log_file_) {
+                        logger.start_file_logger(config_.log_file_path_, config_.log_file_size_);
+                    }
+
 #if defined(BOOST_OS_LINUX_AVAILABLE)
-					if (config_.log_syslog_) {
-						logger.start_syslog(config_.node_, !config_.log_console_);
-					}
+                    if (config_.log_syslog_) {
+                        logger.start_syslog(config_.node_, !config_.log_console_);
+                    }
 #endif
 
-					// Capture SIGINT and SIGTERM to perform a clean shutdown
-					boost::asio::signal_set signals(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
-					signals.async_wait(
-						[&, this](boost::system::error_code const&, int sig)
-						{
-							// Stop the `io_context`. This will cause `run()`
-							// to return immediately, eventually destroying the
-							// `io_context` and all of the sockets in it.
-							shutdown = true;
+                    cyng::stash channels(ctl.get_ctx());
 
-							const auto uptime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - now);
+                    // Capture SIGINT and SIGTERM to perform a clean shutdown
+                    boost::asio::signal_set signals(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
+                    signals.async_wait([&, this](boost::system::error_code const &, int sig) {
+                        // Stop the `io_context`. This will cause `run()`
+                        // to return immediately, eventually destroying the
+                        // `io_context` and all of the sockets in it.
+                        shutdown = true;
 
-							CYNG_LOG_INFO(logger, "shutdown " << config_.node_ << " - uptime: " << uptime);
+                        const auto uptime =
+                            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - now);
 
-							//	stop all running tasks
-							this->shutdown(logger, ctl.get_registry());
-                            logger.stop();
-							std::this_thread::sleep_for(std::chrono::seconds(1));
-                            ctl.get_registry().shutdown();
-                            ctl.shutdown();
+                        CYNG_LOG_INFO(logger, "shutdown " << config_.node_ << " - uptime: " << uptime);
 
-						});
+                        //	stop all running tasks
+                        this->shutdown(ctl.get_registry(), channels, logger);
+                        logger.stop();
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                        ctl.get_registry().shutdown();
+                        ctl.shutdown();
+                    });
 
-					CYNG_LOG_INFO(logger, "startup " << config_.node_);
+                    CYNG_LOG_INFO(logger, "startup " << config_.node_);
 
-					//
-					//	startup application
-					//
-					run(ctl, logger, cfg, config_.node_);
+                    //
+                    //	startup application
+                    //
+                    run(ctl, channels, logger, cfg, config_.node_);
 
-					//
-					//	wait for pending requests
-					//
-					std::this_thread::sleep_for(std::chrono::seconds(1));
+                    //
+                    //	wait for pending requests
+                    //
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                     ctl.stop();
-					std::this_thread::sleep_for(std::chrono::seconds(1));
-				}
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
 
-				return EXIT_SUCCESS;
-			}
-			catch (std::exception& ex)	{
-				std::cerr
-					<< ex.what()
-					<< std::endl;
-			}
-			return EXIT_FAILURE;
+                return EXIT_SUCCESS;
+            } catch (std::exception &ex) {
+                std::cerr << ex.what() << std::endl;
+            }
+            return EXIT_FAILURE;
+        }
 
-		}
+        cyng::object controller_base::read_config_section(std::string const &json_path, std::size_t config_index) {
 
-		cyng::object controller_base::read_config_section(std::string const& json_path, std::size_t config_index) {
+            auto const obj = cyng::json::parse_file(json_path);
+            if (obj) {
+                auto vec = cyng::container_cast<cyng::vector_t>(obj);
+                if (config_index < vec.size()) {
+                    return vec.at(config_index);
+                }
+            }
+            return obj;
+        }
 
-			auto const obj = cyng::json::parse_file(json_path);
-			if (obj) {
-				auto vec = cyng::container_cast<cyng::vector_t>(obj);
-				if (config_index < vec.size()) {
-					return vec.at(config_index);
-				}
-			}
-			return obj;
-		}
+        void controller_base::print_configuration(std::ostream &os) {
+            auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
+            std::cout << cfg << std::endl;
+            BOOST_ASSERT_MSG(cfg, "no configiration data");
+            BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
 
-		void controller_base::print_configuration(std::ostream& os) {
-			auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
-			std::cout << cfg << std::endl;
-			BOOST_ASSERT_MSG(cfg, "no configiration data");
-			BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
+            cyng::io::serialize_json_pretty(os, cfg);
+        }
 
-			cyng::io::serialize_json_pretty(os, cfg);
+        void stop_tasks(cyng::logger logger, cyng::registry &reg, std::string name) {
 
-		}
+            auto const channels = reg.lookup(name);
+            CYNG_LOG_INFO(logger, "stop " << channels.size() << " task(s) [" << name << "]");
+            for (auto channel : channels) {
+                channel->stop();
+            }
+        }
 
-		void stop_tasks(cyng::logger logger, cyng::registry& reg, std::string name) {
-
-			auto const channels = reg.lookup(name);
-			CYNG_LOG_INFO(logger, "stop " << channels.size() << " task(s) [" << name << "]");
-			for (auto channel : channels) {
-				channel->stop();
-			}
-
-		}
-
-	}
-}
-
+    } // namespace config
+} // namespace smf

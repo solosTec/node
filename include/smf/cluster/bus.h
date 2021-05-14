@@ -25,7 +25,7 @@ namespace smf
 	 */
 	class bus_interface {
 	public:
-		virtual cyng::mesh* get_fabric() = 0;
+		virtual auto get_fabric() -> cyng::mesh* = 0;
 
 		virtual void on_login(bool) = 0;
 
@@ -83,9 +83,9 @@ namespace smf
 		void start();
 		void stop();
 
-		boost::uuids::uuid get_tag() const;
+		auto get_tag() const -> boost::uuids::uuid;
 
-		constexpr bool is_connected() const {
+		constexpr auto is_connected() const -> bool {
 			return state_ == state::CONNECTED;
 		}
 
@@ -221,7 +221,7 @@ namespace smf
 
 		void set_reconnect_timer(std::chrono::seconds);
 
-		constexpr bool is_stopped() const {
+		constexpr auto is_stopped() const -> bool {
 			return state_ == state::STOPPED;
 		}
 
@@ -230,49 +230,49 @@ namespace smf
 		/**
 		 * insert external functions
 		 */
-		cyng::vm_proxy init_vm(bus_interface*);
+		auto init_vm(bus_interface*) -> cyng::vm_proxy;
 
 		//
 		//	generate VM channel functions
 		//
 
-		static std::function<void(bool)> 
-		get_vm_func_on_login(bus_interface*);
+		static auto 
+		get_vm_func_on_login(bus_interface*) -> std::function<void(bool)>;
 
-		static std::function<void(std::string)>
-		get_vm_func_on_disconnect(bus_interface*);
+		static auto
+		get_vm_func_on_disconnect(bus_interface*) -> std::function<void(std::string)>;
 
 		//	subscribe (1)
-		static std::function<void(std::string
+		static auto 
+		get_vm_func_db_res_insert(bus_interface*) -> std::function<void(std::string
 			, cyng::key_t
 			, cyng::data_t
 			, std::uint64_t
-			, boost::uuids::uuid )> 
-		get_vm_func_db_res_insert(bus_interface*);
+			, boost::uuids::uuid )>;
 
 		//	trx (2)
-		static std::function<void(std::string
-			, bool)>
-		get_vm_func_db_res_trx(bus_interface*);
+		static auto
+		get_vm_func_db_res_trx(bus_interface*) -> std::function<void(std::string
+			, bool)>;
 
 		//	update (3)
-		static std::function<void(std::string
+		static auto 
+		get_vm_func_db_res_update(bus_interface*) -> std::function<void(std::string
 			, cyng::key_t
 			, cyng::attr_t
 			, std::uint64_t
-			, boost::uuids::uuid)> 
-		get_vm_func_db_res_update(bus_interface*);
+			, boost::uuids::uuid)>;
 
 		//	remove (4)
-		static std::function<void(std::string
+		static auto 
+		get_vm_func_db_res_remove(bus_interface*) -> std::function<void(std::string
 			, cyng::key_t key
-			, boost::uuids::uuid)> 
-		get_vm_func_db_res_remove(bus_interface*);
+			, boost::uuids::uuid)>;
 
 		//	clear (5)
-		static std::function<void(std::string
-			, boost::uuids::uuid)> 
-		get_vm_func_db_res_clear(bus_interface*);
+		static auto 
+		get_vm_func_db_res_clear(bus_interface*) -> std::function<void(std::string
+			, boost::uuids::uuid)>;
 
 	private:
 		boost::asio::io_context& ctx_;

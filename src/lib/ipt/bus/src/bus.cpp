@@ -82,6 +82,8 @@ namespace smf {
                 boost::system::error_code ignored_ec;
                 socket_.close(ignored_ec);
                 timer_.cancel();
+                registrant_.clear();
+                targets_.clear();
 
                 if (is_authorized()) {
 
@@ -410,25 +412,29 @@ namespace smf {
 
         void bus::register_target(std::string name, cyng::channel_weak wp) {
 
-            boost::asio::post(dispatcher_, [this, name, wp]() {
-                bool const b = buffer_write_.empty();
-                auto r = serializer_.req_register_push_target(
-                    name, std::numeric_limits<std::uint16_t>::max() //	0xffff
-                    ,
-                    1);
+            if (!name.empty() && wp.lock()) {
+                boost::asio::post(dispatcher_, [this, name, wp]() {
+                    bool const b = buffer_write_.empty();
+                    auto r = serializer_.req_register_push_target(
+                        name, std::numeric_limits<std::uint16_t>::max() //	0xffff
+                        ,
+                        1);
 
-                //
-                //	send register command to ip-t server
-                //
-                registrant_.emplace(r.second, std::make_pair(name, wp));
-                buffer_write_.push_back(r.first);
+                    //
+                    //	send register command to ip-t server
+                    //
+                    registrant_.emplace(r.second, std::make_pair(name, wp));
+                    buffer_write_.push_back(r.first);
 
-                //
-                //	send request
-                //
-                if (b)
-                    do_write();
-            });
+                    //
+                    //	send request
+                    //
+                    if (b)
+                        do_write();
+                });
+            } else {
+                CYNG_LOG_WARNING(logger_, "[ipt] cannot register target: name or channel is empty");
+            }
         }
 
         void bus::open_channel(push_channel pcc) {
@@ -467,8 +473,10 @@ namespace smf {
 
                     CYNG_LOG_INFO(
                         logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": "
-                                              << ctrl_res_register_target_policy::get_response_name(res)
-                                              << ", channel: " << channel);
+                                              << ctrl_res_register_target_policy::get_response_name(res) << ", " << channel << ":"
+                                              << pos->second.first);
+
+                    BOOST_ASSERT_MSG(!pos->second.first.empty(), "no target name");
 
                     //	name/channel
                     auto sp = pos->second.second.lock();
@@ -476,6 +484,7 @@ namespace smf {
                         if (ctrl_res_register_target_policy::is_success(res)) {
                             targets_.emplace(channel, std::move(pos->second));
                         } else {
+                            CYNG_LOG_WARNING(logger_, "[ipt] register target " << pos->second.first << " failed: stop session");
                             //
                             //	stop task
                             //
@@ -491,6 +500,15 @@ namespace smf {
                     CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing registrant");
                 }
             });
+
+#ifdef _DEBUG
+            //
+            //  list all registered targets
+            //
+            for (auto const &e : targets_) {
+                CYNG_LOG_DEBUG(logger_, "[ipt] target " << e.first << ": " << e.second.first);
+            }
+#endif
         }
 
         void bus::pushdata_transfer(header const &h, cyng::buffer_t &&body) {
@@ -499,21 +517,38 @@ namespace smf {
              * @return channel, source, status, block and data
              */
             auto [channel, source, status, block, data] = tp_req_pushdata_transfer(std::move(body));
+            CYNG_LOG_TRACE(
+                logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " - " << data.size()
+                                      << " bytes");
 
             //
             //	sync with strand
             //
             boost::asio::post(dispatcher_, [this, h, channel, source, status, block, data]() {
+                BOOST_ASSERT_MSG(!data.empty(), "no push data");
+
                 auto const pos = targets_.find(channel);
                 if (pos != targets_.end()) {
-                    CYNG_LOG_TRACE(
-                        logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " - "
-                                              << data.size() << " bytes");
+
                     //	name/channel
                     auto sp = pos->second.second.lock();
                     if (sp) {
-                        sp->dispatch("receive", cyng::make_tuple(channel, source, data, pos->second.first));
+                        if (pos->second.first.empty()) {
+                            CYNG_LOG_WARNING(logger_, "[ipt] target " << channel << ':' << source << " without name");
+#ifdef _DEBUG
+                            //
+                            //  list all registered targets
+                            //
+                            for (auto const &e : targets_) {
+                                CYNG_LOG_DEBUG(logger_, "[ipt] target " << e.first << ": " << e.second.first);
+                            }
+#endif
+                        }
+                        // BOOST_ASSERT_MSG(!pos->second.first.empty(), "no target name");
+                        std::string const target = pos->second.first;
+                        sp->dispatch("receive", cyng::make_tuple(channel, source, data, target));
                     } else {
+                        CYNG_LOG_WARNING(logger_, "[ipt] remove target " << channel << ':' << source);
                         //
                         //	task removed - clean up
                         //
@@ -524,6 +559,15 @@ namespace smf {
                         logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " dropped");
                 }
             });
+
+#ifdef _DEBUG
+            //
+            //  list all registered targets
+            //
+            for (auto const &e : targets_) {
+                CYNG_LOG_DEBUG(logger_, "[ipt] target " << e.first << ": " << e.second.first);
+            }
+#endif
         }
 
         void bus::req_watchdog(header const &h, cyng::buffer_t &&body) {

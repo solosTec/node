@@ -75,6 +75,8 @@ namespace smf {
             register_targets();
         } else {
             CYNG_LOG_WARNING(logger_, "[ipt] authorization lost");
+            stash_.stop(); //  stop all targets
+            stash_.clear();
         }
     }
 

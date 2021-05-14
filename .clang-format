@@ -1,6 +1,9 @@
 # Format Style Options - Created with Clang Power Tools
 ---
 AlignAfterOpenBracket: AlwaysBreak
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
 ColumnLimit: 132
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 IndentWidth: 4

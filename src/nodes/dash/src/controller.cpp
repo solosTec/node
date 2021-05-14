@@ -30,7 +30,8 @@ namespace smf {
 
     controller::controller(config::startup const &config) : controller_base(config), cluster_() {}
 
-    void controller::run(cyng::controller &ctl, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
+    void controller::run(
+        cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
 
 #if _DEBUG_DASH
         CYNG_LOG_INFO(logger, cfg);
@@ -75,11 +76,25 @@ namespace smf {
         //	connect to cluster
         //
         join_cluster(
-            ctl, logger, tag, node_name, std::move(tgl), address, port, document_root, max_upload_size, nickname, timeout,
-            country_code, lang_code, std::move(blocklist), std::move(redirects_intrinsic), auths);
+            ctl,
+            logger,
+            tag,
+            node_name,
+            std::move(tgl),
+            address,
+            port,
+            document_root,
+            max_upload_size,
+            nickname,
+            timeout,
+            country_code,
+            lang_code,
+            std::move(blocklist),
+            std::move(redirects_intrinsic),
+            auths);
     }
 
-    void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
+    void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 
         config::stop_tasks(logger, reg, "cluster");
 
@@ -90,10 +105,21 @@ namespace smf {
     }
 
     void controller::join_cluster(
-        cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name,
-        toggle::server_vec_t &&cfg, std::string const &address, std::uint16_t port, std::string const &document_root,
-        std::uint64_t max_upload_size, std::string const &nickname, std::chrono::seconds timeout, std::string const &country_code,
-        std::string const &lang_code, blocklist_type &&blocklist, std::map<std::string, std::string> &&redirects_intrinsic,
+        cyng::controller &ctl,
+        cyng::logger logger,
+        boost::uuids::uuid tag,
+        std::string const &node_name,
+        toggle::server_vec_t &&cfg,
+        std::string const &address,
+        std::uint16_t port,
+        std::string const &document_root,
+        std::uint64_t max_upload_size,
+        std::string const &nickname,
+        std::chrono::seconds timeout,
+        std::string const &country_code,
+        std::string const &lang_code,
+        blocklist_type &&blocklist,
+        std::map<std::string, std::string> &&redirects_intrinsic,
         http::auth_dirs const &auths) {
 
         if (!std::filesystem::exists(document_root)) {
@@ -101,8 +127,21 @@ namespace smf {
         }
 
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
-            "cluster", ctl, tag, node_name, logger, std::move(cfg), document_root, max_upload_size, nickname, timeout, country_code,
-            lang_code, std::move(blocklist), std::move(redirects_intrinsic), auths);
+            "cluster",
+            ctl,
+            tag,
+            node_name,
+            logger,
+            std::move(cfg),
+            document_root,
+            max_upload_size,
+            nickname,
+            timeout,
+            country_code,
+            lang_code,
+            std::move(blocklist),
+            std::move(redirects_intrinsic),
+            auths);
 
         BOOST_ASSERT(cluster_->is_open());
         cluster_->dispatch("connect", cyng::make_tuple());
@@ -117,23 +156,30 @@ namespace smf {
         auto const root = (cwd / ".." / "dash" / "dist").lexically_normal();
 
         return cyng::make_vector({cyng::make_tuple(
-            cyng::make_param("generated", now), cyng::make_param("log-dir", tmp.string()),
-            cyng::make_param("tag", get_random_tag()), cyng::make_param("country-code", "CH"),
-            cyng::make_param("language-code", cyng::sys::get_system_locale()), create_server_spec(root), create_cluster_spec())});
+            cyng::make_param("generated", now),
+            cyng::make_param("log-dir", tmp.string()),
+            cyng::make_param("tag", get_random_tag()),
+            cyng::make_param("country-code", "CH"),
+            cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            create_server_spec(root),
+            create_cluster_spec())});
     }
 
     cyng::param_t controller::create_server_spec(std::filesystem::path const &root) {
         return cyng::make_param(
-            "server", cyng::make_tuple(
-                          cyng::make_param("address", "0.0.0.0"), cyng::make_param("port", 8080),
-                          cyng::make_param("timeout", 15),                       //	seconds
-                          cyng::make_param("max-upload-size", 1024 * 1024 * 10), //	10 MB
-                          cyng::make_param("document-root", root.string()),
-                          cyng::make_param("server-nickname", "Coraline"), //	x-servernickname
-                          cyng::make_param("auth-type", "Basic"),          //	none, cookie
-                          create_auth_spec(), create_block_list(),
-                          create_redirects() //	intrinsic redirections
-                          ));
+            "server",
+            cyng::make_tuple(
+                cyng::make_param("address", "0.0.0.0"),
+                cyng::make_param("port", 8080),
+                cyng::make_param("timeout", 15),                       //	seconds
+                cyng::make_param("max-upload-size", 1024 * 1024 * 10), //	10 MB
+                cyng::make_param("document-root", root.string()),
+                cyng::make_param("server-nickname", "Coraline"), //	x-servernickname
+                cyng::make_param("auth-type", "Basic"),          //	none, cookie
+                create_auth_spec(),
+                create_block_list(),
+                create_redirects() //	intrinsic redirections
+                ));
     }
 
     cyng::param_t controller::create_block_list() {
@@ -154,15 +200,20 @@ namespace smf {
 
     cyng::param_t controller::create_auth_spec() {
         return cyng::make_param(
-            "auth", cyng::make_vector(
-                        {cyng::make_tuple(
-                             cyng::make_param("directory", "/"), cyng::make_param("authType", "Basic"),
-                             cyng::make_param("realm", "solos::Tec"), cyng::make_param("name", "auth@example.com"),
-                             cyng::make_param("pwd", "secret")),
-                         cyng::make_tuple(
-                             cyng::make_param("directory", "/temp"), cyng::make_param("authType", "Basic"),
-                             cyng::make_param("realm", "solos::Tec"), cyng::make_param("name", "auth@example.com"),
-                             cyng::make_param("pwd", "secret"))}));
+            "auth",
+            cyng::make_vector(
+                {cyng::make_tuple(
+                     cyng::make_param("directory", "/"),
+                     cyng::make_param("authType", "Basic"),
+                     cyng::make_param("realm", "solos::Tec"),
+                     cyng::make_param("name", "auth@example.com"),
+                     cyng::make_param("pwd", "secret")),
+                 cyng::make_tuple(
+                     cyng::make_param("directory", "/temp"),
+                     cyng::make_param("authType", "Basic"),
+                     cyng::make_param("realm", "solos::Tec"),
+                     cyng::make_param("name", "auth@example.com"),
+                     cyng::make_param("pwd", "secret"))}));
     }
 
     cyng::param_t controller::create_cluster_spec() {
@@ -170,8 +221,11 @@ namespace smf {
             "cluster",
             cyng::make_vector({
                 cyng::make_tuple(
-                    cyng::make_param("host", "127.0.0.1"), cyng::make_param("service", "7701"), cyng::make_param("account", "root"),
-                    cyng::make_param("pwd", "NODE_PWD"), cyng::make_param("salt", "NODE_SALT"),
+                    cyng::make_param("host", "127.0.0.1"),
+                    cyng::make_param("service", "7701"),
+                    cyng::make_param("account", "root"),
+                    cyng::make_param("pwd", "NODE_PWD"),
+                    cyng::make_param("salt", "NODE_SALT"),
                     // cyng::make_param("monitor", rnd_monitor()),	//	seconds
                     cyng::make_param("group", 0)) //	customer ID
             }));
@@ -181,16 +235,21 @@ namespace smf {
         return cyng::make_param(
             "redirects",
             cyng::make_tuple(
-                create_intrinsic_redirects(), cyng::make_param("permanent", cyng::tuple_factory()),
-                cyng::make_param("see-other", cyng::tuple_factory()), cyng::make_param("temporary", cyng::tuple_factory())));
+                create_intrinsic_redirects(),
+                cyng::make_param("permanent", cyng::tuple_factory()),
+                cyng::make_param("see-other", cyng::tuple_factory()),
+                cyng::make_param("temporary", cyng::tuple_factory())));
     }
 
     cyng::param_t controller::create_intrinsic_redirects() {
         return cyng::make_param(
-            "intrinsic", cyng::make_tuple(
-                             cyng::make_param("/config", "/index.html"), cyng::make_param("/status", "/index.html"),
-                             cyng::make_param("/monitor", "/index.html"), cyng::make_param("/task", "/index.html"),
-                             cyng::make_param("/collector", "/index.html")));
+            "intrinsic",
+            cyng::make_tuple(
+                cyng::make_param("/config", "/index.html"),
+                cyng::make_param("/status", "/index.html"),
+                cyng::make_param("/monitor", "/index.html"),
+                cyng::make_param("/task", "/index.html"),
+                cyng::make_param("/collector", "/index.html")));
     }
 
     std::vector<boost::asio::ip::address> convert_to_blocklist(std::vector<std::string> &&inp) {

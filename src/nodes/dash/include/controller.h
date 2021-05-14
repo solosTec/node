@@ -28,9 +28,10 @@ namespace smf {
         cyng::vector_t create_default_config(
             std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) override;
 
-        virtual void run(cyng::controller &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
+        virtual void
+        run(cyng::controller &, cyng::stash &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
 
-        virtual void shutdown(cyng::logger, cyng::registry &) override;
+        virtual void shutdown(cyng::registry &, cyng::stash &, cyng::logger) override;
 
       private:
         cyng::param_t create_server_spec(std::filesystem::path const &root);
@@ -41,10 +42,22 @@ namespace smf {
         cyng::param_t create_intrinsic_redirects();
 
         void join_cluster(
-            cyng::controller &, cyng::logger, boost::uuids::uuid, std::string const &node_name, toggle::server_vec_t &&,
-            std::string const &address, std::uint16_t port, std::string const &document_root, std::uint64_t max_upload_size,
-            std::string const &nickname, std::chrono::seconds timeout, std::string const &country_code,
-            std::string const &lang_code, blocklist_type &&, std::map<std::string, std::string> &&, http::auth_dirs const &);
+            cyng::controller &,
+            cyng::logger,
+            boost::uuids::uuid,
+            std::string const &node_name,
+            toggle::server_vec_t &&,
+            std::string const &address,
+            std::uint16_t port,
+            std::string const &document_root,
+            std::uint64_t max_upload_size,
+            std::string const &nickname,
+            std::chrono::seconds timeout,
+            std::string const &country_code,
+            std::string const &lang_code,
+            blocklist_type &&,
+            std::map<std::string, std::string> &&,
+            http::auth_dirs const &);
 
       private:
         cyng::channel_ptr cluster_;

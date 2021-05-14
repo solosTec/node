@@ -101,9 +101,12 @@ namespace smf {
         auto const hostname = cyng::sys::get_hostname();
 
         return cyng::make_vector({cyng::make_tuple(
-            cyng::make_param("generated", now), cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()), cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", "CH"), cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            cyng::make_param("generated", now),
+            cyng::make_param("version", SMF_VERSION_TAG),
+            cyng::make_param("log-dir", tmp.string()),
+            cyng::make_param("tag", get_random_tag()),
+            cyng::make_param("country-code", "CH"),
+            cyng::make_param("language-code", cyng::sys::get_system_locale()),
             cyng::make_param("generate-profile", false),
 
             create_server_id(),
@@ -145,7 +148,9 @@ namespace smf {
         //
         std::vector<boost::asio::ip::address> local_links;
         std::transform(
-            std::begin(macs), std::end(macs), std::back_inserter(local_links),
+            std::begin(macs),
+            std::end(macs),
+            std::back_inserter(local_links),
             [](cyng::mac48 const &mac) -> boost::asio::ip::address { return mac.to_link_local(); });
 
         if (macs.empty()) {
@@ -166,20 +171,24 @@ namespace smf {
         tmp.insert(tmp.begin(), 0x05);
 
         return cyng::make_param(
-            "net", cyng::tuple_factory(
-                       cyng::make_param("mac", srv_mac), cyng::make_param("nics", macs),
-                       cyng::make_param(cyng::to_str(OBIS_SERVER_ID), cyng::io::to_hex(tmp)),
-                       cyng::make_param("local-links", local_links)));
+            "net",
+            cyng::tuple_factory(
+                cyng::make_param("mac", srv_mac),
+                cyng::make_param("nics", macs),
+                cyng::make_param(cyng::to_str(OBIS_SERVER_ID), cyng::io::to_hex(tmp)),
+                cyng::make_param("local-links", local_links)));
     }
 
     cyng::param_t controller::create_virtual_meter_spec() const {
         return cyng::make_param(
-            "virtual-meter", cyng::tuple_factory(
-                                 cyng::make_param("enabled", false), cyng::make_param("server", "01-d81c-10000001-3c-02"), //	1CD8
-                                 cyng::make_param("port-index", 1),   //	0 = wireless, 1 = wired
-                                 cyng::make_param("protocol", "iec"), //	wired => IEC
-                                 cyng::make_param("interval", 26000)  //	seconds push interval
-                                 ));
+            "virtual-meter",
+            cyng::tuple_factory(
+                cyng::make_param("enabled", false),
+                cyng::make_param("server", "01-d81c-10000001-3c-02"), //	1CD8
+                cyng::make_param("port-index", 1),                    //	0 = wireless, 1 = wired
+                cyng::make_param("protocol", "iec"),                  //	wired => IEC
+                cyng::make_param("interval", 26000)                   //	seconds push interval
+                ));
     }
 
     cyng::tuple_t controller::create_wireless_spec(std::string const &hostname) const {
@@ -197,43 +206,52 @@ namespace smf {
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
 
             //	iM871A
-            cyng::make_param("enabled", false), cyng::make_param("port", "COM3"), //	USB serial port
+            cyng::make_param("enabled", false),
+            cyng::make_param("port", "COM3"), //	USB serial port
             //	if port number is greater than 9 the following syntax is required: "\\\\.\\COM12"
-            cyng::make_param("HCI", "CP210x"),                                   //	iM871A mbus-USB converter
-            cyng::make_param("databits", 8), cyng::make_param("parity", "none"), //	none, odd, even
-            cyng::make_param("flow-control", "none"),                            //	none, software, hardware
-            cyng::make_param("stopbits", "one"),                                 //	one, onepointfive, two
-            cyng::make_param("speed", 57600),                                    //	0xE100
+            cyng::make_param("HCI", "CP210x"), //	iM871A mbus-USB converter
+            cyng::make_param("databits", 8),
+            cyng::make_param("parity", "none"),       //	none, odd, even
+            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
+            cyng::make_param("speed", 57600),         //	0xE100
 
 #else
 
-            cyng::make_param("enabled", true), cyng::make_param("port", "/dev/ttyAPP0"), cyng::make_param("HCI", "none"),
-            cyng::make_param("databits", 8), cyng::make_param("parity", "none"), //	none, odd, even
-            cyng::make_param("flow-control", "none"),                            //	none, software, hardware
-            cyng::make_param("stopbits", "one"),                                 //	one, onepointfive, two
+            cyng::make_param("enabled", true),
+            cyng::make_param("port", "/dev/ttyAPP0"),
+            cyng::make_param("HCI", "none"),
+            cyng::make_param("databits", 8),
+            cyng::make_param("parity", "none"),       //	none, odd, even
+            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
             cyng::make_param("speed", 115200),
 
 #endif
             cyng::make_param("protocol", "wM-Bus:EN13757-4"), //	raw, mbus, iec, sml
-            cyng::make_param("broker-enabled", true), cyng::make_param("broker-login", false),
+            cyng::make_param("broker-enabled", true),
+            cyng::make_param("broker-login", false),
             cyng::make_param("broker-timeout", 12), //	seconds
-            cyng::make_param("hex-dump", false), create_wireless_broker(hostname), create_wireless_block_list()
+            cyng::make_param("hex-dump", false),
+            create_wireless_broker(hostname),
+            create_wireless_block_list()
 
         );
     }
 
     cyng::param_t controller::create_wireless_block_list() const {
         return cyng::make_param(
-            "blocklist", cyng::param_map_factory
+            "blocklist",
+            cyng::param_map_factory
 #ifdef _DEBUG
-                         ("enabled", true)("list", cyng::make_vector({"00684279", "12345678"}))
+            ("enabled", true)("list", cyng::make_vector({"00684279", "12345678"}))
 #else
-                         ("enabled", false)("list", cyng::make_vector({}))
+            ("enabled", false)("list", cyng::make_vector({}))
 #endif
-                             ("mode", "drop") //	or accept
-                         ("period", 30)       //	seconds
-                             .
-                             operator cyng::param_map_t());
+                ("mode", "drop") //	or accept
+            ("period", 30)       //	seconds
+                .
+                operator cyng::param_map_t());
     }
 
     cyng::param_t controller::create_wireless_broker(std::string const &hostname) const {
@@ -262,17 +280,20 @@ namespace smf {
 
     cyng::param_t controller::create_rs485_listener() const {
         return cyng::make_param(
-            "listener", cyng::tuple_factory(
-                            cyng::make_param("address", "0.0.0.0"), cyng::make_param("port", 6006),
-                            cyng::make_param("login", false),  //	request login
-                            cyng::make_param("enabled", true), //	start rs485 server
-                            cyng::make_param("timeout", std::chrono::seconds(30))));
+            "listener",
+            cyng::tuple_factory(
+                cyng::make_param("address", "0.0.0.0"),
+                cyng::make_param("port", 6006),
+                cyng::make_param("login", false),  //	request login
+                cyng::make_param("enabled", true), //	start rs485 server
+                cyng::make_param("timeout", std::chrono::seconds(30))));
     }
 
     cyng::param_t controller::create_rs485_block_list() const {
         return cyng::make_param(
-            "blocklist", cyng::tuple_factory(cyng::make_param("enabled", false) //	no block list
-                                             ));
+            "blocklist",
+            cyng::tuple_factory(cyng::make_param("enabled", false) //	no block list
+                                ));
     }
 
     cyng::tuple_t controller::create_rs485_spec(std::string const &hostname) const {
@@ -281,46 +302,56 @@ namespace smf {
             cyng::make_param("type", "RS-485"),
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
-            cyng::make_param("enabled", false), cyng::make_param("port", "COM6"),
+            cyng::make_param("enabled", false),
+            cyng::make_param("port", "COM6"),
             cyng::make_param("parity", "even"), //	none, odd, even
 
             //	8N1
-            cyng::make_param("databits", 8), cyng::make_param("flow-control", "none"), //	none, software, hardware
-            cyng::make_param("stopbits", "one"),                                       //	one, onepointfive, two
-            cyng::make_param("speed", 2400),                                           //	initial
+            cyng::make_param("databits", 8),
+            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
+            cyng::make_param("speed", 2400),          //	initial
 
 #else
-            cyng::make_param("enabled", true), cyng::make_param("port", "/dev/ttyAPP1"),
+            cyng::make_param("enabled", true),
+            cyng::make_param("port", "/dev/ttyAPP1"),
 
         //	8N1
 #if defined(__ARMEL__)
-            cyng::make_param("databits", 7), cyng::make_param("stopbits", "two"), //	one, onepointfive, two
-            cyng::make_param("parity", "even"),                                   //	none, odd, even
+            cyng::make_param("databits", 7),
+            cyng::make_param("stopbits", "two"), //	one, onepointfive, two
+            cyng::make_param("parity", "even"),  //	none, odd, even
 #else
-            cyng::make_param("databits", 8), cyng::make_param("stopbits", "one"), //	one, onepointfive, two
-            cyng::make_param("parity", "none"),                                   //	none, odd, even
+            cyng::make_param("databits", 8),
+            cyng::make_param("stopbits", "one"), //	one, onepointfive, two
+            cyng::make_param("parity", "none"),  //	none, odd, even
 #endif
             cyng::make_param("flow-control", "none"), //	none, software, hardware
             cyng::make_param("speed", 9600),          //	initial
 
 #endif
             cyng::make_param("protocol", "raw"), //	raw, mbus, iec, sml
-            cyng::make_param("broker-enabled", false), cyng::make_param("broker-login", false),
+            cyng::make_param("broker-enabled", false),
+            cyng::make_param("broker-login", false),
             cyng::make_param("broker-reconnect", 12), //	seconds
-            cyng::make_param("hex-dump", false), create_rs485_broker(hostname), create_rs485_listener(), create_rs485_block_list());
+            cyng::make_param("hex-dump", false),
+            create_rs485_broker(hostname),
+            create_rs485_listener(),
+            create_rs485_block_list());
     }
 
     cyng::param_t controller::create_gpio_spec() const {
         //	available pins are 46, 47, 50, 53, 64, 68
         return cyng::make_param(
-            "gpio", cyng::param_map_factory(
-                        "enabled",
+            "gpio",
+            cyng::param_map_factory(
+                "enabled",
 #if defined(__ARMEL__)
-                        true
+                true
 #else
-                        false
+                false
 #endif
-                        )("path", "/sys/class/gpio")("list", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68
+                )("path", "/sys/class/gpio")("list", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68
             ());
     }
 
@@ -361,37 +392,43 @@ namespace smf {
     cyng::param_t controller::create_nms_server_spec(std::filesystem::path const &tmp) const {
 
         return cyng::make_param(
-            "nms", cyng::tuple_factory(
-                       cyng::make_param("address", get_nms_address()), cyng::make_param("port", 7562),
-                       cyng::make_param("account", "operator"), cyng::make_param("pwd", "operator"),
+            "nms",
+            cyng::tuple_factory(
+                cyng::make_param("address", get_nms_address()),
+                cyng::make_param("port", 7562),
+                cyng::make_param("account", "operator"),
+                cyng::make_param("pwd", "operator"),
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-                       cyng::make_param("enabled", true),
+                cyng::make_param("enabled", true),
 #else
-                       cyng::make_param("enabled", false),
+                cyng::make_param("enabled", false),
 #endif
-                       cyng::make_param(
-                           "script-path",
+                cyng::make_param(
+                    "script-path",
 #if defined(BOOST_OS_LINUX_AVAILABLE)
-                           (tmp / "update-script.sh").string()
+                    (tmp / "update-script.sh").string()
 #else
-                           (tmp / "update-script.cmd").string()
+                    (tmp / "update-script.cmd").string()
 #endif
-                               ),
+                        ),
 #ifdef _DEBUG
-                       cyng::make_param("debug", true)
+                cyng::make_param("debug", true)
 #else
-                       cyng::make_param("debug", false)
+                cyng::make_param("debug", false)
 #endif
 
-                           ));
+                    ));
     }
     cyng::param_t controller::create_sml_server_spec() const {
 
         return cyng::make_param(
             "sml",
             cyng::make_tuple(
-                cyng::make_param("address", "0.0.0.0"), cyng::make_param("port", 7259), cyng::make_param("discover", 5798), //	UDP
-                cyng::make_param("account", "operator"), cyng::make_param("pwd", "operator"),
+                cyng::make_param("address", "0.0.0.0"),
+                cyng::make_param("port", 7259),
+                cyng::make_param("discover", 5798), //	UDP
+                cyng::make_param("account", "operator"),
+                cyng::make_param("pwd", "operator"),
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
                 cyng::make_param("enabled", false),
 #else
@@ -403,16 +440,17 @@ namespace smf {
 
     cyng::param_t controller::create_db_spec(std::filesystem::path const &cwd) const {
         return cyng::make_param(
-            "DB", cyng::make_tuple(
+            "DB",
+            cyng::make_tuple(
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-                      cyng::make_param("file-name", "/usr/local/etc/smf/segw.database"),
+                cyng::make_param("file-name", "/usr/local/etc/smf/segw.database"),
 #else
-                      cyng::make_param("file-name", (cwd / "segw.database").string()),
+                cyng::make_param("file-name", (cwd / "segw.database").string()),
 #endif
-                      cyng::make_param("busy-timeout", 12),         //	seconds
-                      cyng::make_param("watchdog", 30),             //	for database connection
-                      cyng::make_param("connection-type", "SQLite") //	file based
-                      ));
+                cyng::make_param("busy-timeout", 12),         //	seconds
+                cyng::make_param("watchdog", 30),             //	for database connection
+                cyng::make_param("connection-type", "SQLite") //	file based
+                ));
     }
 
     cyng::param_t controller::create_ipt_spec(std::string const &hostname) const {
@@ -430,10 +468,12 @@ namespace smf {
                 cyng::make_tuple(
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-                    cyng::make_param("host", "segw.ch"), cyng::make_param("account", hostname),
+                    cyng::make_param("host", "segw.ch"),
+                    cyng::make_param("account", hostname),
                     cyng::make_param("service", "26862"),
 #else
-                    cyng::make_param("host", "127.0.0.1"), cyng::make_param("account", "segw"),
+                    cyng::make_param("host", "127.0.0.1"),
+                    cyng::make_param("account", "segw"),
                     cyng::make_param("service", "26862"),
 #endif
 
@@ -450,10 +490,12 @@ namespace smf {
                     cyng::make_tuple(
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-                        cyng::make_param("host", "192.168.1.100"), cyng::make_param("account", hostname),
+                        cyng::make_param("host", "192.168.1.100"),
+                        cyng::make_param("account", hostname),
                         cyng::make_param("service", "26862"),
 #else
-                        cyng::make_param("host", "127.0.0.1"), cyng::make_param("account", "segw"),
+                        cyng::make_param("host", "127.0.0.1"),
+                        cyng::make_param("account", "segw"),
                         cyng::make_param("service", "26863"),
 #endif
                         cyng::make_param("pwd", "NODE_PWD"),
@@ -468,16 +510,17 @@ namespace smf {
 
     cyng::param_t controller::create_ipt_params() const {
         return cyng::make_param(
-            "param", cyng::tuple_factory(
-                         cyng::make_param(OBIS_TCP_WAIT_TO_RECONNECT, 1u), //	minutes
-                         cyng::make_param(OBIS_TCP_CONNECT_RETRIES, 20u),
-                         cyng::make_param(OBIS_HAS_SSL_CONFIG, 0u), //	has SSL configuration
+            "param",
+            cyng::tuple_factory(
+                cyng::make_param(OBIS_TCP_WAIT_TO_RECONNECT, 1u), //	minutes
+                cyng::make_param(OBIS_TCP_CONNECT_RETRIES, 20u),
+                cyng::make_param(OBIS_HAS_SSL_CONFIG, 0u), //	has SSL configuration
 #if defined(__ARMEL__)
-                         cyng::make_param("enabled", false)
+                cyng::make_param("enabled", false)
 #else
-                         cyng::make_param("enabled", true)
+                cyng::make_param("enabled", true)
 #endif
-                             ));
+                    ));
     }
 
     cyng::param_t controller::create_lmn_spec(std::string const &hostname) const {
@@ -562,7 +605,8 @@ namespace smf {
         }
     }
 
-    void controller::run(cyng::controller &ctl, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
+    void controller::run(
+        cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
 
         auto const reader = cyng::make_reader(cfg);
         auto s = cyng::db::create_db_session(reader.get("DB"));
@@ -604,7 +648,7 @@ namespace smf {
 #endif
     }
 
-    void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
+    void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 
         //
         //	main task

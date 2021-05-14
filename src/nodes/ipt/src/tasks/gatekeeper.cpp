@@ -4,22 +4,20 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#include <tasks/gatekeeper.h>
 #include <ipt_session.h>
+#include <tasks/gatekeeper.h>
 
-#include <cyng/task/channel.h>
-#include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
+#include <cyng/obj/util.hpp>
+#include <cyng/task/channel.h>
 
 #include <iostream>
 
 namespace smf {
 
-
-	gatekeeper::gatekeeper(cyng::channel_weak wp
+    gatekeeper::gatekeeper(cyng::channel_weak wp
 		, cyng::logger logger
-		, std::chrono::seconds timeout
-		, std::shared_ptr<ipt_session> iptsp)
+		, std::shared_ptr<ipt_session> iptsp, bus &cluster_bus)
 	: sigs_{ 
 		std::bind(&gatekeeper::timeout, this),
 		std::bind(&gatekeeper::stop, this, std::placeholders::_1),
@@ -27,35 +25,31 @@ namespace smf {
 	, channel_(wp)
 	, logger_(logger)
 	, iptsp_(iptsp)
+    , cluster_bus_(cluster_bus)
 	{
-		BOOST_ASSERT(iptsp_);
-		auto sp = wp.lock();
-		if (sp) {
-			sp->set_channel_name("timeout", 0);
-			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created - timeout is " << timeout.count() << " seconds");
-			sp->suspend(timeout, "timeout", cyng::make_tuple());
-		}
-	}
+        BOOST_ASSERT(iptsp_);
+        auto sp = wp.lock();
+        if (sp) {
+            sp->set_channel_name("timeout", 0);
+            CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
+        }
+    }
 
-	gatekeeper::~gatekeeper()
-	{
+    gatekeeper::~gatekeeper() {
 #ifdef _DEBUG_IPT
-		std::cout << "gatekeeper(~)" << std::endl;
+        std::cout << "gatekeeper(~)" << std::endl;
 #endif
-	}
+    }
 
-	void gatekeeper::timeout() {
-		CYNG_LOG_WARNING(logger_, "[gatekeeper] timeout");
-		iptsp_->stop();
-		auto sp = channel_.lock();
-		if (sp) sp->stop();
-	}
+    void gatekeeper::timeout() {
+        CYNG_LOG_WARNING(logger_, "[gatekeeper] timeout");
+        //  this will stop this task too
+        if (iptsp_) {
+            cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "gatekeeper timeout", iptsp_->get_remote_endpoint());
+            iptsp_->stop();
+        }
+    }
 
-	void gatekeeper::stop(cyng::eod)
-	{
-		CYNG_LOG_INFO(logger_, "[gatekeeper] stop");
-	}
+    void gatekeeper::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[gatekeeper] stop"); }
 
-}
-
-
+} // namespace smf

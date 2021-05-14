@@ -27,9 +27,10 @@ namespace smf {
         cyng::vector_t create_default_config(
             std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) override;
 
-        virtual void run(cyng::controller &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
+        virtual void
+        run(cyng::controller &, cyng::stash &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
 
-        virtual void shutdown(cyng::logger, cyng::registry &) override;
+        virtual void shutdown(cyng::registry &, cyng::stash &, cyng::logger) override;
 
       private:
         cyng::tuple_t create_wireless_spec(std::string const &hostname) const;

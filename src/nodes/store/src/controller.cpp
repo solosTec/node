@@ -8,6 +8,18 @@
 #include <controller.h>
 #include <tasks/network.h>
 
+#include <tasks/iec_csv_writer.h>
+#include <tasks/iec_db_writer.h>
+#include <tasks/iec_influx_writer.h>
+#include <tasks/iec_log_writer.h>
+#include <tasks/sml_abl_writer.h>
+#include <tasks/sml_csv_writer.h>
+#include <tasks/sml_db_writer.h>
+#include <tasks/sml_influx_writer.h>
+#include <tasks/sml_json_writer.h>
+#include <tasks/sml_log_writer.h>
+#include <tasks/sml_xml_writer.h>
+
 #include <smf.h>
 
 #include <cyng/io/ostream.h>
@@ -29,7 +41,7 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config), network_() {}
+    controller::controller(config::startup const &config) : controller_base(config) {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
@@ -38,101 +50,143 @@ namespace smf {
         std::cout << std::locale("").name().c_str() << std::endl;
 
         return cyng::make_vector({cyng::make_tuple(
-            cyng::make_param("generated", now), cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()), cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", "CH"), cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            cyng::make_param("generated", now),
+            cyng::make_param("version", SMF_VERSION_TAG),
+            cyng::make_param("log-dir", tmp.string()),
+            cyng::make_param("tag", get_random_tag()),
+            cyng::make_param("country-code", "CH"),
+            cyng::make_param("language-code", cyng::sys::get_system_locale()),
             cyng::make_param("model", "smf.store"),
 
             cyng::make_param("output", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
             cyng::make_param(
-                "SML:DB", cyng::tuple_factory(
-                              cyng::make_param("type", "SQLite"), cyng::make_param("file-name", (cwd / "store.database").string()),
-                              cyng::make_param("busy-timeout", 12),            //	seconds
-                              cyng::make_param("watchdog", 30),                //	for database connection
-                              cyng::make_param("pool-size", 1),                //	no pooling for SQLite
-                              cyng::make_param("db-schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
-                              cyng::make_param("interval", 12)                 //	seconds
-                              )),
+                "SML:DB",
+                cyng::tuple_factory(
+                    cyng::make_param("type", "SQLite"),
+                    cyng::make_param("file-name", (cwd / "store.database").string()),
+                    cyng::make_param("busy-timeout", 12),            //	seconds
+                    cyng::make_param("watchdog", 30),                //	for database connection
+                    cyng::make_param("pool-size", 1),                //	no pooling for SQLite
+                    cyng::make_param("db-schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
+                    cyng::make_param("interval", 12)                 //	seconds
+                    )),
             cyng::make_param(
-                "IEC:DB", cyng::tuple_factory(
-                              cyng::make_param("type", "SQLite"), cyng::make_param("file-name", (cwd / "store.database").string()),
-                              cyng::make_param("busy-timeout", 12), //	seconds
-                              cyng::make_param("watchdog", 30),     //	for database connection
-                              cyng::make_param("pool-size", 1),     //	no pooling for SQLite
-                              cyng::make_param("db-schema", SMF_VERSION_NAME), cyng::make_param("interval", 20), //	seconds
-                              cyng::make_param("ignore-null", false) //	don't write values equal 0
-                              )),
+                "IEC:DB",
+                cyng::tuple_factory(
+                    cyng::make_param("type", "SQLite"),
+                    cyng::make_param("file-name", (cwd / "store.database").string()),
+                    cyng::make_param("busy-timeout", 12), //	seconds
+                    cyng::make_param("watchdog", 30),     //	for database connection
+                    cyng::make_param("pool-size", 1),     //	no pooling for SQLite
+                    cyng::make_param("db-schema", SMF_VERSION_NAME),
+                    cyng::make_param("interval", 20),      //	seconds
+                    cyng::make_param("ignore-null", false) //	don't write values equal 0
+                    )),
             cyng::make_param(
-                "SML:XML", cyng::tuple_factory(
-                               cyng::make_param("root-dir", (cwd / "xml").string()), cyng::make_param("root-name", "SML"),
-                               cyng::make_param("endcoding", "UTF-8"), cyng::make_param("interval", 18) //	seconds
-                               )),
+                "SML:XML",
+                cyng::tuple_factory(
+                    cyng::make_param("root-dir", (cwd / "xml").string()),
+                    cyng::make_param("root-name", "SML"),
+                    cyng::make_param("endcoding", "UTF-8"),
+                    cyng::make_param("interval", 18) //	seconds
+                    )),
             cyng::make_param(
-                "SML:JSON", cyng::tuple_factory(
-                                cyng::make_param("root-dir", (cwd / "json").string()), cyng::make_param("prefix", "smf"),
-                                cyng::make_param("suffix", "json"), cyng::make_param("version", SMF_VERSION_NAME),
-                                cyng::make_param("interval", 21) //	seconds
-                                )),
+                "SML:JSON",
+                cyng::tuple_factory(
+                    cyng::make_param("root-dir", (cwd / "json").string()),
+                    cyng::make_param("prefix", "smf"),
+                    cyng::make_param("suffix", "json"),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param("interval", 21) //	seconds
+                    )),
             cyng::make_param(
-                "SML:ABL", cyng::tuple_factory(
-                               cyng::make_param("root-dir", (cwd / "abl").string()), cyng::make_param("prefix", "smf"),
-                               cyng::make_param("suffix", "abl"), cyng::make_param("version", SMF_VERSION_NAME),
-                               cyng::make_param("interval", 33),      //	seconds
-                               cyng::make_param("line-ending", "DOS") //	DOS/UNIX
-                               )),
+                "SML:ABL",
+                cyng::tuple_factory(
+                    cyng::make_param("root-dir", (cwd / "abl").string()),
+                    cyng::make_param("prefix", "smf"),
+                    cyng::make_param("suffix", "abl"),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param("interval", 33),      //	seconds
+                    cyng::make_param("line-ending", "DOS") //	DOS/UNIX
+                    )),
             cyng::make_param(
-                "ALL:BIN", cyng::tuple_factory(
-                               cyng::make_param("root-dir", (cwd / "sml").string()), cyng::make_param("prefix", "smf"),
-                               cyng::make_param("suffix", "sml"), cyng::make_param("version", SMF_VERSION_NAME),
-                               cyng::make_param("interval", 27))),
+                "ALL:BIN",
+                cyng::tuple_factory(
+                    cyng::make_param("root-dir", (cwd / "sml").string()),
+                    cyng::make_param("prefix", "smf"),
+                    cyng::make_param("suffix", "sml"),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param("interval", 27))),
             cyng::make_param(
-                "SML:LOG", cyng::tuple_factory(
-                               cyng::make_param("root-dir", (cwd / "log").string()), cyng::make_param("prefix", "sml"),
-                               cyng::make_param("suffix", "log"), cyng::make_param("version", SMF_VERSION_NAME),
-                               cyng::make_param("interval", 26) //	seconds
-                               )),
+                "SML:LOG",
+                cyng::tuple_factory(
+                    cyng::make_param("root-dir", (cwd / "log").string()),
+                    cyng::make_param("prefix", "sml"),
+                    cyng::make_param("suffix", "log"),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param("interval", 26) //	seconds
+                    )),
             cyng::make_param(
-                "IEC:LOG", cyng::tuple_factory(
-                               cyng::make_param("root-dir", (cwd / "log").string()), cyng::make_param("prefix", "iec"),
-                               cyng::make_param("suffix", "log"), cyng::make_param("version", SMF_VERSION_NAME),
-                               cyng::make_param("interval", 16) //	seconds
-                               )),
+                "IEC:LOG",
+                cyng::tuple_factory(
+                    cyng::make_param("root-dir", (cwd / "log").string()),
+                    cyng::make_param("prefix", "iec"),
+                    cyng::make_param("suffix", "log"),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param("interval", 16) //	seconds
+                    )),
             cyng::make_param(
-                "SML:CSV", cyng::tuple_factory(
-                               cyng::make_param("root-dir", (cwd / "csv").string()), cyng::make_param("prefix", "smf"),
-                               cyng::make_param("suffix", "csv"), cyng::make_param("header", true),
-                               cyng::make_param("version", SMF_VERSION_NAME), cyng::make_param("interval", 39) //	seconds
-                               )),
+                "SML:CSV",
+                cyng::tuple_factory(
+                    cyng::make_param("root-dir", (cwd / "csv").string()),
+                    cyng::make_param("prefix", "smf"),
+                    cyng::make_param("suffix", "csv"),
+                    cyng::make_param("header", true),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param("interval", 39) //	seconds
+                    )),
             cyng::make_param(
                 "SML:influxdb",
                 cyng::tuple_factory(
-                    cyng::make_param("host", "localhost"), cyng::make_param("port", "8086"), //	8094 for udp
-                    cyng::make_param("protocol", "http"),                                    //	http, https, udp, unix
-                    cyng::make_param("cert", (cwd / "cert.pem").string()), cyng::make_param("db", "SMF"),
-                    cyng::make_param("series", "SML"), cyng::make_param("auth-enabled", false), cyng::make_param("user", "user"),
-                    cyng::make_param("pwd", "pwd"), cyng::make_param("interval", 46) //	seconds
+                    cyng::make_param("host", "localhost"),
+                    cyng::make_param("port", "8086"),     //	8094 for udp
+                    cyng::make_param("protocol", "http"), //	http, https, udp, unix
+                    cyng::make_param("cert", (cwd / "cert.pem").string()),
+                    cyng::make_param("db", "SMF"),
+                    cyng::make_param("series", "SML"),
+                    cyng::make_param("auth-enabled", false),
+                    cyng::make_param("user", "user"),
+                    cyng::make_param("pwd", "pwd"),
+                    cyng::make_param("interval", 46) //	seconds
                     )),
             cyng::make_param(
-                "ipt", cyng::make_vector(
-                           {cyng::make_tuple(
-                                cyng::make_param("host", "localhost"), cyng::make_param("service", "26862"),
-                                cyng::make_param("account", "data-store"), cyng::make_param("pwd", "to-define"),
-                                cyng::make_param(
-                                    "def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
-                                cyng::make_param("scrambled", true)),
-                            cyng::make_tuple(
-                                cyng::make_param("host", "localhost"), cyng::make_param("service", "26863"),
-                                cyng::make_param("account", "data-store"), cyng::make_param("pwd", "to-define"),
-                                cyng::make_param(
-                                    "def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
-                                cyng::make_param("scrambled", false))})),
+                "ipt",
+                cyng::make_vector(
+                    {cyng::make_tuple(
+                         cyng::make_param("host", "localhost"),
+                         cyng::make_param("service", "26862"),
+                         cyng::make_param("account", "data-store"),
+                         cyng::make_param("pwd", "to-define"),
+                         cyng::make_param(
+                             "def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                         cyng::make_param("scrambled", true)),
+                     cyng::make_tuple(
+                         cyng::make_param("host", "localhost"),
+                         cyng::make_param("service", "26863"),
+                         cyng::make_param("account", "data-store"),
+                         cyng::make_param("pwd", "to-define"),
+                         cyng::make_param(
+                             "def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                         cyng::make_param("scrambled", false))})),
             cyng::make_param(
-                "targets", cyng::make_tuple(
-                               cyng::make_param("SML", cyng::make_vector({"water@solostec", "gas@solostec", "power@solostec"})),
-                               cyng::make_param("IEC", cyng::make_vector({"LZQJ"})))))});
+                "targets",
+                cyng::make_tuple(
+                    cyng::make_param("SML", cyng::make_vector({"water@solostec", "gas@solostec", "power@solostec"})),
+                    cyng::make_param("IEC", cyng::make_vector({"LZQJ"})))))});
     }
-    void controller::run(cyng::controller &ctl, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
+    void controller::run(
+        cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
 
         auto const reader = cyng::make_reader(cfg);
         auto const tag = read_tag(reader["tag"].get());
@@ -151,28 +205,58 @@ namespace smf {
             CYNG_LOG_FATAL(logger, "no targets configured");
         }
 
-        join_network(ctl, logger, tag, node_name, model, std::move(tgl), config_types, target_sml, target_iec);
+        //
+        //  start writer tasks
+        //
+        start_sml_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:DB")));
+        start_sml_xml(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:XML")));
+        start_sml_json(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:JSON")));
+        start_sml_abl(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:ABL")));
+        start_sml_log(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:LOG")));
+        start_sml_csv(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:CSV")));
+        start_sml_influx(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:influxdb")));
+
+        start_iec_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("IEC:DB")));
+        start_iec_log(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("IEC:LOG")));
+        start_iec_csv(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("IEC:CSV")));
+        start_iec_influx(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("IEC:influxdb")));
+
+        //
+        //  connect to ip-t server
+        //
+        join_network(ctl, channels, logger, tag, node_name, model, std::move(tgl), config_types, target_sml, target_iec);
     }
 
-    void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
+    void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 
-        config::stop_tasks(logger, reg, "network");
+        // config::stop_tasks(logger, reg, "network");
+
+        channels.stop();
+        channels.clear();
 
         //
         //	stop all running tasks
         //
-        reg.shutdown();
+        // reg.shutdown();
     }
 
     void controller::join_network(
-        cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name, std::string const &model,
-        ipt::toggle::server_vec_t &&tgl, std::vector<std::string> const &config_types, std::vector<std::string> const &sml_targets,
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        boost::uuids::uuid tag,
+        std::string const &node_name,
+        std::string const &model,
+        ipt::toggle::server_vec_t &&tgl,
+        std::vector<std::string> const &config_types,
+        std::vector<std::string> const &sml_targets,
         std::vector<std::string> const &iec_targets) {
 
-        network_ = ctl.create_named_channel_with_ref<network>(
+        auto channel = ctl.create_named_channel_with_ref<network>(
             "network", ctl, tag, logger, node_name, model, std::move(tgl), config_types, sml_targets, iec_targets);
-        BOOST_ASSERT(network_->is_open());
-        network_->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(channel->is_open());
+        channel->dispatch("connect", cyng::make_tuple());
+        channels.lock(channel);
     }
 
     bool controller::run_options(boost::program_options::variables_map &vars) {
@@ -251,6 +335,97 @@ namespace smf {
         }
 
         ctl.stop();
+    }
+
+    void controller::start_sml_db(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start sml database writer");
+            auto const reader = cyng::make_reader(pm);
+            auto channel = ctl.create_named_channel_with_ref<sml_db_writer>("SML:DB", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_sml_xml(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start sml xml writer");
+            auto channel = ctl.create_named_channel_with_ref<sml_xml_writer>("SML:XML", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_sml_json(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start sml json writer");
+            auto channel = ctl.create_named_channel_with_ref<sml_json_writer>("SML:JSON", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_sml_abl(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start sml abl writer");
+            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>("SML:ABL", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_sml_log(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start sml log writer");
+            auto channel = ctl.create_named_channel_with_ref<sml_log_writer>("SML:LOG", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_sml_csv(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start sml csv writer");
+            auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>("SML:CSV", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_sml_influx(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start sml influx writer");
+            auto channel = ctl.create_named_channel_with_ref<sml_influx_writer>("SML:influx", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+
+    void controller::start_iec_db(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start iec database writer");
+            auto channel = ctl.create_named_channel_with_ref<iec_db_writer>("IEC:DB", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_iec_log(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start iec log writer");
+            auto channel = ctl.create_named_channel_with_ref<iec_log_writer>("IEC:LOG", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_iec_csv(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start iec csv writer");
+            auto channel = ctl.create_named_channel_with_ref<iec_csv_writer>("IEC:CVS", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+    void controller::start_iec_influx(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+        if (!pm.empty()) {
+            CYNG_LOG_INFO(logger, "start iec influx writer");
+            auto channel = ctl.create_named_channel_with_ref<iec_influx_writer>("IEC:influx", ctl, logger);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
     }
 
 } // namespace smf

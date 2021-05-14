@@ -9,70 +9,65 @@
 
 #include <smf/config.h>
 
-#include <cyng/obj/intrinsics/container.h>
 #include <cyng/log/logger.h>
+#include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/tag.hpp>
 
-#include <filesystem>
-#include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <filesystem>
 
 namespace cyng {
-	class controller;
-}
+    class controller;
+    class stash;
+} // namespace cyng
 
 namespace smf {
-	namespace config {
+    namespace config {
 
-		class controller_base
-		{
-		public:
-			controller_base(startup const&);
+        class controller_base {
+          public:
+            controller_base(startup const &);
 
-			virtual bool run_options(boost::program_options::variables_map&);
+            virtual bool run_options(boost::program_options::variables_map &);
 
-			/**
-			 * Prepare a default environment and call the derived run() method
-			 */
-			virtual int run();
+            /**
+             * Prepare a default environment and call the derived run() method
+             */
+            virtual int run();
 
-		protected:
-			virtual cyng::vector_t create_default_config(std::chrono::system_clock::time_point&&
-				, std::filesystem::path&& tmp
-				, std::filesystem::path&& cwd) = 0;
-			virtual void print_configuration(std::ostream&);
+          protected:
+            virtual cyng::vector_t create_default_config(
+                std::chrono::system_clock::time_point &&, std::filesystem::path &&tmp, std::filesystem::path &&cwd) = 0;
+            virtual void print_configuration(std::ostream &);
 
-			virtual void run(cyng::controller&, cyng::logger, cyng::object const& cfg, std::string const& node_name) = 0;
-			virtual void shutdown(cyng::logger, cyng::registry&) = 0;
+            virtual void
+            run(cyng::controller &, cyng::stash &, cyng::logger, cyng::object const &cfg, std::string const &node_name) = 0;
+            virtual void shutdown(cyng::registry &, cyng::stash &, cyng::logger) = 0;
 
+            void write_config(cyng::vector_t &&);
 
-			void write_config(cyng::vector_t&&);
+            /**
+             * generate a random UUID without requiring system entropy
+             */
+            [[nodiscard]] boost::uuids::uuid get_random_tag() const;
 
-			/**
-			 * generate a random UUID without requiring system entropy
-			 */
-			[[nodiscard]]
-			boost::uuids::uuid get_random_tag() const;
+            /**
+             * Convert an object of type string into an UUID
+             */
+            [[nodiscard]] boost::uuids::uuid read_tag(cyng::object) const;
 
-			/**
-			 * Convert an object of type string into an UUID
-			 */
-			[[nodiscard]]
-			boost::uuids::uuid read_tag(cyng::object) const;
+            [[nodiscard]] cyng::object read_config_section(std::string const &json_path, std::size_t config_index);
 
-			[[nodiscard]]
-			cyng::object read_config_section(std::string const& json_path, std::size_t config_index);
+          protected:
+            startup const &config_;
 
-		protected:
-			startup const& config_;
+          private:
+            mutable boost::uuids::random_generator_mt19937 uidgen_;
+        };
 
-		private:
-			mutable boost::uuids::random_generator_mt19937 uidgen_;
-
-		};
-
-		void stop_tasks(cyng::logger, cyng::registry&, std::string);
-	}
-}
+        void stop_tasks(cyng::logger, cyng::registry &, std::string);
+    } // namespace config
+} // namespace smf
 
 #endif

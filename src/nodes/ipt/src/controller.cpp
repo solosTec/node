@@ -36,9 +36,13 @@ namespace smf {
         std::cout << std::locale("").name().c_str() << std::endl;
 
         return cyng::make_vector({cyng::make_tuple(
-            cyng::make_param("generated", now), cyng::make_param("log-dir", tmp.string()),
-            cyng::make_param("tag", get_random_tag()), cyng::make_param("country-code", "CH"),
-            cyng::make_param("language-code", cyng::sys::get_system_locale()), cyng::make_param("query", 6), create_server_spec(),
+            cyng::make_param("generated", now),
+            cyng::make_param("log-dir", tmp.string()),
+            cyng::make_param("tag", get_random_tag()),
+            cyng::make_param("country-code", "CH"),
+            cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            cyng::make_param("query", 6),
+            create_server_spec(),
             create_cluster_spec())});
     }
 
@@ -46,7 +50,8 @@ namespace smf {
         return cyng::make_param(
             "server",
             cyng::make_tuple(
-                cyng::make_param("address", "0.0.0.0"), cyng::make_param("port", 26862),
+                cyng::make_param("address", "0.0.0.0"),
+                cyng::make_param("port", 26862),
                 cyng::make_param("sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                 cyng::make_param("watchdog", 30), //	for IP-T connection (minutes)
                 cyng::make_param("timeout", 10)   //	connection timeout in seconds
@@ -59,12 +64,16 @@ namespace smf {
             cyng::make_vector({
                 //	redundancy I
                 cyng::make_tuple(
-                    cyng::make_param("host", "localhost"), cyng::make_param("service", "7701"), cyng::make_param("account", "root"),
-                    cyng::make_param("pwd", "NODE_PWD"), cyng::make_param("salt", 756)) //	ToDo: use project wide defined value
+                    cyng::make_param("host", "localhost"),
+                    cyng::make_param("service", "7701"),
+                    cyng::make_param("account", "root"),
+                    cyng::make_param("pwd", "NODE_PWD"),
+                    cyng::make_param("salt", 756)) //	ToDo: use project wide defined value
             }));
     }
 
-    void controller::run(cyng::controller &ctl, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
+    void controller::run(
+        cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
 
 #if _DEBUG_IPT
         CYNG_LOG_INFO(logger, cfg);
@@ -90,11 +99,20 @@ namespace smf {
         //	connect to cluster
         //
         join_cluster(
-            ctl, logger, tag, query, node_name, std::move(tgl), address, port, sk, std::chrono::minutes(watchdog),
+            ctl,
+            logger,
+            tag,
+            query,
+            node_name,
+            std::move(tgl),
+            address,
+            port,
+            sk,
+            std::chrono::minutes(watchdog),
             std::chrono::seconds(timeout));
     }
 
-    void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
+    void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 
         config::stop_tasks(logger, reg, "cluster");
 
@@ -105,9 +123,17 @@ namespace smf {
     }
 
     void controller::join_cluster(
-        cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::uint32_t query, std::string const &node_name,
-        toggle::server_vec_t &&tgl, std::string const &address, std::uint16_t port, ipt::scramble_key const &sk,
-        std::chrono::minutes watchdog, std::chrono::seconds timeout) {
+        cyng::controller &ctl,
+        cyng::logger logger,
+        boost::uuids::uuid tag,
+        std::uint32_t query,
+        std::string const &node_name,
+        toggle::server_vec_t &&tgl,
+        std::string const &address,
+        std::uint16_t port,
+        ipt::scramble_key const &sk,
+        std::chrono::minutes watchdog,
+        std::chrono::seconds timeout) {
 
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout);

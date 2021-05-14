@@ -21,21 +21,39 @@ namespace smf {
       protected:
         cyng::vector_t create_default_config(
             std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) override;
-        virtual void run(cyng::controller &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
-        virtual void shutdown(cyng::logger, cyng::registry &) override;
+        virtual void
+        run(cyng::controller &, cyng::stash &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
+        virtual void shutdown(cyng::registry &, cyng::stash &, cyng::logger) override;
 
       private:
         void join_network(
-            cyng::controller &, cyng::logger, boost::uuids::uuid, std::string const &node_name, std::string const &model,
-            ipt::toggle::server_vec_t &&, std::vector<std::string> const &, std::vector<std::string> const &,
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            boost::uuids::uuid,
+            std::string const &node_name,
+            std::string const &model,
+            ipt::toggle::server_vec_t &&,
+            std::vector<std::string> const &,
+            std::vector<std::string> const &,
             std::vector<std::string> const &);
+
+        void start_sml_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_sml_xml(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_sml_json(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_sml_abl(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_sml_log(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_sml_csv(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_sml_influx(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+
+        void start_iec_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_iec_log(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_iec_influx(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
+        void start_iec_csv(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&);
 
       private:
         void init_storage(cyng::object &&);
         void create_influx_dbs(cyng::object &&, std::string const &cmd);
-
-      private:
-        cyng::channel_ptr network_;
     };
 } // namespace smf
 
