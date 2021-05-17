@@ -280,7 +280,7 @@ get_interface_inspecific_key_ids()
 	interface_inspecific_key_ids="$interface_inspecific_key_ids device_mac"
 	interface_inspecific_key_ids="$interface_inspecific_key_ids device_class"
 	interface_inspecific_key_ids="$interface_inspecific_key_ids device_manufacturer"
-	interface_inspecific_key_ids="$interface_inspecific_key_ids device_serial_number"
+	#interface_inspecific_key_ids="$interface_inspecific_key_ids device_serial_number"
 
 	echo "$interface_inspecific_key_ids"
 }
