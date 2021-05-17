@@ -27,7 +27,7 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config) : controller_base(config), cluster_() {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
@@ -109,13 +109,13 @@ namespace smf {
         toggle::server_vec_t &&tgl, std::string const &address, std::uint16_t port, ipt::scramble_key const &sk,
         std::chrono::minutes watchdog, std::chrono::seconds timeout) {
 
-        auto channel = ctl.create_named_channel_with_ref<cluster>(
+        cluster_ = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout);
-        BOOST_ASSERT(channel->is_open());
-        channel->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(cluster_->is_open());
+        cluster_->dispatch("connect", cyng::make_tuple());
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-        channel->dispatch("listen", cyng::make_tuple(ep));
+        cluster_->dispatch("listen", cyng::make_tuple(ep));
     }
 
 } // namespace smf

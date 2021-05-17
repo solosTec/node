@@ -28,7 +28,7 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config) : controller_base(config), cluster_() {}
 
     void controller::run(cyng::controller &ctl, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
 
@@ -81,6 +81,8 @@ namespace smf {
 
     void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
 
+        config::stop_tasks(logger, reg, "cluster");
+
         //
         //	stop all running tasks
         //
@@ -98,15 +100,15 @@ namespace smf {
             CYNG_LOG_ERROR(logger, "document root [" << document_root << "] does not exists");
         }
 
-        auto channel = ctl.create_named_channel_with_ref<cluster>(
+        cluster_ = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, node_name, logger, std::move(cfg), document_root, max_upload_size, nickname, timeout, country_code,
             lang_code, std::move(blocklist), std::move(redirects_intrinsic), auths);
 
-        BOOST_ASSERT(channel->is_open());
-        channel->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(cluster_->is_open());
+        cluster_->dispatch("connect", cyng::make_tuple());
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-        channel->dispatch("listen", cyng::make_tuple(ep));
+        cluster_->dispatch("listen", cyng::make_tuple(ep));
     }
 
     cyng::vector_t controller::create_default_config(

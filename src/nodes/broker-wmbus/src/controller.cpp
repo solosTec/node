@@ -30,7 +30,7 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config) : controller_base(config), cluster_(), network_() {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
@@ -104,12 +104,15 @@ namespace smf {
         cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name,
         ipt::toggle::server_vec_t &&tgl, ipt::push_channel &&pcc) {
 
-        auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
-        BOOST_ASSERT(channel->is_open());
-        channel->dispatch("connect", cyng::make_tuple());
+        network_ = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
+        BOOST_ASSERT(network_->is_open());
+        network_->dispatch("connect", cyng::make_tuple());
     }
 
     void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
+
+        config::stop_tasks(logger, reg, "network");
+        config::stop_tasks(logger, reg, "cluster");
 
         //
         //	stop all running tasks
@@ -122,13 +125,13 @@ namespace smf {
         toggle::server_vec_t &&tgl, std::string const &address, std::uint16_t port, bool client_login,
         std::chrono::seconds client_timeout, std::filesystem::path client_out) {
 
-        auto channel = ctl.create_named_channel_with_ref<cluster>(
+        cluster_ = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, node_name, logger, std::move(tgl), client_login, client_timeout, client_out);
-        BOOST_ASSERT(channel->is_open());
+        BOOST_ASSERT(cluster_->is_open());
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-        channel->dispatch("connect", cyng::make_tuple());
-        channel->dispatch("listen", cyng::make_tuple(ep));
+        cluster_->dispatch("connect", cyng::make_tuple());
+        cluster_->dispatch("listen", cyng::make_tuple(ep));
     }
 
     cyng::param_t controller::create_server_spec(std::filesystem::path const &cwd) {

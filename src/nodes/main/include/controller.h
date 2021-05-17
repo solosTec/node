@@ -26,6 +26,9 @@ namespace smf {
         cyng::param_t create_server_spec();
         cyng::param_t create_session_spec(std::filesystem::path const &tmp);
         cyng::param_t create_cluster_spec();
+
+      private:
+        cyng::channel_ptr cluster_;
     };
 } // namespace smf
 

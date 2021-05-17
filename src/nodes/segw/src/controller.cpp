@@ -12,7 +12,6 @@
 #include <tasks/gpio.h>
 
 #include <smf/obis/defs.h>
-//#include <smf/ipt/config.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/log/record.h>
@@ -352,8 +351,8 @@ namespace smf {
                                                        // cyng::make_param("adapter", cyng::tuple_factory(
                 //	cyng::make_param(sml::OBIS_W_MBUS_ADAPTER_MANUFACTURER.to_str(), "RC1180-MBUS3"),	//	manufacturer
                 //(81 06 00 00 01 00) 	cyng::make_param(sml::OBIS_W_MBUS_ADAPTER_ID.to_str(), "A8 15 17 45 89 03 01 31"),	//
-                //adapter ID (81 06 00 00 03 00) 	cyng::make_param(sml::OBIS_W_MBUS_FIRMWARE.to_str(), "3.08"),	//
-                //firmware (81 06 00 02 00 00)
+                // adapter ID (81 06 00 00 03 00) 	cyng::make_param(sml::OBIS_W_MBUS_FIRMWARE.to_str(), "3.08"),	//
+                // firmware (81 06 00 02 00 00)
                 //	cyng::make_param(sml::OBIS_W_MBUS_HARDWARE.to_str(), "2.00")	//	hardware (81 06 00 02 03 FF)
                 //))
                 ));
@@ -563,19 +562,14 @@ namespace smf {
         }
     }
 
-    // void controller::readout_serial(cyng::object&& cfg, std::uint8_t idx) {
-    //	cyng::controller ctl(2);
-
-    //}
-
     void controller::run(cyng::controller &ctl, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
 
         auto const reader = cyng::make_reader(cfg);
         auto s = cyng::db::create_db_session(reader.get("DB"));
 
-        auto channel = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s);
-        BOOST_ASSERT(channel->is_open());
-        channel->dispatch("start", cyng::make_tuple());
+        bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s);
+        BOOST_ASSERT(bridge_->is_open());
+        bridge_->dispatch("start", cyng::make_tuple());
     }
 
     std::string get_nms_address() {
@@ -618,14 +612,12 @@ namespace smf {
         config::stop_tasks(logger, reg, "bridge");
         // logger.stop();
 
-        std::this_thread::sleep_for(std::chrono::seconds(6));
+        std::this_thread::sleep_for(std::chrono::seconds(4));
 
         //
         //	stop all running tasks
         //
         // reg.shutdown();
-
-        // std::terminate();
     }
 
 } // namespace smf
