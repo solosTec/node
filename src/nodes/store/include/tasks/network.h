@@ -25,10 +25,17 @@ namespace smf {
 
       public:
         network(
-            std::weak_ptr<cyng::channel>, cyng::controller &, boost::uuids::uuid tag, cyng::logger logger,
-            std::string const &node_name, std::string const &model, ipt::toggle::server_vec_t &&,
-            std::vector<std::string> const &config_types, std::vector<std::string> const &sml_targets,
-            std::vector<std::string> const &iec_targets);
+            std::weak_ptr<cyng::channel>,
+            cyng::controller &,
+            boost::uuids::uuid tag,
+            cyng::logger logger,
+            std::string const &node_name,
+            std::string const &model,
+            ipt::toggle::server_vec_t &&,
+            std::vector<std::string> const &config_types,
+            std::vector<std::string> const &sml_targets,
+            std::vector<std::string> const &iec_targets,
+            std::vector<std::string> const &writer);
         ~network();
 
         void stop(cyng::eod);
@@ -55,6 +62,7 @@ namespace smf {
 
         std::vector<std::string> const sml_targets_;
         std::vector<std::string> const iec_targets_;
+        std::vector<std::string> const writer_;
 
         ipt::bus bus_;
 

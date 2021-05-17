@@ -6,6 +6,7 @@
  */
 
 #include <controller.h>
+#include <influxdb.h>
 #include <tasks/network.h>
 
 #include <tasks/iec_csv_writer.h>
@@ -44,7 +45,9 @@ namespace smf {
     controller::controller(config::startup const &config) : controller_base(config) {}
 
     cyng::vector_t controller::create_default_config(
-        std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
+        std::chrono::system_clock::time_point &&now,
+        std::filesystem::path &&tmp,
+        std::filesystem::path &&cwd) {
 
         std::locale loc(std::locale(), new std::ctype<char>);
         std::cout << std::locale("").name().c_str() << std::endl;
@@ -58,7 +61,7 @@ namespace smf {
             cyng::make_param("language-code", cyng::sys::get_system_locale()),
             cyng::make_param("model", "smf.store"),
 
-            cyng::make_param("output", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
+            cyng::make_param("writer", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
             cyng::make_param(
                 "SML:DB",
@@ -80,7 +83,7 @@ namespace smf {
                     cyng::make_param("watchdog", 30),     //	for database connection
                     cyng::make_param("pool-size", 1),     //	no pooling for SQLite
                     cyng::make_param("db-schema", SMF_VERSION_NAME),
-                    cyng::make_param("interval", 20),      //	seconds
+                    // cyng::make_param("interval", 20),      //	seconds
                     cyng::make_param("ignore-null", false) //	don't write values equal 0
                     )),
             cyng::make_param(
@@ -124,30 +127,46 @@ namespace smf {
                     cyng::make_param("root-dir", (cwd / "log").string()),
                     cyng::make_param("prefix", "sml"),
                     cyng::make_param("suffix", "log"),
-                    cyng::make_param("version", SMF_VERSION_NAME),
-                    cyng::make_param("interval", 26) //	seconds
-                    )),
+                    cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "IEC:LOG",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "log").string()),
                     cyng::make_param("prefix", "iec"),
                     cyng::make_param("suffix", "log"),
-                    cyng::make_param("version", SMF_VERSION_NAME),
-                    cyng::make_param("interval", 16) //	seconds
-                    )),
+                    cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "SML:CSV",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "csv").string()),
-                    cyng::make_param("prefix", "smf"),
+                    cyng::make_param("prefix", "sml"),
                     cyng::make_param("suffix", "csv"),
                     cyng::make_param("header", true),
-                    cyng::make_param("version", SMF_VERSION_NAME),
-                    cyng::make_param("interval", 39) //	seconds
-                    )),
+                    cyng::make_param("version", SMF_VERSION_NAME))),
+            cyng::make_param(
+                "IEC:CSV",
+                cyng::tuple_factory(
+                    cyng::make_param("root-dir", (cwd / "csv").string()),
+                    cyng::make_param("prefix", "iec"),
+                    cyng::make_param("suffix", "csv"),
+                    cyng::make_param("header", true),
+                    cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "SML:influxdb",
+                cyng::tuple_factory(
+                    cyng::make_param("host", "localhost"),
+                    cyng::make_param("port", "8086"),     //	8094 for udp
+                    cyng::make_param("protocol", "http"), //	http, https, udp, unix
+                    cyng::make_param("cert", (cwd / "cert.pem").string()),
+                    cyng::make_param("db", "SMF"),
+                    cyng::make_param("series", "SML"),
+                    cyng::make_param("auth-enabled", false),
+                    cyng::make_param("user", "user"),
+                    cyng::make_param("pwd", "pwd"),
+                    cyng::make_param("interval", 46) //	seconds
+                    )),
+            cyng::make_param(
+                "IEC:influxdb",
                 cyng::tuple_factory(
                     cyng::make_param("host", "localhost"),
                     cyng::make_param("port", "8086"),     //	8094 for udp
@@ -186,7 +205,11 @@ namespace smf {
                     cyng::make_param("IEC", cyng::make_vector({"LZQJ"})))))});
     }
     void controller::run(
-        cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::object const &cfg,
+        std::string const &node_name) {
 
         auto const reader = cyng::make_reader(cfg);
         auto const tag = read_tag(reader["tag"].get());
@@ -208,23 +231,44 @@ namespace smf {
         //
         //  start writer tasks
         //
-        start_sml_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:DB")));
-        start_sml_xml(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:XML")));
-        start_sml_json(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:JSON")));
-        start_sml_abl(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:ABL")));
-        start_sml_log(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:LOG")));
-        start_sml_csv(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:CSV")));
-        start_sml_influx(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("SML:influxdb")));
+        auto const writer = cyng::vector_cast<std::string>(reader["writer"].get(), "ALL:BIN");
+        if (!writer.empty()) {
+            for (auto const &name : writer) {
+                if (boost::algorithm::equals(name, "SML:DB")) {
+                    start_sml_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "SML:SML")) {
+                    start_sml_xml(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "SML:JSON")) {
+                    start_sml_json(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "SML:ABL")) {
+                    start_sml_abl(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "SML:LOG")) {
+                    start_sml_log(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "SML:CSV")) {
+                    start_sml_csv(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "SML:influxdb")) {
+                    start_sml_influx(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "IEC:DB")) {
+                    start_iec_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "IEC:LOG")) {
+                    start_iec_log(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "IEC:CSV")) {
+                    start_iec_csv(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else if (boost::algorithm::equals(name, "IEC:influxdb")) {
+                    start_iec_influx(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                } else {
+                    CYNG_LOG_WARNING(logger, "unknown writer task: " << name);
+                }
+            }
 
-        start_iec_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("IEC:DB")));
-        start_iec_log(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("IEC:LOG")));
-        start_iec_csv(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("IEC:CSV")));
-        start_iec_influx(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get("IEC:influxdb")));
+        } else {
+            CYNG_LOG_FATAL(logger, "no writer tasks configured");
+        }
 
         //
         //  connect to ip-t server
         //
-        join_network(ctl, channels, logger, tag, node_name, model, std::move(tgl), config_types, target_sml, target_iec);
+        join_network(ctl, channels, logger, tag, node_name, model, std::move(tgl), config_types, target_sml, target_iec, writer);
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
@@ -250,10 +294,11 @@ namespace smf {
         ipt::toggle::server_vec_t &&tgl,
         std::vector<std::string> const &config_types,
         std::vector<std::string> const &sml_targets,
-        std::vector<std::string> const &iec_targets) {
+        std::vector<std::string> const &iec_targets,
+        std::vector<std::string> const &writer) {
 
         auto channel = ctl.create_named_channel_with_ref<network>(
-            "network", ctl, tag, logger, node_name, model, std::move(tgl), config_types, sml_targets, iec_targets);
+            "network", ctl, tag, logger, node_name, model, std::move(tgl), config_types, sml_targets, iec_targets, writer);
         BOOST_ASSERT(channel->is_open());
         channel->dispatch("connect", cyng::make_tuple());
         channels.lock(channel);
@@ -272,7 +317,7 @@ namespace smf {
         auto const cmd = vars["influxdb"].as<std::string>();
         if (!cmd.empty()) {
             //	execute a influx db command
-            std::cerr << cmd << " not implemented yet" << std::endl;
+            // std::cerr << cmd << " not implemented yet" << std::endl;
             // return ctrl.create_influx_dbs(config_index, cmd);
             create_influx_dbs(read_config_section(config_.json_path_, config_.config_index_), cmd);
             return true;
@@ -292,137 +337,203 @@ namespace smf {
         // if (s.is_alive())	smf::init_storage(s);	//	see task/storage_db.h
     }
 
-    void controller::create_influx_dbs(cyng::object &&cfg, std::string const &cmd) {
+    int controller::create_influx_dbs(cyng::object &&cfg, std::string const &cmd) {
 
         auto const reader = cyng::make_reader(std::move(cfg));
         auto const pmap = cyng::container_cast<cyng::param_map_t>(reader.get("SML:influxdb"));
         std::cout << "***info: " << pmap << std::endl;
 
         cyng::controller ctl(config_.pool_size_);
+        int rc = EXIT_FAILURE;
 
         if (boost::algorithm::equals(cmd, "create")) {
 
             //
             //	create database
             //
-            // return sml::influxdb_exporter::create_db(mux.get_io_service()
-            //	, cyng::from_param_map<std::string>(cm, "host", "localhost")
-            //	, cyng::from_param_map<std::string>(cm, "port", "8086")
-            //	, cyng::from_param_map(cm, "protocol", "http")
-            //	, cyng::from_param_map(cm, "cert", "cert.pem")
-            //	, cyng::from_param_map<std::string>(cm, "db", "SMF"));
+            rc = influx::create_db(
+                ctl.get_ctx(),
+                std::cout,
+                cyng::value_cast(reader["SML:influxdb"]["host"].get(), "localhost"),
+                cyng::value_cast(reader["SML:influxdb"]["port"].get(), "8086"),
+                cyng::value_cast(reader["SML:influxdb"]["protocol"].get(), "http"),
+                cyng::value_cast(reader["SML:influxdb"]["cert"].get(), "cert.pem"),
+                cyng::value_cast(reader["SML:influxdb"]["db"].get(), "SMF"));
         } else if (boost::algorithm::equals(cmd, "show")) {
             //
             //	show database
             //
-            // return sml::influxdb_exporter::show_db(mux.get_io_service()
-            //	, cyng::from_param_map<std::string>(cm, "host", "localhost")
-            //	, cyng::from_param_map<std::string>(cm, "port", "8086")
-            //	, cyng::from_param_map(cm, "protocol", "http")
-            //	, cyng::from_param_map(cm, "cert", "cert.pem"));
+
+            rc = influx::show_db(
+                ctl.get_ctx(),
+                std::cout,
+                cyng::value_cast(reader["SML:influxdb"]["host"].get(), "localhost"),
+                cyng::value_cast(reader["SML:influxdb"]["port"].get(), "8086"),
+                cyng::value_cast(reader["SML:influxdb"]["protocol"].get(), "http"),
+                cyng::value_cast(reader["SML:influxdb"]["cert"].get(), "cert.pem"));
+
         } else if (boost::algorithm::equals(cmd, "drop")) {
             //
             //	drop database
             //
-            // return sml::influxdb_exporter::drop_db(mux.get_io_service()
-            //	, cyng::from_param_map<std::string>(cm, "host", "localhost")
-            //	, cyng::from_param_map<std::string>(cm, "port", "8086")
-            //	, cyng::from_param_map(cm, "protocol", "http")
-            //	, cyng::from_param_map(cm, "cert", "cert.pem")
-            //	, cyng::from_param_map<std::string>(cm, "db", "SMF"));
+            rc = influx::drop_db(
+                ctl.get_ctx(),
+                std::cout,
+                cyng::value_cast(reader["SML:influxdb"]["host"].get(), "localhost"),
+                cyng::value_cast(reader["SML:influxdb"]["port"].get(), "8086"),
+                cyng::value_cast(reader["SML:influxdb"]["protocol"].get(), "http"),
+                cyng::value_cast(reader["SML:influxdb"]["cert"].get(), "cert.pem"),
+                cyng::value_cast(reader["SML:influxdb"]["db"].get(), "SMF"));
         } else {
             std::cerr << "***error: unknown command " << cmd << std::endl;
         }
 
+        ctl.cancel();
         ctl.stop();
+        return rc;
     }
 
-    void controller::start_sml_db(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_sml_db(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml database writer");
             auto const reader = cyng::make_reader(pm);
-            auto channel = ctl.create_named_channel_with_ref<sml_db_writer>("SML:DB", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_db_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_sml_xml(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_sml_xml(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml xml writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_xml_writer>("SML:XML", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_xml_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_sml_json(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_sml_json(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml json writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_json_writer>("SML:JSON", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_json_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_sml_abl(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_sml_abl(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml abl writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>("SML:ABL", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_sml_log(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_sml_log(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml log writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_log_writer>("SML:LOG", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_log_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_sml_csv(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_sml_csv(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml csv writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>("SML:CSV", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_sml_influx(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_sml_influx(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml influx writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_influx_writer>("SML:influx", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_influx_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
 
-    void controller::start_iec_db(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_iec_db(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start iec database writer");
-            auto channel = ctl.create_named_channel_with_ref<iec_db_writer>("IEC:DB", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<iec_db_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_iec_log(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_iec_log(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start iec log writer");
-            auto channel = ctl.create_named_channel_with_ref<iec_log_writer>("IEC:LOG", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<iec_log_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_iec_csv(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_iec_csv(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start iec csv writer");
-            auto channel = ctl.create_named_channel_with_ref<iec_csv_writer>("IEC:CVS", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<iec_csv_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
-    void controller::start_iec_influx(cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::param_map_t &&pm) {
+    void controller::start_iec_influx(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::param_map_t &&pm,
+        std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start iec influx writer");
-            auto channel = ctl.create_named_channel_with_ref<iec_influx_writer>("IEC:influx", ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<iec_influx_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }

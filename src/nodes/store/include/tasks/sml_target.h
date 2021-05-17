@@ -8,6 +8,7 @@
 #define SMF_STORE_TASK_SML_TARGET_H
 
 #include <smf/ipt/bus.h>
+#include <smf/sml/unpack.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/task/controller.h>
@@ -21,7 +22,9 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(std::string)>, std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t, std::string)>,
+            std::function<void(std::string)>,
+            std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t, std::string)>,
+            std::function<void(std::string)>,
             std::function<void(cyng::eod)>>;
 
       public:
@@ -33,6 +36,11 @@ namespace smf {
       private:
         void register_target(std::string);
         void receive(std::uint32_t, std::uint32_t, cyng::buffer_t, std::string);
+        void add_writer(std::string);
+
+        void open_response(std::string const &trx, cyng::tuple_t const &msg);
+        void close_response(std::string const &trx, cyng::tuple_t const &msg);
+        void get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg);
 
       private:
         signatures_t sigs_;
@@ -40,6 +48,8 @@ namespace smf {
         cyng::controller &ctl_;
         cyng::logger logger_;
         ipt::bus &bus_;
+        std::vector<cyng::channel_weak> writer_;
+        sml::unpack parser_;
     };
 
 } // namespace smf

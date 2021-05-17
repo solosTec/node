@@ -6,10 +6,12 @@ set (store_node)
 set (store_cpp
     src/main.cpp
     src/controller.cpp
+    src/influxdb.cpp
 )
     
 set (store_h
     include/controller.h
+    include/influxdb.h
 )
 
 if(WIN32)

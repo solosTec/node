@@ -20,6 +20,7 @@
 #include <cyng/obj/util.hpp>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
+#include <cyng/task/stash.h>
 
 #include <iostream>
 #include <locale>
@@ -31,7 +32,9 @@ namespace smf {
     controller::controller(config::startup const &config) : controller_base(config), cluster_() {}
 
     cyng::vector_t controller::create_default_config(
-        std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
+        std::chrono::system_clock::time_point &&now,
+        std::filesystem::path &&tmp,
+        std::filesystem::path &&cwd) {
 
         std::locale loc(std::locale(), new std::ctype<char>);
         std::cout << std::locale("").name().c_str() << std::endl;
@@ -66,7 +69,11 @@ namespace smf {
     }
 
     void controller::run(
-        cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::object const &cfg,
+        std::string const &node_name) {
 #if _DEBUG_SETUP
         CYNG_LOG_INFO(logger, cfg);
 #endif
@@ -102,7 +109,8 @@ namespace smf {
         //
         //	stop all running tasks
         //
-        reg.shutdown();
+        channels.stop();
+        channels.clear();
     }
 
     void controller::join_cluster(

@@ -4,6 +4,8 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
+#include <smf/mbus/server_id.h>
+#include <smf/sml/reader.h>
 #include <tasks/sml_target.h>
 
 #include <cyng/io/hex_dump.hpp>
@@ -19,15 +21,43 @@
 namespace smf {
 
     sml_target::sml_target(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, ipt::bus &bus)
-        : sigs_{std::bind(&sml_target::register_target, this, std::placeholders::_1), std::bind(&sml_target::receive, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), std::bind(&sml_target::stop, this, std::placeholders::_1)},
+        : sigs_{std::bind(&sml_target::register_target, this, std::placeholders::_1), std::bind(&sml_target::receive, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), std::bind(&sml_target::add_writer, this, std::placeholders::_1), std::bind(&sml_target::stop, this, std::placeholders::_1)},
           channel_(wp),
           ctl_(ctl),
           logger_(logger),
-          bus_(bus) {
+          bus_(bus),
+          writer_(),
+          parser_([this](
+                      std::string trx,
+                      std::uint8_t group_no,
+                      std::uint8_t,
+                      smf::sml::msg_type type,
+                      cyng::tuple_t msg,
+                      std::uint16_t crc) {
+              switch (type) {
+              case sml::msg_type::OPEN_RESPONSE:
+                  CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                  open_response(trx, msg);
+                  break;
+              case sml::msg_type::GET_PROFILE_LIST_RESPONSE:
+                  CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                  get_profile_list_response(trx, group_no, msg);
+                  break;
+              case sml::msg_type::CLOSE_RESPONSE:
+                  CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                  close_response(trx, msg);
+                  break;
+              default:
+                  CYNG_LOG_WARNING(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                  break;
+              }
+          }) {
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("register", 0);
-            sp->set_channel_name("receive", 1);
+            std::size_t slot{0};
+            sp->set_channel_name("register", slot++);
+            sp->set_channel_name("receive", slot++);
+            sp->set_channel_name("add", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }
@@ -42,21 +72,48 @@ namespace smf {
 
     void sml_target::register_target(std::string name) { bus_.register_target(name, channel_); }
 
+    void sml_target::add_writer(std::string name) {
+        auto channels = ctl_.get_registry().lookup(name);
+        if (channels.empty()) {
+            CYNG_LOG_WARNING(logger_, "[sml] writer " << name << " not found");
+        } else {
+            writer_.insert(writer_.end(), channels.begin(), channels.end());
+            CYNG_LOG_INFO(logger_, "[sml] add writer " << name << " #" << writer_.size());
+        }
+    }
+
     void sml_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data, std::string target) {
 
         if (boost::algorithm::equals(channel_.lock()->get_name(), target)) {
-            CYNG_LOG_TRACE(logger_, "[sml target] " << target << " receive " << data.size() << " bytes");
+            // CYNG_LOG_TRACE(logger_, "[sml] " << target << " receive " << data.size() << " bytes");
             {
                 std::stringstream ss;
                 cyng::io::hex_dump<8> hd;
                 hd(ss, data.begin(), data.end());
-                CYNG_LOG_TRACE(logger_, data.size() << " bytes:\n" << ss.str());
+                CYNG_LOG_TRACE(logger_, "[sml] " << target << " recived " << data.size() << " bytes:\n" << ss.str());
             }
+            parser_.read(std::begin(data), std::end(data));
 
         } else {
             CYNG_LOG_WARNING(
-                logger_, "[sml target] wrong target name " << channel_.lock()->get_name() << "/" << target << " - " << data.size()
-                                                           << " bytes lost");
+                logger_,
+                "[sml] wrong target name " << channel_.lock()->get_name() << "/" << target << " - " << data.size()
+                                           << " bytes lost");
+        }
+    }
+
+    void sml_target::open_response(std::string const &trx, cyng::tuple_t const &msg) {
+        auto const tpl = smf::sml::read_public_open_response(msg);
+
+        CYNG_LOG_TRACE(logger_, "[sml] open request " << srv_id_to_str(std::get<1>(tpl)) << "*" << std::get<3>(tpl));
+    }
+    void sml_target::close_response(std::string const &trx, cyng::tuple_t const &msg) {
+        auto const r = smf::sml::read_public_close_response(msg);
+    }
+    void sml_target::get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
+        auto const r = smf::sml::read_get_profile_list_response(msg);
+        for (auto const &ro : std::get<3>(r)) {
+            CYNG_LOG_TRACE(logger_, ro.first << ": " << ro.second);
         }
     }
 

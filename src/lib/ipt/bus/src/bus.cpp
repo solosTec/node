@@ -539,9 +539,9 @@ namespace smf {
                             //
                             //  list all registered targets
                             //
-                            for (auto const &e : targets_) {
-                                CYNG_LOG_DEBUG(logger_, "[ipt] target " << e.first << ": " << e.second.first);
-                            }
+                            // for (auto const &e : targets_) {
+                            //    CYNG_LOG_DEBUG(logger_, "[ipt] target " << e.first << ": " << e.second.first);
+                            //}
 #endif
                         }
                         // BOOST_ASSERT_MSG(!pos->second.first.empty(), "no target name");
@@ -564,9 +564,9 @@ namespace smf {
             //
             //  list all registered targets
             //
-            for (auto const &e : targets_) {
-                CYNG_LOG_DEBUG(logger_, "[ipt] target " << e.first << ": " << e.second.first);
-            }
+            // for (auto const &e : targets_) {
+            //    CYNG_LOG_DEBUG(logger_, "[ipt] target " << e.first << ": " << e.second.first);
+            //}
 #endif
         }
 
