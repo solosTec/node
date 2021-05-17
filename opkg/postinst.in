@@ -433,7 +433,7 @@ get_datatype_by_key_id()
 			echo "u16"
 			;;
 		listener_pwd)
-			echo "u16"
+			echo "s"
 			;;
 		###
 		# All meter settings in alphabetical order
@@ -1500,13 +1500,10 @@ sync_value_by_key_id()
 		# read the value
 		val=$( get_val_by_key_from_db_dump "$key_old" "$db_dump_file" )
 
-		
-
 		# make sure that a value is set, to not import an empty value and possibly overwrite a good setting
-		if [ "$val" = "" ]; then 
+		if [ "$val" = "" ] || [ "$val" = "null" ] ; then 
 			echo "[POST-INSTALL]    ... skipped: $key_id, as its value is empty ..."
 		else 
-
 			# read out the value type
 			val_type=$( get_datatype_by_key_id "$key_id" )
 
@@ -1529,7 +1526,7 @@ sync_value_by_key_id()
 
 			# now with the conversions done, import the values
 			import_value "$key_new" "$val" "$val_type"
-			
+
 			echo "[POST-INSTALL]    ... imported: $key_id($key_old -> $key_new) = $val (type: $val_type) ..."
 		fi
 	fi
