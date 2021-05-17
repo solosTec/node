@@ -385,7 +385,7 @@ get_datatype_by_key_id()
 			echo "s"
 			;;
 		serial_stopbits)
-			echo "u32"
+			echo "s"
 			;;
 		serial_type)
 			echo "s"
@@ -1497,11 +1497,27 @@ sync_value_by_key_id()
 	elif [ -z "$key_old" ] || [ -z "$key_new" ]; then 
 		echo "[POST-INSTALL]    ... skipped: $key_id, as it could not be found and is empty ..."
 	else
+		# read the value
 		val=$( get_val_by_key_from_db_dump "$key_old" "$db_dump_file" )
+
+		
+
 		# make sure that a value is set, to not import an empty value and possibly overwrite a good setting
 		if [ "$val" = "" ]; then 
 			echo "[POST-INSTALL]    ... skipped: $key_id, as its value is empty ..."
 		else 
+			# if the value is not the default value, it might come in the form [val/default]
+			# TODO
+
+			# unfortunately some values are exported as hex values, but only decimal imports are allowed
+			if [ "$val_type" = "u8" ] || [ "$val_type" = "u16" ] || [ "$val_type" = "u32" ] || [ "$val_type" = "i32" ] || [ "$val_type" = "i64" ]; then 
+				
+				# listener_port is somehow exported decimal directly, thus skip converison here
+				if [ "$key_id" != "listener_port" ]; then 
+					val=$(printf '%d' "0x$val")
+				fi
+			fi
+
 			val_type=$( get_datatype_by_key_id "$key_id" )
 			import_value "$key_new" "$val" "$val_type"
 			echo "[POST-INSTALL]    ... imported: $key_id($key_old -> $key_new) = $val (type: $val_type) ..."
