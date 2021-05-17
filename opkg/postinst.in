@@ -1506,8 +1506,17 @@ sync_value_by_key_id()
 		if [ "$val" = "" ]; then 
 			echo "[POST-INSTALL]    ... skipped: $key_id, as its value is empty ..."
 		else 
+
+			# read out the value type
+			val_type=$( get_datatype_by_key_id "$key_id" )
+
 			# if the value is not the default value, it might come in the form [val/default]
-			# TODO
+			case $val in 
+				# check if the read out value begins with [, like [asd/123]
+				[*)
+					val=$(echo "$val" | awk '{split($0, a, "["); print a[2]}' | sed 's/\(.*\)\/.*/\1/')
+					;;
+			esac
 
 			# unfortunately some values are exported as hex values, but only decimal imports are allowed
 			if [ "$val_type" = "u8" ] || [ "$val_type" = "u16" ] || [ "$val_type" = "u32" ] || [ "$val_type" = "i32" ] || [ "$val_type" = "i64" ]; then 
@@ -1518,8 +1527,9 @@ sync_value_by_key_id()
 				fi
 			fi
 
-			val_type=$( get_datatype_by_key_id "$key_id" )
+			# now with the conversions done, import the values
 			import_value "$key_new" "$val" "$val_type"
+			
 			echo "[POST-INSTALL]    ... imported: $key_id($key_old -> $key_new) = $val (type: $val_type) ..."
 		fi
 	fi
