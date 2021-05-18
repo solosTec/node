@@ -9,11 +9,11 @@
 
 #include <cyng/obj/intrinsics/obis.h>
 
-
 namespace smf {
-	namespace obis {
-		std::string get_name(cyng::obis);
-	}
-}
+    namespace obis {
+        std::string get_name(cyng::obis);
+        std::string get_description(cyng::obis);
+    } // namespace obis
+} // namespace smf
 
 #endif

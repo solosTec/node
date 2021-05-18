@@ -24,10 +24,8 @@ namespace smf {
     class broker {
         template <typename T> friend class cyng::task;
 
-        using signatures_t =
-            std::tuple<std::function<void(cyng::buffer_t)>,
-                       std::function<void(std::chrono::seconds)>,
-                       std::function<void(cyng::eod)>>;
+        using signatures_t = std::
+            tuple<std::function<void(cyng::buffer_t)>, std::function<void(std::chrono::seconds)>, std::function<void(cyng::eod)>>;
 
         enum class state {
             START,
@@ -37,8 +35,7 @@ namespace smf {
         } state_;
 
       public:
-        broker(std::weak_ptr<cyng::channel>, cyng::controller &ctl,
-               cyng::logger, target const &, bool login);
+        broker(cyng::channel_weak, cyng::controller &ctl, cyng::logger, target const &, bool login);
 
       private:
         void stop(cyng::eod);
@@ -50,13 +47,9 @@ namespace smf {
         void receive(cyng::buffer_t);
 
         void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
+        void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
         void
-        start_connect(boost::asio::ip::tcp::resolver::results_type::iterator
-                          endpoint_iter);
-        void
-        handle_connect(const boost::system::error_code &ec,
-                       boost::asio::ip::tcp::resolver::results_type::iterator
-                           endpoint_iter);
+        handle_connect(const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
         void do_read();
         void handle_read(const boost::system::error_code &ec, std::size_t n);
         void do_write();
@@ -64,15 +57,13 @@ namespace smf {
         void check_status(std::chrono::seconds);
 
         constexpr bool is_stopped() const { return state_ == state::STOPPED; }
-        constexpr bool is_connected() const {
-            return state_ == state::CONNECTED;
-        }
+        constexpr bool is_connected() const { return state_ == state::CONNECTED; }
 
         void reset(state);
 
       private:
         signatures_t sigs_;
-        std::weak_ptr<cyng::channel> channel_;
+        cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
         target const target_;

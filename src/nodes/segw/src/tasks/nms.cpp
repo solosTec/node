@@ -54,6 +54,12 @@ namespace smf {
                 CYNG_LOG_WARNING(logger_, "[NMS] server cannot start listening at " << ep << ": " << ec.message());
 
                 //
+                //  reset acceptor
+                //
+                acceptor_.cancel(ec);
+                acceptor_.close(ec);
+
+                //
                 //  retry
                 //
                 auto sp = channel_.lock();

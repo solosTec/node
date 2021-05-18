@@ -5,7 +5,7 @@
  *
  */
 #include <smf/mbus/server_id.h>
-#include <smf/sml/reader.h>
+#include <smf/obis/db.h>
 #include <tasks/sml_target.h>
 
 #include <cyng/io/hex_dump.hpp>
@@ -21,37 +21,41 @@
 namespace smf {
 
     sml_target::sml_target(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, ipt::bus &bus)
-        : sigs_{std::bind(&sml_target::register_target, this, std::placeholders::_1), std::bind(&sml_target::receive, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), std::bind(&sml_target::add_writer, this, std::placeholders::_1), std::bind(&sml_target::stop, this, std::placeholders::_1)},
-          channel_(wp),
-          ctl_(ctl),
-          logger_(logger),
-          bus_(bus),
-          writer_(),
-          parser_([this](
+        : sigs_{std::bind(&sml_target::register_target, this, std::placeholders::_1), std::bind(&sml_target::receive, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), std::bind(&sml_target::add_writer, this, std::placeholders::_1), std::bind(&sml_target::stop, this, std::placeholders::_1)}
+        , channel_(wp)
+        , ctl_(ctl)
+        , logger_(logger)
+        , bus_(bus)
+        , writers_()
+        , parser_([this](
                       std::string trx,
                       std::uint8_t group_no,
                       std::uint8_t,
                       smf::sml::msg_type type,
                       cyng::tuple_t msg,
                       std::uint16_t crc) {
-              switch (type) {
-              case sml::msg_type::OPEN_RESPONSE:
-                  CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                  open_response(trx, msg);
-                  break;
-              case sml::msg_type::GET_PROFILE_LIST_RESPONSE:
-                  CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                  get_profile_list_response(trx, group_no, msg);
-                  break;
-              case sml::msg_type::CLOSE_RESPONSE:
-                  CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                  close_response(trx, msg);
-                  break;
-              default:
-                  CYNG_LOG_WARNING(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                  break;
-              }
-          }) {
+            switch (type) {
+            case sml::msg_type::OPEN_RESPONSE:
+                CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                open_response(trx, msg);
+                break;
+            case sml::msg_type::GET_PROFILE_LIST_RESPONSE:
+                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                get_profile_list_response(trx, group_no, msg);
+                break;
+            case sml::msg_type::GET_PROC_PARAMETER_RESPONSE:
+                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                get_proc_parameter_response(trx, group_no, msg);
+                break;
+            case sml::msg_type::CLOSE_RESPONSE:
+                CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                close_response(trx, msg);
+                break;
+            default:
+                CYNG_LOG_WARNING(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                break;
+            }
+        }) {
         auto sp = channel_.lock();
         if (sp) {
             std::size_t slot{0};
@@ -77,8 +81,8 @@ namespace smf {
         if (channels.empty()) {
             CYNG_LOG_WARNING(logger_, "[sml] writer " << name << " not found");
         } else {
-            writer_.insert(writer_.end(), channels.begin(), channels.end());
-            CYNG_LOG_INFO(logger_, "[sml] add writer " << name << " #" << writer_.size());
+            writers_.insert(writers_.end(), channels.begin(), channels.end());
+            CYNG_LOG_INFO(logger_, "[sml] add writer " << name << " #" << writers_.size());
         }
     }
 
@@ -105,16 +109,75 @@ namespace smf {
     void sml_target::open_response(std::string const &trx, cyng::tuple_t const &msg) {
         auto const tpl = smf::sml::read_public_open_response(msg);
 
-        CYNG_LOG_TRACE(logger_, "[sml] open request " << srv_id_to_str(std::get<1>(tpl)) << "*" << std::get<3>(tpl));
+        CYNG_LOG_TRACE(logger_, "[sml] open response " << srv_id_to_str(std::get<1>(tpl)) << "*" << std::get<3>(tpl));
+        for (auto writer : writers_) {
+            auto sp = writer.lock();
+            //  send cliend and server ID
+            if (sp)
+                sp->dispatch("open.response", std::get<1>(tpl), std::get<3>(tpl));
+        }
     }
     void sml_target::close_response(std::string const &trx, cyng::tuple_t const &msg) {
         auto const r = smf::sml::read_public_close_response(msg);
     }
     void sml_target::get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
         auto const r = smf::sml::read_get_profile_list_response(msg);
-        for (auto const &ro : std::get<3>(r)) {
+        for (auto const &ro : std::get<5>(r)) {
             CYNG_LOG_TRACE(logger_, ro.first << ": " << ro.second);
         }
+
+        //
+        // convert value map from
+        // std::map<cyng::obis, cyng::param_map_t>
+        // to
+        // std::map<std::string, cyng::object> == cyng::param_map_t
+        //
+        auto const pmap = convert_to_param_map(std::get<5>(r));
+
+        //
+        //  send to writers
+        //
+        for (auto writer : writers_) {
+            auto sp = writer.lock();
+            if (sp)
+                sp->dispatch(
+                    "get.profile.list.response",
+                    trx,
+                    std::get<0>(r), //  [buffer_t] server id
+                    std::get<1>(r), //  [cyng::object] actTime
+                    std::get<2>(r), //  [u32] regPeriod
+                    std::get<3>(r), //  [u32] status
+                    std::get<4>(r), //  [obis_path_t] path
+                    pmap            //  [std::map<cyng::obis, cyng::param_map_t>] values
+                );
+        }
+    }
+
+    void sml_target::get_proc_parameter_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
+        auto const r = smf::sml::read_get_proc_parameter_response(msg);
+        //
+        //  ToDo: send to writers
+        //
+        for (auto writer : writers_) {
+            auto sp = writer.lock();
+            // if (sp)
+            //    sp->dispatch("get.proc.parameter.response");
+        }
+    }
+
+    cyng::param_map_t convert_to_param_map(sml::sml_list_t const &inp) {
+        cyng::param_map_t r;
+        std::transform(
+            std::begin(inp),
+            std::end(inp),
+            std::inserter(r, r.end()),
+            [](sml::sml_list_t::value_type value) -> cyng::param_map_t::value_type {
+                value.second.emplace("code", cyng::make_object(obis::get_name(value.first)));
+                value.second.emplace("descr", cyng::make_object(obis::get_description(value.first)));
+
+                return {cyng::to_str(value.first), cyng::make_object(value.second)};
+            });
+        return r;
     }
 
 } // namespace smf

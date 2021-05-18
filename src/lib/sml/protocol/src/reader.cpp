@@ -130,7 +130,7 @@ namespace smf {
             return cyng::make_object();
         }
 
-        std::tuple<cyng::buffer_t, cyng::buffer_t, cyng::obis, cyng::object, cyng::object, std::map<cyng::obis, cyng::param_map_t>>
+        std::tuple<cyng::buffer_t, cyng::buffer_t, cyng::obis, cyng::object, cyng::object, sml_list_t>
         read_get_list_response(cyng::tuple_t msg) {
 
 #ifdef _DEBUG_SML
@@ -187,13 +187,7 @@ namespace smf {
                 return std::make_tuple(client, server, code, sensor_tp, gw_tp, r);
             }
 
-            return std::make_tuple(
-                cyng::buffer_t(),
-                cyng::buffer_t(),
-                cyng::obis(),
-                cyng::object(),
-                cyng::object(),
-                std::map<cyng::obis, cyng::param_map_t>());
+            return std::make_tuple(cyng::buffer_t(), cyng::buffer_t(), cyng::obis(), cyng::object(), cyng::object(), sml_list_t());
         }
 
         void read_get_proc_parameter_request(cyng::tuple_t msg) {
@@ -279,7 +273,38 @@ namespace smf {
             }
         }
 
-        std::tuple<cyng::buffer_t, cyng::object, std::uint32_t, std::map<cyng::obis, cyng::param_map_t>>
+        std::pair<cyng::obis_path_t, cyng::param_t> read_get_proc_parameter_response(cyng::tuple_t msg) {
+            BOOST_ASSERT(msg.size() == 3);
+            if (msg.size() == 3) {
+
+                //
+                //	iterate over message
+                //
+                auto pos = msg.begin();
+
+                //
+                //	serverId
+                //
+                auto const server = cyng::to_buffer(*pos++);
+
+                //
+                //	parameterTreePath (OBIS)
+                //
+                auto const path = read_param_tree_path(*pos++);
+
+                //
+                //	parameterTree
+                //
+                auto const tpl = cyng::container_cast<cyng::tuple_t>(*pos++);
+                if (tpl.size() != 3)
+                    return std::make_pair(path, cyng::param_t{});
+
+                // return std::make_pair(path, read_param_tree(tpl.begin(), tpl.end()));
+            }
+            return std::make_pair(cyng::obis_path_t(), cyng::param_t{});
+        }
+
+        std::tuple<cyng::buffer_t, cyng::object, std::uint32_t, std::uint32_t, cyng::obis_path_t, sml_list_t>
         read_get_profile_list_response(cyng::tuple_t msg) {
             BOOST_ASSERT(msg.size() == 9);
             if (msg.size() == 9) {
@@ -300,9 +325,9 @@ namespace smf {
                 auto const sensor_tp = read_time(*pos++);
 
                 //
-                //	regPeriod
+                //	regPeriod (u32 => seconds)
                 //
-                auto const reg_period = *pos++;
+                auto const reg_period = read_numeric<std::uint32_t>(*pos++);
 
                 //
                 //	parameterTreePath (OBIS)
@@ -331,15 +356,14 @@ namespace smf {
                 //	periodSignature
                 auto const signature = *pos;
 
-                return std::make_tuple(server, sensor_tp, status, r);
+                return std::make_tuple(server, sensor_tp, reg_period, status, path, r);
             }
             return std::make_tuple(
-                cyng::buffer_t(), cyng::make_object(), std::uint32_t{}, std::map<cyng::obis, cyng::param_map_t>{});
+                cyng::buffer_t(), cyng::make_object(), std::uint32_t{}, std::uint32_t{}, cyng::obis_path_t(), sml_list_t{});
         }
 
-        std::map<cyng::obis, cyng::param_map_t>
-        read_sml_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end) {
-            std::map<cyng::obis, cyng::param_map_t> r;
+        sml_list_t read_sml_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end) {
+            sml_list_t r;
 
             //
             //	list of tuples (period entry)
@@ -398,13 +422,12 @@ namespace smf {
             return std::make_pair(
                 code,
                 cyng::param_map_factory("unit", unit)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
-                    "valTime", val_time)("status", status)("signature", *pos));
+                    "valTime", val_time)("status", status) /*("signature", *pos)*/);
         }
 
-        std::map<cyng::obis, cyng::param_map_t>
-        read_period_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end) {
+        sml_list_t read_period_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end) {
 
-            std::map<cyng::obis, cyng::param_map_t> r;
+            sml_list_t r;
 
             //
             //	list of tuples (period entry)
@@ -462,7 +485,41 @@ namespace smf {
             return std::make_pair(
                 code,
                 cyng::param_map_factory("unit", unit)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
-                    "value", val)("signature", *pos));
+                    "value", val) /*("signature", *pos)*/);
+        }
+
+        std::pair<cyng::obis, cyng::object> read_param_tree(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end) {
+            std::size_t count = std::distance(pos, end);
+            BOOST_ASSERT_MSG(count == 3, "SML Tree");
+            if (count != 3)
+                return std::make_pair(cyng::obis(), cyng::make_object());
+
+            //
+            //	object name
+            //
+            auto const code = read_obis(*pos++);
+
+            //
+            //	parameterValue SML_ProcParValue OPTIONAL,
+            //
+            auto const attr = read_parameter(*pos++);
+
+            //
+            //	3. child_List List_of_SML_Tree OPTIONAL
+            //
+            auto const tpl = cyng::container_cast<cyng::tuple_t>(*pos);
+            for (auto const &child : tpl) {
+
+                //
+                //  ToDo: build child list
+                //
+                auto const tree = cyng::container_cast<cyng::tuple_t>(child);
+                if (tree.size() == 3) {
+                    auto const param = read_param_tree(tree.begin(), tree.end());
+                }
+            }
+
+            return std::make_pair(code, cyng::make_object());
         }
 
     } // namespace sml

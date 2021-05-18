@@ -11,10 +11,11 @@
 #include <vector>
 
 namespace smf {
-	namespace obis {
+    namespace obis {
 
-		std::vector<std::string> to_str_vector(cyng::obis_path_t const& path, bool translate);
-	}
-}
+        std::vector<std::string> to_str_vector(cyng::obis_path_t const &path, bool translate);
+
+    } // namespace obis
+} // namespace smf
 
 #endif

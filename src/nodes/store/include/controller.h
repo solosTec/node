@@ -47,11 +47,29 @@ namespace smf {
         void start_sml_abl(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
         void start_sml_log(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
         void start_sml_csv(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
-        void start_sml_influx(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
+        void start_sml_influx(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &name,
+            std::string const &host,
+            std::string const &service,
+            std::string const &protocol,
+            std::string const &cert,
+            std::string const &db);
 
         void start_iec_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
         void start_iec_log(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
-        void start_iec_influx(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
+        void start_iec_influx(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &name,
+            std::string const &host,
+            std::string const &service,
+            std::string const &protocol,
+            std::string const &cert,
+            std::string const &db);
         void start_iec_csv(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
 
       private:

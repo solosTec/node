@@ -89,6 +89,7 @@ namespace smf {
     }
 
     ipt_session::~ipt_session() {
+        gatekeeper_->stop();
 #ifdef _DEBUG_IPT
         std::cout << "session(~)" << std::endl;
 #endif
@@ -97,7 +98,6 @@ namespace smf {
     void ipt_session::stop() {
         //	https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/reference/basic_stream_socket/close/overload2.html
         CYNG_LOG_WARNING(logger_, "[session] " << vm_.get_tag() << " stopped");
-        gatekeeper_->stop();
         boost::system::error_code ec;
         socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
         socket_.close(ec);

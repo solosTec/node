@@ -2,10 +2,14 @@
 ---
 AlignAfterOpenBracket: AlwaysBreak
 AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: true
+AllowAllConstructorInitializersOnNextLine: true
 BinPackArguments: false
 BinPackParameters: false
+BreakConstructorInitializers: BeforeComma
+BreakStringLiterals: false
 ColumnLimit: 132
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
 IndentWidth: 4
 NamespaceIndentation: All
 ObjCBlockIndentWidth: 4

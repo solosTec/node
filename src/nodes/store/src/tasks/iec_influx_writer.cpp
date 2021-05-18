@@ -16,8 +16,24 @@
 
 namespace smf {
 
-    iec_influx_writer::iec_influx_writer(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger)
-        : sigs_{std::bind(&iec_influx_writer::stop, this, std::placeholders::_1)}, channel_(wp), ctl_(ctl), logger_(logger) {
+    iec_influx_writer::iec_influx_writer(
+        cyng::channel_weak wp,
+        cyng::controller &ctl,
+        cyng::logger logger,
+        std::string const &host,
+        std::string const &service,
+        std::string const &protocol,
+        std::string const &cert,
+        std::string const &db)
+        : sigs_{std::bind(&iec_influx_writer::stop, this, std::placeholders::_1)}
+        , channel_(wp)
+        , ctl_(ctl)
+        , logger_(logger)
+        , host_(host)
+        , service_(service)
+        , protocol_(protocol)
+        , cert_(cert)
+        , db_(db) {
         auto sp = channel_.lock();
         if (sp) {
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");

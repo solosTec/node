@@ -21,7 +21,15 @@ namespace smf {
         using signatures_t = std::tuple<std::function<void(cyng::eod)>>;
 
       public:
-        iec_influx_writer(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger);
+        iec_influx_writer(
+            cyng::channel_weak,
+            cyng::controller &ctl,
+            cyng::logger logger,
+            std::string const &host,
+            std::string const &service,
+            std::string const &protocol,
+            std::string const &cert,
+            std::string const &db);
         ~iec_influx_writer();
 
       private:
@@ -32,6 +40,11 @@ namespace smf {
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
+        std::string const host_;
+        std::string const service_;
+        std::string const protocol_; //  http/hhtps/ws
+        std::string const cert_;
+        std::string const db_; //  adressed database
     };
 
 } // namespace smf

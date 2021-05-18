@@ -859,7 +859,7 @@ BOOST_AUTO_TEST_CASE(get_profile_list_response) {
             std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
             if (type == smf::sml::msg_type::GET_PROFILE_LIST_RESPONSE) {
                 auto const r = smf::sml::read_get_profile_list_response(msg);
-                for (auto const &ro : std::get<3>(r)) {
+                for (auto const &ro : std::get<5>(r)) {
                     std::cout << ">> " << ro.first << ": " << ro.second << std::endl;
                 }
             }

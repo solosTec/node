@@ -16,6 +16,11 @@
 namespace smf {
     namespace sml {
 
+        /**
+         * define data type to hold a SML list
+         */
+        using sml_list_t = std::map<cyng::obis, cyng::param_map_t>;
+
         [[nodiscard]] std::tuple<std::string, cyng::buffer_t, cyng::buffer_t, std::string, std::string, std::string, std::uint8_t>
         read_public_open_request(cyng::tuple_t msg);
 
@@ -35,32 +40,34 @@ namespace smf {
          */
         cyng::object read_public_close_response(cyng::tuple_t msg);
 
-        /** @brief message_e::GET_LIST_RESPONSE (1793)
+        /** @brief GET_LIST_RESPONSE (1793)
          *
          * SML push data
          *
          * @return tuple with client id, server id, list name (obis code), sensor time, gateway time and a map
          * with all readouts.
          */
-        [[nodiscard]] std::
-            tuple<cyng::buffer_t, cyng::buffer_t, cyng::obis, cyng::object, cyng::object, std::map<cyng::obis, cyng::param_map_t>>
-            read_get_list_response(cyng::tuple_t msg);
+        [[nodiscard]] std::tuple<cyng::buffer_t, cyng::buffer_t, cyng::obis, cyng::object, cyng::object, sml_list_t>
+        read_get_list_response(cyng::tuple_t msg);
 
-        /** @brief message_e::GET_PROC_PARAMETER_REQUEST (1280)
+        /** @brief GET_PROC_PARAMETER_REQUEST (1280)
          */
         void read_get_proc_parameter_request(cyng::tuple_t msg);
 
-        /** @brief message_e::SET_PROC_PARAMETER_REQUEST (1536)
+        /** @brief SET_PROC_PARAMETER_REQUEST (1536)
          */
         void read_set_proc_parameter_request(cyng::tuple_t msg);
 
+        /** @brief GET_PROC_PARAMETER_RESPONSE (1281)
+         */
+        [[nodiscard]] std::pair<cyng::obis_path_t, cyng::param_t> read_get_proc_parameter_response(cyng::tuple_t msg);
+
         /** @brief message_e::GET_PROFILE_LIST_RESPONSE (1025)
          */
-        [[nodiscard]] std::tuple<cyng::buffer_t, cyng::object, std::uint32_t, std::map<cyng::obis, cyng::param_map_t>>
+        [[nodiscard]] std::tuple<cyng::buffer_t, cyng::object, std::uint32_t, std::uint32_t, cyng::obis_path_t, sml_list_t>
         read_get_profile_list_response(cyng::tuple_t msg);
 
-        [[nodiscard]] std::map<cyng::obis, cyng::param_map_t>
-        read_sml_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+        [[nodiscard]] sml_list_t read_sml_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
         /**
          * Reads a set of 7 values:
@@ -72,8 +79,7 @@ namespace smf {
         /**
          * Read a list of period entries
          */
-        [[nodiscard]] std::map<cyng::obis, cyng::param_map_t>
-        read_period_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+        [[nodiscard]] sml_list_t read_period_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
         /**
          * Reads a set of 5 values:
@@ -81,6 +87,12 @@ namespace smf {
          */
         [[nodiscard]] std::pair<cyng::obis, cyng::param_map_t>
         read_period_entry(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
+
+        /**
+         * read a data record
+         */
+        [[nodiscard]] std::pair<cyng::obis, cyng::object>
+        read_param_tree(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
     } // namespace sml
 } // namespace smf

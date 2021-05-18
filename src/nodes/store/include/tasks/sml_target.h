@@ -8,6 +8,7 @@
 #define SMF_STORE_TASK_SML_TARGET_H
 
 #include <smf/ipt/bus.h>
+#include <smf/sml/reader.h>
 #include <smf/sml/unpack.h>
 
 #include <cyng/log/logger.h>
@@ -41,6 +42,7 @@ namespace smf {
         void open_response(std::string const &trx, cyng::tuple_t const &msg);
         void close_response(std::string const &trx, cyng::tuple_t const &msg);
         void get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg);
+        void get_proc_parameter_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg);
 
       private:
         signatures_t sigs_;
@@ -48,9 +50,15 @@ namespace smf {
         cyng::controller &ctl_;
         cyng::logger logger_;
         ipt::bus &bus_;
-        std::vector<cyng::channel_weak> writer_;
+        /**
+         * vector of SML writers
+         */
+        std::vector<cyng::channel_weak> writers_;
         sml::unpack parser_;
     };
+
+    //      std::vector<std::string> to_str_vector(cyng::obis_path_t const &path, bool translate);
+    cyng::param_map_t convert_to_param_map(sml::sml_list_t const &);
 
 } // namespace smf
 
