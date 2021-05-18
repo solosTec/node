@@ -1517,11 +1517,7 @@ sync_value_by_key_id()
 
 			# unfortunately some values are exported as hex values, but only decimal imports are allowed
 			if [ "$val_type" = "u8" ] || [ "$val_type" = "u16" ] || [ "$val_type" = "u32" ] || [ "$val_type" = "i32" ] || [ "$val_type" = "i64" ]; then 
-				
-				# listener_port is somehow exported decimal directly, thus skip converison here
-				if [ "$key_id" != "listener_port" ]; then 
-					val=$(printf '%d' "0x$val")
-				fi
+				val=$(printf '%d' "0x$val")
 			fi
 
 			# now with the conversions done, import the values
