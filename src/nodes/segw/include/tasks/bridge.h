@@ -87,7 +87,7 @@ namespace smf {
 
         void init_redirectors();
         void init_redirector(lmn_type);
-        void init_redirector_ipv6(cfg_listener const &cfg);
+        void init_redirector_ipv6(cfg_listener const &cfg, std::string nic);
         void stop_redirectors();
         void stop_redirector(lmn_type);
 

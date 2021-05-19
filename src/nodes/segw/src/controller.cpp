@@ -397,12 +397,13 @@ namespace smf {
         return cyng::make_param(
             "nms",
             cyng::tuple_factory(
-                cyng::make_param("address", get_nms_address()),
+                cyng::make_param("address", get_nms_address("br0")),
                 cyng::make_param("port", 7562),
                 cyng::make_param("account", "operator"),
                 cyng::make_param("pwd", "operator"),
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
                 cyng::make_param("enabled", true),
+                cyng::make_param("nic", "br0"),
 #else
                 cyng::make_param("enabled", false),
 #endif
@@ -623,30 +624,28 @@ namespace smf {
         bridge_->dispatch("start", cyng::make_tuple());
     }
 
-    std::string get_nms_address() {
+    std::string get_nms_address(std::string nic) {
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
 
         auto const pres = cyng::sys::get_nic_prefix();
-        auto const pos = std::find(pres.begin(), pres.end(), "br0");
+        auto const pos = std::find(pres.begin(), pres.end(), nic);
 
         if (pos != pres.end()) {
             // address may contain the "%32" as suffix
-            std::string local_address_with_scope = cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string();
+            std::string local_address_with_scope = cyng::sys::get_address_IPv6(nic, cyng::sys::LINKLOCAL).to_string();
 
-            // check if the local address ends with "%xy". We dont check directly for %32"
-            // to be flexible if the number changes.
             //
-            int length_of_scope = 3;
-            std::string tmpStr = local_address_with_scope.substr(local_address_with_scope.length() - length_of_scope, 1);
-
-            if (tmpStr == "%") {
-                // std::cout << std::endl << "scope found in address: " <<std::endl;
-                // get rid of the "%32"
-                local_address_with_scope.erase(local_address_with_scope.length() - length_of_scope, length_of_scope);
-            } else {
-                std::cout << std::endl << "scope not found in address. tmpStr is " << tmpStr << std::endl;
+            //  substitute %nn with % br0
+            //
+            auto const pos = local_address_with_scope.find_last_of('%');
+            if (pos != std::string::npos) {
+                local_address_with_scope = local_address_with_scope.substr(0, pos + 1) + nic;
             }
-            return local_address_with_scope + "%br0";
+            else {
+                std::cerr << "invalid address: " << local_address_with_scope << std::endl;
+            }
+
+            return local_address_with_scope;
         }
         return "0.0.0.0";
 

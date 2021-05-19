@@ -28,6 +28,7 @@
 #include <cyng/log/record.h>
 #include <cyng/parse/buffer.h>
 #include <cyng/task/channel.h>
+#include <cyng/sys/net.h>
 
 #ifdef _DEBUG_SEGW
 #include <iostream>
@@ -667,7 +668,7 @@ namespace smf {
     void bridge::init_redirector(lmn_type type) {
         cfg_listener cfg(cfg_, type);
         if (cfg.is_enabled()) {
-            CYNG_LOG_INFO(logger_, "start listener for port [" << cfg.get_port_name() << "] " << cfg);
+            CYNG_LOG_INFO(logger_, "start IPv4 listener for port [" << cfg.get_port_name() << "] " << cfg);
             if (!cfg.is_lmn_enabled()) {
                 CYNG_LOG_WARNING(
                     logger_,
@@ -680,23 +681,47 @@ namespace smf {
             //
             //  check the IPv6 case only for linux envronments
             //
-            init_redirector_ipv6(cfg);
+//            init_redirector_ipv6(cfg, "eth2");
+            init_redirector_ipv6(cfg, "br0");
 
         } else {
-            CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] is not enabled");
+            CYNG_LOG_WARNING(logger_, "IPv4 listener for port [" << cfg.get_port_name() << "] is not enabled");
         }
     }
 
-    void bridge::init_redirector_ipv6(cfg_listener const &cfg) {
+    void bridge::init_redirector_ipv6(cfg_listener const &cfg, std::string nic) {
+
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
         auto const pres = cyng::sys::get_nic_prefix();
-        auto const pos = std::find(pres.begin(), pres.end(), "br0");
+        auto const pos = std::find(pres.begin(), pres.end(), nic);
 
         if (pos != pres.end()) {
-            std::string local_address_with_scope = cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string();
-            CYNG_LOG_TRACE(logger_, "listener for port [" << cfg.get_port_name() << "] " << local_address_with_scope);
+            //  this is something like: fe80::225:18ff:fea4:9982%32
+            std::string local_address_with_scope = cyng::sys::get_address_IPv6(nic, cyng::sys::LINKLOCAL).to_string();
+//            CYNG_LOG_TRACE(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " << local_address_with_scope);
+
+            //
+            //  substitute %nn with % br0
+            //
+            auto const pos = local_address_with_scope.find_last_of('%');
+            if (pos != std::string::npos) {
+                local_address_with_scope = local_address_with_scope.substr(0, pos + 1) + nic;
+                //CYNG_LOG_INFO(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " << local_address_with_scope);
+
+                auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(local_address_with_scope), cfg.get_port());
+                CYNG_LOG_INFO(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " << ep);
+
+                //
+                //  start listener
+                //
+                redir_ipv6_.at(cfg.get_index()).start(ep);
+                
+            }
+            else {
+                CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] invalid address: " << local_address_with_scope);
+            }
         } else {
-            CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] 'br0' is not present");
+            CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] \"" << nic << "\" is not present");
         }
 #endif
     }
@@ -711,6 +736,9 @@ namespace smf {
         if (cfg.is_enabled()) {
             CYNG_LOG_INFO(logger_, "stop listener for port [" << cfg.get_port_name() << "] " << cfg);
             redir_ipv4_.at(get_index(type)).stop();
+#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
+            redir_ipv6_.at(get_index(type)).stop();
+#endif
         } else {
             CYNG_LOG_TRACE(logger_, "[redirector] not running");
         }

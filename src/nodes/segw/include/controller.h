@@ -67,7 +67,7 @@ namespace smf {
      * When running on the segw hardware tries to figure out if this is a BPL device
      * and returns the link local address of "
      */
-    std::string get_nms_address();
+    std::string get_nms_address(std::string nic);
 
 } // namespace smf
 
