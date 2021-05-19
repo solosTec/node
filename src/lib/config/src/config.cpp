@@ -315,7 +315,7 @@ namespace smf {
                 std::cout << std::endl;
                 std::cout << nics.size() << " network interface controller(s)" << std::endl;
                 for (auto const &nic : nics) {
-                    std::cout << nic << std::endl;
+                    std::cout << nic << " - " << cyng::sys::get_address_IPv6(nic) << std::endl;
                 }
             }
         }
