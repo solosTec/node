@@ -73,6 +73,16 @@ namespace smf {
             }
             return true;
         }
+        if (vars.count("add-value") != 0) {
+            auto vec = vars["add-value"].as<std::vector<std::string>>();
+            if (vec.size() == 3) {
+                //	add configuration value
+                add_config_value(read_config_section(config_.json_path_, config_.config_index_), vec.at(0), vec.at(1), vec.at(2));
+            } else {
+                std::cerr << "add-value requires 3 parameters: \"path\" \"value\" \"type\"" << std::endl;
+            }
+            return true;
+        }
         if (vars.count("switch-gpio") != 0) {
             auto vec = vars["switch-gpio"].as<std::vector<std::string>>();
             if (vec.size() == 2) {
@@ -579,6 +589,21 @@ namespace smf {
         }
     }
 
+    void
+    controller::add_config_value(cyng::object &&cfg, std::string const &path, std::string const &value, std::string const &type) {
+
+        auto const reader = cyng::make_reader(std::move(cfg));
+
+        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
+
+        auto s = cyng::db::create_db_session(reader.get("DB"));
+        if (s.is_alive()) {
+            if (smf::add_config_value(s, path, value, type)) {
+                std::cout << path << " := " << value << " (" << type << ")" << std::endl;
+            }
+        }
+    }
+
     void controller::switch_gpio(cyng::object &&cfg, std::string const &str, std::string const &state) {
 
         auto const reader = cyng::make_reader(std::move(cfg));
@@ -640,8 +665,7 @@ namespace smf {
             auto const pos = local_address_with_scope.find_last_of('%');
             if (pos != std::string::npos) {
                 local_address_with_scope = local_address_with_scope.substr(0, pos + 1) + nic;
-            }
-            else {
+            } else {
                 std::cerr << "invalid address: " << local_address_with_scope << std::endl;
             }
 

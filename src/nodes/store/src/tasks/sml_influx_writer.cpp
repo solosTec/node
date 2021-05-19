@@ -123,9 +123,9 @@ namespace smf {
                     ss << "," << val.first << "=\"" << cyng::io::to_plain(val.second) << "\"";
                 } else if (boost::algorithm::equals(val.first, "value")) {
                     //
-                    //  always float => string
+                    //  obis = value
                     //
-                    ss << "," << val.first << "=\"" << cyng::io::to_plain(val.second) << "\"";
+                    ss << "," << v.first << "=" << influx::to_line_protocol(val.second);
                 } else {
                     ss << "," << val.first << "=" << influx::to_line_protocol(val.second);
                 }

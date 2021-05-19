@@ -25,7 +25,9 @@ namespace smf {
 
       protected:
         cyng::vector_t create_default_config(
-            std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) override;
+            std::chrono::system_clock::time_point &&now,
+            std::filesystem::path &&tmp,
+            std::filesystem::path &&cwd) override;
 
         virtual void
         run(cyng::controller &, cyng::stash &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
@@ -57,6 +59,7 @@ namespace smf {
         void clear_config(cyng::object &&);
         void list_config(cyng::object &&);
         void set_config_value(cyng::object &&, std::string const &path, std::string const &value, std::string const &type);
+        void add_config_value(cyng::object &&, std::string const &path, std::string const &value, std::string const &type);
         void switch_gpio(cyng::object &&cfg, std::string const &number, std::string const &state);
 
       private:

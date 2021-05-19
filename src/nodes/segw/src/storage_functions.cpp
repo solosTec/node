@@ -862,6 +862,49 @@ namespace smf {
         return false;
     }
 
+    bool add_config_value(cyng::db::session &db, std::string const &path, std::string const &value, std::string const &type) {
+
+        storage store(db);
+
+        auto const obj = cyng::make_object(path);
+
+        if (boost::algorithm::equals(type, "bool") || boost::algorithm::equals(type, "b") ||
+            boost::algorithm::equals(type, "boolean")) {
+            return store.cfg_insert(obj, cyng::make_object(boost::algorithm::equals(value, "true")));
+        } else if (boost::algorithm::equals(type, "u8")) {
+            return store.cfg_insert(obj, cyng::make_object(static_cast<std::uint8_t>(std::stoul(value))));
+        } else if (boost::algorithm::equals(type, "u16")) {
+            return store.cfg_insert(obj, cyng::make_object(static_cast<std::uint16_t>(std::stoul(value))));
+        } else if (boost::algorithm::equals(type, "u32")) {
+            return store.cfg_insert(obj, cyng::make_object(static_cast<std::uint32_t>(std::stoul(value))));
+        } else if (boost::algorithm::equals(type, "u64")) {
+            return store.cfg_insert(obj, cyng::make_object(static_cast<std::uint64_t>(std::stoull(value))));
+        } else if (boost::algorithm::equals(type, "i8")) {
+            return store.cfg_insert(obj, cyng::make_object(static_cast<std::int8_t>(std::stol(value))));
+        } else if (boost::algorithm::equals(type, "i16")) {
+            return store.cfg_insert(obj, cyng::make_object(static_cast<std::int16_t>(std::stol(value))));
+        } else if (boost::algorithm::equals(type, "i32")) {
+            return store.cfg_insert(obj, cyng::make_object(static_cast<std::int32_t>(std::stol(value))));
+        } else if (boost::algorithm::equals(type, "i64")) {
+            return store.cfg_insert(obj, cyng::make_object(static_cast<std::int64_t>(std::stoll(value))));
+        } else if (boost::algorithm::equals(type, "s")) {
+            return store.cfg_insert(obj, cyng::make_object(value));
+        } else if (boost::algorithm::equals(type, "chrono:sec")) {
+            return store.cfg_insert(obj, cyng::make_object(std::chrono::seconds(std::stoull(value))));
+        } else if (boost::algorithm::equals(type, "chrono:min")) {
+            return store.cfg_insert(obj, cyng::make_object(std::chrono::minutes(std::stoull(value))));
+        } else if (boost::algorithm::equals(type, "ip:address")) {
+            boost::system::error_code ec;
+            return store.cfg_insert(obj, cyng::make_object(boost::asio::ip::make_address(value, ec)));
+        } else {
+            std::cerr << "supported data types: [bool] [u8] [u16] [u32] [u64] [i8] [i16] [i32] [i64] [s] [chrono:sec] [chrono:min] "
+                         "[ip:address]"
+                      << std::endl;
+        }
+
+        return false;
+    }
+
     bool insert_config_record(cyng::db::statement_ptr stmt, std::string key, cyng::object obj, std::string desc) {
         //
         //	use already prepared statements
