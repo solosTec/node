@@ -280,7 +280,7 @@ get_interface_inspecific_key_ids()
 	interface_inspecific_key_ids="$interface_inspecific_key_ids device_mac"
 	interface_inspecific_key_ids="$interface_inspecific_key_ids device_class"
 	interface_inspecific_key_ids="$interface_inspecific_key_ids device_manufacturer"
-	interface_inspecific_key_ids="$interface_inspecific_key_ids device_serial_number"
+	#interface_inspecific_key_ids="$interface_inspecific_key_ids device_serial_number"
 
 	echo "$interface_inspecific_key_ids"
 }
@@ -385,7 +385,7 @@ get_datatype_by_key_id()
 			echo "s"
 			;;
 		serial_stopbits)
-			echo "u32"
+			echo "s"
 			;;
 		serial_type)
 			echo "s"
@@ -433,7 +433,7 @@ get_datatype_by_key_id()
 			echo "u16"
 			;;
 		listener_pwd)
-			echo "u16"
+			echo "s"
 			;;
 		###
 		# All meter settings in alphabetical order
@@ -1497,13 +1497,32 @@ sync_value_by_key_id()
 	elif [ -z "$key_old" ] || [ -z "$key_new" ]; then 
 		echo "[POST-INSTALL]    ... skipped: $key_id, as it could not be found and is empty ..."
 	else
+		# read the value
 		val=$( get_val_by_key_from_db_dump "$key_old" "$db_dump_file" )
+
 		# make sure that a value is set, to not import an empty value and possibly overwrite a good setting
-		if [ "$val" = "" ]; then 
+		if [ "$val" = "" ] || [ "$val" = "null" ] ; then 
 			echo "[POST-INSTALL]    ... skipped: $key_id, as its value is empty ..."
 		else 
+			# read out the value type
 			val_type=$( get_datatype_by_key_id "$key_id" )
+
+			# if the value is not the default value, it might come in the form [val/default]
+			case $val in 
+				# check if the read out value begins with [, like [asd/123]
+				[*)
+					val=$(echo "$val" | awk '{split($0, a, "["); print a[2]}' | sed 's/\(.*\)\/.*/\1/')
+					;;
+			esac
+
+			# unfortunately some values are exported as hex values, but only decimal imports are allowed
+			if [ "$val_type" = "u8" ] || [ "$val_type" = "u16" ] || [ "$val_type" = "u32" ] || [ "$val_type" = "i32" ] || [ "$val_type" = "i64" ]; then 
+				val=$(printf '%d' "0x$val")
+			fi
+
+			# now with the conversions done, import the values
 			import_value "$key_new" "$val" "$val_type"
+
 			echo "[POST-INSTALL]    ... imported: $key_id($key_old -> $key_new) = $val (type: $val_type) ..."
 		fi
 	fi
