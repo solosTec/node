@@ -26,6 +26,8 @@
 
 namespace smf {
 
+    class cfg_listener;
+
     /**
      * manage segw lifetime
      */
@@ -85,6 +87,7 @@ namespace smf {
 
         void init_redirectors();
         void init_redirector(lmn_type);
+        void init_redirector_ipv6(cfg_listener const &cfg);
         void stop_redirectors();
         void stop_redirector(lmn_type);
 
@@ -100,7 +103,8 @@ namespace smf {
         cyng::mesh fabric_;
         router router_; //	SML router (incl. ip-t bus)
         sml::server sml_;
-        std::array<rdr::server, 2> redir_;
+        std::array<rdr::server, 2> redir_ipv4_;
+        std::array<rdr::server, 2> redir_ipv6_;
         cyng::stash stash_;
     };
 } // namespace smf

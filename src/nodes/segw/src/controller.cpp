@@ -35,7 +35,8 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config)
+        : controller_base(config) {}
 
     bool controller::run_options(boost::program_options::variables_map &vars) {
 
@@ -93,7 +94,9 @@ namespace smf {
     }
 
     cyng::vector_t controller::create_default_config(
-        std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
+        std::chrono::system_clock::time_point &&now,
+        std::filesystem::path &&tmp,
+        std::filesystem::path &&cwd) {
 
         //
         //	get hostname
@@ -606,7 +609,11 @@ namespace smf {
     }
 
     void controller::run(
-        cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::object const &cfg,
+        std::string const &node_name) {
 
         auto const reader = cyng::make_reader(cfg);
         auto s = cyng::db::create_db_session(reader.get("DB"));
@@ -623,7 +630,7 @@ namespace smf {
         auto const pos = std::find(pres.begin(), pres.end(), "br0");
 
         if (pos != pres.end()) {
-            // address may contain the "%32" as surfix
+            // address may contain the "%32" as suffix
             std::string local_address_with_scope = cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string();
 
             // check if the local address ends with "%xy". We dont check directly for %32"

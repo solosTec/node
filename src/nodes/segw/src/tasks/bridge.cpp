@@ -54,7 +54,13 @@ namespace smf {
 		, fabric_(ctl)
 		, router_(ctl, cfg_, logger)
 		, sml_(ctl, cfg_, logger)
-		, redir_{ { 
+		, redir_ipv4_{ { 
+				//	the array index is repeated in the LMN type.
+				//	don't change this.
+			{ctl, cfg_, logger, lmn_type::WIRELESS}, 
+			{ctl, cfg_, logger, lmn_type::WIRED} 
+			} }
+        , redir_ipv6_{ { 
 				//	the array index is repeated in the LMN type.
 				//	don't change this.
 			{ctl, cfg_, logger, lmn_type::WIRELESS}, 
@@ -303,7 +309,8 @@ namespace smf {
                             //	insert value
                             //
                             cfg->merge(
-                                rec.key(), cyng::data_generator(obj),
+                                rec.key(),
+                                cyng::data_generator(obj),
                                 1u //	only needed for insert operations
                                 ,
                                 boost::uuids::nil_uuid()); //	tag not
@@ -440,9 +447,10 @@ namespace smf {
 
             if (!cfg.is_lmn_enabled()) {
                 CYNG_LOG_WARNING(
-                    logger_, "LMN for [" << port
-                                         << "] is not running. This broker "
-                                            "will never receive any data");
+                    logger_,
+                    "LMN for [" << port
+                                << "] is not running. This broker "
+                                   "will never receive any data");
             }
 
             //	All broker for this port have the same name.
@@ -662,14 +670,35 @@ namespace smf {
             CYNG_LOG_INFO(logger_, "start listener for port [" << cfg.get_port_name() << "] " << cfg);
             if (!cfg.is_lmn_enabled()) {
                 CYNG_LOG_WARNING(
-                    logger_, "LMN for [" << cfg.get_port_name()
-                                         << "] is not running. This redirector "
-                                            "will never submit any data");
+                    logger_,
+                    "LMN for [" << cfg.get_port_name()
+                                << "] is not running. This redirector "
+                                   "will never transmit any data");
             }
-            redir_.at(get_index(type)).start(cfg.get_ep());
+            redir_ipv4_.at(get_index(type)).start(cfg.get_ep());
+
+            //
+            //  check the IPv6 case only for linux envronments
+            //
+            init_redirector_ipv6(cfg);
+
         } else {
             CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] is not enabled");
         }
+    }
+
+    void bridge::init_redirector_ipv6(cfg_listener const &cfg) {
+#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
+        auto const pres = cyng::sys::get_nic_prefix();
+        auto const pos = std::find(pres.begin(), pres.end(), "br0");
+
+        if (pos != pres.end()) {
+            std::string local_address_with_scope = cyng::sys::get_address_IPv6("br0", cyng::sys::LINKLOCAL).to_string();
+            CYNG_LOG_TRACE(logger_, "listener for port [" << cfg.get_port_name() << "] " << local_address_with_scope);
+        } else {
+            CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] 'br0' is not present");
+        }
+#endif
     }
 
     void bridge::stop_redirectors() {
@@ -681,7 +710,7 @@ namespace smf {
         cfg_listener cfg(cfg_, type);
         if (cfg.is_enabled()) {
             CYNG_LOG_INFO(logger_, "stop listener for port [" << cfg.get_port_name() << "] " << cfg);
-            redir_.at(get_index(type)).stop();
+            redir_ipv4_.at(get_index(type)).stop();
         } else {
             CYNG_LOG_TRACE(logger_, "[redirector] not running");
         }
