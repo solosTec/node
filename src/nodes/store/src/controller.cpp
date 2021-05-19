@@ -9,6 +9,7 @@
 #include <influxdb.h>
 #include <tasks/network.h>
 
+#include <tasks/dlms_influx_writer.h>
 #include <tasks/iec_csv_writer.h>
 #include <tasks/iec_db_writer.h>
 #include <tasks/iec_influx_writer.h>
@@ -120,8 +121,7 @@ namespace smf {
                     cyng::make_param("root-dir", (cwd / "sml").string()),
                     cyng::make_param("prefix", "smf"),
                     cyng::make_param("suffix", "sml"),
-                    cyng::make_param("version", SMF_VERSION_NAME),
-                    cyng::make_param("interval", 27))),
+                    cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "SML:LOG",
                 cyng::tuple_factory(
@@ -160,12 +160,7 @@ namespace smf {
                     cyng::make_param("protocol", "http"), //	http, https, udp, unix
                     cyng::make_param("cert", (cwd / "cert.pem").string()),
                     cyng::make_param("db", "SMF"),
-                    cyng::make_param("series", "SML"),
-                    cyng::make_param("auth-enabled", false),
-                    cyng::make_param("user", "user"),
-                    cyng::make_param("pwd", "pwd"),
-                    cyng::make_param("interval", 46) //	seconds
-                    )),
+                    cyng::make_param("series", "SML"))),
             cyng::make_param(
                 "IEC:influxdb",
                 cyng::tuple_factory(
@@ -174,12 +169,16 @@ namespace smf {
                     cyng::make_param("protocol", "http"), //	http, https, udp, unix
                     cyng::make_param("cert", (cwd / "cert.pem").string()),
                     cyng::make_param("db", "SMF"),
-                    cyng::make_param("series", "SML"),
-                    cyng::make_param("auth-enabled", false),
-                    cyng::make_param("user", "user"),
-                    cyng::make_param("pwd", "pwd"),
-                    cyng::make_param("interval", 46) //	seconds
-                    )),
+                    cyng::make_param("series", "IEC"))),
+            cyng::make_param(
+                "DLMS:influxdb",
+                cyng::tuple_factory(
+                    cyng::make_param("host", "localhost"),
+                    cyng::make_param("port", "8086"),     //	8094 for udp
+                    cyng::make_param("protocol", "http"), //	http, https, udp, unix
+                    cyng::make_param("cert", (cwd / "cert.pem").string()),
+                    cyng::make_param("db", "SMF"),
+                    cyng::make_param("series", "DLMS"))),
             cyng::make_param(
                 "ipt",
                 cyng::make_vector(
@@ -203,7 +202,8 @@ namespace smf {
                 "targets",
                 cyng::make_tuple(
                     cyng::make_param("SML", cyng::make_vector({"water@solostec", "gas@solostec", "power@solostec"})),
-                    cyng::make_param("IEC", cyng::make_vector({"LZQJ"})))))});
+                    cyng::make_param("DLMS", cyng::make_vector({"dlms@store"})),
+                    cyng::make_param("IEC", cyng::make_vector({"LZQJ", "iec@store"})))))});
     }
     void controller::run(
         cyng::controller &ctl,
@@ -222,8 +222,9 @@ namespace smf {
         if (tgl.empty()) {
             CYNG_LOG_FATAL(logger, "no ip-t server configured");
         }
-        auto const target_sml = cyng::vector_cast<std::string>(reader["targets"]["SML"].get(), "sml@solostec");
-        auto const target_iec = cyng::vector_cast<std::string>(reader["targets"]["IEC"].get(), "iec@solostec");
+        auto const target_sml = cyng::vector_cast<std::string>(reader["targets"]["SML"].get(), "sml@store");
+        auto const target_iec = cyng::vector_cast<std::string>(reader["targets"]["IEC"].get(), "iec@store");
+        auto const target_dlms = cyng::vector_cast<std::string>(reader["targets"]["DLMS"].get(), "dlms@store");
 
         if (target_sml.empty() && target_iec.empty()) {
             CYNG_LOG_FATAL(logger, "no targets configured");
@@ -276,6 +277,17 @@ namespace smf {
                         cyng::value_cast(reader[name]["protocol"].get(), "http"),
                         cyng::value_cast(reader[name]["cert"].get(), "cert.pem"),
                         cyng::value_cast(reader[name]["db"].get(), "SMF"));
+                } else if (boost::algorithm::equals(name, "DLMS:influxdb")) {
+                    start_dlms_influx(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["host"].get(), "localhost"),
+                        cyng::value_cast(reader[name]["port"].get(), "8086"),
+                        cyng::value_cast(reader[name]["protocol"].get(), "http"),
+                        cyng::value_cast(reader[name]["cert"].get(), "cert.pem"),
+                        cyng::value_cast(reader[name]["db"].get(), "SMF"));
                 } else {
                     CYNG_LOG_WARNING(logger, "unknown writer task: " << name);
                 }
@@ -288,7 +300,19 @@ namespace smf {
         //
         //  connect to ip-t server
         //
-        join_network(ctl, channels, logger, tag, node_name, model, std::move(tgl), config_types, target_sml, target_iec, writer);
+        join_network(
+            ctl,
+            channels,
+            logger,
+            tag,
+            node_name,
+            model,
+            std::move(tgl),
+            config_types,
+            target_sml,
+            target_iec,
+            target_dlms,
+            writer);
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
@@ -315,10 +339,22 @@ namespace smf {
         std::vector<std::string> const &config_types,
         std::vector<std::string> const &sml_targets,
         std::vector<std::string> const &iec_targets,
+        std::vector<std::string> const &dlms_targets,
         std::vector<std::string> const &writer) {
 
         auto channel = ctl.create_named_channel_with_ref<network>(
-            "network", ctl, tag, logger, node_name, model, std::move(tgl), config_types, sml_targets, iec_targets, writer);
+            "network",
+            ctl,
+            tag,
+            logger,
+            node_name,
+            model,
+            std::move(tgl),
+            config_types,
+            sml_targets,
+            iec_targets,
+            dlms_targets,
+            writer);
         BOOST_ASSERT(channel->is_open());
         channel->dispatch("connect", cyng::make_tuple());
         channels.lock(channel);
@@ -560,6 +596,21 @@ namespace smf {
         std::string const &db) {
         CYNG_LOG_INFO(logger, "start " << name);
         auto channel = ctl.create_named_channel_with_ref<iec_influx_writer>(name, ctl, logger, host, service, protocol, cert, db);
+        BOOST_ASSERT(channel->is_open());
+        channels.lock(channel);
+    }
+    void controller::start_dlms_influx(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        std::string const &name,
+        std::string const &host,
+        std::string const &service,
+        std::string const &protocol,
+        std::string const &cert,
+        std::string const &db) {
+        CYNG_LOG_INFO(logger, "start " << name);
+        auto channel = ctl.create_named_channel_with_ref<dlms_influx_writer>(name, ctl, logger, host, service, protocol, cert, db);
         BOOST_ASSERT(channel->is_open());
         channels.lock(channel);
     }

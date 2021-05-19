@@ -69,7 +69,10 @@ namespace smf {
                 }
 
                 auto const size = calculate_size(d.get_data_field_code(), data.at(offset));
-                BOOST_ASSERT(data.size() >= offset + size);
+                // BOOST_ASSERT(data.size() >= offset + size);
+                if (data.size() < offset + size) {
+                    return std::make_tuple(data.size(), cyng::obis(), cyng::make_object(), 0, unit::UNDEFINED_);
+                }
 
                 if (data_field_code::DFC_VAR == d.get_data_field_code()) {
                     ++offset;
@@ -289,7 +292,7 @@ namespace smf {
                 BOOST_ASSERT_MSG(false, "not implemented");
 
             } else if (data_field_code::DFC_SPECIAL == dfc) {
-                BOOST_ASSERT_MSG(false, "not implemented");
+                // BOOST_ASSERT_MSG(false, "not implemented");
             }
             return get_length(dfc);
         }

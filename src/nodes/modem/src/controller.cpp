@@ -6,6 +6,8 @@
  */
 
 #include <controller.h>
+#include <smf.h>
+
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/object.h>
@@ -18,16 +20,20 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config)
+        : controller_base(config) {}
 
     cyng::vector_t controller::create_default_config(
-        std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
+        std::chrono::system_clock::time_point &&now,
+        std::filesystem::path &&tmp,
+        std::filesystem::path &&cwd) {
 
         std::locale loc(std::locale(), new std::ctype<char>);
         std::cout << std::locale("").name().c_str() << std::endl;
 
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
+            cyng::make_param("version", SMF_VERSION_TAG),
             cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("country-code", "CH"),
@@ -36,7 +42,11 @@ namespace smf {
             create_cluster_spec())});
     }
     void controller::run(
-        cyng::controller &, cyng::stash &channels, cyng::logger, cyng::object const &cfg, std::string const &node_name) {}
+        cyng::controller &,
+        cyng::stash &channels,
+        cyng::logger,
+        cyng::object const &cfg,
+        std::string const &node_name) {}
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 
         //

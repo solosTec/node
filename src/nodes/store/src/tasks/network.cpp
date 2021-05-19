@@ -4,6 +4,7 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
+#include <tasks/dlms_target.h>
 #include <tasks/iec_target.h>
 #include <tasks/network.h>
 #include <tasks/sml_target.h>
@@ -29,25 +30,27 @@ namespace smf {
         std::vector<std::string> const &config_types,
         std::vector<std::string> const &sml_targets,
         std::vector<std::string> const &iec_targets,
+        std::vector<std::string> const &dlms_targets,
         std::vector<std::string> const &writer)
-        : sigs_{std::bind(&network::connect, this), std::bind(&network::stop, this, std::placeholders::_1)},
-          channel_(wp),
-          ctl_(ctl),
-          tag_(tag),
-          logger_(logger),
-          toggle_(std::move(tgl)),
-          sml_targets_(sml_targets),
-          iec_targets_(iec_targets),
-          writer_(writer),
-          bus_(
+        : sigs_{std::bind(&network::connect, this), std::bind(&network::stop, this, std::placeholders::_1)}
+        , channel_(wp)
+        , ctl_(ctl)
+        , tag_(tag)
+        , logger_(logger)
+        , toggle_(std::move(tgl))
+        , sml_targets_(sml_targets)
+        , iec_targets_(iec_targets)
+        , dlms_targets_(dlms_targets)
+        , writer_(writer)
+        , bus_(
               ctl_.get_ctx(),
               logger_,
               std::move(toggle_),
               model,
               std::bind(&network::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
               std::bind(&network::ipt_stream, this, std::placeholders::_1),
-              std::bind(&network::auth_state, this, std::placeholders::_1)),
-          stash_(ctl_.get_ctx()) {
+              std::bind(&network::auth_state, this, std::placeholders::_1))
+        , stash_(ctl_.get_ctx()) {
         auto sp = channel_.lock();
         if (sp) {
             sp->set_channel_name("connect", 0);
@@ -129,6 +132,26 @@ namespace smf {
             //
             for (auto const &task_name : writer_) {
                 if (boost::algorithm::starts_with(task_name, "IEC:")) {
+                    channel->dispatch("add", cyng::make_tuple(task_name));
+                }
+            }
+        }
+
+        for (auto const &name : dlms_targets_) {
+            CYNG_LOG_TRACE(logger_, "[ipt] register dlms target " << name);
+            auto channel = ctl_.create_named_channel_with_ref<dlms_target>(name, ctl_, logger_, bus_);
+            channel->dispatch("register", cyng::make_tuple(name));
+
+            //
+            //  stash this channel
+            //
+            stash_.lock(channel);
+
+            //
+            //  add data output
+            //
+            for (auto const &task_name : writer_) {
+                if (boost::algorithm::starts_with(task_name, "DLMS:")) {
                     channel->dispatch("add", cyng::make_tuple(task_name));
                 }
             }

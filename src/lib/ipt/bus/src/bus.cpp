@@ -15,6 +15,13 @@
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
 
+#ifdef _DEBUG
+#include <cyng/io/hex_dump.hpp>
+#include <iostream>
+#include <smf/sml/unpack.h>
+#include <sstream>
+#endif
+
 #include <functional>
 
 #include <boost/bind.hpp>
@@ -22,25 +29,31 @@
 namespace smf {
     namespace ipt {
         bus::bus(
-            boost::asio::io_context &ctx, cyng::logger logger, toggle::server_vec_t &&tgl, std::string model,
-            parser::command_cb cb_cmd, parser::data_cb cb_stream, auth_cb cb_auth)
-            : state_(state::START),
-              ctx_(ctx),
-              logger_(logger),
-              tgl_(std::move(tgl)),
-              model_(model),
-              cb_cmd_(cb_cmd),
-              cb_auth_(cb_auth),
-              endpoints_(),
-              socket_(ctx),
-              timer_(ctx),
-              dispatcher_(ctx),
-              serializer_(tgl_.get().sk_),
-              parser_(tgl_.get().sk_, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), cb_stream),
-              buffer_write_(),
-              input_buffer_(),
-              registrant_(),
-              targets_() {}
+            boost::asio::io_context &ctx,
+            cyng::logger logger,
+            toggle::server_vec_t &&tgl,
+            std::string model,
+            parser::command_cb cb_cmd,
+            parser::data_cb cb_stream,
+            auth_cb cb_auth)
+            : state_(state::START)
+            , ctx_(ctx)
+            , logger_(logger)
+            , tgl_(std::move(tgl))
+            , model_(model)
+            , cb_cmd_(cb_cmd)
+            , cb_auth_(cb_auth)
+            , endpoints_()
+            , socket_(ctx)
+            , timer_(ctx)
+            , dispatcher_(ctx)
+            , serializer_(tgl_.get().sk_)
+            , parser_(tgl_.get().sk_, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), cb_stream)
+            , buffer_write_()
+            , input_buffer_()
+            , registrant_()
+            , targets_()
+            , pending_channel_() {}
 
         bus::~bus() {}
 
@@ -84,6 +97,7 @@ namespace smf {
                 timer_.cancel();
                 registrant_.clear();
                 targets_.clear();
+                pending_channel_.clear();
 
                 if (is_authorized()) {
 
@@ -140,7 +154,8 @@ namespace smf {
         }
 
         void bus::handle_connect(
-            const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
+            const boost::system::error_code &ec,
+            boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
 
             if (is_stopped())
                 return;
@@ -222,11 +237,14 @@ namespace smf {
             if (is_stopped())
                 return;
 
-            CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] write: " << buffer_write_.front().size() << " bytes");
+            CYNG_LOG_TRACE(
+                logger_,
+                "ipt [" << tgl_.get() << "] write #" << buffer_write_.size() << ": " << buffer_write_.front().size() << " bytes");
 
             // Start an asynchronous operation to send a heartbeat message.
             boost::asio::async_write(
-                socket_, boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
+                socket_,
+                boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
                 dispatcher_.wrap(std::bind(&bus::handle_write, this, std::placeholders::_1)));
         }
 
@@ -237,7 +255,15 @@ namespace smf {
             if (!ec) {
                 CYNG_LOG_DEBUG(logger_, "ipt [" << tgl_.get() << "] received " << n << " bytes");
 
-                parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
+                auto const data = parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
+#ifdef _DEBUG
+                {
+                    std::stringstream ss;
+                    cyng::io::hex_dump<8> hd;
+                    hd(ss, data.begin(), data.end());
+                    CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] ipt data:\n" << ss.str());
+                }
+#endif
 
                 //
                 //	continue reading
@@ -257,6 +283,7 @@ namespace smf {
                     set_reconnect_timer(boost::asio::chrono::seconds(100));
                     break;
                 case boost::asio::error::connection_reset:
+                    //  closes from peer
                     set_reconnect_timer(boost::asio::chrono::seconds(10));
                     break;
                 default:
@@ -299,7 +326,8 @@ namespace smf {
 
             switch (to_code(h.command_)) {
             case code::TP_RES_OPEN_PUSH_CHANNEL:
-                cb_cmd_(h, std::move(body));
+                res_open_push_channel(h, std::move(body));
+                // cb_cmd_(h, std::move(body));
                 break;
             case code::TP_RES_CLOSE_PUSH_CHANNEL:
                 cb_cmd_(h, std::move(body));
@@ -333,7 +361,9 @@ namespace smf {
                 break;
             case code::APP_REQ_DEVICE_AUTHENTIFICATION:
                 send(serializer_.res_device_auth(
-                    h.sequence_, tgl_.get().account_, tgl_.get().pwd_,
+                    h.sequence_,
+                    tgl_.get().account_,
+                    tgl_.get().pwd_,
                     tgl_.get().account_ //	number
                     ,
                     model_));
@@ -416,7 +446,8 @@ namespace smf {
                 boost::asio::post(dispatcher_, [this, name, wp]() {
                     bool const b = buffer_write_.empty();
                     auto r = serializer_.req_register_push_target(
-                        name, std::numeric_limits<std::uint16_t>::max() //	0xffff
+                        name,
+                        std::numeric_limits<std::uint16_t>::max() //	0xffff
                         ,
                         1);
 
@@ -437,12 +468,86 @@ namespace smf {
             }
         }
 
-        void bus::open_channel(push_channel pcc) {
+        void bus::open_channels(push_channel pcc) {
 
-            boost::asio::post(dispatcher_, [this, pcc]() {
+            for (auto const target : pcc.targets_) {
+                CYNG_LOG_INFO(logger_, "[ipt] open " << target.first << " channel " << target.second);
+                // auto r = serializer_.req_open_push_channel(
+                //    target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+                open_channel(target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+            }
+
+            // boost::asio::post(dispatcher_, [this, pcc]() {
+            //    bool const b = buffer_write_.empty();
+
+            //    for (auto const target : pcc.targets_) {
+            //        CYNG_LOG_INFO(logger_, "[ipt] open " << target.first << " channel " << target.second);
+            //        auto r = serializer_.req_open_push_channel(
+            //            target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+
+            //        //
+            //        //  update list of pending channel openings
+            //        //
+            //        pending_channel_.emplace(r.second, target.second);
+
+            //        //
+            //        //	send "open push channel" command to ip-t server
+            //        //
+            //        buffer_write_.push_back(r.first);
+            //    }
+
+            //    //
+            //    //	send request
+            //    //
+            //    if (b)
+            //        do_write();
+            //});
+        }
+
+        void bus::res_open_push_channel(header const &h, cyng::buffer_t &&body) {
+            //
+            //	read message body
+            // response code, channel, source, packet size, window size, status, target count
+            //
+            // std::tuple<std::uint8_t, std::uint32_t, std::uint32_t, std::uint16_t, std::uint8_t, std::uint8_t, std::uint32_t>
+            auto const [res, channel, source, packet_size, window_size, status, count] = tp_res_open_push_channel(std::move(body));
+
+            boost::asio::post(dispatcher_, [this, h, res, channel, source, packet_size, window_size, status, count]() {
+                auto const pos = pending_channel_.find(h.sequence_);
+                if (pos != pending_channel_.end()) {
+
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                     << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":" << source
+                                     << ":" << pos->second);
+
+                    //
+                    //  cleanup list
+                    //
+                    pending_channel_.erase(pos);
+                } else {
+                    CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing list entry");
+                }
+            });
+        }
+
+        void bus::open_channel(
+            std::string name,
+            std::string account,
+            std::string number,
+            std::string version,
+            std::string id,
+            std::uint16_t timeout) {
+
+            boost::asio::post(dispatcher_, [this, name, account, number, id, version, timeout]() {
                 bool const b = buffer_write_.empty();
-                auto r =
-                    serializer_.req_open_push_channel(pcc.target_, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+                auto r = serializer_.req_open_push_channel(name, account, number, version, id, timeout);
+
+                //
+                //  update list of pending channel openings
+                //
+                pending_channel_.emplace(r.second, name);
 
                 //
                 //	send "open push channel" command to ip-t server
@@ -472,9 +577,10 @@ namespace smf {
                 if (pos != registrant_.end()) {
 
                     CYNG_LOG_INFO(
-                        logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": "
-                                              << ctrl_res_register_target_policy::get_response_name(res) << ", " << channel << ":"
-                                              << pos->second.first);
+                        logger_,
+                        "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                     << ctrl_res_register_target_policy::get_response_name(res) << ", " << channel << ":"
+                                     << pos->second.first);
 
                     BOOST_ASSERT_MSG(!pos->second.first.empty(), "no target name");
 
@@ -518,8 +624,9 @@ namespace smf {
              */
             auto [channel, source, status, block, data] = tp_req_pushdata_transfer(std::move(body));
             CYNG_LOG_TRACE(
-                logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " - " << data.size()
-                                      << " bytes");
+                logger_,
+                "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " - " << data.size()
+                             << " bytes");
 
             //
             //	sync with strand

@@ -35,6 +35,7 @@ namespace smf {
             std::vector<std::string> const &config_types,
             std::vector<std::string> const &sml_targets,
             std::vector<std::string> const &iec_targets,
+            std::vector<std::string> const &dlms_targets,
             std::vector<std::string> const &writer);
         ~network();
 
@@ -62,6 +63,7 @@ namespace smf {
 
         std::vector<std::string> const sml_targets_;
         std::vector<std::string> const iec_targets_;
+        std::vector<std::string> const dlms_targets_;
         std::vector<std::string> const writer_;
 
         ipt::bus bus_;

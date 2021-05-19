@@ -8,6 +8,8 @@
 #include <controller.h>
 #include <tasks/server.h>
 
+#include <smf.h>
+
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
@@ -23,16 +25,21 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config), cluster_() {}
+    controller::controller(config::startup const &config)
+        : controller_base(config)
+        , cluster_() {}
 
     cyng::vector_t controller::create_default_config(
-        std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
+        std::chrono::system_clock::time_point &&now,
+        std::filesystem::path &&tmp,
+        std::filesystem::path &&cwd) {
 
         std::locale loc(std::locale(), new std::ctype<char>);
         std::cout << std::locale("").name().c_str() << std::endl;
 
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
+            cyng::make_param("version", SMF_VERSION_TAG),
             cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("country-code", "CH"),
@@ -79,7 +86,11 @@ namespace smf {
     }
 
     void controller::run(
-        cyng::controller &ctl, cyng::stash &channels, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::object const &cfg,
+        std::string const &node_name) {
 
 #if _DEBUG_MAIN
         CYNG_LOG_INFO(logger, cfg);

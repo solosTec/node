@@ -39,6 +39,7 @@ namespace smf {
             std::vector<std::string> const &,
             std::vector<std::string> const &,
             std::vector<std::string> const &,
+            std::vector<std::string> const &,
             std::vector<std::string> const &writer);
 
         void start_sml_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
@@ -71,6 +72,16 @@ namespace smf {
             std::string const &cert,
             std::string const &db);
         void start_iec_csv(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
+        void start_dlms_influx(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &name,
+            std::string const &host,
+            std::string const &service,
+            std::string const &protocol,
+            std::string const &cert,
+            std::string const &db);
 
       private:
         void init_storage(cyng::object &&);

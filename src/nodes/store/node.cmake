@@ -32,6 +32,7 @@ set (store_tasks
   include/tasks/network.h
   include/tasks/sml_target.h
   include/tasks/iec_target.h
+  include/tasks/dlms_target.h
   include/tasks/sml_db_writer.h
   include/tasks/sml_xml_writer.h
   include/tasks/sml_json_writer.h
@@ -43,9 +44,11 @@ set (store_tasks
   include/tasks/iec_log_writer.h
   include/tasks/iec_influx_writer.h
   include/tasks/iec_csv_writer.h
+  include/tasks/dlms_influx_writer.h
   src/tasks/network.cpp
   src/tasks/sml_target.cpp
   src/tasks/iec_target.cpp
+  src/tasks/dlms_target.cpp
   src/tasks/sml_db_writer.cpp
   src/tasks/sml_xml_writer.cpp
   src/tasks/sml_json_writer.cpp
@@ -57,6 +60,7 @@ set (store_tasks
   src/tasks/iec_log_writer.cpp
   src/tasks/iec_influx_writer.cpp
   src/tasks/iec_csv_writer.cpp
+  src/tasks/dlms_influx_writer.cpp
 )
 
 source_group("store-assets" FILES ${store_assets})

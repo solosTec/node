@@ -10,6 +10,7 @@
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/radio/decode.h>
 #include <smf/mbus/radio/header.h>
+#include <smf/mbus/reader.h>
 #include <smf/sml/reader.h>
 #include <smf/sml/unpack.h>
 
@@ -33,20 +34,24 @@
 namespace smf {
 
     wmbus_session::wmbus_session(
-        cyng::controller &ctl, boost::asio::ip::tcp::socket socket, std::shared_ptr<db> db, cyng::logger logger, bus &cluster_bus,
+        cyng::controller &ctl,
+        boost::asio::ip::tcp::socket socket,
+        std::shared_ptr<db> db,
+        cyng::logger logger,
+        bus &cluster_bus,
         cyng::channel_ptr writer)
-        : ctl_(ctl),
-          socket_(std::move(socket)),
-          logger_(logger),
-          db_(db),
-          bus_(cluster_bus),
-          writer_(writer),
-          buffer_(),
-          buffer_write_(),
-          parser_([this](mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &data) {
-              this->decode(h, t, data);
-          }),
-          gatekeeper_() {}
+        : ctl_(ctl)
+        , socket_(std::move(socket))
+        , logger_(logger)
+        , db_(db)
+        , bus_(cluster_bus)
+        , writer_(writer)
+        , buffer_()
+        , buffer_write_()
+        , parser_([this](mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &data) {
+            this->decode(h, t, data);
+        })
+        , gatekeeper_() {}
 
     wmbus_session::~wmbus_session() {
 #ifdef _DEBUG_BROKER_WMBUS
@@ -82,7 +87,9 @@ namespace smf {
             [this, self](boost::system::error_code ec, std::size_t bytes_transferred) {
                 if (!ec) {
                     CYNG_LOG_DEBUG(
-                        logger_, "[session] received " << bytes_transferred << " bytes from [" << socket_.remote_endpoint() << "]");
+                        logger_,
+                        "[session] received " << bytes_transferred << " bytes wM-Bus data from [" << socket_.remote_endpoint()
+                                              << "]");
 
 #ifdef _DEBUG_BROKER_WMBUS
                     {
@@ -90,8 +97,9 @@ namespace smf {
                         cyng::io::hex_dump<8> hd;
                         hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
                         CYNG_LOG_DEBUG(
-                            logger_, "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes:\n"
-                                         << ss.str());
+                            logger_,
+                            "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes wM-Bus data:\n"
+                                << ss.str());
                     }
 #endif
 
@@ -114,7 +122,8 @@ namespace smf {
     void wmbus_session::do_write() {
         // Start an asynchronous operation to send a heartbeat message.
         boost::asio::async_write(
-            socket_, boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
+            socket_,
+            boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
             std::bind(&wmbus_session::handle_write, this, std::placeholders::_1));
     }
 
@@ -167,17 +176,13 @@ namespace smf {
                     switch (frame_type) {
                     case mbus::FIELD_CI_HEADER_LONG:
                     case mbus::FIELD_CI_HEADER_SHORT:
-                        read_mbus(address, payload);
-                        //
-                        //	insert uplink data
-                        //
-                        bus_.req_db_insert_auto(
-                            "wMBusUplink", cyng::data_generator(
-                                               std::chrono::system_clock::now(),
-                                               id, //	meter id
-                                               get_medium(address), manufacturer, frame_type,
-                                               cyng::io::to_hex(payload), //	"payload",
-                                               boost::uuids::nil_uuid()));
+                        read_mbus(
+                            address,
+                            id, //	meter id
+                            get_medium(address),
+                            manufacturer,
+                            frame_type,
+                            payload);
                         break;
                     case mbus::FIELD_CI_RES_LONG_SML:
                     case mbus::FIELD_CI_RES_SHORT_SML: {
@@ -187,8 +192,11 @@ namespace smf {
                             cyng::data_generator(
                                 std::chrono::system_clock::now(),
                                 id, //	meter id
-                                get_medium(address), manufacturer, frame_type,
-                                std::to_string(count) + " records: " + cyng::io::to_hex(payload), boost::uuids::nil_uuid()));
+                                get_medium(address),
+                                manufacturer,
+                                frame_type,
+                                std::to_string(count) + " records: " + cyng::io::to_hex(payload),
+                                boost::uuids::nil_uuid()));
                     } break;
                     default:
                         //	unknown frame type
@@ -196,12 +204,15 @@ namespace smf {
                         //	insert uplink data
                         //
                         bus_.req_db_insert_auto(
-                            "wMBusUplink", cyng::data_generator(
-                                               std::chrono::system_clock::now(),
-                                               id, //	meter id
-                                               get_medium(address), manufacturer, frame_type,
-                                               cyng::io::to_hex(payload), //	"payload",
-                                               boost::uuids::nil_uuid()));
+                            "wMBusUplink",
+                            cyng::data_generator(
+                                std::chrono::system_clock::now(),
+                                id, //	meter id
+                                get_medium(address),
+                                manufacturer,
+                                frame_type,
+                                cyng::io::to_hex(payload), //	"payload",
+                                boost::uuids::nil_uuid()));
 
                         break;
                     }
@@ -213,7 +224,8 @@ namespace smf {
                 //
                 auto const ep = socket_.remote_endpoint();
                 bus_.req_db_update(
-                    "meterwMBus", cyng::key_generator(tag),
+                    "meterwMBus",
+                    cyng::key_generator(tag),
                     cyng::param_map_factory()("address", ep.address())("port", ep.port())(
                         "lastSeen", std::chrono::system_clock::now()));
 
@@ -258,10 +270,55 @@ namespace smf {
         // p.read(payload.begin() + 2, payload.end());
 #endif
     }
-    void wmbus_session::push_dlsm_data(cyng::buffer_t const &payload) {}
+    void wmbus_session::push_dlsm_data(cyng::buffer_t const &payload) {
+        ctl_.get_registry().dispatch("push", "send.dlsm", cyng::make_tuple());
+    }
     void wmbus_session::push_data(cyng::buffer_t const &payload) {}
 
-    void wmbus_session::read_mbus(srv_id_t const &address, cyng::buffer_t const &payload) {}
+    void wmbus_session::read_mbus(
+        srv_id_t const &address,
+        std::string const &id,
+        std::uint8_t medium,
+        std::string const &manufacturer,
+        std::uint8_t frame_type,
+        cyng::buffer_t const &payload) {
+
+        std::size_t offset = 2;
+        cyng::obis code;
+        cyng::object obj;
+        std::int8_t scaler = 0;
+        smf::mbus::unit u;
+        std::stringstream ss;
+        bool init = false;
+        while (offset < payload.size()) {
+            std::tie(offset, code, obj, scaler, u) = smf::mbus::read(payload, offset, 1);
+            // std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
+            CYNG_LOG_TRACE(logger_, "[sml] " << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u));
+            if (!init) {
+                init = true;
+            } else {
+                ss << ", ";
+            }
+            ss << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
+        }
+
+        //
+        //	insert uplink data
+        //
+        bus_.req_db_insert_auto(
+            "wMBusUplink",
+            cyng::data_generator(
+                std::chrono::system_clock::now(),
+                get_id(address), //	meter id
+                get_medium(address),
+                manufacturer,
+                frame_type,
+                ss.str(), //  payload
+                // cyng::io::to_hex(payload), //	"payload",
+                boost::uuids::nil_uuid()));
+
+        ctl_.get_registry().dispatch("push", "send.mbus", cyng::make_tuple());
+    }
 
     std::size_t wmbus_session::read_sml(srv_id_t const &address, cyng::buffer_t const &payload) {
 
@@ -306,6 +363,8 @@ namespace smf {
         //	close CSV file
         //
         writer_->dispatch("commit", cyng::make_tuple());
+
+        ctl_.get_registry().dispatch("push", "send.sml", cyng::make_tuple(cyng::buffer_t(address.begin(), address.end()), payload));
 
         return count;
     }

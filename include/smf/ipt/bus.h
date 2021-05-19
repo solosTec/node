@@ -34,8 +34,13 @@ namespace smf {
             using auth_cb = std::function<void(bool)>;
 
           public:
-            bus(boost::asio::io_context &ctx, cyng::logger, toggle::server_vec_t &&, std::string model, parser::command_cb,
-                parser::data_cb, auth_cb);
+            bus(boost::asio::io_context &ctx,
+                cyng::logger,
+                toggle::server_vec_t &&,
+                std::string model,
+                parser::command_cb,
+                parser::data_cb,
+                auth_cb);
 
             ~bus();
 
@@ -52,7 +57,17 @@ namespace smf {
             /**
              * open a push channel
              */
-            void open_channel(push_channel);
+            void open_channel(
+                std::string name,
+                std::string account,
+                std::string number,
+                std::string version,
+                std::string id,
+                std::uint16_t timeout);
+            /**
+             * open all push channels at once
+             */
+            void open_channels(push_channel);
 
           private:
             constexpr bool is_stopped() const { return state_ == state::STOPPED; }
@@ -60,7 +75,8 @@ namespace smf {
             void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
             void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
             void handle_connect(
-                boost::system::error_code const &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+                boost::system::error_code const &ec,
+                boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
             void reconnect_timeout(boost::system::error_code const &);
             void do_read();
             void do_write();
@@ -86,6 +102,8 @@ namespace smf {
 
             void set_reconnect_timer(std::chrono::seconds);
 
+            void res_open_push_channel(header const &, cyng::buffer_t &&);
+
           private:
             boost::asio::io_context &ctx_;
             cyng::logger logger_;
@@ -110,6 +128,11 @@ namespace smf {
              */
             std::map<ipt::sequence_t, name_channel_t> registrant_;
             std::map<std::uint32_t, name_channel_t> targets_;
+
+            /**
+             * Maps the sequence id to the channel/target name
+             */
+            std::map<ipt::sequence_t, std::string> pending_channel_;
         };
     } // namespace ipt
 } // namespace smf

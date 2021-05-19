@@ -10,53 +10,51 @@
 #include <smf/ipt/bus.h>
 
 #include <cyng/log/logger.h>
-#include <cyng/task/task_fwd.h>
 #include <cyng/task/controller.h>
+#include <cyng/task/task_fwd.h>
 
 #include <boost/uuid/uuid.hpp>
 
 namespace smf {
 
-	class push
-	{
-		template <typename T >
-		friend class cyng::task;
+    class push {
+        template <typename T> friend class cyng::task;
 
-		using signatures_t = std::tuple<
-			std::function<void(void)>,
-			std::function<void(cyng::eod)>
-		>;
+        using signatures_t = std::tuple<
+            std::function<void(void)>,
+            std::function<void(cyng::buffer_t srv, cyng::buffer_t payload)>, //  send_sml
+            std::function<void(void)>,
+            std::function<void(void)>,
+            std::function<void(cyng::eod)>>;
 
-	public:
-		push(std::weak_ptr<cyng::channel>
-			, cyng::controller&
-			, cyng::logger
-			, ipt::toggle::server_vec_t&&
-			, ipt::push_channel&& pcc);
-		~push();
+      public:
+        push(std::weak_ptr<cyng::channel>, cyng::controller &, cyng::logger, ipt::toggle::server_vec_t &&, ipt::push_channel &&pcc);
+        ~push();
 
+      private:
+        void stop(cyng::eod);
+        void connect();
+        void send_sml(cyng::buffer_t srv, cyng::buffer_t payload);
+        void send_mbus();
+        void send_dlms();
 
-		void stop(cyng::eod);
+        //
+        //	bus interface
+        //
+        void ipt_cmd(ipt::header const &, cyng::buffer_t &&);
+        void ipt_stream(cyng::buffer_t &&);
+        void auth_state(bool);
+        void open_push_channel();
 
-	private:
-		void connect();
+      private:
+        signatures_t sigs_;
+        std::weak_ptr<cyng::channel> channel_;
+        cyng::logger logger_;
+        ipt::toggle::server_vec_t toggle_;
+        ipt::push_channel const pcc_;
+        ipt::bus bus_;
+    };
 
-		//
-		//	bus interface
-		//
-		void ipt_cmd(ipt::header const&, cyng::buffer_t&&);
-		void ipt_stream(cyng::buffer_t&&);
-		void auth_state(bool);
-
-	private:
-		signatures_t sigs_;
-		std::weak_ptr<cyng::channel> channel_;
-		cyng::logger logger_;
-		ipt::toggle::server_vec_t toggle_;
-		ipt::push_channel const pcc_;
-		ipt::bus	bus_;
-	};
-
-}
+} // namespace smf
 
 #endif

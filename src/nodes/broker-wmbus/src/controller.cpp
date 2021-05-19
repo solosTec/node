@@ -9,6 +9,7 @@
 #include <tasks/cluster.h>
 #include <tasks/push.h>
 
+#include <smf.h>
 #include <smf/ipt/scramble_key_format.h>
 
 #include <cyng/io/ostream.h>
@@ -31,7 +32,8 @@
 
 namespace smf {
 
-    controller::controller(config::startup const &config) : controller_base(config) {}
+    controller::controller(config::startup const &config)
+        : controller_base(config) {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now,
@@ -45,6 +47,7 @@ namespace smf {
 
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
+            cyng::make_param("version", SMF_VERSION_TAG),
             cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", tag),
             cyng::make_param("country-code", "CH"),
@@ -142,7 +145,10 @@ namespace smf {
 
         auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
         BOOST_ASSERT(channel->is_open());
-        channel->dispatch("connect");
+        //
+        //  suspended to wait for ip-t node
+        //
+        channel->suspend(std::chrono::seconds(10), "connect", cyng::make_tuple());
         channels.lock(channel);
     }
 
@@ -184,7 +190,11 @@ namespace smf {
         return cyng::make_param(
             "push-channel",
             cyng::make_tuple(
-                cyng::make_param("target", "power@solostec"),
+                cyng::make_param(
+                    "targets",
+                    cyng::param_map_factory("SML", "sml@store")("IEC", "iec@store")("DLMS", "dlms@store")
+                        .
+                        operator cyng::param_map_t()),
                 cyng::make_param("account", ""),
                 cyng::make_param("number", ""),
                 cyng::make_param("version", ""),
