@@ -131,7 +131,7 @@ namespace smf {
 
     void push::auth_state(bool auth) {
         if (auth) {
-            CYNG_LOG_INFO(logger_, "[ipt] authorized - open " << pcc_.targets_.size() << " push channels");
+            // CYNG_LOG_INFO(logger_, "[ipt] authorized - open " << pcc_.targets_.size() << " push channels");
             BOOST_ASSERT(bus_.is_authorized());
             //
             //  ToDo: open push channel

@@ -20,7 +20,9 @@ namespace smf {
 
       protected:
         cyng::vector_t create_default_config(
-            std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) override;
+            std::chrono::system_clock::time_point &&now,
+            std::filesystem::path &&tmp,
+            std::filesystem::path &&cwd) override;
 
         virtual void
         run(cyng::controller &, cyng::stash &, cyng::logger, cyng::object const &cfg, std::string const &node_name) override;
@@ -48,6 +50,8 @@ namespace smf {
             boost::uuids::uuid tag,
             std::string const &node_name,
             ipt::toggle::server_vec_t &&tgl,
+            ipt::push_channel &&,
+            ipt::push_channel &&,
             ipt::push_channel &&);
 
       private:

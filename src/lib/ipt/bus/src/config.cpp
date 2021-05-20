@@ -85,7 +85,7 @@ namespace smf {
         }
 
         push_channel::push_channel()
-            : targets_()
+            : target_()
             , account_()
             , number_()
             , id_()
@@ -93,13 +93,13 @@ namespace smf {
             , timeout_(20) {}
 
         push_channel::push_channel(
-            std::map<std::string, std::string> const &targets,
+            std::string const &target,
             std::string const &account,
             std::string const &number,
             std::string const &id,
             std::string const &version,
             std::uint16_t timeout)
-            : targets_(targets)
+            : target_(target)
             , account_(account)
             , number_(number)
             , id_(id)
@@ -108,19 +108,8 @@ namespace smf {
 
         push_channel read_push_channel_config(cyng::param_map_t const &pmap) {
 
-            auto const pm = cyng::container_cast<cyng::param_map_t>(cyng::find(pmap, std::string("targets")));
-            std::map<std::string, std::string> targets{};
-
-            std::transform(
-                pm.begin(),
-                pm.end(),
-                std::inserter(targets, targets.end()),
-                [](cyng::param_map_t::value_type const &val) -> std::pair<std::string const, std::string> {
-                    return std::make_pair(val.first, cyng::value_cast(val.second, ""));
-                });
-
             return push_channel(
-                targets,
+                cyng::find_value(pmap, std::string("target"), std::string()),
                 cyng::find_value(pmap, std::string("account"), std::string()),
                 cyng::find_value(pmap, std::string("number"), std::string()),
                 cyng::find_value(pmap, std::string("version"), std::string()),

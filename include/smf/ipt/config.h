@@ -90,14 +90,14 @@ namespace smf {
             push_channel();
             push_channel(push_channel const &) = default;
             push_channel(
-                std::map<std::string, std::string> const &targets,
+                std::string const &,
                 std::string const &,
                 std::string const &,
                 std::string const &,
                 std::string const &,
                 std::uint16_t);
 
-            std::map<std::string, std::string> const targets_;
+            std::string const target_;
             std::string const account_;
             std::string const number_;
             std::string const id_;

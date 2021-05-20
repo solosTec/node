@@ -131,7 +131,9 @@ namespace smf {
             tag,
             node_name,
             std::move(tgl_ipt),
-            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"].get())));
+            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["SML"].get()),
+            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["IEC"].get()),
+            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["DLMS"].get())));
     }
 
     void controller::join_network(
@@ -141,9 +143,11 @@ namespace smf {
         boost::uuids::uuid tag,
         std::string const &node_name,
         ipt::toggle::server_vec_t &&tgl,
-        ipt::push_channel &&pcc) {
+        ipt::push_channel &&pc_sml,
+        ipt::push_channel &&pcc_iec,
+        ipt::push_channel &&pcc_dlms) {
 
-        auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
+        auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pc_sml));
         BOOST_ASSERT(channel->is_open());
         //
         //  suspended to wait for ip-t node
@@ -191,15 +195,23 @@ namespace smf {
             "push-channel",
             cyng::make_tuple(
                 cyng::make_param(
-                    "targets",
-                    cyng::param_map_factory("SML", "sml@store")("IEC", "iec@store")("DLMS", "dlms@store")
+                    "SML",
+                    cyng::param_map_factory("target", "sml@store")("account", "account")("number", "number")("version", "version")(
+                        "timeout", 30)
                         .
                         operator cyng::param_map_t()),
-                cyng::make_param("account", ""),
-                cyng::make_param("number", ""),
-                cyng::make_param("version", ""),
-                cyng::make_param("id", ""),
-                cyng::make_param("timeout", 30)));
+                cyng::make_param(
+                    "IEC",
+                    cyng::param_map_factory("target", "iec@store")("account", "account")("number", "number")("version", "version")(
+                        "timeout", 30)
+                        .
+                        operator cyng::param_map_t()),
+                cyng::make_param(
+                    "DLMS",
+                    cyng::param_map_factory("target", "dlms@store")("account", "account")("number", "number")("version", "version")(
+                        "timeout", 30)
+                        .
+                        operator cyng::param_map_t())));
     }
 
     cyng::param_t controller::create_cluster_spec() {

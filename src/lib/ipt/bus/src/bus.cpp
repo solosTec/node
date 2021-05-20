@@ -470,12 +470,12 @@ namespace smf {
 
         void bus::open_channels(push_channel pcc) {
 
-            for (auto const target : pcc.targets_) {
-                CYNG_LOG_INFO(logger_, "[ipt] open " << target.first << " channel " << target.second);
-                // auto r = serializer_.req_open_push_channel(
-                //    target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
-                open_channel(target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
-            }
+            // for (auto const target : pcc.targets_) {
+            //    CYNG_LOG_INFO(logger_, "[ipt] open " << target.first << " channel " << target.second);
+            //    // auto r = serializer_.req_open_push_channel(
+            //    //    target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+            //    open_channel(target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+            //}
 
             // boost::asio::post(dispatcher_, [this, pcc]() {
             //    bool const b = buffer_write_.empty();
