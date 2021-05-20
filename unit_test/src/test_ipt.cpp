@@ -81,4 +81,28 @@ BOOST_AUTO_TEST_CASE(transpiler) {
     }
 }
 
+BOOST_AUTO_TEST_CASE(parser) {
+
+    smf::ipt::serializer s(smf::ipt::scramble_key::default_scramble_key_);
+    smf::ipt::parser p(
+        smf::ipt::scramble_key::default_scramble_key_,
+        [](smf::ipt::header const &h, cyng::buffer_t &&body) -> void {
+            std::cout << "cmd: " << smf::ipt::command_name(h.command_) << std::endl;
+        },
+        [](cyng::buffer_t &&) -> void { std::cout << "data" << std::endl; });
+
+    auto r1 = s.req_login_public("name", "pwd");
+    auto r2 = s.req_open_push_channel("target-1", "account-1", "number-1", "version-1", "id-1", 1);
+    auto r3 = s.req_open_push_channel("target-2", "account-2", "number-2", "version-2", "id-2", 2);
+
+    cyng::buffer_t merged;
+    merged.insert(merged.end(), r1.begin(), r1.end());
+    merged.insert(merged.end(), r2.first.begin(), r2.first.end());
+    merged.insert(merged.end(), r3.first.begin(), r3.first.end());
+
+    p.read(merged.begin(), merged.end());
+
+    std::cout << std::endl;
+}
+
 BOOST_AUTO_TEST_SUITE_END()

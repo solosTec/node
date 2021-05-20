@@ -30,6 +30,7 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/vector_cast.hpp>
@@ -62,6 +63,7 @@ namespace smf {
             cyng::make_param("country-code", "CH"),
             cyng::make_param("language-code", cyng::sys::get_system_locale()),
             cyng::make_param("model", "smf.store"),
+            cyng::make_param("network-delay", 12), //  seconds to wait before starting ip-t client
 
             cyng::make_param("writer", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
@@ -298,6 +300,12 @@ namespace smf {
         }
 
         //
+        //  seconds to wait before starting ip-t client
+        //
+        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 12);
+        CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
+
+        //
         //  connect to ip-t server
         //
         join_network(
@@ -308,6 +316,7 @@ namespace smf {
             node_name,
             model,
             std::move(tgl),
+            std::chrono::seconds(delay),
             config_types,
             target_sml,
             target_iec,
@@ -321,11 +330,6 @@ namespace smf {
 
         channels.stop();
         channels.clear();
-
-        //
-        //	stop all running tasks
-        //
-        // reg.shutdown();
     }
 
     void controller::join_network(
@@ -336,6 +340,7 @@ namespace smf {
         std::string const &node_name,
         std::string const &model,
         ipt::toggle::server_vec_t &&tgl,
+        std::chrono::seconds delay,
         std::vector<std::string> const &config_types,
         std::vector<std::string> const &sml_targets,
         std::vector<std::string> const &iec_targets,
@@ -356,8 +361,12 @@ namespace smf {
             dlms_targets,
             writer);
         BOOST_ASSERT(channel->is_open());
-        channel->dispatch("connect", cyng::make_tuple());
         channels.lock(channel);
+
+        //
+        //  wait for IP-T server to start up
+        //
+        channel->suspend(delay, "connect", cyng::make_tuple());
     }
 
     bool controller::run_options(boost::program_options::variables_map &vars) {

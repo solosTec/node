@@ -57,17 +57,17 @@ namespace smf {
             /**
              * open a push channel
              */
-            void open_channel(
-                std::string name,
-                std::string account,
-                std::string number,
-                std::string version,
-                std::string id,
-                std::uint16_t timeout);
+            // void open_channel(
+            //    std::string name,
+            //    std::string account,
+            //    std::string number,
+            //    std::string version,
+            //    std::string id,
+            //    std::uint16_t timeout);
             /**
-             * open all push channels at once
+             * open a push channel
              */
-            void open_channels(push_channel);
+            void open_channel(push_channel);
 
           private:
             constexpr bool is_stopped() const { return state_ == state::STOPPED; }

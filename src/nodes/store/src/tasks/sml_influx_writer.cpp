@@ -101,7 +101,7 @@ namespace smf {
             //	tags:
             //  tags are indexd
             //
-            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first;
+            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first << ",area=unknown";
 
             //
             //   space separator
@@ -126,6 +126,8 @@ namespace smf {
                     //  obis = value
                     //
                     ss << "," << v.first << "=" << influx::to_line_protocol(val.second);
+                } else if (boost::algorithm::equals(val.first, "reg_period")) {
+                    //  skip
                 } else {
                     ss << "," << val.first << "=" << influx::to_line_protocol(val.second);
                 }

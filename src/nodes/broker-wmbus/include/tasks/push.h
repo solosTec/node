@@ -28,7 +28,14 @@ namespace smf {
             std::function<void(cyng::eod)>>;
 
       public:
-        push(std::weak_ptr<cyng::channel>, cyng::controller &, cyng::logger, ipt::toggle::server_vec_t &&, ipt::push_channel &&pcc);
+        push(
+            std::weak_ptr<cyng::channel>,
+            cyng::controller &,
+            cyng::logger,
+            ipt::toggle::server_vec_t &&,
+            ipt::push_channel &&pcc_sml,
+            ipt::push_channel &&pcc_iec,
+            ipt::push_channel &&pcc_dlms);
         ~push();
 
       private:
@@ -44,14 +51,16 @@ namespace smf {
         void ipt_cmd(ipt::header const &, cyng::buffer_t &&);
         void ipt_stream(cyng::buffer_t &&);
         void auth_state(bool);
-        void open_push_channel();
+        void open_push_channels();
 
       private:
         signatures_t sigs_;
         std::weak_ptr<cyng::channel> channel_;
         cyng::logger logger_;
         ipt::toggle::server_vec_t toggle_;
-        ipt::push_channel const pcc_;
+        ipt::push_channel const pcc_sml_;
+        ipt::push_channel const pcc_iec_;
+        ipt::push_channel const pcc_dlms_;
         ipt::bus bus_;
     };
 

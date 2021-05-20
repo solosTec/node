@@ -98,6 +98,7 @@ namespace smf {
                 registrant_.clear();
                 targets_.clear();
                 pending_channel_.clear();
+                parser_.clear();
 
                 if (is_authorized()) {
 
@@ -241,6 +242,15 @@ namespace smf {
                 logger_,
                 "ipt [" << tgl_.get() << "] write #" << buffer_write_.size() << ": " << buffer_write_.front().size() << " bytes");
 
+#ifdef _DEBUG
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, buffer_write_.front().begin(), buffer_write_.front().end());
+                CYNG_LOG_DEBUG(logger_, "[ipt] write #" << buffer_write_.size() << ":\n" << ss.str());
+            }
+#endif
+
             // Start an asynchronous operation to send a heartbeat message.
             boost::asio::async_write(
                 socket_,
@@ -253,7 +263,7 @@ namespace smf {
                 return;
 
             if (!ec) {
-                CYNG_LOG_DEBUG(logger_, "ipt [" << tgl_.get() << "] received " << n << " bytes");
+                CYNG_LOG_DEBUG(logger_, "ipt [" << tgl_.get() << "] received " << n << " bytes from " << socket_.remote_endpoint());
 
                 auto const data = parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
 #ifdef _DEBUG
@@ -261,7 +271,10 @@ namespace smf {
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
                     hd(ss, data.begin(), data.end());
-                    CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] ipt data:\n" << ss.str());
+                    CYNG_LOG_DEBUG(
+                        logger_,
+                        "received " << n << " bytes ipt data from [" << socket_.remote_endpoint() << "]:\n"
+                                    << ss.str());
                 }
 #endif
 
@@ -322,12 +335,9 @@ namespace smf {
         void bus::cmd_complete(header const &h, cyng::buffer_t &&body) {
             CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] cmd " << command_name(h.command_));
 
-            // auto instructions = gen_instructions(h, std::move(body));
-
             switch (to_code(h.command_)) {
             case code::TP_RES_OPEN_PUSH_CHANNEL:
                 res_open_push_channel(h, std::move(body));
-                // cb_cmd_(h, std::move(body));
                 break;
             case code::TP_RES_CLOSE_PUSH_CHANNEL:
                 cb_cmd_(h, std::move(body));
@@ -468,40 +478,42 @@ namespace smf {
             }
         }
 
-        void bus::open_channels(push_channel pcc) {
+        void bus::open_channel(push_channel pcc) {
 
-            // for (auto const target : pcc.targets_) {
-            //    CYNG_LOG_INFO(logger_, "[ipt] open " << target.first << " channel " << target.second);
-            //    // auto r = serializer_.req_open_push_channel(
-            //    //    target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
-            //    open_channel(target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
-            //}
+            boost::asio::post(dispatcher_, [this, pcc]() {
+                bool const b = buffer_write_.empty();
+                auto r =
+                    serializer_.req_open_push_channel(pcc.target_, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
 
-            // boost::asio::post(dispatcher_, [this, pcc]() {
-            //    bool const b = buffer_write_.empty();
+                CYNG_LOG_INFO(
+                    logger_,
+                    "[ipt] open channel \"" << pcc.target_ << "\" - #" << pending_channel_.size() << " pending request(s)");
 
-            //    for (auto const target : pcc.targets_) {
-            //        CYNG_LOG_INFO(logger_, "[ipt] open " << target.first << " channel " << target.second);
-            //        auto r = serializer_.req_open_push_channel(
-            //            target.second, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+                //
+                //  update list of pending channel openings
+                //
+                pending_channel_.emplace(r.second, pcc.target_);
 
-            //        //
-            //        //  update list of pending channel openings
-            //        //
-            //        pending_channel_.emplace(r.second, target.second);
+#ifdef _DEBUG
+                {
+                    std::stringstream ss;
+                    cyng::io::hex_dump<8> hd;
+                    hd(ss, r.first.begin(), r.first.end());
+                    CYNG_LOG_DEBUG(logger_, "[" << +r.second << "] open channel " << pcc.target_ << ":\n" << ss.str());
+                }
+#endif
 
-            //        //
-            //        //	send "open push channel" command to ip-t server
-            //        //
-            //        buffer_write_.push_back(r.first);
-            //    }
+                //
+                //	send "open push channel" command to ip-t server
+                //
+                buffer_write_.push_back(r.first);
 
-            //    //
-            //    //	send request
-            //    //
-            //    if (b)
-            //        do_write();
-            //});
+                //
+                //	send request
+                //
+                if (b)
+                    do_write();
+            });
         }
 
         void bus::res_open_push_channel(header const &h, cyng::buffer_t &&body) {
@@ -516,11 +528,19 @@ namespace smf {
                 auto const pos = pending_channel_.find(h.sequence_);
                 if (pos != pending_channel_.end()) {
 
-                    CYNG_LOG_INFO(
-                        logger_,
-                        "[ipt] cmd " << ipt::command_name(h.command_) << ": "
-                                     << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":" << source
-                                     << ":" << pos->second);
+                    if (tp_res_open_push_channel_policy::is_success(res)) {
+                        CYNG_LOG_INFO(
+                            logger_,
+                            "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                         << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
+                                         << source << ":" << pos->second);
+                    } else {
+                        CYNG_LOG_WARNING(
+                            logger_,
+                            "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                         << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
+                                         << source << ":" << pos->second);
+                    }
 
                     //
                     //  cleanup list
@@ -529,36 +549,6 @@ namespace smf {
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing list entry");
                 }
-            });
-        }
-
-        void bus::open_channel(
-            std::string name,
-            std::string account,
-            std::string number,
-            std::string version,
-            std::string id,
-            std::uint16_t timeout) {
-
-            boost::asio::post(dispatcher_, [this, name, account, number, id, version, timeout]() {
-                bool const b = buffer_write_.empty();
-                auto r = serializer_.req_open_push_channel(name, account, number, version, id, timeout);
-
-                //
-                //  update list of pending channel openings
-                //
-                pending_channel_.emplace(r.second, name);
-
-                //
-                //	send "open push channel" command to ip-t server
-                //
-                buffer_write_.push_back(r.first);
-
-                //
-                //	send request
-                //
-                if (b)
-                    do_write();
             });
         }
 

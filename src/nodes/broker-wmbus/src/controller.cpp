@@ -131,8 +131,8 @@ namespace smf {
             tag,
             node_name,
             std::move(tgl_ipt),
-            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["SML"].get()),
-            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["IEC"].get()),
+            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["SML"].get())),
+            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["IEC"].get())),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["DLMS"].get())));
     }
 
@@ -147,7 +147,8 @@ namespace smf {
         ipt::push_channel &&pcc_iec,
         ipt::push_channel &&pcc_dlms) {
 
-        auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pc_sml));
+        auto channel = ctl.create_named_channel_with_ref<push>(
+            "push", ctl, logger, std::move(tgl), std::move(pc_sml), std::move(pcc_iec), std::move(pcc_dlms));
         BOOST_ASSERT(channel->is_open());
         //
         //  suspended to wait for ip-t node
