@@ -51,23 +51,17 @@ namespace smf {
 
             /**
              * initiate a sequence to register a push target
+             *
+             * @return true if process was started
              */
-            void register_target(std::string, cyng::channel_weak);
+            bool register_target(std::string, cyng::channel_weak);
 
             /**
              * open a push channel
+             *
+             * @return true if process was started
              */
-            // void open_channel(
-            //    std::string name,
-            //    std::string account,
-            //    std::string number,
-            //    std::string version,
-            //    std::string id,
-            //    std::uint16_t timeout);
-            /**
-             * open a push channel
-             */
-            void open_channel(push_channel);
+            bool open_channel(push_channel);
 
           private:
             constexpr bool is_stopped() const { return state_ == state::STOPPED; }
@@ -86,7 +80,7 @@ namespace smf {
             /**
              * start an async write
              */
-            void send(cyng::buffer_t);
+            void send(std::function<cyng::buffer_t()>);
 
             void cmd_complete(header const &, cyng::buffer_t &&);
 

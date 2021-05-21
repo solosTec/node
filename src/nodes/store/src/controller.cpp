@@ -63,7 +63,7 @@ namespace smf {
             cyng::make_param("country-code", "CH"),
             cyng::make_param("language-code", cyng::sys::get_system_locale()),
             cyng::make_param("model", "smf.store"),
-            cyng::make_param("network-delay", 12), //  seconds to wait before starting ip-t client
+            cyng::make_param("network-delay", 6), //  seconds to wait before starting ip-t client
 
             cyng::make_param("writer", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
@@ -224,13 +224,6 @@ namespace smf {
         if (tgl.empty()) {
             CYNG_LOG_FATAL(logger, "no ip-t server configured");
         }
-        auto const target_sml = cyng::vector_cast<std::string>(reader["targets"]["SML"].get(), "sml@store");
-        auto const target_iec = cyng::vector_cast<std::string>(reader["targets"]["IEC"].get(), "iec@store");
-        auto const target_dlms = cyng::vector_cast<std::string>(reader["targets"]["DLMS"].get(), "dlms@store");
-
-        if (target_sml.empty() && target_iec.empty()) {
-            CYNG_LOG_FATAL(logger, "no targets configured");
-        }
 
         //
         //  start writer tasks
@@ -299,10 +292,24 @@ namespace smf {
             CYNG_LOG_FATAL(logger, "no writer tasks configured");
         }
 
+        auto const target_sml = cyng::vector_cast<std::string>(reader["targets"]["SML"].get(), "sml@store");
+        auto const target_iec = cyng::vector_cast<std::string>(reader["targets"]["IEC"].get(), "iec@store");
+        auto const target_dlms = cyng::vector_cast<std::string>(reader["targets"]["DLMS"].get(), "dlms@store");
+
+        if (target_sml.empty()) {
+            CYNG_LOG_WARNING(logger, "no SML targets configured");
+        }
+        if (target_iec.empty()) {
+            CYNG_LOG_WARNING(logger, "no IEC targets configured");
+        }
+        if (target_dlms.empty()) {
+            CYNG_LOG_WARNING(logger, "no DLMS targets configured");
+        }
+
         //
         //  seconds to wait before starting ip-t client
         //
-        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 12);
+        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 6);
         CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
 
         //

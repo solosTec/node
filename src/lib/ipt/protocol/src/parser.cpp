@@ -41,7 +41,6 @@ namespace smf {
                 BOOST_ASSERT_MSG(false, "invalid parser state");
                 break;
             }
-
             return c;
         }
 
@@ -133,6 +132,9 @@ namespace smf {
             scrambler_.reset();
             buffer_.clear();
         }
+
+        scramble_key::key_type const &parser::get_sk() const { return scrambler_.key(); }
+        std::size_t parser::get_scrambler_index() const { return scrambler_.get_index(); }
 
     } // namespace ipt
 } // namespace smf

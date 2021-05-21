@@ -9,6 +9,7 @@
 #include <smf/ipt/bus.h>
 #include <smf/ipt/codes.h>
 #include <smf/ipt/response.hpp>
+#include <smf/ipt/scramble_key_format.h>
 #include <smf/ipt/transpiler.h>
 
 #include <cyng/log/record.h>
@@ -200,10 +201,11 @@ namespace smf {
                     //
                     auto const sk = gen_random_sk();
 
-                    send(serializer_.req_login_scrambled(srv.account_, srv.pwd_, sk));
+                    CYNG_LOG_INFO(logger_, "ipt [" << tgl_.get() << "] sk = " << ipt::to_string(sk));
                     parser_.set_sk(sk);
+                    send(std::bind(&serializer::req_login_scrambled, &serializer_, srv.account_, srv.pwd_, sk));
                 } else {
-                    send(serializer_.req_login_public(srv.account_, srv.pwd_));
+                    send(std::bind(&serializer::req_login_public, &serializer_, srv.account_, srv.pwd_));
                 }
 
                 // Start the input actor.
@@ -263,7 +265,7 @@ namespace smf {
                 return;
 
             if (!ec) {
-                CYNG_LOG_DEBUG(logger_, "ipt [" << tgl_.get() << "] received " << n << " bytes from " << socket_.remote_endpoint());
+                CYNG_LOG_DEBUG(logger_, "ipt [" << tgl_.get() << "] received " << n << " bytes " << socket_.remote_endpoint());
 
                 auto const data = parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
 #ifdef _DEBUG
@@ -323,10 +325,10 @@ namespace smf {
             }
         }
 
-        void bus::send(cyng::buffer_t data) {
-            boost::asio::post(dispatcher_, [this, data]() {
+        void bus::send(std::function<cyng::buffer_t()> f) {
+            boost::asio::post(dispatcher_, [this, f]() {
                 bool const b = buffer_write_.empty();
-                buffer_write_.push_back(data);
+                buffer_write_.push_back(f());
                 if (b)
                     do_write();
             });
@@ -361,16 +363,18 @@ namespace smf {
                 cb_cmd_(h, std::move(body));
                 break;
             case code::APP_REQ_PROTOCOL_VERSION:
-                send(serializer_.res_protocol_version(h.sequence_, 1));
+                send(std::bind(&serializer::res_protocol_version, &serializer_, h.sequence_, 1));
                 break;
             case code::APP_REQ_SOFTWARE_VERSION:
-                send(serializer_.res_software_version(h.sequence_, SMF_VERSION_NAME));
+                send(std::bind(&serializer::res_software_version, &serializer_, h.sequence_, SMF_VERSION_NAME));
                 break;
             case code::APP_REQ_DEVICE_IDENTIFIER:
-                send(serializer_.res_device_id(h.sequence_, model_));
+                send(std::bind(&serializer::res_device_id, &serializer_, h.sequence_, model_));
                 break;
             case code::APP_REQ_DEVICE_AUTHENTIFICATION:
-                send(serializer_.res_device_auth(
+                send(std::bind(
+                    &serializer::res_device_auth,
+                    &serializer_,
                     h.sequence_,
                     tgl_.get().account_,
                     tgl_.get().pwd_,
@@ -379,7 +383,7 @@ namespace smf {
                     model_));
                 break;
             case code::APP_REQ_DEVICE_TIME:
-                send(serializer_.res_device_time(h.sequence_));
+                send(std::bind(&serializer::res_device_time, &serializer_, h.sequence_));
                 break;
             case code::CTRL_RES_LOGIN_PUBLIC:
                 res_login(std::move(body));
@@ -394,13 +398,13 @@ namespace smf {
                 //	break;
 
             case code::CTRL_REQ_REGISTER_TARGET:
-                send(serializer_.res_unknown_command(h.sequence_, h.command_));
+                send(std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
                 break;
             case code::CTRL_RES_REGISTER_TARGET:
                 res_register_target(h, std::move(body));
                 break;
             case code::CTRL_REQ_DEREGISTER_TARGET:
-                send(serializer_.res_unknown_command(h.sequence_, h.command_));
+                send(std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
                 break;
             case code::CTRL_RES_DEREGISTER_TARGET:
                 cb_cmd_(h, std::move(body));
@@ -411,7 +415,7 @@ namespace smf {
 
             case code::UNKNOWN:
             default:
-                send(serializer_.res_unknown_command(h.sequence_, h.command_));
+                send(std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
                 break;
             }
         }
@@ -450,7 +454,7 @@ namespace smf {
             }
         }
 
-        void bus::register_target(std::string name, cyng::channel_weak wp) {
+        bool bus::register_target(std::string name, cyng::channel_weak wp) {
 
             if (!name.empty() && wp.lock()) {
                 boost::asio::post(dispatcher_, [this, name, wp]() {
@@ -473,47 +477,62 @@ namespace smf {
                     if (b)
                         do_write();
                 });
+
+                return true;
             } else {
                 CYNG_LOG_WARNING(logger_, "[ipt] cannot register target: name or channel is empty");
             }
+            return false;
         }
 
-        void bus::open_channel(push_channel pcc) {
+        bool bus::open_channel(push_channel pcc) {
 
-            boost::asio::post(dispatcher_, [this, pcc]() {
-                bool const b = buffer_write_.empty();
-                auto r =
-                    serializer_.req_open_push_channel(pcc.target_, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+            if (!pcc.target_.empty()) {
 
-                CYNG_LOG_INFO(
-                    logger_,
-                    "[ipt] open channel \"" << pcc.target_ << "\" - #" << pending_channel_.size() << " pending request(s)");
+                boost::asio::post(dispatcher_, [this, pcc]() {
+                    bool const b = buffer_write_.empty();
+                    auto r = serializer_.req_open_push_channel(
+                        pcc.target_, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
 
-                //
-                //  update list of pending channel openings
-                //
-                pending_channel_.emplace(r.second, pcc.target_);
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "[ipt] open channel \"" << pcc.target_ << "\" - #" << pending_channel_.size() << " pending request(s)");
+
+                    //
+                    //  update list of pending channel openings
+                    //
+                    pending_channel_.emplace(r.second, pcc.target_);
 
 #ifdef _DEBUG
-                {
-                    std::stringstream ss;
-                    cyng::io::hex_dump<8> hd;
-                    hd(ss, r.first.begin(), r.first.end());
-                    CYNG_LOG_DEBUG(logger_, "[" << +r.second << "] open channel " << pcc.target_ << ":\n" << ss.str());
-                }
+                    {
+                        std::stringstream ss;
+                        cyng::io::hex_dump<8> hd;
+                        hd(ss, r.first.begin(), r.first.end());
+                        CYNG_LOG_DEBUG(
+                            logger_,
+                            "[" << +r.second << "] open channel " << pcc.target_ << " sk = " << to_string(serializer_.get_sk())
+                                << "@" << serializer_.get_scrambler_index() << ":\n"
+                                << ss.str());
+                    }
 #endif
 
-                //
-                //	send "open push channel" command to ip-t server
-                //
-                buffer_write_.push_back(r.first);
+                    //
+                    //	send "open push channel" command to ip-t server
+                    //
+                    buffer_write_.push_back(r.first);
 
-                //
-                //	send request
-                //
-                if (b)
-                    do_write();
-            });
+                    //
+                    //	send request
+                    //
+                    if (b)
+                        do_write();
+                });
+
+                return true;
+            } else {
+                CYNG_LOG_WARNING(logger_, "[ipt] cannot open push chanel: name or channel is empty");
+            }
+            return false;
         }
 
         void bus::res_open_push_channel(header const &h, cyng::buffer_t &&body) {
@@ -670,7 +689,7 @@ namespace smf {
         void bus::req_watchdog(header const &h, cyng::buffer_t &&body) {
             BOOST_ASSERT(body.empty());
             CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << +h.sequence_);
-            send(serializer_.res_watchdog(h.sequence_));
+            send(std::bind(&serializer::res_watchdog, &serializer_, h.sequence_));
         }
 
         void bus::open_connection(std::string number, sequence_t seq) {
@@ -678,19 +697,27 @@ namespace smf {
             if (state_ == state::AUTHORIZED) {
                 state_ = state::LINKED;
                 CYNG_LOG_TRACE(logger_, "[ipt] linked to " << number);
-                send(serializer_.res_open_connection(seq, tp_res_open_connection_policy::DIALUP_SUCCESS));
+                send(std::bind(&serializer::res_open_connection, &serializer_, seq, tp_res_open_connection_policy::DIALUP_SUCCESS));
             } else {
-                send(serializer_.res_open_connection(seq, tp_res_open_connection_policy::BUSY));
+                send(std::bind(&serializer::res_open_connection, &serializer_, seq, tp_res_open_connection_policy::BUSY));
             }
         }
 
         void bus::close_connection(sequence_t seq) {
             if (state_ == state::LINKED) {
                 state_ = state::AUTHORIZED;
-                send(serializer_.res_close_connection(seq, tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED));
+                send(std::bind(
+                    &serializer::res_close_connection,
+                    &serializer_,
+                    seq,
+                    tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED));
                 CYNG_LOG_TRACE(logger_, "[ipt] unlinked");
             } else {
-                send(serializer_.res_close_connection(seq, tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
+                send(std::bind(
+                    &serializer::res_close_connection,
+                    &serializer_,
+                    seq,
+                    tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
             }
         }
 

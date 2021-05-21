@@ -129,6 +129,22 @@ namespace smf {
                         "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
                                      << socket_.remote_endpoint() << "]");
 
+                    if (bytes_transferred == 45) {
+                        int i = 0; //  start debugging here
+                                   //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
+                                   //  garble data from wMBus broker to oen a second channel when scrambling is active
+                    }
+                    {
+                        std::stringstream ss;
+                        cyng::io::hex_dump<8> hd;
+                        hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+
+                        CYNG_LOG_DEBUG(
+                            logger_,
+                            "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes scrambled "
+                                << ipt::to_string(parser_.get_sk()) << "@" << parser_.get_scrambler_index() << " ip-t data:\n"
+                                << ss.str());
+                    }
                     //
                     //	let parse it
                     //
@@ -140,7 +156,7 @@ namespace smf {
                         hd(ss, data.begin(), data.end());
                         CYNG_LOG_DEBUG(
                             logger_,
-                            "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes ip-t data:\n"
+                            "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes (unscrambled) ip-t data:\n"
                                 << ss.str());
                     }
 #endif
@@ -217,19 +233,21 @@ namespace smf {
                 cluster_bus_.pty_login(name, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
             } else {
                 CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
-                ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
+                ipt_send(std::bind(
+                    &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
             }
             break;
         case ipt::code::CTRL_REQ_LOGIN_SCRAMBLED:
             if (cluster_bus_.is_connected()) {
                 auto const [name, pwd, sk] = ipt::ctrl_req_login_scrambled(std::move(body));
-                CYNG_LOG_INFO(logger_, "[ipt] scrambled login: " << name << ':' << pwd << ':' << ipt::to_string(sk));
-                cluster_bus_.pty_login(name, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
+                CYNG_LOG_INFO(logger_, "[ipt] scrambled login: " << name << ':' << pwd << ", sk = " << ipt::to_string(sk));
                 parser_.set_sk(sk);
                 serializer_.set_sk(sk);
+                cluster_bus_.pty_login(name, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
             } else {
                 CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
-                ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
+                ipt_send(std::bind(
+                    &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
             }
             break;
         case ipt::code::APP_RES_SOFTWARE_VERSION:
@@ -264,7 +282,7 @@ namespace smf {
             break;
         case ipt::code::TP_REQ_PUSHDATA_TRANSFER:
             if (cluster_bus_.is_connected()) {
-#ifdef _DEBUG_IPT
+#ifdef __DEBUG_IPT
                 {
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
@@ -345,7 +363,7 @@ namespace smf {
             break;
         default:
             CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " dropped");
-            ipt_send(serializer_.res_unknown_command(h.sequence_, h.command_));
+            ipt_send(std::bind(&ipt::serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
             break;
         }
     }
@@ -461,10 +479,10 @@ namespace smf {
         }
     }
 
-    void ipt_session::ipt_send(cyng::buffer_t &&data) {
-        cyng::exec(vm_, [this, data]() {
+    void ipt_session::ipt_send(std::function<cyng::buffer_t()> f) {
+        cyng::exec(vm_, [this, f]() {
             bool const b = buffer_write_.empty();
-            buffer_write_.push_back(data);
+            buffer_write_.push_back(f());
             if (b)
                 do_write();
         });
@@ -485,13 +503,15 @@ namespace smf {
             dev_ = dev;
 
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " login ok");
-            ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
+            ipt_send(
+                std::bind(&ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
 
             query();
 
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
-            ipt_send(serializer_.res_login_public(ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
+            ipt_send(std::bind(
+                &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
 
             //
             //  gatekeeper will close this session
@@ -508,10 +528,16 @@ namespace smf {
         if (success) {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " register target ok: " << token);
 
-            ipt_send(serializer_.res_register_push_target(seq, ipt::ctrl_res_register_target_policy::OK, channel));
+            ipt_send(std::bind(
+                &ipt::serializer::res_register_push_target, &serializer_, seq, ipt::ctrl_res_register_target_policy::OK, channel));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " register target failed: " << token);
-            ipt_send(serializer_.res_register_push_target(seq, ipt::ctrl_res_register_target_policy::REJECTED, channel));
+            ipt_send(std::bind(
+                &ipt::serializer::res_register_push_target,
+                &serializer_,
+                seq,
+                ipt::ctrl_res_register_target_policy::REJECTED,
+                channel));
         }
     }
 
@@ -533,11 +559,30 @@ namespace smf {
             CYNG_LOG_INFO(
                 logger_, "[pty] " << vm_.get_tag() << " open push channel " << channel << ':' << source << " ok: " << token);
 
-            ipt_send(serializer_.res_open_push_channel(
-                seq, ipt::tp_res_open_push_channel_policy::SUCCESS, channel, source, packet_size, window_size, status, count));
+            ipt_send(std::bind(
+                &ipt::serializer::res_open_push_channel,
+                &serializer_,
+                seq,
+                ipt::tp_res_open_push_channel_policy::SUCCESS,
+                channel,
+                source,
+                packet_size,
+                window_size,
+                status,
+                count));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " open push channel failed: " << token);
-            ipt_send(serializer_.res_open_push_channel(seq, ipt::tp_res_open_push_channel_policy::UNREACHABLE, 0, 0, 0, 1, 0, 0));
+            ipt_send(std::bind(
+                &ipt::serializer::res_open_push_channel,
+                &serializer_,
+                seq,
+                ipt::tp_res_open_push_channel_policy::UNREACHABLE,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0));
         }
     }
 
@@ -554,7 +599,7 @@ namespace smf {
 #endif
         std::uint8_t status = 0;
         std::uint8_t block = 0;
-        ipt_send(serializer_.req_transfer_push_data(channel, source, status, block, std::move(data)));
+        ipt_send(std::bind(&ipt::serializer::req_transfer_push_data, &serializer_, channel, source, status, block, data));
     }
 
     void ipt_session::pty_res_push_data(bool success, std::uint32_t channel, std::uint32_t source, cyng::param_map_t token) {
@@ -575,7 +620,9 @@ namespace smf {
                              << " invalid push channel status: " << +status);
             }
 
-            ipt_send(serializer_.res_transfer_push_data(
+            ipt_send(std::bind(
+                &ipt::serializer::res_transfer_push_data,
+                &serializer_,
                 seq,
                 ipt::tp_res_pushdata_transfer_policy::SUCCESS,
                 channel,
@@ -584,8 +631,15 @@ namespace smf {
                 block));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " push data " << channel << " failed: " << token);
-            ipt_send(serializer_.res_transfer_push_data(
-                seq, ipt::tp_res_pushdata_transfer_policy::UNREACHABLE, channel, source, status, block));
+            ipt_send(std::bind(
+                &ipt::serializer::res_transfer_push_data,
+                &serializer_,
+                seq,
+                ipt::tp_res_pushdata_transfer_policy::UNREACHABLE,
+                channel,
+                source,
+                status,
+                block));
         }
     }
 
@@ -597,10 +651,20 @@ namespace smf {
         BOOST_ASSERT(seq != 0);
         if (success) {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " close push channel " << channel << " ok: " << token);
-            ipt_send(serializer_.res_close_push_channel(seq, ipt::tp_res_close_push_channel_policy::SUCCESS, channel));
+            ipt_send(std::bind(
+                &ipt::serializer::res_close_push_channel,
+                &serializer_,
+                seq,
+                ipt::tp_res_close_push_channel_policy::SUCCESS,
+                channel));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " close push channel " << channel << " failed: " << token);
-            ipt_send(serializer_.res_close_push_channel(seq, ipt::tp_res_close_push_channel_policy::BROKEN, channel));
+            ipt_send(std::bind(
+                &ipt::serializer::res_close_push_channel,
+                &serializer_,
+                seq,
+                ipt::tp_res_close_push_channel_policy::BROKEN,
+                channel));
         }
     }
 
@@ -617,8 +681,11 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " dialup failed: " << token);
         }
 
-        ipt_send(serializer_.res_open_connection(
-            seq, success ? ipt::tp_res_open_connection_policy::DIALUP_SUCCESS : ipt::tp_res_open_connection_policy::DIALUP_FAILED));
+        ipt_send(std::bind(
+            &ipt::serializer::res_open_connection,
+            &serializer_,
+            seq,
+            success ? ipt::tp_res_open_connection_policy::DIALUP_SUCCESS : ipt::tp_res_open_connection_policy::DIALUP_FAILED));
     }
 
     void ipt_session::pty_res_close_connection(bool success, cyng::param_map_t token) {
@@ -629,7 +696,9 @@ namespace smf {
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed " << token);
 
         BOOST_ASSERT(seq != 0);
-        ipt_send(serializer_.res_close_connection(
+        ipt_send(std::bind(
+            &ipt::serializer::res_close_connection,
+            &serializer_,
             seq,
             success ? ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED
                     : ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
@@ -638,10 +707,15 @@ namespace smf {
     void ipt_session::pty_req_open_connection(std::string msisdn, bool local, cyng::param_map_t token) {
 
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " req open connection " << msisdn);
-        // std::pair<cyng::buffer_t, sequence_t>
-        auto r = serializer_.req_open_connection(msisdn);
-        ipt_send(std::move(r.first));
-        oce_map_.emplace(r.second, token);
+        cyng::exec(vm_, [this, msisdn, token]() {
+            bool const b = buffer_write_.empty();
+            // std::pair<cyng::buffer_t, sequence_t>
+            auto r = serializer_.req_open_connection(msisdn);
+            buffer_write_.push_back(r.first);
+            oce_map_.emplace(r.second, token);
+            if (b)
+                do_write();
+        });
     }
 
     void ipt_session::pty_transfer_data(cyng::buffer_t data) {
@@ -654,45 +728,50 @@ namespace smf {
             CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] emit " << data.size() << " bytes:\n" << ss.str());
         }
 #endif
-        ipt_send(serializer_.write(data));
-        // ipt_send(serializer_.scramble(std::move(data)));
+        cyng::exec(vm_, [this, data]() {
+            bool const b = buffer_write_.empty();
+            // scramble data
+            buffer_write_.push_back(serializer_.write(data));
+            if (b)
+                do_write();
+        });
     }
 
     void ipt_session::pty_req_close_connection() {
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " close connection");
-        ipt_send(serializer_.req_close_connection());
+        ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
     }
 
     void ipt_session::query() {
 
         if (ipt::test_bit(query_, ipt::query::PROTOCOL_VERSION)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::PROTOCOL_VERSION)));
-            ipt_send(serializer_.req_protocol_version());
+            ipt_send(std::bind(&ipt::serializer::req_protocol_version, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::FIRMWARE_VERSION)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::FIRMWARE_VERSION)));
-            ipt_send(serializer_.req_software_version());
+            ipt_send(std::bind(&ipt::serializer::req_software_version, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::DEVICE_IDENTIFIER)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_IDENTIFIER)));
-            ipt_send(serializer_.req_device_id());
+            ipt_send(std::bind(&ipt::serializer::req_device_id, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::NETWORK_STATUS)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::NETWORK_STATUS)));
-            ipt_send(serializer_.req_network_status());
+            ipt_send(std::bind(&ipt::serializer::req_network_status, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::IP_STATISTIC)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::IP_STATISTIC)));
-            ipt_send(serializer_.req_ip_statistics());
+            ipt_send(std::bind(&ipt::serializer::req_ip_statistics, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::DEVICE_AUTHENTIFICATION)) {
             CYNG_LOG_TRACE(
                 logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_AUTHENTIFICATION)));
-            ipt_send(serializer_.req_device_auth());
+            ipt_send(std::bind(&ipt::serializer::req_device_auth, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::DEVICE_TIME)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_TIME)));
-            ipt_send(serializer_.req_device_time());
+            ipt_send(std::bind(&ipt::serializer::req_device_time, &serializer_));
         }
     }
 

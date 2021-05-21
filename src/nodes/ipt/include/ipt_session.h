@@ -25,8 +25,12 @@ namespace smf {
     class ipt_session : public std::enable_shared_from_this<ipt_session> {
       public:
         ipt_session(
-            boost::asio::ip::tcp::socket socket, bus &cluster_bus, cyng::mesh &fabric, ipt::scramble_key const &sk,
-            std::uint32_t query, cyng::logger logger);
+            boost::asio::ip::tcp::socket socket,
+            bus &cluster_bus,
+            cyng::mesh &fabric,
+            ipt::scramble_key const &sk,
+            std::uint32_t query,
+            cyng::logger logger);
         ~ipt_session();
 
         void start(std::chrono::seconds timeout);
@@ -45,16 +49,25 @@ namespace smf {
         //
         void ipt_cmd(ipt::header const &h, cyng::buffer_t &&body);
         void ipt_stream(cyng::buffer_t &&data);
+
         /**
          * start an async write
+         * @param f to provide a function that produces a buffer instead of the buffer itself
+         * guaranties that scrambled content is has the correct index in the scramble key.
          */
-        void ipt_send(cyng::buffer_t &&data);
+        void ipt_send(std::function<cyng::buffer_t()> f);
 
         void pty_res_login(bool success, boost::uuids::uuid dev);
         void pty_res_register(bool success, std::uint32_t channel, cyng::param_map_t token);
         void pty_res_open_channel(
-            bool success, std::uint32_t channel, std::uint32_t source, std::uint16_t packet_size, std::uint8_t window_size,
-            std::uint8_t status, std::uint32_t count, cyng::param_map_t token);
+            bool success,
+            std::uint32_t channel,
+            std::uint32_t source,
+            std::uint16_t packet_size,
+            std::uint8_t window_size,
+            std::uint8_t status,
+            std::uint32_t count,
+            cyng::param_map_t token);
 
         void pty_req_push_data(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data);
 
@@ -84,13 +97,22 @@ namespace smf {
         void deregister_target(std::string name, ipt::sequence_t seq);
 
         void open_push_channel(
-            std::string name, std::string account, std::string msisdn, std::string version, std::string id, std::uint16_t timeout,
+            std::string name,
+            std::string account,
+            std::string msisdn,
+            std::string version,
+            std::string id,
+            std::uint16_t timeout,
             ipt::sequence_t /*seq*/);
 
         void close_push_channel(std::uint32_t channel, ipt::sequence_t seq);
 
         void pushdata_transfer(
-            std::uint32_t channel, std::uint32_t source, std::uint8_t status, std::uint8_t block, cyng::buffer_t data,
+            std::uint32_t channel,
+            std::uint32_t source,
+            std::uint8_t status,
+            std::uint8_t block,
+            cyng::buffer_t data,
             ipt::sequence_t seq);
 
         void open_connection(std::string msisdn, ipt::sequence_t seq);

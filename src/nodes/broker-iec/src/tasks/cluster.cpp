@@ -38,8 +38,7 @@ namespace smf {
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_, channel_))
-		, rnd_delay_(10u, 120u)
-        //, clients_(ctl.get_ctx())
+		, rnd_delay_(10u, 240u)
 	{
         auto sp = channel_.lock();
         if (sp) {
@@ -119,6 +118,9 @@ namespace smf {
                             sp->dispatch("update.client", cyng::make_tuple(task, name));
                     } else {
 
+                        auto const delay = rnd_delay_();
+                        CYNG_LOG_TRACE(logger_, "[cluster] start client " << host << ':' << port << " in " << delay << " seconds");
+
                         //
                         //	start client
                         //
@@ -127,10 +129,10 @@ namespace smf {
                         BOOST_ASSERT(channel->is_open());
 
                         //
-                        //  start all clients with a random delay between 10 and 120 seconds
+                        //  start all clients with a random delay between 10 and 240 seconds
                         //
                         channel->suspend(
-                            std::chrono::seconds(rnd_delay_()), "start", cyng::make_tuple(host, std::to_string(port), interval));
+                            std::chrono::seconds(delay), "start", cyng::make_tuple(host, std::to_string(port), interval));
                         //
                         //  client stays alive since using a timer with a reference to the task
                         //
