@@ -50,6 +50,7 @@ namespace smf {
             boost::uuids::uuid tag,
             std::string const &node_name,
             ipt::toggle::server_vec_t &&tgl,
+            std::chrono::seconds delay,
             ipt::push_channel &&,
             ipt::push_channel &&,
             ipt::push_channel &&);

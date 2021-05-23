@@ -364,7 +364,18 @@ namespace smf {
         //
         writer_->dispatch("commit", cyng::make_tuple());
 
-        ctl_.get_registry().dispatch("push", "send.sml", cyng::make_tuple(cyng::buffer_t(address.begin(), address.end()), payload));
+        //
+        //	remove trailing 0x2F
+        //
+        cyng::buffer_t data(payload.begin() + 2, payload.end());
+        if (!data.empty()) {
+            auto index = data.size();
+            for (; index > 0 && data.at(index - 1) == 0x2F; --index)
+                ;
+            data.resize(index);
+        }
+
+        ctl_.get_registry().dispatch("push", "send.sml", cyng::make_tuple(cyng::buffer_t(address.begin(), address.end()), data));
 
         return count;
     }

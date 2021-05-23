@@ -43,6 +43,7 @@ namespace smf {
         void close_response(std::string const &trx, cyng::tuple_t const &msg);
         void get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg);
         void get_proc_parameter_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg);
+        void get_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg);
 
       private:
         signatures_t sigs_;

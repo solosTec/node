@@ -22,7 +22,6 @@ namespace smf {
 		, cyng::logger logger
 		, toggle::server_vec_t&& cfg
 		, bool login
-		, std::string target
 		, std::filesystem::path out)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),

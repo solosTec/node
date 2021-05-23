@@ -89,6 +89,8 @@ namespace smf {
         std::uint32_t status,
         cyng::param_map_t const &pmap) {
 
+        auto const srv_id = to_srv_id(server_id);
+
         //	example
         for (auto const &v : pmap) {
             std::stringstream ss;
@@ -101,7 +103,8 @@ namespace smf {
             //	tags:
             //  tags are indexd
             //
-            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first << ",area=unknown";
+            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first
+               << ",meter=" << get_id(srv_id) << ",area=unknown";
 
             //
             //   space separator

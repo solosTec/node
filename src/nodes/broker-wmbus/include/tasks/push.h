@@ -25,7 +25,10 @@ namespace smf {
             std::function<void(cyng::buffer_t srv, cyng::buffer_t payload)>, //  send_sml
             std::function<void(void)>,
             std::function<void(void)>,
+            std::function<void(std::uint32_t, std::uint32_t, std::uint32_t, std::string)>,
             std::function<void(cyng::eod)>>;
+
+        enum class protocol_type { SML, IEC, DLMS };
 
       public:
         push(
@@ -53,6 +56,8 @@ namespace smf {
         void auth_state(bool);
         void open_push_channels();
 
+        void on_channel_open(std::uint32_t, std::uint32_t, std::uint32_t, std::string);
+
       private:
         signatures_t sigs_;
         std::weak_ptr<cyng::channel> channel_;
@@ -62,6 +67,10 @@ namespace smf {
         ipt::push_channel const pcc_iec_;
         ipt::push_channel const pcc_dlms_;
         ipt::bus bus_;
+        /**
+         * maintain a list of open channels
+         */
+        std::map<protocol_type, std::pair<std::uint32_t, std::uint32_t>> channels_;
     };
 
 } // namespace smf

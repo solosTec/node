@@ -50,6 +50,7 @@ namespace smf {
             cyng::make_param("tag", tag),
             cyng::make_param("country-code", "CH"),
             cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            cyng::make_param("network-delay", 10), //  seconds to wait before starting ip-t client
             create_client_spec(),
             create_cluster_spec(),
             create_ipt_spec(tag),
@@ -75,7 +76,6 @@ namespace smf {
         }
 
         auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
-        auto const client_target = cyng::value_cast(reader["client"]["target"].get(), "power@solostec");
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
         std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "D:\\projects\\data\\csv");
 #else
@@ -89,7 +89,7 @@ namespace smf {
         //
         //	connect to cluster
         //
-        join_cluster(ctl, channels, logger, tag, node_name, std::move(tgl_cluster), client_login, client_target, client_out);
+        join_cluster(ctl, channels, logger, tag, node_name, std::move(tgl_cluster), client_login, client_out);
 
         auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
         auto tgl_ipt = ipt::read_config(ipt_vec);
@@ -120,6 +120,12 @@ namespace smf {
         }
 
         //
+        //  seconds to wait before starting ip-t client
+        //
+        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 10);
+        CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
+
+        //
         //	connect to ip-t server
         //
         join_network(
@@ -129,6 +135,7 @@ namespace smf {
             tag,
             node_name,
             std::move(tgl_ipt),
+            std::chrono::seconds(delay),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"].get())));
     }
 
@@ -139,14 +146,16 @@ namespace smf {
         boost::uuids::uuid tag,
         std::string const &node_name,
         ipt::toggle::server_vec_t &&tgl,
+        std::chrono::seconds delay,
         ipt::push_channel &&pcc) {
 
         auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
         BOOST_ASSERT(channel->is_open());
+
         //
         //  suspended to wait for ip-t node
         //
-        channel->suspend(std::chrono::seconds(10), "connect", cyng::make_tuple());
+        channel->suspend(delay, "connect", cyng::make_tuple());
         channels.lock(channel);
     }
 
@@ -167,11 +176,10 @@ namespace smf {
         std::string const &node_name,
         toggle::server_vec_t &&tgl,
         bool login,
-        std::string target,
         std::filesystem::path out) {
 
         auto channel =
-            ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl), login, target, out);
+            ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl), login, out);
         BOOST_ASSERT(channel->is_open());
         channel->dispatch("connect");
         channels.lock(channel);
@@ -196,8 +204,7 @@ namespace smf {
             "client",
             cyng::make_tuple(
                 cyng::make_param("login", false),
-                cyng::make_param("verbose", false),           //	parser
-                cyng::make_param("target", "power@solostec"), //	push target name
+                cyng::make_param("verbose", false), //	parser
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
                 cyng::make_param("out", "D:\\projects\\data\\csv") //	output path
 #else
@@ -211,7 +218,7 @@ namespace smf {
         return cyng::make_param(
             "push-channel",
             cyng::make_tuple(
-                cyng::make_param("targets", cyng::param_map_factory("IEC", "iec@store").operator cyng::param_map_t()),
+                cyng::make_param("target", "iec@store"),
                 cyng::make_param("account", ""),
                 cyng::make_param("number", ""),
                 cyng::make_param("version", ""),

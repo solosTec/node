@@ -44,7 +44,6 @@ namespace smf {
             cyng::logger,
             toggle::server_vec_t &&,
             bool login,
-            std::string target,
             std::filesystem::path out);
 
         void connect();

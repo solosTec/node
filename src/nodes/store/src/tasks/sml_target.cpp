@@ -47,6 +47,10 @@ namespace smf {
                 CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
                 get_proc_parameter_response(trx, group_no, msg);
                 break;
+            case sml::msg_type::GET_LIST_RESPONSE:
+                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                get_list_response(trx, group_no, msg);
+                break;
             case sml::msg_type::CLOSE_RESPONSE:
                 CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
                 close_response(trx, msg);
@@ -162,6 +166,47 @@ namespace smf {
             auto sp = writer.lock();
             // if (sp)
             //    sp->dispatch("get.proc.parameter.response");
+        }
+    }
+
+    void sml_target::get_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
+        // std::tuple<cyng::buffer_t, cyng::buffer_t, cyng::obis, cyng::object, cyng::object, sml_list_t>
+        auto const r = smf::sml::read_get_list_response(msg);
+
+        CYNG_LOG_INFO(logger_, "list response from " << srv_id_to_str(std::get<1>(r)));
+        for (auto const &ro : std::get<5>(r)) {
+            CYNG_LOG_TRACE(logger_, ro.first << ": " << ro.second);
+        }
+
+        // 0100010800ff:
+        // %(("raw":14521),("scaler":-1),("status":00020240),("unit":1e),("unit-name":Wh),("valTime":null),("value":1452.1))
+        // 0100010801ff: %(("raw":0),("scaler":-1),("status":null),("unit":1e),("unit-name":Wh),("valTime":null),("value":0))
+        // 0100010802ff:
+        // %(("raw":14521),("scaler":-1),("status":null),("unit":1e),("unit-name":Wh),("valTime":null),("value":1452.1))
+        // 0100020800ff:
+        // %(("raw":561139),("scaler":-1),("status":00020240),("unit":1e),("unit-name":Wh),("valTime":null),("value":56113.9))
+        // 0100020801ff: %(("raw":0),("scaler":-1),("status":null),("unit":1e),("unit-name":Wh),("valTime":null),("value":0))
+        // 0100020802ff:
+        // %(("raw":561139),("scaler":-1),("status":null),("unit":1e),("unit-name":Wh),("valTime":null),("value":56113.9))
+        // 0100100700ff: %(("raw":0),("scaler":-1),("status":null),("unit":1b),("unit-name":W),("valTime":null),("value":0))
+
+        auto const pmap = convert_to_param_map(std::get<5>(r));
+        //
+        //  send to writers
+        //
+        for (auto writer : writers_) {
+            auto sp = writer.lock();
+            if (sp)
+                sp->dispatch(
+                    "get.profile.list.response",
+                    trx,
+                    std::get<1>(r),                      //  [buffer_t] server id
+                    std::chrono::system_clock::now(),    //  [cyng::object] actTime
+                    std::uint32_t(0),                    //  [u32] regPeriod
+                    std::uint32_t(0),                    //  [u32] status
+                    cyng::obis_path_t({std::get<2>(r)}), //  [obis_path_t] path
+                    pmap                                 //  [std::map<cyng::obis, cyng::param_map_t>] values
+                );
         }
     }
 

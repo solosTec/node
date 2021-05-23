@@ -52,6 +52,7 @@ namespace smf {
             cyng::make_param("tag", tag),
             cyng::make_param("country-code", "CH"),
             cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            cyng::make_param("network-delay", 10), //  seconds to wait before starting ip-t client
             create_server_spec(cwd),
             create_push_spec(),
             create_client_spec(),
@@ -122,6 +123,12 @@ namespace smf {
         }
 
         //
+        //  seconds to wait before starting ip-t client
+        //
+        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 10);
+        CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
+
+        //
         //	connect to ip-t server
         //
         join_network(
@@ -131,6 +138,7 @@ namespace smf {
             tag,
             node_name,
             std::move(tgl_ipt),
+            std::chrono::seconds(delay),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["SML"].get())),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["IEC"].get())),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["DLMS"].get())));
@@ -143,6 +151,7 @@ namespace smf {
         boost::uuids::uuid tag,
         std::string const &node_name,
         ipt::toggle::server_vec_t &&tgl,
+        std::chrono::seconds delay,
         ipt::push_channel &&pc_sml,
         ipt::push_channel &&pcc_iec,
         ipt::push_channel &&pcc_dlms) {
@@ -150,10 +159,11 @@ namespace smf {
         auto channel = ctl.create_named_channel_with_ref<push>(
             "push", ctl, logger, std::move(tgl), std::move(pc_sml), std::move(pcc_iec), std::move(pcc_dlms));
         BOOST_ASSERT(channel->is_open());
+
         //
         //  suspended to wait for ip-t node
         //
-        channel->suspend(std::chrono::seconds(10), "connect", cyng::make_tuple());
+        channel->suspend(delay, "connect", cyng::make_tuple());
         channels.lock(channel);
     }
 

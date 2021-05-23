@@ -127,6 +127,12 @@ namespace smf {
         tp_req_pushdata_transfer(cyng::buffer_t &&data);
 
         /**
+         * @return response code, channel, source, status, block
+         */
+        std::tuple<std::uint8_t, std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t>
+        tp_res_pushdata_transfer(cyng::buffer_t &&data);
+
+        /**
          * @return msisdn
          */
         std::string tp_req_open_connection(cyng::buffer_t &&data);

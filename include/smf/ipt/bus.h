@@ -27,7 +27,8 @@ namespace smf {
             /**
              * Use this to store a (target) name - channel relation
              */
-            using name_channel_t = std::pair<std::string, cyng::channel_weak>;
+            using name_target_rel_t = std::pair<std::string, cyng::channel_weak>;
+            using name_channel_rel_t = std::pair<push_channel, cyng::channel_weak>;
 
           public:
             //	call back to signal changed IP-T authorization state
@@ -61,7 +62,17 @@ namespace smf {
              *
              * @return true if process was started
              */
-            bool open_channel(push_channel);
+            bool open_channel(push_channel, cyng::channel_weak);
+
+            /**
+             * send push data over specified channel
+             */
+            void transmit(std::pair<std::uint32_t, std::uint32_t> id, cyng::buffer_t data);
+
+            /**
+             * send data over an open connection
+             */
+            // void transfer(cyng::buffer_t);
 
           private:
             constexpr bool is_stopped() const { return state_ == state::STOPPED; }
@@ -120,13 +131,14 @@ namespace smf {
              * After receiving a response the stored callback will be moved
              * to the channel => callback map.
              */
-            std::map<ipt::sequence_t, name_channel_t> registrant_;
-            std::map<std::uint32_t, name_channel_t> targets_;
+            std::map<ipt::sequence_t, name_target_rel_t> pending_targets_;
+            std::map<std::uint32_t, name_target_rel_t> targets_;
 
             /**
              * Maps the sequence id to the channel/target name
              */
-            std::map<ipt::sequence_t, std::string> pending_channel_;
+            std::map<ipt::sequence_t, name_channel_rel_t> pending_channel_;
+            std::map<std::uint32_t, name_channel_rel_t> channels_;
         };
     } // namespace ipt
 } // namespace smf

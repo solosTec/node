@@ -99,7 +99,7 @@ namespace smf {
 
             auto const choice = cyng::container_cast<cyng::tuple_t>(obj);
             if (choice.empty())
-                return cyng::make_object();
+                return cyng::make_object(std::chrono::system_clock::from_time_t(0u));
 
             BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
             if (choice.size() == 2) {

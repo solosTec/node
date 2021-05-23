@@ -16,7 +16,7 @@
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
 
-#ifdef _DEBUG
+#ifdef _DEBUG_IPT
 #include <cyng/io/hex_dump.hpp>
 #include <iostream>
 #include <smf/sml/unpack.h>
@@ -52,9 +52,10 @@ namespace smf {
             , parser_(tgl_.get().sk_, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), cb_stream)
             , buffer_write_()
             , input_buffer_()
-            , registrant_()
+            , pending_targets_()
             , targets_()
-            , pending_channel_() {}
+            , pending_channel_()
+            , channels_() {}
 
         bus::~bus() {}
 
@@ -96,7 +97,7 @@ namespace smf {
                 boost::system::error_code ignored_ec;
                 socket_.close(ignored_ec);
                 timer_.cancel();
-                registrant_.clear();
+                pending_targets_.clear();
                 targets_.clear();
                 pending_channel_.clear();
                 parser_.clear();
@@ -244,7 +245,7 @@ namespace smf {
                 logger_,
                 "ipt [" << tgl_.get() << "] write #" << buffer_write_.size() << ": " << buffer_write_.front().size() << " bytes");
 
-#ifdef _DEBUG
+#ifdef _DEBUG_IPT
             {
                 std::stringstream ss;
                 cyng::io::hex_dump<8> hd;
@@ -268,7 +269,7 @@ namespace smf {
                 CYNG_LOG_DEBUG(logger_, "ipt [" << tgl_.get() << "] received " << n << " bytes " << socket_.remote_endpoint());
 
                 auto const data = parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
-#ifdef _DEBUG
+#ifdef _DEBUG_IPT
                 {
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
@@ -348,6 +349,11 @@ namespace smf {
                 pushdata_transfer(h, std::move(body));
                 break;
             case code::TP_RES_PUSHDATA_TRANSFER:
+                //
+                // ToDo: dispatch to channel owner
+                //
+                // std::tuple<std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t, cyng::buffer_t>
+                // tp_req_pushdata_transfer(cyng::buffer_t &&data);
                 cb_cmd_(h, std::move(body));
                 break;
             case code::TP_REQ_OPEN_CONNECTION:
@@ -461,14 +467,13 @@ namespace smf {
                     bool const b = buffer_write_.empty();
                     auto r = serializer_.req_register_push_target(
                         name,
-                        std::numeric_limits<std::uint16_t>::max() //	0xffff
-                        ,
+                        std::numeric_limits<std::uint16_t>::max(), //	0xffff
                         1);
 
                     //
                     //	send register command to ip-t server
                     //
-                    registrant_.emplace(r.second, std::make_pair(name, wp));
+                    pending_targets_.emplace(r.second, std::make_pair(name, wp));
                     buffer_write_.push_back(r.first);
 
                     //
@@ -485,11 +490,11 @@ namespace smf {
             return false;
         }
 
-        bool bus::open_channel(push_channel pcc) {
+        bool bus::open_channel(push_channel pcc, cyng::channel_weak wp) {
 
             if (!pcc.target_.empty()) {
 
-                boost::asio::post(dispatcher_, [this, pcc]() {
+                boost::asio::post(dispatcher_, [this, pcc, wp]() {
                     bool const b = buffer_write_.empty();
                     auto r = serializer_.req_open_push_channel(
                         pcc.target_, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
@@ -501,9 +506,9 @@ namespace smf {
                     //
                     //  update list of pending channel openings
                     //
-                    pending_channel_.emplace(r.second, pcc.target_);
+                    pending_channel_.emplace(r.second, std::make_pair(pcc, wp));
 
-#ifdef _DEBUG
+#ifdef __DEBUG_IPT
                     {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;
@@ -552,13 +557,24 @@ namespace smf {
                             logger_,
                             "[ipt] cmd " << ipt::command_name(h.command_) << ": "
                                          << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
-                                         << source << ":" << pos->second);
+                                         << source << ":" << pos->second.first.target_);
+
+                        auto sp = pos->second.second.lock();
+                        if (sp) {
+                            //
+                            //  update channels list
+                            //
+                            channels_.emplace(channel, std::move(pos->second));
+
+                            sp->dispatch("channel.open", channel, source, count, pos->second.first.target_);
+                        }
+
                     } else {
                         CYNG_LOG_WARNING(
                             logger_,
                             "[ipt] cmd " << ipt::command_name(h.command_) << ": "
                                          << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
-                                         << source << ":" << pos->second);
+                                         << source << ":" << pos->second.first.target_);
                     }
 
                     //
@@ -582,8 +598,8 @@ namespace smf {
             //	sync with strand
             //
             boost::asio::post(dispatcher_, [this, h, res, channel]() {
-                auto const pos = registrant_.find(h.sequence_);
-                if (pos != registrant_.end()) {
+                auto const pos = pending_targets_.find(h.sequence_);
+                if (pos != pending_targets_.end()) {
 
                     CYNG_LOG_INFO(
                         logger_,
@@ -610,13 +626,13 @@ namespace smf {
                     //
                     //	cleanup list
                     //
-                    registrant_.erase(pos);
+                    pending_targets_.erase(pos);
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing registrant");
                 }
             });
 
-#ifdef _DEBUG
+#ifdef __DEBUG_IPT
             //
             //  list all registered targets
             //
@@ -651,7 +667,7 @@ namespace smf {
                     if (sp) {
                         if (pos->second.first.empty()) {
                             CYNG_LOG_WARNING(logger_, "[ipt] target " << channel << ':' << source << " without name");
-#ifdef _DEBUG
+#ifdef _DEBUG_IPT
                             //
                             //  list all registered targets
                             //
@@ -676,7 +692,7 @@ namespace smf {
                 }
             });
 
-#ifdef _DEBUG
+#ifdef _DEBUG_IPT
             //
             //  list all registered targets
             //
@@ -719,6 +735,24 @@ namespace smf {
                     seq,
                     tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
             }
+        }
+
+        void bus::transmit(std::pair<std::uint32_t, std::uint32_t> id, cyng::buffer_t data) {
+            //  status = 0xc1
+            CYNG_LOG_TRACE(logger_, "[ipt] push " << data.size() << " bytes over channel " << id.first << ':' << id.second);
+#ifdef _DEBUG_IPT
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, data.begin(), data.end());
+                CYNG_LOG_DEBUG(
+                    logger_,
+                    "[ipt] write " << data.size() << " bytes over channel " << id.first << ':' << id.second << ":\n"
+                                   << ss.str());
+            }
+#endif
+
+            send(std::bind(&serializer::req_transfer_push_data, &serializer_, id.first, id.second, 0xc1, 0, data));
         }
 
     } // namespace ipt
