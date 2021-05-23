@@ -134,6 +134,7 @@ namespace smf {
                                    //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
                                    //  garble data from wMBus broker to oen a second channel when scrambling is active
                     }
+#ifdef _DEBUG_IPT
                     {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;
@@ -145,6 +146,7 @@ namespace smf {
                                 << ipt::to_string(parser_.get_sk()) << "@" << parser_.get_scrambler_index() << " ip-t data:\n"
                                 << ss.str());
                     }
+#endif
                     //
                     //	let parse it
                     //
