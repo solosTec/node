@@ -30,7 +30,7 @@ namespace smf {
         std::string const &protocol,
         std::string const &cert,
         std::string const &db)
-        : sigs_{std::bind(&sml_influx_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), std::bind(&sml_influx_writer::close_response, this), std::bind(&sml_influx_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7), std::bind(&sml_influx_writer::get_proc_parameter_response, this), std::bind(&sml_influx_writer::stop, this, std::placeholders::_1)}
+        : sigs_{std::bind(&sml_influx_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), std::bind(&sml_influx_writer::close_response, this), std::bind(&sml_influx_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6), std::bind(&sml_influx_writer::get_proc_parameter_response, this), std::bind(&sml_influx_writer::stop, this, std::placeholders::_1)}
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger)
@@ -63,7 +63,6 @@ namespace smf {
         std::string trx,
         cyng::buffer_t server_id,
         cyng::object act_time,
-        std::uint32_t reg_period, //    seconds
         std::uint32_t status,
         cyng::obis_path_t path,
         cyng::param_map_t values) {
@@ -73,7 +72,7 @@ namespace smf {
             auto const profile = obis::to_str_vector(path, true).at(0);
             CYNG_LOG_TRACE(logger_, "[sml.influx] get_profile_list_response #" << values.size() << ": " << profile);
 
-            send_write_stmt(profile, server_id, act_time, reg_period, status, values);
+            send_write_stmt(profile, server_id, act_time, /*reg_period, */ status, values);
 
         } else {
             CYNG_LOG_WARNING(logger_, "[sml.influx] get_profile_list_response - invalid path size: " << path.size());
@@ -85,7 +84,7 @@ namespace smf {
         std::string profile,
         cyng::buffer_t server_id,
         cyng::object actTime,
-        std::uint32_t reg_period,
+        // std::uint32_t reg_period,
         std::uint32_t status,
         cyng::param_map_t const &pmap) {
 
@@ -103,8 +102,7 @@ namespace smf {
             //	tags:
             //  tags are indexd
             //
-            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first
-               << ",meter=" << get_id(srv_id) << ",area=unknown";
+            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first << ",area=unknown";
 
             //
             //   space separator
@@ -115,7 +113,7 @@ namespace smf {
             //	fields:
             //  fields are not indexed
             //
-            ss << "status=" << status << ",reg_period=" << reg_period;
+            ss << "status=" << status << ",meter=\"" << get_id(srv_id) << "\"";
 
             auto const readout = cyng::container_cast<cyng::param_map_t>(v.second);
             for (auto const &val : readout) {

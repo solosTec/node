@@ -25,7 +25,7 @@ namespace smf {
                 std::string,
                 cyng::buffer_t,
                 cyng::object,
-                std::uint32_t,
+                // std::uint32_t,
                 std::uint32_t,
                 cyng::obis_path_t,
                 cyng::param_map_t)>,
@@ -53,7 +53,6 @@ namespace smf {
             cyng::buffer_t,
             cyng::object,
             std::uint32_t,
-            std::uint32_t,
             cyng::obis_path_t,
             cyng::param_map_t);
         void get_proc_parameter_response();
@@ -62,7 +61,7 @@ namespace smf {
             std::string profile,
             cyng::buffer_t server_id,
             cyng::object actTime,
-            std::uint32_t reg_period,
+            // std::uint32_t reg_period,
             std::uint32_t status,
             cyng::param_map_t const &pmap);
 

@@ -149,7 +149,7 @@ namespace smf {
                     trx,
                     std::get<0>(r), //  [buffer_t] server id
                     std::get<1>(r), //  [cyng::object] actTime
-                    std::get<2>(r), //  [u32] regPeriod
+                    // std::get<2>(r), //  [u32] regPeriod
                     std::get<3>(r), //  [u32] status
                     std::get<4>(r), //  [obis_path_t] path
                     pmap            //  [std::map<cyng::obis, cyng::param_map_t>] values
@@ -202,7 +202,6 @@ namespace smf {
                     trx,
                     std::get<1>(r),                      //  [buffer_t] server id
                     std::chrono::system_clock::now(),    //  [cyng::object] actTime
-                    std::uint32_t(0),                    //  [u32] regPeriod
                     std::uint32_t(0),                    //  [u32] status
                     cyng::obis_path_t({std::get<2>(r)}), //  [obis_path_t] path
                     pmap                                 //  [std::map<cyng::obis, cyng::param_map_t>] values
