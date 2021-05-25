@@ -687,7 +687,7 @@ namespace smf {
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
         auto const ep = cfg.get_ipv6_ep(nic);
-        if (!ep.is_unspecified()) {
+        if (!ep.address().is_unspecified()) {
             CYNG_LOG_INFO(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " << ep);
             //
             //  start listener
