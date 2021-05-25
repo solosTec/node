@@ -1,4 +1,5 @@
 # Format Style Options - Created with Clang Power Tools
+#AccessModifierOffset: 0
 ---
 AlignAfterOpenBracket: AlwaysBreak
 AllowAllParametersOfDeclarationOnNextLine: false

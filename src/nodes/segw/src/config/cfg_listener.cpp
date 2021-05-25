@@ -8,6 +8,8 @@
 #include <config/cfg_listener.h>
 #include <config/cfg_lmn.h>
 
+#include <cyng/sys/net.h>
+
 #include <cyng/obj/container_factory.hpp>
 
 namespace smf {
@@ -62,7 +64,31 @@ namespace smf {
     bool cfg_listener::has_login() const { return cfg_.get_value(login_path(get_index()), false); }
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
+
     std::string cfg_listener::get_nic() const { return cfg_.get_value(nic_path(get_index()), "ens33"); }
+
+    boost::asio::ip::tcp::endpoint get_ipv6_ep(std::string nic) {
+        auto const pres = cyng::sys::get_nic_prefix();
+        auto const pos = std::find(pres.begin(), pres.end(), nic);
+
+        if (pos != pres.end()) {
+
+            //  this is something like: fe80::225:18ff:fea4:9982%32
+            std::string local_address_with_scope = cyng::sys::get_address_IPv6(nic, cyng::sys::LINKLOCAL).to_string();
+
+            //
+            //  substitute %nn with % nic
+            //
+            auto const pos = local_address_with_scope.find_last_of('%');
+            if (pos != std::string::npos) {
+                local_address_with_scope = local_address_with_scope.substr(0, pos + 1) + nic;
+
+                return boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(local_address_with_scope), cfg.get_port());
+            }
+        }
+
+        return boost::asio::ip::tcp::endpoint();
+    }
 #endif
 
     bool cfg_listener::set_address(std::string address) const { return cfg_.set_value(address_path(get_index()), address); }

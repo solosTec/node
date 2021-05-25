@@ -38,40 +38,32 @@
 
 namespace smf {
 
-    bridge::bridge(cyng::channel_weak wp
-		, cyng::controller& ctl
-		, cyng::logger logger
-		, cyng::db::session db)
-	: sigs_{
-		std::bind(&bridge::stop, this, std::placeholders::_1),
-		std::bind(&bridge::start, this),
-	}	, channel_(wp)
-		, ctl_(ctl)
-		, logger_(logger)
-		, db_(db)
-		, storage_(db_)
-		, cache_()
-		, cfg_(logger, cache_)
-		, fabric_(ctl)
-		, router_(ctl, cfg_, logger)
-		, sml_(ctl, cfg_, logger)
-		, redir_ipv4_{ { 
-				//	the array index is repeated in the LMN type.
-				//	don't change this.
-			{ctl, cfg_, logger, lmn_type::WIRELESS}, 
-			{ctl, cfg_, logger, lmn_type::WIRED} 
-			} }
-        , redir_ipv6_{ { 
-				//	the array index is repeated in the LMN type.
-				//	don't change this.
-			{ctl, cfg_, logger, lmn_type::WIRELESS}, 
-			{ctl, cfg_, logger, lmn_type::WIRED} 
-			} }
-        , stash_(ctl.get_ctx())
-	{
+    bridge::bridge(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cyng::db::session db)
+        : sigs_{std::bind(&bridge::start, this), std::bind(&bridge::rdr_activity, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), std::bind(&bridge::stop, this, std::placeholders::_1)}
+        , channel_(wp)
+        , ctl_(ctl)
+        , logger_(logger)
+        , db_(db)
+        , storage_(db_)
+        , cache_()
+        , cfg_(logger, cache_)
+        , fabric_(ctl)
+        , router_(ctl, cfg_, logger)
+        , sml_(ctl, cfg_, logger)
+        , redir_ipv4_{{//	the array index is repeated in the LMN type.
+                       //	don't change this.
+                       {ctl, cfg_, logger, lmn_type::WIRELESS, rdr::server::type::ipv4},
+                       {ctl, cfg_, logger, lmn_type::WIRED, rdr::server::type::ipv4}}}
+        , redir_ipv6_{{//	the array index is repeated in the LMN type.
+                       //	don't change this.
+                       {ctl, cfg_, logger, lmn_type::WIRELESS, rdr::server::type::ipv6},
+                       {ctl, cfg_, logger, lmn_type::WIRED, rdr::server::type::ipv6}}}
+        , stash_(ctl.get_ctx()) {
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("start", 1);
+            std::size_t slot{0};
+            sp->set_channel_name("start", slot++);
+            sp->set_channel_name("rdr.activity", slot++);
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
 
@@ -694,36 +686,13 @@ namespace smf {
     void bridge::init_redirector_ipv6(cfg_listener const &cfg, std::string nic) {
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-        auto const pres = cyng::sys::get_nic_prefix();
-        auto const pos = std::find(pres.begin(), pres.end(), nic);
-
-        if (pos != pres.end()) {
-            //  this is something like: fe80::225:18ff:fea4:9982%32
-            std::string local_address_with_scope = cyng::sys::get_address_IPv6(nic, cyng::sys::LINKLOCAL).to_string();
-            //            CYNG_LOG_TRACE(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " <<
-            //            local_address_with_scope);
-
+        auto const ep = cfg.get_ipv6_ep(nic);
+        if (!ep.is_unspecified()) {
+            CYNG_LOG_INFO(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " << ep);
             //
-            //  substitute %nn with % br0
+            //  start listener
             //
-            auto const pos = local_address_with_scope.find_last_of('%');
-            if (pos != std::string::npos) {
-                local_address_with_scope = local_address_with_scope.substr(0, pos + 1) + nic;
-                // CYNG_LOG_INFO(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " << local_address_with_scope);
-
-                auto const ep =
-                    boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(local_address_with_scope), cfg.get_port());
-                CYNG_LOG_INFO(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " << ep);
-
-                //
-                //  start listener
-                //
-                redir_ipv6_.at(cfg.get_index()).start(ep);
-
-            } else {
-                CYNG_LOG_WARNING(
-                    logger_, "listener for port [" << cfg.get_port_name() << "] invalid address: " << local_address_with_scope);
-            }
+            redir_ipv6_.at(cfg.get_index()).start(ep);
         } else {
             CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] \"" << nic << "\" is not present");
         }
@@ -745,6 +714,49 @@ namespace smf {
 #endif
         } else {
             CYNG_LOG_TRACE(logger_, "[redirector] not running");
+        }
+    }
+
+    void bridge::rdr_activity(std::uint64_t counter, std::uint8_t port_type, std::uint8_t srv_type) {
+
+        //
+        //  check plausibility
+        //
+        BOOST_ASSERT(port_type < 2);
+        if (port_type > 1) {
+            CYNG_LOG_ERROR(logger_, "[rdr] invalid port type value " << +port_type);
+            return;
+        }
+
+        auto type = static_cast<lmn_type>(port_type);
+        CYNG_LOG_TRACE(logger_, "[rdr] activity at " << get_name(type) << " interface - #" << counter << " session(s) online");
+
+        switch (static_cast<rdr::server::type>(srv_type)) {
+        case rdr::server::type::ipv4:
+            if (counter == 1) {
+                CYNG_LOG_INFO(logger_, "[rdr] stop IPv6 listener on " << get_name(type) << " interface");
+                redir_ipv6_[port_type].stop();
+            } else if (counter == 0) {
+                CYNG_LOG_INFO(logger_, "[rdr] start IPv6 listener on " << get_name(type) << " interface");
+                cfg_listener cfg(cfg_, type);
+                //
+                //  start IPv6 listener (if available)
+                //
+                init_redirector_ipv6(cfg, "br0");
+            }
+            break;
+        case rdr::server::type::ipv6:
+            if (counter == 1) {
+                CYNG_LOG_INFO(logger_, "[rdr] stop IPv4 listener on " << get_name(type) << " interface");
+                redir_ipv4_[port_type].stop();
+            } else if (counter == 0) {
+                CYNG_LOG_INFO(logger_, "[rdr] start IPv4 listener on " << get_name(type) << " interface");
+                cfg_listener cfg(cfg_, type);
+                redir_ipv4_.at(get_index(type)).start(cfg.get_ep());
+            }
+            break;
+        default:
+            break;
         }
     }
 

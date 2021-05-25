@@ -34,7 +34,10 @@ namespace smf {
     class bridge {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void(cyng::eod)>, std::function<void()>>;
+        using signatures_t = std::tuple<
+            std::function<void()>,
+            std::function<void(std::uint64_t, std::uint8_t, std::uint8_t)>,
+            std::function<void(cyng::eod)>>;
 
       public:
         bridge(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cyng::db::session);
@@ -90,6 +93,15 @@ namespace smf {
         void init_redirector_ipv6(cfg_listener const &cfg, std::string nic);
         void stop_redirectors();
         void stop_redirector(lmn_type);
+
+        //
+        //  state management
+        //
+
+        /**
+         * listener/redirector signals new or closed session
+         */
+        void rdr_activity(std::uint64_t, std::uint8_t, std::uint8_t);
 
       private:
         signatures_t sigs_;
