@@ -675,7 +675,7 @@ namespace smf {
             //  In future version the NIC name is part of the configuration.
             //  So it's possible to use other NICs than br0
             //
-            //            init_redirector_ipv6(cfg, "eth2");
+            //init_redirector_ipv6(cfg, "eth2");
             init_redirector_ipv6(cfg, "br0");
 
         } else {
