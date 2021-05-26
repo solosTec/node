@@ -20,6 +20,7 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/vector_cast.hpp>
+#include <cyng/parse/duration.h>
 #include <cyng/parse/string.h>
 #include <cyng/sql/sql.hpp>
 
@@ -645,6 +646,15 @@ namespace smf {
                     cyng::to_path(cfg::sep, "listener", std::to_string(counter), listener.first),
                     cyng::make_object(address),
                     "default listener bind address " + address.to_string());
+            } else if (boost::algorithm::equals(listener.first, "delay")) {
+                auto const inp = cyng::value_cast(listener.second, "00:00:12.000000");
+                auto const delay = cyng::to_seconds(inp);
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "listener", std::to_string(counter), listener.first),
+                    cyng::make_object(delay),
+                    "default startup delay " + inp);
+
             } else {
                 insert_config_record(
                     stmt,

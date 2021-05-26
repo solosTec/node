@@ -42,8 +42,9 @@ set (segw_tasks
     include/tasks/CP210x.h
     include/tasks/persistence.h
     include/tasks/filter.h
-    include/tasks/redirector.h
+    include/tasks/forwarder.h
     include/tasks/nms.h
+    include/tasks/rdr.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
@@ -51,8 +52,9 @@ set (segw_tasks
     src/tasks/CP210x.cpp
     src/tasks/persistence.cpp
     src/tasks/filter.cpp
-    src/tasks/redirector.cpp
+    src/tasks/forwarder.cpp
     src/tasks/nms.cpp
+    src/tasks/rdr.cpp
 )
 
 set (segw_config
@@ -95,9 +97,9 @@ set (segw_nms
 )
 
 set (segw_redirector
-    include/redirector/server.h
+#    include/redirector/server.h
     include/redirector/session.h
-    src/redirector/server.cpp
+#    src/redirector/server.cpp
     src/redirector/session.cpp
 )
 

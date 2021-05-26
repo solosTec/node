@@ -297,9 +297,9 @@ namespace smf {
             cyng::tuple_factory(
                 cyng::make_param("address", "0.0.0.0"),
                 cyng::make_param("port", 6006),
-                cyng::make_param("login", false),  //	request login
-                cyng::make_param("enabled", true), //	start rs485 server
-                cyng::make_param("timeout", std::chrono::seconds(30))));
+                cyng::make_param("login", false),                      //	request login
+                cyng::make_param("enabled", true),                     //	start rs485 server
+                cyng::make_param("delay", std::chrono::seconds(30)))); //	startup delay
     }
 
     cyng::param_t controller::create_rs485_block_list() const {

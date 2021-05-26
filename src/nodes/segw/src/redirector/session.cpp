@@ -6,7 +6,7 @@
  */
 
 #include <redirector/session.h>
-#include <tasks/redirector.h>
+#include <tasks/forwarder.h>
 
 #include <cyng/log/record.h>
 #include <cyng/task/controller.h>
@@ -28,7 +28,7 @@ namespace smf {
             //
             //	start receiver task
             //
-            channel_ = ctl.create_named_channel_with_ref<redirector>(
+            channel_ = ctl.create_named_channel_with_ref<forwarder>(
                 "redirector", registry_, logger_, std::bind(&session::do_write, this, std::placeholders::_1));
             BOOST_ASSERT(channel_->is_open());
 
@@ -81,6 +81,7 @@ namespace smf {
                         do_read();
                     } else {
                         CYNG_LOG_WARNING(logger_, "[RDR] session " << port_name << " stopped: " << ec.message());
+                        channel_->stop();
                     }
                 });
         }

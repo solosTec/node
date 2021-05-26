@@ -4,8 +4,8 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_SEGW_TASK_REDIRECTOR_H
-#define SMF_SEGW_TASK_REDIRECTOR_H
+#ifndef SMF_SEGW_TASK_FORWARDER_H
+#define SMF_SEGW_TASK_FORWARDER_H
 
 #include <cfg.h>
 #include <config/cfg_gpio.h>
@@ -23,7 +23,7 @@ namespace smf {
      * Receive data from LMN/filter and forward this data
      * to the listener session
      */
-    class redirector {
+    class forwarder {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
@@ -34,7 +34,7 @@ namespace smf {
         using cb_f = std::function<void(cyng::buffer_t)>;
 
       public:
-        redirector(cyng::channel_weak, cyng::registry &reg, cyng::logger, cb_f);
+        forwarder(cyng::channel_weak, cyng::registry &reg, cyng::logger, cb_f);
 
       private:
         void stop(cyng::eod);

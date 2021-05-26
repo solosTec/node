@@ -9,7 +9,6 @@
 
 #include <cfg.h>
 #include <config/cfg_lmn.h>
-#include <redirector/server.h>
 #include <router.h>
 #include <sml/server.h>
 #include <storage.h>
@@ -34,10 +33,7 @@ namespace smf {
     class bridge {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<
-            std::function<void()>,
-            std::function<void(std::uint64_t, std::uint8_t, std::uint8_t)>,
-            std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<std::function<void()>, std::function<void(cyng::eod)>>;
 
       public:
         bridge(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cyng::db::session);
@@ -94,15 +90,6 @@ namespace smf {
         void stop_redirectors();
         void stop_redirector(lmn_type);
 
-        //
-        //  state management
-        //
-
-        /**
-         * listener/redirector signals new or closed session
-         */
-        void rdr_activity(std::uint64_t, std::uint8_t, std::uint8_t);
-
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
@@ -115,8 +102,6 @@ namespace smf {
         cyng::mesh fabric_;
         router router_; //	SML router (incl. ip-t bus)
         sml::server sml_;
-        std::array<rdr::server, 2> redir_ipv4_;
-        std::array<rdr::server, 2> redir_ipv6_;
         cyng::stash stash_;
     };
 } // namespace smf

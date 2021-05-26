@@ -34,6 +34,13 @@ namespace smf {
         std::string get_port_name() const;
 
         /**
+         * Each set of listener tasks for the same serial port
+         * share the same task name.
+         * Format: <lmn-type-name> <:> <port-name>
+         */
+        std::string get_task_name() const;
+
+        /**
          * A broker without an active LMN is virtually useless.
          * This method helps to detect such a misconfiguration.
          */
@@ -41,9 +48,9 @@ namespace smf {
 
         boost::asio::ip::address get_address() const;
         std::uint16_t get_port() const;
-        std::chrono::seconds get_timeout() const;
+        std::chrono::seconds get_delay() const;
 
-        boost::asio::ip::tcp::endpoint get_ep() const;
+        boost::asio::ip::tcp::endpoint get_ipv4_ep() const;
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
         std::string get_nic() const;
@@ -55,7 +62,7 @@ namespace smf {
 
         bool set_login(bool) const;
         bool set_enabled(bool) const;
-        bool set_timeout(std::chrono::seconds) const;
+        bool set_delay(std::chrono::seconds) const;
 
         constexpr static char root[] = "listener";
 

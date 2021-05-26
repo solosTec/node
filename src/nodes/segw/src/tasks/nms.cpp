@@ -48,7 +48,7 @@ namespace smf {
                 acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
             }
             if (!ec) {
-                CYNG_LOG_TRACE(logger_, "[NMS] server running: " << ep);
+                CYNG_LOG_TRACE(logger_, "[NMS] starts listening at: " << ep);
                 do_accept();
             } else {
                 CYNG_LOG_WARNING(logger_, "[NMS] server cannot start listening at " << ep << ": " << ec.message());
