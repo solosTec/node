@@ -98,7 +98,8 @@ namespace smf {
                 std::stringstream ss;
                 cyng::io::hex_dump<8> hd;
                 hd(ss, data.begin(), data.end());
-                CYNG_LOG_TRACE(logger_, "[sml] " << target << " recived " << data.size() << " bytes:\n" << ss.str());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(logger_, "[sml] " << target << " recived " << data.size() << " bytes:\n" << dmp);
             }
             parser_.read(std::begin(data), std::end(data));
 

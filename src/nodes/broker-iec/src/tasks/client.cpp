@@ -281,7 +281,8 @@ namespace smf {
                 std::stringstream ss;
                 cyng::io::hex_dump<8> hd;
                 hd(ss, input_buffer_.data(), input_buffer_.data() + bytes_transferred);
-                CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes:\n" << ss.str());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes:\n" << dmp);
             }
             //#endif
 

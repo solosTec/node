@@ -139,12 +139,13 @@ namespace smf {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;
                         hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+                        auto const dmp = ss.str();
 
                         CYNG_LOG_DEBUG(
                             logger_,
                             "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes scrambled "
                                 << ipt::to_string(parser_.get_sk()) << "@" << parser_.get_scrambler_index() << " ip-t data:\n"
-                                << ss.str());
+                                << dmp);
                     }
 #endif
                     //
@@ -156,10 +157,11 @@ namespace smf {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;
                         hd(ss, data.begin(), data.end());
+                        auto const dmp = ss.str();
                         CYNG_LOG_DEBUG(
                             logger_,
                             "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes (unscrambled) ip-t data:\n"
-                                << ss.str());
+                                << dmp);
                     }
 #endif
 
@@ -289,7 +291,8 @@ namespace smf {
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
                     hd(ss, body.begin(), body.end());
-                    CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] <-- incoming push data:\n" << ss.str());
+                    auto const dmp = ss.str();
+                    CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] <-- incoming push data:\n" << dmp);
                 }
 #endif
                 auto const [channel, source, status, block, data] = ipt::tp_req_pushdata_transfer(std::move(body));
@@ -473,7 +476,8 @@ namespace smf {
             std::stringstream ss;
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
-            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] " << data.size() << " stream bytes:\n" << ss.str());
+            auto const dmp = ss.str();
+            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] " << data.size() << " stream bytes:\n" << dmp);
         }
 #endif
         if (cluster_bus_.is_connected()) {
@@ -596,7 +600,8 @@ namespace smf {
             std::stringstream ss;
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
-            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] --> outgoing push data:\n" << ss.str());
+            auto const dmp = ss.str();
+            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] --> outgoing push data:\n" << dmp);
         }
 #endif
         std::uint8_t status = 0;
@@ -727,7 +732,8 @@ namespace smf {
             std::stringstream ss;
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
-            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] emit " << data.size() << " bytes:\n" << ss.str());
+            auto const dmp = ss.str();
+            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] emit " << data.size() << " bytes:\n" << dmp);
         }
 #endif
         cyng::exec(vm_, [this, data]() {

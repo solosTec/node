@@ -96,10 +96,11 @@ namespace smf {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;
                         hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+                        auto const dmp = ss.str();
                         CYNG_LOG_DEBUG(
                             logger_,
                             "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes wM-Bus data:\n"
-                                << ss.str());
+                                << dmp);
                     }
 #endif
 

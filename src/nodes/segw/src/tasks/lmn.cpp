@@ -173,11 +173,9 @@ namespace smf {
                 if (cfg_.is_hex_dump()) {
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
+                    auto const dmp = ss.str();
                     hd(ss, std::begin(buffer_), std::begin(buffer_) + bytes_transferred);
-                    CYNG_LOG_TRACE(
-                        logger_,
-                        "[" << cfg_.get_port() << "] received " << bytes_transferred << " bytes:\n"
-                            << ss.str());
+                    CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] received " << bytes_transferred << " bytes:\n" << dmp);
                 }
 
                 //

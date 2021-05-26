@@ -250,7 +250,8 @@ namespace smf {
                 std::stringstream ss;
                 cyng::io::hex_dump<8> hd;
                 hd(ss, buffer_write_.front().begin(), buffer_write_.front().end());
-                CYNG_LOG_DEBUG(logger_, "[ipt] write #" << buffer_write_.size() << ":\n" << ss.str());
+                auto const dmp = ss.str();
+                CYNG_LOG_DEBUG(logger_, "[ipt] write #" << buffer_write_.size() << ":\n" << dmp);
             }
 #endif
 
@@ -274,10 +275,11 @@ namespace smf {
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
                     hd(ss, data.begin(), data.end());
+                    auto const dmp = ss.str();
                     CYNG_LOG_DEBUG(
                         logger_,
                         "received " << n << " bytes ipt data from [" << socket_.remote_endpoint() << "]:\n"
-                                    << ss.str());
+                                    << dmp);
                 }
 #endif
 
@@ -513,11 +515,12 @@ namespace smf {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;
                         hd(ss, r.first.begin(), r.first.end());
+                        auto const dmp = ss.str();
                         CYNG_LOG_DEBUG(
                             logger_,
                             "[" << +r.second << "] open channel " << pcc.target_ << " sk = " << to_string(serializer_.get_sk())
                                 << "@" << serializer_.get_scrambler_index() << ":\n"
-                                << ss.str());
+                                << dmp);
                     }
 #endif
 
@@ -745,10 +748,11 @@ namespace smf {
                 std::stringstream ss;
                 cyng::io::hex_dump<8> hd;
                 hd(ss, data.begin(), data.end());
+                auto const dmp = ss.str();
                 CYNG_LOG_DEBUG(
                     logger_,
                     "[ipt] write " << data.size() << " bytes over channel " << id.first << ':' << id.second << ":\n"
-                                   << ss.str());
+                                   << dmp);
             }
 #endif
 
