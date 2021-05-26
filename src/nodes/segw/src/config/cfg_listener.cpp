@@ -56,7 +56,7 @@ namespace smf {
     }
 
     std::chrono::seconds cfg_listener::get_delay() const {
-        return cfg_.get_value(delay_path(get_index()), std::chrono::seconds(30));
+        return cfg_.get_value(delay_path(get_index()), std::chrono::seconds(20));
     }
 
     boost::asio::ip::tcp::endpoint cfg_listener::get_ipv4_ep() const { return {get_address(), get_port()}; }

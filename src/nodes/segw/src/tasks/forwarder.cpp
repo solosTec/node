@@ -20,9 +20,9 @@ namespace smf {
 		, cyng::logger logger
 		, cb_f cb)
 	: sigs_{
-			std::bind(&forwarder::stop, this, std::placeholders::_1),	//	0
 			std::bind(&forwarder::start, this, std::placeholders::_1),	//	1
-			std::bind(&forwarder::receive, this, std::placeholders::_1)	//	2
+			std::bind(&forwarder::receive, this, std::placeholders::_1),	//	2
+			std::bind(&forwarder::stop, this, std::placeholders::_1)	//	0
 	}
 		, channel_(wp)
 		, registry_(reg)
@@ -31,8 +31,9 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("start", 1);
-            sp->set_channel_name("receive", 2);
+	        std::size_t slot{0};
+            sp->set_channel_name("start", slot++);
+            sp->set_channel_name("receive", slot++);
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
     }

@@ -363,11 +363,19 @@ namespace smf {
             } else {
 
                 //
+                //	prepare broker to distribute data received
+                //  from this serial port
+                //
+                auto const name = blocklist.get_task_name();
+
+                auto const targets = ctl_.get_registry().lookup(name);
+                CYNG_LOG_TRACE(logger_, "reset-target-channels -> [" << port << "]: " << targets.size() << " x " << name );
+                //channel->dispatch("reset-target-channels", cyng::make_tuple(name));
+
+                //
                 //	open serial port
                 //
-                // channel->dispatch("reset-target-channels",
-                // cyng::make_tuple(cfg.get_task_name()));
-                channel->dispatch("reset-target-channels", cyng::make_tuple(blocklist.get_task_name()));
+                CYNG_LOG_TRACE(logger_, "open -> [" << port << "]");
                 channel->dispatch("open", cyng::make_tuple());
             }
 
@@ -678,8 +686,8 @@ namespace smf {
             //  In future version the NIC name is part of the configuration.
             //  So it's possible to use other NICs than br0
             //
-            //init_redirector_ipv6(cfg, "eth2");
-            init_redirector_ipv6(cfg, "br0");
+            init_redirector_ipv6(cfg, "eth2");
+            //init_redirector_ipv6(cfg, "br0");
 
         } else {
             CYNG_LOG_WARNING(logger_, "IPv4 listener for port [" << cfg.get_port_name() << "] is not enabled");

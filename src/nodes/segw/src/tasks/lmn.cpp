@@ -23,7 +23,6 @@ namespace smf {
 		, cfg& c
 		, lmn_type type)
 		: sigs_{
-			std::bind(&lmn::stop, this, std::placeholders::_1),
 			std::bind(&lmn::open, this),
 			std::bind(&lmn::do_write, this, std::placeholders::_1),
 			std::bind(&lmn::reset_target_channels, this, std::placeholders::_1),
@@ -32,7 +31,8 @@ namespace smf {
 			std::bind(&lmn::set_flow_control, this, std::placeholders::_1),	//	6
 			std::bind(&lmn::set_stopbits, this, std::placeholders::_1),		//	7
 			std::bind(&lmn::set_databits, this, std::placeholders::_1),		//	8
-			std::bind(&lmn::update_statistics, this)	//	9
+			std::bind(&lmn::update_statistics, this),	//	9
+			std::bind(&lmn::stop, this, std::placeholders::_1)
 		}	
 		, channel_(wp)
 		, ctl_(ctl)
@@ -47,19 +47,18 @@ namespace smf {
 	{
 		auto sp = channel_.lock();
 		if (sp) {
-			sp->set_channel_name("open", 1);
-			sp->set_channel_name("write", 2);
-			sp->set_channel_name("reset-target-channels", 3);
-			sp->set_channel_name("set-baud-rate", 4);
-			sp->set_channel_name("set-parity", 5);
-			sp->set_channel_name("set-flow-control", 6);
-			sp->set_channel_name("set-stopbits", 7);
-			sp->set_channel_name("set-databits", 8);
-			sp->set_channel_name("update-statistics", 9);
-			CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
+			std::size_t slot{0};
+			sp->set_channel_name("open", slot++);
+			sp->set_channel_name("write", slot++);
+			sp->set_channel_name("reset-target-channels", slot++);
+			sp->set_channel_name("set-baud-rate", slot++);
+			sp->set_channel_name("set-parity", slot++);
+			sp->set_channel_name("set-flow-control", slot++);
+			sp->set_channel_name("set-stopbits", slot++);
+			sp->set_channel_name("set-databits", slot++);
+			sp->set_channel_name("update-statistics", slot++);
+			CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
 		}
-
-		CYNG_LOG_INFO(logger_, "LMN " << cfg_.get_port() << " ready");
 	}
 
 	void lmn::stop(cyng::eod) {
@@ -71,12 +70,13 @@ namespace smf {
 
 	void lmn::open() {
 		auto const port = cfg_.get_port();
-		CYNG_LOG_INFO(logger_, "open LMN " << port);
 
 		boost::system::error_code ec;
 		if (!port_.is_open()) {
 			port_.open(port, ec);
 			if (!ec) {
+
+				CYNG_LOG_INFO(logger_, "[" << port << "] is open");
 
 				//
 				//	set options
@@ -94,12 +94,10 @@ namespace smf {
 
 			}
 			else {
-				CYNG_LOG_ERROR(logger_, "cannot open port ["
-					<< port
-					<< "] - "
-					<< ec.message());
-
+				CYNG_LOG_ERROR(logger_, "[" << port << "] cannot open: " << ec.message());
 			}
+		} else {
+			CYNG_LOG_ERROR(logger_, "[" << port << "] already open");
 		}
 	}
 
@@ -137,6 +135,7 @@ namespace smf {
 	}
 
 	void lmn::reset_target_channels(std::string name) {
+		CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] lookup target: " << name);
 		targets_ = ctl_.get_registry().lookup(name);
 		CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] has " << targets_.size() << " x target(s) " << name);
 

@@ -28,7 +28,6 @@ namespace smf {
 		friend class cyng::task;
 
 		using signatures_t = std::tuple<
-			std::function<void(cyng::eod)>,
 			std::function<void()>,
 			std::function<void(cyng::buffer_t)>,
 			std::function<void(std::string)>,		//	reset_target_channels
@@ -37,7 +36,8 @@ namespace smf {
 			std::function<void(std::string)>,		//	set_flow_control
 			std::function<void(std::string)>,		//	set_stopbits
 			std::function<void(std::uint8_t)>,		//	set_databits
-			std::function<void()>					//	statistics
+			std::function<void()>,					//	statistics
+			std::function<void(cyng::eod)>
 		>;
 
 	public:
