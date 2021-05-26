@@ -55,10 +55,10 @@ namespace smf {
                 acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
             }
             if (!ec) {
-                CYNG_LOG_INFO(logger_, "[RDR] starts listening at " << ep_);
+                CYNG_LOG_INFO(logger_, "[RDR] " << get_name(type_) << " starts listening at " << ep_);
                 do_accept();
             } else {
-                CYNG_LOG_WARNING(logger_, "[RDR] server cannot start listening at " << ep_ << ": " << ec.message());
+                CYNG_LOG_WARNING(logger_, "[RDR] " << get_name(type_) << " server cannot start listening at " << ep_ << ": " << ec.message());
                 //
                 //  reset acceptor
                 //
@@ -74,7 +74,7 @@ namespace smf {
         void server::do_accept() {
             acceptor_.async_accept([this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
                 if (!ec) {
-                    CYNG_LOG_INFO(logger_, "[RDR] new session " << socket.remote_endpoint());
+                    CYNG_LOG_INFO(logger_, "[RDR] " << get_name(type_) << " new session " << socket.remote_endpoint());
 
                     auto sp = std::shared_ptr<session>(
                         new session(std::move(socket), registry_, cfg_, logger_, type_), [this](session *s) {
