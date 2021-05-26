@@ -349,28 +349,39 @@ namespace smf {
                 //
                 //	init CP210x
                 //
-                channel->dispatch("reset-target-channels", cyng::make_tuple("CP210x"));
-                channel->dispatch("open", cyng::make_tuple());
+                channel->dispatch("reset-target-channels");
+                channel->dispatch("add-target-channel", cyng::make_tuple("CP210x"));
+                channel->dispatch("open");
                 channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
 
                 //
                 //	CP210x will forward incoming data to filter
                 //
-
                 hci->dispatch("reset-target-channels", cyng::make_tuple(blocklist.get_task_name()));
-                // hci->dispatch("reset-target-channels",
-                // cyng::make_tuple(cfg.get_task_name()));
+
             } else {
 
                 //
                 //	prepare broker to distribute data received
                 //  from this serial port
                 //
-                auto const name = blocklist.get_task_name();
+                CYNG_LOG_TRACE(logger_, "reset-target-channels -> [" << port << "]");
+                channel->dispatch("reset-target-channels");
 
+                //
+                //  get a list of broker tasks
+                //
+                auto const name = blocklist.get_task_name();
                 auto const targets = ctl_.get_registry().lookup(name);
-                CYNG_LOG_TRACE(logger_, "reset-target-channels -> [" << port << "]: " << targets.size() << " x " << name );
-                //channel->dispatch("reset-target-channels", cyng::make_tuple(name));
+                for (auto const &target : targets) {
+                    CYNG_LOG_TRACE(logger_, "add-target-channel -> [" << port << "]: " << target);
+                    channel->dispatch("add-target-channel", target);
+                }
+
+                //
+                //  start LMN GPIO statistics
+                //
+                channel->suspend(std::chrono::seconds(1), "update-statistics", cyng::make_tuple());
 
                 //
                 //	open serial port
@@ -687,7 +698,7 @@ namespace smf {
             //  So it's possible to use other NICs than br0
             //
             init_redirector_ipv6(cfg, "eth2");
-            //init_redirector_ipv6(cfg, "br0");
+            // init_redirector_ipv6(cfg, "br0");
 
         } else {
             CYNG_LOG_WARNING(logger_, "IPv4 listener for port [" << cfg.get_port_name() << "] is not enabled");

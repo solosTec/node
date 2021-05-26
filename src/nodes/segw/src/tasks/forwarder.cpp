@@ -31,7 +31,7 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-	        std::size_t slot{0};
+            std::size_t slot{0};
             sp->set_channel_name("start", slot++);
             sp->set_channel_name("receive", slot++);
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
@@ -46,8 +46,10 @@ namespace smf {
         //
         CYNG_LOG_TRACE(logger_, "[redirector] registers als listener for [" << lmn_task_name << "]");
 
-        //	"reset-target-channels"
-        registry_.dispatch(lmn_task_name, "reset-target-channels", cyng::make_tuple("redirector"));
+        //
+        //  Add listener to LMN
+        //
+        registry_.dispatch(lmn_task_name, "add-target-channel", cyng::make_tuple("redirector"));
     }
 
     void forwarder::receive(cyng::buffer_t data) {
