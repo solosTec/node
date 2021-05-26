@@ -69,7 +69,7 @@ namespace smf {
 
     std::string cfg_listener::get_nic() const { return cfg_.get_value(nic_path(get_index()), "ens33"); }
 
-    boost::asio::ip::tcp::endpoint get_ipv6_ep(std::string nic) {
+    boost::asio::ip::tcp::endpoint cfg_listener::get_ipv6_ep(std::string nic) const {
         auto const pres = cyng::sys::get_nic_prefix();
         auto const pos = std::find(pres.begin(), pres.end(), nic);
 
@@ -85,7 +85,7 @@ namespace smf {
             if (pos != std::string::npos) {
                 local_address_with_scope = local_address_with_scope.substr(0, pos + 1) + nic;
 
-                return boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(local_address_with_scope), cfg.get_port());
+                return boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(local_address_with_scope), get_port());
             }
         }
 
