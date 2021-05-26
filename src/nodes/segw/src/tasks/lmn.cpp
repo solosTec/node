@@ -134,7 +134,7 @@ namespace smf {
     }
 
     void lmn::add_target_channel(std::string name) {
-        CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] add target " << name << " #" << targets_.size() + 1);
+        CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] add target \"" << name << "\" #" << targets_.size() + 1);
         targets_.push_back(name);
     }
 
@@ -186,14 +186,14 @@ namespace smf {
                     "[" << cfg_.get_port() << "] dispatch " << bytes_transferred << " bytes to " << targets_.size()
                         << " target(s)");
                 for (auto target : targets_) {
-                    //	copy data
+					CYNG_LOG_TRACE(
+						logger_,
+						"[" << cfg_.get_port() << "] " << bytes_transferred << " bytes => " << target);
+						//	copy data
                     ctl_.get_registry().dispatch(
                         target,
                         "receive",
                         cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) + bytes_transferred)));
-                    // target->dispatch(
-                    //    "receive", cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) +
-                    //    bytes_transferred)));
                 }
 
                 //

@@ -373,9 +373,11 @@ namespace smf {
                 //
                 auto const name = blocklist.get_task_name();
                 auto const targets = ctl_.get_registry().lookup(name);
-                for (auto const &target : targets) {
-                    CYNG_LOG_TRACE(logger_, "add-target-channel -> [" << port << "]: " << target);
-                    channel->dispatch("add-target-channel", target);
+                for (auto sp : targets) {
+                    if (sp) {
+                        CYNG_LOG_TRACE(logger_, "add-target-channel -> [" << port << "] #" << sp->get_id() << " - " << sp->get_name());
+                        channel->dispatch("add-target-channel", sp->get_name());
+                    }
                 }
 
                 //
@@ -684,11 +686,11 @@ namespace smf {
             auto const name = cfg.get_task_name();
 
             auto channel = ctl_.create_named_channel_with_ref<rdr::server>(
-                name, ctl_, cfg_, logger_, lmn_type::WIRELESS, rdr::server::type::ipv4, cfg.get_ipv4_ep());
+                name, ctl_, cfg_, logger_, type, rdr::server::type::ipv4, cfg.get_ipv4_ep());
             stash_.lock(channel);
 
             auto const delay = cfg.get_delay();
-            CYNG_LOG_INFO(logger_, "start external listener: " << name << " in " << delay.count() << " seconds");
+            CYNG_LOG_INFO(logger_, "start external listener [" << name << "] in " << delay.count() << " seconds");
 
             channel->suspend(delay, "start", cyng::make_tuple(delay));
 
@@ -697,8 +699,8 @@ namespace smf {
             //  In future version the NIC name is part of the configuration.
             //  So it's possible to use other NICs than br0
             //
-            //init_redirector_ipv6(cfg, "eth2");
-            init_redirector_ipv6(cfg, "br0");
+            init_redirector_ipv6(cfg, "eth2");
+            //init_redirector_ipv6(cfg, "br0");
 
         } else {
             CYNG_LOG_WARNING(logger_, "external listener for port [" << cfg.get_port_name() << "] is not enabled");
@@ -712,10 +714,10 @@ namespace smf {
         if (!ep.address().is_unspecified()) {
 
             auto const name = cfg.get_task_name();
-            CYNG_LOG_INFO(logger_, "create link-local listener: " << name);
+            CYNG_LOG_INFO(logger_, "create link-local listener [" << name << "]");
 
             auto channel = ctl_.create_named_channel_with_ref<rdr::server>(
-                name, ctl_, cfg_, logger_, lmn_type::WIRELESS, rdr::server::type::ipv6, ep);
+                name, ctl_, cfg_, logger_, cfg.get_type(), rdr::server::type::ipv6, ep);
             stash_.lock(channel);
 
             CYNG_LOG_INFO(logger_, "link-local listener for port [" << cfg.get_port_name() << "] " << ep);
@@ -724,7 +726,7 @@ namespace smf {
             //  start listener
             //
             auto const delay = cfg.get_delay();
-            CYNG_LOG_INFO(logger_, "start link-local listener: " << name << " in " << delay.count() << " seconds");
+            CYNG_LOG_INFO(logger_, "start link-local listener [" << name << "] in " << delay.count() << " seconds");
 
             channel->suspend(delay, "start", cyng::make_tuple(delay));
 
