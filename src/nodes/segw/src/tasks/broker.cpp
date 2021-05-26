@@ -56,9 +56,9 @@ namespace smf {
         state_ = next;
         if (state_ != state::STOPPED) {
             boost::asio::post(dispatcher_, [this]() { buffer_write_.clear(); });
+            boost::system::error_code ignored_ec;
+            socket_.close(ignored_ec);
         }
-        boost::system::error_code ignored_ec;
-        socket_.close(ignored_ec);
     }
 
     void broker::receive(cyng::buffer_t data) {
@@ -106,7 +106,7 @@ namespace smf {
         } else {
 
             //
-            // There are no more endpoints to try. Shut down the client.
+            // There are no more endpoints to try. Restart client.
             //
             reset(state::START);
         }
@@ -116,18 +116,18 @@ namespace smf {
 
         switch (state_) {
         case state::START:
-            CYNG_LOG_TRACE(logger_, "[broker] check deadline: start");
+            CYNG_LOG_TRACE(logger_, "[broker] status: start");
             start();
             break;
         case state::CONNECTED:
-            // CYNG_LOG_DEBUG(logger_, "[broker] check deadline: connected");
+            // CYNG_LOG_DEBUG(logger_, "[broker] status: connected");
             break;
         case state::WAIT:
-            CYNG_LOG_TRACE(logger_, "[broker] check deadline: waiting");
+            CYNG_LOG_TRACE(logger_, "[broker] check status: waiting");
             start();
             break;
         default:
-            CYNG_LOG_ERROR(logger_, "[broker] check deadline: invalid state");
+            CYNG_LOG_ERROR(logger_, "[broker] check status: invalid state");
             BOOST_ASSERT_MSG(false, "invalid state");
             break;
         }
@@ -150,7 +150,7 @@ namespace smf {
         // the timeout handler must have run first.
         if (!socket_.is_open()) {
 
-            CYNG_LOG_WARNING(logger_, "[broker] " << target_ << " connect timed out");
+            CYNG_LOG_WARNING(logger_, "[broker] " << target_ << " connect timed out: " << ec.message());
 
             // Try the next available endpoint.
             start_connect(++endpoint_iter);

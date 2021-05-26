@@ -673,7 +673,7 @@ namespace smf {
     void bridge::init_redirector(lmn_type type) {
         cfg_listener cfg(cfg_, type);
         if (cfg.is_enabled()) {
-            CYNG_LOG_INFO(logger_, "create IPv4 listener for port [" << cfg.get_port_name() << "] " << cfg);
+            CYNG_LOG_INFO(logger_, "create external listener for port [" << cfg.get_port_name() << "] " << cfg);
             if (!cfg.is_lmn_enabled()) {
                 CYNG_LOG_WARNING(
                     logger_,
@@ -688,7 +688,7 @@ namespace smf {
             stash_.lock(channel);
 
             auto const delay = cfg.get_delay();
-            CYNG_LOG_INFO(logger_, "start IPv4 listener: " << name << " in " << delay.count() << " seconds");
+            CYNG_LOG_INFO(logger_, "start external listener: " << name << " in " << delay.count() << " seconds");
 
             channel->suspend(delay, "start", cyng::make_tuple(delay));
 
@@ -697,11 +697,11 @@ namespace smf {
             //  In future version the NIC name is part of the configuration.
             //  So it's possible to use other NICs than br0
             //
-            init_redirector_ipv6(cfg, "eth2");
-            // init_redirector_ipv6(cfg, "br0");
+            //init_redirector_ipv6(cfg, "eth2");
+            init_redirector_ipv6(cfg, "br0");
 
         } else {
-            CYNG_LOG_WARNING(logger_, "IPv4 listener for port [" << cfg.get_port_name() << "] is not enabled");
+            CYNG_LOG_WARNING(logger_, "external listener for port [" << cfg.get_port_name() << "] is not enabled");
         }
     }
 
@@ -712,24 +712,24 @@ namespace smf {
         if (!ep.address().is_unspecified()) {
 
             auto const name = cfg.get_task_name();
-            CYNG_LOG_INFO(logger_, "create IPv6 listener: " << name);
+            CYNG_LOG_INFO(logger_, "create link-local listener: " << name);
 
             auto channel = ctl_.create_named_channel_with_ref<rdr::server>(
                 name, ctl_, cfg_, logger_, lmn_type::WIRELESS, rdr::server::type::ipv6, ep);
             stash_.lock(channel);
 
-            CYNG_LOG_INFO(logger_, "IPv6 listener for port [" << cfg.get_port_name() << "] " << ep);
+            CYNG_LOG_INFO(logger_, "link-local listener for port [" << cfg.get_port_name() << "] " << ep);
 
             //
             //  start listener
             //
             auto const delay = cfg.get_delay();
-            CYNG_LOG_INFO(logger_, "start IPv6 listener: " << name << " in " << delay.count() << " seconds");
+            CYNG_LOG_INFO(logger_, "start link-local listener: " << name << " in " << delay.count() << " seconds");
 
             channel->suspend(delay, "start", cyng::make_tuple(delay));
 
         } else {
-            CYNG_LOG_WARNING(logger_, "listener for port [" << cfg.get_port_name() << "] \"" << nic << "\" is not present");
+            CYNG_LOG_WARNING(logger_, "link-local listener for port [" << cfg.get_port_name() << "] \"" << nic << "\" is not present");
         }
 #endif
     }

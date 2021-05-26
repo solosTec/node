@@ -96,7 +96,7 @@ namespace smf {
                             if (sp && session_counter_ == 0) {
                                 cfg_listener cfg(cfg_, type_);
                                 auto const delay = cfg.get_delay();
-                                CYNG_LOG_INFO(logger_, "[RDR] restart other listener in " << delay.count() << " seconds");
+                                CYNG_LOG_INFO(logger_, "[RDR] restart other listener");
                                 auto const count = ctl_.get_registry().dispatch_exclude(sp, "start", cyng::make_tuple(delay));
                                 if (count == 0) {
                                     CYNG_LOG_WARNING(logger_, "[RDR] no other listener available");
