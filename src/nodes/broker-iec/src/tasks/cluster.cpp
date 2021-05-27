@@ -48,8 +48,6 @@ namespace smf {
 
     void cluster::stop(cyng::eod) {
         CYNG_LOG_WARNING(logger_, "[cluster] stop task(" << tag_ << ")");
-        // clients_.stop();
-        // clients_.clear();
         bus_.stop();
     }
 
@@ -156,7 +154,8 @@ namespace smf {
             //
             auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
             db_->init(slot);
-            db_->loop([this](cyng::meta_store const &m) { bus_.req_subscribe(m.get_name()); });
+            // db_->loop([this](cyng::meta_store const &m) { bus_.req_subscribe(m.get_name()); });
+            bus_.req_subscribe("meter");
 
         } else {
             CYNG_LOG_ERROR(logger_, "[cluster] joining failed");
@@ -192,6 +191,11 @@ namespace smf {
 
     void cluster::db_res_trx(std::string table_name, bool trx) {
         CYNG_LOG_INFO(logger_, "[cluster] trx: " << table_name << (trx ? " start" : " commit"));
+        if (!trx) {
+            if (boost::algorithm::equals(table_name, "meter")) {
+                bus_.req_subscribe("meterIEC");
+            }
+        }
     }
 
     void

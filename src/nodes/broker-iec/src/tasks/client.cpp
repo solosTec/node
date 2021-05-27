@@ -197,7 +197,7 @@ namespace smf {
 
         // Check if the connect operation failed before the deadline expired.
         else if (ec) {
-            CYNG_LOG_WARNING(logger_, "[client] connect error " << mgr_.get() << " - " << ec.value() << ": " << ec.message());
+            CYNG_LOG_WARNING(logger_, "[client] " << mgr_.get() << " connect error - " << ec.value() << ": " << ec.message());
 
             // We need to close the socket used in the previous connection attempt
             // before starting a new one.
