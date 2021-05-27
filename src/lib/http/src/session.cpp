@@ -79,7 +79,8 @@ namespace smf {
             , std::uint64_t const max_upload_size
             , std::string const nickname
             , std::chrono::seconds const timeout
-            , ws_cb cb)
+            , ws_cb cb
+            , post_cb post)
         : stream_(std::move(socket))
             , buffer_()
             , logger_(logger)
@@ -90,6 +91,7 @@ namespace smf {
             , nickname_(nickname)
             , timeout_(timeout)
             , ws_cb_(cb)
+            , post_cb_(post)
             , queue_(*this)
             , parser_()
         {
@@ -364,10 +366,25 @@ namespace smf {
             CYNG_LOG_INFO(logger_, *req.payload_size() << " bytes posted to " << target);
             std::uint64_t payload_size = *req.payload_size();
 
-            if (boost::algorithm::equals(content_type, "application/xml")) {
+#ifdef _DEBUG
+            CYNG_LOG_DEBUG(logger_, "payload: " << req.body());
+#endif
 
+            if (boost::algorithm::equals(content_type, "application/xml")) {
+                auto const file_name = post_cb_(target, std::string(req.body().begin(), req.body().end()), content_type.to_string());
+                //  ToDo: start download
             }
             else if (boost::algorithm::starts_with(content_type, "application/json")) {
+                auto const file_name = post_cb_(target, std::string(req.body().begin(), req.body().end()), content_type.to_string());
+                //  start download
+                std::filesystem::path const attachment(target);
+                start_download(file_name, attachment.filename());
+                //    if (std::filesystem::exists(file_name)) {
+                //}
+                //else {
+                //    CYNG_LOG_WARNING(logger_, "file [" << file_name << "] not found");
+
+                //}
 
             }
             else if (boost::algorithm::starts_with(content_type, "application/x-www-form-urlencoded")) {
@@ -376,6 +393,60 @@ namespace smf {
             else if (boost::algorithm::starts_with(content_type, "multipart/form-data")) {
 
             }
+
+        }
+
+        void session::start_download(std::filesystem::path file_name, std::filesystem::path attachment) {
+
+            boost::beast::error_code ec;
+            boost::beast::http::file_body::value_type body;
+            body.open(file_name.string().c_str(), boost::beast::file_mode::scan, ec);
+            if (ec == boost::system::errc::no_such_file_or_directory)
+            {
+                boost::beast::http::response<boost::beast::http::string_body> res{ boost::beast::http::status::not_found, 11 };
+                res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
+                res.set(boost::beast::http::field::content_type, "text/html");
+                res.keep_alive(true);
+                res.body() = "The resource '" + file_name.string() + "' was not found.";
+                res.prepare_payload();
+
+                return queue_(std::move(res));
+            }
+            // Cache the size since we need it after the move
+            auto const size = body.size();
+
+            boost::beast::http::response<boost::beast::http::file_body> res{
+                std::piecewise_construct,
+                std::make_tuple(std::move(body)),
+                std::make_tuple(boost::beast::http::status::ok, 11) };
+
+            res.content_length(size);
+
+
+            res.set(boost::beast::http::field::server, SMF_VERSION_SUFFIX);
+            res.set(boost::beast::http::field::content_description, "File Transfer");
+            auto const content_disposition = "attachment; filename=\"" + attachment.string() + "\"";
+            res.set(boost::beast::http::field::content_disposition, content_disposition);
+            //res.set(boost::beast::http::field::expires, "0");	//	already expired
+            res.set(boost::beast::http::field::cache_control, "must-revalidate, post-check=0, pre-check=0");
+            res.set(boost::beast::http::field::pragma, "public");
+            res.set(boost::beast::http::field::content_transfer_encoding, "binary");
+
+            auto const ext = file_name.extension().string();
+            if (boost::algorithm::equals(ext, ".xml")) {
+                res.set(boost::beast::http::field::content_type, "application/xml");
+            }
+            else if (boost::algorithm::equals(ext, ".csv")) {
+                res.set(boost::beast::http::field::content_type, "application/csv");
+            }
+            else if (boost::algorithm::equals(ext, ".pdf")) {
+                res.set(boost::beast::http::field::content_type, "application/pdf");
+            }
+            else {
+                res.set(boost::beast::http::field::content_type, "application/octet-stream");
+            }
+
+            queue_(std::move(res));
 
         }
 

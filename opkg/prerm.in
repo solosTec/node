@@ -37,6 +37,21 @@ create_backups()
         echo "[PRE-RM] ... There is no such file $SMF_DIR/$DATABASE_FILE, skipping database backup steps."
     fi
 
+    if [ -f "/usr/local/etc/segw_v$VERSION_SHORT.cfg" ]; then
+        # create backups of the configurations independently of the installed versions
+        # old approach: use ls and grep to get the correct files
+        #   config_files=$(ls /usr/local/etc/ | grep cfg | grep -v bkp)
+        mkdir -p "$bkp_dir"
+        cmd_output=$(mv "/usr/local/etc/segw_v$VERSION_SHORT.cfg" "$bkp_dir")
+        if [ $? -eq 0 ]; then
+            echo "[PRE-RM] ... saved /usr/local/etc/segw_v$VERSION_SHORT.cfg successfully"
+        else
+            echo "[PRE-RM] ... saving /usr/local/etc/segw_v$VERSION_SHORT.cfg failed for reason: $cmd_output"
+        fi
+    else
+        echo "[PRE-RM] ... There is no such file /usr/local/etc/segw_v$VERSION_SHORT.cfg, skipping this backup step."
+    fi
+
     echo "[PRE-RM] Backups done."
     return 0
 }

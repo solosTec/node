@@ -7,136 +7,185 @@
 
 #include <controller.h>
 #include <tasks/cluster.h>
+#include <tasks/push.h>
 
-#include <cyng/obj/intrinsics/container.h>
-#include <cyng/obj/container_factory.hpp>
-#include <cyng/obj/container_cast.hpp>
-#include <cyng/obj/numeric_cast.hpp>
-#include <cyng/obj/util.hpp>
-#include <cyng/obj/object.h>
-#include <cyng/sys/locale.h>
+#include <smf/ipt/scramble_key_format.h>
+
 #include <cyng/io/ostream.h>
-#include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/log/record.h>
+#include <cyng/obj/algorithm/reader.hpp>
+#include <cyng/obj/container_cast.hpp>
+#include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/intrinsics/container.h>
+#include <cyng/obj/numeric_cast.hpp>
+#include <cyng/obj/object.h>
+#include <cyng/obj/util.hpp>
+#include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 
-#include <locale>
 #include <iostream>
+#include <locale>
+
+#include <boost/predef.h>
 
 namespace smf {
 
-	controller::controller(config::startup const& config) 
-		: controller_base(config)
-	{}
+    controller::controller(config::startup const &config) : controller_base(config), cluster_(), network_() {}
 
-	cyng::vector_t controller::create_default_config(std::chrono::system_clock::time_point&& now
-		, std::filesystem::path&& tmp
-		, std::filesystem::path&& cwd) {
+    cyng::vector_t controller::create_default_config(
+        std::chrono::system_clock::time_point &&now, std::filesystem::path &&tmp, std::filesystem::path &&cwd) {
 
-		std::locale loc(std::locale(), new std::ctype<char>);
-		std::cout << std::locale("").name().c_str() << std::endl;
+        std::locale loc(std::locale(), new std::ctype<char>);
+        std::cout << std::locale("").name().c_str() << std::endl;
 
-		return cyng::make_vector({
-			cyng::make_tuple(
-				cyng::make_param("generated", now),
-				cyng::make_param("log-dir", tmp.string()),
-				cyng::make_param("tag", get_random_tag()),
-				cyng::make_param("country-code", "CH"),
-				cyng::make_param("language-code", cyng::sys::get_system_locale()),
-				create_server_spec(cwd),
-				create_client_spec(),
-				create_cluster_spec()
-			)
-		});
-	}
+        auto const tag = get_random_tag();
 
-	void controller::run(cyng::controller& ctl, cyng::logger logger, cyng::object const& cfg, std::string const& node_name) {
+        return cyng::make_vector({cyng::make_tuple(
+            cyng::make_param("generated", now), cyng::make_param("log-dir", tmp.string()), cyng::make_param("tag", tag),
+            cyng::make_param("country-code", "CH"), cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            create_server_spec(cwd), create_push_spec(), create_client_spec(), create_cluster_spec(), create_ipt_spec(tag))});
+    }
+
+    void controller::run(cyng::controller &ctl, cyng::logger logger, cyng::object const &cfg, std::string const &node_name) {
 
 #if _DEBUG_BROKER_WMBUS
-		CYNG_LOG_INFO(logger, cfg);
+        CYNG_LOG_INFO(logger, cfg);
 #endif
-		auto const reader = cyng::make_reader(cfg);
-		auto const tag = cyng::value_cast(reader["tag"].get(), this->get_random_tag());
+        auto const reader = cyng::make_reader(cfg);
+        auto const tag = read_tag(reader["tag"].get());
 
+        auto tgl_cluster = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
+        BOOST_ASSERT(!tgl_cluster.empty());
+        if (tgl_cluster.empty()) {
+            CYNG_LOG_FATAL(logger, "no cluster data configured");
+        }
 
-		auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
-		BOOST_ASSERT(!tgl.empty());
-		if (tgl.empty()) {
-			CYNG_LOG_FATAL(logger, "no cluster data configured");
-		}
+        auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
+        auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["service"].get(), 12002);
+        auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
+        std::chrono::seconds client_timeout(cyng::numeric_cast<std::uint32_t>(reader["client"]["timeout"].get(), 32));
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+        std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "D:\\projects\\data\\csv");
+#else
+        std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "/data/csv");
+#endif
 
-		auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
-		auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["service"].get(), 12002);
-		auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
+        //
+        //	connect to cluster
+        //
+        join_cluster(ctl, logger, tag, node_name, std::move(tgl_cluster), address, port, client_login, client_timeout, client_out);
 
-		//
-		//	connect to cluster
-		//
-		join_cluster(ctl
-			, logger
-			, tag
-			, node_name
-			, std::move(tgl)
-			, address
-			, port
-			, client_login);
-	}
+        auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
+        auto tgl_ipt = ipt::read_config(ipt_vec);
+        if (tgl_ipt.empty()) {
 
-	void controller::shutdown(cyng::logger logger, cyng::registry& reg) {
+            CYNG_LOG_FATAL(logger, "no ip-t server configured");
 
-		//
-		//	stop all running tasks
-		//
-		reg.shutdown();
-	}
+            auto const pwd = boost::uuids::to_string(tag);
+            CYNG_LOG_INFO(logger, "use fallback configuration broker-wmbus:" << pwd << "@localhost:26862");
 
-	void controller::join_cluster(cyng::controller& ctl
-		, cyng::logger logger
-		, boost::uuids::uuid tag
-		, std::string const& node_name
-		, toggle::server_vec_t&& tgl
-		, std::string const& address
-		, std::uint16_t port
-		, bool client_login) {
+            tgl_ipt.push_back(ipt::server(
+                "localhost", "26862", "broker-wmbus", pwd,
+                ipt::to_sk("0102030405060708090001020304050607080900010203040506070809000001"), false, 12));
+            tgl_ipt.push_back(ipt::server(
+                "ipt", "26862", "broker-wmbus", pwd, ipt::to_sk("0102030405060708090001020304050607080900010203040506070809000001"),
+                false, 12));
+        }
 
-		auto channel = ctl.create_named_channel_with_ref<cluster>("cluster"
-			, ctl
-			, tag
-			, node_name
-			, logger
-			, std::move(tgl));
+        //
+        //	connect to ip-t server
+        //
+        join_network(
+            ctl, logger, tag, node_name, std::move(tgl_ipt),
+            ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"].get())));
+    }
 
-		auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-		channel->dispatch("connect", cyng::make_tuple());
-		channel->dispatch("listen", cyng::make_tuple(ep));
+    void controller::join_network(
+        cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name,
+        ipt::toggle::server_vec_t &&tgl, ipt::push_channel &&pcc) {
 
-	}
+        network_ = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
+        BOOST_ASSERT(network_->is_open());
+        network_->dispatch("connect", cyng::make_tuple());
+    }
 
-	cyng::param_t controller::create_server_spec(std::filesystem::path const& cwd) {
-		return cyng::make_param("server", cyng::make_tuple(
-			cyng::make_param("address", "0.0.0.0"),
-			cyng::make_param("service", "12002")
-			));
-	}
+    void controller::shutdown(cyng::logger logger, cyng::registry &reg) {
 
-	cyng::param_t controller::create_cluster_spec() {
-		return cyng::make_param("cluster", cyng::make_vector({
-			cyng::make_tuple(
-				cyng::make_param("host", "127.0.0.1"),
-				cyng::make_param("service", "7701"),
-				cyng::make_param("account", "root"),
-				cyng::make_param("pwd", "NODE_PWD"),
-				cyng::make_param("salt", "NODE_SALT"),
-				//cyng::make_param("monitor", rnd_monitor()),	//	seconds
-				cyng::make_param("group", 0))	//	customer ID
-			}
-		));
-	}
+        config::stop_tasks(logger, reg, "network");
+        config::stop_tasks(logger, reg, "cluster");
 
-	cyng::param_t controller::create_client_spec() {
-		return cyng::make_param("client", cyng::make_tuple(
-			cyng::make_param("login", false)
-		));
-	}
+        //
+        //	stop all running tasks
+        //
+        reg.shutdown();
+    }
 
-}
+    void controller::join_cluster(
+        cyng::controller &ctl, cyng::logger logger, boost::uuids::uuid tag, std::string const &node_name,
+        toggle::server_vec_t &&tgl, std::string const &address, std::uint16_t port, bool client_login,
+        std::chrono::seconds client_timeout, std::filesystem::path client_out) {
+
+        cluster_ = ctl.create_named_channel_with_ref<cluster>(
+            "cluster", ctl, tag, node_name, logger, std::move(tgl), client_login, client_timeout, client_out);
+        BOOST_ASSERT(cluster_->is_open());
+
+        auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
+        cluster_->dispatch("connect", cyng::make_tuple());
+        cluster_->dispatch("listen", cyng::make_tuple(ep));
+    }
+
+    cyng::param_t controller::create_server_spec(std::filesystem::path const &cwd) {
+        return cyng::make_param(
+            "server", cyng::make_tuple(cyng::make_param("address", "0.0.0.0"), cyng::make_param("service", "12000")));
+    }
+    cyng::param_t controller::create_push_spec() {
+        return cyng::make_param(
+            "push-channel",
+            cyng::make_tuple(
+                cyng::make_param("target", "power@solostec"), cyng::make_param("account", ""), cyng::make_param("number", ""),
+                cyng::make_param("version", ""), cyng::make_param("id", ""), cyng::make_param("timeout", 30)));
+    }
+
+    cyng::param_t controller::create_cluster_spec() {
+        return cyng::make_param(
+            "cluster", cyng::make_vector({
+                           cyng::make_tuple(
+                               cyng::make_param("host", "127.0.0.1"), cyng::make_param("service", "7701"),
+                               cyng::make_param("account", "root"), cyng::make_param("pwd", "NODE_PWD"),
+                               cyng::make_param("salt", "NODE_SALT"), cyng::make_param("group", 0)) //	customer ID
+                       }));
+    }
+
+    cyng::param_t controller::create_client_spec() {
+        return cyng::make_param(
+            "client", cyng::make_tuple(
+                          cyng::make_param("login", false), cyng::make_param("timeout", std::chrono::seconds(32)), //	gatekeeper
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                          cyng::make_param("out", "D:\\projects\\data\\csv") //	output path
+#else
+                          cyng::make_param("out", "/data/csv") //	output path
+#endif
+
+                          ));
+    }
+
+    cyng::param_t controller::create_ipt_spec(boost::uuids::uuid tag) {
+
+        auto const pwd = boost::uuids::to_string(tag);
+
+        return cyng::make_param(
+            "ipt",
+            cyng::make_vector(
+                {cyng::make_tuple(
+                     cyng::make_param("host", "localhost"), cyng::make_param("service", "26862"),
+                     cyng::make_param("account", "broker-wmbus"), cyng::make_param("pwd", pwd),
+                     cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                     cyng::make_param("scrambled", true)),
+                 cyng::make_tuple(
+                     cyng::make_param("host", "ipt"), cyng::make_param("service", "26862"),
+                     cyng::make_param("account", "broker-wmbus"), cyng::make_param("pwd", pwd),
+                     cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                     cyng::make_param("scrambled", false))}));
+    }
+
+} // namespace smf

@@ -56,13 +56,25 @@ namespace smf {
 
 				auto const name = meters_.at(meter_index_);
 				CYNG_LOG_TRACE(logger_, "[iec] data " << name << " - " << code << ": " << value << " " << unit);
+
+				//
+				//	store data to csv file
+				//
 				writer_->dispatch("store", cyng::make_tuple(code, value, unit));
+
+				//
+				//	increment counter
+				//
 				++entries_;
 
 			}, [this](std::string dev, bool crc) {
 
 				auto const name = meters_.at(meter_index_);
 				CYNG_LOG_TRACE(logger_, "[iec] readout complete " << dev << ", " << name);
+
+				//
+				//	close CSV file
+				//
 				writer_->dispatch("commit", cyng::make_tuple());
 
 				bus_.req_db_insert_auto("iecUplink", cyng::data_generator(
@@ -135,9 +147,6 @@ namespace smf {
 
 		if (endpoint_iter != endpoints_.end()) {
 			CYNG_LOG_TRACE(logger_, "[client] trying " << endpoint_iter->endpoint() << "...");
-
-			//	Set a deadline for the connect operation.
-			//timer_.expires_after(std::chrono::seconds(12));
 
 			// Start the asynchronous connect operation.
 			socket_.async_connect(endpoint_iter->endpoint(),
@@ -215,8 +224,16 @@ namespace smf {
 				if (meter_index_ < meters_.size()) {
 					auto const name = meters_.at(meter_index_);
 					CYNG_LOG_INFO(logger_, "[client] query " << name);
-					buffer_write_.push_back(generate_query(name));
+
+					//
+					//	writer opens file for writing CSV data
+					//
 					writer_->dispatch("open", cyng::make_tuple(name));
+
+					//
+					//	send query to meter
+					//
+					buffer_write_.push_back(generate_query(name));
 				}
 				else {
 					meter_index_ = 0;

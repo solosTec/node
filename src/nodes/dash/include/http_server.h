@@ -9,6 +9,7 @@
 
 #include <db.h>
 #include <upload.h>
+#include <download.h>
 
 #include <smf/http/server.h>
 #include <smf/http/auth.h>
@@ -90,6 +91,11 @@ namespace smf {
 			, boost::beast::http::request<boost::beast::http::string_body> req);
 
 		/**
+		 * post => start download
+		 */
+		std::filesystem::path post(std::string, std::string, std::string);
+
+		/**
 		 * received text/json data from the websocket
 		 */
 		void on_msg(boost::uuids::uuid tag, std::string);
@@ -133,6 +139,11 @@ namespace smf {
 		 * manage config file uploads
 		 */
 		upload upload_;
+
+		/**
+		 * manage config file downloads
+		 */
+		download download_;
 
 		/**
 		 * generate unique session tags

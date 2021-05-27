@@ -504,10 +504,11 @@ namespace smf {
 				, boost::uuids::nil_uuid()));	//	no device
 
 			//	check auto insert
-			auto const auto_enabled = cache_.get_cfg().get_value("auto-enabled", false);
-			if (auto_enabled) {
-				CYNG_LOG_INFO(logger_, "auto-enabled is ON - insert [" << name << "] into device table");
-				cache_.insert_device(tag, name, pwd, true);
+			auto const auto_login = cache_.get_cfg().get_value("auto-login", false);
+			if (auto_login) {
+				CYNG_LOG_INFO(logger_, "auto-login is ON - insert [" << name << "] into device table");
+				auto const auto_enabled = cache_.get_cfg().get_value("auto-enabled", true);
+				cache_.insert_device(tag, name, pwd, auto_enabled);
 			}
 		}
 	}

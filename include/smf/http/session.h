@@ -95,6 +95,7 @@ namespace smf {
 		public:
             //  callback for websockets
             using ws_cb = std::function<void(boost::asio::ip::tcp::socket&&, boost::beast::http::request<boost::beast::http::string_body>)>;
+            using post_cb = std::function<std::filesystem::path(std::string, std::string, std::string)>;
 
 			session(boost::asio::ip::tcp::socket&& socket
                 , cyng::logger
@@ -105,6 +106,7 @@ namespace smf {
                 , std::string const nickname
                 , std::chrono::seconds const timeout
                 , ws_cb
+                , post_cb
             );
 
             /**
@@ -168,6 +170,8 @@ namespace smf {
                 , std::string target
                 , std::string realm);
 
+            void start_download(std::filesystem::path, std::filesystem::path);
+
 		private:
             boost::beast::tcp_stream stream_;
             boost::beast::flat_buffer buffer_;
@@ -179,6 +183,7 @@ namespace smf {
             std::string const nickname_;
             std::chrono::seconds const timeout_;
             ws_cb ws_cb_;
+            post_cb post_cb_;
             queue queue_;
 
             // The parser is stored in an optional container so we can

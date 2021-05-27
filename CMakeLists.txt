@@ -31,7 +31,7 @@ include (cmake/time_stamp.cmake)
 # set project name/properties
 #
 project(smf
-	VERSION 0.9.0.${_TWEAK_ID}
+	VERSION 0.9.1.${_TWEAK_ID}
 	LANGUAGES CXX C
 )
 
@@ -754,6 +754,7 @@ add_subdirectory(src/nodes/lora)
 add_subdirectory(src/nodes/main)
 add_subdirectory(src/nodes/modem)
 add_subdirectory(src/nodes/mqtt)
+add_subdirectory(src/nodes/report)
 add_subdirectory(src/nodes/segw)
 add_subdirectory(src/nodes/setup)
 add_subdirectory(src/nodes/store)
@@ -841,7 +842,7 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
         PATTERN "*hpp"
 )
 
-set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_hci smf_http smf_ipt smf_iec smf_ipt_bus smf_mbus smf_obis smf_serial_bus dash imega ipt segw store lora main modem setup mqtt broker-iec broker-wmbus)
+set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_hci smf_http smf_ipt smf_iec smf_ipt_bus smf_mbus smf_obis smf_serial_bus smf_sml dash imega ipt segw store lora main modem setup mqtt broker-iec broker-wmbus report)
 
 message(STATUS "** Target list                  : ${SMF_TARGET_LIST}")
 

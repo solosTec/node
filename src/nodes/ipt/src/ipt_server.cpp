@@ -3,6 +3,7 @@
 
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
+#include <cyng/task/controller.h>
 
 #include <iostream>
 
@@ -91,7 +92,7 @@ namespace smf {
 					//
 					//	start session
 					//
-					sp->start();
+					sp->start(timeout_);
 
 					//
 					//	update session counter

@@ -202,6 +202,10 @@ namespace smf
 		}
 		void push_sys_msg(std::string, cyng::severity level);
 
+		/**
+		 * send an update request for "cluster" table to main node
+		 */
+		void update_pty_counter(std::uint64_t);
 
 	private:
 		void reset();
@@ -213,7 +217,9 @@ namespace smf
 		void do_write();
 		void handle_read(boost::system::error_code const&, std::size_t n);
 		void handle_write(boost::system::error_code const&);
-		void check_deadline(boost::system::error_code const&);
+		void reconnect_timeout(boost::system::error_code const&);
+
+		void set_reconnect_timer(std::chrono::seconds);
 
 		constexpr bool is_stopped() const {
 			return state_ == state::STOPPED;

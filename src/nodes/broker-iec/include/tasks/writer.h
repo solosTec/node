@@ -4,8 +4,8 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_DASH_TASK_WRITER_H
-#define SMF_DASH_TASK_WRITER_H
+#ifndef SMF_IEC_TASK_WRITER_H
+#define SMF_IEC_TASK_WRITER_H
 
 #include <db.h>
 

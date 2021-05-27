@@ -10,6 +10,7 @@ set (dash_cpp
     src/db.cpp
     src/notifier.cpp
     src/upload.cpp
+    src/download.cpp
 )
     
 set (dash_h
@@ -18,6 +19,7 @@ set (dash_h
     include/db.h
     include/notifier.h
     include/upload.h
+    include/download.h
 )
 
 if(WIN32)

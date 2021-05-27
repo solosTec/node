@@ -14,6 +14,7 @@
 #include <iomanip>
 
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/predef.h>
 
 #ifdef _DEBUG_BROKER_IEC
 #include <cyng/io/hex_dump.hpp>
@@ -53,7 +54,12 @@ namespace smf {
 
 		auto const now = std::chrono::system_clock::now();
 		std::time_t const tt = std::chrono::system_clock::to_time_t(now);
-		auto tm = *std::gmtime(&tt);
+		struct tm tm = { 0 };
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+		::gmtime_s(&tm, &tt);
+#else
+		::gmtime_r(&tt, &tm);
+#endif
 
 		//
 		//	make a file name

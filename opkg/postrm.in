@@ -48,7 +48,7 @@ create_backups()
         else
             echo "[POST-RM] ... saving $SMF_DIR/segw_v$VERSION_SHORT.json failed for reason: $cmd_output"
         fi
-    else 
+    else
         echo "[POST-RM] ... There is no such file $SMF_DIR/segw_v$VERSION_SHORT.json, skipping this backup step."
     fi
     

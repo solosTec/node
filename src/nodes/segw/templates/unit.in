@@ -3,9 +3,9 @@ Description=smart energy gateway v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_N
 #
 # use this dependency when running on the same machine
 #
-#Wants=node-ipt.service
-#After=network.target node-ipt.service
 After=network.target
+Requires=network.target
+After=oecp.service
 
 [Service]
 Type=simple

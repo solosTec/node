@@ -15,6 +15,7 @@
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/vm/proxy.h>
 #include <cyng/vm/vm_fwd.h>
+#include <cyng/task/controller.h>
 
 #include <memory>
 #include <array>
@@ -32,7 +33,7 @@ namespace smf {
 			, cyng::logger);
 		~ipt_session();
 
-		void start();
+		void start(std::chrono::seconds timeout);
 		void stop();
 		void logout();
 
@@ -180,11 +181,13 @@ namespace smf {
 		get_vm_func_pty_req_close_connection(ipt_session* p);
 
 	private:
+		cyng::controller& ctl_;
 		boost::asio::ip::tcp::socket socket_;
 		cyng::logger logger_;
 
 		bus& cluster_bus_;
 		std::uint32_t const query_;
+
 		/**
 		 * Buffer for incoming data.
 		 */
@@ -214,6 +217,11 @@ namespace smf {
 		 * store temporary data during connection establishment
 		 */
 		std::map<ipt::sequence_t, cyng::param_map_t>	oce_map_;
+
+		/**
+		 * gatekeeper
+		 */
+		cyng::channel_ptr gatekeeper_;
 	};
 
 }

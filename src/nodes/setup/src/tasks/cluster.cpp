@@ -193,6 +193,9 @@ namespace smf {
 			<< table_name
 			<< ": "
 			<< key);
+
+		storage_->dispatch("remove", cyng::make_tuple(table_name, key, tag));
+
 	}
 
 	void cluster::db_res_clear(std::string table_name
@@ -200,6 +203,9 @@ namespace smf {
 
 		CYNG_LOG_TRACE(logger_, "[cluster] clear: "
 			<< table_name);
+
+		storage_->dispatch("clear", cyng::make_tuple(table_name, tag));
+
 	}
 
 	void cluster::upload(std::string const& table_name) {

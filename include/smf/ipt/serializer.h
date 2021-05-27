@@ -58,7 +58,7 @@ namespace smf {
 			cyng::buffer_t res_watchdog(sequence_t seq);
 
 			[[nodiscard]]
-			cyng::buffer_t req_open_push_channel(std::string,		//	[0] push target
+			std::pair<cyng::buffer_t, sequence_t> req_open_push_channel(std::string,		//	[0] push target
 				std::string,		//	[1] account
 				std::string,		//	[2] number
 				std::string,		//	[3] version

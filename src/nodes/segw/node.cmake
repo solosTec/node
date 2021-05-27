@@ -43,6 +43,7 @@ set (segw_tasks
     include/tasks/persistence.h
     include/tasks/filter.h
     include/tasks/redirector.h
+    include/tasks/nms.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
@@ -51,6 +52,7 @@ set (segw_tasks
     src/tasks/persistence.cpp
     src/tasks/filter.cpp
     src/tasks/redirector.cpp
+    src/tasks/nms.cpp
 )
 
 set (segw_config
@@ -86,10 +88,8 @@ set (segw_sml
 )
 
 set (segw_nms
-    include/nms/server.h
     include/nms/session.h
     include/nms/reader.h
-    src/nms/server.cpp
     src/nms/session.cpp
     src/nms/reader.cpp
 )

@@ -61,11 +61,33 @@ namespace smf
 			}
 			return 0;
 		}
+
+		/**
+		 * @return a the name of the enum as string
+		 */
+		const char* get_name(data_field_code dfc);
+
 		/**
 		 * Take a DIF value and returns the enum.
 		 */
 		constexpr data_field_code decode_dfc(std::uint8_t val) {
 			return static_cast<data_field_code>(val & 0x0f);
+		}
+
+		/**
+		 * @return true if data are BCD encoded
+		 */
+		constexpr bool is_bcd(data_field_code dfc) {
+			switch (dfc) {
+			case data_field_code::DFC_2_DIGIT_BCD:	return true;
+			case data_field_code::DFC_4_DIGIT_BCD:	return true;
+			case data_field_code::DFC_6_DIGIT_BCD:	return true;
+			case data_field_code::DFC_8_DIGIT_BCD:	return true;
+			case data_field_code::DFC_12_DIGIT_BCD:	return true;
+			default:
+				break;
+			}
+			return false;
 		}
 
 		enum class function_field_code : std::uint8_t {
@@ -124,8 +146,9 @@ namespace smf
 			 * bit [0..3] storage number
 			 */
 			std::uint8_t get_storage_nr() const;
+
 			/**
-			 * bit [4..5] tariff 0 = total, 1 = tariff 1, 2 = traiff 2
+			 * bit [4..5] tariff 0 = total, 1 = tariff 1, 2 = tariff 2
 			 */
 			std::uint8_t get_tariff() const;
 

@@ -1,9 +1,12 @@
 # Dependencies
 find_package(Boost 1.75 REQUIRED COMPONENTS unit_test_framework)
 
-source_group("test-assets" 
-    FILES 
-        unit_test/assets/smf--SML-202012T071425-power@solostec8bbb6264-bc4a4b92.sml) 
+set(test_assets
+    assets/smf--SML-202012T071425-power@solostec8bbb6264-bc4a4b92.sml
+    assets/iec.log    
+)
+
+source_group("test-assets" FILES ${test_assets}) 
 
 add_executable(unit_test 
     main.cpp
@@ -12,7 +15,7 @@ add_executable(unit_test
     src/test_iec.cpp
     src/test_ipt.cpp
     src/test_mbus.cpp
-    ${test-assets}
+    ${test_assets}
 )
 
 target_compile_features(unit_test PRIVATE cxx_std_20)
@@ -21,7 +24,7 @@ target_compile_definitions(unit_test
     PRIVATE 
         BOOST_TEST_DYN_LINK 
         BOOST_ASIO_HAS_MOVE
-        $<$<CONFIG:Debug>:_DEBUG_OBJECT>
+        $<$<CONFIG:Debug>:_DEBUG_UNIT_TEST>
 )
 
 #

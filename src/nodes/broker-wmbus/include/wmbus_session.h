@@ -16,6 +16,7 @@
 #include <cyng/io/parser/parser.h>
 #include <cyng/vm/proxy.h>
 #include <cyng/obj/intrinsics/pid.h>
+#include <cyng/task/controller.h>
 
 #include <memory>
 #include <array>
@@ -25,10 +26,15 @@ namespace smf {
 	class wmbus_session : public std::enable_shared_from_this<wmbus_session>
 	{
 	public:
-		wmbus_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<db>, cyng::logger, bus&);
+		wmbus_session(cyng::controller& ctl
+			, boost::asio::ip::tcp::socket socket
+			, std::shared_ptr<db>
+			, cyng::logger
+			, bus&
+			, cyng::channel_ptr writer);
 		~wmbus_session();
 
-		void start();
+		void start(std::chrono::seconds timeout);
 		void stop();
 
 	private:
@@ -44,11 +50,24 @@ namespace smf {
 			, std::uint8_t frame_type
 			, cyng::buffer_t const& data);
 
+		void push_sml_data(cyng::buffer_t const& payload);
+		void push_dlsm_data(cyng::buffer_t const& payload);
+		void push_data(cyng::buffer_t const& payload);
+
+		void read_mbus(srv_id_t const& address, cyng::buffer_t const& payload);
+
+		/**
+		 * @return number of data records
+		 */
+		std::size_t read_sml(srv_id_t const& address, cyng::buffer_t const& payload);
+
 	private:
+		cyng::controller& ctl_;
 		boost::asio::ip::tcp::socket socket_;
+		std::shared_ptr<db> db_;
 		cyng::logger logger_;
 		bus& bus_;
-		std::shared_ptr<db> db_;
+		cyng::channel_ptr writer_;
 
 		/**
 		 * Buffer for incoming data.
@@ -65,6 +84,10 @@ namespace smf {
 		 */
 		mbus::radio::parser parser_;
 
+		/**
+		 * gatekeeper
+		 */
+		cyng::channel_ptr gatekeeper_;
 
 	};
 

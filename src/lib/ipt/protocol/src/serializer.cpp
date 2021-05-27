@@ -121,7 +121,7 @@ namespace smf {
 			return merge(deq);
 		}
 //
-		cyng::buffer_t serializer::req_open_push_channel(std::string target,		//	[0] push target
+		std::pair<cyng::buffer_t, sequence_t> serializer::req_open_push_channel(std::string target,		//	[0] push target
 			std::string account,
 			std::string number,
 			std::string version,
@@ -150,7 +150,7 @@ namespace smf {
 			deq.push_back(write(version));
 			deq.push_back(write(id));
 			deq.push_back(write_numeric<std::uint16_t>(timeout));
-			return merge(deq);
+			return std::make_pair(merge(deq), last_seq_);
 		}
 //
 		cyng::buffer_t serializer::res_open_push_channel(sequence_t seq,

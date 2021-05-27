@@ -263,7 +263,33 @@ namespace smf {
 		auto const pos = sql_map_.find(table_name);
 		if (pos != sql_map_.end()) {
 			auto const& meta = pos->second;
+			auto const sql = cyng::sql::remove(db_.get_dialect(), meta).self().where(meta, cyng::sql::pk())();
 
+			auto stmt = db_.create_statement();
+			std::pair<int, bool> const r = stmt->prepare(sql);
+			if (r.second) {
+
+				BOOST_ASSERT(r.first == key.size());
+
+				//
+				//	pk
+				//
+				std::size_t col_index{ 0 };
+				for (auto& kp : key) {
+					auto const width = meta.get_column(col_index).width_;
+					stmt->push(kp, width);	//	pk
+					++col_index;
+				}
+
+				if (stmt->execute()) {
+					stmt->clear();
+				}
+
+
+			}
+			else {
+				CYNG_LOG_WARNING(logger_, "[db] delete error: " << sql);
+			}
 		}
 		else {
 			CYNG_LOG_WARNING(logger_, "[db] remove - unknown table: " << table_name);

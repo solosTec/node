@@ -1,5 +1,6 @@
 #include <wmbus_server.h>
 #include <wmbus_session.h>
+#include <tasks/writer.h>
 
 #include <cyng/obj/util.hpp>
 #include <cyng/log/record.h>
@@ -8,18 +9,22 @@
 
 namespace smf {
 
-	wmbus_server::wmbus_server(boost::asio::io_context& ioc
+	wmbus_server::wmbus_server(cyng::controller& ctl
 		, cyng::logger logger
 		, bus& cluster_bus
-		, std::shared_ptr<db> db)
-	: logger_(logger)
+		, std::shared_ptr<db> db
+		, std::chrono::seconds client_timeout
+		, std::filesystem::path client_out)
+	: ctl_(ctl)
+		, logger_(logger)
 		, bus_(cluster_bus)
-		, acceptor_(ioc)
+		, acceptor_(ctl.get_ctx())
 		, db_(db)
+		, client_timeout_(client_timeout)
+		, client_out_(client_out)
 		, session_counter_{ 0 }
 	{
 		CYNG_LOG_INFO(logger_, "[server] created");
-
 	}
 
 	wmbus_server::~wmbus_server()
@@ -54,18 +59,32 @@ namespace smf {
 			if (!ec) {
 				CYNG_LOG_INFO(logger_, "[server] new session " << socket.remote_endpoint());
 
+				//
+				//	start writer
+				//
+				auto w = ctl_.create_channel_with_ref<writer>(logger_, client_out_);
+				BOOST_ASSERT(w->is_open());
+
 				auto sp = std::shared_ptr<wmbus_session>(new wmbus_session(
+					ctl_,
 					std::move(socket),
 					db_,
 					logger_,
-					bus_
-				), [this](wmbus_session* s) {
+					bus_,
+					w
+				), [this, w](wmbus_session* s) {
 
 					//
 					//	update session counter
 					//
 					--session_counter_;
 					CYNG_LOG_TRACE(logger_, "[server] session(s) running: " << session_counter_);
+					bus_.update_pty_counter(session_counter_);
+
+					//
+					//	stop writer
+					// 
+					w->stop();
 
 					//
 					//	remove session
@@ -78,12 +97,18 @@ namespace smf {
 					//
 					//	start session
 					//
-					sp->start();
+					sp->start(client_timeout_);
 
 					//
 					//	update session counter
 					//
 					++session_counter_;
+
+					//
+					//	update cluster table
+					//
+					bus_.update_pty_counter(session_counter_);
+
 				}
 
 				//

@@ -104,7 +104,7 @@ namespace smf
 			FIELD_CI_HEADER_LONG = 0x72, //!<	12 byte header followed by variable format data (EN 13757-3)
 			FIELD_CI_APL_ALARM_SHORT = 0x74, //!	<Alarm from device with short header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
 			FIELD_CI_APL_ALARM_LONG = 0x75, //!<	Alarm from device with long header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
-			FIELD_CI_HEADER_NO = 0x78, //!<	Variable data format respond without header (EN 13757-3)
+			FIELD_CI_HEADER_NO = 0x78, //!<	Variable data format respond without header (EN 13757-3) - no encryption
 			FIELD_CI_HEADER_SHORT = 0x7A, //!<	4 byte header followed by variable data format respond (EN 13757-3)
 			FIELD_CI_RES_LONG_DLMS = 0x7C,
 			FIELD_CI_RES_SHORT_DLSM = 0x7D,	//!<	short header
@@ -117,7 +117,7 @@ namespace smf
 			//#if !OMS_V4_ENABLED
 
 			FIELD_CI_EXT_DLL_I = 0x8C,		//!<	Additional Link Layer may be applied for Radio messages with or without Application Layer. 
-			FIELD_CI_EXT_DLL_II = 0x8D, //!<	Additional Link Layer may be applied for Radio messages with or without Application Layer. 
+			FIELD_CI_EXT_DLL_II = 0x8D, //!<	Additional Link Layer may be applied for Radio messages with or without Application Layer (ELL)
 			//#endif // OMS_V4_ENABLED
 
 			FIELD_CI_EXT_DLL_III = 0x8E,	//!<	Lower Layer Service (10 Byte)

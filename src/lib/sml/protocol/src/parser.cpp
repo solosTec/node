@@ -201,7 +201,12 @@ namespace smf {
 						//	callback
 						//	std::function<void(std::string, std::uint8_t, std::uint8_t, msg_type, cyng::tuple_t, std::uint16_t)>;
 						// 
-						cb_(std::string(trx.begin(), trx.end()), group_no, abort_on_error, last_type_, body, crc);
+						cb_((trx.size() == 1) ? std::to_string(trx.at(0)) : std::string(trx.begin(), trx.end())
+							, group_no
+							, abort_on_error
+							, last_type_
+							, body
+							, crc);
 					}
 				}
 

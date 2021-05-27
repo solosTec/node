@@ -110,6 +110,12 @@ namespace smf
 			return static_cast<std::uint8_t>(u);
 		}
                
+		constexpr unit to_unit(std::uint8_t n) {
+			return static_cast<unit>(n);	//	not safe!
+		}
+
+		unit decode_time_unit(std::uint8_t code);
+
 	}
 }
 

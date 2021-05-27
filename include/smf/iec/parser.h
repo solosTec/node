@@ -122,6 +122,8 @@ namespace smf
 			//	31.7.0(0.000*A)
 			//	32.32.0(000000)
 			//	52.32.0(094050)
+			//	1.6.1*87(01.05)(2101082215)
+			//	0.1.2.04 (98-05-01 00:00)	- time of last reset
 			// 
 			//	OBIS(data)	- Measurement value
 			//	OBIS(data)(time) - Extreme value
@@ -150,11 +152,6 @@ namespace smf
 
 		private:
 
-			/**
-			 * split data line into separate entities
-			 */
-			std::vector<std::string> split(std::string const&);
-
 			void convert(std::string const&, std::string const&);
 			void convert(std::string const&, std::string const&, std::string const&);
 
@@ -165,12 +162,31 @@ namespace smf
 		};
 
 		/**
+		 * split data line into separate entities
+		 */
+		std::vector<std::string> split_line(std::string const&);
+
+		/**
 		 * convert a string into an edis code.
 		 * format is "a.b.c"
 		 */
 		cyng::obis to_obis(std::string, std::uint8_t medium);
+
+		/**
+		 * convert 3 strings into u8 values
+		 */
 		std::tuple<std::uint8_t, std::uint8_t, std::uint8_t> to_u8(std::string, std::string, std::string);
+
+		/**
+		 * convert 4 strings into u8 values
+		 */
+		std::tuple<std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t> to_u8(std::string, std::string, std::string, std::string);
+
+		/**
+		 * Split a string over the '*' symbol
+		 */
 		std::tuple<std::string, std::string> split_edis_value(std::string);
+
 	}
 }
 
