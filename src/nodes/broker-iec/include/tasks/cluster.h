@@ -32,7 +32,7 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(void)>,
-            std::function<void(std::string, std::string)>, //	update client client
+            // std::function<void(std::string, std::string)>, //	update client client
             std::function<void(cyng::eod)>>;
 
       public:
@@ -72,7 +72,7 @@ namespace smf {
          */
         bool check_client(cyng::record const &);
         // void start_client(cyng::key_t, std::string, std::string);	//	start client
-        void update_client(std::string, std::string); //	update client client
+        // void update_client(std::string, std::string); //	update client client
 
       private:
         signatures_t sigs_;

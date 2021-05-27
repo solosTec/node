@@ -34,12 +34,29 @@ namespace smf {
             STOPPED,
         } state_;
 
+        class meter_mgr {
+
+          public:
+            meter_mgr(std::string);
+            std::string get() const;
+            /**
+             * @return true if at last position
+             */
+            bool next();
+            void add(std::string);
+            std::size_t size() const;
+            std::size_t index() const;
+
+          private:
+            std::vector<std::string> meters_;
+            std::size_t index_;
+        };
+
       public:
         client(
             std::weak_ptr<cyng::channel>,
             cyng::controller &,
             bus &,
-            std::shared_ptr<db> db,
             cyng::logger,
             std::filesystem::path,
             cyng::key_t key,
@@ -67,12 +84,10 @@ namespace smf {
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         bus &bus_;
-        std::shared_ptr<db> db_;
         cyng::logger logger_;
         cyng::key_t const key_;
-        std::vector<std::string> meters_;
-        std::size_t meter_index_;
 
+        meter_mgr mgr_;
         boost::asio::ip::tcp::resolver::results_type endpoints_;
         boost::asio::ip::tcp::socket socket_;
         boost::asio::io_context::strand dispatcher_;

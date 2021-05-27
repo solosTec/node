@@ -25,7 +25,6 @@ namespace smf {
 		, std::filesystem::path out)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
-		std::bind(&cluster::update_client, this, std::placeholders::_1, std::placeholders::_2),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
 	}
 		, channel_(wp)
@@ -43,7 +42,6 @@ namespace smf {
         if (sp) {
             std::size_t idx{0};
             sp->set_channel_name("connect", idx++);
-            sp->set_channel_name("update.client", idx++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
     }
@@ -110,11 +108,10 @@ namespace smf {
                     //
                     //	start/update clients
                     //
-                    auto sp = channel_.lock();
                     if (counter != 0) {
                         CYNG_LOG_INFO(logger_, "[db] address with multiple meters " << counter - 1 << ": " << host << ':' << port);
-                        if (sp)
-                            sp->dispatch("update.client", cyng::make_tuple(task, name));
+                        ctl_.get_registry().dispatch(task, "add.meter", name);
+
                     } else {
 
                         auto const delay = rnd_delay_();
@@ -123,8 +120,7 @@ namespace smf {
                         //
                         //	start client
                         //
-                        auto channel =
-                            ctl_.create_named_channel_with_ref<client>(task, ctl_, bus_, db_, logger_, out_, rec.key(), name);
+                        auto channel = ctl_.create_named_channel_with_ref<client>(task, ctl_, bus_, logger_, out_, rec.key(), name);
                         BOOST_ASSERT(channel->is_open());
 
                         //
@@ -146,8 +142,6 @@ namespace smf {
 
         return found;
     }
-
-    void cluster::update_client(std::string task_name, std::string meter) { CYNG_LOG_INFO(logger_, "update client " << meter); }
 
     //
     //	bus interface
