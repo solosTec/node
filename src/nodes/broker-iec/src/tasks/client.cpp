@@ -77,7 +77,7 @@ namespace smf {
                       "iecUplink",
                       cyng::data_generator(
                           std::chrono::system_clock::now(),
-                          "readout complete: " + name + " (" + dev + ") #" + std::to_string(entries_),
+                          "readout " + std::to_string(mgr_.index()) + " complete: " + name + " (" + dev + ") #" + std::to_string(entries_),
                           socket_.remote_endpoint(),
                           boost::uuids::nil_uuid()));
 
