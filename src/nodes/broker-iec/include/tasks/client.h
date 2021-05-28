@@ -24,7 +24,7 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(std::string, std::string, std::chrono::seconds)>,
-            std::function<void(std::string)>,
+            std::function<void(std::string, cyng::key_t)>, //  add
             std::function<void(cyng::eod)>>;
 
         enum class state {
@@ -34,27 +34,51 @@ namespace smf {
             STOPPED,
         } state_;
 
+        struct meter_state {
+            meter_state(std::string id, cyng::key_t);
+            std::string const id_;
+            cyng::key_t const key_;
+            std::uint32_t connect_counter_;
+            std::uint32_t failed_counter_;
+        };
+
+        /**
+         * Manage multiple meters at one gateway.
+         * Collect some statistics
+         */
         class meter_mgr {
 
           public:
-            meter_mgr(std::string);
-            std::string get() const;
+            meter_mgr(std::string, cyng::key_t);
+
+            /**
+             * @return current meter id
+             */
+            std::string get_id() const;
+            cyng::key_t get_key() const;
+
             /**
              * @return true if at last position
              */
             bool next();
-            void add(std::string);
+            void add(std::string, cyng::key_t key);
             std::size_t size() const;
             std::size_t index() const;
 
+            /**
+             * increase connect counter of current meter
+             */
+            void inc();
+            void failed();
+
           private:
-            std::vector<std::string> meters_;
+            std::vector<meter_state> meters_;
             std::size_t index_;
         };
 
       public:
         client(
-            std::weak_ptr<cyng::channel>,
+            cyng::channel_weak,
             cyng::controller &,
             bus &,
             cyng::logger,
@@ -64,7 +88,7 @@ namespace smf {
 
       private:
         void start(std::string, std::string, std::chrono::seconds);
-        void add_meter(std::string);
+        void add_meter(std::string, cyng::key_t);
         void stop(cyng::eod);
 
         void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
@@ -76,6 +100,13 @@ namespace smf {
         void do_write();
         void handle_write(const boost::system::error_code &ec);
 
+        /**
+         * send ice query for
+         *
+         * @param id meter id
+         */
+        void send_query(std::string id);
+
         constexpr bool is_stopped() const { return state_ == state::STOPPED; }
         constexpr bool is_connected() const { return state_ == state::CONNECTED; }
 
@@ -85,7 +116,6 @@ namespace smf {
         cyng::controller &ctl_;
         bus &bus_;
         cyng::logger logger_;
-        cyng::key_t const key_;
 
         meter_mgr mgr_;
         boost::asio::ip::tcp::resolver::results_type endpoints_;

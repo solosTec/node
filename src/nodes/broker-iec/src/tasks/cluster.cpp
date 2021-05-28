@@ -108,7 +108,7 @@ namespace smf {
                     //
                     if (counter != 0) {
                         CYNG_LOG_INFO(logger_, "[db] address with multiple meters " << counter - 1 << ": " << host << ':' << port);
-                        ctl_.get_registry().dispatch(task, "add.meter", name);
+                        ctl_.get_registry().dispatch(task, "add.meter", name, rec.key());
 
                     } else {
 
