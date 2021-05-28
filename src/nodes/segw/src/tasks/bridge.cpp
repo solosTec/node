@@ -375,7 +375,8 @@ namespace smf {
                 auto const targets = ctl_.get_registry().lookup(name);
                 for (auto sp : targets) {
                     if (sp) {
-                        CYNG_LOG_TRACE(logger_, "add-target-channel -> [" << port << "] #" << sp->get_id() << " - " << sp->get_name());
+                        CYNG_LOG_TRACE(
+                            logger_, "add-target-channel -> [" << port << "] #" << sp->get_id() << " - " << sp->get_name());
                         channel->dispatch("add-target-channel", sp->get_name());
                     }
                 }
@@ -699,8 +700,8 @@ namespace smf {
             //  In future version the NIC name is part of the configuration.
             //  So it's possible to use other NICs than br0
             //
-            init_redirector_ipv6(cfg, "eth2");
-            //init_redirector_ipv6(cfg, "br0");
+            // init_redirector_ipv6(cfg, "eth2");
+            init_redirector_ipv6(cfg, "br0");
 
         } else {
             CYNG_LOG_WARNING(logger_, "external listener for port [" << cfg.get_port_name() << "] is not enabled");
@@ -731,7 +732,8 @@ namespace smf {
             channel->suspend(delay, "start", cyng::make_tuple(delay));
 
         } else {
-            CYNG_LOG_WARNING(logger_, "link-local listener for port [" << cfg.get_port_name() << "] \"" << nic << "\" is not present");
+            CYNG_LOG_WARNING(
+                logger_, "link-local listener for port [" << cfg.get_port_name() << "] \"" << nic << "\" is not present");
         }
 #endif
     }
