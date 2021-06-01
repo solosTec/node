@@ -28,8 +28,9 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void()>,
             std::function<void(cyng::buffer_t)>,
-            std::function<void()>,              //	reset_target_channels
-            std::function<void(std::string)>,   //	add_target_channel
+            std::function<void()>,              //	reset_data_sinks
+            std::function<void(std::size_t)>,   //	add_data_sink
+            std::function<void(std::size_t)>,   //	remove_data_sink
             std::function<void(std::uint32_t)>, //	set_baud_rate
             std::function<void(std::string)>,   //	set_parity
             std::function<void(std::string)>,   //	set_flow_control
@@ -44,8 +45,9 @@ namespace smf {
       private:
         void stop(cyng::eod);
         void open();
-        void reset_target_channels();
-        void add_target_channel(std::string);
+        void reset_data_sinks();
+        void add_data_sink(std::size_t);
+        void remove_data_sink(std::size_t);
 
         void set_options(std::string const &);
         void do_read();
@@ -97,10 +99,12 @@ namespace smf {
         /**
          * data targets
          */
-        std::vector<std::string> targets_;
-        // std::vector<cyng::channel_ptr> targets_;
-        // std::vector<cyng::channel_ptr> gpio_;
+        std::vector<std::size_t> data_sinks_;
 
+        /**
+         * bytes per seconds.
+         * Used to calculate flashing frequency
+         */
         std::size_t accumulated_bytes_;
     };
 } // namespace smf

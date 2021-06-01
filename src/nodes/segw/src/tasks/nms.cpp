@@ -48,7 +48,7 @@ namespace smf {
                 acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
             }
             if (!ec) {
-                CYNG_LOG_TRACE(logger_, "[NMS] starts listening at: " << ep);
+                CYNG_LOG_INFO(logger_, "[NMS] starts listening at: " << ep);
                 do_accept();
             } else {
                 CYNG_LOG_WARNING(logger_, "[NMS] server cannot start listening at " << ep << ": " << ec.message());
@@ -105,7 +105,7 @@ namespace smf {
                     //	continue listening
                     //
                     do_accept();
-                } else {
+                } else if (ec != boost::asio::error::operation_aborted) {
                     CYNG_LOG_WARNING(logger_, "[NMS] server stopped: " << ec.message());
                 }
             });

@@ -58,7 +58,8 @@ namespace smf {
                 CYNG_LOG_INFO(logger_, "[RDR] " << get_name(type_) << " starts listening at " << ep_);
                 do_accept();
             } else {
-                CYNG_LOG_WARNING(logger_, "[RDR] " << get_name(type_) << " server cannot start listening at " << ep_ << ": " << ec.message());
+                CYNG_LOG_WARNING(
+                    logger_, "[RDR] " << get_name(type_) << " server cannot start listening at " << ep_ << ": " << ec.message());
                 //
                 //  reset acceptor
                 //
@@ -79,10 +80,24 @@ namespace smf {
                     auto sp = std::shared_ptr<session>(
                         new session(std::move(socket), registry_, cfg_, logger_, type_), [this](session *s) {
                             //
+                            //  disconnect from LMN
+                            //
+                            auto const id = s->get_redirector_id();
+                            BOOST_ASSERT(id != 0u);
+                            cfg_listener cfg(cfg_, type_);
+                            registry_.dispatch(cfg.get_port_name(), "remove-data-sink", id);
+
+                            //
+                            //  stop "redirector" task
+                            //
+                            s->stop_redirector();
+                            CYNG_LOG_TRACE(logger_, "[RDR] redirector #" << id << " stopped");
+
+                            //
                             //	update session counter
                             //
                             --session_counter_;
-                            CYNG_LOG_TRACE(logger_, "[RDR] session(s) running: " << session_counter_);
+                            CYNG_LOG_TRACE(logger_, "[RDR] " << session_counter_ << " session(s) running");
 
                             //
                             //	remove session
@@ -100,8 +115,7 @@ namespace smf {
                                 auto const count = ctl_.get_registry().dispatch_exclude(sp, "start", cyng::make_tuple(delay));
                                 if (count == 0) {
                                     CYNG_LOG_WARNING(logger_, "[RDR] no other listener available");
-                                }
-                                else {
+                                } else {
                                     CYNG_LOG_TRACE(logger_, "[RDR] #" << count << " other listener(s) restarted");
                                 }
                             }
@@ -128,8 +142,7 @@ namespace smf {
                             auto const count = ctl_.get_registry().dispatch_exclude(sp, "halt", cyng::make_tuple());
                             if (count == 0) {
                                 CYNG_LOG_WARNING(logger_, "[RDR] no other listener available");
-                            }
-                            else {
+                            } else {
                                 CYNG_LOG_TRACE(logger_, "[RDR] #" << count << " other listener(s) halted");
                             }
                         }
@@ -139,7 +152,8 @@ namespace smf {
                     //	continue listening
                     //
                     do_accept();
-                } else {
+                } else if (ec != boost::asio::error::operation_aborted) {
+
                     CYNG_LOG_WARNING(logger_, "[RDR] server stopped: " << ec.message());
                 }
             });

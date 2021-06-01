@@ -56,9 +56,9 @@ namespace smf {
         state_ = next;
         if (state_ != state::STOPPED) {
             boost::asio::post(dispatcher_, [this]() { buffer_write_.clear(); });
-            boost::system::error_code ignored_ec;
-            socket_.close(ignored_ec);
         }
+        boost::system::error_code ignored_ec;
+        socket_.close(ignored_ec);
     }
 
     void broker::receive(cyng::buffer_t data) {

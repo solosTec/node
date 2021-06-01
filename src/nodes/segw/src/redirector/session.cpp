@@ -35,7 +35,7 @@ namespace smf {
             //
             //	port name == LMN task name
             //
-            channel_->dispatch("start", cyng::make_tuple(cfg_.get_port_name()));
+            channel_->dispatch("connect", cyng::make_tuple(cfg_.get_port_name()));
 
             //
             //	start reading incoming data (mostly "/?!")
@@ -69,11 +69,11 @@ namespace smf {
                         //
                         //	send to port
                         //
-                        auto const count = registry_.dispatch(
+                        /*auto const count = */ registry_.dispatch(
                             port_name,
                             "write",
                             cyng::make_tuple(cyng::buffer_t(buffer_.begin(), buffer_.begin() + bytes_transferred)));
-                        CYNG_LOG_TRACE(logger_, "[RDR] " << port_name << " found " << count << " receiver");
+                        // CYNG_LOG_TRACE(logger_, "[RDR] " << port_name << " found " << count << " receiver");
 
                         //
                         //	continue reading
@@ -81,9 +81,18 @@ namespace smf {
                         do_read();
                     } else {
                         CYNG_LOG_WARNING(logger_, "[RDR] session " << port_name << " stopped: " << ec.message());
-                        channel_->stop();
                     }
                 });
+        }
+
+        std::size_t session::get_redirector_id() const { return (channel_) ? channel_->get_id() : 0u; }
+
+        bool session::stop_redirector() {
+            if (channel_) {
+                channel_->stop();
+                return true;
+            }
+            return false;
         }
 
     } // namespace rdr

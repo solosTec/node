@@ -27,10 +27,10 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(std::string)>, //	start
-            std::function<void(cyng::buffer_t)>,  // receive
-            std::function<void(cyng::eod)>
-            >;
+            std::function<void(std::string)>,    //	connect
+            std::function<void(std::string)>,    //	disconnect
+            std::function<void(cyng::buffer_t)>, // receive
+            std::function<void(cyng::eod)>>;
 
         using cb_f = std::function<void(cyng::buffer_t)>;
 
@@ -39,7 +39,8 @@ namespace smf {
 
       private:
         void stop(cyng::eod);
-        void start(std::string);
+        void connect(std::string);
+        void disconnect(std::string);
 
         /**
          * incoming data from LMN/filter

@@ -26,6 +26,13 @@ namespace smf {
 
             void start(cyng::controller &);
 
+            std::size_t get_redirector_id() const;
+
+            /**
+             * disconnect from LMN and stop redirector task
+             */
+            bool stop_redirector();
+
           private:
             void do_read();
             void do_write(cyng::buffer_t);

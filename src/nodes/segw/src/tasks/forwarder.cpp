@@ -20,9 +20,10 @@ namespace smf {
 		, cyng::logger logger
 		, cb_f cb)
 	: sigs_{
-			std::bind(&forwarder::start, this, std::placeholders::_1),	//	1
-			std::bind(&forwarder::receive, this, std::placeholders::_1),	//	2
-			std::bind(&forwarder::stop, this, std::placeholders::_1)	//	0
+			std::bind(&forwarder::connect, this, std::placeholders::_1),	//	1
+			std::bind(&forwarder::disconnect, this, std::placeholders::_1),	//	2
+			std::bind(&forwarder::receive, this, std::placeholders::_1),	//	3
+			std::bind(&forwarder::stop, this, std::placeholders::_1)	//	4
 	}
 		, channel_(wp)
 		, registry_(reg)
@@ -32,7 +33,8 @@ namespace smf {
         auto sp = channel_.lock();
         if (sp) {
             std::size_t slot{0};
-            sp->set_channel_name("start", slot++);
+            sp->set_channel_name("connect", slot++);
+            sp->set_channel_name("disconnect", slot++);
             sp->set_channel_name("receive", slot++);
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -40,16 +42,37 @@ namespace smf {
 
     void forwarder::stop(cyng::eod) {}
 
-    void forwarder::start(std::string lmn_task_name) {
-        //
-        //	register as listener on LMN port 1
-        //
-        CYNG_LOG_TRACE(logger_, "[redirector] registers als listener for [" << lmn_task_name << "]");
+    void forwarder::connect(std::string lmn_task_name) {
 
         //
         //  Add listener to LMN
         //
-        registry_.dispatch(lmn_task_name, "add-target-channel", cyng::make_tuple("redirector"));
+        auto sp = channel_.lock();
+        BOOST_ASSERT(sp);
+        if (sp) {
+            //
+            //	register as listener on LMN port 1
+            //
+            auto const id = sp->get_id();
+            CYNG_LOG_TRACE(logger_, "[redirector] #" << id << " connect to [" << lmn_task_name << "]");
+            registry_.dispatch(lmn_task_name, "add-data-sink", cyng::make_tuple(id));
+        }
+    }
+
+    void forwarder::disconnect(std::string lmn_task_name) {
+        //
+        //  remove as listener from LMN
+        //
+        auto sp = channel_.lock();
+        BOOST_ASSERT(sp);
+        if (sp) {
+            //
+            //	remove as listener from LMN
+            //
+            auto const id = sp->get_id();
+            CYNG_LOG_TRACE(logger_, "[redirector] #" << id << " disconnect from [" << lmn_task_name << "]");
+            registry_.dispatch(lmn_task_name, "remove-data-sink", cyng::make_tuple(id));
+        }
     }
 
     void forwarder::receive(cyng::buffer_t data) {

@@ -349,15 +349,16 @@ namespace smf {
                 //
                 //	init CP210x
                 //
-                channel->dispatch("reset-target-channels");
-                channel->dispatch("add-target-channel", cyng::make_tuple("CP210x"));
+                channel->dispatch("reset-data-sinks");
+                // channel->dispatch("add-data-sink", cyng::make_tuple("CP210x"));
+                channel->dispatch("add-data-sink", hci->get_id());
                 channel->dispatch("open");
                 channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
 
                 //
                 //	CP210x will forward incoming data to filter
                 //
-                hci->dispatch("reset-target-channels", cyng::make_tuple(blocklist.get_task_name()));
+                hci->dispatch("reset-data-sinks", cyng::make_tuple(blocklist.get_task_name()));
 
             } else {
 
@@ -365,8 +366,8 @@ namespace smf {
                 //	prepare broker to distribute data received
                 //  from this serial port
                 //
-                CYNG_LOG_TRACE(logger_, "reset-target-channels -> [" << port << "]");
-                channel->dispatch("reset-target-channels");
+                CYNG_LOG_TRACE(logger_, "reset-data-sinks -> [" << port << "]");
+                channel->dispatch("reset-data-sinks");
 
                 //
                 //  get a list of broker tasks
@@ -375,9 +376,8 @@ namespace smf {
                 auto const targets = ctl_.get_registry().lookup(name);
                 for (auto sp : targets) {
                     if (sp) {
-                        CYNG_LOG_TRACE(
-                            logger_, "add-target-channel -> [" << port << "] #" << sp->get_id() << " - " << sp->get_name());
-                        channel->dispatch("add-target-channel", sp->get_name());
+                        CYNG_LOG_TRACE(logger_, "add-data-sink -> [" << port << "] " << sp->get_name() << "#" << sp->get_id());
+                        channel->dispatch("add-data-sink", sp->get_id());
                     }
                 }
 
@@ -502,8 +502,9 @@ namespace smf {
             auto const name = cfg.get_task_name();
             auto scp = ctl_.get_registry().lookup(name);
             for (auto sp : scp) {
-                CYNG_LOG_INFO(logger_, "[broker " << name << "] stop #" << sp->get_id());
-                stash_.unlock(sp->get_id());
+                auto const id = sp->get_id();
+                CYNG_LOG_INFO(logger_, "[broker " << name << "] stop #" << id);
+                stash_.unlock(id);
                 sp->stop();
             }
 
@@ -532,7 +533,7 @@ namespace smf {
         //	broker tasks are target channels
         //
         cfg_broker broker_cfg(cfg_, type);
-        channel->dispatch("reset-target-channels", cyng::make_tuple(broker_cfg.get_task_name()));
+        channel->dispatch("reset-data-sinks", cyng::make_tuple(broker_cfg.get_task_name()));
     }
 
     void bridge::stop_filter() {

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2021 Sylko Olzscher
@@ -24,13 +24,14 @@ namespace smf {
 		: sigs_{
 			std::bind(&lmn::open, this),
 			std::bind(&lmn::do_write, this, std::placeholders::_1),
-			std::bind(&lmn::reset_target_channels, this),
-			std::bind(&lmn::add_target_channel, this, std::placeholders::_1),
-			std::bind(&lmn::set_baud_rate, this, std::placeholders::_1),	//	4
-			std::bind(&lmn::set_parity, this, std::placeholders::_1),		//	5
-			std::bind(&lmn::set_flow_control, this, std::placeholders::_1),	//	6
-			std::bind(&lmn::set_stopbits, this, std::placeholders::_1),		//	7
-			std::bind(&lmn::set_databits, this, std::placeholders::_1),		//	8
+			std::bind(&lmn::reset_data_sinks, this),
+			std::bind(&lmn::add_data_sink, this, std::placeholders::_1),
+			std::bind(&lmn::remove_data_sink, this, std::placeholders::_1),
+			std::bind(&lmn::set_baud_rate, this, std::placeholders::_1),	
+			std::bind(&lmn::set_parity, this, std::placeholders::_1),		
+			std::bind(&lmn::set_flow_control, this, std::placeholders::_1),	
+			std::bind(&lmn::set_stopbits, this, std::placeholders::_1),		
+			std::bind(&lmn::set_databits, this, std::placeholders::_1),		
 			std::bind(&lmn::update_statistics, this),	//	9
 			std::bind(&lmn::stop, this, std::placeholders::_1)
 		}	
@@ -41,7 +42,7 @@ namespace smf {
 		, gpio_cfg_(c)
 		, port_(ctl.get_ctx())
 		, buffer_{ 0 }
-		, targets_()
+		, data_sinks_()
 		, accumulated_bytes_{0}
 	{
         auto sp = channel_.lock();
@@ -49,8 +50,9 @@ namespace smf {
             std::size_t slot{0};
             sp->set_channel_name("open", slot++);
             sp->set_channel_name("write", slot++);
-            sp->set_channel_name("reset-target-channels", slot++);
-            sp->set_channel_name("add-target-channel", slot++);
+            sp->set_channel_name("reset-data-sinks", slot++);
+            sp->set_channel_name("add-data-sink", slot++);
+            sp->set_channel_name("remove-data-sink", slot++);
             sp->set_channel_name("set-baud-rate", slot++);
             sp->set_channel_name("set-parity", slot++);
             sp->set_channel_name("set-flow-control", slot++);
@@ -63,7 +65,7 @@ namespace smf {
 
     void lmn::stop(cyng::eod) {
         CYNG_LOG_INFO(logger_, "LMN stop");
-        targets_.clear();
+        data_sinks_.clear();
         boost::system::error_code ec;
         port_.close(ec);
     }
@@ -128,14 +130,19 @@ namespace smf {
         }
     }
 
-    void lmn::reset_target_channels() {
-        CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] clear " << targets_.size() << " target channel(s)");
-        targets_.clear();
+    void lmn::reset_data_sinks() {
+        CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] clear " << data_sinks_.size() << " data sink(s)");
+        data_sinks_.clear();
     }
 
-    void lmn::add_target_channel(std::string name) {
-        CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] add target \"" << name << "\" #" << targets_.size() + 1);
-        targets_.push_back(name);
+    void lmn::add_data_sink(std::size_t id) {
+        data_sinks_.push_back(id);
+        CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] add data sink #" << id << " +" << data_sinks_.size());
+    }
+
+    void lmn::remove_data_sink(std::size_t id) {
+        data_sinks_.erase(std::remove(data_sinks_.begin(), data_sinks_.end(), id), data_sinks_.end());
+        CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] remove data sink #" << id << " +" << data_sinks_.size());
     }
 
     void lmn::update_statistics() {
@@ -183,18 +190,18 @@ namespace smf {
                 //
                 CYNG_LOG_TRACE(
                     logger_,
-                    "[" << cfg_.get_port() << "] dispatch " << bytes_transferred << " bytes to " << targets_.size()
+                    "[" << cfg_.get_port() << "] dispatch " << bytes_transferred << " bytes to " << data_sinks_.size()
                         << " target(s)");
-                for (auto target : targets_) {
-					CYNG_LOG_TRACE(
-						logger_,
-						"[" << cfg_.get_port() << "] " << bytes_transferred << " bytes => " << target);
-						//	copy data
-                    ctl_.get_registry().dispatch(
-                        target,
-                        "receive",
-                        cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) + bytes_transferred)));
-                }
+
+                CYNG_LOG_TRACE(
+                    logger_,
+                    "[" << cfg_.get_port() << "] " << bytes_transferred << " bytes => " << data_sinks_.size() << " data sink(s)");
+
+                //	copy data
+                ctl_.get_registry().dispatch(
+                    data_sinks_,
+                    "receive",
+                    cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) + bytes_transferred)));
 
                 //
                 //	continue reading

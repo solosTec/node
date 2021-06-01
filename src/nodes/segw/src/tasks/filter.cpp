@@ -61,7 +61,7 @@ namespace smf {
         auto sp = channel_.lock();
         if (sp) {
             sp->set_channel_name("receive", 1);
-            sp->set_channel_name("reset-target-channels", 2);
+            sp->set_channel_name("reset-data-sinks", 2);
             sp->set_channel_name("update-statistics", 3);
 
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
