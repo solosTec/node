@@ -415,7 +415,8 @@ namespace smf {
             config::get_store_connection(),
             config::get_store_sys_msg(),
             config::get_store_uplink_wmbus(),
-            config::get_store_uplink_iec()};
+            config::get_store_uplink_iec(),
+            config::get_store_gwIEC()};
     }
 
     cyng::object convert_to_type(cyng::type_code tc, cyng::object &obj) {

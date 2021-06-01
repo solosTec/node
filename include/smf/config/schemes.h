@@ -9,119 +9,119 @@
 
 #include <cyng/store/meta.h>
 
-
 namespace smf {
-	namespace config {
+    namespace config {
 
+        /**
+         * device/TDevice
+         */
+        cyng::meta_store get_store_device();
+        cyng::meta_sql get_table_device();
 
-		/**
-		 * device/TDevice
-		 */
-		cyng::meta_store get_store_device();
-		cyng::meta_sql get_table_device();
+        /**
+         * meter/TMeter
+         */
+        cyng::meta_store get_store_meter();
+        cyng::meta_sql get_table_meter();
 
-		/**
-		 * meter/TMeter
-		 */
-		cyng::meta_store get_store_meter();
-		cyng::meta_sql get_table_meter();
+        /**
+         * meterIEC/TMeterIEC
+         */
+        cyng::meta_store get_store_meterIEC();
+        cyng::meta_sql get_table_meterIEC();
 
-		/**
-		 * meterIEC/TMeterIEC
-		 */
-		cyng::meta_store get_store_meterIEC();
-		cyng::meta_sql get_table_meterIEC();
+        /**
+         * meterwMBus/TMeterwMBus
+         */
+        cyng::meta_store get_store_meterwMBus();
+        cyng::meta_sql get_table_meterwMBus();
 
-		/**
-		 * meterwMBus/TMeterwMBus
-		 */
-		cyng::meta_store get_store_meterwMBus();
-		cyng::meta_sql get_table_meterwMBus();
+        /**
+         * gateway/TGateway
+         */
+        cyng::meta_store get_store_gateway();
+        cyng::meta_sql get_table_gateway();
 
+        /**
+         * loRaDevice/TLoRaDevice
+         */
+        cyng::meta_store get_store_lora();
+        cyng::meta_sql get_table_lora();
 
-		/**
-		 * gateway/TGateway
-		 */
-		cyng::meta_store get_store_gateway();
-		cyng::meta_sql get_table_gateway();
+        /**
+         * guiUser/TGuiUser
+         */
+        cyng::meta_store get_store_gui_user();
+        cyng::meta_sql get_table_gui_user();
 
-		/**
-		 * loRaDevice/TLoRaDevice
-		 */
-		cyng::meta_store get_store_lora();
-		cyng::meta_sql get_table_lora();
+        /**
+         * location/TLocation
+         */
+        cyng::meta_store get_store_location();
+        cyng::meta_sql get_table_location();
 
-		/**
-		 * guiUser/TGuiUser
-		 */
-		cyng::meta_store get_store_gui_user();
-		cyng::meta_sql get_table_gui_user();
+        //
+        //	store only schemes
+        // -----------------------------------------------------------------+
+        //
 
-		/**
-		 * location/TLocation
-		 */
-		cyng::meta_store get_store_location();
-		cyng::meta_sql get_table_location();
+        /**
+         * sessions
+         */
+        cyng::meta_store get_store_session();
 
+        /**
+         * all current connections
+         */
+        cyng::meta_store get_store_connection();
 
-		//
-		//	store only schemes
-		// -----------------------------------------------------------------+
-		//
+        /**
+         * push targets
+         */
+        cyng::meta_store get_store_target();
 
-		/**
-		 * sessions
-		 */
-		cyng::meta_store get_store_session();
+        /**
+         * push channels
+         */
+        cyng::meta_store get_store_channel();
 
-		/**
-		 * all current connections
-		 */
-		cyng::meta_store get_store_connection();
+        /**
+         * cluster/TCluster
+         */
+        cyng::meta_store get_store_cluster();
 
-		/**
-		 * push targets
-		 */
-		cyng::meta_store get_store_target();
+        /**
+         * super simple config table
+         */
+        cyng::meta_store get_config();
 
-		/**
-		 * push channels
-		 */
-		cyng::meta_store get_store_channel();
+        /**
+         * system messages
+         */
+        cyng::meta_store get_store_sys_msg();
 
-		/**
-		 * cluster/TCluster
-		 */
-		cyng::meta_store get_store_cluster();
+        /**
+         * IEC gateway status
+         */
+        cyng::meta_store get_store_gwIEC();
 
-		/**
-		 * super simple config table
-		 */
-		cyng::meta_store get_config();
+        //
+        //	uplinks
+        //
+        cyng::meta_store get_store_uplink_lora();
+        cyng::meta_store get_store_uplink_iec();
+        cyng::meta_store get_store_uplink_wmbus();
 
-		/**
-		 * system messages
-		 */
-		cyng::meta_store get_store_sys_msg();
+        /**
+         * container to store meta data of in-memory tables
+         */
+        using store_map = std::map<std::string, cyng::meta_store>;
 
-		//
-		//	uplinks
-		//
-		cyng::meta_store get_store_uplink_lora();
-		cyng::meta_store get_store_uplink_iec();
-		cyng::meta_store get_store_uplink_wmbus();
-
-
-		/**
-		 * container to store meta data of in-memory tables
-		 */
-		using store_map = std::map<std::string, cyng::meta_store>;
-
-		/**
-		 * container to store meta data of SQL tables
-		 */
-		using sql_map = std::map<std::string, cyng::meta_sql>;
-	}
-}
+        /**
+         * container to store meta data of SQL tables
+         */
+        using sql_map = std::map<std::string, cyng::meta_sql>;
+    } // namespace config
+} // namespace smf
 
 #endif
