@@ -153,7 +153,6 @@ namespace smf {
                     //
                     do_accept();
                 } else if (ec != boost::asio::error::operation_aborted) {
-
                     CYNG_LOG_WARNING(logger_, "[RDR] server stopped: " << ec.message());
                 }
             });

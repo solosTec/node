@@ -58,7 +58,7 @@ namespace smf {
             boost::asio::post(dispatcher_, [this]() { buffer_write_.clear(); });
         }
         boost::system::error_code ignored_ec;
-        socket_.close(ignored_ec);
+        socket_.close(ignored_ec); //  connection_aborted
     }
 
     void broker::receive(cyng::buffer_t data) {
@@ -222,7 +222,7 @@ namespace smf {
             }
 
             do_read();
-        } else {
+        } else if (ec != boost::asio::error::connection_aborted) {
             CYNG_LOG_WARNING(logger_, "[broker] " << target_ << " read " << ec.value() << ": " << ec.message());
             reset(state::START);
         }
