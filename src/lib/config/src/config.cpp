@@ -288,7 +288,6 @@ namespace smf {
 
             auto const macs = cyng::sys::get_mac48_adresses();
 
-            // std::string const host = boost::asio::ip::host_name();
             // os
             //	<< "host name: "
             //	<< host
@@ -315,8 +314,28 @@ namespace smf {
                 std::cout << std::endl;
                 std::cout << nics.size() << " network interface controller(s)" << std::endl;
                 for (auto const &nic : nics) {
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                    std::cout << nic << std::endl;
+#else
                     std::cout << nic << " - " << cyng::sys::get_address_IPv6(nic) << std::endl;
+#endif
                 }
+            }
+
+            try {
+                std::string const host = boost::asio::ip::host_name();
+                std::cout << std::endl << "address(es) of \"" << host << "\"" << std::endl;
+                boost::asio::io_service io_service;
+                boost::asio::ip::tcp::resolver resolver(io_service);
+                boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
+                boost::asio::ip::tcp::resolver::iterator it = resolver.resolve(query);
+
+                while (it != boost::asio::ip::tcp::resolver::iterator()) {
+                    boost::asio::ip::address addr = (it++)->endpoint().address();
+
+                    std::cout << addr.to_string() << std::endl;
+                }
+            } catch (std::exception const &) {
             }
         }
 

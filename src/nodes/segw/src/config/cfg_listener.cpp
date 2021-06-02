@@ -69,7 +69,7 @@ namespace smf {
 
     std::string cfg_listener::get_nic() const { return cfg_.get_value(nic_path(get_index()), "ens33"); }
 
-    boost::asio::ip::tcp::endpoint get_ipv6_ep(std::string nic) {
+    boost::asio::ip::tcp::endpoint cfg_listener::get_ipv6_ep(std::string nic) {
         auto const pres = cyng::sys::get_nic_prefix();
         auto const pos = std::find(pres.begin(), pres.end(), nic);
 

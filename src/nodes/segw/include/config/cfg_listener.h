@@ -56,6 +56,7 @@ namespace smf {
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
         std::string get_nic() const;
+        boost::asio::ip::tcp::endpoint get_ipv6_ep(std::string nic);
 #endif
 
         bool set_address(std::string) const;
@@ -71,10 +72,6 @@ namespace smf {
         cfg &cfg_;
         lmn_type const type_;
     };
-
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-    boost::asio::ip::tcp::endpoint get_ipv6_ep(std::string nic);
-#endif
 
     /**
      * debug helper
