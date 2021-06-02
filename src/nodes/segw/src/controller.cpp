@@ -296,6 +296,7 @@ namespace smf {
             "listener",
             cyng::tuple_factory(
                 cyng::make_param("address", "0.0.0.0"),
+                cyng::make_param("link-local", get_nms_address("br0")),
                 cyng::make_param("port", 6006),
                 cyng::make_param("login", false),                      //	request login
                 cyng::make_param("enabled", true),                     //	start rs485 server

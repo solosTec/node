@@ -711,8 +711,13 @@ namespace smf {
 
     void bridge::init_redirector_ipv6(cfg_listener const &cfg, std::string nic) {
 
+        //  use same link-local address as NMS and the ip port from the listener
+        cfg_nms nms(cfg_);
+        auto const addr6 = nms.get_as_ipv6();
+        boost::asio::ip::tcp::endpoint ep(addr6, cfg.get_port());
+
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-        auto const ep = cfg.get_ipv6_ep(nic);
+        CYNG_LOG_INFO(logger_, "link-local listener for port [" << cfg.get_port_name() << "] " << ep);
         if (!ep.address().is_unspecified()) {
 
             auto const name = cfg.get_task_name();
@@ -736,6 +741,9 @@ namespace smf {
             CYNG_LOG_WARNING(
                 logger_, "link-local listener for port [" << cfg.get_port_name() << "] \"" << nic << "\" is not present");
         }
+#else
+        CYNG_LOG_WARNING(
+            logger_, "link-local listener for port [" << cfg.get_port_name() << "] " << ep << " not supported on this platform");
 #endif
     }
 
