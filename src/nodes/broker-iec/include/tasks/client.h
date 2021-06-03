@@ -49,7 +49,7 @@ namespace smf {
         class meter_mgr {
 
           public:
-            meter_mgr(std::string, cyng::key_t);
+            meter_mgr();
 
             /**
              * @return current meter id
@@ -83,8 +83,9 @@ namespace smf {
             bus &,
             cyng::logger,
             std::filesystem::path,
-            cyng::key_t key,
-            std::string meter);
+            cyng::key_t key, //  "gwIEC"
+            std::uint32_t connect_counter,
+            std::uint32_t failure_counter);
 
       private:
         void start(std::string, std::string, std::chrono::seconds);
@@ -116,6 +117,10 @@ namespace smf {
         cyng::controller &ctl_;
         bus &bus_;
         cyng::logger logger_;
+
+        cyng::key_t key_gw_iec_; //  "gwIEC"
+        std::uint32_t connect_counter_;
+        std::uint32_t failure_counter_;
 
         meter_mgr mgr_;
         boost::asio::ip::tcp::resolver::results_type endpoints_;

@@ -116,6 +116,8 @@ namespace smf {
                     cyng::column("connectCounter", cyng::TC_UINT32), //	any attempt to open the socket
                     cyng::column("failureCounter", cyng::TC_UINT32), //	failed connects
                     cyng::column("state", cyng::TC_UINT16),          //	0 = offline, 1 = waiting, 2 = connected
+                    cyng::column("index", cyng::TC_UINT32),          //	current meter index (zero based)
+                    cyng::column("interval", cyng::TC_SECOND),       //	pull cycle
                 },
                 1);
         }
@@ -147,10 +149,8 @@ namespace smf {
             return cyng::to_sql(
                 get_store_meterwMBus(),
                 {36,
-                 0 //	address
-                 ,
-                 0 //	port
-                 ,
+                 0, //	address
+                 0, //	port
                  32,
                  0});
         }

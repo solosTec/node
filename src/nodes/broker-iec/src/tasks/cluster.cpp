@@ -36,7 +36,7 @@ namespace smf {
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_, channel_))
-		, rnd_delay_(10u, 240u)
+		, rnd_delay_(10u, 300u)
 	{
         auto sp = channel_.lock();
         if (sp) {
@@ -58,87 +58,90 @@ namespace smf {
         bus_.start();
     }
 
-    bool cluster::check_client(cyng::record const &rec) {
+    std::size_t cluster::check_gateway(cyng::record const &rec) {
 
         auto const host = rec.value("host", "");
         auto const port = rec.value<std::uint16_t>("port", 0);
-        auto const interval = rec.value("interval", std::chrono::seconds(900));
-        bool found = false;
+        auto const interval = rec.value("interval", std::chrono::seconds(60 * 60));
 
-        std::size_t counter{0};
+        auto const meter_counter = rec.value<std::uint32_t>("meterCounter", 0);
+        auto const connect_counter = rec.value<std::uint32_t>("connectCounter", 0);
+        auto const failure_counter = rec.value<std::uint32_t>("failureCounter", 0);
+
+        //
+        //	construct task name
+        //
+        auto const task_name = make_task_name(host, port);
+
+        auto const delay = rnd_delay_();
+        CYNG_LOG_TRACE(logger_, "[cluster] start client " << task_name << " in " << delay << " seconds");
+
+        //
+        //	start client
+        //
+        auto channel = ctl_.create_named_channel_with_ref<client>(
+            task_name, ctl_, bus_, logger_, out_, rec.key(), connect_counter, failure_counter);
+        BOOST_ASSERT(channel->is_open());
+
+        //
+        // find all meters and find the smallest time interval.
+        //
+        std::uint32_t counter{0};
         store_.access(
             [&](cyng::table const *tbl_iec, cyng::table const *tbl_meter) {
-                //
-                //	lookup meter
-                //
-                auto const meter = tbl_meter->lookup(rec.key());
-                if (!meter.empty()) {
+                tbl_iec->loop([&](cyng::record const &rec_iec, std::size_t) -> bool {
+                    auto const host_iec = rec_iec.value("host", "");
+                    auto const port_iec = rec_iec.value<std::uint16_t>("port", 0);
 
-                    //
-                    //	update "found" flag
-                    //
-                    found = true;
+                    if (boost::algorithm::equals(host_iec, host) && port_iec == port) {
 
-                    //
-                    //	get meter name
-                    //
-                    auto const name = meter.value("meter", "no-meter");
+                        //
+                        //	lookup meter
+                        //
+                        auto const meter = tbl_meter->lookup(rec_iec.key());
+                        if (!meter.empty()) {
 
-                    //
-                    //	search for duplicate ip adresses
-                    //
-                    tbl_iec->loop([&](cyng::record const &rec, std::size_t) -> bool {
-                        auto const cmp_host = rec.value("host", "");
-                        auto const cmp_port = rec.value<std::uint16_t>("port", 0);
+                            //
+                            //	get meter name
+                            //
+                            auto const name = meter.value("meter", "no-meter");
 
-                        if (boost::algorithm::equals(cmp_host, host) && cmp_port == port) {
+                            //
+                            //  update meter counter
+                            //
                             ++counter;
+
+                            CYNG_LOG_INFO(logger_, "[db] add meter " << name << " to " << task_name);
+                            channel->dispatch("add.meter", name, rec_iec.key());
+
+                        } else {
+                            CYNG_LOG_WARNING(logger_, "[db] address " << host << ':' << port << " without meter configuration ");
+                            bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] ", host, ":", port, "without meter configuration");
                         }
-
-                        return true;
-                    });
-
-                    //
-                    //	construct task name
-                    //
-                    auto task = make_task_name(host, port);
-
-                    //
-                    //	start/update clients
-                    //
-                    if (counter != 0) {
-                        CYNG_LOG_INFO(logger_, "[db] address with multiple meters " << counter - 1 << ": " << host << ':' << port);
-                        ctl_.get_registry().dispatch(task, "add.meter", name, rec.key());
-
-                    } else {
-
-                        auto const delay = rnd_delay_();
-                        CYNG_LOG_TRACE(logger_, "[cluster] start client " << host << ':' << port << " in " << delay << " seconds");
-
-                        //
-                        //	start client
-                        //
-                        auto channel = ctl_.create_named_channel_with_ref<client>(task, ctl_, bus_, logger_, out_, rec.key(), name);
-                        BOOST_ASSERT(channel->is_open());
-
-                        //
-                        //  start all clients with a random delay between 10 and 240 seconds
-                        //
-                        channel->suspend(
-                            std::chrono::seconds(delay), "start", cyng::make_tuple(host, std::to_string(port), interval));
-                        //
-                        //  client stays alive since using a timer with a reference to the task
-                        //
                     }
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[db] address " << host << ':' << port << " without meter configuration");
-                    bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec]", host, ":", port, "without meter configuration");
-                }
+
+                    return true;
+                });
             },
             cyng::access::read("meterIEC"),
             cyng::access::read("meter"));
 
-        return found;
+        //
+        //  start all clients with a random delay between 10 and 300 seconds
+        //
+        channel->suspend(std::chrono::seconds(delay), "start", cyng::make_tuple(host, std::to_string(port), interval));
+
+        //
+        //  client stays alive since using a timer with a reference to the task
+        //
+
+        // BOOST_ASSERT(counter == meter_counter); //  check data consistency
+        if (counter != meter_counter) {
+            CYNG_LOG_WARNING(
+                logger_,
+                "[cluster] client " << task_name << " has an inconsistent configuration: " << counter << "/" << meter_counter);
+        }
+        return counter;
     }
 
     //
@@ -154,7 +157,7 @@ namespace smf {
             //
             auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
             db_->init(slot);
-            // db_->loop([this](cyng::meta_store const &m) { bus_.req_subscribe(m.get_name()); });
+            //  start with first table
             bus_.req_subscribe("meter");
 
         } else {
@@ -179,11 +182,11 @@ namespace smf {
         //
 
         if (db_) {
-            if (boost::algorithm::equals(table_name, "meterIEC")) {
-                cyng::record rec(db_->get_meta_iec(), key, data, gen);
+            if (boost::algorithm::equals(table_name, "gwIEC")) {
+                cyng::record rec(db_->get_meta(table_name), key, data, gen);
 
-                CYNG_LOG_INFO(logger_, "[cluster] check client: " << data);
-                check_client(rec);
+                CYNG_LOG_INFO(logger_, "[cluster] check gateway: " << data);
+                check_gateway(rec);
             }
             db_->res_insert(table_name, key, data, gen, tag);
         }
@@ -192,8 +195,9 @@ namespace smf {
     void cluster::db_res_trx(std::string table_name, bool trx) {
         CYNG_LOG_INFO(logger_, "[cluster] trx: " << table_name << (trx ? " start" : " commit"));
         if (!trx) {
-            if (boost::algorithm::equals(table_name, "meter")) {
-                bus_.req_subscribe("meterIEC");
+            auto const next = db_->get_next_table(table_name);
+            if (!next.empty()) {
+                bus_.req_subscribe(next);
             }
         }
     }

@@ -105,8 +105,9 @@ namespace smf {
 
         CYNG_LOG_INFO(logger_, "[cluster] trx: " << table_name << (trx ? " start" : " commit"));
         if (!trx) {
-            if (boost::algorithm::equals(table_name, "meter")) {
-                bus_.req_subscribe("meterwMBus");
+            auto const next = db_->get_next_table(table_name);
+            if (!next.empty()) {
+                bus_.req_subscribe(next);
             }
         }
     }

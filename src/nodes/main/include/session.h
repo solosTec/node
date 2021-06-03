@@ -19,6 +19,8 @@
 #include <array>
 #include <memory>
 
+#include <boost/uuid/name_generator.hpp>
+
 namespace smf {
 
     class session : public std::enable_shared_from_this<session> {
@@ -30,7 +32,10 @@ namespace smf {
             forward(cyng::table const *, cyng::key_t const &, cyng::data_t const &, std::uint64_t, boost::uuids::uuid) override;
 
             virtual bool forward(
-                cyng::table const *tbl, cyng::key_t const &key, cyng::attr_t const &attr, std::uint64_t gen,
+                cyng::table const *tbl,
+                cyng::key_t const &key,
+                cyng::attr_t const &attr,
+                std::uint64_t gen,
                 boost::uuids::uuid tag) override;
 
             virtual bool forward(cyng::table const *tbl, cyng::key_t const &key, boost::uuids::uuid tag) override;
@@ -68,14 +73,24 @@ namespace smf {
         void db_req_subscribe(std::string, boost::uuids::uuid tag);
 
         void db_req_insert(
-            std::string const &table_name, cyng::key_t key, cyng::data_t data, std::uint64_t generation, boost::uuids::uuid);
+            std::string const &table_name,
+            cyng::key_t key,
+            cyng::data_t data,
+            std::uint64_t generation,
+            boost::uuids::uuid);
 
         void db_req_insert_auto(std::string const &table_name, cyng::data_t data, boost::uuids::uuid);
+
+        /**
+         * table "gwIEC" is depended from table "meterIEC"
+         */
+        void db_req_insert_gw_iec(cyng::key_t key, boost::uuids::uuid tag);
 
         /**
          * table merge()
          */
         void db_req_update(std::string const &table_name, cyng::key_t key, cyng::param_map_t, boost::uuids::uuid);
+        void db_req_update_gw_iec(cyng::key_t key, cyng::param_map_t, boost::uuids::uuid);
 
         /**
          * table erase()
@@ -113,7 +128,8 @@ namespace smf {
          * pty.return.open.connection
          */
         void pty_return_open_connection(
-            bool success, boost::uuids::uuid dev //	callee dev-tag
+            bool success,
+            boost::uuids::uuid dev //	callee dev-tag
             ,
             boost::uuids::uuid callee //	callee vm-tag
             ,
@@ -141,8 +157,15 @@ namespace smf {
          * pty.open.channel
          */
         void pty_open_channel(
-            boost::uuids::uuid, boost::uuids::uuid, std::string, std::string, std::string, std::string, std::string,
-            std::chrono::seconds, cyng::param_map_t);
+            boost::uuids::uuid,
+            boost::uuids::uuid,
+            std::string,
+            std::string,
+            std::string,
+            std::string,
+            std::string,
+            std::chrono::seconds,
+            cyng::param_map_t);
 
         /**
          * pty.close.channel
@@ -153,7 +176,12 @@ namespace smf {
          * pty.push.data.req
          */
         void pty_push_data_req(
-            boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, std::uint32_t, cyng::buffer_t, cyng::param_map_t);
+            boost::uuids::uuid,
+            boost::uuids::uuid,
+            std::uint32_t,
+            std::uint32_t,
+            cyng::buffer_t,
+            cyng::param_map_t);
 
         /**
          * send data to cluster node
@@ -188,6 +216,9 @@ namespace smf {
         //	"db.req.clear"
         static std::function<void(std::string, boost::uuids::uuid)> get_vm_func_db_req_clear(session *);
 
+        //	"db.upload.complete"
+        // static std::function<void(boost::uuids::uuid)> get_vm_func_db_upload_complete(session *);
+
         //	"cluster.req.login"
         static std::function<void(boost::uuids::uuid, std::string, std::string, boost::asio::ip::tcp::endpoint, std::string)>
         get_vm_func_pty_login(session *);
@@ -216,8 +247,15 @@ namespace smf {
         static std::function<void(boost::uuids::uuid, std::string)> get_vm_func_pty_deregister(session *);
 
         static std::function<void(
-            boost::uuids::uuid, boost::uuids::uuid, std::string, std::string, std::string, std::string, std::string,
-            std::chrono::seconds, cyng::param_map_t)>
+            boost::uuids::uuid,
+            boost::uuids::uuid,
+            std::string,
+            std::string,
+            std::string,
+            std::string,
+            std::string,
+            std::chrono::seconds,
+            cyng::param_map_t)>
         get_vm_func_pty_open_channel(session *);
 
         static std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, cyng::param_map_t)>
@@ -254,6 +292,11 @@ namespace smf {
          */
         boost::uuids::uuid peer_;
         std::string protocol_layer_;
+
+        /**
+         * generate depended kays for "gwIEC"
+         */
+        boost::uuids::name_generator_sha1 uuid_gen_;
     };
 
 } // namespace smf

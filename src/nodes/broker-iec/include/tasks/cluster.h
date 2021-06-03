@@ -68,9 +68,9 @@ namespace smf {
         virtual void db_res_clear(std::string, boost::uuids::uuid tag) override;
 
         /**
-         * @return true if meter is defined
+         * @return meter count
          */
-        bool check_client(cyng::record const &);
+        std::size_t check_gateway(cyng::record const &);
         // void start_client(cyng::key_t, std::string, std::string);	//	start client
         // void update_client(std::string, std::string); //	update client client
 

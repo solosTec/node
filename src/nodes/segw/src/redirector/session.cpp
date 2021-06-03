@@ -79,7 +79,7 @@ namespace smf {
                         //	continue reading
                         //
                         do_read();
-                    } else {
+                    } else if (ec != boost::asio::error::connection_aborted) {
                         CYNG_LOG_WARNING(logger_, "[RDR] session " << port_name << " stopped: " << ec.message());
                     }
                 });

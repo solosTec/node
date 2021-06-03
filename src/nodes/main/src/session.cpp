@@ -35,16 +35,18 @@ namespace smf {
         })
         , slot_(cyng::make_slot(new slot(this)))
         , peer_(boost::uuids::nil_uuid())
-        , protocol_layer_("any") {
+        , protocol_layer_("any")
+        , uuid_gen_(boost::uuids::ns::oid()) {
         vm_ = init_vm(fabric);
         std::size_t slot{0};
-        vm_.set_channel_name("cluster.req.login", slot++);           //	get_vm_func_cluster_req_login
-        vm_.set_channel_name("db.req.subscribe", slot++);            //	get_vm_func_db_req_subscribe
-        vm_.set_channel_name("db.req.insert", slot++);               //	get_vm_func_db_req_insert
-        vm_.set_channel_name("db.req.insert.auto", slot++);          //	get_vm_func_db_req_insert_auto
-        vm_.set_channel_name("db.req.update", slot++);               //	table modify()
-        vm_.set_channel_name("db.req.remove", slot++);               //	table erase()
-        vm_.set_channel_name("db.req.clear", slot++);                //	table clear()
+        vm_.set_channel_name("cluster.req.login", slot++);  //	get_vm_func_cluster_req_login
+        vm_.set_channel_name("db.req.subscribe", slot++);   //	get_vm_func_db_req_subscribe
+        vm_.set_channel_name("db.req.insert", slot++);      //	get_vm_func_db_req_insert
+        vm_.set_channel_name("db.req.insert.auto", slot++); //	get_vm_func_db_req_insert_auto
+        vm_.set_channel_name("db.req.update", slot++);      //	table modify()
+        vm_.set_channel_name("db.req.remove", slot++);      //	table erase()
+        vm_.set_channel_name("db.req.clear", slot++);       //	table clear()
+        // vm_.set_channel_name("db.upload.complete", slot++);          //	upload complete()
         vm_.set_channel_name("pty.req.login", slot++);               //	get_vm_func_pty_login
         vm_.set_channel_name("pty.req.logout", slot++);              //	get_vm_func_pty_logout
         vm_.set_channel_name("pty.open.connection", slot++);         //	get_vm_func_pty_open_connection
@@ -127,6 +129,7 @@ namespace smf {
             get_vm_func_db_req_update(this),
             get_vm_func_db_req_remove(this),
             get_vm_func_db_req_clear(this),
+            // get_vm_func_db_upload_complete(this),
             get_vm_func_pty_login(this),
             get_vm_func_pty_logout(this),
             get_vm_func_pty_open_connection(this),
@@ -215,15 +218,97 @@ namespace smf {
         std::reverse(key.begin(), key.end());
         std::reverse(data.begin(), data.end());
 
-        CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.insert " << table_name << " - " << data);
+        auto const b = cache_.get_store().insert(table_name, key, data, generation, tag);
 
-        cache_.get_store().insert(table_name, key, data, generation, tag);
+        if (b) {
+            try {
+                CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.insert " << table_name << " - " << data);
+            } catch (std::exception const &ex) {
+                CYNG_LOG_WARNING(logger_, "session " << tag << " is offline: " << ex.what());
+            }
+
+            if (boost::algorithm::equals(table_name, "meterIEC")) {
+                //
+                //  insert/update "gwIEC" too
+                //
+                db_req_insert_gw_iec(key, tag);
+            } else {
+                CYNG_LOG_WARNING(logger_, "[session] req.insert " << table_name << " - " << data << " failed");
+            }
+        }
     }
+
+    void session::db_req_insert_gw_iec(cyng::key_t key, boost::uuids::uuid tag) {
+
+        cache_.get_store().access(
+            [&](cyng::table const *tbl_meter, cyng::table *tbl_gw) {
+                //
+                //  get record
+                //
+                auto const rec_meter = tbl_meter->lookup(key);
+                if (!rec_meter.empty()) {
+                    auto const host = rec_meter.value("host", "");
+                    auto const port = rec_meter.value<std::uint16_t>("port", 0);
+                    auto const interval = rec_meter.value("interval", std::chrono::seconds(60 * 60));
+
+                    //
+                    // build key
+                    //
+                    auto const s = host + ":" + std::to_string(port);
+                    auto const gw_tag = uuid_gen_(s);
+                    auto const gw_key = cyng::key_generator(gw_tag);
+
+                    //
+                    //  lookup IEC gw
+                    //
+                    auto const rec_gw = tbl_gw->lookup(gw_key);
+                    if (rec_gw.empty()) {
+                        if (tbl_gw->insert(
+                                gw_key,
+                                cyng::data_generator(
+                                    host,
+                                    port,
+                                    static_cast<std::uint32_t>(1), //  meterCounter
+                                    static_cast<std::uint32_t>(0), // connectCounter
+                                    static_cast<std::uint32_t>(0), // failureCounter
+                                    static_cast<std::uint16_t>(0), // state
+                                    static_cast<std::uint32_t>(0), // current meter index
+                                    //  interval: at least 1 minute
+                                    interval < std::chrono::seconds(60) ? std::chrono::seconds(60) : interval),
+                                1,
+                                tag)) {
+                            CYNG_LOG_TRACE(logger_, "insert iec gw " << s << " - " << gw_key);
+                        } else {
+                            CYNG_LOG_WARNING(logger_, "insert iec gw " << s << " - " << gw_key << " failed");
+                        }
+                    } else {
+                        auto const meter_counter = rec_gw.value<std::uint32_t>("meterCounter", 0) + 1;
+                        CYNG_LOG_TRACE(logger_, "update iec gw " << s << " to " << meter_counter << " meters");
+                        BOOST_ASSERT(meter_counter > 1u);
+                        tbl_gw->modify(gw_key, cyng::make_param("meterCounter", meter_counter), tag);
+
+                        //  at least 1 minute
+                        auto const interval_gw = rec_gw.value("interval", std::chrono::seconds(60 * 60));
+                        if (interval < interval_gw && (interval > std::chrono::seconds(60))) {
+                            CYNG_LOG_TRACE(logger_, "update iec gw " << s << " to " << interval.count() << " seconds pull cycle");
+                            tbl_gw->modify(gw_key, cyng::make_param("interval", interval), tag);
+                        }
+                    }
+                }
+            },
+            cyng::access::read("meterIEC"),
+            cyng::access::write("gwIEC"));
+    }
+
     void session::db_req_insert_auto(std::string const &table_name, cyng::data_t data, boost::uuids::uuid tag) {
 
         std::reverse(data.begin(), data.end());
 
-        CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.insert.auto " << table_name << " - " << data);
+        try {
+            CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.insert.auto " << table_name << " - " << data);
+        } catch (std::exception const &ex) {
+            CYNG_LOG_WARNING(logger_, "session " << tag << " is offline: " << ex.what());
+        }
 
         cache_.get_store().insert_auto(table_name, std::move(data), tag);
 
@@ -238,13 +323,35 @@ namespace smf {
 
     void session::db_req_update(std::string const &table_name, cyng::key_t key, cyng::param_map_t data, boost::uuids::uuid source) {
 
-        CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.update " << table_name << " - " << data);
+        try {
+            CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.update " << table_name << " - " << data);
+        } catch (std::exception const &ex) {
+            CYNG_LOG_WARNING(logger_, "session " << source << " is offline: " << ex.what());
+        }
 
         //
         //	key with multiple columns
         //
         std::reverse(key.begin(), key.end());
-        cache_.get_store().modify(table_name, key, data, source);
+        auto const b = cache_.get_store().modify(table_name, key, data, source);
+
+        if (b && boost::algorithm::equals(table_name, "meterIEC")) {
+            //
+            //  update "gwIEC" too
+            //
+            db_req_update_gw_iec(key, data, source);
+        }
+    }
+
+    void session::db_req_update_gw_iec(cyng::key_t key, cyng::param_map_t pmap, boost::uuids::uuid source) {
+
+        for (auto const &pm : pmap) {
+            if (boost::algorithm::equals(pm.first, "host") || boost::algorithm::equals(pm.first, "port")) {
+                //
+                //  ToDo: move to other gateway
+                //
+            }
+        }
     }
 
     void session::db_req_remove(std::string const &table_name, cyng::key_t key, boost::uuids::uuid source) {
@@ -253,6 +360,14 @@ namespace smf {
         if (cache_.get_store().erase(table_name, key, source)) {
 
             CYNG_LOG_TRACE(logger_, "remove [" << table_name << '/' << key << "] ok");
+
+            if (boost::algorithm::equals(table_name, "meterIEC")) {
+                //
+                //  update "gwIEC" too
+                //
+                // db_req_remove_gw_iec(key, data, source);
+            }
+
         } else {
             CYNG_LOG_WARNING(logger_, "remove [" << table_name << '/' << key << "] failed");
 
