@@ -83,7 +83,8 @@ namespace smf {
     void server::do_accept() {
         acceptor_.async_accept([this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
             if (!ec) {
-                CYNG_LOG_INFO(logger_, "new session " << socket.remote_endpoint());
+                auto const ep = socket.remote_endpoint();
+                CYNG_LOG_INFO(logger_, "new session " << ep);
 
                 auto sp = std::shared_ptr<session>(new session(std::move(socket), cache_, fabric_, logger_), [this](session *s) {
                     BOOST_ASSERT(s != nullptr);
@@ -125,7 +126,7 @@ namespace smf {
                     //	update session counter
                     //
                     ++session_counter_;
-                    cache_.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_, "node(s) online + ", socket.remote_endpoint());
+                    cache_.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_, "node(s) online + ", ep);
                 }
 
                 //
