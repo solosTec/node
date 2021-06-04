@@ -145,6 +145,11 @@ namespace smf {
                 } else if (boost::algorithm::equals(type, "uplinkwMBus")) {
                     BOOST_ASSERT(boost::algorithm::equals(target, "/download.wMBusUplink"));
                     download = download_.generate("wMBusUplink", fmt);
+                } else if (boost::algorithm::equals(type, "gwIEC")) {
+                    BOOST_ASSERT(boost::algorithm::equals(target, "/download.gwIEC"));
+                    download = download_.generate("gwIEC", fmt);
+                } else {
+                    CYNG_LOG_WARNING(logger_, "[HTTP] unknown download type: [" << type << "]");
                 }
             });
             parser.read(content.begin(), content.end());
