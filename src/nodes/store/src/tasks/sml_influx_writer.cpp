@@ -5,9 +5,10 @@
  *
  */
 #include <influxdb.h>
+#include <tasks/sml_influx_writer.h>
+
 #include <smf/mbus/server_id.h>
 #include <smf/obis/conv.h>
-#include <tasks/sml_influx_writer.h>
 
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
@@ -38,7 +39,13 @@ namespace smf {
         , service_(service)
         , protocol_(protocol)
         , cert_(cert)
-        , db_(db) {
+        , db_(db)
+#ifdef _DEBUG
+        , reg_nae_t2_(56113.9)
+        , rnd_gen()
+        , rnd_dist_(-100.0, 500.0)
+#endif
+    {
         auto sp = channel_.lock();
         if (sp) {
             std::size_t slot{0};
@@ -84,7 +91,6 @@ namespace smf {
         std::string profile,
         cyng::buffer_t server_id,
         cyng::object actTime,
-        // std::uint32_t reg_period,
         std::uint32_t status,
         cyng::param_map_t const &pmap) {
 
@@ -123,10 +129,22 @@ namespace smf {
                     //
                     ss << "," << val.first << "=\"" << cyng::io::to_plain(val.second) << "\"";
                 } else if (boost::algorithm::equals(val.first, "value")) {
+
+#ifdef _DEBUG
+                    if (boost::algorithm::equals(v.first, "0100020802ff")) {
+                        //  random value
+                        reg_nae_t2_ += rnd_dist_(rnd_gen);
+                        ss << "," << v.first << "=" << reg_nae_t2_;
+                    } else {
+                        ss << "," << v.first << "=" << influx::to_line_protocol(val.second);
+                    }
+#else
                     //
                     //  obis = value
                     //
                     ss << "," << v.first << "=" << influx::to_line_protocol(val.second);
+#endif
+
                 } else if (boost::algorithm::equals(val.first, "reg_period")) {
                     //  skip
                 } else {

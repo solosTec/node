@@ -13,6 +13,12 @@
 
 #include <boost/uuid/uuid.hpp>
 
+#ifdef _DEBUG
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
+#include <cyng/rnd/rnd.hpp>
+#endif
+
 namespace smf {
 
     class sml_influx_writer {
@@ -21,14 +27,7 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void(cyng::buffer_t, cyng::buffer_t)>,
             std::function<void()>,
-            std::function<void(
-                std::string,
-                cyng::buffer_t,
-                cyng::object,
-                // std::uint32_t,
-                std::uint32_t,
-                cyng::obis_path_t,
-                cyng::param_map_t)>,
+            std::function<void(std::string, cyng::buffer_t, cyng::object, std::uint32_t, cyng::obis_path_t, cyng::param_map_t)>,
             std::function<void()>,
             std::function<void(cyng::eod)>>;
 
@@ -75,6 +74,12 @@ namespace smf {
         std::string const protocol_; //  http/hhtps/ws
         std::string const cert_;
         std::string const db_; //  adressed database
+#ifdef _DEBUG
+        //  random value for "0100020802ff" (Negative active energy(A+) in tariff T2)
+        double reg_nae_t2_;
+        boost::random::mt19937 rnd_gen;
+        boost::random::uniform_real_distribution<> rnd_dist_;
+#endif
     };
 
 } // namespace smf
