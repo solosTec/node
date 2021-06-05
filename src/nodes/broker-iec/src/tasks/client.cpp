@@ -170,8 +170,9 @@ namespace smf {
                 bus_.req_db_update(
                     "gwIEC",
                     key_gw_iec_,
-                    cyng::param_map_factory()("connectCounter", connect_counter_)("state", static_cast<std::uint16_t>(1))/*(
-                        "lastUpdate", std::chrono::system_clock::now())*/);
+                    cyng::param_map_factory()("connectCounter", connect_counter_) //  increased connect counter
+                    ("state", static_cast<std::uint16_t>(1))                      //  waiting
+                    ("index", static_cast<std::uint32_t>(mgr_.size())));          //  current meter index
 
                 boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
                 connect(r.resolve(address, service));
@@ -367,7 +368,10 @@ namespace smf {
             bus_.req_db_update(
                 "gwIEC",
                 key_gw_iec_,
-                cyng::param_map_factory()("connectCounter", connect_counter_)("state", static_cast<std::uint16_t>(0)));
+                cyng::param_map_factory()
+                    ("state", static_cast<std::uint16_t>(0))   //  offline
+                    ("index", static_cast<std::uint32_t>(mgr_.index()))                //  current meter index            
+                );
         }
     }
 
