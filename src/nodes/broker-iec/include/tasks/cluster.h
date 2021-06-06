@@ -13,7 +13,6 @@
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/eod.h>
-#include <cyng/rnd/rnd.hpp>
 #include <cyng/task/stash.h>
 #include <cyng/task/task_fwd.h>
 #include <cyng/vm/mesh.h>
@@ -71,8 +70,7 @@ namespace smf {
          * @return meter count
          */
         std::size_t check_gateway(cyng::record const &);
-        // void start_client(cyng::key_t, std::string, std::string);	//	start client
-        // void update_client(std::string, std::string); //	update client client
+        void update_delay(std::uint32_t counter);
 
       private:
         signatures_t sigs_;
@@ -86,8 +84,7 @@ namespace smf {
         bus bus_;
         cyng::store store_;
         std::shared_ptr<db> db_;
-        cyng::crypto::rnd_num<std::uint32_t> rnd_delay_;
-        // cyng::stash clients_;
+        std::chrono::seconds delay_;
     };
 
     std::string make_task_name(std::string host, std::uint16_t port);

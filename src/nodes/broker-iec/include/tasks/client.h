@@ -38,8 +38,6 @@ namespace smf {
             meter_state(std::string id, cyng::key_t);
             std::string const id_;
             cyng::key_t const key_;
-            std::uint32_t connect_counter_;
-            std::uint32_t failed_counter_;
         };
 
         /**
@@ -62,18 +60,12 @@ namespace smf {
              */
             bool next();
             void add(std::string, cyng::key_t key);
-            std::size_t size() const;
-            std::size_t index() const;
-
-            /**
-             * increase connect counter of current meter
-             */
-            void inc();
-            void failed();
+            std::uint32_t size() const;
+            std::uint32_t index() const;
 
           private:
             std::vector<meter_state> meters_;
-            std::size_t index_;
+            std::uint32_t index_;
         };
 
       public:

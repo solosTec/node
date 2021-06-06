@@ -67,6 +67,12 @@ namespace smf {
                   //	increment counter
                   //
                   ++entries_;
+
+            bus_.req_db_update(
+                "gwIEC",
+                key_gw_iec_,
+                cyng::param_map_factory()("index", static_cast<std::uint32_t>(entries_)));
+
               },
               [this](std::string dev, bool crc) {
                   auto const name = mgr_.get_id();
@@ -98,14 +104,13 @@ namespace smf {
                         bus_.req_db_update(
                           "gwIEC",
                           key_gw_iec_,
-                          cyng::param_map_factory()("index", static_cast<std::uint32_t>(mgr_.index()))); //  current meter index
+                          cyng::param_map_factory()("index", mgr_.index())); //  current meter index
                            
 
                       //
                       //    more meters
                       //
                       auto const name = mgr_.get_id();
-                      mgr_.inc();
                       writer_->dispatch("open", cyng::make_tuple(name));
                       CYNG_LOG_INFO(logger_, "[client] query " << name << " #" << mgr_.index() << "/" << mgr_.size());
                       send_query(name);
@@ -172,7 +177,7 @@ namespace smf {
                     key_gw_iec_,
                     cyng::param_map_factory()("connectCounter", connect_counter_) //  increased connect counter
                     ("state", static_cast<std::uint16_t>(1))                      //  waiting
-                    ("index", static_cast<std::uint32_t>(mgr_.size())));          //  current meter index
+                    ("index", mgr_.size()));                                      //  set current meter index to max
 
                 boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
                 connect(r.resolve(address, service));
@@ -227,8 +232,6 @@ namespace smf {
                         "connect failed: " + mgr_.get_id(),
                         boost::asio::ip::tcp::endpoint(),
                         boost::uuids::nil_uuid()));
-
-                mgr_.failed();
 
                 ++failure_counter_;
                 bus_.req_db_update(
@@ -288,7 +291,7 @@ namespace smf {
                 "gwIEC",
                 key_gw_iec_,
                 cyng::param_map_factory()("state", static_cast<std::uint16_t>(2)) //  state: online
-                ("index", static_cast<std::uint32_t>(mgr_.index())                //  current meter index
+                ("index", mgr_.index()                                            //  current meter index
                  ));
 
             //
@@ -299,7 +302,6 @@ namespace smf {
             // Start the input actor.
             do_read();
 
-            mgr_.inc();
             writer_->dispatch("open", cyng::make_tuple(name));
             CYNG_LOG_INFO(logger_, "[client] query " << name << " #" << mgr_.index() << "/" << mgr_.size());
             send_query(name);
@@ -368,10 +370,9 @@ namespace smf {
             bus_.req_db_update(
                 "gwIEC",
                 key_gw_iec_,
-                cyng::param_map_factory()
-                    ("state", static_cast<std::uint16_t>(0))   //  offline
-                    ("index", static_cast<std::uint32_t>(mgr_.index()))                //  current meter index            
-                );
+                cyng::param_map_factory()("state", static_cast<std::uint16_t>(0)) //  offline
+                ("index", static_cast<std::uint32_t>(mgr_.index()))               //  current meter index
+            );
         }
     }
 
@@ -425,25 +426,12 @@ namespace smf {
 
     void client::meter_mgr::add(std::string name, cyng::key_t key) { meters_.push_back(meter_state(name, key)); }
 
-    std::size_t client::meter_mgr::size() const { return meters_.size(); }
-    std::size_t client::meter_mgr::index() const { return index_; }
-
-    void client::meter_mgr::inc() {
-        if (index_ < meters_.size()) {
-            ++meters_.at(index_).connect_counter_;
-        }
-    }
-    void client::meter_mgr::failed() {
-        if (index_ < meters_.size()) {
-            ++meters_.at(index_).failed_counter_;
-        }
-    }
+    std::uint32_t client::meter_mgr::size() const { return static_cast<std::uint32_t>(meters_.size()); }
+    std::uint32_t client::meter_mgr::index() const { return index_; }
 
     client::meter_state::meter_state(std::string id, cyng::key_t key)
         : id_(id)
-        , key_(key)
-        , connect_counter_(0)
-        , failed_counter_(0) {}
+        , key_(key) {}
 
     cyng::buffer_t generate_query(std::string meter) {
         std::stringstream ss;

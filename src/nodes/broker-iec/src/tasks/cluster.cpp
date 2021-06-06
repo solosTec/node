@@ -36,7 +36,8 @@ namespace smf {
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_, channel_))
-		, rnd_delay_(10u, 300u)
+		//, rnd_delay_(10u, 300u)
+        , delay_(0)
 	{
         auto sp = channel_.lock();
         if (sp) {
@@ -73,8 +74,8 @@ namespace smf {
         //
         auto const task_name = make_task_name(host, port);
 
-        auto const delay = rnd_delay_();
-        CYNG_LOG_TRACE(logger_, "[cluster] start client " << task_name << " in " << delay << " seconds");
+        // auto const delay = rnd_delay_();
+        CYNG_LOG_TRACE(logger_, "[cluster] start client " << task_name << " in " << delay_ << " seconds");
 
         //
         //	start client
@@ -129,7 +130,7 @@ namespace smf {
         //
         //  start all clients with a random delay between 10 and 300 seconds
         //
-        channel->suspend(std::chrono::seconds(delay), "start", cyng::make_tuple(host, std::to_string(port), interval));
+        channel->suspend(std::chrono::seconds(delay_), "start", cyng::make_tuple(host, std::to_string(port), interval));
 
         //
         //  client stays alive since using a timer with a reference to the task
@@ -140,8 +141,29 @@ namespace smf {
             CYNG_LOG_WARNING(
                 logger_,
                 "[cluster] client " << task_name << " has an inconsistent configuration: " << counter << "/" << meter_counter);
+            bus_.sys_msg(
+                cyng::severity::LEVEL_WARNING,
+                "[iec] ",
+                task_name,
+                "has an inconsistent configuration: ",
+                counter,
+                "/",
+                meter_counter);
         }
+
+        //
+        //  update delay
+        //
+        update_delay(counter);
+
         return counter;
+    }
+
+    void cluster::update_delay(std::uint32_t counter) {
+        delay_ += std::chrono::seconds((counter + 1) * 5);
+        if (delay_ > std::chrono::seconds(300)) {
+            delay_ = std::chrono::seconds(0);
+        }
     }
 
     //
