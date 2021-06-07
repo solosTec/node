@@ -288,7 +288,7 @@ namespace smf {
                 //
                 do_read();
             } else {
-                CYNG_LOG_ERROR(logger_, "ipt [" << tgl_.get() << "] on receive " << ec.value() << ": s" << ec.message());
+                CYNG_LOG_ERROR(logger_, "ipt [" << tgl_.get() << "] on receive " << ec.value() << ": " << ec.message());
 
                 reset(state::START);
 

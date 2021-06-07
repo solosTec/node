@@ -68,10 +68,8 @@ namespace smf {
                   //
                   ++entries_;
 
-            bus_.req_db_update(
-                "gwIEC",
-                key_gw_iec_,
-                cyng::param_map_factory()("index", static_cast<std::uint32_t>(entries_)));
+                  // bus_.req_db_update(
+                  //    "gwIEC", key_gw_iec_, cyng::param_map_factory()("index", static_cast<std::uint32_t>(entries_)));
 
               },
               [this](std::string dev, bool crc) {
@@ -94,12 +92,12 @@ namespace smf {
                   ss << name << " readout " << mgr_.index() << "/" << mgr_.size() << " complete (" << dev << ") #" << entries_;
                   auto const msg = ss.str();
 
-                  bus_.req_db_insert_auto(
-                      "iecUplink",
-                      cyng::data_generator(
-                          std::chrono::system_clock::now(), msg,
-                          socket_.remote_endpoint(),
-                          boost::uuids::nil_uuid()));
+                  if (socket_.is_open()) {
+                      bus_.req_db_insert_auto(
+                          "iecUplink",
+                          cyng::data_generator(
+                              std::chrono::system_clock::now(), msg, socket_.remote_endpoint(), boost::uuids::nil_uuid()));
+                  }
 
                   //
                   //	reset
@@ -111,6 +109,9 @@ namespace smf {
                   //
                   if (!mgr_.next()) {
 
+                      //
+                      //    update index in gwIEC table
+                      //
                       bus_.req_db_update(
                           "gwIEC", key_gw_iec_, cyng::param_map_factory()("index", mgr_.index())); //  current meter index
 
@@ -128,7 +129,7 @@ namespace smf {
                       //
                       //    no more meters
                       //
-                      CYNG_LOG_INFO(logger_, "[iec] close connection " << socket_.remote_endpoint());
+                      CYNG_LOG_INFO(logger_, "[iec] close connection " << name << " #" << mgr_.index() << "/" << mgr_.size());
                       boost::system::error_code ignored_ec;
                       socket_.close(ignored_ec);
 
@@ -184,7 +185,7 @@ namespace smf {
                     key_gw_iec_,
                     cyng::param_map_factory()("connectCounter", connect_counter_) //  increased connect counter
                     ("state", static_cast<std::uint16_t>(1))                      //  waiting
-                    ("index", mgr_.size()));                                      //  set current meter index to max.
+                    ("index", mgr_.size()));                                      //  show max. meter index
 
                 boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
                 connect(r.resolve(address, service));
@@ -307,8 +308,8 @@ namespace smf {
                 "gwIEC",
                 key_gw_iec_,
                 cyng::param_map_factory()("state", static_cast<std::uint16_t>(2)) //  state: online
-                ("index", mgr_.index()                                            //  current meter index
-                 ));
+                ("index", mgr_.index())                                           //  current meter index
+            );
 
             //
             //	update configuration
@@ -389,7 +390,7 @@ namespace smf {
                 "gwIEC",
                 key_gw_iec_,
                 cyng::param_map_factory()("state", static_cast<std::uint16_t>(0)) //  offline
-                ("index", static_cast<std::uint32_t>(mgr_.index()))               //  current meter index
+                ("index", mgr_.index())                                           //  current meter index
             );
         }
     }
@@ -446,7 +447,7 @@ namespace smf {
 
     void client::meter_mgr::add(std::string name, cyng::key_t key) { meters_.push_back(meter_state(name, key)); }
 
-    std::uint32_t client::meter_mgr::size() const { return static_cast<std::uint32_t>(meters_.size()); }
+    std::uint32_t client::meter_mgr::size() const { meters_.size(); }
     std::uint32_t client::meter_mgr::index() const { return index_; }
 
     void client::meter_mgr::loop(std::function<void(client::meter_state const &)> cb) {
