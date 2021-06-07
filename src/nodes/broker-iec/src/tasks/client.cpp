@@ -447,7 +447,7 @@ namespace smf {
 
     void client::meter_mgr::add(std::string name, cyng::key_t key) { meters_.push_back(meter_state(name, key)); }
 
-    std::uint32_t client::meter_mgr::size() const { meters_.size(); }
+    std::uint32_t client::meter_mgr::size() const { return static_cast<std::uint32_t>(meters_.size()); }
     std::uint32_t client::meter_mgr::index() const { return index_; }
 
     void client::meter_mgr::loop(std::function<void(client::meter_state const &)> cb) {
