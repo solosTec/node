@@ -236,7 +236,7 @@ namespace smf {
                     "iecUplink",
                     cyng::data_generator(
                         std::chrono::system_clock::now(),
-                        "connect failed: " + mgr_.get_id(),
+                        "connect " + sp->get_name() + " failed: " + mgr_.get_id() + "#" + std::to_string(mgr_.index()),
                         boost::asio::ip::tcp::endpoint(),
                         boost::uuids::nil_uuid()));
 
@@ -379,7 +379,7 @@ namespace smf {
             do_read();
         } else if (ec != boost::asio::error::connection_aborted) {
 
-            CYNG_LOG_ERROR(logger_, "[client] read " << ec.value() << ": " << ec.message());
+            CYNG_LOG_WARNING(logger_, "[client] " << mgr_.get_id() << " read " << ec.value() << ": " << ec.message());
 
             boost::system::error_code ignored_ec;
             socket_.close(ignored_ec);
