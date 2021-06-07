@@ -92,20 +92,21 @@ namespace smf {
 
     void bus::stop() {
         CYNG_LOG_INFO(logger_, "[cluster] " << tgl_.get() << " stop");
-
-        reset();
-        state_ = state::STOPPED;
+        vm_.stop();
+        reset(state::STOPPED);
     }
 
     boost::uuids::uuid bus::get_tag() const { return tag_; }
 
-    void bus::reset() {
+    void bus::reset(state s) {
 
+        state_ = s;
         boost::system::error_code ignored_ec;
         socket_.close(ignored_ec);
-        state_ = state::START;
         timer_.cancel();
-        buffer_write_.clear();
+        if (s != state::STOPPED) {
+            buffer_write_.clear();
+        }
     }
 
     void bus::reconnect_timeout(const boost::system::error_code &ec) {
@@ -117,9 +118,7 @@ namespace smf {
             if (!is_connected()) {
                 start();
             }
-        } else if (ec == boost::asio::error::operation_aborted) {
-            CYNG_LOG_TRACE(logger_, "[cluster] reconnect timer cancelled");
-        } else {
+        } else if (ec != boost::asio::error::operation_aborted) {
             CYNG_LOG_WARNING(logger_, "[cluster] reconnect timer: " << ec.message());
         }
     }
@@ -146,7 +145,7 @@ namespace smf {
             //
             // There are no more endpoints to try. Shut down the client.
             //
-            reset();
+            reset(state::START);
 
             //
             //	alter connection endpoint
@@ -267,8 +266,13 @@ namespace smf {
             //
             do_read();
         } else {
+            //} else if (ec.value() != 1236) { //  windows only
+            //
+            // possibly an Asio bug: an aborted connection error code is not equal to
+            // boost::asio::error::connection_aborted
+            //
             CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " read " << ec.value() << ": " << ec.message());
-            reset();
+            reset(state::START);
 
             //
             //	call disconnect function
@@ -296,7 +300,7 @@ namespace smf {
             }
         } else {
             CYNG_LOG_ERROR(logger_, "[cluster] " << tgl_.get() << " on write: " << ec.message());
-            reset();
+            reset(state::START);
         }
     }
 
@@ -431,6 +435,9 @@ namespace smf {
     void bus::push_sys_msg(std::string msg, cyng::severity level) { add_msg(cyng::serialize_invoke("sys.msg", msg, level)); }
 
     void bus::add_msg(std::deque<cyng::buffer_t> &&msg) {
+
+        if (is_stopped())
+            return;
 
         cyng::exec(vm_, [=, this]() {
             bool const b = buffer_write_.empty();

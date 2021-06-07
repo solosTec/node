@@ -75,19 +75,29 @@ namespace smf {
 
               },
               [this](std::string dev, bool crc) {
+
+                  //
+                  //    get current meter id
+                  //
                   auto const name = mgr_.get_id();
-                  CYNG_LOG_TRACE(logger_, "[iec] readout complete " << dev << ", " << name);
+                  CYNG_LOG_INFO(logger_, "[iec] " << name << " readout " << mgr_.index() << "/" << mgr_.size() << " complete " << dev);
 
                   //
                   //	close CSV file
                   //
                   writer_->dispatch("commit", cyng::make_tuple());
 
+                  //
+                  //    message for IEC uplink table
+                  //
+                  std::stringstream ss;
+                  ss << name << " readout " << mgr_.index() << "/" << mgr_.size() << " complete (" << dev << ") #" << entries_;
+                  auto const msg = ss.str();
+
                   bus_.req_db_insert_auto(
                       "iecUplink",
                       cyng::data_generator(
-                          std::chrono::system_clock::now(),
-                          "readout " + std::to_string(mgr_.index()) + " complete: " + name + " (" + dev + ") #" + std::to_string(entries_),
+                          std::chrono::system_clock::now(), msg,
                           socket_.remote_endpoint(),
                           boost::uuids::nil_uuid()));
 
@@ -101,11 +111,8 @@ namespace smf {
                   //
                   if (!mgr_.next()) {
 
-                        bus_.req_db_update(
-                          "gwIEC",
-                          key_gw_iec_,
-                          cyng::param_map_factory()("index", mgr_.index())); //  current meter index
-                           
+                      bus_.req_db_update(
+                          "gwIEC", key_gw_iec_, cyng::param_map_factory()("index", mgr_.index())); //  current meter index
 
                       //
                       //    more meters
@@ -177,7 +184,7 @@ namespace smf {
                     key_gw_iec_,
                     cyng::param_map_factory()("connectCounter", connect_counter_) //  increased connect counter
                     ("state", static_cast<std::uint16_t>(1))                      //  waiting
-                    ("index", mgr_.size()));                                      //  set current meter index to max
+                    ("index", mgr_.size()));                                      //  set current meter index to max.
 
                 boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
                 connect(r.resolve(address, service));
@@ -238,6 +245,11 @@ namespace smf {
                     "gwIEC",
                     key_gw_iec_,
                     cyng::param_map_factory()("failureCounter", failure_counter_)("state", static_cast<std::uint16_t>(0)));
+
+                //
+                //  reset meter index
+                //
+                mgr_.reset();
             }
         }
     }
@@ -254,7 +266,11 @@ namespace smf {
         // the timeout handler must have run first.
         if (!socket_.is_open()) {
 
-            CYNG_LOG_WARNING(logger_, "[client] connect timed out");
+            try {
+                CYNG_LOG_WARNING(logger_, "[client] connect timed out - " << endpoint_iter->endpoint());
+            } catch (std::exception const &) {
+                CYNG_LOG_WARNING(logger_, "[client] connect timed out - " << mgr_.get_id());
+            }
 
             // Try the next available endpoint.
             start_connect(++endpoint_iter);
@@ -297,7 +313,9 @@ namespace smf {
             //
             //	update configuration
             //
-            bus_.req_db_update("meterIEC", mgr_.get_key(), cyng::param_map_factory()("lastSeen", std::chrono::system_clock::now()));
+            mgr_.loop([this](client::meter_state const &state) -> void {
+                bus_.req_db_update("meterIEC", state.key_, cyng::param_map_factory()("lastSeen", std::chrono::system_clock::now()));
+            });
 
             // Start the input actor.
             do_read();
@@ -399,8 +417,8 @@ namespace smf {
             if (!buffer_write_.empty()) {
                 do_write();
             }
-        } else {
-            CYNG_LOG_ERROR(logger_, "[client]  on heartbeat: " << ec.message());
+        } else if (ec != boost::asio::error::connection_aborted) {
+            CYNG_LOG_ERROR(logger_, "[client]  write failed: " << ec.message());
 
             boost::system::error_code ignored_ec;
             socket_.close(ignored_ec);
@@ -415,10 +433,12 @@ namespace smf {
     std::string client::meter_mgr::get_id() const { return meters_.empty() ? "" : meters_.at(index_).id_; }
     cyng::key_t client::meter_mgr::get_key() const { return meters_.empty() ? cyng::key_t() : meters_.at(index_).key_; }
 
+    void client::meter_mgr::reset() { index_ = 0; }
+
     bool client::meter_mgr::next() {
         ++index_;
         if (index_ == size()) {
-            index_ = 0;
+            reset();
             return true;
         }
         return false;
@@ -428,6 +448,12 @@ namespace smf {
 
     std::uint32_t client::meter_mgr::size() const { return static_cast<std::uint32_t>(meters_.size()); }
     std::uint32_t client::meter_mgr::index() const { return index_; }
+
+    void client::meter_mgr::loop(std::function<void(client::meter_state const &)> cb) {
+        for (auto const &state : meters_) {
+            cb(state);
+        }
+    }
 
     client::meter_state::meter_state(std::string id, cyng::key_t key)
         : id_(id)

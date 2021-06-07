@@ -177,7 +177,7 @@ namespace smf {
         void update_pty_counter(std::uint64_t);
 
       private:
-        void reset();
+        void reset(state);
         void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
         void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
         void

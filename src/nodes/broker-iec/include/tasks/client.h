@@ -56,12 +56,18 @@ namespace smf {
             cyng::key_t get_key() const;
 
             /**
+             * set index to start
+             */
+            void reset();
+
+            /**
              * @return true if at last position
              */
             bool next();
             void add(std::string, cyng::key_t key);
             std::uint32_t size() const;
             std::uint32_t index() const;
+            void loop(std::function<void(meter_state const &)>);
 
           private:
             std::vector<meter_state> meters_;
