@@ -113,7 +113,9 @@ namespace smf {
                       //    update index in gwIEC table
                       //
                       bus_.req_db_update(
-                          "gwIEC", key_gw_iec_, cyng::param_map_factory()("index", mgr_.index())); //  current meter index
+                          "gwIEC", key_gw_iec_, cyng::param_map_factory()("index", mgr_.index()) //  current meter index
+                          ("meter", mgr_.get_id())                          //  current meter id
+                      );
 
                       //
                       //    more meters
@@ -185,7 +187,9 @@ namespace smf {
                     key_gw_iec_,
                     cyng::param_map_factory()("connectCounter", connect_counter_) //  increased connect counter
                     ("state", static_cast<std::uint16_t>(1))                      //  waiting
-                    ("index", mgr_.size()));                                      //  show max. meter index
+                    ("index", mgr_.size())                                        //  show max. meter index
+                    ("meter", mgr_.get_id())                                      //  current meter id/name
+                );
 
                 boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
                 connect(r.resolve(address, service));
@@ -309,6 +313,7 @@ namespace smf {
                 key_gw_iec_,
                 cyng::param_map_factory()("state", static_cast<std::uint16_t>(2)) //  state: online
                 ("index", mgr_.index())                                           //  current meter index
+                ("meter", mgr_.get_id())                                          //  current meter id
             );
 
             //
@@ -390,7 +395,8 @@ namespace smf {
                 "gwIEC",
                 key_gw_iec_,
                 cyng::param_map_factory()("state", static_cast<std::uint16_t>(0)) //  offline
-                ("index", mgr_.index())                                           //  current meter index
+                ("index", static_cast<std::uint32_t>(0))                          //  current meter index
+                ("meter", "-")                                                    //  current meter id
             );
         }
     }

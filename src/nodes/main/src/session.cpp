@@ -273,6 +273,7 @@ namespace smf {
                                     static_cast<std::uint32_t>(0), // failureCounter
                                     static_cast<std::uint16_t>(0), // state
                                     static_cast<std::uint32_t>(0), // current meter index
+                                    std::string("-"),              //  current meter id/name
                                     //  interval: at least 1 minute
                                     interval < std::chrono::seconds(60) ? std::chrono::seconds(60) : interval),
                                 1,
