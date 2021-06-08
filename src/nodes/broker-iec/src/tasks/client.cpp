@@ -254,7 +254,7 @@ namespace smf {
                 //
                 //  reset meter index
                 //
-                mgr_.reset();
+                // mgr_.reset();
             }
         }
     }
@@ -395,7 +395,7 @@ namespace smf {
                 "gwIEC",
                 key_gw_iec_,
                 cyng::param_map_factory()("state", static_cast<std::uint16_t>(0)) //  offline
-                ("index", static_cast<std::uint32_t>(0))                          //  current meter index
+                ("index", mgr_.index())                                           //  current meter index
                 ("meter", "-")                                                    //  current meter id
             );
         }
