@@ -64,6 +64,7 @@ namespace smf {
              * @return true if at last position
              */
             bool next();
+            bool is_complete() const;
             void add(std::string, cyng::key_t key);
             std::uint32_t size() const;
             std::uint32_t index() const;
