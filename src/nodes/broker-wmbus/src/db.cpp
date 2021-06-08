@@ -10,6 +10,7 @@
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/container_factory.hpp>
 #include <cyng/parse/duration.h>
 #include <cyng/parse/string.h>
 
@@ -22,7 +23,9 @@ namespace smf {
     db::db(cyng::store &cache, cyng::logger logger, boost::uuids::uuid tag)
         : cache_(cache)
         , logger_(logger)
-        , store_map_() {}
+        , tag_(tag)
+        , store_map_()
+        , uidgen_() {}
 
     void db::init(cyng::slot_ptr slot) {
         //
@@ -40,11 +43,6 @@ namespace smf {
 
     void db::disconnect(cyng::slot_ptr slot) { cache_.disconnect(slot); }
 
-    // void db::loop(std::function<void(cyng::meta_store const&)> cb) {
-    //	for (auto const& m : store_map_) {
-    //		cb(m.second);
-    //	}
-    //}
     std::string db::get_next_table(std::string const &name) const {
 
         auto const vec = get_store_meta_data();
@@ -56,7 +54,7 @@ namespace smf {
                 return pos->get_name();
             }
         }
-        return "";
+        return ""; //  no more tables
     }
 
     void db::res_insert(std::string table_name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) {
@@ -185,10 +183,63 @@ namespace smf {
         return {key, tag};
     }
 
+    cyng::key_t db::update_gw_status(boost::asio::ip::tcp::endpoint ep) {
+
+        cyng::key_t key;
+        cache_.access(
+            [&](cyng::table *tbl_gw) {
+                tbl_gw->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
+                    auto const addr = rec.value("host", boost::asio::ip::address());
+                    //  calculate next connect counter
+                    auto const connect_counter = rec.value("connectCounter", static_cast<std::uint32_t>(0)) + 1u;
+
+                    if (addr == ep.address()) {
+
+                        //
+                        //  get key and update port
+                        //
+                        key = rec.key();
+                        tbl_gw->modify(
+                            key,
+                            cyng::param_map_factory()("port", ep.port()) //  tcp/ip port
+                            ("status", static_cast<std::uint16_t>(1))    //  status: connecting
+                            ("connectCounter", connect_counter),         //  connectCounter
+                            tag_);
+
+                        return false; //  complete
+                    }
+                    return true;
+                });
+
+                if (key.empty()) {
+                    //
+                    //  create new key
+                    //
+                    key = cyng::key_generator(uidgen_());
+                    tbl_gw->insert(
+                        key,
+                        cyng::data_generator(
+                            ep.address(),                  //   host
+                            static_cast<std::uint32_t>(0), //  meterCounter
+                            static_cast<std::uint32_t>(1), //  connectCounter
+                            static_cast<std::uint16_t>(1), //  state connecting
+                            std::string("-"),              //  current meter id/name
+                            ep.port()                      //  current TCP/IP port
+                            ),
+                        1,
+                        tag_);
+                }
+            },
+            cyng::access::write("gwwMBus"));
+
+        return key;
+    }
+
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
-            config::get_store_meter(), config::get_store_meterwMBus()
-            // config::get_config(),	//	"config"
+            config::get_store_meter(),      //  all meters
+            config::get_store_meterwMBus(), //  all wireless M-Bus meters
+            config::get_store_gwwMBus(),    //	"status"
 
         };
     }

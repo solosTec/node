@@ -156,6 +156,25 @@ namespace smf {
                  0});
         }
 
+        /**
+         * One gateway has one ip address but can host multiple wMBus meters.
+         * These are temporary data to generate statistics and will not be stored.
+         */
+        cyng::meta_store get_store_gwwMBus() {
+            return cyng::meta_store(
+                "gwwMBus",
+                {
+                    cyng::column("tag", cyng::TC_UUID),              //	independent of meter table
+                    cyng::column("host", cyng::TC_IP_ADDRESS),       //	IP address
+                    cyng::column("meterCounter", cyng::TC_UINT32),   //	number of meters coming from this IP address
+                    cyng::column("connectCounter", cyng::TC_UINT32), //	any attempt to connect
+                    cyng::column("state", cyng::TC_UINT16),          //	0 = offline, 1 = connecting, 2 = reading
+                    cyng::column("meter", cyng::TC_STRING),          //	current meter id/name
+                    cyng::column("port", cyng::TC_UINT16),           //	current TCP/IP port
+                },
+                1);
+        }
+
         cyng::meta_store get_store_gateway() {
             return cyng::meta_store(
                 "gateway",

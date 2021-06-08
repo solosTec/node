@@ -105,6 +105,11 @@ namespace smf {
          */
         cyng::meta_store get_store_gwIEC();
 
+        /**
+         * wMBus gateway status
+         */
+        cyng::meta_store get_store_gwwMBus();
+
         //
         //	uplinks
         //

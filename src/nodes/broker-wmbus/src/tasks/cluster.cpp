@@ -77,9 +77,6 @@ namespace smf {
             //
             auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
             db_->init(slot);
-            // db_->loop([this](cyng::meta_store const& m) {
-            //	bus_.req_subscribe(m.get_name());
-            //	});
             bus_.req_subscribe("meter");
 
         } else {

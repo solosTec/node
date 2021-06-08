@@ -62,10 +62,6 @@ namespace smf {
         virtual bool forward(cyng::table const *, bool) override;
 
         /**
-         * loop over all table meta data
-         */
-        // void loop(std::function<void(cyng::meta_store const&)>);
-        /**
          * get next table name from get_store_meta_data()
          *
          * @return empty string if no more tables available
@@ -77,12 +73,16 @@ namespace smf {
          */
         std::pair<cyng::crypto::aes_128_key, boost::uuids::uuid> lookup_meter(std::string);
 
+        cyng::key_t update_gw_status(boost::asio::ip::tcp::endpoint);
+
       public:
         cyng::store &cache_;
+        boost::uuids::uuid const tag_;
 
       private:
         cyng::logger logger_;
         config::store_map store_map_;
+        boost::uuids::random_generator uidgen_;
     };
 
     std::vector<cyng::meta_store> get_store_meta_data();
