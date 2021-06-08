@@ -175,4 +175,8 @@ namespace smf {
         };
     }
 
+    sub_meter::sub_meter(std::string const &id, cyng::key_t const &key)
+        : id_(id)
+        , key_(key){};
+
 } // namespace smf

@@ -84,7 +84,7 @@ namespace smf {
         BOOST_ASSERT(channel->is_open());
 
         //
-        // find all meters and find the smallest time interval.
+        // find all meters and calculate the smallest time interval.
         //
         std::uint32_t counter{0};
         store_.access(
@@ -111,7 +111,8 @@ namespace smf {
                             //
                             ++counter;
 
-                            CYNG_LOG_INFO(logger_, "[db] add meter " << name << " to " << task_name);
+                            CYNG_LOG_INFO(
+                                logger_, "[db] " << task_name << " add meter " << name << " - " << counter << "/" << meter_counter);
                             channel->dispatch("add.meter", name, rec_iec.key());
 
                         } else {

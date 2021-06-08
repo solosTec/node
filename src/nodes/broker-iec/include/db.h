@@ -85,6 +85,15 @@ namespace smf {
     };
 
     std::vector<cyng::meta_store> get_store_meta_data();
+
+    /**
+     * helper class to store temporary config data
+     */
+    struct sub_meter {
+        std::string id_;
+        cyng::key_t key_;
+        sub_meter(std::string const &, cyng::key_t const &);
+    };
 } // namespace smf
 
 #endif
