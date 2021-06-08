@@ -432,7 +432,7 @@ namespace smf {
                     key_gw_iec_,
                     cyng::param_map_factory()("state", static_cast<std::uint16_t>(0)) //  offline
                     ("index", mgr_.index())                                           //  current meter index
-                    ("meter", "-incomplete-")                                         //  flag incomplete readout
+                    ("meter", "[incomplete]")                                         //  flag incomplete readout
                 );
             }
         }
@@ -488,7 +488,7 @@ namespace smf {
         return false;
     }
 
-    bool client::meter_mgr::is_complete() const { return (index_ + 1) == size(); }
+    bool client::meter_mgr::is_complete() const { return (index_ == 0) || ((index_ + 1) == size()); }
 
     void client::meter_mgr::add(std::string name, cyng::key_t key) { meters_.push_back(meter_state(name, key)); }
 
