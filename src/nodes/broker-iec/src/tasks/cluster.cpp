@@ -37,6 +37,7 @@ namespace smf {
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_, channel_))
         , delay_(0)
+        , dep_key_()
 	{
         auto sp = channel_.lock();
         if (sp) {
@@ -169,6 +170,26 @@ namespace smf {
     void cluster::check_iec_meter(cyng::record const &rec) {
         auto const host = rec.value("host", "");
         auto const port = rec.value<std::uint16_t>("port", 0);
+
+        //
+        //	construct task name
+        //
+        auto const task_name = make_task_name(host, port);
+
+        store_.access(
+            [&](cyng::table const *tbl_meter) {
+                auto const rec_meter = tbl_meter->lookup(rec.key());
+                if (!rec_meter.empty()) {
+
+                    auto const name = rec_meter.value("meter", "");
+                    CYNG_LOG_INFO(logger_, "[db] " << task_name << " add meter " << name);
+                    ctl_.get_registry().dispatch(task_name, "add.meter", name, rec.key());
+
+                } else {
+                    CYNG_LOG_WARNING(logger_, "[db] IEC meter " << rec.to_string() << " for " << task_name << " not found");
+                }
+            },
+            cyng::access::read("meter"));
     }
 
     void cluster::update_delay(std::uint32_t counter) {
@@ -217,11 +238,16 @@ namespace smf {
 
         if (db_) {
             if (boost::algorithm::equals(table_name, "gwIEC")) {
-                cyng::record rec(db_->get_meta(table_name), key, data, gen);
-
+                //
+                //  an IEC gateway was added - add all available IEC meters
+                //
                 CYNG_LOG_INFO(logger_, "[cluster] check gateway: " << data);
+                cyng::record rec(db_->get_meta(table_name), key, data, gen);
                 check_gateway(rec);
             } else if (boost::algorithm::equals(table_name, "meterIEC")) {
+                //
+                //  an IEC meters was added - add to task if available
+                //
                 CYNG_LOG_INFO(logger_, "[cluster] check IEC meter: " << data);
                 cyng::record rec(db_->get_meta(table_name), key, data, gen);
                 check_iec_meter(rec);
@@ -270,9 +296,10 @@ namespace smf {
     }
 
     std::string make_task_name(std::string host, std::uint16_t port) {
-        std::stringstream ss;
-        ss << host << ':' << port;
-        return ss.str();
+        // std::stringstream ss;
+        // ss << host << ':' << port;
+        // return ss.str();
+        return config::dependend_key::build_name(host, port);
     }
 
 } // namespace smf

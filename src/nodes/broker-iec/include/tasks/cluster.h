@@ -86,6 +86,7 @@ namespace smf {
         cyng::store store_;
         std::shared_ptr<db> db_;
         std::chrono::seconds delay_;
+        config::dependend_key dep_key_;
     };
 
     std::string make_task_name(std::string host, std::uint16_t port);
