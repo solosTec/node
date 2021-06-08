@@ -36,7 +36,7 @@ namespace smf {
         , slot_(cyng::make_slot(new slot(this)))
         , peer_(boost::uuids::nil_uuid())
         , protocol_layer_("any")
-        , uuid_gen_(boost::uuids::ns::oid()) {
+        , dep_key_() {
         vm_ = init_vm(fabric);
         std::size_t slot{0};
         vm_.set_channel_name("cluster.req.login", slot++);  //	get_vm_func_cluster_req_login
@@ -254,9 +254,8 @@ namespace smf {
                     //
                     // build key
                     //
-                    auto const s = host + ":" + std::to_string(port);
-                    auto const gw_tag = uuid_gen_(s);
-                    auto const gw_key = cyng::key_generator(gw_tag);
+                    auto const s = config::dependend_key::build_name(host, port);
+                    auto const gw_key = dep_key_(host, port);
 
                     //
                     //  lookup IEC gw

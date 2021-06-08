@@ -798,7 +798,8 @@ namespace smf {
                 ,
                 "35074614" //	[string] meter number (i.e. 16000913) 4 bytes
                 ,
-                "MA0000000000000000000000035074614" // cyng::column("code", cyng::TC_STRING),		//	[string] metering code
+                "MA0000000000000000000000035074614" // cyng::column("code", cyng::TC_STRING),		//	[string] metering
+                                                    // code
                                                     // - changed at 2019-01-31
                 ,
                 "ELS" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
@@ -1340,7 +1341,8 @@ namespace smf {
                 ,
                 "03218421" //	[string] meter number (i.e. 16000913) 4 bytes
                 ,
-                "CH0000000000000000000000003218421" // cyng::column("code", cyng::TC_STRING),		//	[string] metering code
+                "CH0000000000000000000000003218421" // cyng::column("code", cyng::TC_STRING),		//	[string] metering
+                                                    // code
                                                     // - changed at 2019-01-31
                 ,
                 "ELS" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
@@ -1409,7 +1411,8 @@ namespace smf {
                 ,
                 "35074616" //	[string] meter number (i.e. 16000913) 4 bytes
                 ,
-                "MA0000000000000000000000035074616" // cyng::column("code", cyng::TC_STRING),		//	[string] metering code
+                "MA0000000000000000000000035074616" // cyng::column("code", cyng::TC_STRING),		//	[string] metering
+                                                    // code
                                                     // - changed at 2019-01-31
                 ,
                 "ELS" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
@@ -1832,7 +1835,8 @@ namespace smf {
             config::get_store_session(),
             config::get_store_connection(),
             config::get_store_channel(), //	only in main node
-            config::get_store_gwIEC()
+            config::get_store_gwIEC(),
+            config::get_store_gwwMBus()
             //	temporary upload data
         };
     }

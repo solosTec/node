@@ -413,5 +413,17 @@ namespace smf {
                 1);
         }
 
+        dependend_key::dependend_key()
+            : uuid_gen_(boost::uuids::ns::oid()) {}
+
+        cyng::key_t dependend_key::generate(std::string host, std::uint16_t port) {
+            auto const s = build_name(host, port);
+            auto const gw_tag = uuid_gen_(s);
+            return cyng::key_generator(gw_tag);
+        }
+        cyng::key_t dependend_key::operator()(std::string host, std::uint16_t port) { return generate(host, port); }
+
+        std::string dependend_key::build_name(std::string host, std::uint16_t port) { return host + ":" + std::to_string(port); }
+
     } // namespace config
 } // namespace smf

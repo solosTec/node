@@ -8,6 +8,7 @@
 #define SMF_MAIN_SESSION_H
 
 #include <db.h>
+//#include <smf/config/schemes.h>
 
 #include <cyng/io/parser/parser.h>
 #include <cyng/log/logger.h>
@@ -18,8 +19,6 @@
 
 #include <array>
 #include <memory>
-
-#include <boost/uuid/name_generator.hpp>
 
 namespace smf {
 
@@ -294,9 +293,9 @@ namespace smf {
         std::string protocol_layer_;
 
         /**
-         * generate depended kays for "gwIEC"
+         * Generate dependen keys for table "gwIEC"
          */
-        boost::uuids::name_generator_sha1 uuid_gen_;
+        config::dependend_key dep_key_;
     };
 
 } // namespace smf

@@ -70,6 +70,7 @@ namespace smf {
          * @return meter count
          */
         std::size_t check_gateway(cyng::record const &);
+        void check_iec_meter(cyng::record const &);
         void update_delay(std::uint32_t counter);
 
       private:

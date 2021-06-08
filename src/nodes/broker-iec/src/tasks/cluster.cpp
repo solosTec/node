@@ -166,6 +166,11 @@ namespace smf {
         return counter;
     }
 
+    void cluster::check_iec_meter(cyng::record const &rec) {
+        auto const host = rec.value("host", "");
+        auto const port = rec.value<std::uint16_t>("port", 0);
+    }
+
     void cluster::update_delay(std::uint32_t counter) {
         delay_ += std::chrono::seconds((counter + 1) * 5);
         if (delay_ > std::chrono::seconds(300)) {
@@ -216,6 +221,10 @@ namespace smf {
 
                 CYNG_LOG_INFO(logger_, "[cluster] check gateway: " << data);
                 check_gateway(rec);
+            } else if (boost::algorithm::equals(table_name, "meterIEC")) {
+                CYNG_LOG_INFO(logger_, "[cluster] check IEC meter: " << data);
+                cyng::record rec(db_->get_meta(table_name), key, data, gen);
+                check_iec_meter(rec);
             }
             db_->res_insert(table_name, key, data, gen, tag);
         }

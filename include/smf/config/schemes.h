@@ -7,6 +7,7 @@
 #ifndef SMF_CONFIG_SCHEMES_H
 #define SMF_CONFIG_SCHEMES_H
 
+#include <boost/uuid/name_generator.hpp>
 #include <cyng/store/meta.h>
 
 namespace smf {
@@ -126,6 +127,21 @@ namespace smf {
          * container to store meta data of SQL tables
          */
         using sql_map = std::map<std::string, cyng::meta_sql>;
+
+        class dependend_key {
+          public:
+            dependend_key();
+
+            static std::string build_name(std::string host, std::uint16_t port);
+            cyng::key_t generate(std::string host, std::uint16_t port);
+            cyng::key_t operator()(std::string host, std::uint16_t port);
+
+          private:
+            /**
+             * generate depended keys for "gwIEC"
+             */
+            boost::uuids::name_generator_sha1 uuid_gen_;
+        };
     } // namespace config
 } // namespace smf
 
