@@ -249,7 +249,10 @@ namespace smf {
                 bus_.req_db_update(
                     "gwIEC",
                     key_gw_iec_,
-                    cyng::param_map_factory()("failureCounter", failure_counter_)("state", static_cast<std::uint16_t>(0)));
+                    cyng::param_map_factory()("failureCounter", failure_counter_)(
+                        "state", static_cast<std::uint16_t>(0)) //  offline
+                    ("meter", mgr_.get_id())                    //  current meter id
+                );
 
                 //
                 //  reset meter index
