@@ -385,7 +385,8 @@ namespace smf {
         db::rel{"sysMsg", "monitor.msg", "table.msg.count"},
         db::rel{"wMBusUplink", "monitor.wMBus", "table.wMBusUplink.count"},
         db::rel{"iecUplink", "monitor.IEC", "table.IECUplink.count"},
-        db::rel{"gwIEC", "status.IECgw", "table.gwIEC.count"}
+        db::rel{"gwIEC", "status.IECgw", "table.gwIEC.count"},
+        db::rel{"gwwMBus", "status.wMBusgw", "table.gwwMBus.count"}
         //
         // db::rel{"TMeterAccess", "config.meterwMBus", "table.meterwMBus.count"},
         // db::rel{"TBridge", "config.bridge", "table.bridge.count"},
