@@ -18,6 +18,7 @@
 
 namespace smf {
 
+    class bus;
     class db : public cyng::slot_interface {
       public:
         db(cyng::store &cache, cyng::logger, boost::uuids::uuid tag);
@@ -73,7 +74,7 @@ namespace smf {
          */
         std::pair<cyng::crypto::aes_128_key, boost::uuids::uuid> lookup_meter(std::string);
 
-        cyng::key_t update_gw_status(boost::asio::ip::tcp::endpoint);
+        cyng::key_t update_gw_status(boost::asio::ip::tcp::endpoint, bus &);
 
       public:
         cyng::store &cache_;
@@ -82,7 +83,7 @@ namespace smf {
       private:
         cyng::logger logger_;
         config::store_map store_map_;
-        boost::uuids::random_generator uidgen_;
+        config::dependend_key uidgen_;
     };
 
     std::vector<cyng::meta_store> get_store_meta_data();

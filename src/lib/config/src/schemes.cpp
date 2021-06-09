@@ -164,9 +164,9 @@ namespace smf {
             return cyng::meta_store(
                 "gwwMBus",
                 {
-                    cyng::column("tag", cyng::TC_UUID),              //	independent of meter table
-                    cyng::column("host", cyng::TC_IP_ADDRESS),       //	IP address
-                    cyng::column("meterCounter", cyng::TC_UINT32),   //	number of meters coming from this IP address
+                    cyng::column("tag", cyng::TC_UUID),        //	independent of meter table
+                    cyng::column("host", cyng::TC_IP_ADDRESS), //	IP address
+                    // cyng::column("meterCounter", cyng::TC_UINT32),   //	number of meters coming from this IP address
                     cyng::column("connectCounter", cyng::TC_UINT32), //	any attempt to connect
                     cyng::column("state", cyng::TC_UINT16),          //	0 = offline, 1 = connecting, 2 = reading
                     cyng::column("meter", cyng::TC_STRING),          //	current meter id/name
@@ -422,6 +422,13 @@ namespace smf {
             return cyng::key_generator(gw_tag);
         }
         cyng::key_t dependend_key::operator()(std::string host, std::uint16_t port) { return generate(host, port); }
+
+        cyng::key_t dependend_key::generate(boost::asio::ip::address addr) {
+            auto const s = addr.to_string();
+            auto const gw_tag = uuid_gen_(s);
+            return cyng::key_generator(gw_tag);
+        }
+        cyng::key_t dependend_key::operator()(boost::asio::ip::address addr) { return generate(addr); }
 
         std::string dependend_key::build_name(std::string host, std::uint16_t port) { return host + ":" + std::to_string(port); }
 

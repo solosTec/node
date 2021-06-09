@@ -8,7 +8,6 @@
 #define SMF_WMBUS_SERVER_H
 
 #include <db.h>
-#include <smf/cluster/bus.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/eod.h>
@@ -23,6 +22,7 @@
 
 namespace smf {
 
+    class bus;
     class wmbus_server {
         using blocklist_type = std::vector<boost::asio::ip::address>;
 

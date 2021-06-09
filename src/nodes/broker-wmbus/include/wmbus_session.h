@@ -31,6 +31,7 @@ namespace smf {
             std::shared_ptr<db>,
             cyng::logger,
             bus &,
+            cyng::key_t,
             cyng::channel_ptr writer);
         ~wmbus_session();
 
@@ -68,6 +69,7 @@ namespace smf {
         std::shared_ptr<db> db_;
         cyng::logger logger_;
         bus &bus_;
+        cyng::key_t const key_gw_wmbus_;
         cyng::channel_ptr writer_;
 
         /**

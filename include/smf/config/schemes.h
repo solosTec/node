@@ -7,8 +7,10 @@
 #ifndef SMF_CONFIG_SCHEMES_H
 #define SMF_CONFIG_SCHEMES_H
 
-#include <boost/uuid/name_generator.hpp>
 #include <cyng/store/meta.h>
+
+#include <boost/asio/ip/address.hpp>
+#include <boost/uuid/name_generator.hpp>
 
 namespace smf {
     namespace config {
@@ -135,6 +137,9 @@ namespace smf {
             static std::string build_name(std::string host, std::uint16_t port);
             cyng::key_t generate(std::string host, std::uint16_t port);
             cyng::key_t operator()(std::string host, std::uint16_t port);
+
+            cyng::key_t generate(boost::asio::ip::address addr);
+            cyng::key_t operator()(boost::asio::ip::address addr);
 
           private:
             /**

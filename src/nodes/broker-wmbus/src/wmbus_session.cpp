@@ -39,12 +39,14 @@ namespace smf {
         std::shared_ptr<db> db,
         cyng::logger logger,
         bus &cluster_bus,
+        cyng::key_t key,
         cyng::channel_ptr writer)
         : ctl_(ctl)
         , socket_(std::move(socket))
         , logger_(logger)
         , db_(db)
         , bus_(cluster_bus)
+        , key_gw_wmbus_(key)
         , writer_(writer)
         , buffer_()
         , buffer_write_()
@@ -116,6 +118,12 @@ namespace smf {
                 } else {
                     CYNG_LOG_WARNING(logger_, "[session] read: " << ec.message());
                     gatekeeper_->stop();
+
+                    bus_.req_db_update(
+                        "gwwMBus",
+                        key_gw_wmbus_,
+                        cyng::param_map_factory()("state", static_cast<std::uint16_t>(0)) //  status: offline
+                    );
                 }
             });
     }
@@ -145,6 +153,14 @@ namespace smf {
         if (bus_.is_connected()) {
 
             CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h));
+
+            // key_gw_wmbus_
+            bus_.req_db_update(
+                "gwwMBus",
+                key_gw_wmbus_,
+                cyng::param_map_factory()("meter", mbus::to_str(h)) //  meter name
+                ("state", static_cast<std::uint16_t>(2))            //  status: reading
+            );
 
             if (h.has_secondary_address()) {
                 decode(t.get_secondary_address(), t.get_access_no(), h.get_frame_type(), data);

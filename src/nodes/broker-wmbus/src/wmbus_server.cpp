@@ -1,3 +1,4 @@
+#include <smf/cluster/bus.h>
 #include <tasks/writer.h>
 #include <wmbus_server.h>
 #include <wmbus_session.h>
@@ -55,55 +56,60 @@ namespace smf {
 
         acceptor_.async_accept([this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
             if (!ec) {
-                CYNG_LOG_INFO(logger_, "[server] new session " << socket.remote_endpoint());
 
-                //
-                //	update "gwwMBus" table
-                //
-                auto const key = db_->update_gw_status(socket.remote_endpoint());
+                if (bus_.is_connected()) {
+                    CYNG_LOG_INFO(logger_, "[server] new session " << socket.remote_endpoint());
+                    //
+                    //	update "gwwMBus" table
+                    //
+                    auto const key = db_->update_gw_status(socket.remote_endpoint(), bus_);
 
-                //
-                //	start writer
-                //
-                auto w = ctl_.create_channel_with_ref<writer>(logger_, client_out_);
-                BOOST_ASSERT(w->is_open());
+                    //
+                    //	start writer
+                    //
+                    auto w = ctl_.create_channel_with_ref<writer>(logger_, client_out_);
+                    BOOST_ASSERT(w->is_open());
 
-                auto sp = std::shared_ptr<wmbus_session>(
-                    new wmbus_session(ctl_, std::move(socket), db_, logger_, bus_, w), [this, w](wmbus_session *s) {
+                    auto sp = std::shared_ptr<wmbus_session>(
+                        new wmbus_session(ctl_, std::move(socket), db_, logger_, bus_, key, w), [this, w](wmbus_session *s) {
+                            //
+                            //	update session counter
+                            //
+                            --session_counter_;
+                            CYNG_LOG_TRACE(logger_, "[server] session(s) running: " << session_counter_);
+                            bus_.update_pty_counter(session_counter_);
+
+                            //
+                            //	stop writer
+                            //
+                            w->stop();
+
+                            //
+                            //	remove session
+                            //
+                            delete s;
+                        });
+
+                    if (sp) {
+
+                        //
+                        //	start session
+                        //
+                        sp->start(client_timeout_);
+
                         //
                         //	update session counter
                         //
-                        --session_counter_;
-                        CYNG_LOG_TRACE(logger_, "[server] session(s) running: " << session_counter_);
+                        ++session_counter_;
+
+                        //
+                        //	update cluster table
+                        //
                         bus_.update_pty_counter(session_counter_);
-
-                        //
-                        //	stop writer
-                        //
-                        w->stop();
-
-                        //
-                        //	remove session
-                        //
-                        delete s;
-                    });
-
-                if (sp) {
-
-                    //
-                    //	start session
-                    //
-                    sp->start(client_timeout_);
-
-                    //
-                    //	update session counter
-                    //
-                    ++session_counter_;
-
-                    //
-                    //	update cluster table
-                    //
-                    bus_.update_pty_counter(session_counter_);
+                    }
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_, "[server] ignore new session " << socket.remote_endpoint() << " no connection to cluster");
                 }
 
                 //

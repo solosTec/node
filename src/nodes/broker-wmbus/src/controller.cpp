@@ -193,7 +193,7 @@ namespace smf {
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
         channel->dispatch("connect");
-        channel->dispatch("listen", ep);
+        channel->suspend(std::chrono::seconds(20), "listen", cyng::make_tuple(ep));
         channels.lock(channel);
     }
 

@@ -6,6 +6,7 @@
  */
 
 #include <db.h>
+#include <smf/cluster/bus.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
@@ -183,28 +184,29 @@ namespace smf {
         return {key, tag};
     }
 
-    cyng::key_t db::update_gw_status(boost::asio::ip::tcp::endpoint ep) {
+    cyng::key_t db::update_gw_status(boost::asio::ip::tcp::endpoint ep, bus &cluster_bus) {
 
         cyng::key_t key;
         cache_.access(
             [&](cyng::table *tbl_gw) {
                 tbl_gw->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
                     auto const addr = rec.value("host", boost::asio::ip::address());
-                    //  calculate next connect counter
-                    auto const connect_counter = rec.value("connectCounter", static_cast<std::uint32_t>(0)) + 1u;
 
                     if (addr == ep.address()) {
+
+                        //  calculate next connect counter
+                        auto const connect_counter = rec.value("connectCounter", static_cast<std::uint32_t>(0)) + 1u;
 
                         //
                         //  get key and update port
                         //
                         key = rec.key();
-                        tbl_gw->modify(
+                        cluster_bus.req_db_update(
+                            tbl_gw->meta().get_name(),
                             key,
                             cyng::param_map_factory()("port", ep.port()) //  tcp/ip port
                             ("status", static_cast<std::uint16_t>(1))    //  status: connecting
-                            ("connectCounter", connect_counter),         //  connectCounter
-                            tag_);
+                            ("connectCounter", connect_counter));
 
                         return false; //  complete
                     }
@@ -215,19 +217,19 @@ namespace smf {
                     //
                     //  create new key
                     //
-                    key = cyng::key_generator(uidgen_());
-                    tbl_gw->insert(
+                    key = cyng::key_generator(uidgen_(ep.address()));
+                    cluster_bus.req_db_insert(
+                        tbl_gw->meta().get_name(),
                         key,
                         cyng::data_generator(
-                            ep.address(),                  //   host
-                            static_cast<std::uint32_t>(0), //  meterCounter
+                            ep.address(), //   host
+                            // static_cast<std::uint32_t>(0), //  meterCounter
                             static_cast<std::uint32_t>(1), //  connectCounter
                             static_cast<std::uint16_t>(1), //  state connecting
                             std::string("[initial]"),      //  current meter id/name
                             ep.port()                      //  current TCP/IP port
                             ),
-                        1,
-                        tag_);
+                        1);
                 }
             },
             cyng::access::write("gwwMBus"));
