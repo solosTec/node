@@ -476,10 +476,16 @@ namespace smf {
                 //	start broker with addition information like timeout and
                 // login
                 //
-                auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, trg, login);
-                BOOST_ASSERT(channel->is_open());
-                stash_.lock(channel);
-                channel->dispatch("check-status", cyng::make_tuple(std::chrono::seconds(timeout)));
+                if (trg.is_connect_on_demand()) {
+                    auto channel = ctl_.create_named_channel_with_ref<broker_on_demand>(name, ctl_, logger_, trg, login);
+                    BOOST_ASSERT(channel->is_open());
+                    stash_.lock(channel);
+                } else {
+                    auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, trg, login);
+                    BOOST_ASSERT(channel->is_open());
+                    stash_.lock(channel);
+                    channel->dispatch("check-status", cyng::make_tuple(std::chrono::seconds(timeout)));
+                }
             }
         } else {
             CYNG_LOG_WARNING(logger_, "broker for [" << port << "] is not enabled");

@@ -79,8 +79,79 @@ namespace smf {
         boost::asio::ip::tcp::socket socket_;
         boost::asio::io_context::strand dispatcher_;
 
-        std::string input_buffer_;
-        std::deque<cyng::buffer_t> buffer_write_;
+        std::array<char, 2048> read_buffer_;
+        std::deque<cyng::buffer_t> write_buffer_;
+    };
+
+    /**
+     * plantuml:
+        @startuml
+        [*] --> OFFLINE
+        OFFLINE--> [*]
+        OFFLINE: disconnected
+        OFFLINE: empty cache
+
+        OFFLINE --> CONNECTING : incoming data
+        CONNECTING: buffering data
+
+        CONNECTING --> CONNECTED : TCP/IP connect
+
+        CONNECTING --> OFFLINE : connect failed\n clear cache
+
+        CONNECTED --> OFFLINE: disconnect\n clear cache
+        CONNECTED: send data from cache
+        CONNECTED: forward incoming data
+        @enduml
+     */
+    class broker_on_demand {
+        template <typename T> friend class cyng::task;
+
+        using signatures_t = std::tuple<std::function<void(cyng::buffer_t)>, std::function<void(cyng::eod)>>;
+
+        enum class state { OFFLINE, CONNECTING, CONNECTED, STOPPED } state_;
+
+      public:
+        broker_on_demand(cyng::channel_weak, cyng::controller &ctl, cyng::logger, target const &, bool login);
+
+      private:
+        void stop(cyng::eod);
+        void start();
+        void reset(state);
+
+        /**
+         * incoming raw data from serial interface
+         */
+        void receive(cyng::buffer_t);
+
+        constexpr bool is_stopped() const { return state_ == state::STOPPED; }
+        constexpr bool is_connected() const { return state_ == state::CONNECTED; }
+
+        void store(cyng::buffer_t);
+        void send(cyng::buffer_t);
+
+        void do_write();
+        void handle_write(const boost::system::error_code &ec);
+        void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
+        void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void
+        handle_connect(const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void do_read();
+        void handle_read(const boost::system::error_code &ec, std::size_t n);
+
+      private:
+        signatures_t sigs_;
+        cyng::channel_weak channel_;
+        cyng::controller &ctl_;
+        cyng::logger logger_;
+        target const target_;
+        bool const login_;
+
+        boost::asio::ip::tcp::resolver::results_type endpoints_;
+        boost::asio::ip::tcp::socket socket_;
+        boost::asio::io_context::strand dispatcher_;
+
+        std::array<char, 2048> read_buffer_;
+        std::deque<cyng::buffer_t> write_buffer_;
     };
 } // namespace smf
 
