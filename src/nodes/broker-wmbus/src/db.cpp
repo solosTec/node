@@ -223,7 +223,7 @@ namespace smf {
                             static_cast<std::uint32_t>(0), //  meterCounter
                             static_cast<std::uint32_t>(1), //  connectCounter
                             static_cast<std::uint16_t>(1), //  state connecting
-                            std::string("-"),              //  current meter id/name
+                            std::string("[initial]"),      //  current meter id/name
                             ep.port()                      //  current TCP/IP port
                             ),
                         1,

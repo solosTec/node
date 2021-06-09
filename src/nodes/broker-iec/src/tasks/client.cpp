@@ -283,13 +283,8 @@ namespace smf {
                     key_gw_iec_,
                     cyng::param_map_factory()("failureCounter", failure_counter_) // failed connects
                     ("state", static_cast<std::uint16_t>(0))                      //  offline
-                    ("meter", mgr_.get_id())                                      //  current meter id
+                    ("meter", "[" + mgr_.get_id() + "]")                          //  current meter id
                 );
-
-                //
-                //  reset meter index
-                //
-                // mgr_.reset();
             }
         }
     }
@@ -427,6 +422,15 @@ namespace smf {
             buffer_write_.clear();
 
             if (mgr_.is_complete()) {
+
+                bus_.req_db_update(
+                    "gwIEC",
+                    key_gw_iec_,
+                    cyng::param_map_factory()("state", static_cast<std::uint16_t>(0)) //  offline
+                    ("index", mgr_.index())                                           //  current meter index
+                    ("meter", "[complete]")                                           //  flag incomplete readout
+                );
+            } else {
                 bus_.req_db_update(
                     "gwIEC",
                     key_gw_iec_,
@@ -434,6 +438,8 @@ namespace smf {
                     ("index", mgr_.index())                                           //  current meter index
                     ("meter", "[incomplete]")                                         //  flag incomplete readout
                 );
+                //  skip failed meter
+                mgr_.next();
             }
         }
     }
