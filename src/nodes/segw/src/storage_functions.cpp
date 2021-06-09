@@ -6,11 +6,12 @@
  */
 
 #include <cfg.h>
+#include <storage.h>
+#include <storage_functions.h>
+
 #include <smf/ipt/config.h>
 #include <smf/ipt/scramble_key_format.h>
 #include <smf/obis/defs.h>
-#include <storage.h>
-#include <storage_functions.h>
 
 #include <cyng/db/details/statement_interface.h>
 #include <cyng/db/storage.h>
@@ -28,6 +29,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/core/ignore_unused.hpp>
+#include <boost/predef.h>
 #include <boost/uuid/string_generator.hpp>
 
 namespace smf {
@@ -663,6 +665,26 @@ namespace smf {
                     "listener: " + listener.first);
             }
         }
+
+        //
+        //  new element since v0.9.1.21
+        //
+        auto pos = pmap.find("link-local");
+        if (pos == pmap.end()) {
+            insert_config_record(
+                stmt,
+                cyng::to_path(cfg::sep, "listener", std::to_string(counter), "link-local"),
+#if defined(BOOST_OS_LINUX_AVAILABLE)
+#if defined(__CROSS_PLATFORM)
+                cyng::make_object("br0"),
+#else
+                cyng::make_object("eth0"),
+#endif
+#else
+                cyng::make_object("Ethernet"),
+#endif
+                "interface to use for link-local connections");
+        }
     }
 
     void transfer_broker(cyng::db::statement_ptr stmt, std::size_t counter, cyng::vector_t &&vec) {
@@ -689,6 +711,18 @@ namespace smf {
                         broker.second,
                         "broker: " + broker.first);
                 }
+            }
+
+            //
+            //  new element since v0.9.1.29
+            //
+            auto const pos = pmap.find("connect");
+            if (pos == pmap.end()) {
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "connect"),
+                    cyng::make_object(true),
+                    "connect on demand, otherwise connect at start = true");
             }
 
             broker_index++;

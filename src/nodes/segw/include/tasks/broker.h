@@ -20,6 +20,12 @@ namespace smf {
     /**
      * connect to MDM system
      * https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/example/cpp03/timeouts/async_tcp_client.cpp
+     * Data is buffered (Fifo)
+     * Connection is established
+     * If during the connection establishment further data come, they are buffered
+     * If the connection is open, data are sent
+     * If the connection cannot be opened, buffer is deleted
+     * If the remote station closes the connection, buffer is deleted
      */
     class broker {
         template <typename T> friend class cyng::task;

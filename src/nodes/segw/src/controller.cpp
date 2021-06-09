@@ -268,25 +268,30 @@ namespace smf {
     }
 
     cyng::param_t controller::create_wireless_broker(std::string const &hostname) const {
-        return cyng::make_param("broker", cyng::make_vector({
-                                    //	define multiple broker here
+        return cyng::make_param("broker", cyng::make_vector({ //	define multiple broker here
                                     cyng::param_map_factory
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
                                         ("address", "segw.ch")("port", 12001)
 #else
                                         ("address", "192.168.230.208")("port", 3000)
 #endif
-                                            ("account", hostname)("pwd", "wM-Bus")
-                                                .
-                                                operator cyng::param_map_t()
+                                            ("account", hostname) //  login name
+                                        ("pwd", "wM-Bus")         //  password
+                                        ("connect", true) //  broker algorithm (connect on demand, otherwise connect at start)
+                                            .
+                                            operator cyng::param_map_t()
                                 }));
     }
 
     cyng::param_t controller::create_rs485_broker(std::string const &hostname) const {
         return cyng::make_param(
             "broker",
-            cyng::make_vector({//	define multiple broker here
-                               cyng::param_map_factory("address", "segw.ch")("port", 12002)("account", hostname)("pwd", "rs485")
+            cyng::make_vector({                                              //	define multiple broker here
+                               cyng::param_map_factory("address", "segw.ch") // address
+                               ("port", 12002)                               // port
+                               ("account", hostname)                         //  login name
+                               ("pwd", "rs485")                              //  password
+                               ("connect", true) //  broker algorithm (connect on demand, otherwise connect at start)
                                    .
                                    operator cyng::param_map_t()}));
     }
@@ -389,7 +394,7 @@ namespace smf {
 #else
                 cyng::make_param("manufacturer", "solosTec"),
 #endif
-                cyng::make_param("model", "virtual.gateway"), //	Typenschl�ssel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
+                cyng::make_param("model", "virtual.gateway"), //	Typenschluessel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
                 cyng::make_param("serial", sn),               //	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
                 cyng::make_param(
                     "class", "129-129:199.130.83*255") //	device class (81 81 C7 82 02 FF - OBIS_DEVICE_CLASS) "2D 2D 2D"
@@ -412,11 +417,16 @@ namespace smf {
                 cyng::make_param("port", 7562),
                 cyng::make_param("account", "operator"),
                 cyng::make_param("pwd", "operator"),
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
+#if defined(BOOST_OS_LINUX_AVAILABLE)
                 cyng::make_param("enabled", true),
+#if defined(__CROSS_PLATFORM)
                 cyng::make_param("nic", "br0"),
 #else
+                cyng::make_param("nic", "eth0"),
+#endif
+#else
                 cyng::make_param("enabled", false),
+                cyng::make_param("nic", "Ethernet"),
 #endif
                 cyng::make_param(
                     "script-path",
