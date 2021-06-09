@@ -152,7 +152,8 @@ namespace smf {
 
         if (bus_.is_connected()) {
 
-            CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << mbus::to_str(h));
+            auto const meter = mbus::to_str(h);
+            CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << meter << " (" << key_gw_wmbus_ << ")");
 
             // key_gw_wmbus_
             bus_.req_db_update(

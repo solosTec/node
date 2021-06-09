@@ -26,7 +26,7 @@ namespace smf {
         , logger_(logger)
         , tag_(tag)
         , store_map_()
-        , uidgen_() {}
+        , dep_key_() {}
 
     void db::init(cyng::slot_ptr slot) {
         //
@@ -217,13 +217,12 @@ namespace smf {
                     //
                     //  create new key
                     //
-                    key = cyng::key_generator(uidgen_(ep.address()));
+                    key = dep_key_(ep.address());
                     cluster_bus.req_db_insert(
                         tbl_gw->meta().get_name(),
                         key,
                         cyng::data_generator(
-                            ep.address(), //   host
-                            // static_cast<std::uint32_t>(0), //  meterCounter
+                            ep.address(),                  //   host
                             static_cast<std::uint32_t>(1), //  connectCounter
                             static_cast<std::uint16_t>(1), //  state connecting
                             std::string("[initial]"),      //  current meter id/name

@@ -83,7 +83,7 @@ namespace smf {
       private:
         cyng::logger logger_;
         config::store_map store_map_;
-        config::dependend_key uidgen_;
+        config::dependend_key dep_key_;
     };
 
     std::vector<cyng::meta_store> get_store_meta_data();
