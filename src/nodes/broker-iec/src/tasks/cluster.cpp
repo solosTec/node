@@ -97,6 +97,11 @@ namespace smf {
                     if (boost::algorithm::equals(host_iec, host) && port_iec == port) {
 
                         //
+                        //  update meter counter
+                        //
+                        ++counter;
+
+                        //
                         //	lookup meter
                         //
                         auto const meter = tbl_meter->lookup(rec_iec.key());
@@ -106,11 +111,6 @@ namespace smf {
                             //	get meter name
                             //
                             auto const name = meter.value("meter", "no-meter");
-
-                            //
-                            //  update meter counter
-                            //
-                            ++counter;
 
                             CYNG_LOG_INFO(
                                 logger_, "[db] " << task_name << " add meter " << name << " - " << counter << "/" << meter_counter);

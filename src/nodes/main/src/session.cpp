@@ -39,14 +39,13 @@ namespace smf {
         , dep_key_() {
         vm_ = init_vm(fabric);
         std::size_t slot{0};
-        vm_.set_channel_name("cluster.req.login", slot++);  //	get_vm_func_cluster_req_login
-        vm_.set_channel_name("db.req.subscribe", slot++);   //	get_vm_func_db_req_subscribe
-        vm_.set_channel_name("db.req.insert", slot++);      //	get_vm_func_db_req_insert
-        vm_.set_channel_name("db.req.insert.auto", slot++); //	get_vm_func_db_req_insert_auto
-        vm_.set_channel_name("db.req.update", slot++);      //	table modify()
-        vm_.set_channel_name("db.req.remove", slot++);      //	table erase()
-        vm_.set_channel_name("db.req.clear", slot++);       //	table clear()
-        // vm_.set_channel_name("db.upload.complete", slot++);          //	upload complete()
+        vm_.set_channel_name("cluster.req.login", slot++);           //	get_vm_func_cluster_req_login
+        vm_.set_channel_name("db.req.subscribe", slot++);            //	get_vm_func_db_req_subscribe
+        vm_.set_channel_name("db.req.insert", slot++);               //	get_vm_func_db_req_insert
+        vm_.set_channel_name("db.req.insert.auto", slot++);          //	get_vm_func_db_req_insert_auto
+        vm_.set_channel_name("db.req.update", slot++);               //	table modify()
+        vm_.set_channel_name("db.req.remove", slot++);               //	table erase()
+        vm_.set_channel_name("db.req.clear", slot++);                //	table clear()
         vm_.set_channel_name("pty.req.login", slot++);               //	get_vm_func_pty_login
         vm_.set_channel_name("pty.req.logout", slot++);              //	get_vm_func_pty_logout
         vm_.set_channel_name("pty.open.connection", slot++);         //	get_vm_func_pty_open_connection
@@ -752,14 +751,13 @@ namespace smf {
 
         } else {
 
-            auto const [channel, source, packet_size, count] =
-                cache_.open_channel(tag, dev, name, account, number, sv, id, timeout);
+            auto const [channel, source, packet_size, count] = cache_.open_channel(dev, name, account, number, sv, id, timeout);
 
             if (count == 0) {
                 cache_.sys_msg(cyng::severity::LEVEL_WARNING, protocol_layer_, "target [", name, "] not found");
                 CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << "target [" << name << "] not found");
             } else {
-                CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " open channel [" << name << "] " << token);
+                CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " open channel [" << name << "] " << channel << ':' << source);
             }
 
             send_cluster_response(cyng::serialize_forward(

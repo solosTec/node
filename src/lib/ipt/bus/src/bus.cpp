@@ -492,23 +492,23 @@ namespace smf {
             return false;
         }
 
-        bool bus::open_channel(push_channel pcc, cyng::channel_weak wp) {
+        bool bus::open_channel(push_channel pc_cfg, cyng::channel_weak wp) {
 
-            if (!pcc.target_.empty()) {
+            if (!pc_cfg.target_.empty()) {
 
-                boost::asio::post(dispatcher_, [this, pcc, wp]() {
+                boost::asio::post(dispatcher_, [this, pc_cfg, wp]() {
                     bool const b = buffer_write_.empty();
                     auto r = serializer_.req_open_push_channel(
-                        pcc.target_, pcc.account_, pcc.number_, pcc.version_, pcc.id_, pcc.timeout_);
+                        pc_cfg.target_, pc_cfg.account_, pc_cfg.number_, pc_cfg.version_, pc_cfg.id_, pc_cfg.timeout_);
 
                     CYNG_LOG_INFO(
                         logger_,
-                        "[ipt] open channel \"" << pcc.target_ << "\" - #" << pending_channel_.size() << " pending request(s)");
+                        "[ipt] open channel \"" << pc_cfg.target_ << "\" - #" << pending_channel_.size() << " pending request(s)");
 
                     //
                     //  update list of pending channel openings
                     //
-                    pending_channel_.emplace(r.second, std::make_pair(pcc, wp));
+                    pending_channel_.emplace(r.second, std::make_pair(pc_cfg, wp));
 
 #ifdef __DEBUG_IPT
                     {
@@ -518,7 +518,7 @@ namespace smf {
                         auto const dmp = ss.str();
                         CYNG_LOG_DEBUG(
                             logger_,
-                            "[" << +r.second << "] open channel " << pcc.target_ << " sk = " << to_string(serializer_.get_sk())
+                            "[" << +r.second << "] open channel " << pc_cfg.target_ << " sk = " << to_string(serializer_.get_sk())
                                 << "@" << serializer_.get_scrambler_index() << ":\n"
                                 << dmp);
                     }

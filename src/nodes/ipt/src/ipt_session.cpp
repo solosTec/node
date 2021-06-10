@@ -565,6 +565,10 @@ namespace smf {
             CYNG_LOG_INFO(
                 logger_, "[pty] " << vm_.get_tag() << " open push channel " << channel << ':' << source << " ok: " << token);
 
+            BOOST_ASSERT(channel != 0);
+            BOOST_ASSERT(window_size == 1);
+            BOOST_ASSERT(count != 0);
+
             ipt_send(std::bind(
                 &ipt::serializer::res_open_push_channel,
                 &serializer_,

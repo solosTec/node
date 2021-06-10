@@ -10,6 +10,7 @@
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/parse/buffer.h>
 #include <cyng/parse/string.h>
@@ -1597,19 +1598,27 @@ namespace smf {
     }
 
     std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t> db::open_channel(
-        boost::uuids::uuid tag,
-        boost::uuids::uuid dev,
-        std::string name,
-        std::string account,
-        std::string number,
-        std::string sv //	software version
-        ,
-        std::string id //	device id / model
-        ,
+        boost::uuids::uuid dev, //  key in table "device"
+        std::string name,       // target name
+        std::string account,    // account (unused yet)
+        std::string number,     // msisdn (unused yet)
+        std::string sv,         // software version (unused yet)
+        std::string id,         // device id / model (unused yet)
         std::chrono::seconds timeout) {
 
-        //	[channel, source, packet_size, count]
-        std::uint32_t source = 0, channel = 0;
+        //
+        //  initialize with an invalid value
+        //
+        std::uint32_t source = 0;
+
+        //
+        //  Each attempt to open a channel increases the channel counter
+        //
+        std::uint32_t const channel = channel_pty_++;
+
+        //
+        //  start with the maximum and reduces if there are targets with a lower limit
+        //
         std::uint16_t packet_size = std::numeric_limits<std::uint16_t>::max();
         cyng::key_list_t targets;
 
@@ -1624,6 +1633,7 @@ namespace smf {
 
                     source = rec_session.value<std::uint32_t>("source", 0);
                     CYNG_LOG_DEBUG(logger_, "channel to " << name << " has source id: " << source);
+                    BOOST_ASSERT(source != 0);
 
                     //
                     //	ToDo: check if device is enabled
@@ -1640,11 +1650,6 @@ namespace smf {
                     //
                     //	ToDo: check device name, number, version and id
                     //
-
-                    //
-                    //	create push channels
-                    //
-                    channel = channel_pty_;
 
                     for (auto const &key_target : targets) {
 
@@ -1672,11 +1677,6 @@ namespace smf {
                             cfg_.get_tag());
                     }
 
-                    //
-                    //	prepare next channel id
-                    //
-                    ++channel_pty_;
-
                 } else {
                     CYNG_LOG_ERROR(logger_, "session " << dev << " not found");
                 }
@@ -1690,7 +1690,7 @@ namespace smf {
     }
 
     std::pair<cyng::key_list_t, std::uint16_t> db::get_matching_targets(
-        cyng::table const *tbl,
+        cyng::table const *tbl, //  "target"
         std::string name,
         std::string account,
         std::string number,
@@ -1705,6 +1705,8 @@ namespace smf {
             auto const target = rec.value("name", "");
             BOOST_ASSERT(!target.empty());
             auto const device = rec.value("device", boost::uuids::nil_uuid());
+            auto const account = rec.value("account", "");
+
             //
             //	dont't open channels to your own targets
             //
@@ -1718,6 +1720,7 @@ namespace smf {
                 //	matching target
                 //
                 keys.insert(rec.key());
+                CYNG_LOG_DEBUG(logger_, "found matching target " << target << " from device " << account);
 
                 auto const ps = rec.value("pSize", packet_size);
 
@@ -1738,17 +1741,20 @@ namespace smf {
     std::vector<push_target> db::get_matching_channels(std::uint32_t channel, std::size_t size) {
 
         std::vector<push_target> vec;
+        BOOST_ASSERT(channel != 0);
 
         cache_.access(
             [&, this](cyng::table const *tbl_channel, cyng::table *tbl_target) {
                 tbl_channel->loop([&](cyng::record const &rec, std::size_t) -> bool {
                     auto const c = rec.value<std::uint32_t>("channel", 0);
+                    BOOST_ASSERT(c != 0);
                     if (channel == c) {
 
                         //
                         //	target channel
                         //
                         auto const target = rec.value<std::uint32_t>("target", 0);
+                        BOOST_ASSERT(target != 0);
                         CYNG_LOG_TRACE(logger_, "[db] matching target: " << channel << ':' << target << " found");
 
                         auto const rec_target = tbl_target->lookup(cyng::key_generator(target));
@@ -1766,16 +1772,12 @@ namespace smf {
                                  target});
 
                             //
-                            //	update message counter
+                            //	update message counter and px
                             //
                             auto const counter = rec_target.value<std::uint64_t>("counter", 0);
-                            tbl_target->modify(rec_target.key(), cyng::make_param("counter", counter + 1), cfg_.get_tag());
-
-                            //
-                            //	update px
-                            //
                             auto const px = rec_target.value<std::uint64_t>("px", 0);
-                            tbl_target->modify(rec_target.key(), cyng::make_param("px", px + size), cfg_.get_tag());
+                            tbl_target->modify(
+                                rec_target.key(), cyng::param_map_factory("px", px + size)("counter", counter + 1), cfg_.get_tag());
 
                         } else {
                             CYNG_LOG_WARNING(logger_, "[db] channel: " << channel << ':' << target << " has no target entry");

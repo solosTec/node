@@ -356,6 +356,8 @@ namespace smf {
                 return response_subscribe_channel_meterwMBus(wsp, name, rel.table_);
             } else if (boost::algorithm::equals(rel.table_, "meterIEC")) {
                 return response_subscribe_channel_meterIEC(wsp, name, rel.table_);
+            } else if (boost::algorithm::equals(rel.table_, "gwIEC")) {
+                return response_subscribe_channel_gwIEC(wsp, name, rel.table_);
             } else if (boost::algorithm::equals(rel.table_, "gateway")) {
                 return response_subscribe_channel_gateway(wsp, name, rel.table_);
             } else {
@@ -551,6 +553,79 @@ namespace smf {
             },
             cyng::access::read(table_name),
             cyng::access::read("meter"));
+
+        return true;
+    }
+
+    bool http_server::response_subscribe_channel_gwIEC(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        //
+        //	Send initial data set
+        //
+        db_.cache_.access(
+            [&](cyng::table const *tbl_gw, cyng::table const *tbl_meter, cyng::table const *tbl_iec) -> void {
+                //
+                //	inform client that data upload is starting
+                //
+                wsp->push_msg(json_load_icon(name, true));
+
+                //
+                //	get total record size
+                //
+                auto total_size{tbl_gw->size()};
+                std::size_t percent{0}, idx{0};
+                std::uint32_t counter{0};
+
+                tbl_gw->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
+                    cyng::vector_t units;
+
+                    //
+                    // find all associated meterIEC and meter
+                    //
+                    auto const host = rec.value("host", "");
+                    auto const port = rec.value<std::uint16_t>("port", 0);
+                    auto const meter_counter = rec.value<std::uint32_t>("meterCounter", 0);
+
+                    tbl_iec->loop([&](cyng::record &&rec_iec, std::size_t idx) -> bool {
+                        auto const host_iec = rec_iec.value("host", "");
+                        auto const port_iec = rec_iec.value<std::uint16_t>("port", 0);
+                        if (boost::algorithm::equals(host, host_iec) && (port == port_iec)) {
+
+                            //
+                            //  update meter counter
+                            //
+                            ++counter;
+
+                            auto const rec_meter = tbl_meter->lookup(rec_iec.key());
+                            if (!rec_meter.empty()) {
+                                auto const ident = rec_meter.value("ident", "");
+                                auto const meter = rec_meter.value("meter", "");
+                                units.push_back(cyng::make_object(meter));
+                            }
+                        }
+                        //
+                        //  small optimization
+                        //  return false if all configured meters complete
+                        //
+                        return counter != meter_counter;
+                    });
+
+                    auto tpl = rec.to_tuple(cyng::param_map_factory("units", units));
+                    auto const str = json_insert_record(name, std::move(tpl));
+                    CYNG_LOG_DEBUG(logger_, str);
+                    wsp->push_msg(str);
+                    return true;
+                });
+
+                //
+                //	inform client that data upload is finished
+                //
+                if (percent != 100)
+                    wsp->push_msg(json_load_level(name, 100));
+                wsp->push_msg(json_load_icon(name, false));
+            },
+            cyng::access::read(table_name),
+            cyng::access::read("meter"),
+            cyng::access::read("meterIEC"));
 
         return true;
     }
