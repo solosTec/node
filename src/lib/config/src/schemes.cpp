@@ -164,9 +164,8 @@ namespace smf {
             return cyng::meta_store(
                 "gwwMBus",
                 {
-                    cyng::column("tag", cyng::TC_UUID),        //	independent of meter table
-                    cyng::column("host", cyng::TC_IP_ADDRESS), //	IP address
-                    // cyng::column("meterCounter", cyng::TC_UINT32),   //	number of meters coming from this IP address
+                    cyng::column("tag", cyng::TC_UUID),              //	independent of meter table
+                    cyng::column("host", cyng::TC_IP_ADDRESS),       //	IP address
                     cyng::column("connectCounter", cyng::TC_UINT32), //	any attempt to connect
                     cyng::column("state", cyng::TC_UINT16),          //	0 = offline, 1 = connecting, 2 = reading
                     cyng::column("meter", cyng::TC_STRING),          //	current meter id/name

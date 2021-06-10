@@ -159,8 +159,8 @@ namespace smf {
             bus_.req_db_update(
                 "gwwMBus",
                 key_gw_wmbus_,
-                cyng::param_map_factory()("meter", mbus::to_str(h)) //  meter name
-                ("state", static_cast<std::uint16_t>(2))            //  status: reading
+                cyng::param_map_factory()("meter", meter) //  meter name
+                ("state", static_cast<std::uint16_t>(2))  //  status: reading
             );
 
             if (h.has_secondary_address()) {

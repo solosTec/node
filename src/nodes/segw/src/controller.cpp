@@ -277,7 +277,8 @@ namespace smf {
 #endif
                                             ("account", hostname) //  login name
                                         ("pwd", "wM-Bus")         //  password
-                                        ("connect", true) //  broker algorithm (connect on demand, otherwise connect at start)
+                                        ("connect-on-demand",
+                                         true) //  broker algorithm (connect on demand, otherwise connect at start)
                                             .
                                             operator cyng::param_map_t()
                                 }));
@@ -291,7 +292,7 @@ namespace smf {
                                ("port", 12002)                               // port
                                ("account", hostname)                         //  login name
                                ("pwd", "rs485")                              //  password
-                               ("connect", true) //  broker algorithm (connect on demand, otherwise connect at start)
+                               ("connect-on-demand", true) //  broker algorithm (connect on demand, otherwise connect at start)
                                    .
                                    operator cyng::param_map_t()}));
     }

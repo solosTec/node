@@ -205,7 +205,7 @@ namespace smf {
                             tbl_gw->meta().get_name(),
                             key,
                             cyng::param_map_factory()("port", ep.port()) //  tcp/ip port
-                            ("status", static_cast<std::uint16_t>(1))    //  status: connecting
+                            ("state", static_cast<std::uint16_t>(1))     //  status: connecting
                             ("connectCounter", connect_counter));
 
                         return false; //  complete

@@ -716,13 +716,13 @@ namespace smf {
             //
             //  new element since v0.9.1.29
             //
-            auto const pos = pmap.find("connect");
+            auto const pos = pmap.find("connect-on-demand");
             if (pos == pmap.end()) {
                 insert_config_record(
                     stmt,
-                    cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "connect"),
+                    cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "connect-on-demand"),
                     cyng::make_object(true),
-                    "connect on demand, otherwise connect at start = true");
+                    "connect on demand = true, otherwise connect at start");
             }
 
             broker_index++;

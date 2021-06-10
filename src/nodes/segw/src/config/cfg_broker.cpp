@@ -47,7 +47,7 @@ namespace smf {
             return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "pwd");
         }
         std::string connect_path(std::uint8_t type, std::size_t idx) {
-            return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "connect");
+            return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "connect-on-demand");
         }
     } // namespace
 
@@ -130,7 +130,7 @@ namespace smf {
 
     cyng::param_map_t to_param_map(target const &srv) {
         return cyng::param_map_factory("address", srv.get_address())("port", srv.get_port())("account", srv.get_account())(
-            "pwd", srv.get_pwd())("connect", srv.is_connect_on_demand());
+            "pwd", srv.get_pwd())("connect-on-demand", srv.is_connect_on_demand());
     }
 
 } // namespace smf
