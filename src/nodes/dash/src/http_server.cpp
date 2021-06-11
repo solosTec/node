@@ -203,7 +203,7 @@ namespace smf {
                     //	send response
                     //
                     BOOST_ASSERT(pos->second.lock());
-                    if (response_subscribe_channel(pos->second.lock(), channel)) {
+                    if (response_subscribe_channel(pos->second.lock(), channel, tag)) {
 
                         //
                         //	add to subscription list
@@ -342,7 +342,7 @@ namespace smf {
         }
     }
 
-    bool http_server::response_subscribe_channel(ws_sptr wsp, std::string const &name) {
+    bool http_server::response_subscribe_channel(ws_sptr wsp, std::string const &name, boost::uuids::uuid tag) {
 
         auto const rel = db_.by_channel(name);
         if (!rel.empty()) {
@@ -369,8 +369,9 @@ namespace smf {
             if (!rel.empty()) {
 
                 //
-                //	ToDo: add subscription table
+                //	add subscription table
                 //
+                db_.add_to_subscriptions(rel.counter_, tag);
 
                 //
                 //	Send table size
@@ -726,9 +727,9 @@ namespace smf {
         auto const pos = ws_map_.find(tag);
         if (pos != ws_map_.end()) {
             auto sp = pos->second.lock();
-            if (sp)
+            if (sp) {
                 sp->push_msg(json_delete_record(channel, key));
-            else {
+            } else {
                 //	shouldn't be necessary
                 BOOST_ASSERT_MSG(false, "invalid ws map - notify_remove");
                 ws_map_.erase(pos);
@@ -740,9 +741,9 @@ namespace smf {
         auto const pos = ws_map_.find(tag);
         if (pos != ws_map_.end()) {
             auto sp = pos->second.lock();
-            if (sp)
+            if (sp) {
                 sp->push_msg(json_clear_table(channel));
-            else {
+            } else {
                 //	shouldn't be necessary
                 BOOST_ASSERT_MSG(false, "invalid ws map - notify_clear");
                 ws_map_.erase(pos);
@@ -754,9 +755,9 @@ namespace smf {
         auto const pos = ws_map_.find(tag);
         if (pos != ws_map_.end()) {
             auto sp = pos->second.lock();
-            if (sp)
+            if (sp) {
                 sp->push_msg(json_insert_record(channel, rec.to_tuple()));
-            else {
+            } else {
                 //	shouldn't be necessary
                 BOOST_ASSERT_MSG(false, "invalid ws map - notify_insert");
                 ws_map_.erase(pos);
@@ -770,10 +771,23 @@ namespace smf {
             auto sp = pos->second.lock();
             if (sp)
                 sp->push_msg(json_update_record(channel, key, param));
+
             else {
                 //	shouldn't be necessary
                 BOOST_ASSERT_MSG(false, "invalid ws map - notify_update");
                 ws_map_.erase(pos);
+            }
+        }
+    }
+
+    void http_server::notify_size(std::string channel, std::size_t size, boost::uuids::uuid tag) {
+
+        auto const pos = ws_map_.find(tag);
+        if (pos != ws_map_.end()) {
+            auto sp = pos->second.lock();
+            if (sp) {
+                auto const str = json_update_channel(channel, size);
+                sp->push_msg(str);
             }
         }
     }

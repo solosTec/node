@@ -78,6 +78,11 @@ namespace smf {
          */
         void notify_update(std::string channel, cyng::key_t, cyng::param_t const &, boost::uuids::uuid tag);
 
+        /**
+         * notify change in table size
+         */
+        void notify_size(std::string channel, std::size_t size, boost::uuids::uuid tag);
+
       private:
         /**
          * incoming connection
@@ -99,7 +104,7 @@ namespace smf {
          */
         void on_msg(boost::uuids::uuid tag, std::string);
 
-        bool response_subscribe_channel(ws_sptr, std::string const &);
+        bool response_subscribe_channel(ws_sptr, std::string const &, boost::uuids::uuid tag);
         bool response_subscribe_channel_def(ws_sptr, std::string const &, std::string const &);
         bool response_subscribe_channel_meterwMBus(ws_sptr, std::string const &, std::string const &);
         bool response_subscribe_channel_meterIEC(ws_sptr, std::string const &, std::string const &);
