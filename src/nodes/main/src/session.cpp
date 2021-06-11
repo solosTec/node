@@ -53,7 +53,7 @@ namespace smf {
         vm_.set_channel_name("pty.return.open.connection", slot++);  //	get_vm_func_pty_return_open_connection
         vm_.set_channel_name("pty.transfer.data", slot++);           //	get_vm_func_pty_transfer_data
         vm_.set_channel_name("pty.close.connection", slot++);        //	get_vm_func_pty_close_connection
-        vm_.set_channel_name("pty.register", slot++);                //	get_vm_func_pty_register
+        vm_.set_channel_name("pty.register.target", slot++);         //	get_vm_func_pty_register_target
         vm_.set_channel_name("pty.deregister", slot++);              //	get_vm_func_pty_deregister
         vm_.set_channel_name("pty.open.channel", slot++);            //	get_vm_func_pty_open_channel
         vm_.set_channel_name("pty.close.channel", slot++);           //	get_vm_func_pty_close_channel
@@ -136,7 +136,7 @@ namespace smf {
             get_vm_func_pty_return_open_connection(this),
             get_vm_func_pty_transfer_data(this),
             get_vm_func_pty_close_connection(this),
-            get_vm_func_pty_register(this),
+            get_vm_func_pty_register_target(this),
             get_vm_func_pty_deregister(this),
             get_vm_func_pty_open_channel(this),
             get_vm_func_pty_close_channel(this),
@@ -694,7 +694,7 @@ namespace smf {
         send_cluster_response(cyng::serialize_forward("pty.res.close.connection", tag, false, token)); //	failed
     }
 
-    void session::pty_register(
+    void session::pty_register_target(
         boost::uuids::uuid tag,
         boost::uuids::uuid dev,
         std::string name,
@@ -708,7 +708,7 @@ namespace smf {
         auto const [channel, success] = cache_.register_target(tag, dev, vm_.get_tag(), name, paket_size, window_size);
         if (success) {
             CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " registered target " << name << " {" << tag << "}");
-            cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "target[", name, "]registered");
+            cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "target[", name, "#", channel, "] registered");
 
             send_cluster_response(cyng::serialize_forward("pty.res.register", tag, true, channel, token)); //	ok
 
@@ -809,8 +809,12 @@ namespace smf {
 
             //
             //	forward data (multiple times)
+            //  substitute channel with target id (pty.channel_)
             //
-            CYNG_LOG_DEBUG(logger_, "pty " << protocol_layer_ << " push data to " << pty.pty_.first << ", " << pty.pty_.second);
+            CYNG_LOG_DEBUG(
+                logger_,
+                "pty " << protocol_layer_ << " push data to " << pty.pty_.first << ", " << pty.pty_.second << " - " << channel
+                       << " <-> " << pty.channel_);
 
             send_cluster_response(cyng::serialize_forward("pty.push.data.req", pty.pty_.first, pty.channel_, source, data));
         }
@@ -940,9 +944,9 @@ namespace smf {
     }
 
     std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::string, std::uint16_t, std::uint8_t, cyng::param_map_t)>
-    session::get_vm_func_pty_register(session *ptr) {
+    session::get_vm_func_pty_register_target(session *ptr) {
         return std::bind(
-            &session::pty_register,
+            &session::pty_register_target,
             ptr,
             std::placeholders::_1,
             std::placeholders::_2,

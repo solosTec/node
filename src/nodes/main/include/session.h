@@ -144,8 +144,13 @@ namespace smf {
          */
         void pty_close_connection(boost::uuids::uuid tag, boost::uuids::uuid dev, cyng::param_map_t);
 
-        void
-        pty_register(boost::uuids::uuid tag, boost::uuids::uuid dev, std::string, std::uint16_t, std::uint8_t, cyng::param_map_t);
+        void pty_register_target(
+            boost::uuids::uuid tag,
+            boost::uuids::uuid dev,
+            std::string,
+            std::uint16_t,
+            std::uint8_t,
+            cyng::param_map_t);
 
         /**
          * pty.register
@@ -241,7 +246,7 @@ namespace smf {
 
         static std::function<
             void(boost::uuids::uuid, boost::uuids::uuid, std::string, std::uint16_t, std::uint8_t, cyng::param_map_t)>
-        get_vm_func_pty_register(session *);
+        get_vm_func_pty_register_target(session *);
 
         static std::function<void(boost::uuids::uuid, std::string)> get_vm_func_pty_deregister(session *);
 

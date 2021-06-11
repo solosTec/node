@@ -1548,8 +1548,7 @@ namespace smf {
     std::pair<std::uint32_t, bool> db::register_target(
         boost::uuids::uuid tag,
         boost::uuids::uuid dev,
-        boost::uuids::uuid peer //	local vm
-        ,
+        boost::uuids::uuid peer, //	local vm
         std::string name,
         std::uint16_t paket_size,
         std::uint8_t window_size) {
@@ -1559,6 +1558,7 @@ namespace smf {
         //
 
         bool r = false;
+        auto const channel = channel_target_++;
 
         //
         //	insert into target table
@@ -1571,7 +1571,7 @@ namespace smf {
                     auto const owner = rec.value<std::string>("name", "");
                     CYNG_LOG_INFO(logger_, "[db] register target - device [" << owner << "]");
                     r = tbl_trg->insert(
-                        cyng::key_generator(channel_target_++),
+                        cyng::key_generator(channel),
                         cyng::data_generator(
                             tag,
                             peer,
@@ -1581,8 +1581,7 @@ namespace smf {
                             paket_size,
                             window_size,
                             std::chrono::system_clock::now(),
-                            static_cast<std::uint64_t>(0) //	px
-                            ,
+                            static_cast<std::uint64_t>(0), //	px
                             static_cast<std::uint64_t>(0)),
                         1,
                         cfg_.get_tag());
@@ -1594,7 +1593,7 @@ namespace smf {
             cyng::access::write("target"),
             cyng::access::read("device"));
 
-        return {channel_target_, r};
+        return {channel, r};
     }
 
     std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t> db::open_channel(
@@ -1759,6 +1758,8 @@ namespace smf {
 
                         auto const rec_target = tbl_target->lookup(cyng::key_generator(target));
                         if (!rec_target.empty()) {
+                            // auto const account = rec.value("account", "");
+
                             CYNG_LOG_DEBUG(
                                 logger_, "[db] matching target: " << channel << ':' << target << ": " << rec_target.to_string());
 

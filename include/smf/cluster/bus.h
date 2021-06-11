@@ -124,7 +124,7 @@ namespace smf {
         //	"pty.transfer.data"
         void pty_transfer_data(boost::uuids::uuid dev, boost::uuids::uuid tag, cyng::buffer_t &&);
 
-        //	"pty.register"
+        //	"pty.register.target"
         void pty_reg_target(
             std::string name,
             std::uint16_t,

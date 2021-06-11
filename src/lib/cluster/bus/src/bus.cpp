@@ -391,7 +391,7 @@ namespace smf {
         boost::uuids::uuid tag,
         cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_invoke("pty.register", tag, dev, name, paket_size, window_size, token));
+        add_msg(cyng::serialize_invoke("pty.register.target", tag, dev, name, paket_size, window_size, token));
     }
 
     void bus::pty_dereg_target(std::string name, boost::uuids::uuid dev, boost::uuids::uuid tag, cyng::param_map_t &&token) {
