@@ -38,8 +38,8 @@ namespace smf {
 
         struct meter_state {
             meter_state(std::string id, cyng::key_t);
-            std::string const id_;
-            cyng::key_t const key_;
+            std::string id_;
+            cyng::key_t key_;
         };
 
         /**
