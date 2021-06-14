@@ -41,8 +41,8 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t idx{0};
-            sp->set_channel_name("connect", idx++);
+            std::size_t slot{0};
+            sp->set_channel_name("connect", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
     }
@@ -192,6 +192,27 @@ namespace smf {
             cyng::access::read("meter"));
     }
 
+    void cluster::remove_iec_meter(cyng::key_t key) {
+        store_.access(
+            [&](cyng::table const *tbl_iec, cyng::table const *tbl_meter) {
+                auto const rec = tbl_iec->lookup(key);
+                if (!rec.empty()) {
+
+                    auto const host = rec.value("host", "");
+                    auto const port = rec.value<std::uint16_t>("port", 0);
+
+                    auto const rec_meter = tbl_meter->lookup(key);
+                    if (!rec_meter.empty()) {
+                        auto const name = rec_meter.value("meter", "");
+                        auto const task_name = make_task_name(host, port);
+                        ctl_.get_registry().dispatch(task_name, "add.meter", name);
+                    }
+                }
+            },
+            cyng::access::read("meterIEC"),
+            cyng::access::read("meter"));
+    }
+
     void cluster::update_delay(std::uint32_t counter) {
         delay_ += std::chrono::seconds((counter + 1) * 5);
         if (delay_ > std::chrono::seconds(300)) {
@@ -246,7 +267,7 @@ namespace smf {
                 check_gateway(rec);
             } else if (boost::algorithm::equals(table_name, "meterIEC")) {
                 //
-                //  an IEC meters was added - add to task if available
+                //  an IEC meter was added - add to task if available
                 //
                 CYNG_LOG_INFO(logger_, "[cluster] check IEC meter: " << data);
                 cyng::record rec(db_->get_meta(table_name), key, data, gen);
@@ -283,16 +304,29 @@ namespace smf {
 
         CYNG_LOG_TRACE(logger_, "[cluster] remove: " << table_name << " - " << key);
 
-        if (db_)
+        if (db_) {
+            if (boost::algorithm::equals(table_name, "meterIEC")) {
+                //
+                //  remove from task
+                //
+                remove_iec_meter(key);
+            }
             db_->res_remove(table_name, key, tag);
+        }
     }
 
     void cluster::db_res_clear(std::string table_name, boost::uuids::uuid tag) {
 
         CYNG_LOG_TRACE(logger_, "[cluster] clear: " << table_name);
 
-        if (db_)
+        if (db_) {
+            if (boost::algorithm::equals(table_name, "gwIEC")) {
+                //
+                //  ToDo: stop all tasks
+                //
+            }
             db_->res_clear(table_name, tag);
+        }
     }
 
     std::string make_task_name(std::string host, std::uint16_t port) {

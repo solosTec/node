@@ -126,12 +126,9 @@ namespace smf {
             boost::uuids::uuid caller_dev,
             std::string caller_name,
             std::string callee_name,
-            boost::uuids::uuid tag //	callee tag
-            ,
-            boost::uuids::uuid dev //	callee dev-tag
-            ,
-            boost::uuids::uuid callee //	callee vm-tag
-            ,
+            boost::uuids::uuid tag,    //	callee tag
+            boost::uuids::uuid dev,    //	callee dev-tag
+            boost::uuids::uuid callee, //	callee vm-tag
             bool local);
 
         /**

@@ -25,6 +25,7 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void(std::string, std::string, std::chrono::seconds)>,
             std::function<void(std::string, cyng::key_t)>, //  add
+            std::function<void(std::string)>,              //  remove
             std::function<void(cyng::eod)>>;
 
         enum class state {
@@ -32,6 +33,7 @@ namespace smf {
             WAIT,
             CONNECTED,
             STOPPED,
+            RETRY, //  connection got lost, try to reconnect
         } state_;
 
         struct meter_state {
@@ -66,6 +68,7 @@ namespace smf {
             bool next();
             bool is_complete() const;
             void add(std::string, cyng::key_t key);
+            void remove(std::string);
             std::uint32_t size() const;
             std::uint32_t index() const;
             void loop(std::function<void(meter_state const &)>);
@@ -89,6 +92,7 @@ namespace smf {
       private:
         void start(std::string, std::string, std::chrono::seconds);
         void add_meter(std::string, cyng::key_t);
+        void remove_meter(std::string);
         void stop(cyng::eod);
 
         void connect(boost::asio::ip::tcp::resolver::results_type endpoints);

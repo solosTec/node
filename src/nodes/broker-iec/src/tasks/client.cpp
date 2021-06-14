@@ -38,6 +38,7 @@ namespace smf {
           sigs_{
               std::bind(&client::start, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
               std::bind(&client::add_meter, this, std::placeholders::_1, std::placeholders::_2),
+              std::bind(&client::remove_meter, this, std::placeholders::_1),
               std::bind(&client::stop, this, std::placeholders::_1),
           },
           channel_(wp),
@@ -170,6 +171,7 @@ namespace smf {
             std::size_t slot{0};
             sp->set_channel_name("start", slot++);
             sp->set_channel_name("add.meter", slot++);
+            sp->set_channel_name("remove.meter", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
 
@@ -186,6 +188,14 @@ namespace smf {
         if (sp) {
             mgr_.add(name, key);
             CYNG_LOG_INFO(logger_, "[" << sp->get_name() << "] add meter #" << mgr_.size() << ": " << name);
+        }
+    }
+
+    void client::remove_meter(std::string name) {
+        auto sp = channel_.lock();
+        if (sp) {
+            mgr_.remove(name);
+            CYNG_LOG_INFO(logger_, "[" << sp->get_name() << "] remove meter #" << mgr_.size() << ": " << name);
         }
     }
 
@@ -498,6 +508,10 @@ namespace smf {
 
     void client::meter_mgr::add(std::string name, cyng::key_t key) { meters_.push_back(meter_state(name, key)); }
 
+    void client::meter_mgr::remove(std::string name) {
+        std::remove_if(
+            meters_.begin(), meters_.end(), [&](meter_state const &state) { return boost::algorithm::equals(name, state.id_); });
+    }
     std::uint32_t client::meter_mgr::size() const { return static_cast<std::uint32_t>(meters_.size()); }
     std::uint32_t client::meter_mgr::index() const { return index_; }
 
