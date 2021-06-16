@@ -33,6 +33,9 @@ namespace smf {
         void auth_state(bool);
         void register_targets();
 
+        void generate_open_response(std::string trx, cyng::tuple_t const &msg);
+        void generate_close_response(std::string trx, cyng::tuple_t const &msg);
+
       private:
         cyng::controller &ctl_;
         cfg &cfg_;

@@ -27,9 +27,11 @@ set (sml_producer
     include/smf/sml/msg.h
     include/smf/sml/value.hpp
     include/smf/sml/writer.hpp
+    include/smf/sml/generator.h
     src/lib/sml/protocol/src/msg.cpp
     src/lib/sml/protocol/src/value.cpp
     src/lib/sml/protocol/src/writer.cpp
+    src/lib/sml/protocol/src/generator.cpp
 )
 
 set (sml_consumer

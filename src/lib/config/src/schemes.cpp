@@ -103,7 +103,8 @@ namespace smf {
 
         /**
          * One gateway has one ip address but can host multiple IEC meters.
-         * These are temporary data to generate statistics and will not be stored.
+         * These are temporary data to generate statistics and will not be stored permanently.
+         * "gwIEC" is dependend from table "meterIEC" and table "meter".
          */
         cyng::meta_store get_store_gwIEC() {
             return cyng::meta_store(
@@ -112,7 +113,7 @@ namespace smf {
                     cyng::column("tag", cyng::TC_UUID),              //	independent of meter table
                     cyng::column("host", cyng::TC_STRING),           //	host/domain name
                     cyng::column("port", cyng::TC_UINT16),           //	listener port (outgoing)
-                    cyng::column("meterCounter", cyng::TC_UINT32),   //	number of hosted meters
+                    cyng::column("meterCounter", cyng::TC_UINT32),   //	number of hosted IEC meters
                     cyng::column("connectCounter", cyng::TC_UINT32), //	any attempt to open the socket
                     cyng::column("failureCounter", cyng::TC_UINT32), //	failed connects
                     cyng::column("state", cyng::TC_UINT16),          //	0 = offline, 1 = waiting, 2 = connected

@@ -7,6 +7,8 @@
 
 #include <config/cfg_hardware.h>
 #include <config/cfg_ipt.h>
+#include <config/cfg_sml.h>
+
 #include <router.h>
 
 #include <smf/ipt/codes.h>
@@ -28,21 +30,28 @@ namespace smf {
         , cfg_(config)
         , logger_(logger)
         , bus_()
-        , parser_(
-              [this](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
-                  CYNG_LOG_TRACE(logger_, smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                  switch (type) {
-                  case sml::msg_type::OPEN_REQUEST:
-                      break;
-                  case sml::msg_type::GET_PROC_PARAMETER_REQUEST:
-                      break;
-                  case sml::msg_type::CLOSE_REQUEST:
-                      break;
-                  default:
-                      CYNG_LOG_WARNING(logger_, "message type " << smf::sml::get_name(type) << " is not supported yet");
-                      break;
-                  }
-              })
+        , parser_([this](
+                      std::string trx,
+                      std::uint8_t group_no,
+                      std::uint8_t abort_on_error,
+                      sml::msg_type type,
+                      cyng::tuple_t msg,
+                      std::uint16_t crc) {
+            CYNG_LOG_TRACE(logger_, smf::sml::get_name(type) << ": " << trx << ", " << msg);
+            switch (type) {
+            case sml::msg_type::OPEN_REQUEST:
+                generate_open_response(trx, msg);
+                break;
+            case sml::msg_type::GET_PROC_PARAMETER_REQUEST:
+                break;
+            case sml::msg_type::CLOSE_REQUEST:
+                generate_close_response(trx, msg);
+                break;
+            default:
+                CYNG_LOG_WARNING(logger_, "message type " << smf::sml::get_name(type) << " is not supported yet");
+                break;
+            }
+        })
         , messages_() {}
 
     void router::start() {
@@ -123,5 +132,14 @@ namespace smf {
     }
 
     void router::register_targets() {}
+
+    void router::generate_open_response(std::string trx, cyng::tuple_t const &msg) {
+        cfg_sml cfg(cfg_);
+        if (cfg.accept_all_ids()) {
+            CYNG_LOG_WARNING(logger_, "[ipt] accept all ids");
+        } else {
+        }
+    }
+    void router::generate_close_response(std::string trx, cyng::tuple_t const &msg) {}
 
 } // namespace smf
