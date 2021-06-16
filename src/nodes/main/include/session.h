@@ -303,6 +303,11 @@ namespace smf {
         config::dependend_key dep_key_;
     };
 
+    /**
+     *  Round up to 5 minutes
+     */
+    std::chrono::seconds smooth(std::chrono::seconds interval);
+
 } // namespace smf
 
 #endif

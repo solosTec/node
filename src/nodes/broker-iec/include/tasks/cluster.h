@@ -43,7 +43,8 @@ namespace smf {
             cyng::logger,
             toggle::server_vec_t &&,
             bool login,
-            std::filesystem::path out);
+            std::filesystem::path out,
+            std::size_t reconnect_timeout);
 
         void connect();
 
@@ -81,6 +82,7 @@ namespace smf {
         boost::uuids::uuid const tag_;
         cyng::logger logger_;
         std::filesystem::path const out_;
+        std::size_t const reconnect_timeout_;
 
         cyng::mesh fabric_;
         bus bus_;

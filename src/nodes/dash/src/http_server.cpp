@@ -574,10 +574,14 @@ namespace smf {
                 //
                 auto total_size{tbl_gw->size()};
                 std::size_t percent{0}, idx{0};
-                std::uint32_t counter{0};
 
                 tbl_gw->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
                     cyng::vector_t units;
+
+                    //
+                    //  meter counter
+                    //
+                    std::uint32_t counter{0};
 
                     //
                     // find all associated meterIEC and meter

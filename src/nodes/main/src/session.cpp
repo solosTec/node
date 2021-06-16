@@ -273,7 +273,7 @@ namespace smf {
                                     static_cast<std::uint32_t>(0), // current meter index
                                     std::string("[start]"),        //  current meter id/name
                                     //  interval: at least 1 minute
-                                    interval < std::chrono::seconds(60) ? std::chrono::seconds(60) : interval),
+                                    smooth(interval < std::chrono::seconds(60) ? std::chrono::seconds(60) : interval)),
                                 1,
                                 tag)) {
                             CYNG_LOG_TRACE(logger_, "insert iec gw " << s << " - " << gw_key);
@@ -290,7 +290,7 @@ namespace smf {
                         auto const interval_gw = rec_gw.value("interval", std::chrono::seconds(60 * 60));
                         if (interval < interval_gw && (interval > std::chrono::seconds(60))) {
                             CYNG_LOG_TRACE(logger_, "update iec gw " << s << " to " << interval.count() << " seconds pull cycle");
-                            tbl_gw->modify(gw_key, cyng::make_param("interval", interval), tag);
+                            tbl_gw->modify(gw_key, cyng::make_param("interval", smooth(interval)), tag);
                         }
                     }
                 }
@@ -1012,6 +1012,11 @@ namespace smf {
 
     std::function<bool(std::string msg, cyng::severity)> session::get_vm_func_sys_msg(db *ptr) {
         return std::bind(&db::push_sys_msg, ptr, std::placeholders::_1, std::placeholders::_2);
+    }
+
+    std::chrono::seconds smooth(std::chrono::seconds interval) {
+        auto const mod = interval.count() % 300;
+        return std::chrono::seconds(interval.count() + (300 - mod));
     }
 
 } // namespace smf

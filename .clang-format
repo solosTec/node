@@ -1,17 +1,18 @@
 # Format Style Options - Created with Clang Power Tools
-#AccessModifierOffset: 0
 ---
 AlignAfterOpenBracket: AlwaysBreak
-AllowAllParametersOfDeclarationOnNextLine: false
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
 BinPackArguments: false
 BinPackParameters: false
+BreakConstructorInitializersBeforeComma: true
 BreakConstructorInitializers: BeforeComma
 BreakStringLiterals: false
 ColumnLimit: 132
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 IndentWidth: 4
+Language: Cpp
 NamespaceIndentation: All
 ObjCBlockIndentWidth: 4
 ...

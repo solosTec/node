@@ -33,10 +33,12 @@ set (broker-iec_tasks
     include/tasks/client.h
     include/tasks/writer.h
     include/tasks/push.h
+    include/tasks/reconnect.h
     src/tasks/cluster.cpp
     src/tasks/client.cpp
     src/tasks/writer.cpp
     src/tasks/push.cpp
+    src/tasks/reconnect.cpp
 )
 
 source_group("broker-iec-assets" FILES ${broker-iec_assets})

@@ -4,8 +4,8 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_IEC_TASK_WRITER_H
-#define SMF_IEC_TASK_WRITER_H
+#ifndef SMF_IEC_TASK_RECONNECT_H
+#define SMF_IEC_TASK_RECONNECT_H
 
 #include <db.h>
 
@@ -21,32 +21,27 @@
 
 namespace smf {
 
-    class writer {
+    class reconnect {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(std::string)>,
-            std::function<void(cyng::obis code, std::string value, std::string unit)>,
-            std::function<void()>,
-            std::function<void(cyng::eod)>>;
+            std::function<void()>,         //  run
+            std::function<void(cyng::eod)> //  stop
+            >;
 
       public:
-        writer(cyng::channel_weak, cyng::logger, std::filesystem::path out);
+        reconnect(cyng::channel_weak, cyng::logger, cyng::channel_weak);
 
         void stop(cyng::eod);
 
       private:
-        void open(std::string);
-        void store(cyng::obis code, std::string value, std::string unit);
-        void commit();
+        void run();
 
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
         cyng::logger logger_;
-        std::filesystem::path const out_;
-        std::ofstream ostream_;
-        std::string id_; //	current meter id/name
+        cyng::channel_weak client_;
     };
 
 } // namespace smf

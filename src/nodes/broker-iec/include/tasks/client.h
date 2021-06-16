@@ -23,17 +23,19 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(std::string, std::string, std::chrono::seconds)>,
+            std::function<void(std::chrono::seconds)>,     //  init
+            std::function<void()>,                         //  start
+            std::function<void()>,                         //  connect
             std::function<void(std::string, cyng::key_t)>, //  add
             std::function<void(std::string)>,              //  remove
             std::function<void(cyng::eod)>>;
 
-        enum class state {
+        enum class state : std::uint16_t {
             START,
             WAIT,
             CONNECTED,
-            STOPPED,
             RETRY, //  connection got lost, try to reconnect
+            STOPPED,
         } state_;
 
         struct meter_state {
@@ -72,6 +74,10 @@ namespace smf {
             std::uint32_t size() const;
             std::uint32_t index() const;
             void loop(std::function<void(meter_state const &)>);
+            /**
+             *  retry at least 3 times
+             */
+            std::uint32_t get_retry_number() const;
 
           private:
             std::vector<meter_state> meters_;
@@ -87,15 +93,19 @@ namespace smf {
             std::filesystem::path,
             cyng::key_t key, //  "gwIEC"
             std::uint32_t connect_counter,
-            std::uint32_t failure_counter);
+            std::uint32_t failure_counter,
+            std::string host,
+            std::string service,
+            std::chrono::seconds reconnect_timeout);
 
       private:
-        void start(std::string, std::string, std::chrono::seconds);
+        void init(std::chrono::seconds interval);
+        void start();
         void add_meter(std::string, cyng::key_t);
         void remove_meter(std::string);
         void stop(cyng::eod);
 
-        void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
+        void connect();
         void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
         void
         handle_connect(const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
@@ -114,6 +124,20 @@ namespace smf {
         constexpr bool is_stopped() const { return state_ == state::STOPPED; }
         constexpr bool is_connected() const { return state_ == state::CONNECTED; }
 
+        /**
+         * @return retry number - current retry counter  
+         */
+        std::uint32_t get_remaining_retries() const;
+
+        void reset(state);
+
+        /**
+         * @return true if sufficient time is left until next readout from now
+         */
+        template <typename R, typename P> bool is_sufficient_time(std::chrono::duration<R, P> d) const {
+            return (next_readout_ - std::chrono::steady_clock::now()) > d;
+        }
+
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
@@ -124,6 +148,9 @@ namespace smf {
         cyng::key_t key_gw_iec_; //  "gwIEC"
         std::uint32_t connect_counter_;
         std::uint32_t failure_counter_;
+        std::string const host_;
+        std::string const service_;
+        std::chrono::seconds const reconnect_timeout_;
 
         meter_mgr mgr_;
         boost::asio::ip::tcp::resolver::results_type endpoints_;
@@ -131,10 +158,14 @@ namespace smf {
         boost::asio::io_context::strand dispatcher_;
         std::deque<cyng::buffer_t> buffer_write_;
         std::array<char, 2048> input_buffer_;
+        std::chrono::seconds interval_;            //  readout interval
+        cyng::channel::time_point_t next_readout_; //  std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds>
 
         iec::parser parser_;
-        cyng::channel_ptr writer_;
-        std::size_t entries_; //	per readount
+        cyng::channel_ptr writer_;    //  task to write CSV files
+        cyng::channel_ptr reconnect_; //  task to trigger reconnects
+        std::size_t entries_;         //	per readount
+        std::uint32_t retry_counter_; //  for each cycle
     };
 
     /**

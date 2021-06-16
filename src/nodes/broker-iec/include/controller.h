@@ -38,7 +38,8 @@ namespace smf {
             std::string const &node_name,
             toggle::server_vec_t &&tgl,
             bool,
-            std::filesystem::path);
+            std::filesystem::path,
+            std::size_t reconnect_timeout);
 
         void join_network(
             cyng::controller &ctl,

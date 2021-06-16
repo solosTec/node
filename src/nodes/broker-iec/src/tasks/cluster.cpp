@@ -8,6 +8,7 @@
 #include <tasks/cluster.h>
 
 #include <cyng/log/record.h>
+#include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
 
@@ -22,7 +23,8 @@ namespace smf {
 		, cyng::logger logger
 		, toggle::server_vec_t&& cfg
 		, bool login
-		, std::filesystem::path out)
+		, std::filesystem::path out,
+        std::size_t reconnect_timeout)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
@@ -32,6 +34,7 @@ namespace smf {
 		, tag_(tag)
 		, logger_(logger)
 		, out_(out)
+        , reconnect_timeout_(reconnect_timeout)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
 		, store_()
@@ -45,6 +48,7 @@ namespace smf {
             sp->set_channel_name("connect", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
+        CYNG_LOG_TRACE(logger, "reconnect timeout is " << reconnect_timeout << " seconds");
     }
 
     void cluster::stop(cyng::eod) {
@@ -81,7 +85,17 @@ namespace smf {
         //	start client
         //
         auto channel = ctl_.create_named_channel_with_ref<client>(
-            task_name, ctl_, bus_, logger_, out_, rec.key(), connect_counter, failure_counter);
+            task_name,
+            ctl_,
+            bus_,
+            logger_,
+            out_,
+            rec.key(),
+            connect_counter,
+            failure_counter,
+            host,
+            std::to_string(port),
+            std::chrono::seconds(reconnect_timeout_));
         BOOST_ASSERT(channel->is_open());
 
         //
@@ -135,10 +149,11 @@ namespace smf {
         //
         //  start all clients with a random delay between 10 and 300 seconds
         //
+        channel->dispatch("init", cyng::make_tuple(interval));
         channel->suspend(
             std::chrono::seconds(delay_) + std::chrono::seconds(12), //  +12 sec offset
             "start",
-            cyng::make_tuple(host, std::to_string(port), interval));
+            cyng::make_tuple());
 
         //
         //  client stays alive since using a timer with a reference to the task
@@ -158,6 +173,16 @@ namespace smf {
                 "/",
                 meter_counter);
         }
+
+        //
+        //  reset IEC gateway status
+        //
+        bus_.req_db_update(
+            "gwIEC",
+            rec.key(),
+            cyng::param_map_factory("state", static_cast<std::uint16_t>(0)) //  offline
+            ("meter", "[start]")                                            //  current meter id/name
+        );
 
         //
         //  update delay

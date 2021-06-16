@@ -81,15 +81,24 @@ namespace smf {
 #else
         std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "/data/csv");
 #endif
-
         if (!std::filesystem::exists(client_out)) {
             CYNG_LOG_FATAL(logger, "output path not found: [" << client_out << "]");
         }
+        auto const reconnect_timeout = cyng::numeric_cast<std::size_t>(reader["client"]["reconnect.timeout"].get(), 40);
 
         //
         //	connect to cluster
         //
-        join_cluster(ctl, channels, logger, tag, node_name, std::move(tgl_cluster), client_login, client_out);
+        join_cluster(
+            ctl,
+            channels,
+            logger,
+            tag,
+            node_name,
+            std::move(tgl_cluster),
+            client_login,
+            client_out,
+            (reconnect_timeout < 10) ? 10 : reconnect_timeout);
 
         auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
         auto tgl_ipt = ipt::read_config(ipt_vec);
@@ -176,10 +185,11 @@ namespace smf {
         std::string const &node_name,
         toggle::server_vec_t &&tgl,
         bool login,
-        std::filesystem::path out) {
+        std::filesystem::path out,
+        std::size_t reconnect_timeout) {
 
-        auto channel =
-            ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(tgl), login, out);
+        auto channel = ctl.create_named_channel_with_ref<cluster>(
+            "cluster", ctl, tag, node_name, logger, std::move(tgl), login, out, reconnect_timeout);
         BOOST_ASSERT(channel->is_open());
         channel->dispatch("connect");
         channels.lock(channel);
@@ -206,10 +216,11 @@ namespace smf {
                 cyng::make_param("login", false),
                 cyng::make_param("verbose", false), //	parser
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
-                cyng::make_param("out", "D:\\projects\\data\\csv") //	output path
+                cyng::make_param("out", "D:\\projects\\data\\csv"), //	output path
 #else
-                cyng::make_param("out", "/data/csv") //	output path
+                cyng::make_param("out", "/data/csv"), //	output path
 #endif
+                cyng::make_param("reconnect.timeout", 40) //	delay between reconnects in seconds
 
                 ));
     }
