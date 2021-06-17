@@ -107,6 +107,10 @@ namespace smf {
         std::uint16_t get_port(std::size_t idx) const;
         std::string get_account(std::size_t idx) const;
         std::string get_pwd(std::size_t idx) const;
+
+        /**
+         * if not specified, the default value is true
+         */
         bool is_connect_on_demand(std::size_t idx) const;
 
         target get_target(std::size_t idx) const;

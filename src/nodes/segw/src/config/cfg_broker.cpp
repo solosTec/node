@@ -63,7 +63,7 @@ namespace smf {
 
     std::string cfg_broker::get_pwd(std::size_t idx) const { return cfg_.get_value(pwd_path(get_index(), idx), ""); }
 
-    bool cfg_broker::is_connect_on_demand(std::size_t idx) const { return cfg_.get_value(connect_path(get_index(), idx), false); }
+    bool cfg_broker::is_connect_on_demand(std::size_t idx) const { return cfg_.get_value(connect_path(get_index(), idx), true); }
 
     target cfg_broker::get_target(std::size_t idx) const {
         return target(get_account(idx), get_pwd(idx), get_address(idx), get_port(idx), is_connect_on_demand(idx));
@@ -129,8 +129,8 @@ namespace smf {
     }
 
     cyng::param_map_t to_param_map(target const &srv) {
-        return cyng::param_map_factory("address", srv.get_address())("port", srv.get_port())("account", srv.get_account())(
-            "pwd", srv.get_pwd())("connect-on-demand", srv.is_connect_on_demand());
+        return cyng::param_map_factory("address", srv.get_address())("port", srv.get_port())(
+            "account", srv.get_account())("pwd", srv.get_pwd())("connect-on-demand", srv.is_connect_on_demand());
     }
 
 } // namespace smf
