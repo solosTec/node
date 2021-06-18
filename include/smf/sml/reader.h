@@ -21,6 +21,9 @@ namespace smf {
          */
         using sml_list_t = std::map<cyng::obis, cyng::param_map_t>;
 
+        /**
+         * @return codepage, client ID (05+MAC), reqFileId, server ID, username, password, SML version
+         */
         [[nodiscard]] std::tuple<std::string, cyng::buffer_t, cyng::buffer_t, std::string, std::string, std::string, std::uint8_t>
         read_public_open_request(cyng::tuple_t msg);
 
@@ -51,8 +54,11 @@ namespace smf {
         read_get_list_response(cyng::tuple_t msg);
 
         /** @brief GET_PROC_PARAMETER_REQUEST (1280)
+         *
+         * @return server id, user, password, parameter tree path, attribute
          */
-        void read_get_proc_parameter_request(cyng::tuple_t msg);
+        [[nodiscard]] std::tuple<cyng::buffer_t, std::string, std::string, cyng::obis_path_t, cyng::object>
+        read_get_proc_parameter_request(cyng::tuple_t msg);
 
         /** @brief SET_PROC_PARAMETER_REQUEST (1536)
          */

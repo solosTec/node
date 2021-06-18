@@ -759,5 +759,10 @@ namespace smf {
             send(std::bind(&serializer::req_transfer_push_data, &serializer_, id.first, id.second, 0xc1, 0, data));
         }
 
+        void bus::transfer(cyng::buffer_t const &data) {
+            CYNG_LOG_TRACE(logger_, "[ipt] transfer " << data.size() << " bytes");
+            send(std::bind(&serializer::escape_data, &serializer_, data));
+        }
+
     } // namespace ipt
 } // namespace smf

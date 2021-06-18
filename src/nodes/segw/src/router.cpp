@@ -13,7 +13,10 @@
 
 #include <smf/ipt/codes.h>
 #include <smf/ipt/transpiler.h>
+#include <smf/sml/reader.h>
 
+#include <cyng/io/io_buffer.h>
+#include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
 #include <cyng/task/controller.h>
 
@@ -22,6 +25,8 @@
 #include <iostream>
 #include <sstream>
 #endif
+
+#include <functional>
 
 namespace smf {
 
@@ -38,21 +43,35 @@ namespace smf {
                       cyng::tuple_t msg,
                       std::uint16_t crc) {
             CYNG_LOG_TRACE(logger_, smf::sml::get_name(type) << ": " << trx << ", " << msg);
+            //
+            //  std::apply() needs as first parameter a this pointer because generate_open_response()
+            //  is a member function.
+            //
             switch (type) {
             case sml::msg_type::OPEN_REQUEST:
-                generate_open_response(trx, msg);
+                std::apply(
+                    &router::generate_open_response,
+                    std::tuple_cat(std::make_tuple(this, trx), sml::read_public_open_request(msg)));
                 break;
             case sml::msg_type::GET_PROC_PARAMETER_REQUEST:
+                std::apply(
+                    &router::generate_get_proc_parameter_response,
+                    std::tuple_cat(std::make_tuple(this, trx), sml::read_get_proc_parameter_request(msg)));
                 break;
             case sml::msg_type::CLOSE_REQUEST:
-                generate_close_response(trx, msg);
+                generate_close_response(trx, sml::read_public_close_request(msg));
+                //
+                //  send response
+                //
+                reply();
                 break;
             default:
                 CYNG_LOG_WARNING(logger_, "message type " << smf::sml::get_name(type) << " is not supported yet");
                 break;
             }
         })
-        , messages_() {}
+        , messages_()
+        , res_gen_() {}
 
     void router::start() {
 
@@ -133,13 +152,56 @@ namespace smf {
 
     void router::register_targets() {}
 
-    void router::generate_open_response(std::string trx, cyng::tuple_t const &msg) {
+    void router::reply() {
+
+        //
+        //  convert to SML
+        //
+        auto const buffer = sml::to_sml(messages_);
+
+        //
+        //  send
+        //
+        if (bus_)
+            bus_->transfer(buffer);
+    }
+
+    void router::generate_open_response(
+        std::string trx,
+        std::string code_page,
+        cyng::buffer_t file_id,
+        cyng::buffer_t client,
+        std::string server,
+        std::string user,
+        std::string pwd,
+        std::uint8_t version) {
+
+        CYNG_LOG_TRACE(
+            logger_,
+            "SML_PublicOpen.Req - trx: " << trx << ", client: " << cyng::io::to_hex(client) << ", server: " << server
+                                         << ", file id: " << cyng::io::to_hex(file_id) << ", user: " << user << ", pwd: " << pwd);
+
         cfg_sml cfg(cfg_);
         if (cfg.accept_all_ids()) {
             CYNG_LOG_WARNING(logger_, "[ipt] accept all ids");
         } else {
         }
+
+        messages_.push_back(res_gen_.public_open(trx, file_id, client, server));
     }
-    void router::generate_close_response(std::string trx, cyng::tuple_t const &msg) {}
+
+    void router::generate_close_response(std::string trx, cyng::object gsign) { messages_.push_back(res_gen_.public_close(trx)); }
+    void router::generate_get_proc_parameter_response(
+        std::string trx,
+        cyng::buffer_t server,
+        std::string user,
+        std::string pwd,
+        cyng::obis_path_t path,
+        cyng::object attr) {
+        CYNG_LOG_INFO(
+            logger_,
+            "SML_GetProcParameter.Req - trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
+                                               << ", pwd: " << pwd << ", path: " << path << ", attr: " << attr);
+    }
 
 } // namespace smf

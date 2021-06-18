@@ -8,6 +8,7 @@
 #include <smf/mbus/server_id.h>
 
 #include <cyng/obj/buffer_cast.hpp>
+#include <cyng/parse/buffer.h>
 #include <cyng/parse/hex.h>
 
 #include <cstring>
@@ -77,6 +78,27 @@ namespace smf {
             }
         }
         return ss.str();
+    }
+
+    cyng::buffer_t to_srv_id(std::string s) {
+        //  tt-mmmm-nnnnnnnn-vv-uu
+        if (s.size() == 22 && s.at(0) == '0' && ((s.at(1) == '1') || (s.at(1) == '2')) && s.at(2) == '-' && s.at(7) == '-' &&
+            s.at(16) == '-' && s.at(19) == '-') {
+
+            //
+            //  convert to an hex string
+            //
+            std::string id;
+            id.reserve(18);
+            std::copy_if(std::begin(s), std::end(s), std::back_inserter(id), [](char c) { return c != '-'; });
+
+            //
+            //  convert hex string to buffer
+            //
+            return cyng::hex_to_buffer(id);
+        }
+
+        return cyng::buffer_t{};
     }
 
     std::string get_id(srv_id_t address) {

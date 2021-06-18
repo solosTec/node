@@ -28,6 +28,8 @@ namespace smf {
          */
         cyng::buffer_t to_sml(sml::messages_t const &);
 
+        cyng::buffer_t set_crc16(cyng::buffer_t &&buffer);
+
         /**
          * Add SML trailer and tail
          */

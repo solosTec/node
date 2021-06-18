@@ -1,5 +1,6 @@
 #include <smf/sml/crc16.h>
 #include <smf/sml/msg.h>
+#include <smf/sml/serializer.h>
 
 #include <cyng/obj/util.hpp>
 
@@ -18,17 +19,28 @@ namespace smf {
             for (auto const &req : reqs) {
                 //
                 //	linearize and set CRC16
-                //
-                // cyng::buffer_t b = linearize(req);
-                // sml_set_crc16(b);
-
-                //
                 //	append to current SML message
                 //
-                // msg.push_back(b);
+                BOOST_ASSERT_MSG(req.size() == 6, "invalid SML message size");
+                msg.push_back(set_crc16(serialize(req)));
             }
 
             return boxing(msg);
+        }
+
+        cyng::buffer_t set_crc16(cyng::buffer_t &&buffer) {
+            BOOST_ASSERT_MSG(buffer.size() > 4, "message buffer to small");
+
+            crc_16_data crc;
+            crc.crc_ = crc16_calculate(buffer);
+
+            if (buffer.size() > 4) {
+                //	patch
+                buffer[buffer.size() - 3] = crc.data_[1];
+                buffer[buffer.size() - 2] = crc.data_[0];
+                BOOST_ASSERT_MSG(buffer[buffer.size() - 1] == 0, "invalid EOD");
+            }
+            return buffer;
         }
 
         cyng::buffer_t boxing(std::vector<cyng::buffer_t> const &inp) {
