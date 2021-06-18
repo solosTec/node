@@ -3,6 +3,8 @@
 
 #include <cyng/obj/object.h>
 
+#include <sstream>
+
 #include <boost/assert.hpp>
 
 namespace smf {
