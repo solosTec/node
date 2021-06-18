@@ -145,7 +145,7 @@ namespace smf {
                     ss << "," << v.first << "=" << influx::to_line_protocol(val.second);
 #endif
 
-                } else if (boost::algorithm::equals(val.first, "reg_period")) {
+                } else if (boost::algorithm::equals(val.first, "reg_period") || boost::algorithm::equals(val.first, "status")) {
                     //  skip
                 } else {
                     ss << "," << val.first << "=" << influx::to_line_protocol(val.second);

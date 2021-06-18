@@ -61,8 +61,10 @@ namespace smf {
         read_get_proc_parameter_request(cyng::tuple_t msg);
 
         /** @brief SET_PROC_PARAMETER_REQUEST (1536)
+         *  each setProcParamReq has to send an attension message as response
          */
-        void read_set_proc_parameter_request(cyng::tuple_t msg);
+        [[nodiscard]] std::tuple<cyng::buffer_t, std::string, std::string, cyng::obis_path_t>
+        read_set_proc_parameter_request(cyng::tuple_t msg);
 
         /** @brief GET_PROC_PARAMETER_RESPONSE (1281)
          */
@@ -95,7 +97,9 @@ namespace smf {
         read_period_entry(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
         /**
-         * read a data record
+         * read a SML tree.
+         * A SML tree consists of a parameter name (OBIS), a value and and an child list. In most cases the value and the child list
+         * are exclusive.
          */
         [[nodiscard]] std::pair<cyng::obis, cyng::object>
         read_param_tree(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);

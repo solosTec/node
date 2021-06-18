@@ -200,6 +200,7 @@ namespace smf {
                 //	iterate over message
                 //
                 auto pos = msg.begin();
+
                 //
                 //	serverId
                 //
@@ -230,52 +231,51 @@ namespace smf {
             return std::make_tuple(cyng::buffer_t(), std::string(), std::string(), cyng::obis_path_t(), cyng::make_object());
         }
 
-        void read_set_proc_parameter_request(cyng::tuple_t msg) {
+        std::tuple<cyng::buffer_t, std::string, std::string, cyng::obis_path_t> read_set_proc_parameter_request(cyng::tuple_t msg) {
             BOOST_ASSERT(msg.size() == 5);
             if (msg.size() == 5) {
 
                 //
+                //	iterate over message
+                //
+                auto pos = msg.begin();
+
+                //
                 //	serverId
                 //
-                // auto const srv_id = read_server_id(*pos++);
-                // boost::ignore_unused(srv_id);
+                auto const server = cyng::to_buffer(*pos++);
 
                 //
                 //	username
                 //
-                // set_value("userName", read_string(*pos++));
+                auto const user = to_string(*pos++);
 
                 //
                 //	password
                 //
-                // set_value("password", read_string(*pos++));
+                auto const pwd = to_string(*pos++);
 
                 //
                 //	parameterTreePath == parameter address
+                //	std::vector<obis>
                 //
-                // auto const path = read_param_tree_path(*pos++);
+                auto const path = read_param_tree_path(*pos++);
 
                 //
                 //	each setProcParamReq has to send an attension message as response
                 //
 
                 //
-                //	recursiv call to an parameter tree - similiar to read_param_tree()
-                //	ToDo: use a generic implementation like in SML_GetProcParameter.Req
-                //
-                // auto p = read_set_proc_parameter_request_tree(path, 0, *pos++);
-                // prg.insert(prg.end(), p.begin(), p.end());
-                //
                 //	parameterTree
                 //
-                // auto const tpl = cyng::to_tuple(*pos++);
-                // if (tpl.size() != 3) return std::make_pair(path, cyng::param_t{});	//return
-                // cyng::generate_invoke("log.msg.error", "SML Tree", tpl.size());
+                auto const tpl = cyng::container_cast<cyng::tuple_t>(*pos++);
+                BOOST_ASSERT(tpl.size() == 3);
 
-                // auto const param = read_param_tree(0u, tpl.begin(), tpl.end());
+                auto const r = (tpl.size() == 3) ? read_param_tree(tpl.begin(), tpl.end()) : std::pair<cyng::obis, cyng::object>{};
 
-                // return std::make_pair(path, param);
+                return std::make_tuple(server, user, pwd, path);
             }
+            return std::make_tuple(cyng::buffer_t(), std::string(), std::string(), cyng::obis_path_t());
         }
 
         std::pair<cyng::obis_path_t, cyng::param_t> read_get_proc_parameter_response(cyng::tuple_t msg) {

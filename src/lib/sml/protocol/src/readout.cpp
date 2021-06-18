@@ -160,6 +160,10 @@ namespace smf {
             return customize_value(code, obj);
         }
 
+        // cyng::param_t read_param_tree(std::size_t depth, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator) {
+        //    return cyng::param_t{};
+        //}
+
         cyng::attr_t read_parameter(cyng::object obj) {
             auto const tpl = cyng::container_cast<cyng::tuple_t>(obj);
             if (tpl.size() == 2) {

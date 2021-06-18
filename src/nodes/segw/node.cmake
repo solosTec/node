@@ -85,8 +85,10 @@ set (segw_config
 set (segw_sml
     include/sml/server.h
     include/sml/session.h
+    include/sml/response_engine.h
     src/sml/server.cpp
     src/sml/session.cpp
+    src/sml/response_engine.cpp
 )
 
 set (segw_nms
@@ -97,9 +99,7 @@ set (segw_nms
 )
 
 set (segw_redirector
-#    include/redirector/server.h
     include/redirector/session.h
-#    src/redirector/server.cpp
     src/redirector/session.cpp
 )
 

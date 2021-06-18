@@ -55,8 +55,13 @@ namespace smf {
                 break;
             case sml::msg_type::GET_PROC_PARAMETER_REQUEST:
                 std::apply(
-                    &router::generate_get_proc_parameter_response,
-                    std::tuple_cat(std::make_tuple(this, trx), sml::read_get_proc_parameter_request(msg)));
+                    &response_engine::generate_get_proc_parameter_response,
+                    std::tuple_cat(std::make_tuple(&engine_, std::ref(messages_), trx), sml::read_get_proc_parameter_request(msg)));
+                break;
+            case sml::msg_type::SET_PROC_PARAMETER_REQUEST:
+                std::apply(
+                    &response_engine::generate_set_proc_parameter_response,
+                    std::tuple_cat(std::make_tuple(&engine_, std::ref(messages_), trx), sml::read_set_proc_parameter_request(msg)));
                 break;
             case sml::msg_type::CLOSE_REQUEST:
                 generate_close_response(trx, sml::read_public_close_request(msg));
@@ -71,7 +76,8 @@ namespace smf {
             }
         })
         , messages_()
-        , res_gen_() {}
+        , res_gen_()
+        , engine_(cfg_, logger, res_gen_) {}
 
     void router::start() {
 
@@ -191,17 +197,5 @@ namespace smf {
     }
 
     void router::generate_close_response(std::string trx, cyng::object gsign) { messages_.push_back(res_gen_.public_close(trx)); }
-    void router::generate_get_proc_parameter_response(
-        std::string trx,
-        cyng::buffer_t server,
-        std::string user,
-        std::string pwd,
-        cyng::obis_path_t path,
-        cyng::object attr) {
-        CYNG_LOG_INFO(
-            logger_,
-            "SML_GetProcParameter.Req - trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
-                                               << ", pwd: " << pwd << ", path: " << path << ", attr: " << attr);
-    }
 
 } // namespace smf

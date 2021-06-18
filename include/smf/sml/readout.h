@@ -61,6 +61,9 @@ namespace smf {
          */
         cyng::object read_value(cyng::obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj);
 
+        /**
+         * read a parameter consisting of an OBIS code a value and an optional child list.
+         */
         // cyng::param_t read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
 
         /**

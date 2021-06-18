@@ -8,6 +8,7 @@
 #define SMF_SEGW_ROUTER_H
 
 #include <cfg.h>
+#include <sml/response_engine.h>
 
 #include <smf/ipt/bus.h>
 #include <smf/sml/generator.h>
@@ -46,14 +47,6 @@ namespace smf {
             std::uint8_t);
         void generate_close_response(std::string trx, cyng::object gsign);
 
-        void generate_get_proc_parameter_response(
-            std::string trx,
-            cyng::buffer_t,
-            std::string,
-            std::string,
-            cyng::obis_path_t,
-            cyng::object);
-
       private:
         cyng::controller &ctl_;
         cfg &cfg_;
@@ -62,6 +55,11 @@ namespace smf {
         sml::unpack parser_;
         sml::messages_t messages_; //	sml response
         sml::response_generator res_gen_;
+
+        //
+        //  response engines
+        //
+        response_engine engine_;
     };
 
 } // namespace smf
