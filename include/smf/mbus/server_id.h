@@ -32,10 +32,16 @@ namespace smf {
 
     /**
      * Produce a string with the format:
-     * mmmm-nnnnnnnn-vv-uu
+     * tt-mmmm-nnnnnnnn-vv-uu
      */
     std::string srv_id_to_str(srv_id_t);
     std::string srv_id_to_str(cyng::buffer_t);
+
+    /**
+     * Expects a string in the format:
+     * tt-mmmm-nnnnnnnn-vv-uu
+     */
+    cyng::buffer_t to_srv_id(std::string);
 
     /**
      * @return meter id as string

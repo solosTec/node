@@ -72,7 +72,7 @@ namespace smf {
             /**
              * send data over an open connection
              */
-            // void transfer(cyng::buffer_t);
+            void transfer(cyng::buffer_t const &);
 
           private:
             constexpr bool is_stopped() const { return state_ == state::STOPPED; }

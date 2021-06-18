@@ -743,7 +743,7 @@ namespace smf {
         cyng::exec(vm_, [this, data]() {
             bool const b = buffer_write_.empty();
             // scramble data
-            buffer_write_.push_back(serializer_.write(data));
+            buffer_write_.push_back(serializer_.escape_data(data));
             if (b)
                 do_write();
         });

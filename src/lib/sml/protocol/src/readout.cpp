@@ -120,8 +120,11 @@ namespace smf {
         }
 
         std::string to_string(cyng::object obj) {
-            cyng::buffer_t const buffer = cyng::to_buffer(obj);
-            return cyng::make_string(buffer);
+            if (obj.rtti().tag() == cyng::TC_BUFFER) {
+                cyng::buffer_t const buffer = cyng::to_buffer(obj);
+                return cyng::make_string(buffer);
+            }
+            return "";
         }
 
         cyng::object read_string(cyng::object obj) { return cyng::make_object(to_string(obj)); }

@@ -44,6 +44,11 @@ BOOST_AUTO_TEST_CASE(id) {
 
     auto const s1 = smf::srv_id_to_str(smf::srv_id_t({0x02, 0xe6, 0x1e, 0x03, 0x19, 0x77, 0x15, 0x3c, 0x07}));
     BOOST_REQUIRE_EQUAL(s1, "02-e61e-03197715-3c-07");
+
+    auto const b1 = smf::to_srv_id(s1);
+    BOOST_REQUIRE_EQUAL(b1.size(), 18);
+    BOOST_REQUIRE_EQUAL(b1.at(0) & 0xFF, 0x02);
+    BOOST_REQUIRE_EQUAL(b1.at(8) & 0xFF, 0x07);
 }
 
 BOOST_AUTO_TEST_CASE(parser) {

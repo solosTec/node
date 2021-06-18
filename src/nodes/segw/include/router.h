@@ -10,6 +10,7 @@
 #include <cfg.h>
 
 #include <smf/ipt/bus.h>
+#include <smf/sml/generator.h>
 #include <smf/sml/msg.h>
 #include <smf/sml/unpack.h>
 
@@ -32,9 +33,26 @@ namespace smf {
         void ipt_stream(cyng::buffer_t &&);
         void auth_state(bool);
         void register_targets();
+        void reply();
 
-        void generate_open_response(std::string trx, cyng::tuple_t const &msg);
-        void generate_close_response(std::string trx, cyng::tuple_t const &msg);
+        void generate_open_response(
+            std::string trx,
+            std::string,
+            cyng::buffer_t,
+            cyng::buffer_t,
+            std::string,
+            std::string,
+            std::string,
+            std::uint8_t);
+        void generate_close_response(std::string trx, cyng::object gsign);
+
+        void generate_get_proc_parameter_response(
+            std::string trx,
+            cyng::buffer_t,
+            std::string,
+            std::string,
+            cyng::obis_path_t,
+            cyng::object);
 
       private:
         cyng::controller &ctl_;
@@ -43,7 +61,9 @@ namespace smf {
         std::unique_ptr<ipt::bus> bus_;
         sml::unpack parser_;
         sml::messages_t messages_; //	sml response
+        sml::response_generator res_gen_;
     };
+
 } // namespace smf
 
 #endif

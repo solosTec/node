@@ -18,6 +18,7 @@
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
+#include <cyng/obj/vector_cast.hpp>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/stash.h>
@@ -85,6 +86,11 @@ namespace smf {
             CYNG_LOG_FATAL(logger, "output path not found: [" << client_out << "]");
         }
         auto const reconnect_timeout = cyng::numeric_cast<std::size_t>(reader["client"]["reconnect.timeout"].get(), 40);
+        auto const filter_enabled = cyng::numeric_cast<std::size_t>(reader["client"]["filter.enabled"].get(), false);
+        // cyng::make_param("filter.enabled", false), //	use filter
+        //    cyng::make_param("filter", cyng::make_vector({"12345678"}))
+        auto const filter = (filter_enabled) ? cyng::vector_cast<std::string>(reader["client"]["filter"].get(), "00000000")
+                                             : std::vector<std::string>();
 
         //
         //	connect to cluster
@@ -220,9 +226,11 @@ namespace smf {
 #else
                 cyng::make_param("out", "/data/csv"), //	output path
 #endif
-                cyng::make_param("reconnect.timeout", 40) //	delay between reconnects in seconds
+                cyng::make_param("reconnect.timeout", 40), //	delay between reconnects in seconds
+                cyng::make_param("filter.enabled", false), //	use filter
+                cyng::make_param("filter", cyng::make_vector({"12345678"}))
 
-                ));
+                    ));
     }
 
     cyng::param_t controller::create_push_spec() {

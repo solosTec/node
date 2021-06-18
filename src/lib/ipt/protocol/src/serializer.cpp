@@ -518,7 +518,7 @@ namespace smf {
             return data;
         }
 
-        cyng::buffer_t serializer::write(cyng::buffer_t const &data) {
+        cyng::buffer_t serializer::escape_data(cyng::buffer_t const &data) {
             cyng::buffer_t buffer;
             buffer.reserve(data.size() + 4);
 

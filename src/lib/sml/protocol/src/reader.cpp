@@ -113,6 +113,7 @@ namespace smf {
             if (msg.size() == 1) {
                 //
                 //	iterate over message
+                //  global signature
                 //
                 return *msg.begin();
             }
@@ -190,39 +191,43 @@ namespace smf {
             return std::make_tuple(cyng::buffer_t(), cyng::buffer_t(), cyng::obis(), cyng::object(), cyng::object(), sml_list_t());
         }
 
-        void read_get_proc_parameter_request(cyng::tuple_t msg) {
+        std::tuple<cyng::buffer_t, std::string, std::string, cyng::obis_path_t, cyng::object>
+        read_get_proc_parameter_request(cyng::tuple_t msg) {
             BOOST_ASSERT(msg.size() == 5);
             if (msg.size() == 5) {
 
                 //
+                //	iterate over message
+                //
+                auto pos = msg.begin();
+                //
                 //	serverId
                 //
-                // auto const srv_id = read_server_id(*pos++);
-                // boost::ignore_unused(srv_id);
+                auto const server = cyng::to_buffer(*pos++);
 
                 //
                 //	username
                 //
-                // set_value("userName", read_string(*pos++));
+                auto const user = to_string(*pos++);
 
                 //
                 //	password
                 //
-                // set_value("password", read_string(*pos++));
+                auto const pwd = to_string(*pos++);
 
                 //
                 //	parameterTreePath == parameter address
                 //	std::vector<obis>
                 //
-                // auto const path = read_param_tree_path(*pos++);
-                // BOOST_ASSERT_MSG(!path.empty(), "no OBIS path");
+                auto const path = read_param_tree_path(*pos++);
 
                 //
                 //	attribute/constraints
                 //
                 //	*pos
-                // return std::make_pair(path, *pos);
+                return std::make_tuple(server, user, pwd, path, *pos);
             }
+            return std::make_tuple(cyng::buffer_t(), std::string(), std::string(), cyng::obis_path_t(), cyng::make_object());
         }
 
         void read_set_proc_parameter_request(cyng::tuple_t msg) {
@@ -421,8 +426,8 @@ namespace smf {
             auto val = read_value(code, scaler, unit, raw);
             return std::make_pair(
                 code,
-                cyng::param_map_factory("unit", unit)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
-                    "valTime", val_time)("status", status) /*("signature", *pos)*/);
+                cyng::param_map_factory("unit", unit)("unit-name", unit_name)(
+                    "scaler", scaler)("value", val)("raw", raw)("valTime", val_time)("status", status) /*("signature", *pos)*/);
         }
 
         sml_list_t read_period_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end) {
@@ -484,8 +489,8 @@ namespace smf {
             //
             return std::make_pair(
                 code,
-                cyng::param_map_factory("unit", unit)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
-                    "value", val) /*("signature", *pos)*/);
+                cyng::param_map_factory("unit", unit)("unit-name", unit_name)(
+                    "scaler", scaler)("value", val)("raw", raw)("value", val) /*("signature", *pos)*/);
         }
 
         std::pair<cyng::obis, cyng::object> read_param_tree(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end) {
