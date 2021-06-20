@@ -19,7 +19,7 @@ namespace smf {
 		, cyng::controller& ctl
 		, cyng::logger logger
 		, ipt::toggle::server_vec_t&& cfg
-		, ipt::push_channel&& pcc)
+		, ipt::push_channel const& pcc)
 	: sigs_{ 
 		std::bind(&push::connect, this),  
         std::bind(&push::send_iec, this, std::placeholders::_1),
@@ -38,7 +38,7 @@ namespace smf {
 		, bus_(ctl.get_ctx()
 			, logger
 			, std::move(cfg)
-			, "model"
+			, "IEC Broker"
 			, std::bind(&push::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2)
 			, std::bind(&push::ipt_stream, this, std::placeholders::_1)
             
@@ -62,7 +62,7 @@ namespace smf {
     }
 
     void push::stop(cyng::eod) {
-        CYNG_LOG_WARNING(logger_, "stop push task");
+        // CYNG_LOG_WARNING(logger_, "stop push task");
         bus_.stop();
     }
 

@@ -64,7 +64,7 @@ namespace smf {
         /**
          * loop over all table meta data
          */
-        // void loop(std::function<void(cyng::meta_store const&)>);
+        std::string get_first_table() const;
 
         /**
          * get next table name from get_store_meta_data()

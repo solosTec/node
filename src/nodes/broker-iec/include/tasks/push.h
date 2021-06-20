@@ -28,7 +28,7 @@ namespace smf {
             >;
 
       public:
-        push(cyng::channel_weak, cyng::controller &, cyng::logger, ipt::toggle::server_vec_t &&, ipt::push_channel &&pcc);
+        push(cyng::channel_weak, cyng::controller &, cyng::logger, ipt::toggle::server_vec_t &&, ipt::push_channel const &pcc);
         ~push();
 
         void stop(cyng::eod);

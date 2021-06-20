@@ -77,7 +77,7 @@ namespace smf {
             //
             auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
             db_->init(slot);
-            bus_.req_subscribe("meter");
+            bus_.req_subscribe(db_->get_first_table());
 
         } else {
             CYNG_LOG_ERROR(logger_, "[cluster] joining failed");

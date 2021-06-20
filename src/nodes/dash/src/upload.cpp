@@ -8,6 +8,7 @@
 #include <db.h>
 #include <upload.h>
 
+#include <smf/config/protocols.h>
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/server_id.h>
 
@@ -219,8 +220,12 @@ namespace smf {
             key,
             db_.complete(
                 "meter",
-                cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)("protocol", "IEC:62056")(
-                    "item", boost::uuids::to_string(tag))),
+                cyng::param_map_factory("ident", server_id)           //  example: 01-e61e-13090016-3c-07
+                ("meter", meter_id)                                   //  example: 16000913
+                ("code", mc)                                          //  global unique metering code
+                ("maker", maker)                                      //  3 character code
+                ("protocol", config::get_name(config::protocol::IEC)) //  protocol enum
+                ("item", meter_type)("factoryNr", boost::uuids::to_string(tag))),
             0);
 
         cluster_bus_.req_db_insert(
@@ -271,8 +276,9 @@ namespace smf {
             key,
             db_.complete(
                 "meter",
-                cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)(
-                    "protocol", "wM-Bus:EN13757-4")("item", boost::uuids::to_string(tag))),
+                cyng::param_map_factory("ident", server_id)("meter", meter_id)(
+                    "code",
+                    mc)("maker", maker)("protocol", config::get_name(config::protocol::WIRED_MBUS))("item", boost::uuids::to_string(tag))),
             0);
         cluster_bus_.req_db_insert(
             "meterwMBus",
@@ -330,8 +336,8 @@ namespace smf {
         cluster_bus_.req_db_update(
             "meter",
             key,
-            cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)(
-                "protocol", "wM-Bus:EN13757-4"));
+            cyng::param_map_factory("ident", server_id)("meter", meter_id)(
+                "code", mc)("maker", maker)("protocol", "wM-Bus:EN13757-4"));
         cluster_bus_.req_db_update("meterwMBus", key, cyng::param_map_factory("aes", aes));
     }
 

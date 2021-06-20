@@ -4,8 +4,10 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
+#include <smf/ipt/config.h>
 #include <tasks/client.h>
 #include <tasks/cluster.h>
+#include <tasks/push.h>
 
 #include <cyng/log/record.h>
 #include <cyng/obj/container_factory.hpp>
@@ -21,10 +23,12 @@ namespace smf {
 		, boost::uuids::uuid tag
 		, std::string const& node_name
 		, cyng::logger logger
-		, toggle::server_vec_t&& cfg
+		, toggle::server_vec_t&& cfg_cluster
 		, bool login
-		, std::filesystem::path out,
-        std::size_t reconnect_timeout)
+		, std::filesystem::path out
+        , std::size_t reconnect_timeout
+        , ipt::toggle::server_vec_t && cfg_ipt
+        , ipt::push_channel &&pcc)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
@@ -35,12 +39,15 @@ namespace smf {
 		, logger_(logger)
 		, out_(out)
         , reconnect_timeout_(reconnect_timeout)
+        , cfg_ipt_(std::move(cfg_ipt))
+        , pcc_(std::move(pcc))
 		, fabric_(ctl)
-		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
+		, bus_(ctl.get_ctx(), logger, std::move(cfg_cluster), node_name, tag, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_, channel_))
         , delay_(0)
         , dep_key_()
+        , stash_(ctl.get_ctx())
 	{
         auto sp = channel_.lock();
         if (sp) {
@@ -53,6 +60,7 @@ namespace smf {
 
     void cluster::stop(cyng::eod) {
         CYNG_LOG_WARNING(logger_, "[cluster] stop task(" << tag_ << ")");
+        stash_.stop();
         bus_.stop();
     }
 
@@ -202,7 +210,7 @@ namespace smf {
         auto const task_name = make_task_name(host, port);
 
         store_.access(
-            [&](cyng::table const *tbl_meter) {
+            [&](cyng::table const *tbl_meter, cyng::table const *tbl_device) {
                 auto const rec_meter = tbl_meter->lookup(rec.key());
                 if (!rec_meter.empty()) {
 
@@ -210,11 +218,46 @@ namespace smf {
                     CYNG_LOG_INFO(logger_, "[db] " << task_name << " add meter " << name);
                     ctl_.get_registry().dispatch(task_name, "add.meter", name, rec.key());
 
+                    auto const rec_device = tbl_device->lookup(rec.key());
+                    if (!rec_device.empty()) {
+
+                        auto const account = rec_device.value("name", "");
+                        auto const pwd = rec_device.value("pwd", "");
+                        auto const enabled = rec_device.value("enabled", false);
+                        if (enabled) {
+                            //
+                            //  create push task
+                            //
+                            create_push_task(name, account, pwd);
+                        } else {
+                            CYNG_LOG_WARNING(logger_, "[db] device " << account << " is not enabled");
+                            bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device ", account, " is not enabled");
+                        }
+
+                    } else {
+                        CYNG_LOG_WARNING(logger_, "[db] device for meter " << name << " not found");
+                        bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device for meter ", name, " not found");
+                    }
+
                 } else {
                     CYNG_LOG_WARNING(logger_, "[db] IEC meter " << rec.to_string() << " for " << task_name << " not found");
+                    bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] meter ", rec.to_string(), " for ", task_name, " not found");
                 }
             },
-            cyng::access::read("meter"));
+            cyng::access::read("meter"),
+            cyng::access::read("device"));
+    }
+
+    void cluster::create_push_task(std::string const &name, std::string const &account, std::string const &pwd) {
+
+        //
+        //  push task is identified by the meter name/id
+        //
+        auto channel = ctl_.create_named_channel_with_ref<push>(name, ctl_, logger_, update_cfg(cfg_ipt_, account, pwd), pcc_);
+        BOOST_ASSERT(channel->is_open());
+        // channel->dispatch("connect");
+        channel->suspend(std::chrono::seconds(15) + std::chrono::milliseconds(stash_.size() * 200), "connect");
+        stash_.lock(channel);
     }
 
     void cluster::remove_iec_meter(cyng::key_t key) {
@@ -230,7 +273,17 @@ namespace smf {
                     if (!rec_meter.empty()) {
                         auto const name = rec_meter.value("meter", "");
                         auto const task_name = make_task_name(host, port);
-                        ctl_.get_registry().dispatch(task_name, "add.meter", name);
+                        ctl_.get_registry().dispatch(task_name, "remove.meter", name);
+
+                        //
+                        //  stop push task
+                        //
+                        CYNG_LOG_WARNING(logger_, "[cluster] stop push task " << name);
+                        auto const cpv = ctl_.get_registry().lookup(name);
+                        for (auto cp : cpv) {
+                            stash_.unlock(cp->get_id());
+                            cp->stop();
+                        }
                     }
                 }
             },
@@ -259,7 +312,7 @@ namespace smf {
             auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
             db_->init(slot);
             //  start with first table
-            bus_.req_subscribe("meter");
+            bus_.req_subscribe(db_->get_first_table());
 
         } else {
             CYNG_LOG_ERROR(logger_, "[cluster] joining failed");
@@ -349,6 +402,10 @@ namespace smf {
                 //
                 //  ToDo: stop all tasks
                 //
+            } else if (boost::algorithm::equals(table_name, "meterIEC")) {
+                //
+                //  ToDo: stop all tasks
+                //
             }
             db_->res_clear(table_name, tag);
         }
@@ -359,6 +416,20 @@ namespace smf {
         // ss << host << ':' << port;
         // return ss.str();
         return config::dependend_key::build_name(host, port);
+    }
+
+    ipt::toggle::server_vec_t update_cfg(ipt::toggle::server_vec_t cfg, std::string const &account, std::string const &pwd) {
+
+        ipt::toggle::server_vec_t r;
+        std::transform(std::begin(cfg), std::end(cfg), std::back_inserter(r), [&](ipt::server const &srv) {
+            //
+            //	substitute account and password
+            //
+            return ipt::server(
+                srv.host_, srv.service_, account, pwd, srv.sk_, srv.scrambled_, static_cast<int>(srv.monitor_.count()));
+        });
+
+        return r;
     }
 
 } // namespace smf

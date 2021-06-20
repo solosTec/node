@@ -8,7 +8,6 @@
 #include <controller.h>
 #include <smf.h>
 #include <tasks/cluster.h>
-#include <tasks/push.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -51,7 +50,7 @@ namespace smf {
             cyng::make_param("tag", tag),
             cyng::make_param("country-code", "CH"),
             cyng::make_param("language-code", cyng::sys::get_system_locale()),
-            cyng::make_param("network-delay", 10), //  seconds to wait before starting ip-t client
+            // cyng::make_param("network-delay", 10), //  seconds to wait before starting ip-t client
             create_client_spec(),
             create_cluster_spec(),
             create_ipt_spec(tag),
@@ -93,19 +92,8 @@ namespace smf {
                                              : std::vector<std::string>();
 
         //
-        //	connect to cluster
+        //  ip-t configuration
         //
-        join_cluster(
-            ctl,
-            channels,
-            logger,
-            tag,
-            node_name,
-            std::move(tgl_cluster),
-            client_login,
-            client_out,
-            (reconnect_timeout < 10) ? 10 : reconnect_timeout);
-
         auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
         auto tgl_ipt = ipt::read_config(ipt_vec);
         if (tgl_ipt.empty()) {
@@ -137,42 +125,59 @@ namespace smf {
         //
         //  seconds to wait before starting ip-t client
         //
-        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 10);
-        CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
+        // auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 10);
+        // CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
 
         //
-        //	connect to ip-t server
+        //	connect to cluster
         //
-        join_network(
+        join_cluster(
             ctl,
             channels,
             logger,
             tag,
             node_name,
+            std::move(tgl_cluster),
+            client_login,
+            client_out,
+            (reconnect_timeout < 10) ? 10 : reconnect_timeout,
             std::move(tgl_ipt),
-            std::chrono::seconds(delay),
+            // std::chrono::seconds(delay),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"].get())));
-    }
-
-    void controller::join_network(
-        cyng::controller &ctl,
-        cyng::stash &channels,
-        cyng::logger logger,
-        boost::uuids::uuid tag,
-        std::string const &node_name,
-        ipt::toggle::server_vec_t &&tgl,
-        std::chrono::seconds delay,
-        ipt::push_channel &&pcc) {
-
-        auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
-        BOOST_ASSERT(channel->is_open());
 
         //
-        //  suspended to wait for ip-t node
+        //	connect to ip-t server
         //
-        channel->suspend(delay, "connect", cyng::make_tuple());
-        channels.lock(channel);
+        // join_network(
+        //    ctl,
+        //    channels,
+        //    logger,
+        //    tag,
+        //    node_name,
+        //    std::move(tgl_ipt),
+        //    std::chrono::seconds(delay),
+        //    ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"].get())));
     }
+
+    // void controller::join_network(
+    //    cyng::controller &ctl,
+    //    cyng::stash &channels,
+    //    cyng::logger logger,
+    //    boost::uuids::uuid tag,
+    //    std::string const &node_name,
+    //    ipt::toggle::server_vec_t &&tgl,
+    //    std::chrono::seconds delay,
+    //    ipt::push_channel &&pcc) {
+
+    //    auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
+    //    BOOST_ASSERT(channel->is_open());
+
+    //    //
+    //    //  suspended to wait for ip-t node
+    //    //
+    //    channel->suspend(delay, "connect", cyng::make_tuple());
+    //    channels.lock(channel);
+    //}
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 
@@ -189,13 +194,26 @@ namespace smf {
         cyng::logger logger,
         boost::uuids::uuid tag,
         std::string const &node_name,
-        toggle::server_vec_t &&tgl,
+        toggle::server_vec_t &&tgl_cluster,
         bool login,
         std::filesystem::path out,
-        std::size_t reconnect_timeout) {
+        std::size_t reconnect_timeout,
+        ipt::toggle::server_vec_t &&tgl_ipt,
+        ipt::push_channel &&pcc) {
 
         auto channel = ctl.create_named_channel_with_ref<cluster>(
-            "cluster", ctl, tag, node_name, logger, std::move(tgl), login, out, reconnect_timeout);
+            "cluster",
+            ctl,
+            tag,
+            node_name,
+            logger,
+            std::move(tgl_cluster),
+            login,
+            out,
+            reconnect_timeout,
+            std::move(tgl_ipt),
+            std::move(pcc));
+
         BOOST_ASSERT(channel->is_open());
         channel->dispatch("connect");
         channels.lock(channel);

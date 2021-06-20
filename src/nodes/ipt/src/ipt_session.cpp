@@ -129,11 +129,11 @@ namespace smf {
                         "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
                                      << socket_.remote_endpoint() << "]");
 
-                    if (bytes_transferred == 45) {
-                        int i = 0; //  start debugging here
-                                   //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
-                                   //  garble data from wMBus broker to oen a second channel when scrambling is active
-                    }
+                // if (bytes_transferred == 45) {
+                //    int i = 0; //  start debugging here
+                //               //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
+                //               //  garble data from wMBus broker to oen a second channel when scrambling is active
+                //}
 #ifdef _DEBUG_IPT
                     {
                         std::stringstream ss;

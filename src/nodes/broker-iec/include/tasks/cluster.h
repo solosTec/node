@@ -10,6 +10,7 @@
 #include <db.h>
 
 #include <smf/cluster/bus.h>
+#include <smf/ipt/config.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/eod.h>
@@ -30,8 +31,7 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>,
-            // std::function<void(std::string, std::string)>, //	update client client
+            std::function<void(void)>, // connect
             std::function<void(cyng::eod)>>;
 
       public:
@@ -44,7 +44,9 @@ namespace smf {
             toggle::server_vec_t &&,
             bool login,
             std::filesystem::path out,
-            std::size_t reconnect_timeout);
+            std::size_t reconnect_timeout,
+            ipt::toggle::server_vec_t &&,
+            ipt::push_channel &&pcc);
 
         void connect();
 
@@ -72,6 +74,7 @@ namespace smf {
          */
         std::size_t check_gateway(cyng::record const &);
         void check_iec_meter(cyng::record const &);
+        void create_push_task(std::string const &, std::string const &, std::string const &);
         void update_delay(std::uint32_t counter);
         void remove_iec_meter(cyng::key_t key);
 
@@ -83,6 +86,8 @@ namespace smf {
         cyng::logger logger_;
         std::filesystem::path const out_;
         std::size_t const reconnect_timeout_;
+        ipt::toggle::server_vec_t const cfg_ipt_;
+        ipt::push_channel const pcc_;
 
         cyng::mesh fabric_;
         bus bus_;
@@ -90,9 +95,12 @@ namespace smf {
         std::shared_ptr<db> db_;
         std::chrono::seconds delay_;
         config::dependend_key dep_key_;
+        cyng::stash stash_;
     };
 
     std::string make_task_name(std::string host, std::uint16_t port);
+
+    ipt::toggle::server_vec_t update_cfg(ipt::toggle::server_vec_t, std::string const &account, std::string const &pwd);
 
 } // namespace smf
 

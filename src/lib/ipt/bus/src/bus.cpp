@@ -91,25 +91,26 @@ namespace smf {
         void bus::reset(state s) {
             if (!is_stopped()) {
 
-                if (s == state::STOPPED)
-                    state_ = s;
-                buffer_write_.clear();
+                state_ = s;
                 boost::system::error_code ignored_ec;
                 socket_.close(ignored_ec);
                 timer_.cancel();
-                pending_targets_.clear();
-                targets_.clear();
-                pending_channel_.clear();
-                parser_.clear();
+                if (s != state::STOPPED) {
 
-                if (is_authorized()) {
+                    buffer_write_.clear();
+                    pending_targets_.clear();
+                    targets_.clear();
+                    pending_channel_.clear();
+                    parser_.clear();
 
-                    //
-                    //	signal changed authorization state
-                    //
-                    cb_auth_(false);
+                    if (is_authorized()) {
+
+                        //
+                        //	signal changed authorization state
+                        //
+                        cb_auth_(false);
+                    }
                 }
-                state_ = s;
             }
         }
 

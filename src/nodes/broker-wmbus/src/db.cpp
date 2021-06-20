@@ -44,6 +44,11 @@ namespace smf {
 
     void db::disconnect(cyng::slot_ptr slot) { cache_.disconnect(slot); }
 
+    std::string db::get_first_table() const {
+        auto const vec = get_store_meta_data();
+        BOOST_ASSERT(!vec.empty());
+        return vec.front().get_name();
+    }
     std::string db::get_next_table(std::string const &name) const {
 
         auto const vec = get_store_meta_data();
