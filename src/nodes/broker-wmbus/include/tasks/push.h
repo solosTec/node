@@ -32,7 +32,7 @@ namespace smf {
 
       public:
         push(
-            std::weak_ptr<cyng::channel>,
+            cyng::channel_weak,
             cyng::controller &,
             cyng::logger,
             ipt::toggle::server_vec_t &&,
@@ -60,7 +60,7 @@ namespace smf {
 
       private:
         signatures_t sigs_;
-        std::weak_ptr<cyng::channel> channel_;
+        cyng::channel_weak channel_;
         cyng::logger logger_;
         ipt::toggle::server_vec_t toggle_;
         ipt::push_channel const pcc_sml_;

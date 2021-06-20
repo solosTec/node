@@ -7,93 +7,85 @@
 #ifndef SMF_SEGW_TASK_GPIO_H
 #define SMF_SEGW_TASK_GPIO_H
 
-#include <cyng/task/task_fwd.h>
 #include <cyng/log/logger.h>
+#include <cyng/task/task_fwd.h>
 
 #include <filesystem>
 
-namespace smf
-{
-	/**
-	 * control GPIO LED
-	 */
-	class gpio
-	{
-		template <typename T >
-		friend class cyng::task;
+namespace smf {
+    /**
+     * control GPIO LED
+     */
+    class gpio {
+        template <typename T> friend class cyng::task;
 
-		using signatures_t = std::tuple<
-			std::function<void(cyng::eod)>,
-			std::function<bool(bool)>,	//	turn
-			std::function<void(std::chrono::milliseconds, std::size_t)>,	//	flashing
-			std::function<void(std::chrono::milliseconds)>	//	blinking
-		>;
+        using signatures_t = std::tuple<
+            std::function<void(cyng::eod)>,
+            std::function<bool(bool)>,                                   //	turn
+            std::function<void(std::chrono::milliseconds, std::size_t)>, //	flashing
+            std::function<void(std::chrono::milliseconds)>               //	blinking
+            >;
 
-		enum class state {
-			OFF,
-			FLASHING,
-			BLINKING,
-		} state_;
+        enum class state {
+            OFF,
+            FLASHING,
+            BLINKING,
+        } state_;
 
-	public:
-		gpio(std::weak_ptr<cyng::channel>
-			, cyng::logger
-			, std::filesystem::path);
+      public:
+        gpio(cyng::channel_weak, cyng::logger, std::filesystem::path);
 
+      private:
+        void stop(cyng::eod);
 
+        /**
+         * @brief slot [0] - static turn ON/OFF
+         *
+         */
+        bool turn(bool);
 
-	private:
-		void stop(cyng::eod);
+        /**
+         * @brief slot [1] - periodic timer in milliseconds and counter
+         *
+         */
+        void flashing(std::chrono::milliseconds, std::size_t);
 
-		/**
-		 * @brief slot [0] - static turn ON/OFF
-		 *
-		 */
-		bool turn(bool);
+        /**
+         * @brief slot [2] - permanent blinking
+         *
+         */
+        void blinking(std::chrono::milliseconds);
 
-		/**
-		 * @brief slot [1] - periodic timer in milliseconds and counter
-		 *
-		 */
-		void flashing(std::chrono::milliseconds, std::size_t);
+      private:
+        signatures_t sigs_;
+        cyng::channel_weak channel_;
 
-		/**
-		 * @brief slot [2] - permanent blinking
-		 *
-		 */
-		void blinking(std::chrono::milliseconds);
+        /**
+         * global logger
+         */
+        cyng::logger logger_;
 
-	private:
-		signatures_t sigs_;
-		std::weak_ptr<cyng::channel> channel_;
+        /**
+         * access path.
+         * example: /sys/class/gpio/gpio50
+         */
+        std::filesystem::path const path_;
+    };
 
-		/**
-		 * global logger
-		 */
-		cyng::logger logger_;
+    /**
+     * Set GPIO to the specified state
+     */
+    bool switch_gpio(std::filesystem::path, bool state);
 
-		/**
-		 * access path.
-		 * example: /sys/class/gpio/gpio50
-		 */
-		std::filesystem::path	const path_;
+    /**
+     * @return true if GPIO is on
+     */
+    bool is_gpio_on(std::filesystem::path);
 
-	};
-
-	/**
-	 * Set GPIO to the specified state
-	 */
-	bool switch_gpio(std::filesystem::path, bool state);
-
-	/**
-	 * @return true if GPIO is on
-	 */
-	bool is_gpio_on(std::filesystem::path);
-
-	/**
-	 * flip status of specified GPIO path
-	 */
-	void flip_gpio(std::filesystem::path);
-}
+    /**
+     * flip status of specified GPIO path
+     */
+    void flip_gpio(std::filesystem::path);
+} // namespace smf
 
 #endif

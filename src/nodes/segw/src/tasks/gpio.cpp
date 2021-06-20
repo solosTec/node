@@ -13,7 +13,7 @@
 #include <iostream>
 
 namespace smf {
-    gpio::gpio(std::weak_ptr<cyng::channel> wp
+    gpio::gpio(cyng::channel_weak wp
 		, cyng::logger logger
 		, std::filesystem::path p)
 		: state_(state::OFF)

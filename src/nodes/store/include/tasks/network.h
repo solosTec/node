@@ -25,7 +25,7 @@ namespace smf {
 
       public:
         network(
-            std::weak_ptr<cyng::channel>,
+            cyng::channel_weak,
             cyng::controller &,
             boost::uuids::uuid tag,
             cyng::logger logger,
@@ -55,7 +55,7 @@ namespace smf {
 
       private:
         signatures_t sigs_;
-        std::weak_ptr<cyng::channel> channel_;
+        cyng::channel_weak channel_;
         cyng::controller &ctl_;
         boost::uuids::uuid const tag_;
         cyng::logger logger_;

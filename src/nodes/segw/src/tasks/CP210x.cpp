@@ -11,7 +11,7 @@
 #include <cyng/task/controller.h>
 
 namespace smf {
-    CP210x::CP210x(std::weak_ptr<cyng::channel> wp, cyng::controller &ctl, cyng::logger logger)
+    CP210x::CP210x(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger)
         : sigs_{std::bind(&CP210x::stop, this, std::placeholders::_1), std::bind(&CP210x::receive, this, std::placeholders::_1), std::bind(&CP210x::reset_target_channels, this, std::placeholders::_1)}
         , channel_(wp)
         , logger_(logger)

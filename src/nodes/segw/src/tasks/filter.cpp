@@ -22,7 +22,7 @@
 //#endif
 
 namespace smf {
-    filter::filter(std::weak_ptr<cyng::channel> wp
+    filter::filter(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, cyng::logger logger
 		, cfg& config

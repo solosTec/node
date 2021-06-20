@@ -36,7 +36,7 @@ namespace smf {
 
       public:
         cluster(
-            std::weak_ptr<cyng::channel>,
+            cyng::channel_weak,
             cyng::controller &,
             boost::uuids::uuid tag,
             std::string const &node_name,
