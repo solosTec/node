@@ -65,7 +65,7 @@ namespace smf {
                 std::uint8_t,   //	[6] status
                 std::uint32_t); //	[7] count
 
-            [[nodiscard]] cyng::buffer_t req_close_push_channel(std::uint32_t channel);
+            [[nodiscard]] std::pair<cyng::buffer_t, sequence_t> req_close_push_channel(std::uint32_t channel);
 
             [[nodiscard]] cyng::buffer_t
             res_close_push_channel(sequence_t const seq, response_t const res, std::uint32_t const channel);

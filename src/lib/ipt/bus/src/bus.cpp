@@ -54,8 +54,9 @@ namespace smf {
             , input_buffer_()
             , pending_targets_()
             , targets_()
-            , pending_channel_()
-            , channels_() {}
+            , opening_channel_()
+            , channels_()
+            , closing_channels_() {}
 
         bus::~bus() {}
 
@@ -100,7 +101,7 @@ namespace smf {
                     buffer_write_.clear();
                     pending_targets_.clear();
                     targets_.clear();
-                    pending_channel_.clear();
+                    opening_channel_.clear();
                     parser_.clear();
 
                     if (is_authorized()) {
@@ -346,7 +347,8 @@ namespace smf {
                 res_open_push_channel(h, std::move(body));
                 break;
             case code::TP_RES_CLOSE_PUSH_CHANNEL:
-                cb_cmd_(h, std::move(body));
+                res_close_push_channel(h, std::move(body));
+                // cb_cmd_(h, std::move(body));
                 break;
             case code::TP_REQ_PUSHDATA_TRANSFER:
                 pushdata_transfer(h, std::move(body));
@@ -495,21 +497,22 @@ namespace smf {
 
         bool bus::open_channel(push_channel pc_cfg, cyng::channel_weak wp) {
 
+            BOOST_ASSERT(!wp.expired());
             if (!pc_cfg.target_.empty()) {
 
                 boost::asio::post(dispatcher_, [this, pc_cfg, wp]() {
                     bool const b = buffer_write_.empty();
-                    auto r = serializer_.req_open_push_channel(
+                    auto const r = serializer_.req_open_push_channel(
                         pc_cfg.target_, pc_cfg.account_, pc_cfg.number_, pc_cfg.version_, pc_cfg.id_, pc_cfg.timeout_);
 
                     CYNG_LOG_INFO(
                         logger_,
-                        "[ipt] open channel \"" << pc_cfg.target_ << "\" - #" << pending_channel_.size() << " pending request(s)");
+                        "[ipt] open channel \"" << pc_cfg.target_ << "\" - #" << opening_channel_.size() << " pending request(s)");
 
                     //
                     //  update list of pending channel openings
                     //
-                    pending_channel_.emplace(r.second, std::make_pair(pc_cfg, wp));
+                    opening_channel_.emplace(r.second, std::make_pair(pc_cfg, wp));
 
 #ifdef __DEBUG_IPT
                     {
@@ -533,14 +536,43 @@ namespace smf {
                     //
                     //	send request
                     //
-                    if (b)
+                    if (b) {
                         do_write();
+                    }
                 });
 
                 return true;
             } else {
                 CYNG_LOG_WARNING(logger_, "[ipt] cannot open push chanel: name or channel is empty");
             }
+            return false;
+        }
+
+        bool bus::close_channel(std::uint32_t channel, cyng::channel_weak wp) {
+            BOOST_ASSERT(!wp.expired());
+            boost::asio::post(dispatcher_, [this, channel, wp]() {
+                bool const b = buffer_write_.empty();
+                auto const r = serializer_.req_close_push_channel(channel);
+
+                CYNG_LOG_INFO(logger_, "[ipt] close channel: " << channel);
+
+                //
+                //  update list of pending channel closings
+                //
+                closing_channels_.emplace(r.second, std::make_pair(channel, wp));
+
+                //
+                //	send "close push channel" command to ip-t server
+                //
+                buffer_write_.push_back(r.first);
+
+                //
+                //	send request
+                //
+                if (b) {
+                    do_write();
+                }
+            });
             return false;
         }
 
@@ -553,8 +585,8 @@ namespace smf {
             auto const [res, channel, source, packet_size, window_size, status, count] = tp_res_open_push_channel(std::move(body));
 
             boost::asio::post(dispatcher_, [this, h, res, channel, source, packet_size, window_size, status, count]() {
-                auto const pos = pending_channel_.find(h.sequence_);
-                if (pos != pending_channel_.end()) {
+                auto const pos = opening_channel_.find(h.sequence_);
+                if (pos != opening_channel_.end()) {
 
                     if (tp_res_open_push_channel_policy::is_success(res)) {
                         CYNG_LOG_INFO(
@@ -584,7 +616,57 @@ namespace smf {
                     //
                     //  cleanup list
                     //
-                    pending_channel_.erase(pos);
+                    opening_channel_.erase(pos);
+                } else {
+                    CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing list entry");
+                }
+            });
+        }
+
+        void bus::res_close_push_channel(header const &h, cyng::buffer_t &&body) {
+            //
+            //	read message body
+            //
+            // std::tuple<std::uint8_t, std::uint32_t>
+            auto const [res, channel] = tp_res_close_push_channel(std::move(body));
+            boost::asio::post(dispatcher_, [this, h, res, channel]() {
+                auto const pos = closing_channels_.find(h.sequence_);
+                if (pos != closing_channels_.end()) {
+
+                    if (tp_res_open_push_channel_policy::is_success(res)) {
+                        CYNG_LOG_INFO(
+                            logger_,
+                            "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                         << tp_res_close_push_channel_policy::get_response_name(res) << ", " << channel << "/"
+                                         << pos->second.first);
+
+                        auto sp = pos->second.second.lock();
+                        if (sp) {
+
+                            //
+                            // ToDo: dispatch
+                            // sp->dispatch("channel.close", channel);
+                        }
+
+                    } else {
+                        CYNG_LOG_WARNING(
+                            logger_,
+                            "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                         << tp_res_close_push_channel_policy::get_response_name(res) << ", " << channel << "/"
+                                         << pos->second.first);
+                    }
+
+                    //
+                    //  remove from channels list
+                    //
+                    if (channels_.erase(channel) == 0) {
+                        CYNG_LOG_WARNING(logger_, "[ipt] cmd - channel " << channel << " not found in open channel list");
+                    }
+
+                    //
+                    //  cleanup list
+                    //
+                    closing_channels_.erase(pos);
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing list entry");
                 }
@@ -592,7 +674,6 @@ namespace smf {
         }
 
         void bus::res_register_target(header const &h, cyng::buffer_t &&body) {
-
             //
             //	read message body
             //
@@ -647,7 +728,6 @@ namespace smf {
         }
 
         void bus::pushdata_transfer(header const &h, cyng::buffer_t &&body) {
-
             /**
              * @return channel, source, status, block and data
              */
@@ -713,7 +793,6 @@ namespace smf {
         }
 
         void bus::open_connection(std::string number, sequence_t seq) {
-
             if (state_ == state::AUTHORIZED) {
                 state_ = state::LINKED;
                 CYNG_LOG_TRACE(logger_, "[ipt] linked to " << number);
@@ -764,6 +843,9 @@ namespace smf {
             CYNG_LOG_TRACE(logger_, "[ipt] transfer " << data.size() << " bytes");
             send(std::bind(&serializer::escape_data, &serializer_, data));
         }
+
+        bool is_null(channel_id const &id) { return id == std::make_pair(0u, 0u); }
+        void init(channel_id &id) { id = std::make_pair(0u, 0u); }
 
     } // namespace ipt
 } // namespace smf

@@ -121,6 +121,11 @@ namespace smf {
         tp_res_open_push_channel(cyng::buffer_t &&data);
 
         /**
+         * @return response code, channel
+         */
+        std::tuple<std::uint8_t, std::uint32_t> tp_res_close_push_channel(cyng::buffer_t &&data);
+
+        /**
          * @return channel, source, status, block and data
          */
         std::tuple<std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t, cyng::buffer_t>

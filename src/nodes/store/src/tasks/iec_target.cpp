@@ -45,7 +45,7 @@ namespace smf {
 
     void iec_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data, std::string target) {
 
-        CYNG_LOG_TRACE(logger_, "[iec] receive " << data.size() << " bytes");
+        CYNG_LOG_TRACE(logger_, "[iec] receive " << data.size() << " bytes from " << channel << ':' << source << '@' << target);
         BOOST_ASSERT(boost::algorithm::equals(channel_.lock()->get_name(), target));
     }
 

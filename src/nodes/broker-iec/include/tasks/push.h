@@ -58,14 +58,12 @@ namespace smf {
         cyng::logger logger_;
         ipt::push_channel const pcc_;
         ipt::bus bus_;
-        std::pair<std::uint32_t, std::uint32_t> id_;
+        ipt::channel_id id_;
         /**
          * Buffer for outgoing data.
          */
         std::deque<cyng::buffer_t> buffer_write_;
     };
-
-    bool is_null(std::pair<std::uint32_t, std::uint32_t> const &);
 
 } // namespace smf
 

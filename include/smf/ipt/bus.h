@@ -15,6 +15,10 @@
 
 namespace smf {
     namespace ipt {
+
+        //  channel + source
+        using channel_id = std::pair<std::uint32_t, std::uint32_t>;
+
         class bus {
             enum class state {
                 START,
@@ -29,6 +33,7 @@ namespace smf {
              */
             using name_target_rel_t = std::pair<std::string, cyng::channel_weak>;
             using name_channel_rel_t = std::pair<push_channel, cyng::channel_weak>;
+            using id_channel_rel_t = std::pair<std::uint32_t, cyng::channel_weak>;
 
           public:
             //	call back to signal changed IP-T authorization state
@@ -63,6 +68,7 @@ namespace smf {
              * @return true if process was started
              */
             bool open_channel(push_channel, cyng::channel_weak);
+            bool close_channel(std::uint32_t channel, cyng::channel_weak);
 
             /**
              * send push data over specified channel
@@ -108,6 +114,7 @@ namespace smf {
             void set_reconnect_timer(std::chrono::seconds);
 
             void res_open_push_channel(header const &, cyng::buffer_t &&);
+            void res_close_push_channel(header const &, cyng::buffer_t &&);
 
           private:
             boost::asio::io_context &ctx_;
@@ -137,9 +144,20 @@ namespace smf {
             /**
              * Maps the sequence id to the channel/target name
              */
-            std::map<ipt::sequence_t, name_channel_rel_t> pending_channel_;
+            std::map<ipt::sequence_t, name_channel_rel_t> opening_channel_;
             std::map<std::uint32_t, name_channel_rel_t> channels_;
+            std::map<ipt::sequence_t, id_channel_rel_t> closing_channels_;
         };
+
+        /**
+         * test if channel id is null
+         */
+        bool is_null(channel_id const &);
+        void init(channel_id &);
+
+        constexpr std::uint32_t get_channel(channel_id const &id) { return id.first; }
+        constexpr std::uint32_t get_source(channel_id const &id) { return id.second; }
+
     } // namespace ipt
 } // namespace smf
 

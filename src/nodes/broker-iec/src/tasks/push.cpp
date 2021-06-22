@@ -90,6 +90,11 @@ namespace smf {
             bus_.open_channel(pcc_, channel_);
         } else {
             CYNG_LOG_WARNING(logger_, "[ipt] authorization lost");
+
+            //
+            //  reset push channel
+            //
+            ipt::init(id_);
         }
     }
 
@@ -102,6 +107,12 @@ namespace smf {
         //
         if (boost::algorithm::equals(target, pcc_.target_)) {
             id_ = std::make_pair(channel, source);
+            if (!buffer_write_.empty()) {
+                for (auto const &payload : buffer_write_) {
+                    send_iec(payload);
+                }
+                buffer_write_.clear();
+            }
         } else {
             CYNG_LOG_WARNING(logger_, "[push] unknown push channel: " << target);
         }
@@ -110,7 +121,7 @@ namespace smf {
     void push::send_iec(cyng::buffer_t payload) { bus_.transmit(id_, payload); }
     void push::forward(cyng::buffer_t payload) {
         if (bus_.is_authorized()) {
-            if (is_null(id_)) {
+            if (ipt::is_null(id_)) {
                 buffer_write_.push_back(payload);
                 bus_.open_channel(pcc_, channel_);
             } else {
@@ -120,7 +131,5 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[push] not authorized: " << channel_.lock()->get_name());
         }
     }
-
-    bool is_null(std::pair<std::uint32_t, std::uint32_t> const &p) { return p == std::make_pair(0u, 0u); }
 
 } // namespace smf

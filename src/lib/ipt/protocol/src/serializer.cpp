@@ -158,11 +158,11 @@ namespace smf {
             return merge(deq);
         }
         //
-        cyng::buffer_t serializer::req_close_push_channel(std::uint32_t channel) {
+        std::pair<cyng::buffer_t, sequence_t> serializer::req_close_push_channel(std::uint32_t channel) {
             last_seq_ = sgen_();
             auto deq = write_header(code::TP_REQ_CLOSE_PUSH_CHANNEL, last_seq_, sizeof(channel));
             deq.push_back(write_numeric(channel));
-            return merge(deq);
+            return std::make_pair(merge(deq), last_seq_);
         }
         //
         cyng::buffer_t serializer::res_close_push_channel(sequence_t const seq, response_t const res, std::uint32_t const channel) {

@@ -71,6 +71,10 @@ namespace smf {
                 std::move(data));
         }
 
+        std::tuple<std::uint8_t, std::uint32_t> tp_res_close_push_channel(cyng::buffer_t &&data) {
+            return read<std::uint8_t, std::uint32_t>(std::move(data));
+        }
+
         std::tuple<std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t, cyng::buffer_t>
         tp_req_pushdata_transfer(cyng::buffer_t &&data) {
 

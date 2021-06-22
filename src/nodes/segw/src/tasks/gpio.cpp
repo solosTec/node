@@ -57,22 +57,25 @@ namespace smf {
         //
         //	complete
         //
-        if (counter == 0)
+        if (counter == 0) {
             return;
+        }
 
         turn((counter % 2) == 0);
 
         auto sp = channel_.lock();
-        if (sp)
+        if (sp) {
             sp->suspend(ms, 2, cyng::make_tuple(ms, counter - 1));
+        }
     }
 
     void gpio::blinking(std::chrono::milliseconds ms) {
 
         flip_gpio(path_);
         auto sp = channel_.lock();
-        if (sp)
+        if (sp) {
             sp->suspend(ms, 3, cyng::make_tuple(ms));
+        }
     }
 
     bool gpio::turn(bool on) {
@@ -85,8 +88,9 @@ namespace smf {
 
         // CYNG_LOG_TRACE(logger_, "turn GPIO [" << path_ << "] " << (on ? "on" : "off"));
 
-        if (switch_gpio(path_, on))
+        if (switch_gpio(path_, on)) {
             return true;
+        }
 
         CYNG_LOG_WARNING(logger_, "cannot open GPIO [" << path_ << "]");
         return false;
