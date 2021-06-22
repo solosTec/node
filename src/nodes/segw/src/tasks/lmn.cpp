@@ -238,7 +238,7 @@ namespace smf {
             //
             boost::asio::serial_port_base::baud_rate baud_rate;
             port_.get_option(baud_rate, ec);
-            CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] new baudrate " << val << "/" << baud_rate.value());
+            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new baudrate " << val << "/" << baud_rate.value());
         } else {
             CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set baudrate " << val << " failed: " << ec.message());
         }
@@ -251,13 +251,17 @@ namespace smf {
         //
         boost::system::error_code ec;
         port_.set_option(serial::to_parity(val), ec);
+        if (!ec) {
 
-        //
-        //	get value and compare
-        //
-        boost::asio::serial_port_base::parity parity;
-        port_.get_option(parity, ec);
-        CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] new parity " << val << "/" << serial::to_str(parity));
+            //
+            //	get value and compare
+            //
+            boost::asio::serial_port_base::parity parity;
+            port_.get_option(parity, ec);
+            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new parity " << val << "/" << serial::to_str(parity));
+        } else {
+            CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set parity " << val << " failed: " << ec.message());
+        }
     }
 
     void lmn::set_flow_control(std::string val) {
@@ -267,14 +271,18 @@ namespace smf {
         //
         boost::system::error_code ec;
         port_.set_option(serial::to_flow_control(val), ec);
+        if (!ec) {
 
-        //
-        //	get value and compare
-        //
-        boost::asio::serial_port_base::flow_control flow_control;
-        port_.get_option(flow_control, ec);
+            //
+            //	get value and compare
+            //
+            boost::asio::serial_port_base::flow_control flow_control;
+            port_.get_option(flow_control, ec);
 
-        CYNG_LOG_DEBUG(logger_, "[" << cfg_.get_port() << "] new flow control " << val << "/" << serial::to_str(flow_control));
+            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new flow control " << val << "/" << serial::to_str(flow_control));
+        } else {
+            CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set flow control " << val << " failed: " << ec.message());
+        }
     }
 
     void lmn::set_stopbits(std::string val) {
@@ -284,14 +292,18 @@ namespace smf {
         //
         boost::system::error_code ec;
         port_.set_option(serial::to_stopbits(val), ec);
+        if (!ec) {
 
-        //
-        //	get value and compare
-        //
-        boost::asio::serial_port_base::stop_bits stopbits;
-        port_.get_option(stopbits);
+            //
+            //	get value and compare
+            //
+            boost::asio::serial_port_base::stop_bits stopbits;
+            port_.get_option(stopbits);
 
-        CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new stopbits " << val << "/" << serial::to_str(stopbits));
+            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new stopbits " << val << "/" << serial::to_str(stopbits));
+        } else {
+            CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set stopbits " << val << " failed: " << ec.message());
+        }
     }
     void lmn::set_databits(std::uint8_t val) {
         //

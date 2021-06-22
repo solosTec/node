@@ -153,14 +153,10 @@ namespace smf {
             auto log_file_size = 32UL * 1024UL * 1024UL;
 
             boost::program_options::options_description options(start.node_);
-            options.add_options()(
-                "setup.json,J",
-                boost::program_options::value(&start.json_path_)->default_value(json_path_default),
-                "JSON configuration file")(
-                "setup.config-index",
-                boost::program_options::value(&start.config_index_)->default_value(start.config_index_),
-                "Default configuration index")(
-                "setup.pool-size,P", boost::program_options::value(&start.pool_size_)->default_value(pool_size), "Thread pool size")
+            options.add_options()
+                ("setup.json,J", boost::program_options::value(&start.json_path_)->default_value(json_path_default),"JSON configuration file")  // --setup.json
+                ("setup.config-index", boost::program_options::value(&start.config_index_)->default_value(start.config_index_),"Default configuration index")   // --setup.config-index
+                ("setup.pool-size,P", boost::program_options::value(&start.pool_size_)->default_value(pool_size), "Thread pool size")
 #if defined(BOOST_OS_LINUX_AVAILABLE)
                 ("RLIMIT_NOFILE.soft",
                  boost::program_options::value<rlim_t>()->default_value(start.rl_.rlim_cur),
@@ -173,11 +169,9 @@ namespace smf {
                     "start syslog logger")
 #endif
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
-                    ("service.enabled,S", boost::program_options::value<bool>()->default_value(false), "run as NT service")(
-                        "service.name",
-                        boost::program_options::value<std::string>()->default_value(derive_service_name(start.node_)),
-                        "NT service name")(
-                        "log.eventlog",
+                ("service.enabled,S", boost::program_options::value<bool>()->default_value(false), "run as NT service") // -- service.enabled
+                ("service.name", boost::program_options::value<std::string>()->default_value(derive_service_name(start.node_)),"NT service name")   // -- service.name
+                ("log.eventlog",
                         boost::program_options::bool_switch(&start.log_eventlog_)->default_value(cyng::has_event_log()),
                         "start event logger")
 #endif

@@ -83,6 +83,15 @@ namespace smf {
             }
             return true;
         }
+        if (vars.count("del-value") != 0) {
+            std::string const key = vars["del-value"].as<std::string>();
+            if (!key.empty()) {
+                //	remove configuration value
+                del_config_value(read_config_section(config_.json_path_, config_.config_index_), key);
+                return true;
+            }
+            return false;
+        }
         if (vars.count("switch-gpio") != 0) {
             auto vec = vars["switch-gpio"].as<std::vector<std::string>>();
             if (vec.size() == 2) {
@@ -339,8 +348,8 @@ namespace smf {
         //	8N1
 #if defined(__ARMEL__)
             cyng::make_param("databits", 7),
-            cyng::make_param("stopbits", "two"), //	one, onepointfive, two
-            cyng::make_param("parity", "even"),  //	none, odd, even
+            cyng::make_param("stopbits", "two"),      //	one, onepointfive, two
+            cyng::make_param("parity", "even"),       //	none, odd, even
 #else
             cyng::make_param("databits", 8),
             cyng::make_param("stopbits", "one"), //	one, onepointfive, two
@@ -612,6 +621,19 @@ namespace smf {
         if (s.is_alive()) {
             if (smf::add_config_value(s, path, value, type)) {
                 std::cout << path << " := " << value << " (" << type << ")" << std::endl;
+            }
+        }
+    }
+
+    void controller::del_config_value(cyng::object &&cfg, std::string const &path) {
+        auto const reader = cyng::make_reader(std::move(cfg));
+
+        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
+
+        auto s = cyng::db::create_db_session(reader.get("DB"));
+        if (s.is_alive()) {
+            if (smf::del_config_value(s, path)) {
+                std::cout << path << " removed" << std::endl;
             }
         }
     }

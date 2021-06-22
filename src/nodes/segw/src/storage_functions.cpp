@@ -949,6 +949,13 @@ namespace smf {
         return false;
     }
 
+    bool del_config_value(cyng::db::session &db, std::string const &path) {
+        storage store(db);
+
+        auto const obj = cyng::make_object(path);
+        return store.cfg_remove(obj);
+    }
+
     bool insert_config_record(cyng::db::statement_ptr stmt, std::string key, cyng::object obj, std::string desc) {
         //
         //	use already prepared statements

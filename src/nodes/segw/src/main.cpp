@@ -25,21 +25,27 @@ int main(int argc, char **argv) {
     //	generic options
     //
     auto generic = smf::config::get_generic_options(config);
-    generic.add_options()("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")(
-        "transfer,T", boost::program_options::bool_switch()->default_value(false), "transfer JSON configuration into database")(
-        "clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database")(
-        "list,l", boost::program_options::bool_switch()->default_value(false), "list configuration from database")(
-        "set-value",
-        boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
-        "set configuration value: \"path\" \"value\" \"type\"")(
-        "add-value",
-        boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
-        "add configuration value: \"path\" \"value\" \"type\"")(
-        "switch-gpio",
-        boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
-        "switch GPIO: \"number\" [on|off]")
+    generic.add_options()(
+        "init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit") //  --init
+        ("transfer,T",
+         boost::program_options::bool_switch()->default_value(false),
+         "transfer JSON configuration into database")                                                                // --transfer
+        ("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database") //  --clear
+        ("list,l", boost::program_options::bool_switch()->default_value(false), "list configuration from database")  //  --list
+        ("set-value",
+         boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
+         "set configuration value: \"path\" \"value\" \"type\"") //  --set-value
+        ("add-value",
+         boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
+         "add configuration value: \"path\" \"value\" \"type\"") //  --add-value
+        ("del-value",
+         boost::program_options::value<std::string>()->default_value("")->implicit_value("-"),
+         "remove configuration value: \"path\"") // --del-value
+        ("switch-gpio",
+         boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
+         "switch GPIO: \"number\" [on|off]") //  --switch-gpio
         //("readout-serial", boost::program_options::value<std::uint8_t>()->implicit_value(1), "send /?! to serial sevice with all
-        //available options")
+        // available options")
         //("connect", boost::program_options::value<std::string>(&connect), "test connection to IP-T server: usr:pwd@host:port")
         ;
 

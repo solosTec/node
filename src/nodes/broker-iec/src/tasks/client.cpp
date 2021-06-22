@@ -487,6 +487,14 @@ namespace smf {
             }
 #endif
 
+            //
+            //  send to push target
+            //
+            ctl_.get_registry().dispatch(
+                mgr_.get_id(), "forward", cyng::buffer_t(input_buffer_.data(), input_buffer_.data() + bytes_transferred));
+            //
+            //  start parser
+            //
             parser_.read(input_buffer_.data(), input_buffer_.data() + bytes_transferred);
 
             do_read();

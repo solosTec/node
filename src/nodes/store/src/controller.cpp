@@ -298,12 +298,18 @@ namespace smf {
 
         if (target_sml.empty()) {
             CYNG_LOG_WARNING(logger, "no SML targets configured");
+        } else {
+            CYNG_LOG_TRACE(logger, target_sml.size() << " SML targets configured");
         }
         if (target_iec.empty()) {
             CYNG_LOG_WARNING(logger, "no IEC targets configured");
+        } else {
+            CYNG_LOG_TRACE(logger, target_iec.size() << " IEC targets configured");
         }
         if (target_dlms.empty()) {
             CYNG_LOG_WARNING(logger, "no DLMS targets configured");
+        } else {
+            CYNG_LOG_TRACE(logger, target_dlms.size() << " DLMS targets configured");
         }
 
         //
@@ -373,7 +379,7 @@ namespace smf {
         //
         //  wait for IP-T server to start up
         //
-        channel->suspend(delay, "connect", cyng::make_tuple());
+        channel->suspend(delay, "connect");
     }
 
     bool controller::run_options(boost::program_options::variables_map &vars) {

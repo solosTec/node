@@ -55,6 +55,7 @@ namespace smf {
     void list_config(cyng::db::session &);
     bool set_config_value(cyng::db::session &, std::string const &path, std::string const &value, std::string const &type);
     bool add_config_value(cyng::db::session &, std::string const &path, std::string const &value, std::string const &type);
+    bool del_config_value(cyng::db::session &, std::string const &path);
 
     /**
      * split string by "/" and return the first section

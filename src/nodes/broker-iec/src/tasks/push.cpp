@@ -23,6 +23,7 @@ namespace smf {
 	: sigs_{ 
 		std::bind(&push::connect, this),  
         std::bind(&push::send_iec, this, std::placeholders::_1),
+        std::bind(&push::forward, this, std::placeholders::_1),
         std::bind(
             &push::on_channel_open,
             this,
@@ -44,12 +45,14 @@ namespace smf {
             
 			, std::bind(&push::auth_state, this, std::placeholders::_1))
         , id_(0u, 0u)
+        , buffer_write_()
 	{
         auto sp = channel_.lock();
         if (sp) {
             std::size_t slot{0};
             sp->set_channel_name("connect", slot++);
             sp->set_channel_name("send.iec", slot++);
+            sp->set_channel_name("forward", slot++);
             sp->set_channel_name("channel.open", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -105,5 +108,19 @@ namespace smf {
     }
 
     void push::send_iec(cyng::buffer_t payload) { bus_.transmit(id_, payload); }
+    void push::forward(cyng::buffer_t payload) {
+        if (bus_.is_authorized()) {
+            if (is_null(id_)) {
+                buffer_write_.push_back(payload);
+                bus_.open_channel(pcc_, channel_);
+            } else {
+                send_iec(payload);
+            }
+        } else {
+            CYNG_LOG_WARNING(logger_, "[push] not authorized: " << channel_.lock()->get_name());
+        }
+    }
+
+    bool is_null(std::pair<std::uint32_t, std::uint32_t> const &p) { return p == std::make_pair(0u, 0u); }
 
 } // namespace smf

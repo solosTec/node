@@ -23,6 +23,7 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void(void)>,                                                     //  connect
             std::function<void(cyng::buffer_t payload)>,                                   //  send_iec
+            std::function<void(cyng::buffer_t payload)>,                                   //  forward
             std::function<void(std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
             std::function<void(cyng::eod)>                                                 //  stop
             >;
@@ -46,15 +47,25 @@ namespace smf {
         void send_iec(cyng::buffer_t payload);
         void on_channel_open(std::uint32_t, std::uint32_t, std::uint32_t, std::string);
 
+        /**
+         * cache data, open channel and send to target
+         */
+        void forward(cyng::buffer_t payload);
+
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
         cyng::logger logger_;
-        ipt::toggle::server_vec_t toggle_;
         ipt::push_channel const pcc_;
         ipt::bus bus_;
         std::pair<std::uint32_t, std::uint32_t> id_;
+        /**
+         * Buffer for outgoing data.
+         */
+        std::deque<cyng::buffer_t> buffer_write_;
     };
+
+    bool is_null(std::pair<std::uint32_t, std::uint32_t> const &);
 
 } // namespace smf
 
