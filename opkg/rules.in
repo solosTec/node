@@ -23,6 +23,7 @@ install: build
 	install -m 755 @PROJECT_BINARY_DIR@/libsmf_hci.so $(INSTALLDIR)/usr/local/lib
 	install -m 755 @PROJECT_BINARY_DIR@/libsmf_mbus.so $(INSTALLDIR)/usr/local/lib
 	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml.so $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_obis.so $(INSTALLDIR)/usr/local/lib
 #	install -m 755 @PROJECT_BINARY_DIR@/libsmf_iec.so $(INSTALLDIR)/usr/local/lib
 #	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml_bus.so $(INSTALLDIR)/usr/local/lib
 
