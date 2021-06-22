@@ -151,7 +151,7 @@ generate_configurations()
 					echo "[POST-INSTALL]    ... restoring json configuration ..."
 					cp "$file" "$SMF_DIR"
 					restore_ok=$(( restore_ok + 1 ))
-				elif [ "$(echo "$file" | grep cfg | grep -v bkp | sort | head -n 1)" = "$DATABASE_FILE" ]; then 
+				elif [ "$(echo "$file" | grep cfg | grep -v bkp | sort | head -n 1)" != "" ]; then 
 					echo "[POST-INSTALL]    ... restoring cfg configuration ..."
 					cp "$file" "/usr/local/etc/"
 					restore_ok=$(( restore_ok + 1 ))
