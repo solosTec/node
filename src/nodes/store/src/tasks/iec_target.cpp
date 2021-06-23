@@ -56,18 +56,18 @@ namespace smf {
         //  distribute
         //
         auto const key = ipt::combine(channel, source);
-        auto pos = channel_list_.find(key);
+        auto const pos = channel_list_.find(key);
         if (pos != channel_list_.end()) {
             pos->second.parser_.read(data.begin(), data.end());
         } else {
             //
             //  create parser/writer
             //
-            auto r = channel_list_.emplace(
-                std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(logger_, writers_));
-            if (r.second) {
-                r.first->second.parser_.read(data.begin(), data.end());
-            }
+            // auto const r = channel_list_.emplace(
+            //     std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(logger_, writers_));
+            // if (r.second) {
+            //     r.first->second.parser_.read(data.begin(), data.end());
+            // }
         }
     }
 
