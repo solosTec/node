@@ -71,7 +71,7 @@ namespace smf {
         //	tags:
         //  tags are indexd
         //
-        ss << ",server=" << id_ << ",obis=" << code << ",area=" << area;
+        ss << ",server=" << (id_.empty() ? "empty" : id_) << ",obis=" << code << ",area=" << area;
 
         //
         //   space separator
@@ -82,8 +82,8 @@ namespace smf {
         //	fields:
         //  fields are not indexed
         //
-        ss << "meter=\"" << id_ << "\"," << code << "=\"" << value << "\",unit=" << unit << ",fArea=\"" << area << "\",fServer=\""
-           << id_ << "\"";
+        ss << "meter=\"" << id_ << "\"," << code << "=\"" << value << "\",unit=\"" << unit << "\",fArea=\"" << area
+           << "\",fServer=\"" << id_ << "\"";
         //
         //	timestamp
         //
