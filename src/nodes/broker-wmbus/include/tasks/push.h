@@ -23,7 +23,7 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void(void)>,                                                           //  connect
             std::function<void(cyng::buffer_t srv, cyng::buffer_t payload)>,                     //  send_sml
-            std::function<void(void)>,                                                           //  send_mbus
+            std::function<void(cyng::buffer_t srv, cyng::buffer_t payload)>,                     //  send_mbus
             std::function<void(void)>,                                                           //  send_dlms
             std::function<void(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
             std::function<void(cyng::eod)>>;
@@ -45,7 +45,7 @@ namespace smf {
         void stop(cyng::eod);
         void connect();
         void send_sml(cyng::buffer_t srv, cyng::buffer_t payload);
-        void send_mbus();
+        void send_mbus(cyng::buffer_t srv, cyng::buffer_t payload);
         void send_dlms();
 
         //

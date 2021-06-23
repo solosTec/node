@@ -244,8 +244,8 @@ namespace smf {
                 bus_.req_db_update(
                     "meterwMBus",
                     cyng::key_generator(tag),
-                    cyng::param_map_factory()("address", ep.address())("port", ep.port())(
-                        "lastSeen", std::chrono::system_clock::now()));
+                    cyng::param_map_factory()("address", ep.address())(
+                        "port", ep.port())("lastSeen", std::chrono::system_clock::now()));
 
                 switch (frame_type) {
                 case mbus::FIELD_CI_RES_LONG_SML:  //	0x7E - long header
@@ -311,7 +311,7 @@ namespace smf {
         while (offset < payload.size()) {
             std::tie(offset, code, obj, scaler, u) = smf::mbus::read(payload, offset, 1);
             // std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
-            CYNG_LOG_TRACE(logger_, "[sml] " << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u));
+            // CYNG_LOG_TRACE(logger_, "[sml] " << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u));
             if (!init) {
                 init = true;
             } else {
@@ -319,6 +319,9 @@ namespace smf {
             }
             ss << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
         }
+
+        auto const msg = ss.str();
+        CYNG_LOG_TRACE(logger_, "[sml] CI_HEADER_SHORT: " << msg);
 
         //
         //	insert uplink data
@@ -331,11 +334,11 @@ namespace smf {
                 get_medium(address),
                 manufacturer,
                 frame_type,
-                ss.str(), //  payload
-                // cyng::io::to_hex(payload), //	"payload",
+                // msg, //  payload
+                cyng::io::to_hex(payload), //	"payload",
                 boost::uuids::nil_uuid()));
 
-        ctl_.get_registry().dispatch("push", "send.mbus", cyng::make_tuple());
+        ctl_.get_registry().dispatch("push", "send.mbus", cyng::buffer_t(address.begin(), address.end()), payload);
     }
 
     std::size_t wmbus_session::read_sml(srv_id_t const &address, cyng::buffer_t const &payload) {

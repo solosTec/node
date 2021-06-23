@@ -27,7 +27,7 @@ namespace smf {
         : sigs_ {
         std::bind(&push::connect, this), 
         std::bind(&push::send_sml, this, std::placeholders::_1, std::placeholders::_2),
-        std::bind(&push::send_mbus, this), 
+        std::bind(&push::send_mbus, this, std::placeholders::_1, std::placeholders::_2), 
         std::bind(&push::send_dlms, this),
         std::bind(
             &push::on_channel_open,
@@ -104,11 +104,15 @@ namespace smf {
         //  generate SML close response message
         //
     }
-    void push::send_mbus() {
+    void push::send_mbus(cyng::buffer_t srv, cyng::buffer_t payload) {
         CYNG_LOG_INFO(logger_, "[push] mbus data");
 
         //
         //  generate SML open response message
+        //
+
+        //
+        //  generate SML  message
         //
 
         //

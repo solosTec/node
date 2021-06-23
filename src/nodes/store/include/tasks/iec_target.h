@@ -21,6 +21,7 @@ namespace smf {
     class consumer {
       public:
         consumer(cyng::logger logger, std::vector<cyng::channel_weak> writers);
+        consumer(consumer const &) = delete;
 
       public:
         cyng::logger logger_;

@@ -95,7 +95,9 @@ namespace smf {
                   }
               },
               [this](std::string dev, bool crc) {
+                  boost::ignore_unused(crc);
                   CYNG_LOG_INFO(logger_, "[iec] readout complete: " << dev);
+
                   //
                   //    send to writer(s)
                   //
