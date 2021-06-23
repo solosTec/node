@@ -59,6 +59,8 @@ namespace smf {
     void iec_influx_writer::stop(cyng::eod) {}
     void iec_influx_writer::open(std::string id) { id_ = id; }
     void iec_influx_writer::store(cyng::obis code, std::string value, std::string unit) {
+
+        auto const area = influx::get_area_name(id_);
         std::stringstream ss;
         //
         //  measurement
@@ -69,7 +71,7 @@ namespace smf {
         //	tags:
         //  tags are indexd
         //
-        ss << ",server=" << id_ << ",obis=" << code << ",area=" << influx::get_area_name(id_);
+        ss << ",server=" << id_ << ",obis=" << code << ",area=" << area;
 
         //
         //   space separator
@@ -80,7 +82,8 @@ namespace smf {
         //	fields:
         //  fields are not indexed
         //
-        ss << "meter=\"" << id_ << "\"," << code << "=" << value << ",unit=" << unit;
+        ss << "meter=\"" << id_ << "\"," << code << "=\"" << value << "\",unit=" << unit << ",fArea=\"" << area << "\",fServer=\""
+           << id_ << "\"";
         //
         //	timestamp
         //

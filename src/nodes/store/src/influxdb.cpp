@@ -15,6 +15,7 @@
 #include <cyng/obj/tag.hpp>
 #include <cyng/obj/value_cast.hpp>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/beast.hpp>
 #include <boost/beast/core/buffers_to_string.hpp>
 
@@ -394,7 +395,7 @@ namespace smf {
             return (s.size()) > 20 ? s.substr(0, 20) : s;
         }
 
-        std::string sml_influx_writer::get_area_name(std::string const &id) {
+        std::string get_area_name(std::string const &id) {
             if (boost::algorithm::equals(id, "3496219") || boost::algorithm::equals(id, "35074662") ||
                 boost::algorithm::equals(id, "10320064") || boost::algorithm::equals(id, "35074718")) {
                 return "Moumnat";
