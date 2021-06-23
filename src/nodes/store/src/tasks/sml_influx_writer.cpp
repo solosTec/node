@@ -104,10 +104,11 @@ namespace smf {
             //  meter id
             //
             auto const id = get_id(srv_id);
+
             //
             //  area
             //
-            auto const area = get_area_name(id);
+            auto const area = influx::get_area_name(id);
 
             std::stringstream ss;
             //
@@ -119,7 +120,7 @@ namespace smf {
             //	tags:
             //  tags are indexd
             //
-            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first << ",area=unknown";
+            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first << ",area=" << area;
 
             //
             //   space separator
@@ -130,7 +131,8 @@ namespace smf {
             //	fields:
             //  fields are not indexed
             //
-            ss << "status=" << status << ",meter=\"" << id << "\"";
+            ss << "status=" << status << ",meter=\"" << id << "\",fArea=\"" << area << "\",fServer=\"" << srv_id_to_str(server_id)
+               << "\"";
 
             auto const readout = cyng::container_cast<cyng::param_map_t>(v.second);
             for (auto const &val : readout) {
@@ -175,14 +177,6 @@ namespace smf {
                 CYNG_LOG_WARNING(logger_, "[sml.influx] result: " << rs);
             }
         }
-    }
-
-    std::string sml_influx_writer::get_area_name(std::string const &id) {
-        if (boost::algorithm::equals(id, "3496219") || boost::algorithm::equals(id, "35074662") ||
-            boost::algorithm::equals(id, "10320064") || boost::algorithm::equals(id, "35074718")) {
-            return "Moumnat";
-        }
-        return "Yasmina";
     }
 
 } // namespace smf

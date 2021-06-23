@@ -44,6 +44,7 @@ namespace smf {
 
       public:
         iec_target(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger, ipt::bus &);
+        iec_target(iec_target const &) = delete;
         ~iec_target();
 
         void stop(cyng::eod);

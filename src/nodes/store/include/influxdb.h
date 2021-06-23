@@ -56,6 +56,8 @@ namespace smf {
         std::string to_line_protocol(std::string s);
         std::string to_line_protocol(std::chrono::system_clock::time_point tp);
 
+        std::string get_area_name(std::string const &id);
+
     } // namespace influx
 } // namespace smf
 

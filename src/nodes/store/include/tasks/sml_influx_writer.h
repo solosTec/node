@@ -63,8 +63,6 @@ namespace smf {
             std::uint32_t status,
             cyng::param_map_t const &pmap);
 
-        std::string get_area_name(std::string const &id);
-
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;

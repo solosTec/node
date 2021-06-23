@@ -69,7 +69,7 @@ namespace smf {
         //	tags:
         //  tags are indexd
         //
-        ss << ",server=" << id_ << ",obis=" << code << ",area=unknown";
+        ss << ",server=" << id_ << ",obis=" << code << ",area=" << influx::get_area_name(id_);
 
         //
         //   space separator
