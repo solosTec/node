@@ -124,6 +124,7 @@ namespace smf {
 
           public:
             parser(cb_data_f, cb_final_f, std::uint8_t medium = 1);
+            parser(parser &) = delete;
 
             /**
              * parse the specified range
@@ -144,7 +145,7 @@ namespace smf {
 
           private:
             tokenizer tokenizer_;
-            cb_data_f data_;
+            cb_data_f cb_data_;
             std::uint8_t const medium_;
         };
 

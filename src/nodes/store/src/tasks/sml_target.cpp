@@ -86,7 +86,8 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[sml] writer " << name << " not found");
         } else {
             writers_.insert(writers_.end(), channels.begin(), channels.end());
-            CYNG_LOG_INFO(logger_, "[sml] add writer " << name << " #" << writers_.size());
+            BOOST_ASSERT(channel_.lock());
+            CYNG_LOG_INFO(logger_, "[sml] \"" << channel_.lock()->get_name() << "\" + writer " << name << " #" << writers_.size());
         }
     }
 

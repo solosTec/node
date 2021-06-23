@@ -44,11 +44,48 @@ namespace smf {
             std::vector<std::string> const &writer);
 
         void start_sml_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
-        void start_sml_xml(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
-        void start_sml_json(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
-        void start_sml_abl(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
-        void start_sml_log(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
-        void start_sml_csv(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
+        void start_sml_xml(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &,
+            std::string,
+            std::string,
+            std::string);
+        void start_sml_json(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &,
+            std::string,
+            std::string,
+            std::string);
+        void start_sml_abl(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &,
+            std::string,
+            std::string,
+            std::string);
+        void start_sml_log(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &,
+            std::string,
+            std::string,
+            std::string,
+            bool);
+        void start_sml_csv(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &,
+            std::string,
+            std::string,
+            std::string,
+            bool);
         void start_sml_influx(
             cyng::controller &,
             cyng::stash &channels,
@@ -61,7 +98,14 @@ namespace smf {
             std::string const &db);
 
         void start_iec_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
-        void start_iec_log(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
+        void start_iec_log(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &,
+            std::string,
+            std::string,
+            std::string);
         void start_iec_influx(
             cyng::controller &,
             cyng::stash &channels,
@@ -72,7 +116,15 @@ namespace smf {
             std::string const &protocol,
             std::string const &cert,
             std::string const &db);
-        void start_iec_csv(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
+        void start_iec_csv(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &,
+            std::string,
+            std::string,
+            std::string,
+            bool);
         void start_dlms_influx(
             cyng::controller &,
             cyng::stash &channels,

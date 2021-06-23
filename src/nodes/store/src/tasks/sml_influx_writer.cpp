@@ -160,8 +160,9 @@ namespace smf {
 
             CYNG_LOG_TRACE(logger_, "[sml.influx] write: " << stmt);
             auto const rs = influx::push_over_http(ctl_.get_ctx(), host_, service_, protocol_, cert_, db_, stmt);
-            if (!rs.empty())
+            if (!rs.empty()) {
                 CYNG_LOG_WARNING(logger_, "[sml.influx] result: " << rs);
+            }
         }
     }
 

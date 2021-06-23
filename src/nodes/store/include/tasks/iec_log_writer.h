@@ -18,14 +18,27 @@ namespace smf {
     class iec_log_writer {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<
+            std::function<void(std::string)>,
+            std::function<void(cyng::obis code, std::string value, std::string unit)>,
+            std::function<void()>,
+            std::function<void(cyng::eod)>>;
 
       public:
-        iec_log_writer(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger);
+        iec_log_writer(
+            cyng::channel_weak,
+            cyng::controller &ctl,
+            cyng::logger logger,
+            std::filesystem::path out,
+            std::string prefix,
+            std::string suffix);
         ~iec_log_writer();
 
       private:
         void stop(cyng::eod);
+        void open(std::string);
+        void store(cyng::obis code, std::string value, std::string unit);
+        void commit();
 
       private:
         signatures_t sigs_;

@@ -21,11 +21,11 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>,
-            std::function<void(cyng::buffer_t srv, cyng::buffer_t payload)>, //  send_sml
-            std::function<void(void)>,
-            std::function<void(void)>,
-            std::function<void(std::uint32_t, std::uint32_t, std::uint32_t, std::string)>,
+            std::function<void(void)>,                                                           //  connect
+            std::function<void(cyng::buffer_t srv, cyng::buffer_t payload)>,                     //  send_sml
+            std::function<void(void)>,                                                           //  send_mbus
+            std::function<void(void)>,                                                           //  send_dlms
+            std::function<void(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
             std::function<void(cyng::eod)>>;
 
         enum class protocol_type { SML, IEC, DLMS };
@@ -56,7 +56,7 @@ namespace smf {
         void auth_state(bool);
         void open_push_channels();
 
-        void on_channel_open(std::uint32_t, std::uint32_t, std::uint32_t, std::string);
+        void on_channel_open(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string);
 
       private:
         signatures_t sigs_;

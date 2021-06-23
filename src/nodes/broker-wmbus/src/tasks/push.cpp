@@ -35,7 +35,8 @@ namespace smf {
             std::placeholders::_1,
             std::placeholders::_2,
             std::placeholders::_3,
-            std::placeholders::_4),
+            std::placeholders::_4,
+            std::placeholders::_5),
 
         std::bind(&push::stop, this, std::placeholders::_1),
     }
@@ -159,6 +160,15 @@ namespace smf {
             open_push_channels();
         } else {
             CYNG_LOG_WARNING(logger_, "[push] authorization lost");
+            channels_.clear();
+
+            //
+            //  reconnect in 1 minute
+            //
+            auto sp = channel_.lock();
+            if (sp) {
+                sp->suspend(std::chrono::minutes(1), "connect");
+            }
         }
     }
 
@@ -168,21 +178,25 @@ namespace smf {
         bus_.open_channel(pcc_dlms_, channel_);
     }
 
-    void push::on_channel_open(std::uint32_t channel, std::uint32_t source, std::uint32_t count, std::string target) {
-        CYNG_LOG_INFO(logger_, "[push] channel " << target << " is open #" << channel << ':' << source);
+    void push::on_channel_open(bool success, std::uint32_t channel, std::uint32_t source, std::uint32_t count, std::string target) {
+        if (success) {
+            CYNG_LOG_INFO(logger_, "[push] channel " << target << " is open #" << channel << ':' << source);
 
-        //
-        //  update channel list
-        // protocol_type { SML, IEC, DLMS };
-        //
-        if (boost::algorithm::equals(target, pcc_sml_.target_)) {
-            channels_.emplace(protocol_type::SML, std::make_pair(channel, source));
-        } else if (boost::algorithm::equals(target, pcc_iec_.target_)) {
-            channels_.emplace(protocol_type::IEC, std::make_pair(channel, source));
-        } else if (boost::algorithm::equals(target, pcc_dlms_.target_)) {
-            channels_.emplace(protocol_type::DLMS, std::make_pair(channel, source));
+            //
+            //  update channel list
+            // protocol_type { SML, IEC, DLMS };
+            //
+            if (boost::algorithm::equals(target, pcc_sml_.target_)) {
+                channels_.emplace(protocol_type::SML, std::make_pair(channel, source));
+            } else if (boost::algorithm::equals(target, pcc_iec_.target_)) {
+                channels_.emplace(protocol_type::IEC, std::make_pair(channel, source));
+            } else if (boost::algorithm::equals(target, pcc_dlms_.target_)) {
+                channels_.emplace(protocol_type::DLMS, std::make_pair(channel, source));
+            } else {
+                CYNG_LOG_WARNING(logger_, "[push] unknown push channel: " << target);
+            }
         } else {
-            CYNG_LOG_WARNING(logger_, "[push] unknown push channel: " << target);
+            CYNG_LOG_WARNING(logger_, "[push] open push channel failed");
         }
     }
 

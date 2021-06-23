@@ -18,7 +18,11 @@ namespace smf {
     class iec_influx_writer {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<
+            std::function<void(std::string)>,
+            std::function<void(cyng::obis code, std::string value, std::string unit)>,
+            std::function<void()>,
+            std::function<void(cyng::eod)>>;
 
       public:
         iec_influx_writer(
@@ -34,6 +38,9 @@ namespace smf {
 
       private:
         void stop(cyng::eod);
+        void open(std::string);
+        void store(cyng::obis code, std::string value, std::string unit);
+        void commit();
 
       private:
         signatures_t sigs_;
@@ -45,6 +52,7 @@ namespace smf {
         std::string const protocol_; //  http/hhtps/ws
         std::string const cert_;
         std::string const db_; //  adressed database
+        std::string id_;       //!< meter id
     };
 
 } // namespace smf

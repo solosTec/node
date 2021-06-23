@@ -102,8 +102,10 @@ namespace smf {
 
                     //
                     //	close CSV file
+                    //  close push channel
                     //
                     writer_->dispatch("commit", cyng::make_tuple());
+                    ctl_.get_registry().dispatch(name, "close");
 
                     //
                     //    message for IEC uplink table
@@ -449,8 +451,9 @@ namespace smf {
             //
             buffer_write_.push_back(generate_query(id));
 
-            if (!buffer_write_.empty())
+            if (!buffer_write_.empty()) {
                 do_write();
+            }
         });
     }
 
@@ -491,7 +494,7 @@ namespace smf {
             //  send to push target
             //
             ctl_.get_registry().dispatch(
-                mgr_.get_id(), "forward", cyng::buffer_t(input_buffer_.data(), input_buffer_.data() + bytes_transferred));
+                mgr_.get_id(), "push", cyng::buffer_t(input_buffer_.data(), input_buffer_.data() + bytes_transferred));
             //
             //  start parser
             //

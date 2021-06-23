@@ -351,11 +351,12 @@ namespace smf {
     void broker_on_demand::send(cyng::buffer_t data) {
         if (is_connected() && !data.empty()) {
             boost::asio::post(dispatcher_, [this, data]() {
-                CYNG_LOG_INFO(logger_, "[broker-on-demand] transmit " << data.size() << " bytes to " << target_);
                 bool const b = write_buffer_.empty();
+                CYNG_LOG_TRACE(logger_, "[broker-on-demand] write " << data.size() << " bytes to data cache of " << target_);
                 write_buffer_.emplace_back(data);
-                if (b)
+                if (b) {
                     do_write();
+                }
             });
         } else {
             CYNG_LOG_WARNING(logger_, "[broker-on-demand] drops " << data.size() << " bytes to " << target_);
@@ -367,6 +368,10 @@ namespace smf {
             return;
 
         BOOST_ASSERT(!write_buffer_.empty());
+        if (write_buffer_.empty()) {
+            return;
+        }
+        CYNG_LOG_INFO(logger_, "[broker-on-demand] transmit " << write_buffer_.front().size() << " bytes to " << target_);
 
         // Start an asynchronous operation to send a heartbeat message.
         boost::asio::async_write(

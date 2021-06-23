@@ -6,6 +6,9 @@
  */
 #include <tasks/iec_target.h>
 
+#include <smf/iec/parser.h>
+#include <smf/obis/defs.h>
+
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
@@ -22,7 +25,8 @@ namespace smf {
         , ctl_(ctl)
         , logger_(logger)
         , bus_(bus)
-        , writer_() {
+        , writers_()
+        , channel_list_() {
         auto sp = channel_.lock();
         if (sp) {
             std::size_t slot{0};
@@ -47,6 +51,24 @@ namespace smf {
 
         CYNG_LOG_TRACE(logger_, "[iec] receive " << data.size() << " bytes from " << channel << ':' << source << '@' << target);
         BOOST_ASSERT(boost::algorithm::equals(channel_.lock()->get_name(), target));
+
+        //
+        //  distribute
+        //
+        auto const key = ipt::combine(channel, source);
+        auto const pos = channel_list_.find(key);
+        if (pos != channel_list_.end()) {
+            pos->second.parser_.read(data.begin(), data.end());
+        } else {
+            //
+            //  create parser/writer
+            //
+            auto r = channel_list_.emplace(
+                std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(logger_, writers_));
+            if (r.second) {
+                r.first->second.parser_.read(data.begin(), data.end());
+            }
+        }
     }
 
     void iec_target::add_writer(std::string name) {
@@ -54,9 +76,47 @@ namespace smf {
         if (channels.empty()) {
             CYNG_LOG_WARNING(logger_, "[iec] writer " << name << " not found");
         } else {
-            writer_.insert(writer_.end(), channels.begin(), channels.end());
-            CYNG_LOG_INFO(logger_, "[iec] add writer " << name << " #" << writer_.size());
+            writers_.insert(writers_.end(), channels.begin(), channels.end());
+            BOOST_ASSERT(channel_.lock());
+            CYNG_LOG_INFO(logger_, "[iec] \"" << channel_.lock()->get_name() << "\" + writer " << name << " #" << writers_.size());
         }
     }
+
+    consumer::consumer(cyng::logger logger, std::vector<cyng::channel_weak> writers)
+        : logger_(logger)
+        , writers_(writers)
+        , parser_(
+              [this](cyng::obis code, std::string value, std::string unit) {
+                  CYNG_LOG_TRACE(logger_, "[iec] data - " << code << ": " << value << " " << unit);
+                  data_.emplace(std::piecewise_construct, std::forward_as_tuple(code), std::forward_as_tuple(value, unit));
+                  if (code == OBIS_METER_ADDRESS) {
+                      BOOST_ASSERT_MSG(value.size() == 8, "invalid meter id");
+                      id_ = value;
+                  }
+              },
+              [this](std::string dev, bool crc) {
+                  CYNG_LOG_INFO(logger_, "[iec] readout complete: " << dev);
+                  //
+                  //    send to writer(s)
+                  //
+                  for (auto writer : writers_) {
+                      auto sp = writer.lock();
+                      if (sp) {
+                          sp->dispatch("open", id_);
+                          for (auto const &readout : data_) {
+                              sp->dispatch("store", readout.first, readout.second.first, readout.second.second);
+                          }
+                          sp->dispatch("commit");
+                      }
+                  }
+
+                  //
+                  //    clear data
+                  //
+                  data_.clear();
+                  id_.clear();
+              })
+        , data_()
+        , id_() {}
 
 } // namespace smf

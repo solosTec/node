@@ -135,8 +135,10 @@ namespace smf {
                       BOOST_ASSERT_MSG(r.size() < 4, "unknown EDIS format");
                   },
                   cbf)
-            , data_(cbd)
-            , medium_(medium) {}
+            , cb_data_(cbd)
+            , medium_(medium) {
+            BOOST_ASSERT(cb_data_);
+        }
 
         std::vector<std::string> split_line(std::string const &line) {
             std::vector<std::string> r{""};
@@ -166,7 +168,7 @@ namespace smf {
         void parser::convert(std::string const &code, std::string const &value) {
             auto const c = to_obis(code, medium_);
             auto const [v, unit] = split_edis_value(value);
-            data_(c, v, unit);
+            cb_data_(c, v, unit);
         }
         void parser::convert(std::string const &code, std::string const &index, std::string const &value) {
             // BOOST_ASSERT(index.size() == 2);
@@ -174,7 +176,7 @@ namespace smf {
                 //  example: 1.4.0(04)(00.000*kW)
                 auto const c = to_obis(code, medium_);
                 auto const [v, unit] = split_edis_value(value);
-                data_(c, v, unit);
+                cb_data_(c, v, unit);
             } else {
                 // std::cout << code << ", " << index << ", " << value << std::endl;
                 if (contains(index, '*')) {

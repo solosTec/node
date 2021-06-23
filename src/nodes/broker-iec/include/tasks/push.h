@@ -21,11 +21,12 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>,                                                     //  connect
-            std::function<void(cyng::buffer_t payload)>,                                   //  send_iec
-            std::function<void(cyng::buffer_t payload)>,                                   //  forward
-            std::function<void(std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
-            std::function<void(cyng::eod)>                                                 //  stop
+            std::function<void(void)>,                                                           //  connect
+            std::function<void()>,                                                               //  close
+            std::function<void(cyng::buffer_t payload)>,                                         //  forward
+            std::function<void(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
+            std::function<void(bool, std::uint32_t)>,                                            //  on_channel_close
+            std::function<void(cyng::eod)>                                                       //  stop
             >;
 
       public:
@@ -45,12 +46,14 @@ namespace smf {
         void auth_state(bool);
 
         void send_iec(cyng::buffer_t payload);
-        void on_channel_open(std::uint32_t, std::uint32_t, std::uint32_t, std::string);
+        void on_channel_open(bool success, std::uint32_t, std::uint32_t, std::uint32_t, std::string);
+        void on_channel_close(bool success, std::uint32_t);
 
         /**
          * cache data, open channel and send to target
          */
         void forward(cyng::buffer_t payload);
+        void close();
 
       private:
         signatures_t sigs_;

@@ -39,10 +39,10 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t idx{0};
-            sp->set_channel_name("open", idx++);
-            sp->set_channel_name("store", idx++);
-            sp->set_channel_name("commit", idx++);
+            std::size_t slot{0};
+            sp->set_channel_name("open", slot++);
+            sp->set_channel_name("store", slot++);
+            sp->set_channel_name("commit", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
     }

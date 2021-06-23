@@ -26,7 +26,14 @@ namespace smf {
             std::function<void(cyng::eod)>>;
 
       public:
-        sml_csv_writer(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger);
+        sml_csv_writer(
+            cyng::channel_weak,
+            cyng::controller &ctl,
+            cyng::logger logger,
+            std::filesystem::path out,
+            std::string prefix,
+            std::string suffix,
+            bool header);
         ~sml_csv_writer();
 
       private:

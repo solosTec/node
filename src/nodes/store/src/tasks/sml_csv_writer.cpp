@@ -16,7 +16,14 @@
 
 namespace smf {
 
-    sml_csv_writer::sml_csv_writer(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger)
+    sml_csv_writer::sml_csv_writer(
+        cyng::channel_weak wp,
+        cyng::controller &ctl,
+        cyng::logger logger,
+        std::filesystem::path out,
+        std::string prefix,
+        std::string suffix,
+        bool header)
         : sigs_{std::bind(&sml_csv_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), std::bind(&sml_csv_writer::close_response, this), std::bind(&sml_csv_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6), std::bind(&sml_csv_writer::get_proc_parameter_response, this), std::bind(&sml_csv_writer::stop, this, std::placeholders::_1)}
         , channel_(wp)
         , ctl_(ctl)

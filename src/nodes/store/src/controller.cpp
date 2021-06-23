@@ -230,19 +230,57 @@ namespace smf {
         //
         auto const writer = cyng::vector_cast<std::string>(reader["writer"].get(), "ALL:BIN");
         if (!writer.empty()) {
+            auto const tmp = std::filesystem::temp_directory_path();
             for (auto const &name : writer) {
                 if (boost::algorithm::equals(name, "SML:DB")) {
                     start_sml_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
                 } else if (boost::algorithm::equals(name, "SML:SML")) {
-                    start_sml_xml(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    start_sml_xml(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
+                        cyng::value_cast(reader[name]["prefix"].get(), "sml"),
+                        cyng::value_cast(reader[name]["suffix"].get(), "csv"));
                 } else if (boost::algorithm::equals(name, "SML:JSON")) {
-                    start_sml_json(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    start_sml_json(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
+                        cyng::value_cast(reader[name]["prefix"].get(), "sml"),
+                        cyng::value_cast(reader[name]["suffix"].get(), "csv"));
                 } else if (boost::algorithm::equals(name, "SML:ABL")) {
-                    start_sml_abl(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    start_sml_abl(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
+                        cyng::value_cast(reader[name]["prefix"].get(), "sml"),
+                        cyng::value_cast(reader[name]["suffix"].get(), "csv"));
                 } else if (boost::algorithm::equals(name, "SML:LOG")) {
-                    start_sml_log(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    start_sml_log(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
+                        cyng::value_cast(reader[name]["prefix"].get(), "sml"),
+                        cyng::value_cast(reader[name]["suffix"].get(), "csv"),
+                        cyng::value_cast(reader[name]["header"].get(), true));
                 } else if (boost::algorithm::equals(name, "SML:CSV")) {
-                    start_sml_csv(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    start_sml_csv(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
+                        cyng::value_cast(reader[name]["prefix"].get(), "sml"),
+                        cyng::value_cast(reader[name]["suffix"].get(), "csv"),
+                        cyng::value_cast(reader[name]["header"].get(), true));
                 } else if (boost::algorithm::equals(name, "SML:influxdb")) {
 
                     start_sml_influx(
@@ -258,9 +296,24 @@ namespace smf {
                 } else if (boost::algorithm::equals(name, "IEC:DB")) {
                     start_iec_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
                 } else if (boost::algorithm::equals(name, "IEC:LOG")) {
-                    start_iec_log(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    start_iec_log(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
+                        cyng::value_cast(reader[name]["prefix"].get(), "iec"),
+                        cyng::value_cast(reader[name]["suffix"].get(), "log"));
                 } else if (boost::algorithm::equals(name, "IEC:CSV")) {
-                    start_iec_csv(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    start_iec_csv(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
+                        cyng::value_cast(reader[name]["prefix"].get(), "sml"),
+                        cyng::value_cast(reader[name]["suffix"].get(), "csv"),
+                        cyng::value_cast(reader[name]["header"].get(), true));
                 } else if (boost::algorithm::equals(name, "IEC:influxdb")) {
                     start_iec_influx(
                         ctl,
@@ -489,11 +542,13 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
-        cyng::param_map_t &&pm,
-        std::string const &name) {
-        if (!pm.empty()) {
+        std::string const &name,
+        std::string out,
+        std::string prefix,
+        std::string suffix) {
+        if (!out.empty()) {
             CYNG_LOG_INFO(logger, "start sml xml writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_xml_writer>(name, ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_xml_writer>(name, ctl, logger, out, prefix, suffix);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -502,11 +557,13 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
-        cyng::param_map_t &&pm,
-        std::string const &name) {
-        if (!pm.empty()) {
-            CYNG_LOG_INFO(logger, "start sml json writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_json_writer>(name, ctl, logger);
+        std::string const &name,
+        std::string out,
+        std::string prefix,
+        std::string suffix) {
+        CYNG_LOG_INFO(logger, "start sml json writer -> " << out);
+        if (!out.empty()) {
+            auto channel = ctl.create_named_channel_with_ref<sml_json_writer>(name, ctl, logger, out, prefix, suffix);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -515,11 +572,13 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
-        cyng::param_map_t &&pm,
-        std::string const &name) {
-        if (!pm.empty()) {
-            CYNG_LOG_INFO(logger, "start sml abl writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>(name, ctl, logger);
+        std::string const &name,
+        std::string out,
+        std::string prefix,
+        std::string suffix) {
+        CYNG_LOG_INFO(logger, "start sml abl writer -> " << out);
+        if (!out.empty()) {
+            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>(name, ctl, logger, out, prefix, suffix);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -528,10 +587,13 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
-        cyng::param_map_t &&pm,
-        std::string const &name) {
-        if (!pm.empty()) {
-            CYNG_LOG_INFO(logger, "start sml log writer");
+        std::string const &name,
+        std::string out,
+        std::string prefix,
+        std::string suffix,
+        bool header) {
+        CYNG_LOG_INFO(logger, "start sml log writer -> " << out);
+        if (!out.empty()) {
             auto channel = ctl.create_named_channel_with_ref<sml_log_writer>(name, ctl, logger);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
@@ -541,11 +603,15 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
-        cyng::param_map_t &&pm,
-        std::string const &name) {
-        if (!pm.empty()) {
-            CYNG_LOG_INFO(logger, "start sml csv writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>(name, ctl, logger);
+        std::string const &name,
+        std::string out,
+        std::string prefix,
+        std::string suffix,
+        bool header) {
+        CYNG_LOG_INFO(logger, "start sml csv writer -> " << out);
+        if (!out.empty()) {
+
+            auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>(name, ctl, logger, out, prefix, suffix, header);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -584,11 +650,13 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
-        cyng::param_map_t &&pm,
-        std::string const &name) {
-        if (!pm.empty()) {
-            CYNG_LOG_INFO(logger, "start iec log writer");
-            auto channel = ctl.create_named_channel_with_ref<iec_log_writer>(name, ctl, logger);
+        std::string const &name,
+        std::string out,
+        std::string prefix,
+        std::string suffix) {
+        CYNG_LOG_INFO(logger, "start iec log writer -> " << out);
+        if (!out.empty()) {
+            auto channel = ctl.create_named_channel_with_ref<iec_log_writer>(name, ctl, logger, out, prefix, suffix);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -597,11 +665,14 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
-        cyng::param_map_t &&pm,
-        std::string const &name) {
-        if (!pm.empty()) {
-            CYNG_LOG_INFO(logger, "start iec csv writer");
-            auto channel = ctl.create_named_channel_with_ref<iec_csv_writer>(name, ctl, logger);
+        std::string const &name,
+        std::string out,
+        std::string prefix,
+        std::string suffix,
+        bool header) {
+        CYNG_LOG_INFO(logger, "start iec csv writer -> " << out);
+        if (!out.empty()) {
+            auto channel = ctl.create_named_channel_with_ref<iec_csv_writer>(name, ctl, logger, out, prefix, suffix, header);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }

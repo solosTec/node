@@ -56,18 +56,23 @@ namespace smf {
             constexpr bool is_authorized() const { return (state_ == state::AUTHORIZED) || (state_ == state::LINKED); }
 
             /**
-             * initiate a sequence to register a push target
+             * Initiate a sequence to register a push target.
+             * If registration fails this task will be closed.
              *
              * @return true if process was started
              */
             bool register_target(std::string, cyng::channel_weak);
 
             /**
-             * open a push channel
+             * open a push channel (TP_RES_OPEN_CONNECTION)
              *
              * @return true if process was started
              */
             bool open_channel(push_channel, cyng::channel_weak);
+
+            /**
+             * close push channel (TP_RES_CLOSE_PUSH_CHANNEL)
+             */
             bool close_channel(std::uint32_t channel, cyng::channel_weak);
 
             /**
@@ -157,6 +162,15 @@ namespace smf {
 
         constexpr std::uint32_t get_channel(channel_id const &id) { return id.first; }
         constexpr std::uint32_t get_source(channel_id const &id) { return id.second; }
+
+        /**
+         * combine two u32 integers to onw u64 integer with the channel as most significant word
+         * and source as least significant word.
+         */
+        constexpr std::uint64_t combine(std::uint32_t channel, std::uint32_t source) {
+            return static_cast<uint64_t>(channel) << 32 | source;
+        }
+        constexpr std::uint64_t combine(channel_id const &id) { return combine(get_channel(id), get_source(id)); }
 
     } // namespace ipt
 } // namespace smf

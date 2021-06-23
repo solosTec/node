@@ -97,6 +97,10 @@ namespace smf {
     }
 
     void network::register_targets() {
+
+        //
+        //  SML targets
+        //
         for (auto const &name : sml_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register sml target " << name);
             auto channel = ctl_.create_named_channel_with_ref<sml_target>(name, ctl_, logger_, bus_);
@@ -117,6 +121,9 @@ namespace smf {
             }
         }
 
+        //
+        //  IEC targets
+        //
         for (auto const &name : iec_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register iec target " << name);
             auto channel = ctl_.create_named_channel_with_ref<iec_target>(name, ctl_, logger_, bus_);
@@ -137,6 +144,9 @@ namespace smf {
             }
         }
 
+        //
+        //  DLMS targets
+        //
         for (auto const &name : dlms_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register dlms target " << name);
             auto channel = ctl_.create_named_channel_with_ref<dlms_target>(name, ctl_, logger_, bus_);

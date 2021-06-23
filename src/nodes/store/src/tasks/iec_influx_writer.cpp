@@ -25,7 +25,12 @@ namespace smf {
         std::string const &protocol,
         std::string const &cert,
         std::string const &db)
-        : sigs_{std::bind(&iec_influx_writer::stop, this, std::placeholders::_1)}
+    : sigs_{			
+            std::bind(&iec_influx_writer::open, this, std::placeholders::_1),
+			std::bind(&iec_influx_writer::store, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+			std::bind(&iec_influx_writer::commit, this),
+			std::bind(&iec_influx_writer::stop, this, std::placeholders::_1),
+        }
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger)
@@ -36,6 +41,10 @@ namespace smf {
         , db_(db) {
         auto sp = channel_.lock();
         if (sp) {
+            std::size_t slot{0};
+            sp->set_channel_name("open", slot++);
+            sp->set_channel_name("store", slot++);
+            sp->set_channel_name("commit", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }
@@ -47,5 +56,8 @@ namespace smf {
     }
 
     void iec_influx_writer::stop(cyng::eod) {}
+    void iec_influx_writer::open(std::string id) { id_ = id; }
+    void iec_influx_writer::store(cyng::obis code, std::string value, std::string unit) {}
+    void iec_influx_writer::commit() {}
 
 } // namespace smf

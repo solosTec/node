@@ -33,9 +33,9 @@ namespace smf {
       public:
         writer(cyng::channel_weak, cyng::logger, std::filesystem::path out);
 
-        void stop(cyng::eod);
 
       private:
+        void stop(cyng::eod);
         void open(std::string);
         void store(cyng::obis code, std::string value, std::string unit);
         void commit();

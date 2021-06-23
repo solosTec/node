@@ -484,8 +484,9 @@ namespace smf {
                     //
                     //	send request
                     //
-                    if (b)
+                    if (b) {
                         do_write();
+                    }
                 });
 
                 return true;
@@ -578,39 +579,44 @@ namespace smf {
 
         void bus::res_open_push_channel(header const &h, cyng::buffer_t &&body) {
             //
-            //	read message body
-            // response code, channel, source, packet size, window size, status, target count
+            //	read message body (TP_RES_OPEN_CONNECTION)
             //
-            // std::tuple<std::uint8_t, std::uint32_t, std::uint32_t, std::uint16_t, std::uint8_t, std::uint8_t, std::uint32_t>
+            // response code, channel, source, packet size, window size, status, target count
             auto const [res, channel, source, packet_size, window_size, status, count] = tp_res_open_push_channel(std::move(body));
 
             boost::asio::post(dispatcher_, [this, h, res, channel, source, packet_size, window_size, status, count]() {
                 auto const pos = opening_channel_.find(h.sequence_);
                 if (pos != opening_channel_.end()) {
 
-                    if (tp_res_open_push_channel_policy::is_success(res)) {
-                        CYNG_LOG_INFO(
-                            logger_,
-                            "[ipt] cmd " << ipt::command_name(h.command_) << ": "
-                                         << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
-                                         << source << ":" << pos->second.first.target_);
+                    auto sp = pos->second.second.lock();
+                    if (sp) {
+                        if (tp_res_open_push_channel_policy::is_success(res)) {
+                            CYNG_LOG_INFO(
+                                logger_,
+                                "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                             << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
+                                             << source << ":" << pos->second.first.target_);
 
-                        auto sp = pos->second.second.lock();
-                        if (sp) {
-                            //
-                            //  update channels list
-                            //
-                            channels_.emplace(channel, std::move(pos->second));
-
-                            sp->dispatch("channel.open", channel, source, count, pos->second.first.target_);
+                        } else {
+                            CYNG_LOG_WARNING(
+                                logger_,
+                                "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                             << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
+                                             << source << ":" << pos->second.first.target_);
                         }
 
-                    } else {
-                        CYNG_LOG_WARNING(
-                            logger_,
-                            "[ipt] cmd " << ipt::command_name(h.command_) << ": "
-                                         << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
-                                         << source << ":" << pos->second.first.target_);
+                        //
+                        //  update channels list
+                        //
+                        channels_.emplace(channel, std::move(pos->second));
+
+                        sp->dispatch(
+                            "channel.open",
+                            tp_res_open_push_channel_policy::is_success(res),
+                            channel,
+                            source,
+                            count,
+                            pos->second.first.target_);
                     }
 
                     //
@@ -625,7 +631,7 @@ namespace smf {
 
         void bus::res_close_push_channel(header const &h, cyng::buffer_t &&body) {
             //
-            //	read message body
+            //	read message body (TP_RES_CLOSE_PUSH_CHANNEL)
             //
             // std::tuple<std::uint8_t, std::uint32_t>
             auto const [res, channel] = tp_res_close_push_channel(std::move(body));
@@ -633,28 +639,34 @@ namespace smf {
                 auto const pos = closing_channels_.find(h.sequence_);
                 if (pos != closing_channels_.end()) {
 
-                    if (tp_res_open_push_channel_policy::is_success(res)) {
-                        CYNG_LOG_INFO(
-                            logger_,
-                            "[ipt] cmd " << ipt::command_name(h.command_) << ": "
-                                         << tp_res_close_push_channel_policy::get_response_name(res) << ", " << channel << "/"
-                                         << pos->second.first);
+                    auto sp = pos->second.second.lock();
+                    if (sp) {
 
-                        auto sp = pos->second.second.lock();
-                        if (sp) {
+                        if (tp_res_close_push_channel_policy::is_success(res)) {
+                            CYNG_LOG_INFO(
+                                logger_,
+                                "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                             << tp_res_close_push_channel_policy::get_response_name(res) << ", " << channel << "/"
+                                             << pos->second.first);
 
-                            //
-                            // ToDo: dispatch
-                            // sp->dispatch("channel.close", channel);
+                        } else {
+                            CYNG_LOG_WARNING(
+                                logger_,
+                                "[ipt] cmd " << ipt::command_name(h.command_) << ": "
+                                             << tp_res_close_push_channel_policy::get_response_name(res) << ", " << channel << "/"
+                                             << pos->second.first);
                         }
 
-                    } else {
-                        CYNG_LOG_WARNING(
-                            logger_,
-                            "[ipt] cmd " << ipt::command_name(h.command_) << ": "
-                                         << tp_res_close_push_channel_policy::get_response_name(res) << ", " << channel << "/"
-                                         << pos->second.first);
+                        //
+                        // dispatch
+                        //
+                        sp->dispatch("channel.close", tp_res_close_push_channel_policy::is_success(res), channel);
                     }
+
+                    //
+                    //  cleanup list
+                    //
+                    closing_channels_.erase(pos);
 
                     //
                     //  remove from channels list
@@ -663,10 +675,6 @@ namespace smf {
                         CYNG_LOG_WARNING(logger_, "[ipt] cmd - channel " << channel << " not found in open channel list");
                     }
 
-                    //
-                    //  cleanup list
-                    //
-                    closing_channels_.erase(pos);
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing list entry");
                 }
@@ -700,7 +708,7 @@ namespace smf {
                         if (ctrl_res_register_target_policy::is_success(res)) {
                             targets_.emplace(channel, std::move(pos->second));
                         } else {
-                            CYNG_LOG_WARNING(logger_, "[ipt] register target " << pos->second.first << " failed: stop session");
+                            CYNG_LOG_ERROR(logger_, "[ipt] register target " << pos->second.first << " failed: stop session");
                             //
                             //	stop task
                             //

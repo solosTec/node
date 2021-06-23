@@ -33,7 +33,13 @@ namespace smf {
             std::function<void(cyng::eod)>>;
 
       public:
-        sml_abl_writer(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger);
+        sml_abl_writer(
+            cyng::channel_weak,
+            cyng::controller &ctl,
+            cyng::logger logger,
+            std::filesystem::path out,
+            std::string prefix,
+            std::string suffix);
         ~sml_abl_writer();
 
       private:

@@ -7,6 +7,7 @@
 #ifndef SMF_STORE_TASK_IEC_TARGET_H
 #define SMF_STORE_TASK_IEC_TARGET_H
 
+#include <smf/iec/parser.h>
 #include <smf/ipt/bus.h>
 
 #include <cyng/log/logger.h>
@@ -17,6 +18,18 @@
 
 namespace smf {
 
+    class consumer {
+      public:
+        consumer(cyng::logger logger, std::vector<cyng::channel_weak> writers);
+
+      public:
+        cyng::logger logger_;
+        std::vector<cyng::channel_weak> writers_;
+        iec::parser parser_;
+        std::map<cyng::obis, std::pair<std::string, std::string>> data_;
+        std::string id_; //!< meter id (8 characters)
+    };
+
     class iec_target {
         template <typename T> friend class cyng::task;
 
@@ -25,6 +38,8 @@ namespace smf {
             std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t data, std::string)>,
             std::function<void(std::string)>,
             std::function<void(cyng::eod)>>;
+
+        using channel_list = std::map<std::uint64_t, consumer>;
 
       public:
         iec_target(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger, ipt::bus &);
@@ -43,7 +58,8 @@ namespace smf {
         cyng::controller &ctl_;
         cyng::logger logger_;
         ipt::bus &bus_;
-        std::vector<cyng::channel_weak> writer_;
+        std::vector<cyng::channel_weak> writers_;
+        channel_list channel_list_;
     };
 
 } // namespace smf
