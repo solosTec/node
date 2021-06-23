@@ -63,11 +63,11 @@ namespace smf {
             //
             //  create parser/writer
             //
-            // auto const r = channel_list_.emplace(
-            //     std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(logger_, writers_));
-            // if (r.second) {
-            //     r.first->second.parser_.read(data.begin(), data.end());
-            // }
+            auto const r = channel_list_.emplace(
+                std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(logger_, writers_));
+            if (r.second) {
+                r.first->second.parser_.read(data.begin(), data.end());
+            }
         }
     }
 

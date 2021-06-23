@@ -4,6 +4,7 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
+#include <influxdb.h>
 #include <tasks/iec_influx_writer.h>
 
 #include <cyng/log/record.h>
@@ -57,7 +58,41 @@ namespace smf {
 
     void iec_influx_writer::stop(cyng::eod) {}
     void iec_influx_writer::open(std::string id) { id_ = id; }
-    void iec_influx_writer::store(cyng::obis code, std::string value, std::string unit) {}
+    void iec_influx_writer::store(cyng::obis code, std::string value, std::string unit) {
+        std::stringstream ss;
+        //
+        //  measurement
+        //
+        ss << "IEC";
+
+        //
+        //	tags:
+        //  tags are indexd
+        //
+        ss << ",server=" << id_ << ",obis=" << code << ",area=unknown";
+
+        //
+        //   space separator
+        //
+        ss << ' ';
+
+        //
+        //	fields:
+        //  fields are not indexed
+        //
+        ss << "meter=\"" << id_ << "\"," << code << "=" << value << ",unit=" << unit;
+        //
+        //	timestamp
+        //
+        ss << ' ' << influx::to_line_protocol(std::chrono::system_clock::now()) << '\n';
+        auto const stmt = ss.str();
+
+        CYNG_LOG_TRACE(logger_, "[iec.influx] write: " << stmt);
+        auto const rs = influx::push_over_http(ctl_.get_ctx(), host_, service_, protocol_, cert_, db_, stmt);
+        if (!rs.empty()) {
+            CYNG_LOG_WARNING(logger_, "[iec.influx] result: " << rs);
+        }
+    }
     void iec_influx_writer::commit() {}
 
 } // namespace smf
