@@ -484,8 +484,11 @@ namespace smf {
                     write_buffer_.emplace_front(cyng::make_buffer("\r\n"));
                     write_buffer_.emplace_front(cyng::make_buffer(target_.get_login_sequence()));
                 }
-                if (b)
-                    do_write();
+
+                //
+                //  start writing
+                //
+                do_write();
             });
         }
     }
