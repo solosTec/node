@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(parser) {
 
 BOOST_AUTO_TEST_CASE(dbg35074715) {
     // /?35074715!
-    char const inp[] = "/ELS5\@V8.22\r\n"
+    char const inp[] = "/ELS5\\@V8.22\r\n"
                        "\x02"
                        // ""   0x02
                        "F.F(00000000)\r\n"
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(dbg35074715) {
 BOOST_AUTO_TEST_CASE(dbg35074664) {
     //?35074664!
 
-    char const inp[] = "/ELS5\@V8.22\r\n"
+    char const inp[] = "/ELS5\\@V8.22\r\n"
                        "\x02"
                        //
                        "F.F(00000000)\r\n"
@@ -575,7 +575,7 @@ BOOST_AUTO_TEST_CASE(dbg35074664) {
 BOOST_AUTO_TEST_CASE(dbg35074645) {
     // /?35074645!
 
-    char const inp[] = "/ELS5\@V8.22\r\n"
+    char const inp[] = "/ELS5\\@V8.22\r\n"
                        "\x02"
                        //
                        "F.F(00000000)\r\n"

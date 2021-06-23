@@ -580,7 +580,11 @@ namespace smf {
                 auto channel = ctl_.create_named_channel_with_ref<gpio>(name, logger_, sp);
                 BOOST_ASSERT(channel->is_open());
                 stash_.lock(channel);
-                channel->dispatch("blinking", cyng::make_tuple(std::chrono::milliseconds(500)));
+#ifdef _DEBUG
+                channel->dispatch("blinking", std::chrono::milliseconds(500));
+#else
+                channel->dispatch("turn", false);
+#endif
             }
         } else {
             CYNG_LOG_WARNING(logger_, "GPIO [" << p << "] is not enabled");
