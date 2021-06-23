@@ -356,7 +356,10 @@ namespace smf {
         if (is_connected() && !data.empty()) {
             boost::asio::post(dispatcher_, [this, data]() {
                 bool const b = write_buffer_.empty();
-                CYNG_LOG_TRACE(logger_, "[broker-on-demand] write " << data.size() << " bytes to data cache of " << target_);
+                CYNG_LOG_TRACE(
+                    logger_,
+                    "[broker-on-demand] write " << data.size() << " bytes to data cache #" << write_buffer_.size() << " of "
+                                                << target_);
                 write_buffer_.emplace_back(data);
                 if (b) {
                     do_write();
@@ -373,6 +376,7 @@ namespace smf {
 
         BOOST_ASSERT(!write_buffer_.empty());
         if (write_buffer_.empty()) {
+            CYNG_LOG_WARNING(logger_, "[broker-on-demand] empty buffer for " << target_);
             return;
         }
         CYNG_LOG_INFO(logger_, "[broker-on-demand] transmit " << write_buffer_.front().size() << " bytes to " << target_);
