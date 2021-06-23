@@ -324,16 +324,20 @@ namespace smf {
     void broker_on_demand::receive(cyng::buffer_t data) {
         switch (state_) {
         case state::OFFLINE:
+            CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: OFFLINE");
             store(data);
             start();
             break;
         case state::CONNECTING:
+            CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTING");
             store(data);
             break;
         case state::CONNECTED:
+            CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTED");
             send(data);
             break;
         default:
+            CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: ?");
             break;
         }
     }
@@ -341,7 +345,7 @@ namespace smf {
     void broker_on_demand::store(cyng::buffer_t data) {
         if (!data.empty()) {
             boost::asio::post(dispatcher_, [this, data]() {
-                CYNG_LOG_INFO(logger_, "[broker-on-demand] stores " << data.size() << " bytes");
+                CYNG_LOG_INFO(logger_, "[broker-on-demand] stores " << data.size() << "bytes #" << write_buffer_.size());
                 bool const b = write_buffer_.empty();
                 write_buffer_.emplace_back(data);
             });
@@ -422,6 +426,7 @@ namespace smf {
             // There are no more endpoints to try.
             // Reset buffer and go offline
             //
+            CYNG_LOG_WARNING(logger_, "[broker-on-demand] connect failed");
             reset(state::OFFLINE);
         }
     }

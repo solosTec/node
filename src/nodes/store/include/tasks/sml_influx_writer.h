@@ -60,9 +60,10 @@ namespace smf {
             std::string profile,
             cyng::buffer_t server_id,
             cyng::object actTime,
-            // std::uint32_t reg_period,
             std::uint32_t status,
             cyng::param_map_t const &pmap);
+
+        std::string get_area_name(std::string const &id);
 
       private:
         signatures_t sigs_;

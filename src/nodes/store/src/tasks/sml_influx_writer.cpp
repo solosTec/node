@@ -94,10 +94,21 @@ namespace smf {
         std::uint32_t status,
         cyng::param_map_t const &pmap) {
 
+        //  9 byte array
         auto const srv_id = to_srv_id(server_id);
 
         //	example
         for (auto const &v : pmap) {
+
+            //
+            //  meter id
+            //
+            auto const id = get_id(srv_id);
+            //
+            //  area
+            //
+            auto const area = get_area_name(id);
+
             std::stringstream ss;
             //
             //  measurement
@@ -119,7 +130,7 @@ namespace smf {
             //	fields:
             //  fields are not indexed
             //
-            ss << "status=" << status << ",meter=\"" << get_id(srv_id) << "\"";
+            ss << "status=" << status << ",meter=\"" << id << "\"";
 
             auto const readout = cyng::container_cast<cyng::param_map_t>(v.second);
             for (auto const &val : readout) {
@@ -164,6 +175,13 @@ namespace smf {
                 CYNG_LOG_WARNING(logger_, "[sml.influx] result: " << rs);
             }
         }
+    }
+
+    std::string sml_influx_writer::get_area_name(std::string const &id) {
+        if (boost::algorithm::equals(id, "3496219") || boost::algorithm::equals(id, "35074662") ||
+            boost::algorithm::equals(id, "10320064"))
+            return "Moumnat";
+        return "Yasmina";
     }
 
 } // namespace smf
