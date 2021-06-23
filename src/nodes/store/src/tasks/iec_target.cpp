@@ -56,7 +56,7 @@ namespace smf {
         //  distribute
         //
         auto const key = ipt::combine(channel, source);
-        auto const pos = channel_list_.find(key);
+        auto pos = channel_list_.find(key);
         if (pos != channel_list_.end()) {
             pos->second.parser_.read(data.begin(), data.end());
         } else {
