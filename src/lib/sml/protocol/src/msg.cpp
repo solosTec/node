@@ -91,7 +91,6 @@ namespace smf {
             cyng::tuple_t body,
             std::uint16_t crc) {
 
-            cyng::make_tuple(static_cast<std::uint16_t>(type), body);
             return cyng::make_tuple(
                 trx, group_no, abort_code, cyng::make_tuple(static_cast<std::uint16_t>(type), body), crc, cyng::eod());
         }
