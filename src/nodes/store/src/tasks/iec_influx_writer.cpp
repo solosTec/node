@@ -57,7 +57,10 @@ namespace smf {
     }
 
     void iec_influx_writer::stop(cyng::eod) {}
-    void iec_influx_writer::open(std::string id) { id_ = id; }
+    void iec_influx_writer::open(std::string id) {
+        id_ = id;
+        CYNG_LOG_TRACE(logger_, "[iec.influx] update meter \"" << id << "\"");
+    }
     void iec_influx_writer::store(cyng::obis code, std::string value, std::string unit) {
 
         auto const area = influx::get_area_name(id_);
@@ -96,6 +99,6 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[iec.influx] result: " << rs);
         }
     }
-    void iec_influx_writer::commit() {}
+    void iec_influx_writer::commit() { CYNG_LOG_TRACE(logger_, "[iec.influx] commit \"" << id_ << "\""); }
 
 } // namespace smf

@@ -104,7 +104,7 @@ namespace smf {
                   for (auto writer : writers_) {
                       auto sp = writer.lock();
                       if (sp) {
-                          sp->dispatch("open", id_);
+                          sp->dispatch("open", std::string(id_));
                           for (auto const &readout : data_) {
                               sp->dispatch("store", readout.first, readout.second.first, readout.second.second);
                           }
