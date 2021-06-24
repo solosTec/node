@@ -71,31 +71,35 @@ namespace smf {
 
         std::filesystem::path path = out_ / ss.str();
 
+#ifdef _DEBUG
         if (ostream_.is_open())
             ostream_.close();
         ostream_.open(path.string());
         if (ostream_.is_open()) {
-            CYNG_LOG_INFO(logger_, "[writer] open " << path);
+            CYNG_LOG_INFO(logger_, "[iec.writer] open " << path);
             ostream_ << "obis,value,unit" << std::endl;
         } else {
-            CYNG_LOG_WARNING(logger_, "[writer] open " << path << " failed");
+            CYNG_LOG_WARNING(logger_, "[iec.writer] open " << path << " failed");
         }
+#endif
 
         //  for logging purposes
         // id_ = meter;
     }
 
     void iec_csv_writer::store(cyng::obis code, std::string value, std::string unit) {
-        CYNG_LOG_TRACE(logger_, "[writer] store " << id_ << ": " << value << " " << unit);
+        CYNG_LOG_TRACE(logger_, "[iec.writer] store " << id_ << ": " << value << " " << unit);
+#ifdef _DEBUG
         ostream_ << code << ',' << value << ',' << unit << std::endl;
+#endif
     }
 
     void iec_csv_writer::commit() {
         if (ostream_.is_open()) {
-            CYNG_LOG_INFO(logger_, "[writer] commit " << id_);
+            CYNG_LOG_INFO(logger_, "[iec.writer] commit " << id_);
             ostream_.close();
         } else {
-            CYNG_LOG_INFO(logger_, "[writer] commit " << id_ << " failed");
+            CYNG_LOG_INFO(logger_, "[iec.writer] commit " << id_ << " failed");
         }
     }
 
