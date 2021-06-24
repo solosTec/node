@@ -87,16 +87,16 @@ namespace smf {
         , writers_(writers)
         , parser_(
               [this](cyng::obis code, std::string value, std::string unit) {
-                  CYNG_LOG_TRACE(logger_, "[iec] data " << id_ << " - " << code << ": " << value << " " << unit);
-                  data_.emplace(std::piecewise_construct, std::forward_as_tuple(code), std::forward_as_tuple(value, unit));
                   if (code == OBIS_METER_ADDRESS) {
                       BOOST_ASSERT_MSG(value.size() == 8, "invalid meter id");
                       id_ = value;
                   }
+                  CYNG_LOG_TRACE(logger_, "[iec] data \"" << id_ << "\" - " << code << ": " << value << " " << unit);
+                  data_.emplace(std::piecewise_construct, std::forward_as_tuple(code), std::forward_as_tuple(value, unit));
               },
               [this](std::string dev, bool crc) {
                   boost::ignore_unused(crc);
-                  CYNG_LOG_INFO(logger_, "[iec] readout complete: " << dev);
+                  CYNG_LOG_INFO(logger_, "[iec] readout complete: " << dev << " \"" << id_ << "\"");
 
                   //
                   //    send to writer(s)
