@@ -240,12 +240,15 @@ namespace smf {
                 //	update config data
                 //	ip adress, port and last seen
                 //
-                auto const ep = socket_.remote_endpoint();
-                bus_.req_db_update(
-                    "meterwMBus",
-                    cyng::key_generator(tag),
-                    cyng::param_map_factory()("address", ep.address())(
-                        "port", ep.port())("lastSeen", std::chrono::system_clock::now()));
+                boost::system::error_code ec;
+                auto const ep = socket_.remote_endpoint(ec);
+                if (!ec) {
+                    bus_.req_db_update(
+                        "meterwMBus",
+                        cyng::key_generator(tag),
+                        cyng::param_map_factory()("address", ep.address())(
+                            "port", ep.port())("lastSeen", std::chrono::system_clock::now()));
+                }
 
                 switch (frame_type) {
                 case mbus::FIELD_CI_RES_LONG_SML:  //	0x7E - long header
