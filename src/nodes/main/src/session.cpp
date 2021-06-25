@@ -6,6 +6,7 @@
  */
 #include <db.h>
 #include <session.h>
+#include <tasks/ping.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
@@ -59,6 +60,12 @@ namespace smf {
         vm_.set_channel_name("pty.close.channel", slot++);           //	get_vm_func_pty_close_channel
         vm_.set_channel_name("pty.push.data.req", slot++);           //	get_vm_func_pty_push_data_req
         vm_.set_channel_name("sys.msg", slot++);                     //	get_vm_func_sys_msg
+
+        //
+        //	start ping
+        //
+        // auto pt = fabric.get_ctl().create_channel_with_ref<ping>(fabric.get_ctl(), logger_);
+        // BOOST_ASSERT(pt->is_open());
     }
 
     session::~session() {
@@ -128,7 +135,6 @@ namespace smf {
             get_vm_func_db_req_update(this),
             get_vm_func_db_req_remove(this),
             get_vm_func_db_req_clear(this),
-            // get_vm_func_db_upload_complete(this),
             get_vm_func_pty_login(this),
             get_vm_func_pty_logout(this),
             get_vm_func_pty_open_connection(this),

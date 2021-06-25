@@ -50,12 +50,28 @@ namespace smf {
      * in the asio C++11 example folder (libs/asio/example/cpp11/timeouts/async_tcp_client.cpp)
      */
     class bus {
-        enum class state {
+        enum class state_value {
             START,
             WAIT,
             CONNECTED,
             STOPPED,
-        } state_;
+        };
+
+        struct state : std::enable_shared_from_this<state> {
+            state(boost::asio::ip::tcp::resolver::results_type &&);
+            constexpr auto is_connected() const -> bool { return value_ == state_value::CONNECTED; }
+            constexpr auto is_stopped() const -> bool { return value_ == state_value::STOPPED; }
+            constexpr bool has_state(state_value s) const { return s == value_; }
+
+            state_value value_;
+            boost::asio::ip::tcp::resolver::results_type endpoints_;
+        };
+        using state_ptr = std::shared_ptr<state>;
+        /**
+         * helps to control state from the outside without
+         * to establish an additional reference to the state object.
+         */
+        state_ptr state_holder_;
 
       public:
         bus(boost::asio::io_context &ctx,
@@ -70,7 +86,7 @@ namespace smf {
 
         auto get_tag() const -> boost::uuids::uuid;
 
-        constexpr auto is_connected() const -> bool { return state_ == state::CONNECTED; }
+        auto is_connected() const -> bool;
 
         //
         //	cluster client functions
@@ -177,22 +193,22 @@ namespace smf {
         void update_pty_counter(std::uint64_t);
 
       private:
-        void reset(state);
-        void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
-        void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void
-        handle_connect(boost::system::error_code const &, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void do_read();
-        void do_write();
-        void handle_read(boost::system::error_code const &, std::size_t n);
-        void handle_write(boost::system::error_code const &);
-        void reconnect_timeout(boost::system::error_code const &);
+        void reset(state_ptr sp, state_value);
+        void connect(state_ptr sp);
+        void start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void handle_connect(
+            state_ptr sp,
+            boost::system::error_code const &,
+            boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void do_read(state_ptr sp);
+        void do_write(state_ptr sp);
+        void handle_read(state_ptr sp, boost::system::error_code const &, std::size_t n);
+        void handle_write(state_ptr sp, boost::system::error_code const &);
+        void reconnect_timeout(state_ptr sp, boost::system::error_code const &);
 
         void set_reconnect_timer(std::chrono::seconds);
 
-        constexpr auto is_stopped() const -> bool { return state_ == state::STOPPED; }
-
-        void add_msg(std::deque<cyng::buffer_t> &&);
+        void add_msg(state_ptr, std::deque<cyng::buffer_t> &&);
 
         /**
          * insert external functions
@@ -233,7 +249,7 @@ namespace smf {
         boost::uuids::uuid const tag_;
         bus_interface *bip_;
 
-        boost::asio::ip::tcp::resolver::results_type endpoints_;
+        // boost::asio::ip::tcp::resolver::results_type endpoints_;
         boost::asio::ip::tcp::socket socket_;
         boost::asio::steady_timer timer_;
         std::deque<cyng::buffer_t> buffer_write_;

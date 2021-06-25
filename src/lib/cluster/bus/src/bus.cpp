@@ -29,14 +29,14 @@ namespace smf {
         std::string const &node_name,
         boost::uuids::uuid tag,
         bus_interface *bip)
-        : state_(state::START)
+        : state_holder_()
         , ctx_(ctx)
         , logger_(logger)
         , tgl_(std::move(tgl))
         , node_name_(node_name)
         , tag_(tag)
         , bip_(bip)
-        , endpoints_()
+        //, endpoints_()
         , socket_(ctx_)
         , timer_(ctx_)
         , buffer_write_()
@@ -74,14 +74,15 @@ namespace smf {
 
         auto const srv = tgl_.get();
         CYNG_LOG_INFO(logger_, "[cluster] connect(" << srv << ")");
-        state_ = state::START;
+        state_holder_.reset();
 
         //
         //	connect to cluster
         //
         try {
             boost::asio::ip::tcp::resolver r(ctx_);
-            connect(r.resolve(srv.host_, srv.service_));
+            state_holder_ = std::make_shared<state>(r.resolve(tgl_.get().host_, tgl_.get().service_));
+            connect(state_holder_->shared_from_this());
         } catch (std::exception const &ex) {
             CYNG_LOG_ERROR(logger_, "[cluster] connect: " << ex.what());
 
@@ -93,229 +94,254 @@ namespace smf {
     void bus::stop() {
         CYNG_LOG_INFO(logger_, "[cluster] " << tgl_.get() << " stop");
         vm_.stop();
-        reset(state::STOPPED);
+        if (state_holder_) {
+            reset(state_holder_, state_value::STOPPED);
+        }
     }
 
     boost::uuids::uuid bus::get_tag() const { return tag_; }
+    bool bus::is_connected() const { return (state_holder_) ? state_holder_->is_connected() : false; }
 
-    void bus::reset(state s) {
+    void bus::reset(state_ptr sp, state_value s) {
+        if (!sp->is_stopped()) {
 
-        state_ = s;
-        boost::system::error_code ignored_ec;
-        //  required to get a proper error code: bad_descriptor (EBADF) instead of connection_aborted
-        socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
-        socket_.close(ignored_ec);
-        timer_.cancel();
-        if (s != state::STOPPED) {
-            buffer_write_.clear();
-        }
-    }
-
-    void bus::reconnect_timeout(const boost::system::error_code &ec) {
-        if (is_stopped())
-            return;
-
-        if (!ec) {
-            CYNG_LOG_TRACE(logger_, "[cluster] reconnect timeout " << ec);
-            if (!is_connected()) {
-                start();
+            sp->value_ = s;
+            boost::system::error_code ignored_ec;
+            //  required to get a proper error code: bad_descriptor (EBADF) instead of connection_aborted
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
+            socket_.close(ignored_ec);
+            timer_.cancel();
+            if (s != state_value::STOPPED) {
+                buffer_write_.clear();
             }
-        } else if (ec != boost::asio::error::operation_aborted) {
-            CYNG_LOG_WARNING(logger_, "[cluster] reconnect timer: " << ec.message());
         }
     }
 
-    void bus::connect(boost::asio::ip::tcp::resolver::results_type endpoints) {
+    void bus::reconnect_timeout(state_ptr sp, const boost::system::error_code &ec) {
+        if (sp && !sp->is_stopped()) {
 
-        state_ = state::WAIT;
+            if (!ec) {
+                CYNG_LOG_TRACE(logger_, "[cluster] reconnect timeout " << ec);
+                if (!sp->is_connected()) {
+                    start();
+                }
+            } else if (ec != boost::asio::error::operation_aborted) {
+                CYNG_LOG_WARNING(logger_, "[cluster] reconnect timer: " << ec.message());
+            }
+        }
+    }
+
+    void bus::connect(state_ptr sp) {
+
+        sp->value_ = state_value::WAIT;
 
         // Start the connect actor.
-        endpoints_ = endpoints;
-        start_connect(endpoints_.begin());
+        start_connect(sp, sp->endpoints_.begin());
     }
 
-    void bus::start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
-        if (endpoint_iter != endpoints_.end()) {
+    void bus::start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
 
-            CYNG_LOG_TRACE(logger_, "[cluster] trying " << endpoint_iter->endpoint() << "...");
+            if (endpoint_iter != sp->endpoints_.end()) {
 
-            // Start the asynchronous connect operation.
-            socket_.async_connect(
-                endpoint_iter->endpoint(), std::bind(&bus::handle_connect, this, std::placeholders::_1, endpoint_iter));
-        } else {
+                CYNG_LOG_TRACE(logger_, "[cluster] trying " << endpoint_iter->endpoint() << "...");
 
-            //
-            // There are no more endpoints to try. Shut down the client.
-            //
-            reset(state::START);
+                // Start the asynchronous connect operation.
+                socket_.async_connect(
+                    endpoint_iter->endpoint(), std::bind(&bus::handle_connect, this, sp, std::placeholders::_1, endpoint_iter));
+            } else {
 
-            //
-            //	alter connection endpoint
-            //
-            tgl_.changeover();
-            CYNG_LOG_WARNING(logger_, "[cluster] connect failed - switch to " << tgl_.get());
+                //
+                //  full reset
+                //
+                reset(sp, state_value::START);
 
-            //
-            //	reconnect after 20 seconds
-            //
-            set_reconnect_timer(std::chrono::seconds(20));
+                //
+                //	alter connection endpoint
+                //
+                tgl_.changeover();
+                CYNG_LOG_WARNING(logger_, "[cluster] connect failed - switch to " << tgl_.get());
+
+                //
+                //	reconnect after 20 seconds
+                //
+                set_reconnect_timer(std::chrono::seconds(20));
+            }
         }
     }
 
     void bus::set_reconnect_timer(std::chrono::seconds delay) {
 
-        if (!is_stopped()) {
-            timer_.expires_after(delay);
-            timer_.async_wait(boost::asio::bind_executor(
-                cyng::expose_dispatcher(vm_), boost::bind(&bus::reconnect_timeout, this, boost::asio::placeholders::error)));
+        timer_.expires_after(delay);
+        timer_.async_wait(boost::asio::bind_executor(
+            cyng::expose_dispatcher(vm_),
+            boost::bind(&bus::reconnect_timeout, this, state_holder_, boost::asio::placeholders::error)));
+    }
+
+    void bus::handle_connect(
+        state_ptr sp,
+        const boost::system::error_code &ec,
+        boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
+
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
+
+            // The async_connect() function automatically opens the socket at the start
+            // of the asynchronous operation. If the socket is closed at this time then
+            // the timeout handler must have run first.
+            if (!socket_.is_open()) {
+
+                CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect timed out");
+
+                // Try the next available endpoint.
+                start_connect(sp, ++endpoint_iter);
+            }
+
+            // Check if the connect operation failed before the deadline expired.
+            else if (ec) {
+                CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect error " << ec.value() << ": " << ec.message());
+
+                // We need to close the socket used in the previous connection attempt
+                // before starting a new one.
+                socket_.close();
+
+                // Try the next available endpoint.
+                start_connect(sp, ++endpoint_iter);
+            }
+
+            // Otherwise we have successfully established a connection.
+            else {
+                CYNG_LOG_INFO(logger_, "[cluster] " << tgl_.get() << " connected to " << endpoint_iter->endpoint());
+                sp->value_ = state_value::CONNECTED;
+
+                //
+                //	send login sequence
+                //
+                auto cfg = tgl_.get();
+                add_msg(
+                    sp,
+                    cyng::serialize_invoke(
+                        "cluster.req.login",
+                        cfg.account_,
+                        cfg.pwd_,
+                        cyng::sys::get_process_id(),
+                        node_name_,
+                        tag_,
+                        cyng::version(SMF_VERSION_MAJOR, SMF_VERSION_MINOR)));
+
+                // Start the input actor.
+                do_read(sp);
+            }
         }
     }
 
-    void
-    bus::handle_connect(const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
-
-        if (is_stopped())
-            return;
-
-        // The async_connect() function automatically opens the socket at the start
-        // of the asynchronous operation. If the socket is closed at this time then
-        // the timeout handler must have run first.
-        if (!socket_.is_open()) {
-
-            CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect timed out");
-
-            // Try the next available endpoint.
-            start_connect(++endpoint_iter);
-        }
-
-        // Check if the connect operation failed before the deadline expired.
-        else if (ec) {
-            CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect error " << ec.value() << ": " << ec.message());
-
-            // We need to close the socket used in the previous connection attempt
-            // before starting a new one.
-            socket_.close();
-
-            // Try the next available endpoint.
-            start_connect(++endpoint_iter);
-        }
-
-        // Otherwise we have successfully established a connection.
-        else {
-            CYNG_LOG_INFO(logger_, "[cluster] " << tgl_.get() << " connected to " << endpoint_iter->endpoint());
-            state_ = state::CONNECTED;
-
-            //
-            //	send login sequence
-            //
-            auto cfg = tgl_.get();
-            add_msg(cyng::serialize_invoke(
-                "cluster.req.login",
-                cfg.account_,
-                cfg.pwd_,
-                cyng::sys::get_process_id(),
-                node_name_,
-                tag_,
-                cyng::version(SMF_VERSION_MAJOR, SMF_VERSION_MINOR)));
-
-            // Start the input actor.
-            do_read();
-
-            // Start the heartbeat actor.
-            // do_write();
-        }
-    }
-
-    void bus::do_read() {
+    void bus::do_read(state_ptr sp) {
         //
         //	connect was successful
         //
 
         // Start an asynchronous operation to read
         socket_.async_read_some(
-            boost::asio::buffer(input_buffer_), std::bind(&bus::handle_read, this, std::placeholders::_1, std::placeholders::_2));
+            boost::asio::buffer(input_buffer_),
+            std::bind(&bus::handle_read, this, sp, std::placeholders::_1, std::placeholders::_2));
     }
 
-    void bus::do_write() {
-        if (is_stopped())
-            return;
-
-        BOOST_ASSERT(!buffer_write_.empty());
-
+    void bus::do_write(state_ptr sp) {
         //
-        //	write actually data to socket
+        //  test if bus was stopped
         //
-        boost::asio::async_write(
-            socket_,
-            boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-            cyng::expose_dispatcher(vm_).wrap(std::bind(&bus::handle_write, this, std::placeholders::_1)));
-    }
+        if (!sp->is_stopped()) {
 
-    void bus::handle_read(const boost::system::error_code &ec, std::size_t bytes_transferred) {
-        if (is_stopped())
-            return;
-
-        if (!ec) {
-            CYNG_LOG_DEBUG(logger_, "[cluster] " << tgl_.get() << " received " << bytes_transferred << " bytes");
+            BOOST_ASSERT(!buffer_write_.empty());
 
             //
-            //	let parse it
+            //	write actually data to socket
             //
-            parser_.read(input_buffer_.begin(), input_buffer_.begin() + bytes_transferred);
-
-            //
-            //	continue reading
-            //
-            do_read();
-        } else {
-            //} else if (ec.value() != 1236) { //  windows only
-            //
-            // possibly an Asio bug: an aborted connection error code is not equal to
-            // boost::asio::error::connection_aborted
-            //
-            CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " read " << ec.value() << ": " << ec.message());
-            reset(state::START);
-
-            //
-            //	call disconnect function
-            //
-            vm_.load(cyng::generate_invoke("cluster.disconnect", ec.message()));
-            vm_.run();
-
-            //
-            //	reconnect after 10/20 seconds
-            //
-            set_reconnect_timer(
-                (ec == boost::asio::error::connection_reset) ? boost::asio::chrono::seconds(10) : boost::asio::chrono::seconds(20));
+            boost::asio::async_write(
+                socket_,
+                boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
+                cyng::expose_dispatcher(vm_).wrap(std::bind(&bus::handle_write, this, sp, std::placeholders::_1)));
         }
     }
 
-    void bus::handle_write(const boost::system::error_code &ec) {
-        if (is_stopped())
-            return;
+    void bus::handle_read(state_ptr sp, const boost::system::error_code &ec, std::size_t bytes_transferred) {
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
 
-        if (!ec) {
+            if (!ec) {
+                CYNG_LOG_DEBUG(logger_, "[cluster] " << tgl_.get() << " received " << bytes_transferred << " bytes");
 
-            buffer_write_.pop_front();
-            if (!buffer_write_.empty()) {
-                do_write();
+                //
+                //	let parse it
+                //
+                parser_.read(input_buffer_.begin(), input_buffer_.begin() + bytes_transferred);
+
+                //
+                //	continue reading
+                //
+                do_read(sp);
+            } else {
+
+                CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " read " << ec.value() << ": " << ec.message());
+                //
+                //  cleanup
+                //
+                reset(sp, state_value::START);
+
+                //
+                //	call disconnect function
+                //
+                vm_.load(cyng::generate_invoke("cluster.disconnect", ec.message()));
+                vm_.run();
+
+                //
+                //	reconnect after 10/20 seconds
+                //
+                set_reconnect_timer(
+                    (ec == boost::asio::error::connection_reset) ? boost::asio::chrono::seconds(10)
+                                                                 : boost::asio::chrono::seconds(20));
             }
-        } else {
-            CYNG_LOG_ERROR(logger_, "[cluster] " << tgl_.get() << " on write: " << ec.message());
-            reset(state::START);
         }
     }
 
-    void bus::req_subscribe(std::string table_name) { add_msg(cyng::serialize_invoke("db.req.subscribe", table_name, tag_)); }
+    void bus::handle_write(state_ptr sp, const boost::system::error_code &ec) {
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
+
+            if (!ec) {
+
+                buffer_write_.pop_front();
+                if (!buffer_write_.empty()) {
+                    do_write(sp);
+                }
+            } else {
+                CYNG_LOG_ERROR(logger_, "[cluster] " << tgl_.get() << " on write: " << ec.message());
+                reset(sp, state_value::START);
+            }
+        }
+    }
+
+    void bus::req_subscribe(std::string table_name) {
+        add_msg(state_holder_, cyng::serialize_invoke("db.req.subscribe", table_name, tag_));
+    }
 
     void bus::req_db_insert(std::string const &table_name, cyng::key_t key, cyng::data_t data, std::uint64_t generation) {
 
-        add_msg(cyng::serialize_invoke("db.req.insert", table_name, key, data, generation, tag_));
+        add_msg(state_holder_, cyng::serialize_invoke("db.req.insert", table_name, key, data, generation, tag_));
     }
 
     void bus::req_db_insert_auto(std::string const &table_name, cyng::data_t data) {
 
-        add_msg(cyng::serialize_invoke("db.req.insert.auto", table_name, data, tag_));
+        add_msg(state_holder_, cyng::serialize_invoke("db.req.insert.auto", table_name, data, tag_));
     }
 
     void bus::req_db_update(std::string const &table_name, cyng::key_t key, cyng::param_map_t data) {
@@ -323,15 +349,17 @@ namespace smf {
         //
         //	triggers a merge() on the receiver side
         //
-        add_msg(cyng::serialize_invoke("db.req.update", table_name, key, data, tag_));
+        add_msg(state_holder_, cyng::serialize_invoke("db.req.update", table_name, key, data, tag_));
     }
 
     void bus::req_db_remove(std::string const &table_name, cyng::key_t key) {
 
-        add_msg(cyng::serialize_invoke("db.req.remove", table_name, key, tag_));
+        add_msg(state_holder_, cyng::serialize_invoke("db.req.remove", table_name, key, tag_));
     }
 
-    void bus::req_db_clear(std::string const &table_name) { add_msg(cyng::serialize_invoke("db.req.clear", table_name, tag_)); }
+    void bus::req_db_clear(std::string const &table_name) {
+        add_msg(state_holder_, cyng::serialize_invoke("db.req.clear", table_name, tag_));
+    }
 
     void bus::pty_login(
         std::string name,
@@ -341,48 +369,44 @@ namespace smf {
         boost::asio::ip::tcp::endpoint ep) {
 
         auto const srv = tgl_.get();
-        add_msg(cyng::serialize_invoke("pty.req.login", tag, name, pwd, ep, data_layer));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.req.login", tag, name, pwd, ep, data_layer));
     }
 
     void bus::pty_logout(boost::uuids::uuid dev, boost::uuids::uuid tag) {
 
-        add_msg(cyng::serialize_invoke("pty.req.logout", tag, dev));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.req.logout", tag, dev));
     }
 
     void bus::pty_open_connection(std::string msisdn, boost::uuids::uuid dev, boost::uuids::uuid tag, cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_invoke("pty.open.connection", tag, dev, msisdn, token));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.open.connection", tag, dev, msisdn, token));
     }
 
     void bus::pty_res_open_connection(
         bool success,
-        boost::uuids::uuid peer //	caller_vm
-        //, boost::uuids::uuid tag	//	caller_tag
-        ,
-        boost::uuids::uuid dev //	callee dev-tag
-        ,
-        boost::uuids::uuid callee //	callee vm-tag
-        ,
+        boost::uuids::uuid peer,   //	caller_vm
+        boost::uuids::uuid dev,    //	callee dev-tag
+        boost::uuids::uuid callee, //	callee vm-tag
         cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_forward(
-            "pty.return.open.connection",
-            peer //	caller_vm
-            //, tag	//	caller_tag
-            ,
-            success,
-            dev,
-            callee,
-            token));
+        add_msg(
+            state_holder_,
+            cyng::serialize_forward(
+                "pty.return.open.connection",
+                peer, //	caller_vm
+                success,
+                dev,
+                callee,
+                token));
     }
     void bus::pty_close_connection(boost::uuids::uuid dev, boost::uuids::uuid tag, cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_invoke("pty.close.connection", tag, dev, token));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.close.connection", tag, dev, token));
     }
 
     void bus::pty_transfer_data(boost::uuids::uuid dev, boost::uuids::uuid tag, cyng::buffer_t &&data) {
 
-        add_msg(cyng::serialize_invoke("pty.transfer.data", tag, dev, std::move(data)));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.transfer.data", tag, dev, std::move(data)));
     }
 
     void bus::pty_reg_target(
@@ -393,12 +417,12 @@ namespace smf {
         boost::uuids::uuid tag,
         cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_invoke("pty.register.target", tag, dev, name, paket_size, window_size, token));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.register.target", tag, dev, name, paket_size, window_size, token));
     }
 
     void bus::pty_dereg_target(std::string name, boost::uuids::uuid dev, boost::uuids::uuid tag, cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_invoke("pty.deregister", tag, dev, name, token));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.deregister", tag, dev, name, token));
     }
 
     //	"pty.open.channel"
@@ -413,13 +437,15 @@ namespace smf {
         boost::uuids::uuid tag,
         cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_invoke("pty.open.channel", tag, dev, name, account, msisdn, version, id, timeout, token));
+        add_msg(
+            state_holder_,
+            cyng::serialize_invoke("pty.open.channel", tag, dev, name, account, msisdn, version, id, timeout, token));
     }
 
     //	"pty.close.channel"
     void bus::pty_close_channel(std::uint32_t channel, boost::uuids::uuid dev, boost::uuids::uuid tag, cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_invoke("pty.close.channel", tag, dev, channel, token));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.close.channel", tag, dev, channel, token));
     }
 
     //	"pty.push.data.req"
@@ -431,21 +457,21 @@ namespace smf {
         boost::uuids::uuid tag,
         cyng::param_map_t &&token) {
 
-        add_msg(cyng::serialize_invoke("pty.push.data.req", tag, dev, channel, source, data, token));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.push.data.req", tag, dev, channel, source, data, token));
     }
 
-    void bus::push_sys_msg(std::string msg, cyng::severity level) { add_msg(cyng::serialize_invoke("sys.msg", msg, level)); }
+    void bus::push_sys_msg(std::string msg, cyng::severity level) {
+        add_msg(state_holder_, cyng::serialize_invoke("sys.msg", msg, level));
+    }
 
-    void bus::add_msg(std::deque<cyng::buffer_t> &&msg) {
-
-        if (is_stopped())
-            return;
+    void bus::add_msg(state_ptr sp, std::deque<cyng::buffer_t> &&msg) {
 
         cyng::exec(vm_, [=, this]() {
             bool const b = buffer_write_.empty();
             cyng::add(buffer_write_, msg);
-            if (b)
-                do_write();
+            if (b && sp) {
+                do_write(sp);
+            }
         });
     }
 
@@ -497,5 +523,9 @@ namespace smf {
     std::function<void(std::string, boost::uuids::uuid tag)> bus::get_vm_func_db_res_clear(bus_interface *bip) {
         return std::bind(&bus_interface::db_res_clear, bip, std::placeholders::_1, std::placeholders::_2);
     }
+
+    bus::state::state(boost::asio::ip::tcp::resolver::results_type &&res)
+        : value_(state_value::START)
+        , endpoints_(std::move(res)) {}
 
 } // namespace smf

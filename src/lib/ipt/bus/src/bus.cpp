@@ -165,7 +165,7 @@ namespace smf {
                     //
                     //  full reset
                     //
-                    sp.reset();
+                    reset(sp, state_value::START);
 
                     //
                     //	switch redundancy

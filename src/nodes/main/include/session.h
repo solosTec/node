@@ -132,10 +132,8 @@ namespace smf {
          */
         void pty_return_open_connection(
             bool success,
-            boost::uuids::uuid dev //	callee dev-tag
-            ,
-            boost::uuids::uuid callee //	callee vm-tag
-            ,
+            boost::uuids::uuid dev,    //	callee dev-tag
+            boost::uuids::uuid callee, //	callee vm-tag
             cyng::param_map_t token);
 
         /**
@@ -224,9 +222,6 @@ namespace smf {
         //	"db.req.clear"
         static std::function<void(std::string, boost::uuids::uuid)> get_vm_func_db_req_clear(session *);
 
-        //	"db.upload.complete"
-        // static std::function<void(boost::uuids::uuid)> get_vm_func_db_upload_complete(session *);
-
         //	"cluster.req.login"
         static std::function<void(boost::uuids::uuid, std::string, std::string, boost::asio::ip::tcp::endpoint, std::string)>
         get_vm_func_pty_login(session *);
@@ -293,6 +288,9 @@ namespace smf {
         cyng::vm_proxy vm_;
         cyng::io::parser parser_;
 
+        /**
+         * database listener
+         */
         cyng::slot_ptr slot_;
 
         /**
@@ -302,7 +300,7 @@ namespace smf {
         std::string protocol_layer_;
 
         /**
-         * Generate dependen keys for table "gwIEC"
+         * Generate dependend keys for table "gwIEC"
          */
         config::dependend_key dep_key_;
     };
