@@ -95,7 +95,7 @@ namespace smf {
     void push::auth_state(bool auth) {
         if (auth) {
             CYNG_LOG_INFO(logger_, "[ipt] authorized");
-            BOOST_ASSERT(bus_.is_authorized());
+            // BOOST_ASSERT(bus_.is_authorized());
             bus_.open_channel(pcc_, channel_);
         } else {
             CYNG_LOG_WARNING(logger_, "[ipt] authorization lost");

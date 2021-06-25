@@ -8,7 +8,6 @@
 #define SMF_MAIN_SESSION_H
 
 #include <db.h>
-//#include <smf/config/schemes.h>
 
 #include <cyng/io/parser/parser.h>
 #include <cyng/log/logger.h>
@@ -95,6 +94,11 @@ namespace smf {
          * table erase()
          */
         void db_req_remove(std::string const &table_name, cyng::key_t key, boost::uuids::uuid source);
+
+        /**
+         * remove "gwIEC" record if no gateway has no longer any meters
+         */
+        void db_req_remove_gw_iec(cyng::key_t key, boost::uuids::uuid source);
 
         /**
          * table clear()

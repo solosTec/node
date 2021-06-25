@@ -13,7 +13,7 @@
 
 namespace smf {
     namespace config {
-        const char *get_name(protocol p) {
+        std::string get_name(protocol p) {
             switch (p) {
             case protocol::ANY:
                 return "any";

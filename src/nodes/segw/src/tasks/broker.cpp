@@ -58,6 +58,8 @@ namespace smf {
         switch (next) {
         case state::START:
             boost::asio::post(dispatcher_, [this]() { write_buffer_.clear(); });
+            //  required to get a proper error code: connection_aborted
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
             socket_.close(ignored_ec); //  connection_aborted
             break;
         case state::CONNECTED:
@@ -65,6 +67,8 @@ namespace smf {
         case state::WAIT:
             break;
         default:
+            //  required to get a proper error code: connection_aborted
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
             socket_.close(ignored_ec); //  connection_aborted
             break;
         }
@@ -307,6 +311,8 @@ namespace smf {
         boost::system::error_code ignored_ec;
         switch (next) {
         case state::OFFLINE:
+            //  required to get a proper error code: connection_aborted
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
             socket_.close(ignored_ec); //  connection_aborted
             boost::asio::post(dispatcher_, [this]() { write_buffer_.clear(); });
             break;
@@ -316,6 +322,8 @@ namespace smf {
             break;
         default:
             //  stopped
+            //  required to get a proper error code: connection_aborted
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
             socket_.close(ignored_ec); //  connection_aborted
             break;
         }

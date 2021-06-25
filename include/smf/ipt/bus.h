@@ -19,14 +19,48 @@ namespace smf {
         //  channel + source
         using channel_id = std::pair<std::uint32_t, std::uint32_t>;
 
+        /**
+         * @brief implementation of an ip-t client.
+         *
+         * Some effort is made to manage the internal state. It's important that
+         * the state can be controlled from the outside and that the state is available
+         * even after the bus object is expired. When an asynchronous socket operation
+         * was cancelled the callback function has to figure out, what's next. And here
+         * is a valid state information necessary.
+         */
         class bus {
-            enum class state {
+            /**
+             * managing state of the bus
+             */
+            enum class state_value {
                 START,
                 CONNECTED,
                 AUTHORIZED,
                 LINKED,
                 STOPPED,
-            } state_;
+            };
+
+            /**
+             * state information has to be available even if the bus object
+             * is destroyed.
+             */
+            struct state : std::enable_shared_from_this<state> {
+                state(boost::asio::ip::tcp::resolver::results_type &&);
+                constexpr bool is_authorized() const {
+                    return (value_ == state_value::AUTHORIZED) || (value_ == state_value::LINKED);
+                }
+                constexpr bool is_stopped() const { return value_ == state_value::STOPPED; }
+                constexpr bool has_state(state_value s) const { return s == value_; }
+
+                state_value value_;
+                boost::asio::ip::tcp::resolver::results_type endpoints_;
+            };
+            using state_ptr = std::shared_ptr<state>;
+            /**
+             * helps to control state from the outside without
+             * to establish an additional reference to the state object.
+             */
+            state_ptr state_holder_;
 
             /**
              * Use this to store a (target) name - channel relation
@@ -53,7 +87,10 @@ namespace smf {
             void start();
             void stop();
 
-            constexpr bool is_authorized() const { return (state_ == state::AUTHORIZED) || (state_ == state::LINKED); }
+            /**
+             * @return true if bus is authorized or in link state
+             */
+            bool is_authorized() const;
 
             /**
              * Initiate a sequence to register a push target.
@@ -86,23 +123,23 @@ namespace smf {
             void transfer(cyng::buffer_t const &);
 
           private:
-            constexpr bool is_stopped() const { return state_ == state::STOPPED; }
-            void reset(state);
-            void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
-            void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+            void reset(state_ptr, state_value);
+            void connect(state_ptr sp);
+            void start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
             void handle_connect(
+                state_ptr sp,
                 boost::system::error_code const &ec,
                 boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-            void reconnect_timeout(boost::system::error_code const &);
-            void do_read();
-            void do_write();
-            void handle_read(boost::system::error_code const &ec, std::size_t n);
-            void handle_write(boost::system::error_code const &ec);
+            void reconnect_timeout(state_ptr sp, boost::system::error_code const &);
+            void do_read(state_ptr);
+            void do_write(state_ptr);
+            void handle_read(state_ptr, boost::system::error_code const &ec, std::size_t n);
+            void handle_write(state_ptr, boost::system::error_code const &ec);
 
             /**
              * start an async write
              */
-            void send(std::function<cyng::buffer_t()>);
+            void send(state_ptr, std::function<cyng::buffer_t()>);
 
             void cmd_complete(header const &, cyng::buffer_t &&);
 
@@ -129,7 +166,7 @@ namespace smf {
             parser::command_cb cb_cmd_;
             auth_cb cb_auth_;
 
-            boost::asio::ip::tcp::resolver::results_type endpoints_;
+            // boost::asio::ip::tcp::resolver::results_type endpoints_;
             boost::asio::ip::tcp::socket socket_;
             boost::asio::steady_timer timer_;
             boost::asio::io_context::strand dispatcher_;

@@ -28,6 +28,7 @@ namespace smf {
             std::function<void()>,                         //  connect
             std::function<void(std::string, cyng::key_t)>, //  add
             std::function<void(std::string)>,              //  remove
+            std::function<void()>,                         //  shutdown
             std::function<void(cyng::eod)>>;
 
         enum class state : std::uint16_t {
@@ -49,7 +50,6 @@ namespace smf {
          * Collect some statistics
          */
         class meter_mgr {
-
           public:
             meter_mgr();
 
@@ -103,6 +103,11 @@ namespace smf {
         void start();
         void add_meter(std::string, cyng::key_t);
         void remove_meter(std::string);
+
+        /**
+         * prepare shutdown and stop all sub-tasks
+         */
+        void shutdown();
         void stop(cyng::eod);
 
         void connect();
@@ -125,7 +130,7 @@ namespace smf {
         constexpr bool is_connected() const { return state_ == state::CONNECTED; }
 
         /**
-         * @return retry number - current retry counter  
+         * @return retry number - current retry counter
          */
         std::uint32_t get_remaining_retries() const;
 

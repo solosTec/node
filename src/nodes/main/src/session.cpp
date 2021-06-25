@@ -356,16 +356,14 @@ namespace smf {
     void session::db_req_remove(std::string const &table_name, cyng::key_t key, boost::uuids::uuid source) {
 
         std::reverse(key.begin(), key.end());
-        if (cache_.get_store().erase(table_name, key, source)) {
+        if (boost::algorithm::equals(table_name, "meterIEC")) {
+            //
+            //  remove "gwIEC" record if no gateway has no longer any meters
+            //
+            db_req_remove_gw_iec(key, source);
+        } else if (cache_.get_store().erase(table_name, key, source)) {
 
             CYNG_LOG_TRACE(logger_, "remove [" << table_name << '/' << key << "] ok");
-
-            if (boost::algorithm::equals(table_name, "meterIEC")) {
-                //
-                //  update "gwIEC" too
-                //
-                // db_req_remove_gw_iec(key, data, source);
-            }
 
         } else {
             CYNG_LOG_WARNING(logger_, "remove [" << table_name << '/' << key << "] failed");
@@ -383,13 +381,65 @@ namespace smf {
 #endif
         }
     }
-    void session::db_req_clear(std::string const &table_name, boost::uuids::uuid source) {
 
+    void session::db_req_remove_gw_iec(cyng::key_t key, boost::uuids::uuid source) {
+
+        //  remove "gwIEC" record if no gateway has no longer any meters
+        cache_.get_store().access(
+            [&](cyng::table *tbl_meter, cyng::table *tbl_gw) {
+                //
+                //  get record
+                //
+                auto const rec_meter = tbl_meter->lookup(key);
+                if (!rec_meter.empty()) {
+                    auto const host = rec_meter.value("host", "");
+                    auto const port = rec_meter.value<std::uint16_t>("port", 0);
+
+                    //
+                    //  are there more IEC meters with the same host / port configuration
+                    //
+                    std::size_t counter{0};
+                    tbl_meter->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                        auto const host_tmp = rec.value("host", "");
+                        auto const port_tmp = rec.value<std::uint16_t>("port", 0);
+
+                        if (boost::algorithm::equals(host, host_tmp) && (port == port_tmp)) {
+                            counter++;
+                        }
+
+                        //
+                        //  this record and one record more with the same host and port
+                        // configuration
+                        //
+                        return counter > 1;
+                    });
+
+                    //
+                    //  remove IEC meter
+                    //
+                    tbl_meter->erase(key, source);
+
+                    if (counter < 2) {
+                        CYNG_LOG_WARNING(logger_, "iec gateway " << host << ':' << port << " has no more meters");
+
+                        //
+                        // build key for "gwIEC"
+                        //
+                        auto const s = config::dependend_key::build_name(host, port);
+                        auto const gw_key = dep_key_(host, port);
+                        tbl_gw->erase(gw_key, source);
+                    }
+                }
+            },
+            cyng::access::write("meterIEC"),
+            cyng::access::write("gwIEC"));
+    }
+
+    void session::db_req_clear(std::string const &table_name, boost::uuids::uuid source) {
         cache_.get_store().clear(table_name, source);
     }
 
     void session::send_cluster_response(std::deque<cyng::buffer_t> &&msg) {
-
         cyng::exec(vm_, [=, this]() {
             bool const b = buffer_write_.empty();
             cyng::add(buffer_write_, msg);
@@ -411,7 +461,6 @@ namespace smf {
         cyng::data_t const &data,
         std::uint64_t gen,
         boost::uuids::uuid source) {
-
         //
         //	send to subscriber
         //
@@ -428,7 +477,6 @@ namespace smf {
         cyng::attr_t const &attr,
         std::uint64_t gen,
         boost::uuids::uuid source) {
-
         //
         //	send update to subscriber
         //
@@ -454,7 +502,6 @@ namespace smf {
     }
 
     bool session::slot::forward(cyng::table const *tbl, boost::uuids::uuid source) {
-
         //
         //	send clear to subscriber
         //
@@ -467,7 +514,6 @@ namespace smf {
     }
 
     bool session::slot::forward(cyng::table const *tbl, bool trx) {
-
         CYNG_LOG_TRACE(sp_->logger_, "forward trx [" << tbl->meta().get_name() << "] " << (trx ? "start" : "commit"));
 
         sp_->send_cluster_response(cyng::serialize_invoke("db.res.trx", tbl->meta().get_name(), trx));
@@ -481,7 +527,6 @@ namespace smf {
         std::string pwd,
         boost::asio::ip::tcp::endpoint ep,
         std::string data_layer) {
-
         CYNG_LOG_INFO(logger_, "pty login " << name << ':' << pwd << '@' << ep);
 
         //
@@ -530,7 +575,6 @@ namespace smf {
     }
 
     void session::pty_logout(boost::uuids::uuid tag, boost::uuids::uuid dev) {
-
         CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " logout [vm:" << vm_.get_tag() << "]");
 
         //
@@ -560,7 +604,6 @@ namespace smf {
     }
 
     void session::pty_open_connection(boost::uuids::uuid tag, boost::uuids::uuid dev, std::string msisdn, cyng::param_map_t token) {
-
         CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " connect " << msisdn << " {" << tag << "}");
 
         //
@@ -613,7 +656,6 @@ namespace smf {
     }
 
     void session::pty_forward_open_connection(std::string msisdn, boost::uuids::uuid tag, bool local, cyng::param_map_t token) {
-
         CYNG_LOG_TRACE(logger_, "pty forward open connection " << msisdn << " - " << (local ? "local " : "distributed "));
 
         //
@@ -629,7 +671,6 @@ namespace smf {
         boost::uuids::uuid callee //	callee vm-tag
         ,
         cyng::param_map_t token) {
-
         CYNG_LOG_INFO(logger_, "pty establish connection " << (success ? "ok" : "failed"));
         CYNG_LOG_DEBUG(logger_, "pty establish connection vm:" << vm_.get_tag() << ", token: " << token);
         CYNG_LOG_DEBUG(logger_, "pty establish connection callee dev-tag:" << dev << ", callee vm-tag: " << callee);
@@ -672,7 +713,6 @@ namespace smf {
     }
 
     void session::pty_transfer_data(boost::uuids::uuid tag, boost::uuids::uuid dev, cyng::buffer_t data) {
-
         auto const [rtag, rpeer] = cache_.get_remote(dev);
         if (!rtag.is_nil()) {
 
@@ -701,7 +741,6 @@ namespace smf {
         std::uint16_t paket_size,
         std::uint8_t window_size,
         cyng::param_map_t token) {
-
         BOOST_ASSERT(tag != dev);
 
         // std::pair<std::uint32_t, bool>
@@ -732,7 +771,6 @@ namespace smf {
         std::string id,
         std::chrono::seconds timeout,
         cyng::param_map_t token) {
-
         if (name.empty()) {
             CYNG_LOG_WARNING(logger_, "no target specified");
             cache_.sys_msg(cyng::severity::LEVEL_WARNING, protocol_layer_, "no target specified");
@@ -776,7 +814,6 @@ namespace smf {
 
     void
     session::pty_close_channel(boost::uuids::uuid tag, boost::uuids::uuid dev, std::uint32_t channel, cyng::param_map_t token) {
-
         CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " close channel [#" << channel << "] " << token);
         auto const count = cache_.close_channel(channel);
 
@@ -796,7 +833,6 @@ namespace smf {
         std::uint32_t source,
         cyng::buffer_t data,
         cyng::param_map_t token) {
-
         CYNG_LOG_INFO(
             logger_,
             "pty " << protocol_layer_ << " push data " << data.size() << " bytes [#" << channel << ":" << source << "] " << token);
@@ -971,7 +1007,6 @@ namespace smf {
         std::chrono::seconds,
         cyng::param_map_t)>
     session::get_vm_func_pty_open_channel(session *ptr) {
-
         return std::bind(
             &session::pty_open_channel,
             ptr,

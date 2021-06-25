@@ -46,6 +46,7 @@ namespace smf {
               std::bind(&client::connect, this),
               std::bind(&client::add_meter, this, std::placeholders::_1, std::placeholders::_2),
               std::bind(&client::remove_meter, this, std::placeholders::_1),
+              std::bind(&client::shutdown, this),
               std::bind(&client::stop, this, std::placeholders::_1),
           },
           channel_(wp),
@@ -124,7 +125,7 @@ namespace smf {
                             "iecUplink",
                             cyng::data_generator(
                                 std::chrono::system_clock::now(), msg, socket_.remote_endpoint(), boost::uuids::nil_uuid()));
-                    } catch (std::exception const &ex) {
+                    } catch (std::exception const &) {
                         //  socket already closed
                     }
 
@@ -174,6 +175,8 @@ namespace smf {
                         //
                         CYNG_LOG_INFO(logger_, "[iec] close connection " << name << " #" << mgr_.index() << "/" << mgr_.size());
                         boost::system::error_code ignored_ec;
+                        //  required to get a proper error code: connection_aborted
+                        socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
                         socket_.close(ignored_ec);
                     }
               },
@@ -190,6 +193,7 @@ namespace smf {
             sp->set_channel_name("connect", slot++);
             sp->set_channel_name("add.meter", slot++);
             sp->set_channel_name("remove.meter", slot++);
+            sp->set_channel_name("shutdown", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
 
@@ -203,6 +207,30 @@ namespace smf {
     // bool client::is_sufficient_time(std::chrono::seconds ts) { return (next_readout_ - std::chrono::steady_clock::now()) > ts; }
 
     void client::stop(cyng::eod) { reset(state::STOPPED); }
+
+    void client::shutdown() {
+        auto sp = channel_.lock();
+        std::string const task_name = (sp) ? sp->get_name() : "no:task";
+        CYNG_LOG_WARNING(logger_, "[" << task_name << "] shutdown");
+
+        BOOST_ASSERT(writer_->is_open());
+        BOOST_ASSERT(reconnect_->is_open());
+        if (writer_)
+            writer_->stop();
+        if (reconnect_)
+            reconnect_->stop();
+
+        //
+        //  stop push task(s)
+        //
+        mgr_.loop([&, this](meter_state const &state) {
+            auto cps = ctl_.get_registry().lookup(state.id_);
+            for (auto cp : cps) {
+                CYNG_LOG_WARNING(logger_, task_name << " stops " << cp->get_name() << " #" << cp->get_id());
+                cp->stop();
+            }
+        });
+    }
 
     std::uint32_t client::get_remaining_retries() const {
         BOOST_ASSERT(retry_counter_ <= mgr_.get_retry_number());
@@ -222,7 +250,7 @@ namespace smf {
             //  make sure that socket is closed
             //
             socket_.close(ignored_ec);
-            std::move(socket_);                       //  socket will be new constructed
+            boost::ignore_unused(std::move(socket_)); //  socket will be new constructed
             retry_counter_ = mgr_.get_retry_number(); //  retry at least 3 times
             break;
         case state::WAIT:
@@ -242,6 +270,8 @@ namespace smf {
         case state::CONNECTED:
             break;
         case state::RETRY: //  connection got lost, try to reconnect
+            //  required to get a proper error code: connection_aborted
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
             socket_.close(ignored_ec);
             buffer_write_.clear();
             BOOST_ASSERT(retry_counter_ != 0);
@@ -397,6 +427,8 @@ namespace smf {
             // We need to close the socket used in the previous connection attempt
             // before starting a new one.
             boost::system::error_code ignored_ec;
+            //  required to get a proper error code: connection_aborted
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
             socket_.close(ignored_ec);
 
             // Try the next available endpoint.
@@ -573,6 +605,8 @@ namespace smf {
             CYNG_LOG_ERROR(logger_, "[client]  write failed: " << ec.message());
 
             boost::system::error_code ignored_ec;
+            //  required to get a proper error code: connection_aborted
+            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
             socket_.close(ignored_ec);
             buffer_write_.clear();
         }

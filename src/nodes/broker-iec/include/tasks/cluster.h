@@ -77,6 +77,7 @@ namespace smf {
         void create_push_task(std::string const &, std::string const &, std::string const &);
         void update_delay(std::uint32_t counter);
         void remove_iec_meter(cyng::key_t key);
+        void remove_iec_gw(cyng::key_t key);
 
       private:
         signatures_t sigs_;

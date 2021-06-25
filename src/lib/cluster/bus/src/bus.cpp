@@ -102,6 +102,8 @@ namespace smf {
 
         state_ = s;
         boost::system::error_code ignored_ec;
+        //  required to get a proper error code: bad_descriptor (EBADF) instead of connection_aborted
+        socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
         socket_.close(ignored_ec);
         timer_.cancel();
         if (s != state::STOPPED) {

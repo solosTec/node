@@ -16,7 +16,7 @@ namespace smf {
 		/*
          * @return the protocol name
          */
-        const char *get_name(protocol);
+        std::string get_name(protocol);
 
     } // namespace config
 } // namespace smf

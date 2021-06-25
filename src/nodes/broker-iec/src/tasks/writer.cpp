@@ -47,7 +47,7 @@ namespace smf {
         }
     }
 
-    void writer::stop(cyng::eod) {}
+    void writer::stop(cyng::eod) { commit(); }
 
     void writer::open(std::string meter) {
 

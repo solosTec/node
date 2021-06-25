@@ -259,8 +259,9 @@ namespace smf {
                     }
                 }
             });
+        } else {
+            CYNG_LOG_ERROR(logger_, "[db] complete: unknown table " << table_name);
         }
-        CYNG_LOG_ERROR(logger_, "[db] complete: unknown table " << table_name);
         return data;
     }
 

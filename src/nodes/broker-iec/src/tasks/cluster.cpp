@@ -388,8 +388,49 @@ namespace smf {
                 //  remove from task
                 //
                 remove_iec_meter(key);
+            } else if (boost::algorithm::equals(table_name, "gwIEC")) {
+                //
+                //  stop task
+                //
+                remove_iec_gw(key);
             }
+
+            //
+            //  remove from cache
+            //
             db_->res_remove(table_name, key, tag);
+        }
+    }
+
+    void cluster::remove_iec_gw(cyng::key_t key) {
+
+        if (db_) {
+            db_->cache_.access(
+                [&](cyng::table *tbl_meter) {
+                    auto const rec = tbl_meter->lookup(key);
+                    if (!rec.empty()) {
+                        auto const host = rec.value("host", "");
+                        auto const port = rec.value<std::uint16_t>("port", 0);
+
+                        //
+                        //	construct task name
+                        //
+                        auto const task_name = make_task_name(host, port);
+
+                        auto cps = ctl_.get_registry().lookup(task_name);
+                        CYNG_LOG_WARNING(logger_, "[cluster] stop task: " << task_name << " #" << cps.size());
+                        for (auto cp : cps) {
+                            cp->dispatch("shutdown");
+                        }
+#ifdef _DEBUG
+                        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+#endif
+                        for (auto cp : cps) {
+                            cp->stop();
+                        }
+                    }
+                },
+                cyng::access::write("gwIEC"));
         }
     }
 
@@ -411,12 +452,7 @@ namespace smf {
         }
     }
 
-    std::string make_task_name(std::string host, std::uint16_t port) {
-        // std::stringstream ss;
-        // ss << host << ':' << port;
-        // return ss.str();
-        return config::dependend_key::build_name(host, port);
-    }
+    std::string make_task_name(std::string host, std::uint16_t port) { return config::dependend_key::build_name(host, port); }
 
     ipt::toggle::server_vec_t update_cfg(ipt::toggle::server_vec_t cfg, std::string const &account, std::string const &pwd) {
 
