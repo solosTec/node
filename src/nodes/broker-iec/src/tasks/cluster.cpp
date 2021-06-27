@@ -111,7 +111,7 @@ namespace smf {
         //
         std::uint32_t counter{0};
         store_.access(
-            [&](cyng::table const *tbl_iec, cyng::table const *tbl_meter) {
+            [&](cyng::table const *tbl_iec, cyng::table const *tbl_meter, cyng::table const *tbl_device) {
                 tbl_iec->loop([&](cyng::record const &rec_iec, std::size_t) -> bool {
                     auto const host_iec = rec_iec.value("host", "");
                     auto const port_iec = rec_iec.value<std::uint16_t>("port", 0);
@@ -134,10 +134,30 @@ namespace smf {
                             //
                             auto const name = meter.value("meter", "no-meter");
 
-                            CYNG_LOG_INFO(
-                                logger_, "[db] " << task_name << " add meter " << name << " - " << counter << "/" << meter_counter);
-                            channel->dispatch("add.meter", name, rec_iec.key());
+                            auto const rec_device = tbl_device->lookup(rec_iec.key());
+                            if (!rec_device.empty()) {
 
+                                auto const account = rec_device.value("name", "");
+                                auto const pwd = rec_device.value("pwd", "");
+                                auto const enabled = rec_device.value("enabled", false);
+                                if (enabled) {
+
+                                    CYNG_LOG_INFO(
+                                        logger_,
+                                        "[db] " << task_name << " add meter " << name << " - " << counter << "/" << meter_counter);
+                                    channel->dispatch("add.meter", name, rec_iec.key());
+                                    //
+                                    //  create push task
+                                    //
+                                    auto const tid = create_push_task(name, account, pwd, task_name);
+                                } else {
+                                    CYNG_LOG_WARNING(logger_, "[db] device " << account << " is not enabled");
+                                    bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device ", account, " is not enabled");
+                                }
+                            } else {
+                                CYNG_LOG_WARNING(logger_, "[db] device for meter " << name << " not found");
+                                bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device for meter ", name, " not found");
+                            }
                         } else {
                             CYNG_LOG_WARNING(logger_, "[db] address " << host << ':' << port << " without meter configuration ");
                             bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] ", host, ":", port, "without meter configuration");
@@ -152,7 +172,8 @@ namespace smf {
                 });
             },
             cyng::access::read("meterIEC"),
-            cyng::access::read("meter"));
+            cyng::access::read("meter"),
+            cyng::access::read("device"));
 
         //
         //  start all clients with a random delay between 10 and 300 seconds
@@ -201,63 +222,87 @@ namespace smf {
     }
 
     void cluster::check_iec_meter(cyng::record const &rec) {
-        auto const host = rec.value("host", "");
-        auto const port = rec.value<std::uint16_t>("port", 0);
-
-        //
-        //	construct task name
-        //
-        auto const task_name = make_task_name(host, port);
 
         store_.access(
-            [&](cyng::table const *tbl_meter, cyng::table const *tbl_device) {
-                auto const rec_meter = tbl_meter->lookup(rec.key());
-                if (!rec_meter.empty()) {
+            [this, &rec](cyng::table const *tbl_meter, cyng::table const *tbl_device, cyng::table const *tbl_gw) {
+                auto const host = rec.value("host", "");
+                auto const port = rec.value<std::uint16_t>("port", 0);
+                //
+                //	construct task name
+                //
+                auto const task_name = make_task_name(host, port);
 
-                    auto const name = rec_meter.value("meter", "");
-                    CYNG_LOG_INFO(logger_, "[db] " << task_name << " add meter " << name);
-                    ctl_.get_registry().dispatch(task_name, "add.meter", name, rec.key());
+                //
+                //  precondition is that gateway is already configured
+                //
+                auto const key_gw = dep_key_(host, port);
+                if (tbl_gw->exist(key_gw)) {
 
-                    auto const rec_device = tbl_device->lookup(rec.key());
-                    if (!rec_device.empty()) {
+                    //
+                    //  look meter record
+                    //
+                    auto const rec_meter = tbl_meter->lookup(rec.key());
+                    if (!rec_meter.empty()) {
 
-                        auto const account = rec_device.value("name", "");
-                        auto const pwd = rec_device.value("pwd", "");
-                        auto const enabled = rec_device.value("enabled", false);
-                        if (enabled) {
-                            //
-                            //  create push task
-                            //
-                            create_push_task(name, account, pwd);
+                        auto const name = rec_meter.value("meter", "");
+
+                        auto const rec_device = tbl_device->lookup(rec.key());
+                        if (!rec_device.empty()) {
+
+                            auto const account = rec_device.value("name", "");
+                            auto const pwd = rec_device.value("pwd", "");
+                            auto const enabled = rec_device.value("enabled", false);
+                            if (enabled) {
+
+                                //
+                                //  add meter
+                                //
+                                CYNG_LOG_INFO(logger_, "[db] " << task_name << " add meter " << name);
+                                ctl_.get_registry().dispatch(task_name, "add.meter", name, rec.key());
+
+                                //
+                                //  create push task
+                                //
+                                auto const tid = create_push_task(name, account, pwd, task_name);
+                            } else {
+                                CYNG_LOG_WARNING(logger_, "[db] device " << account << " is not enabled");
+                                bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device ", account, " is not enabled");
+                            }
+
                         } else {
-                            CYNG_LOG_WARNING(logger_, "[db] device " << account << " is not enabled");
-                            bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device ", account, " is not enabled");
+                            CYNG_LOG_WARNING(logger_, "[db] device for meter " << name << " not found");
+                            bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device for meter ", name, " not found");
                         }
 
                     } else {
-                        CYNG_LOG_WARNING(logger_, "[db] device for meter " << name << " not found");
-                        bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device for meter ", name, " not found");
+                        CYNG_LOG_WARNING(logger_, "[db] IEC meter " << rec.to_string() << " for " << task_name << " not found");
+                        bus_.sys_msg(
+                            cyng::severity::LEVEL_WARNING, "[iec] meter ", rec.to_string(), " for ", task_name, " not found");
                     }
-
                 } else {
-                    CYNG_LOG_WARNING(logger_, "[db] IEC meter " << rec.to_string() << " for " << task_name << " not found");
-                    bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] meter ", rec.to_string(), " for ", task_name, " not found");
+                    CYNG_LOG_WARNING(logger_, "[db] gw " << task_name << " not ready yet");
                 }
             },
             cyng::access::read("meter"),
-            cyng::access::read("device"));
+            cyng::access::read("device"),
+            cyng::access::read("gwIEC"));
     }
 
-    void cluster::create_push_task(std::string const &name, std::string const &account, std::string const &pwd) {
+    std::size_t cluster::create_push_task(
+        std::string const &name,
+        std::string const &account,
+        std::string const &pwd,
+        std::string const &client) {
 
         //
         //  push task is identified by the meter name/id
         //
-        auto channel = ctl_.create_named_channel_with_ref<push>(name, ctl_, logger_, update_cfg(cfg_ipt_, account, pwd), pcc_);
+        auto channel =
+            ctl_.create_named_channel_with_ref<push>(name, ctl_, logger_, update_cfg(cfg_ipt_, account, pwd), pcc_, client);
         BOOST_ASSERT(channel->is_open());
-        // channel->dispatch("connect");
-        channel->suspend(std::chrono::seconds(15) + std::chrono::milliseconds(stash_.size() * 200), "connect");
+        channel->suspend(std::chrono::seconds(15) + std::chrono::milliseconds(stash_.size() * 120), "connect");
         stash_.lock(channel);
+        return channel->get_id();
     }
 
     void cluster::remove_iec_meter(cyng::key_t key) {
@@ -312,7 +357,9 @@ namespace smf {
             auto slot = std::static_pointer_cast<cyng::slot_interface>(db_);
             db_->init(slot);
             //  start with first table
-            bus_.req_subscribe(db_->get_first_table());
+            auto const table_name = db_->get_first_table();
+            CYNG_LOG_TRACE(logger_, "[cluster] subscribe table " << table_name);
+            bus_.req_subscribe(table_name);
 
         } else {
             CYNG_LOG_ERROR(logger_, "[cluster] joining failed");
@@ -360,6 +407,7 @@ namespace smf {
         if (!trx) {
             auto const next = db_->get_next_table(table_name);
             if (!next.empty()) {
+                CYNG_LOG_TRACE(logger_, "[cluster] subscribe table " << next);
                 bus_.req_subscribe(next);
             }
         }

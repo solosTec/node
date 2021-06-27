@@ -430,7 +430,9 @@ namespace smf {
         }
         cyng::key_t dependend_key::operator()(boost::asio::ip::address addr) { return generate(addr); }
 
-        std::string dependend_key::build_name(std::string host, std::uint16_t port) { return host + ":" + std::to_string(port); }
+        std::string dependend_key::build_name(std::string host, std::uint16_t port) {
+            return host + std::string(":") + std::to_string(port);
+        }
 
     } // namespace config
 } // namespace smf

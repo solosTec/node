@@ -74,7 +74,11 @@ namespace smf {
          */
         std::size_t check_gateway(cyng::record const &);
         void check_iec_meter(cyng::record const &);
-        void create_push_task(std::string const &, std::string const &, std::string const &);
+
+        /**
+         * The name of the meter is also the name of the task
+         */
+        std::size_t create_push_task(std::string const &, std::string const &, std::string const &, std::string const &client);
         void update_delay(std::uint32_t counter);
         void remove_iec_meter(cyng::key_t key);
         void remove_iec_gw(cyng::key_t key);

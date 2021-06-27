@@ -10,7 +10,7 @@
 #include <db.h>
 
 #include <smf/cluster/bus.h>
-#include <smf/iec/parser.h>
+#include <smf/iec/scanner.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/eod.h>
@@ -23,21 +23,38 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(std::chrono::seconds)>,     //  init
-            std::function<void()>,                         //  start
-            std::function<void()>,                         //  connect
-            std::function<void(std::string, cyng::key_t)>, //  add
-            std::function<void(std::string)>,              //  remove
-            std::function<void()>,                         //  shutdown
+            std::function<void(std::chrono::seconds)>,                            //  init
+            std::function<void()>,                                                //  start
+            std::function<void()>,                                                //  connect to gateway
+            std::function<void(std::string, cyng::key_t)>,                        //  add meter
+            std::function<void(std::string)>,                                     //  remove meter
+            std::function<void()>,                                                //  shutdown
+            std::function<void(bool, std::string, std::uint32_t, std::uint32_t)>, //  on_channel_open
+            std::function<void(std::string, std::uint32_t)>,                      //  on_channel_close
             std::function<void(cyng::eod)>>;
 
-        enum class state : std::uint16_t {
+        enum class state_value : std::uint16_t {
             START,
             WAIT,
             CONNECTED,
             RETRY, //  connection got lost, try to reconnect
             STOPPED,
-        } state_;
+        };
+        struct state : std::enable_shared_from_this<state> {
+            state(boost::asio::ip::tcp::resolver::results_type &&);
+            constexpr bool is_stopped() const { return value_ == state_value::STOPPED; }
+            constexpr bool is_connected() const { return value_ == state_value::CONNECTED; }
+            constexpr bool has_state(state_value s) const { return s == value_; }
+
+            state_value value_;
+            boost::asio::ip::tcp::resolver::results_type endpoints_;
+        };
+        using state_ptr = std::shared_ptr<state>;
+        /**
+         * helps to control state from the outside without
+         * to establish an additional reference to the state object.
+         */
+        state_ptr state_holder_;
 
         struct meter_state {
             meter_state(std::string id, cyng::key_t);
@@ -111,13 +128,15 @@ namespace smf {
         void stop(cyng::eod);
 
         void connect();
-        void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void
-        handle_connect(const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void do_read();
-        void handle_read(const boost::system::error_code &ec, std::size_t n);
-        void do_write();
-        void handle_write(const boost::system::error_code &ec);
+        void start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void handle_connect(
+            state_ptr sp,
+            const boost::system::error_code &ec,
+            boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void do_read(state_ptr);
+        void handle_read(state_ptr, const boost::system::error_code &ec, std::size_t n);
+        void do_write(state_ptr);
+        void handle_write(state_ptr, const boost::system::error_code &ec);
 
         /**
          * send ice query for
@@ -126,15 +145,12 @@ namespace smf {
          */
         void send_query(std::string id);
 
-        constexpr bool is_stopped() const { return state_ == state::STOPPED; }
-        constexpr bool is_connected() const { return state_ == state::CONNECTED; }
-
         /**
          * @return retry number - current retry counter
          */
         std::uint32_t get_remaining_retries() const;
 
-        void reset(state);
+        void reset(state_ptr, state_value);
 
         /**
          * @return true if sufficient time is left until next readout from now
@@ -142,6 +158,23 @@ namespace smf {
         template <typename R, typename P> bool is_sufficient_time(std::chrono::duration<R, P> d) const {
             return (next_readout_ - std::chrono::steady_clock::now()) > d;
         }
+
+        //
+        //  state management
+        //
+        void state_version(std::string id);
+        void state_data(std::size_t line);
+        void state_bbc();
+
+        void on_channel_open(bool, std::string, std::uint32_t, std::uint32_t);
+        void on_channel_close(std::string, std::uint32_t);
+
+        /**
+         * check if there are more meters
+         * and start the readout sequence:
+         * open channel, query, readout, close channel
+         */
+        void next_meter();
 
       private:
         signatures_t sigs_;
@@ -157,19 +190,27 @@ namespace smf {
         std::string const service_;
         std::chrono::seconds const reconnect_timeout_;
 
+        /**
+         * managing multiple meters
+         */
         meter_mgr mgr_;
-        boost::asio::ip::tcp::resolver::results_type endpoints_;
+
+        /**
+         * TCP/IP socker
+         */
         boost::asio::ip::tcp::socket socket_;
+
+        /**
+         * boost asio strand context
+         */
         boost::asio::io_context::strand dispatcher_;
         std::deque<cyng::buffer_t> buffer_write_;
         std::array<char, 2048> input_buffer_;
         std::chrono::seconds interval_;            //  readout interval
         cyng::channel::time_point_t next_readout_; //  std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds>
 
-        iec::parser parser_;
-        cyng::channel_ptr writer_;    //  task to write CSV files
+        iec::scanner scanner_;
         cyng::channel_ptr reconnect_; //  task to trigger reconnects
-        std::size_t entries_;         //	per readount
         std::uint32_t retry_counter_; //  for each cycle
     };
 

@@ -144,40 +144,7 @@ namespace smf {
             std::move(tgl_ipt),
             // std::chrono::seconds(delay),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"].get())));
-
-        //
-        //	connect to ip-t server
-        //
-        // join_network(
-        //    ctl,
-        //    channels,
-        //    logger,
-        //    tag,
-        //    node_name,
-        //    std::move(tgl_ipt),
-        //    std::chrono::seconds(delay),
-        //    ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"].get())));
     }
-
-    // void controller::join_network(
-    //    cyng::controller &ctl,
-    //    cyng::stash &channels,
-    //    cyng::logger logger,
-    //    boost::uuids::uuid tag,
-    //    std::string const &node_name,
-    //    ipt::toggle::server_vec_t &&tgl,
-    //    std::chrono::seconds delay,
-    //    ipt::push_channel &&pcc) {
-
-    //    auto channel = ctl.create_named_channel_with_ref<push>("push", ctl, logger, std::move(tgl), std::move(pcc));
-    //    BOOST_ASSERT(channel->is_open());
-
-    //    //
-    //    //  suspended to wait for ip-t node
-    //    //
-    //    channel->suspend(delay, "connect", cyng::make_tuple());
-    //    channels.lock(channel);
-    //}
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 

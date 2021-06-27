@@ -22,6 +22,7 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(void)>,                                                           //  connect
+            std::function<void()>,                                                               //  open
             std::function<void()>,                                                               //  close
             std::function<void(cyng::buffer_t payload)>,                                         //  forward
             std::function<void(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
@@ -30,12 +31,18 @@ namespace smf {
             >;
 
       public:
-        push(cyng::channel_weak, cyng::controller &, cyng::logger, ipt::toggle::server_vec_t &&, ipt::push_channel const &pcc);
+        push(
+            cyng::channel_weak,
+            cyng::controller &,
+            cyng::logger,
+            ipt::toggle::server_vec_t &&,
+            ipt::push_channel const &pcc,
+            std::string const &client);
         ~push();
 
-        void stop(cyng::eod);
-
       private:
+        void stop(cyng::eod);
+        void open();
         void connect();
 
         //
@@ -58,8 +65,10 @@ namespace smf {
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
+        cyng::registry &registry_;
         cyng::logger logger_;
         ipt::push_channel const pcc_;
+        std::string const client_task_;
         ipt::bus bus_;
         ipt::channel_id id_;
         /**

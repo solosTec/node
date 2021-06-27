@@ -28,7 +28,7 @@ namespace smf {
          */
         class tokenizer {
           public:
-            using cb_f = std::function<void(std::string)>;
+            using cb_f = std::function<void(std::string)>; //  contains device id/version
             using cb_final_f = std::function<void(std::string, bool)>;
 
           private:
