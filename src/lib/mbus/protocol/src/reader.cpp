@@ -28,33 +28,38 @@ namespace smf {
                 }
 
                 //
-                //	read dif
+                //	read DIF
                 //
                 dif const d(data.at(offset));
                 ++offset;
                 BOOST_ASSERT(data.size() > offset);
 
-                std::uint8_t tariff = 0;
-
-                // const char* get_name(data_field_code dfc)
-                std::cout << get_name(d.get_data_field_code()) << std::endl;
-
-                if (d.is_extended()) {
-                    //
-                    //	read dife
-                    //
-                    dife const de(data.at(offset));
-                    ++offset;
-                    BOOST_ASSERT(data.size() > offset);
-
-                    //
-                    //	update tariff
-                    //
-                    tariff = de.get_tariff();
+#ifdef _DEBUG
+                {
+                    auto const dtc = get_name(d.get_data_field_code());
+                    boost::ignore_unused(dtc);
                 }
+#endif
 
                 //
-                //	read vif
+                //  read extended DIF
+                //
+                dife de(d.is_extended() ? data.at(offset++) : char(0));
+                BOOST_ASSERT(data.size() > offset);
+
+                //
+                //  get tarif
+                //
+                std::uint8_t const tariff = d.is_extended() ? de.get_tariff() : 0;
+                BOOST_ASSERT_MSG(tariff < 16, "tariff out of range");
+
+                //
+                //  get obis code
+                //
+                // cyng::obis code = (d.is_extended()) ? identify_obis_code(medium, d, de) : identify_obis_code(medium, d);
+
+                //
+                //	read VIF
                 //
                 vif const v(data.at(offset));
                 ++offset;
@@ -83,7 +88,8 @@ namespace smf {
                 //	get vib type
                 //  ToDo: data type DFC_VAR could overwrite the data type
                 //
-                auto const vt = v.get_vib_type();
+                //<std::int8_t, unit, cyng::obis>
+                auto const [scaler, u, code] = d.is_extended() ? v.get_vib_type(medium, d, de) : v.get_vib_type(medium, d);
 
                 //
                 //	read value
@@ -115,17 +121,13 @@ namespace smf {
                                         2, //	date
                                         255),
                                     cyng::make_object(convert_to_tp(value.at(0), value.at(1))),
-                                    vt.first,
-                                    vt.second);
+                                    scaler,
+                                    u);
                             } else {
 
                                 // std::cout << cyng::to_numeric_be<std::int16_t>(value) << std::endl;
                                 return std::make_tuple(
-                                    offset,
-                                    make_obis(medium, tariff, v),
-                                    cyng::make_object(cyng::to_numeric_be<std::int16_t>(value)),
-                                    vt.first,
-                                    vt.second);
+                                    offset, code, cyng::make_object(cyng::to_numeric_be<std::int16_t>(value)), scaler, u);
                             }
                         }
                         break;
@@ -134,11 +136,7 @@ namespace smf {
                         if (value.size() == 3) {
                             // std::cout << cyng::to_numeric_be<std::int32_t>(value) << std::endl;
                             return std::make_tuple(
-                                offset,
-                                make_obis(medium, tariff, v),
-                                cyng::make_object(cyng::to_numeric_be<std::int32_t>(value)),
-                                vt.first,
-                                vt.second);
+                                offset, code, cyng::make_object(cyng::to_numeric_be<std::int32_t>(value)), scaler, u);
                         }
                         break;
                     case data_field_code::DFC_32_BIT_INT:
@@ -155,16 +153,12 @@ namespace smf {
                                         1, //	time
                                         255),
                                     cyng::make_object(convert_to_tp(value.at(0), value.at(1), value.at(2), value.at(3))),
-                                    vt.first,
-                                    vt.second);
+                                    scaler,
+                                    u);
                             } else {
                                 std::cout << cyng::to_numeric_be<std::int32_t>(value) << std::endl;
                                 return std::make_tuple(
-                                    offset,
-                                    make_obis(medium, tariff, v),
-                                    cyng::make_object(cyng::to_numeric_be<std::int32_t>(value)),
-                                    vt.first,
-                                    vt.second);
+                                    offset, code, cyng::make_object(cyng::to_numeric_be<std::int32_t>(value)), scaler, u);
                             }
                         }
                         break;
@@ -176,7 +170,7 @@ namespace smf {
                             //  note: byte ordering has to be reversed
                             auto const f = cyng::to_numeric_be<float>(value);
                             // std::cout << f << std::endl;
-                            return std::make_tuple(offset, make_obis(medium, tariff, v), cyng::make_object(f), vt.first, vt.second);
+                            return std::make_tuple(offset, code, cyng::make_object(f), scaler, u);
                         }
                         break;
                     case data_field_code::DFC_48_BIT_INT:
@@ -186,11 +180,7 @@ namespace smf {
                         if (value.size() == 8) {
                             // std::cout << cyng::to_numeric_be<std::int64_t>(value) << std::endl;
                             return std::make_tuple(
-                                offset,
-                                make_obis(medium, tariff, v),
-                                cyng::make_object(cyng::to_numeric_be<std::int64_t>(value)),
-                                vt.first,
-                                vt.second);
+                                offset, code, cyng::make_object(cyng::to_numeric_be<std::int64_t>(value)), scaler, u);
                         }
                         break;
                     case data_field_code::DFC_READOUT:
@@ -199,48 +189,28 @@ namespace smf {
                         BOOST_ASSERT(value.size() == 1);
                         if (value.size() == 1) {
                             // std::cout << bcd_to_n<std::uint16_t>(value) << std::endl;
-                            return std::make_tuple(
-                                offset,
-                                make_obis(medium, tariff, v),
-                                cyng::make_object(bcd_to_n<std::uint16_t>(value)),
-                                vt.first,
-                                vt.second);
+                            return std::make_tuple(offset, code, cyng::make_object(bcd_to_n<std::uint16_t>(value)), scaler, u);
                         }
                         break;
                     case data_field_code::DFC_4_DIGIT_BCD:
                         BOOST_ASSERT(value.size() == 2);
                         if (value.size() == 2) {
                             // std::cout << bcd_to_n<std::uint32_t>(value) << std::endl;
-                            return std::make_tuple(
-                                offset,
-                                make_obis(medium, tariff, v),
-                                cyng::make_object(bcd_to_n<std::uint32_t>(value)),
-                                vt.first,
-                                vt.second);
+                            return std::make_tuple(offset, code, cyng::make_object(bcd_to_n<std::uint32_t>(value)), scaler, u);
                         }
                         break;
                     case data_field_code::DFC_6_DIGIT_BCD:
                         BOOST_ASSERT(value.size() == 3);
                         if (value.size() == 3) {
                             // std::cout << bcd_to_n<std::uint32_t>(value) << std::endl;
-                            return std::make_tuple(
-                                offset,
-                                make_obis(medium, tariff, v),
-                                cyng::make_object(bcd_to_n<std::uint32_t>(value)),
-                                vt.first,
-                                vt.second);
+                            return std::make_tuple(offset, code, cyng::make_object(bcd_to_n<std::uint32_t>(value)), scaler, u);
                         }
                         break;
                     case data_field_code::DFC_8_DIGIT_BCD:
                         BOOST_ASSERT(value.size() == 4);
                         if (value.size() == 4) {
                             // std::cout << bcd_to_n<std::uint64_t>(value) << std::endl;
-                            return std::make_tuple(
-                                offset,
-                                make_obis(medium, tariff, v),
-                                cyng::make_object(bcd_to_n<std::uint64_t>(value)),
-                                vt.first,
-                                vt.second);
+                            return std::make_tuple(offset, code, cyng::make_object(bcd_to_n<std::uint64_t>(value)), scaler, u);
                         }
                         break;
                     case data_field_code::DFC_VAR:
@@ -249,12 +219,7 @@ namespace smf {
                         BOOST_ASSERT(value.size() == 6);
                         if (value.size() == 6) {
                             // std::cout << bcd_to_n<std::uint64_t>(value) << std::endl;
-                            return std::make_tuple(
-                                offset,
-                                make_obis(medium, tariff, v),
-                                cyng::make_object(bcd_to_n<std::uint64_t>(value)),
-                                vt.first,
-                                vt.second);
+                            return std::make_tuple(offset, code, cyng::make_object(bcd_to_n<std::uint64_t>(value)), scaler, u);
                         }
                         break;
                     case data_field_code::DFC_SPECIAL:
@@ -268,7 +233,7 @@ namespace smf {
                     //}
                 }
 
-                return std::make_tuple(offset, cyng::obis(), cyng::make_object(), vt.first, vt.second);
+                return std::make_tuple(offset, cyng::obis(), cyng::make_object(), scaler, u);
             }
             return std::make_tuple(data.size(), cyng::obis(), cyng::make_object(), 0, unit::UNDEFINED_);
         }

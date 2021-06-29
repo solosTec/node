@@ -304,6 +304,13 @@ namespace smf {
         std::uint8_t frame_type,
         cyng::buffer_t const &payload) {
 
+        CYNG_LOG_TRACE(logger_, "[wmbus] payload " << payload);
+
+        //
+        //	open CSV file
+        //
+        writer_->dispatch("open", cyng::make_tuple(id));
+
         std::size_t offset = 2;
         cyng::obis code;
         cyng::object obj;
@@ -315,13 +322,25 @@ namespace smf {
             std::tie(offset, code, obj, scaler, u) = smf::mbus::read(payload, offset, 1);
             // std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
             // CYNG_LOG_TRACE(logger_, "[sml] " << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u));
+
+            //
+            //	store data to csv file
+            //
+            auto const value = cyng::io::to_plain(obj);
+            writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_unit_name(u)));
+
             if (!init) {
                 init = true;
             } else {
                 ss << ", ";
             }
-            ss << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
+            ss << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
         }
+
+        //
+        //	close CSV file
+        //
+        writer_->dispatch("commit");
 
         auto const msg = ss.str();
         CYNG_LOG_TRACE(logger_, "[sml] CI_HEADER_SHORT: " << msg);
@@ -386,7 +405,7 @@ namespace smf {
         //
         //	close CSV file
         //
-        writer_->dispatch("commit", cyng::make_tuple());
+        writer_->dispatch("commit");
 
         //
         //	remove trailing 0x2F
