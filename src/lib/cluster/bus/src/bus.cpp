@@ -195,7 +195,7 @@ namespace smf {
             // the timeout handler must have run first.
             if (!socket_.is_open()) {
 
-                CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect timed out: " << ec.message()
+                CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect timed out: " << ec.message());
 
                 // Try the next available endpoint.
                 start_connect(sp, ++endpoint_iter);
