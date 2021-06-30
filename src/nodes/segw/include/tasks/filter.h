@@ -32,6 +32,18 @@ namespace smf {
             std::function<void(void)>         //	update_statistics
             >;
 
+        struct access_data {
+            access_data();
+            /**
+             * in percent
+             */
+            std::string calculate_rate() const;
+
+            std::chrono::system_clock::time_point access_;
+            std::size_t total_;
+            std::size_t dropped_;
+        };
+
       public:
         filter(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cfg &, lmn_type);
 
@@ -76,7 +88,7 @@ namespace smf {
          */
         std::vector<cyng::channel_ptr> targets_;
 
-        std::map<std::string, std::chrono::system_clock::time_point> access_times_;
+        std::map<std::string, access_data> access_times_;
         std::size_t accumulated_bytes_;
     };
 } // namespace smf

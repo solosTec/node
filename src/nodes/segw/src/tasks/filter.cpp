@@ -15,11 +15,10 @@
 #include <fstream>
 #include <iostream>
 
-//#ifdef _DEBUG_SEGW
 #include <cyng/io/hex_dump.hpp>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-//#endif
 
 namespace smf {
     filter::filter(cyng::channel_weak wp
@@ -194,7 +193,9 @@ namespace smf {
             //
             //	calculate the elapsed time sind last access
             //
-            auto const elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - pos->second);
+            auto const elapsed =
+                std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - pos->second.access_);
+            ++pos->second.total_;
 
             CYNG_LOG_TRACE(
                 logger_,
@@ -207,22 +208,23 @@ namespace smf {
 
                 CYNG_LOG_TRACE(
                     logger_,
-                    "[" << cfg_blocklist_.get_task_name() << "] meter \"" << id << "\" has " << remaining.count()
-                        << " seconds to wait - drop message");
+                    "[" << cfg_blocklist_.get_task_name() << "] meter \"" << id << "\" " << remaining.count()
+                        << " seconds until data is forwarded again - drop rate: " << pos->second.calculate_rate());
                 //
                 //	to fast
                 //
+                ++pos->second.dropped_;
                 return false;
             }
 
             //
             //	update access times
             //
-            pos->second = std::chrono::system_clock::now();
+            pos->second.access_ = std::chrono::system_clock::now();
             return true;
         }
 
-        access_times_.emplace(id, std::chrono::system_clock::now());
+        access_times_.emplace(id, access_data());
         CYNG_LOG_TRACE(
             logger_,
             "[" << cfg_blocklist_.get_task_name() << "] add meter \"" << id << "\" to access times list (" << access_times_.size()
@@ -260,4 +262,20 @@ namespace smf {
             ctl_.get_registry().dispatch(gpio_task_name, "flashing", cyng::make_tuple(ms, count));
         }
     }
+
+    filter::access_data::access_data()
+        : access_(std::chrono::system_clock::now())
+        , total_(0)
+        , dropped_(0) {}
+
+    std::string filter::access_data::calculate_rate() const {
+        if (total_ != 0) {
+            auto const rate = dropped_ * 100.0 / total_;
+            std::stringstream ss;
+            ss << std::fixed << std::setprecision(2) << rate << " %";
+            return ss.str();
+        }
+        return "0 %";
+    }
+
 } // namespace smf
