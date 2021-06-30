@@ -1,5 +1,6 @@
 #include <smf/mbus/bcd.hpp>
 #include <smf/mbus/reader.h>
+//#include <smf/mbus/units.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/obj/buffer_cast.hpp>
@@ -8,6 +9,8 @@
 #include <ctime>
 #include <iostream>
 #include <iterator> // for back_inserter
+#ifdef _DEBUG
+#endif
 
 #include <boost/assert.hpp>
 #include <boost/predef.h>
@@ -30,10 +33,15 @@ namespace smf {
                 //
                 //	read DIF
                 //
-                dif const d(data.at(offset));
-                ++offset;
+                dif d(data.at(offset++));
                 BOOST_ASSERT(data.size() > offset);
-
+                while (!d.is_complete()) {
+                    //
+                    //	read DIFE
+                    //
+                    d.add(data.at(offset++));
+                    BOOST_ASSERT(data.size() > offset);
+                }
 #ifdef _DEBUG
                 {
                     auto const dtc = get_name(d.get_data_field_code());
@@ -44,32 +52,25 @@ namespace smf {
                 //
                 //  read extended DIF
                 //
-                dife de(d.is_extended() ? data.at(offset++) : char(0));
-                BOOST_ASSERT(data.size() > offset);
+                // dife de(d.is_extended() ? data.at(offset++) : char(0));
+                // BOOST_ASSERT(data.size() > offset);
 
                 //
                 //  get tarif
                 //
-                std::uint8_t const tariff = d.is_extended() ? de.get_tariff() : 0;
+                std::uint8_t const tariff = d.get_tariff();
                 BOOST_ASSERT_MSG(tariff < 16, "tariff out of range");
-
-                //
-                //  get obis code
-                //
-                // cyng::obis code = (d.is_extended()) ? identify_obis_code(medium, d, de) : identify_obis_code(medium, d);
 
                 //
                 //	read VIF
                 //
-                vif const v(data.at(offset));
-                ++offset;
+                vif v(data.at(offset++));
                 BOOST_ASSERT(data.size() > offset);
-
-                if (v.is_extended()) {
+                while (!v.is_complete()) {
                     //
                     //	read vife
                     //
-                    ++offset;
+                    v.add(data.at(offset++));
                     BOOST_ASSERT(data.size() > offset);
                 }
 
@@ -89,7 +90,15 @@ namespace smf {
                 //  ToDo: data type DFC_VAR could overwrite the data type
                 //
                 //<std::int8_t, unit, cyng::obis>
-                auto const [scaler, u, code] = d.is_extended() ? v.get_vib_type(medium, d, de) : v.get_vib_type(medium, d);
+                auto const [scaler, u, code] = v.get_vib_type(medium, d);
+
+#ifdef _DEBUG
+                {
+                    // std::tuple<vib_category, std::int8_t, unit> get_vib_category(vif const &v, vife const &ve)
+                    auto const [cat, sc, e] = get_vib_category(v);
+                    std::cout << to_string(cat) << ", scaler: " << +sc << ", unit: " << mbus::get_unit_name(e) << std::endl;
+                }
+#endif
 
                 //
                 //	read value
@@ -156,7 +165,7 @@ namespace smf {
                                     scaler,
                                     u);
                             } else {
-                                std::cout << cyng::to_numeric_be<std::int32_t>(value) << std::endl;
+                                // std::cout << cyng::to_numeric_be<std::int32_t>(value) << std::endl;
                                 return std::make_tuple(
                                     offset, code, cyng::make_object(cyng::to_numeric_be<std::int32_t>(value)), scaler, u);
                             }

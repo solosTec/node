@@ -16,7 +16,6 @@
 
 #include <chrono>
 #include <cstdint>
-//#include <functional>
 #include <tuple>
 
 namespace smf {
@@ -49,9 +48,6 @@ namespace smf {
         cyng::object make_i24_value(char, char, char);
 
         cyng::obis make_obis(std::uint8_t medium, std::uint8_t tariff, vif const &);
-
-        // cyng::obis identify_obis_code(std::uint8_t medium, dif const &, dife const &);
-        // cyng::obis identify_obis_code(std::uint8_t medium, dif const &);
 
     } // namespace mbus
 } // namespace smf
