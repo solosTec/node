@@ -161,7 +161,6 @@ namespace smf {
         target const target_;
         bool const login_;
 
-        // boost::asio::ip::tcp::resolver::results_type endpoints_;
         boost::asio::ip::tcp::socket socket_;
         boost::asio::io_context::strand dispatcher_;
 

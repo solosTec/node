@@ -300,9 +300,6 @@ namespace smf {
     }
 
     void broker_on_demand::start() {
-        // if (is_stopped())
-        //    return;
-
         CYNG_LOG_INFO(logger_, "[broker-on-demand] connect " << target_);
         state_holder_.reset();
 
@@ -364,6 +361,8 @@ namespace smf {
                 CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: ?");
                 break;
             }
+        } else {
+            CYNG_LOG_WARNING(logger_, "[broker-on-demand] is not running");
         }
     }
 

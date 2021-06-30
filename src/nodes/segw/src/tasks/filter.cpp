@@ -136,6 +136,10 @@ namespace smf {
                 //
                 if (check_frequency(id)) {
                     accumulated_bytes_ += payload.size();
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[" << cfg_blocklist_.get_task_name() << "] send " << accumulated_bytes_ << " bytes to " << targets_.size()
+                            << " target(s) in " << cfg_blocklist_.get_mode() << " mode");
 
                     for (auto target : targets_) {
                         target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, t, payload)));
@@ -154,6 +158,10 @@ namespace smf {
                 //
                 accumulated_bytes_ += payload.size();
                 if (check_frequency(id)) {
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[" << cfg_blocklist_.get_task_name() << "] send " << accumulated_bytes_ << " bytes to " << targets_.size()
+                            << " target(s) in " << cfg_blocklist_.get_mode() << " mode");
                     for (auto target : targets_) {
                         target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, t, payload)));
                     }
