@@ -18,13 +18,22 @@ namespace smf {
      */
     class target {
       public:
-        target(std::string account, std::string pwd, std::string address, std::uint16_t port, bool on_demand);
+        target(
+            std::string account,
+            std::string pwd,
+            std::string address,
+            std::uint16_t port,
+            bool on_demand,
+            std::chrono::seconds timeout,
+            std::chrono::seconds watchdog);
 
         std::string const &get_address() const;
         std::uint16_t get_port() const;
         std::string const &get_account() const;
         std::string const &get_pwd() const;
         bool is_connect_on_demand() const;
+        std::chrono::seconds get_timeout() const;
+        std::chrono::seconds get_watchdog() const;
 
         std::string get_login_sequence() const;
 
@@ -34,6 +43,8 @@ namespace smf {
         std::string const address_;
         std::uint16_t const port_;
         bool const on_demand_;
+        std::chrono::seconds const timeout_;
+        std::chrono::seconds const watchdog_;
     };
 
     /**
@@ -77,7 +88,7 @@ namespace smf {
          * When connection to target got lost
          * wait for this specified time to reconnect.
          */
-        std::chrono::seconds get_timeout() const;
+        // std::chrono::seconds get_timeout() const;
 
         /**
          * Duplicate from cfg_lmn class
@@ -112,6 +123,16 @@ namespace smf {
          * if not specified, the default value is true
          */
         bool is_connect_on_demand(std::size_t idx) const;
+
+        /**
+         * timeout after write (on-demand only)
+         */
+        std::chrono::seconds get_timeout(std::size_t idx) const;
+
+        /**
+         * watchdog timer for connection state (on-start only)
+         */
+        std::chrono::seconds get_watchdog(std::size_t idx) const;
 
         target get_target(std::size_t idx) const;
         target_vec get_all_targets() const;

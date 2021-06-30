@@ -464,7 +464,7 @@ namespace smf {
 
             //	All broker for this port have the same name.
             auto const name = cfg.get_task_name();
-            auto const timeout = cfg.get_timeout();
+            // auto const timeout = cfg.get_timeout();
             auto const login = cfg.has_login();
 
             auto const size = cfg.size();
@@ -477,14 +477,16 @@ namespace smf {
                 // login
                 //
                 if (trg.is_connect_on_demand()) {
-                    auto channel = ctl_.create_named_channel_with_ref<broker_on_demand>(name, ctl_, logger_, trg, login);
+
+                    auto channel =
+                        ctl_.create_named_channel_with_ref<broker_on_demand>(name, ctl_, logger_, trg, login, trg.get_timeout());
                     BOOST_ASSERT(channel->is_open());
                     stash_.lock(channel);
                 } else {
                     auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, trg, login);
                     BOOST_ASSERT(channel->is_open());
                     stash_.lock(channel);
-                    channel->dispatch("check-status", cyng::make_tuple(std::chrono::seconds(timeout)));
+                    channel->dispatch("check-status", trg.get_watchdog());
                 }
             }
         } else {
@@ -591,7 +593,7 @@ namespace smf {
 #ifdef _DEBUG
                 channel->dispatch("blinking", std::chrono::milliseconds(500));
 #else
-                if ( pin == 53u) {
+                if (pin == 53u) {
                     // turn on the Power LED and turn off all others
                     CYNG_LOG_TRACE(logger_, "Init GPIOs: turned on the PWR LED.");
                     channel->dispatch("turn", true);

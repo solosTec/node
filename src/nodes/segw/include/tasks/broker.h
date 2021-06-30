@@ -106,7 +106,11 @@ namespace smf {
     class broker_on_demand {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void(cyng::buffer_t)>, std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<
+            std::function<void(cyng::buffer_t)>, // receive()
+            std::function<void()>,               // close_connection()
+            std::function<void(cyng::eod)>       // stop()
+            >;
 
         enum class state_value { OFFLINE, CONNECTING, CONNECTED, STOPPED };
 
@@ -127,7 +131,13 @@ namespace smf {
         state_ptr state_holder_;
 
       public:
-        broker_on_demand(cyng::channel_weak, cyng::controller &ctl, cyng::logger, target const &, bool login);
+        broker_on_demand(
+            cyng::channel_weak,
+            cyng::controller &ctl,
+            cyng::logger,
+            target const &,
+            bool login,
+            std::chrono::seconds timeout);
 
       private:
         void stop(cyng::eod);
@@ -138,6 +148,12 @@ namespace smf {
          * incoming raw data from serial interface
          */
         void receive(cyng::buffer_t);
+
+        /**
+         * If write buffer is empty an open connection
+         * will be closed.
+         */
+        void close_connection();
 
         void store(cyng::buffer_t);
         void send(state_ptr sp, cyng::buffer_t);
@@ -160,6 +176,7 @@ namespace smf {
         cyng::logger logger_;
         target const target_;
         bool const login_;
+        std::chrono::seconds const timeout_;
 
         boost::asio::ip::tcp::socket socket_;
         boost::asio::io_context::strand dispatcher_;

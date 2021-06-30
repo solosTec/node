@@ -97,7 +97,13 @@ namespace smf {
         //
         bool is_broker_enabled() const;
         bool has_broker_login() const;
-        std::chrono::seconds get_broker_timeout() const;
+
+        /**
+         * @brief Timer to check connection state.
+         *
+         * Only usefull for "broker-on-start"
+         */
+        // std::chrono::seconds get_broker_timeout() const;
 
         /**
          * configured type name

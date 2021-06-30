@@ -25,7 +25,11 @@ namespace smf {
 
     broker::broker(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, target const &t, bool login)
         : state_(state::START)
-        , sigs_{std::bind(&broker::receive, this, std::placeholders::_1), std::bind(&broker::check_status, this, std::placeholders::_1), std::bind(&broker::stop, this, std::placeholders::_1)}
+        , sigs_{
+            std::bind(&broker::receive, this, std::placeholders::_1), //    receive
+            std::bind(&broker::check_status, this, std::placeholders::_1), // check status
+            std::bind(&broker::stop, this, std::placeholders::_1)
+        }
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger)
@@ -274,10 +278,12 @@ namespace smf {
         cyng::controller &ctl,
         cyng::logger logger,
         target const &t,
-        bool login)
-        : state_holder_()
+        bool login,
+        std::chrono::seconds timeout)
+    : state_holder_()
         , sigs_{
             std::bind(&broker_on_demand::receive, this, std::placeholders::_1), //  receive
+            std::bind(&broker_on_demand::close_connection, this), // close_connection
             std::bind(&broker_on_demand::stop, this, std::placeholders::_1) // stop
         }
         , channel_(wp)
@@ -285,6 +291,7 @@ namespace smf {
         , logger_(logger)
         , target_(t)
         , login_(login)
+        , timeout_(timeout)
         , socket_(ctl.get_ctx())
         , dispatcher_(ctl.get_ctx())
         , read_buffer_()
@@ -293,10 +300,12 @@ namespace smf {
         if (sp) {
             std::size_t slot{0};
             sp->set_channel_name("receive", slot++);
+            sp->set_channel_name("close.socket", slot++);
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
 
         CYNG_LOG_INFO(logger_, "[broker-on-demand] ready: " << target_);
+        CYNG_LOG_TRACE(logger_, "[broker-on-demand] write timeout is: " << timeout_.count() << " seconds");
     }
 
     void broker_on_demand::start() {
@@ -369,6 +378,19 @@ namespace smf {
         }
     }
 
+    void broker_on_demand::close_connection() {
+        if (state_holder_ && !state_holder_->is_stopped()) {
+            auto sp = state_holder_->shared_from_this();
+
+            boost::asio::post(dispatcher_, [this, sp]() {
+                if (write_buffer_.empty()) {
+                    CYNG_LOG_TRACE(logger_, "[broker-on-demand] write buffer is empty - close connection");
+                    reset(sp, state_value::OFFLINE);
+                }
+            });
+        }
+    }
+
     void broker_on_demand::store(cyng::buffer_t data) {
         if (!data.empty()) {
             boost::asio::post(dispatcher_, [this, data]() {
@@ -428,20 +450,27 @@ namespace smf {
 
     void broker_on_demand::handle_write(state_ptr sp, const boost::system::error_code &ec, std::size_t n) {
         //
-        //  test if bus was stopped
+        //  test if connection was stopped
         //
         if (!sp->is_stopped()) {
 
             CYNG_LOG_INFO(
                 logger_,
-                "[broker-on-demand] transmited " << n << " bytes #" << write_buffer_.size() << " to " << target_ << ": "
-                                                 << ec.message());
+                "[broker-on-demand] transmitted " << n << " bytes #" << write_buffer_.size() << " to " << target_ << ": "
+                                                  << ec.message());
 
             if (!ec) {
 
                 write_buffer_.pop_front();
                 if (!write_buffer_.empty()) {
                     do_write(sp);
+                } else {
+                    //  close socket after 1 second
+                    //  is required for the Swistec broker (4A)
+                    auto ch_ptr = channel_.lock();
+                    if (ch_ptr) {
+                        ch_ptr->suspend(timeout_, "close.socket");
+                    }
                 }
             } else {
                 CYNG_LOG_WARNING(logger_, "[broker-on-demand] write " << target_ << ": " << ec.message());
@@ -452,7 +481,6 @@ namespace smf {
     }
 
     void broker_on_demand::connect(state_ptr sp) {
-
         // state_ = state::WAIT;
         BOOST_ASSERT(sp->value_ == state_value::CONNECTING);
 
@@ -463,7 +491,6 @@ namespace smf {
     }
 
     void broker_on_demand::start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
-
         //
         //  test if connection was stopped
         //
@@ -492,7 +519,6 @@ namespace smf {
         state_ptr sp,
         const boost::system::error_code &ec,
         boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
-
         //
         //  test if bus was stopped
         //

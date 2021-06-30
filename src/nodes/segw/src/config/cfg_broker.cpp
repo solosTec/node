@@ -24,7 +24,7 @@ namespace smf {
 
     bool cfg_broker::is_lmn_enabled() const { return cfg_lmn(cfg_, type_).is_enabled(); }
 
-    std::chrono::seconds cfg_broker::get_timeout() const { return cfg_lmn(cfg_, type_).get_broker_timeout(); }
+    // std::chrono::seconds cfg_broker::get_timeout() const { return cfg_lmn(cfg_, type_).get_broker_timeout(); }
 
     std::string cfg_broker::get_port() const { return cfg_lmn(cfg_, type_).get_port(); }
 
@@ -49,6 +49,12 @@ namespace smf {
         std::string connect_path(std::uint8_t type, std::size_t idx) {
             return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "connect-on-demand");
         }
+        std::string timeout_path(std::uint8_t type, std::size_t idx) {
+            return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "write-timeout");
+        }
+        std::string watchdog_path(std::uint8_t type, std::size_t idx) {
+            return cyng::to_path(cfg::sep, cfg_broker::root, std::to_string(type), idx, "watchdog");
+        }
     } // namespace
 
     std::size_t cfg_broker::size() const { return cfg_.get_value(count_path(get_index()), static_cast<std::size_t>(0)); }
@@ -65,8 +71,27 @@ namespace smf {
 
     bool cfg_broker::is_connect_on_demand(std::size_t idx) const { return cfg_.get_value(connect_path(get_index(), idx), true); }
 
+    std::chrono::seconds cfg_broker::get_timeout(std::size_t idx) const {
+        auto const to = cfg_.get_value(timeout_path(get_index(), idx), 1);
+        //  at least 1 second
+        return std::chrono::seconds((to < 1) ? 1 : to);
+    }
+
+    std::chrono::seconds cfg_broker::get_watchdog(std::size_t idx) const {
+        auto const wd = cfg_.get_value(watchdog_path(get_index(), idx), 12);
+        //  at least 5 seconds
+        return std::chrono::seconds((wd < 5) ? 5 : wd);
+    }
+
     target cfg_broker::get_target(std::size_t idx) const {
-        return target(get_account(idx), get_pwd(idx), get_address(idx), get_port(idx), is_connect_on_demand(idx));
+        return target(
+            get_account(idx),
+            get_pwd(idx),
+            get_address(idx),
+            get_port(idx),
+            is_connect_on_demand(idx),
+            get_timeout(idx),
+            get_watchdog(idx));
     }
 
     target_vec cfg_broker::get_all_targets() const {
@@ -104,17 +129,28 @@ namespace smf {
 
     bool cfg_broker::set_size(std::size_t size) const { return cfg_.set_value(count_path(get_index()), size); }
 
-    target::target(std::string account, std::string pwd, std::string address, std::uint16_t port, bool on_demand)
+    target::target(
+        std::string account,
+        std::string pwd,
+        std::string address,
+        std::uint16_t port,
+        bool on_demand,
+        std::chrono::seconds timeout,
+        std::chrono::seconds watchdog)
         : account_(account)
         , pwd_(pwd)
         , address_(address)
         , port_(port)
-        , on_demand_(on_demand) {}
+        , on_demand_(on_demand)
+        , timeout_(timeout)
+        , watchdog_(watchdog) {}
 
     std::string const &target::get_account() const { return account_; }
 
     std::string const &target::get_pwd() const { return pwd_; }
     bool target::is_connect_on_demand() const { return on_demand_; }
+    std::chrono::seconds target::get_timeout() const { return timeout_; }
+    std::chrono::seconds target::get_watchdog() const { return watchdog_; }
 
     std::string const &target::get_address() const { return address_; }
 

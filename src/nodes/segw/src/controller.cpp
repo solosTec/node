@@ -253,7 +253,7 @@ namespace smf {
             cyng::make_param("protocol", "wM-Bus:EN13757-4"), //	raw, mbus, iec, sml
             cyng::make_param("broker-enabled", true),
             cyng::make_param("broker-login", false),
-            cyng::make_param("broker-timeout", 12), //	seconds
+            // cyng::make_param("broker-timeout", 12), //	seconds
             cyng::make_param("hex-dump", false),
             create_wireless_broker(hostname),
             create_wireless_block_list()
@@ -277,33 +277,40 @@ namespace smf {
     }
 
     cyng::param_t controller::create_wireless_broker(std::string const &hostname) const {
-        return cyng::make_param("broker", cyng::make_vector({ //	define multiple broker here
-                                    cyng::param_map_factory
+        return cyng::make_param(
+            "broker",
+            cyng::make_vector( //	define multiple broker here
+                {
+                    cyng::param_map_factory
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
-                                        ("address", "segw.ch")("port", 12001)
+                        ("address", "segw.ch")("port", 12001)
 #else
-                                        ("address", "192.168.230.208")("port", 3000)
+                        ("address", "192.168.230.208")("port", 3000)
 #endif
-                                            ("account", hostname) //  login name
-                                        ("pwd", "wM-Bus")         //  password
-                                        ("connect-on-demand",
-                                         true) //  broker algorithm (connect on demand, otherwise connect at start)
-                                            .
-                                            operator cyng::param_map_t()
-                                }));
+                            ("account", hostname)   //  login name
+                        ("pwd", "wM-Bus")           //  password
+                        ("connect-on-demand", true) //  broker algorithm (connect on demand, otherwise connect at start)
+                        ("write-timeout", 2)        //	seconds - only for on-demand
+                        ("watchdog", 12)            //	seconds - only for on-start
+                            .
+                            operator cyng::param_map_t()
+                }));
     }
 
     cyng::param_t controller::create_rs485_broker(std::string const &hostname) const {
         return cyng::make_param(
             "broker",
-            cyng::make_vector({                                              //	define multiple broker here
-                               cyng::param_map_factory("address", "segw.ch") // address
-                               ("port", 12002)                               // port
-                               ("account", hostname)                         //  login name
-                               ("pwd", "rs485")                              //  password
-                               ("connect-on-demand", true) //  broker algorithm (connect on demand, otherwise connect at start)
-                                   .
-                                   operator cyng::param_map_t()}));
+            cyng::make_vector(                                 //	define multiple broker here
+                {                                              //	define multiple broker here
+                 cyng::param_map_factory("address", "segw.ch") // address
+                 ("port", 12002)                               // port
+                 ("account", hostname)                         //  login name
+                 ("pwd", "rs485")                              //  password
+                 ("connect-on-demand", true)                   //  broker algorithm (connect on demand, otherwise connect at start)
+                 ("write-timeout", 2)                          //	seconds - only for on-demand
+                 ("watchdog", 12)                              //	seconds - only for on-start
+                     .
+                     operator cyng::param_map_t()}));
     }
 
     cyng::param_t controller::create_rs485_listener() const {
