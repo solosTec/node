@@ -370,10 +370,10 @@ namespace smf {
                 channel->dispatch("reset-data-sinks");
 
                 //
-                //  get a list of broker tasks
+                //  get a list of filter tasks
                 //
-                auto const name = blocklist.get_task_name();
-                auto const targets = ctl_.get_registry().lookup(name);
+                auto const task_name = blocklist.get_task_name();
+                auto const targets = ctl_.get_registry().lookup(task_name);
                 for (auto sp : targets) {
                     if (sp) {
                         CYNG_LOG_TRACE(logger_, "add-data-sink -> [" << port << "] " << sp->get_name() << "#" << sp->get_id());
@@ -529,11 +529,19 @@ namespace smf {
     void bridge::init_filter(lmn_type type) {
 
         cfg_blocklist cfg(cfg_, type);
-        CYNG_LOG_INFO(logger_, "create filter [" << cfg.get_task_name() << "]");
 
-        auto channel = ctl_.create_named_channel_with_ref<filter>(cfg.get_task_name(), ctl_, logger_, cfg_, type);
+        //  "filter@" + port name
+        auto const task_name = cfg.get_task_name();
+        CYNG_LOG_INFO(logger_, "create filter [" << task_name << "]");
+
+        auto channel = ctl_.create_named_channel_with_ref<filter>(task_name, ctl_, logger_, cfg_, type);
         BOOST_ASSERT(channel->is_open());
         stash_.lock(channel);
+
+        //
+        //	update statistics every second
+        //
+        channel->suspend(std::chrono::seconds(1), "update-statistics");
 
         //
         //	broker tasks are target channels

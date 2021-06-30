@@ -73,8 +73,6 @@ namespace smf {
                 auto const gpio_task_name = cfg_gpio::get_name(lmn_type::ETHERNET);
                 ctl_.get_registry().dispatch(gpio_task_name, "turn", cyng::make_tuple(false));
             }
-            //	update statistics
-            sp->suspend(std::chrono::seconds(1), 3, cyng::make_tuple());
         }
     }
 
@@ -106,9 +104,10 @@ namespace smf {
             if (targets_.empty()) {
                 CYNG_LOG_WARNING(
                     logger_, "[" << cfg_blocklist_.get_task_name() << "] has no targets - drop " << data.size() << " bytes");
-            } else {
-                accumulated_bytes_ += data.size();
             }
+
+            accumulated_bytes_ += data.size();
+
             //
             //	send data to broker
             //
@@ -132,7 +131,7 @@ namespace smf {
             if (!cfg_blocklist_.is_drop_mode()) {
 
                 //
-                // not blocked
+                //  not blocked
                 //	passthrough
                 //
                 if (check_frequency(id)) {
@@ -172,8 +171,9 @@ namespace smf {
         //
         //	check if frequency test is enabled
         //
-        if (!cfg_blocklist_.is_max_frequency_enabled())
+        if (!cfg_blocklist_.is_max_frequency_enabled()) {
             return true;
+        }
 
         //
         //	search meter id
@@ -235,8 +235,9 @@ namespace smf {
             accumulated_bytes_ = 0;
         }
         auto sp = channel_.lock();
-        if (sp)
+        if (sp) {
             sp->suspend(std::chrono::seconds(1), 3, cyng::make_tuple());
+        }
     }
 
     void filter::flash_led(std::chrono::milliseconds ms, std::size_t count) {
