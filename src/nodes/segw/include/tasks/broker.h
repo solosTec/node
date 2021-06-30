@@ -143,7 +143,7 @@ namespace smf {
         void send(state_ptr sp, cyng::buffer_t);
 
         void do_write(state_ptr sp);
-        void handle_write(state_ptr sp, boost::system::error_code const &ec);
+        void handle_write(state_ptr sp, boost::system::error_code const &ec, std::size_t n);
         void connect(state_ptr sp);
         void start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
         void handle_connect(

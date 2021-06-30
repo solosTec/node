@@ -416,24 +416,26 @@ namespace smf {
                 CYNG_LOG_WARNING(logger_, "[broker-on-demand] empty buffer for " << target_);
                 return;
             }
-            CYNG_LOG_INFO(
-                logger_,
-                "[broker-on-demand] transmit " << write_buffer_.front().size() << " bytes #" << write_buffer_.size() << " to "
-                                               << target_);
 
             // Start an asynchronous operation to send a heartbeat message.
             boost::asio::async_write(
                 socket_,
                 boost::asio::buffer(write_buffer_.front().data(), write_buffer_.front().size()),
-                dispatcher_.wrap(std::bind(&broker_on_demand::handle_write, this, sp, std::placeholders::_1)));
+                dispatcher_.wrap(
+                    std::bind(&broker_on_demand::handle_write, this, sp, std::placeholders::_1, std::placeholders::_2)));
         }
     }
 
-    void broker_on_demand::handle_write(state_ptr sp, const boost::system::error_code &ec) {
+    void broker_on_demand::handle_write(state_ptr sp, const boost::system::error_code &ec, std::size_t n) {
         //
         //  test if bus was stopped
         //
         if (!sp->is_stopped()) {
+
+            CYNG_LOG_INFO(
+                logger_,
+                "[broker-on-demand] transmited " << n << " bytes #" << write_buffer_.size() << " to " << target_ << ": "
+                                                 << ec.message());
 
             if (!ec) {
 
@@ -454,15 +456,16 @@ namespace smf {
         // state_ = state::WAIT;
         BOOST_ASSERT(sp->value_ == state_value::CONNECTING);
 
+        //
         // Start the connect actor.
-        // endpoints_ = endpoints;
+        //
         start_connect(sp, sp->endpoints_.begin());
     }
 
     void broker_on_demand::start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
 
         //
-        //  test if bus was stopped
+        //  test if connection was stopped
         //
         if (!sp->is_stopped()) {
 
