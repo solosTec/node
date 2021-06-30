@@ -716,7 +716,7 @@ namespace smf {
             //
             //  new element since v0.9.1.29
             //
-            auto const pos = pmap.find("connect-on-demand");
+            auto pos = pmap.find("connect-on-demand");
             if (pos == pmap.end()) {
                 insert_config_record(
                     stmt,
@@ -724,7 +724,32 @@ namespace smf {
                     cyng::make_object(true),
                     "connect on demand = true, otherwise connect at start");
             }
+            //
+            //  new element since v0.9.2.8
+            //
+            pos = pmap.find("write-timeout");
+            if (pos == pmap.end()) {
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "write-timeout"),
+                    cyng::make_object(1),
+                    "write timeout in seconds (for [connect-on-demand] only)");
+            }
+            //
+            //  new element since v0.9.2.8
+            //
+            pos = pmap.find("watchdog");
+            if (pos == pmap.end()) {
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "watchdog"),
+                    cyng::make_object(12),
+                    "watchdog in seconds (for [connect-on-start] only)");
+            }
 
+            //
+            //  next broker index
+            //
             broker_index++;
         }
 
