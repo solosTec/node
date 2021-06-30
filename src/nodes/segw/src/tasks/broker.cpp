@@ -394,16 +394,24 @@ namespace smf {
     void broker_on_demand::store(cyng::buffer_t data) {
         if (!data.empty()) {
             boost::asio::post(dispatcher_, [this, data]() {
+                //
+                //  add to write buffer
+                //
+                write_buffer_.emplace_back(data);
+
+                //
+                //  calculate total buffer size
+                //
                 auto const total_size = std::accumulate(
                     write_buffer_.begin(),
                     write_buffer_.end(),
                     static_cast<std::size_t>(0),
                     [](std::size_t n, cyng::buffer_t const &buffer) { return n + buffer.size(); });
+
                 CYNG_LOG_INFO(
                     logger_,
                     "[broker-on-demand] stores " << data.size() << " bytes #" << write_buffer_.size()
                                                  << " - total: " << total_size);
-                write_buffer_.emplace_back(data);
             });
         }
     }
