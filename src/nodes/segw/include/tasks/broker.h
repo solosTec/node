@@ -108,7 +108,23 @@ namespace smf {
 
         using signatures_t = std::tuple<std::function<void(cyng::buffer_t)>, std::function<void(cyng::eod)>>;
 
-        enum class state { OFFLINE, CONNECTING, CONNECTED, STOPPED } state_;
+        enum class state_value { OFFLINE, CONNECTING, CONNECTED, STOPPED };
+
+        struct state : std::enable_shared_from_this<state> {
+            state(boost::asio::ip::tcp::resolver::results_type &&);
+            constexpr bool is_stopped() const { return has_state(state_value::STOPPED); }
+            constexpr bool is_connected() const { return has_state(state_value::CONNECTED); }
+            constexpr bool has_state(state_value s) const { return s == value_; }
+
+            state_value value_;
+            boost::asio::ip::tcp::resolver::results_type endpoints_;
+        };
+        using state_ptr = std::shared_ptr<state>;
+        /**
+         * helps to control state from the outside without
+         * to establish an additional reference to the state object.
+         */
+        state_ptr state_holder_;
 
       public:
         broker_on_demand(cyng::channel_weak, cyng::controller &ctl, cyng::logger, target const &, bool login);
@@ -116,27 +132,26 @@ namespace smf {
       private:
         void stop(cyng::eod);
         void start();
-        void reset(state);
+        void reset(state_ptr sp, state_value);
 
         /**
          * incoming raw data from serial interface
          */
         void receive(cyng::buffer_t);
 
-        constexpr bool is_stopped() const { return state_ == state::STOPPED; }
-        constexpr bool is_connected() const { return state_ == state::CONNECTED; }
-
         void store(cyng::buffer_t);
-        void send(cyng::buffer_t);
+        void send(state_ptr sp, cyng::buffer_t);
 
-        void do_write();
-        void handle_write(const boost::system::error_code &ec);
-        void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
-        void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void
-        handle_connect(const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void do_read();
-        void handle_read(const boost::system::error_code &ec, std::size_t n);
+        void do_write(state_ptr sp);
+        void handle_write(state_ptr sp, boost::system::error_code const &ec);
+        void connect(state_ptr sp);
+        void start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void handle_connect(
+            state_ptr sp,
+            const boost::system::error_code &ec,
+            boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void do_read(state_ptr sp);
+        void handle_read(state_ptr sp, const boost::system::error_code &ec, std::size_t n);
 
       private:
         signatures_t sigs_;
@@ -146,7 +161,7 @@ namespace smf {
         target const target_;
         bool const login_;
 
-        boost::asio::ip::tcp::resolver::results_type endpoints_;
+        // boost::asio::ip::tcp::resolver::results_type endpoints_;
         boost::asio::ip::tcp::socket socket_;
         boost::asio::io_context::strand dispatcher_;
 

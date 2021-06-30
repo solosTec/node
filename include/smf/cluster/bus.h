@@ -59,8 +59,8 @@ namespace smf {
 
         struct state : std::enable_shared_from_this<state> {
             state(boost::asio::ip::tcp::resolver::results_type &&);
-            constexpr auto is_connected() const -> bool { return value_ == state_value::CONNECTED; }
-            constexpr auto is_stopped() const -> bool { return value_ == state_value::STOPPED; }
+            constexpr auto is_connected() const -> bool { return has_state(state_value::CONNECTED); }
+            constexpr auto is_stopped() const -> bool { return has_state(state_value::STOPPED); }
             constexpr bool has_state(state_value s) const { return s == value_; }
 
             state_value value_;

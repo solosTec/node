@@ -81,8 +81,9 @@ namespace smf {
                 CYNG_LOG_INFO(logger_, "[broker-on-start] transmit " << data.size() << " bytes to " << target_);
                 bool const b = write_buffer_.empty();
                 write_buffer_.emplace_back(data);
-                if (b)
+                if (b) {
                     do_write();
+                }
             });
         } else {
             CYNG_LOG_WARNING(logger_, "[broker-on-start] drops " << data.size() << " bytes to " << target_);
@@ -118,6 +119,7 @@ namespace smf {
                 endpoint_iter->endpoint(), std::bind(&broker::handle_connect, this, std::placeholders::_1, endpoint_iter));
         } else {
 
+            CYNG_LOG_WARNING(logger_, "[broker-on-start] " << target_ << " connect failed");
             //
             // There are no more endpoints to try. Restart client.
             //
@@ -146,9 +148,10 @@ namespace smf {
         }
 
         auto sp = channel_.lock();
-        if (sp)
+        if (sp) {
             sp->suspend(
                 timeout, "check-status", cyng::make_tuple(timeout < std::chrono::seconds(10) ? std::chrono::seconds(10) : timeout));
+        }
     }
 
     void broker::handle_connect(
@@ -272,14 +275,16 @@ namespace smf {
         cyng::logger logger,
         target const &t,
         bool login)
-        : state_(state::OFFLINE)
-        , sigs_{std::bind(&broker_on_demand::receive, this, std::placeholders::_1), std::bind(&broker_on_demand::stop, this, std::placeholders::_1)}
+        : state_holder_()
+        , sigs_{
+            std::bind(&broker_on_demand::receive, this, std::placeholders::_1), //  receive
+            std::bind(&broker_on_demand::stop, this, std::placeholders::_1) // stop
+        }
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger)
         , target_(t)
         , login_(login)
-        , endpoints_()
         , socket_(ctl.get_ctx())
         , dispatcher_(ctl.get_ctx())
         , read_buffer_()
@@ -295,60 +300,70 @@ namespace smf {
     }
 
     void broker_on_demand::start() {
-        if (is_stopped())
-            return;
+        // if (is_stopped())
+        //    return;
 
-        CYNG_LOG_INFO(logger_, "[broker-on-demand] start " << target_);
+        CYNG_LOG_INFO(logger_, "[broker-on-demand] connect " << target_);
+        state_holder_.reset();
 
-        reset(state::CONNECTING);
+        try {
+            boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
+            state_holder_ = std::make_shared<state>(r.resolve(target_.get_address(), std::to_string(target_.get_port())));
+            reset(state_holder_, state_value::CONNECTING);
+            connect(state_holder_->shared_from_this());
 
-        boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
-        connect(r.resolve(target_.get_address(), std::to_string(target_.get_port())));
+        } catch (std::exception const &ex) {
+            CYNG_LOG_WARNING(logger_, "[broker-on-demand] cannot resolve address " << target_ << ": " << ex.what());
+        }
     }
 
-    void broker_on_demand::stop(cyng::eod) { reset(state::STOPPED); }
+    void broker_on_demand::stop(cyng::eod) { reset(state_holder_, state_value::STOPPED); }
 
-    void broker_on_demand::reset(state next) {
-        state_ = next;
-        boost::system::error_code ignored_ec;
-        switch (next) {
-        case state::OFFLINE:
-            //  required to get a proper error code: connection_aborted
-            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
-            socket_.close(ignored_ec); //  connection_aborted
-            boost::asio::post(dispatcher_, [this]() { write_buffer_.clear(); });
-            break;
-        case state::CONNECTING:
-            break;
-        case state::CONNECTED:
-            break;
-        default:
-            //  stopped
-            //  required to get a proper error code: connection_aborted
-            socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
-            socket_.close(ignored_ec); //  connection_aborted
-            break;
+    void broker_on_demand::reset(state_ptr sp, state_value next) {
+        if (sp && !sp->is_stopped()) {
+
+            sp->value_ = next;
+
+            boost::system::error_code ignored_ec;
+            switch (next) {
+            case state_value::OFFLINE:
+                //  required to get a proper error code: connection_aborted
+                socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
+                socket_.close(ignored_ec); //  connection_aborted
+                boost::asio::post(dispatcher_, [this]() { write_buffer_.clear(); });
+                break;
+            case state_value::STOPPED:
+                //  stopped
+                //  required to get a proper error code: connection_aborted
+                socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
+                socket_.close(ignored_ec); //  connection_aborted
+                break;
+            default:
+                break;
+            }
         }
     }
 
     void broker_on_demand::receive(cyng::buffer_t data) {
-        switch (state_) {
-        case state::OFFLINE:
-            CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: OFFLINE");
-            store(data);
-            start();
-            break;
-        case state::CONNECTING:
-            CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTING");
-            store(data);
-            break;
-        case state::CONNECTED:
-            CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTED");
-            send(data);
-            break;
-        default:
-            CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: ?");
-            break;
+        if (state_holder_ && !state_holder_->is_stopped()) {
+            switch (state_holder_->value_) {
+            case state_value::OFFLINE:
+                CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: OFFLINE");
+                store(data);
+                start();
+                break;
+            case state_value::CONNECTING:
+                CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTING");
+                store(data);
+                break;
+            case state_value::CONNECTED:
+                CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTED");
+                send(state_holder_, data);
+                break;
+            default:
+                CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: ?");
+                break;
+            }
         }
     }
 
@@ -369,9 +384,10 @@ namespace smf {
         }
     }
 
-    void broker_on_demand::send(cyng::buffer_t data) {
-        if (is_connected() && !data.empty()) {
-            boost::asio::post(dispatcher_, [this, data]() {
+    void broker_on_demand::send(state_ptr sp, cyng::buffer_t data) {
+        if (sp && sp->is_connected() && !data.empty()) {
+
+            boost::asio::post(dispatcher_, [this, sp, data]() {
                 bool const b = write_buffer_.empty();
                 CYNG_LOG_TRACE(
                     logger_,
@@ -379,7 +395,7 @@ namespace smf {
                                                 << target_);
                 write_buffer_.emplace_back(data);
                 if (b) {
-                    do_write();
+                    do_write(sp);
                 }
             });
         } else {
@@ -387,157 +403,185 @@ namespace smf {
         }
     }
 
-    void broker_on_demand::do_write() {
-        if (is_stopped())
-            return;
+    void broker_on_demand::do_write(state_ptr sp) {
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
 
-        BOOST_ASSERT(!write_buffer_.empty());
-        if (write_buffer_.empty()) {
-            CYNG_LOG_WARNING(logger_, "[broker-on-demand] empty buffer for " << target_);
-            return;
-        }
-        CYNG_LOG_INFO(
-            logger_,
-            "[broker-on-demand] transmit " << write_buffer_.front().size() << " bytes #" << write_buffer_.size() << " to "
-                                           << target_);
-
-        // Start an asynchronous operation to send a heartbeat message.
-        boost::asio::async_write(
-            socket_,
-            boost::asio::buffer(write_buffer_.front().data(), write_buffer_.front().size()),
-            dispatcher_.wrap(std::bind(&broker_on_demand::handle_write, this, std::placeholders::_1)));
-    }
-
-    void broker_on_demand::handle_write(const boost::system::error_code &ec) {
-        if (is_stopped())
-            return;
-
-        if (!ec) {
-
-            write_buffer_.pop_front();
-            if (!write_buffer_.empty()) {
-                do_write();
+            BOOST_ASSERT(!write_buffer_.empty());
+            if (write_buffer_.empty()) {
+                CYNG_LOG_WARNING(logger_, "[broker-on-demand] empty buffer for " << target_);
+                return;
             }
-        } else {
-            CYNG_LOG_WARNING(logger_, "[broker-on-demand] write " << target_ << ": " << ec.message());
+            CYNG_LOG_INFO(
+                logger_,
+                "[broker-on-demand] transmit " << write_buffer_.front().size() << " bytes #" << write_buffer_.size() << " to "
+                                               << target_);
 
-            reset(state::OFFLINE);
+            // Start an asynchronous operation to send a heartbeat message.
+            boost::asio::async_write(
+                socket_,
+                boost::asio::buffer(write_buffer_.front().data(), write_buffer_.front().size()),
+                dispatcher_.wrap(std::bind(&broker_on_demand::handle_write, this, sp, std::placeholders::_1)));
         }
     }
 
-    void broker_on_demand::connect(boost::asio::ip::tcp::resolver::results_type endpoints) {
+    void broker_on_demand::handle_write(state_ptr sp, const boost::system::error_code &ec) {
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
+
+            if (!ec) {
+
+                write_buffer_.pop_front();
+                if (!write_buffer_.empty()) {
+                    do_write(sp);
+                }
+            } else {
+                CYNG_LOG_WARNING(logger_, "[broker-on-demand] write " << target_ << ": " << ec.message());
+
+                reset(sp, state_value::OFFLINE);
+            }
+        }
+    }
+
+    void broker_on_demand::connect(state_ptr sp) {
 
         // state_ = state::WAIT;
-        BOOST_ASSERT(state_ == state::CONNECTING);
+        BOOST_ASSERT(sp->value_ == state_value::CONNECTING);
 
         // Start the connect actor.
-        endpoints_ = endpoints;
-        start_connect(endpoints_.begin());
+        // endpoints_ = endpoints;
+        start_connect(sp, sp->endpoints_.begin());
     }
 
-    void broker_on_demand::start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
+    void broker_on_demand::start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
 
-        if (endpoint_iter != endpoints_.end()) {
-            CYNG_LOG_TRACE(logger_, "[broker-on-demand] trying " << endpoint_iter->endpoint() << "...");
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
 
-            // Start the asynchronous connect operation.
-            socket_.async_connect(
-                endpoint_iter->endpoint(),
-                std::bind(&broker_on_demand::handle_connect, this, std::placeholders::_1, endpoint_iter));
-        } else {
+            if (endpoint_iter != sp->endpoints_.end()) {
+                CYNG_LOG_TRACE(logger_, "[broker-on-demand] trying " << endpoint_iter->endpoint() << "...");
 
-            //
-            // There are no more endpoints to try.
-            // Reset buffer and go offline
-            //
-            CYNG_LOG_WARNING(logger_, "[broker-on-demand] connect failed");
-            reset(state::OFFLINE);
+                // Start the asynchronous connect operation.
+                socket_.async_connect(
+                    endpoint_iter->endpoint(),
+                    std::bind(&broker_on_demand::handle_connect, this, sp, std::placeholders::_1, endpoint_iter));
+            } else {
+
+                //
+                // There are no more endpoints to try.
+                // Reset buffer and go offline
+                //
+                CYNG_LOG_WARNING(logger_, "[broker-on-demand] " << target_ << " connect failed");
+                reset(sp, state_value::OFFLINE);
+            }
         }
     }
 
     void broker_on_demand::handle_connect(
+        state_ptr sp,
         const boost::system::error_code &ec,
         boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
 
-        if (is_stopped())
-            return;
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
 
-        // The async_connect() function automatically opens the socket at the start
-        // of the asynchronous operation. If the socket is closed at this time then
-        // the timeout handler must have run first.
-        if (!socket_.is_open()) {
+            // The async_connect() function automatically opens the socket at the start
+            // of the asynchronous operation. If the socket is closed at this time then
+            // the timeout handler must have run first.
+            if (!socket_.is_open()) {
 
-            CYNG_LOG_WARNING(logger_, "[broker-on-demand] " << target_ << " connect timed out: " << ec.message());
+                CYNG_LOG_WARNING(logger_, "[broker-on-demand] " << target_ << " connect timed out: " << ec.message());
 
-            // Try the next available endpoint.
-            start_connect(++endpoint_iter);
-        }
+                // Try the next available endpoint.
+                start_connect(sp, ++endpoint_iter);
+            }
 
-        // Check if the connect operation failed before the deadline expired.
-        else if (ec) {
-            CYNG_LOG_WARNING(logger_, "[broker-on-demand] " << target_ << " connect error " << ec.value() << ": " << ec.message());
+            // Check if the connect operation failed before the deadline expired.
+            else if (ec) {
+                CYNG_LOG_WARNING(
+                    logger_, "[broker-on-demand] " << target_ << " connect error " << ec.value() << ": " << ec.message());
 
-            // We need to close the socket used in the previous connection attempt
-            // before starting a new one.
-            boost::system::error_code ec;
-            socket_.close(ec);
+                // We need to close the socket used in the previous connection attempt
+                // before starting a new one.
+                boost::system::error_code ec;
+                socket_.close(ec);
 
-            // Try the next available endpoint.
-            start_connect(++endpoint_iter);
-        }
+                // Try the next available endpoint.
+                start_connect(sp, ++endpoint_iter);
+            }
 
-        // Otherwise we have successfully established a connection.
-        else {
-            CYNG_LOG_INFO(logger_, "[broker-on-demand] " << target_ << " connected to " << endpoint_iter->endpoint());
-            reset(state::CONNECTED);
+            // Otherwise we have successfully established a connection.
+            else {
+                CYNG_LOG_INFO(logger_, "[broker-on-demand] " << target_ << " connected to " << endpoint_iter->endpoint());
+                reset(sp, state_value::CONNECTED);
 
-            // Start the input actor to detect closed connection
-            do_read();
+                // Start the input actor to detect closed connection
+                do_read(sp);
 
-            boost::asio::post(dispatcher_, [this]() {
-                bool const b = write_buffer_.empty();
-                if (login_) {
+                boost::asio::post(dispatcher_, [this, sp]() {
+                    bool const b = write_buffer_.empty();
+                    if (login_) {
+                        //
+                        //	set login sequence
+                        // Start with the login
+                        //
+                        write_buffer_.emplace_front(cyng::make_buffer("\r\n"));
+                        write_buffer_.emplace_front(cyng::make_buffer(target_.get_login_sequence()));
+                    }
+
                     //
-                    //	set login sequence
-                    // Start with the login
+                    //  start writing
                     //
-                    write_buffer_.emplace_front(cyng::make_buffer("\r\n"));
-                    write_buffer_.emplace_front(cyng::make_buffer(target_.get_login_sequence()));
-                }
-
-                //
-                //  start writing
-                //
-                do_write();
-            });
+                    do_write(sp);
+                });
+            }
         }
     }
-    void broker_on_demand::do_read() {
+    void broker_on_demand::do_read(state_ptr sp) {
         //
         //	connect was successful
         //  Start an asynchronous operation to read a newline-delimited message.
         //
         socket_.async_read_some(
             boost::asio::buffer(read_buffer_.data(), read_buffer_.size()),
-            std::bind(&broker_on_demand::handle_read, this, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&broker_on_demand::handle_read, this, sp, std::placeholders::_1, std::placeholders::_2));
     }
 
-    void broker_on_demand::handle_read(const boost::system::error_code &ec, std::size_t n) {
-        if (is_stopped())
-            return;
+    void broker_on_demand::handle_read(state_ptr sp, const boost::system::error_code &ec, std::size_t n) {
+        //
+        //  test if bus was stopped
+        //
+        if (!sp->is_stopped()) {
 
-        if (!ec) {
+            if (!ec) {
 
-            //
-            //  incoming data will be ignored
-            //
-            CYNG_LOG_WARNING(logger_, "[broker-on-demand] " << target_ << " received " << n << " bytes");
+                //
+                //  incoming data will be ignored
+                //
+                CYNG_LOG_WARNING(logger_, "[broker-on-demand] " << target_ << " received " << n << " bytes");
 
-            do_read();
-        } else if (ec != boost::asio::error::connection_aborted) {
-            CYNG_LOG_WARNING(logger_, "[broker-on-demand] " << target_ << " read " << ec.value() << ": " << ec.message());
-            reset(state::OFFLINE);
+                //
+                //  continue reading
+                //
+                do_read(sp);
+
+            } else if (ec != boost::asio::error::connection_aborted) {
+                CYNG_LOG_WARNING(logger_, "[broker-on-demand] " << target_ << " read " << ec.value() << ": " << ec.message());
+                reset(sp, state_value::OFFLINE);
+            }
         }
     }
+
+    broker_on_demand::state::state(boost::asio::ip::tcp::resolver::results_type &&res)
+        : value_(state_value::OFFLINE)
+        , endpoints_(std::move(res)) {}
 
 } // namespace smf

@@ -36,7 +36,6 @@ namespace smf {
         , node_name_(node_name)
         , tag_(tag)
         , bip_(bip)
-        //, endpoints_()
         , socket_(ctx_)
         , timer_(ctx_)
         , buffer_write_()
@@ -103,7 +102,7 @@ namespace smf {
     bool bus::is_connected() const { return (state_holder_) ? state_holder_->is_connected() : false; }
 
     void bus::reset(state_ptr sp, state_value s) {
-        if (!sp->is_stopped()) {
+        if (sp && !sp->is_stopped()) {
 
             sp->value_ = s;
             boost::system::error_code ignored_ec;
@@ -196,7 +195,7 @@ namespace smf {
             // the timeout handler must have run first.
             if (!socket_.is_open()) {
 
-                CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect timed out");
+                CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect timed out: " << ec.message()
 
                 // Try the next available endpoint.
                 start_connect(sp, ++endpoint_iter);
