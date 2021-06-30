@@ -342,27 +342,30 @@ namespace smf {
     }
 
     void broker_on_demand::receive(cyng::buffer_t data) {
-        if (state_holder_ && !state_holder_->is_stopped()) {
-            switch (state_holder_->value_) {
-            case state_value::OFFLINE:
-                CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: OFFLINE");
-                store(data);
-                start();
-                break;
-            case state_value::CONNECTING:
-                CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTING");
-                store(data);
-                break;
-            case state_value::CONNECTED:
-                CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTED");
-                send(state_holder_, data);
-                break;
-            default:
-                CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: ?");
-                break;
+        if (state_holder_) {
+            if (!state_holder_->is_stopped()) {
+                switch (state_holder_->value_) {
+                case state_value::OFFLINE:
+                    CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: OFFLINE");
+                    store(data);
+                    start();
+                    break;
+                case state_value::CONNECTING:
+                    CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTING");
+                    store(data);
+                    break;
+                case state_value::CONNECTED:
+                    CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: CONNECTED");
+                    send(state_holder_, data);
+                    break;
+                default:
+                    CYNG_LOG_TRACE(logger_, "[broker-on-demand] state: ?");
+                    break;
+                }
             }
         } else {
-            CYNG_LOG_WARNING(logger_, "[broker-on-demand] is not running");
+            store(data);
+            start();
         }
     }
 
