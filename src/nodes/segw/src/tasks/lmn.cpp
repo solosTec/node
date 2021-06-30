@@ -147,7 +147,7 @@ namespace smf {
 
     void lmn::update_statistics() {
         if (accumulated_bytes_ > 0) {
-            CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] update statistics: " << accumulated_bytes_);
+            CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] update statistics: " << accumulated_bytes_ << " bytes/sec");
             if (accumulated_bytes_ < 128) {
                 flash_led(std::chrono::milliseconds(500), 2);
             } else if (accumulated_bytes_ < 512) {
@@ -190,12 +190,8 @@ namespace smf {
                 //
                 CYNG_LOG_TRACE(
                     logger_,
-                    "[" << cfg_.get_port() << "] dispatch " << bytes_transferred << " bytes to " << data_sinks_.size()
-                        << " target(s)");
-
-                CYNG_LOG_TRACE(
-                    logger_,
-                    "[" << cfg_.get_port() << "] " << bytes_transferred << " bytes => " << data_sinks_.size() << " data sink(s)");
+                    "[" << cfg_.get_port() << "] dispatch " << bytes_transferred << " bytes => " << data_sinks_.size()
+                        << " data sink(s)");
 
                 //	copy data
                 ctl_.get_registry().dispatch(
