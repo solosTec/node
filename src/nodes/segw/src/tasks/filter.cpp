@@ -40,7 +40,7 @@ namespace smf {
 		, cfg_gpio_(config)
 		, parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
 			auto const flag_id = get_manufacturer_code(h.get_server_id());
-			CYNG_LOG_TRACE(logger_, "[filter] meter: " << get_id(h.get_server_id()) << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+			CYNG_LOG_TRACE(logger_, "[filter] apply " << cfg_blocklist_.get_mode() << " filter to meter: " << get_id(h.get_server_id()) << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
 #ifdef _DEBUG_SEGW
 			{
 				std::stringstream ss;
@@ -187,11 +187,16 @@ namespace smf {
             //	calculate the elapsed time sind last access
             //
             auto const elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - pos->second);
+            // CYNG_LOG_TRACE(
+            //    logger_,
+            //    "[" << cfg_blocklist_.get_task_name() << "] elapsed time of meter \"" << id << "\" since last access is "
+            //        << elapsed.count() << " seconds"
+            //        << " (min. = " << delta.count() << ")");
+
             CYNG_LOG_TRACE(
                 logger_,
-                "[" << cfg_blocklist_.get_task_name() << "] elapsed time of meter " << id << " since last access is "
-                    << elapsed.count() << " seconds"
-                    << " (min = " << delta.count() << ")");
+                "[" << cfg_blocklist_.get_task_name() << "] meter \"" << id << "\" elapsed time " << elapsed.count() << "/"
+                    << delta.count() << " seconds");
 
             if (elapsed < delta) {
 
@@ -200,7 +205,7 @@ namespace smf {
                 CYNG_LOG_TRACE(
                     logger_,
                     "[" << cfg_blocklist_.get_task_name() << "] meter " << id << " has " << remaining.count()
-                        << " seconds to wait");
+                        << " seconds to wait - drop message");
                 //
                 //	to fast
                 //

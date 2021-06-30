@@ -396,7 +396,10 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[broker-on-demand] empty buffer for " << target_);
             return;
         }
-        CYNG_LOG_INFO(logger_, "[broker-on-demand] transmit " << write_buffer_.front().size() << " bytes to " << target_);
+        CYNG_LOG_INFO(
+            logger_,
+            "[broker-on-demand] transmit " << write_buffer_.front().size() << " bytes #" << write_buffer_.size() << " to "
+                                           << target_);
 
         // Start an asynchronous operation to send a heartbeat message.
         boost::asio::async_write(
