@@ -583,7 +583,13 @@ namespace smf {
 #ifdef _DEBUG
                 channel->dispatch("blinking", std::chrono::milliseconds(500));
 #else
-                channel->dispatch("turn", false);
+                if ( pin == 53u) {
+                    // turn on the Power LED and turn off all others
+                    CYNG_LOG_TRACE(logger_, "Init GPIOs: turned on the PWR LED.");
+                    channel->dispatch("turn", true);
+                } else {
+                    channel->dispatch("turn", false);
+                }
 #endif
             }
         } else {
