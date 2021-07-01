@@ -541,7 +541,7 @@ namespace smf {
                         stmt,
                         cyng::to_path(cfg::sep, "lmn", std::to_string(counter), param.first),
                         cyng::make_object(std::chrono::seconds(reconnect)),
-                        "reconnect time in seconds (" + std::to_string(reconnect) + ")");
+                        " deprecated");
                 } else if (boost::algorithm::equals(param.first, "broker")) {
 
                     //
