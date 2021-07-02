@@ -311,6 +311,11 @@ BOOST_AUTO_TEST_CASE(esy) {
     offset = 2;
     while (offset < inp.size()) {
         std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp2, offset, 1);
+#ifdef _DEBUG
+        std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
+                  << std::endl
+                  << std::endl;
+#endif
     }
 }
 
@@ -645,6 +650,11 @@ BOOST_AUTO_TEST_CASE(payload) {
         smf::mbus::unit u;
         while (offset < buffer.size()) {
             std::tie(offset, code, obj, scaler, u) = smf::mbus::read(buffer, offset, 1);
+#ifdef _DEBUG
+            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
+                      << std::endl
+                      << std::endl;
+#endif
         }
     }
     // broker_wmbus_1  | [2021-06-29T07:54:16+0000] TRACE  961191488 -- [wmbus] payload

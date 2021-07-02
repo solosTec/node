@@ -28,7 +28,7 @@ namespace smf {
             case protocol::WIRED_MBUS:
                 return "M-Bus";
             case protocol::WIRELESS_MBUS:
-                return "wM-Bus:EB13757-4";
+                return "wM-Bus:EN13757-4";
             case protocol::HDLC:
                 return "HDLC";
             case protocol::SML:

@@ -41,6 +41,9 @@ namespace smf {
                     //
                     d.add(data.at(offset++));
                     BOOST_ASSERT(data.size() > offset);
+                    BOOST_ASSERT(d.get_dife_size() < 10);
+                    if (d.get_dife_size() == 10)
+                        break;
                 }
 #ifdef _DEBUG
                 {
@@ -48,12 +51,6 @@ namespace smf {
                     boost::ignore_unused(dtc);
                 }
 #endif
-
-                //
-                //  read extended DIF
-                //
-                // dife de(d.is_extended() ? data.at(offset++) : char(0));
-                // BOOST_ASSERT(data.size() > offset);
 
                 //
                 //  get tarif
@@ -72,6 +69,9 @@ namespace smf {
                     //
                     v.add(data.at(offset++));
                     BOOST_ASSERT(data.size() > offset);
+                    BOOST_ASSERT(v.get_vife_size() < 10);
+                    if (v.get_vife_size() == 10)
+                        break;
                 }
 
                 auto const size = calculate_size(d.get_data_field_code(), data.at(offset));
@@ -80,24 +80,20 @@ namespace smf {
                     return std::make_tuple(data.size(), cyng::obis(), cyng::make_object(), 0, unit::UNDEFINED_);
                 }
 
-                if (data_field_code::DFC_VAR == d.get_data_field_code()) {
-                    ++offset;
-                    BOOST_ASSERT(data.size() > offset + size);
-                }
-
-                //
-                //	get vib type
-                //  ToDo: data type DFC_VAR could overwrite the data type
-                //
-                //<std::int8_t, unit, cyng::obis>
-                auto const [scaler, u, code] = v.get_vib_type(medium, d);
-
 #ifdef _DEBUG
                 {
-                    // std::tuple<vib_category, std::int8_t, unit> get_vib_category(vif const &v, vife const &ve)
-                    auto const [cat, sc, e] = get_vib_category(v);
-                    std::cout << to_string(cat) << ", scaler: " << +sc << ", unit: " << mbus::get_unit_name(e) << std::endl;
+                    //
+                    //  reference implementation
+                    //
+                    // auto const [scaler, u, code] = v.get_vib_type(medium, d);
+                    // std::cout << code << ", scaler: " << +scaler << ", unit: " << mbus::get_unit_name(u) << std::endl;
                 }
+#endif
+
+                auto const [cat, code, scaler, u] = get_vib_category(medium, tariff, v);
+#ifdef _DEBUG
+                std::cout << to_string(cat) << " - " << code << ", scaler: " << +scaler << ", unit: " << mbus::get_unit_name(u)
+                          << std::endl;
 #endif
 
                 //
@@ -106,9 +102,55 @@ namespace smf {
                 if (data.size() > offset + size) {
 
                     cyng::buffer_t value;
-                    value.reserve(size);
-                    std::copy_n(data.begin() + offset, size, std::back_inserter(value));
-                    offset += size;
+                    if (data_field_code::DFC_VAR == d.get_data_field_code()) {
+                        //
+                        //  first field contains data length
+                        //
+                        auto const lvar = data.at(offset++);
+                        if (lvar < 0xC0) {
+                            //  ASCII string with LVAR characters
+                            value.reserve(lvar);
+                            std::copy_n(data.begin() + offset, lvar, std::back_inserter(value));
+                            offset += lvar;
+                            return std::make_tuple(
+                                offset, code, cyng::make_object(std::string(value.begin(), value.end())), scaler, u);
+
+                        } else if (lvar < 0xD0) {
+                            //  positive BCD number with(LVAR - C0h) - 2 digits
+                            auto const length = lvar - 0xC0;
+                            value.reserve(length);
+                            std::copy_n(data.begin() + offset, length, std::back_inserter(value));
+                            offset += length;
+                        } else if (lvar < 0xE0) {
+                            //  negative  BCD number with(LVAR - D0h) - 2 digits
+                            auto const length = lvar - 0xD0;
+                            value.reserve(length);
+                            std::copy_n(data.begin() + offset, length, std::back_inserter(value));
+                            offset += length;
+                        } else if (lvar < 0xF0) {
+                            //  binary number with (LVAR - E0h) bytes
+                            auto const length = lvar - 0xE0;
+                            value.reserve(length);
+                            std::copy_n(data.begin() + offset, length, std::back_inserter(value));
+                            offset += length;
+                        } else if (lvar < 0xFB) {
+                            // floating point number with (LVAR - F0h) bytes [to be defined]
+                            auto const length = lvar - 0xF0;
+                            value.reserve(length);
+                            std::copy_n(data.begin() + offset, length, std::back_inserter(value));
+                            offset += length;
+                        }
+
+                    } else {
+
+                        BOOST_ASSERT(data.size() > offset + size);
+                        value.reserve(size);
+                        std::copy_n(data.begin() + offset, size, std::back_inserter(value));
+                        //
+                        //  update offset
+                        //
+                        offset += size;
+                    }
 
                     switch (d.get_data_field_code()) {
                     case data_field_code::DFC_NO_DATA:
@@ -122,13 +164,14 @@ namespace smf {
                             if (v.is_date()) {
                                 return std::make_tuple(
                                     offset,
-                                    cyng::make_obis(
-                                        1,
-                                        0,
-                                        0,
-                                        9,
-                                        2, //	date
-                                        255),
+                                    code, //  date
+                                    // cyng::make_obis(
+                                    //    1,
+                                    //    0,
+                                    //    0,
+                                    //    9,
+                                    //    2, //	date
+                                    //    255),
                                     cyng::make_object(convert_to_tp(value.at(0), value.at(1))),
                                     scaler,
                                     u);
@@ -154,13 +197,14 @@ namespace smf {
                             if (v.is_time()) {
                                 return std::make_tuple(
                                     offset,
-                                    cyng::make_obis(
-                                        1,
-                                        0,
-                                        0,
-                                        9,
-                                        1, //	time
-                                        255),
+                                    code, //  time
+                                    // cyng::make_obis(
+                                    //    1,
+                                    //    0,
+                                    //    0,
+                                    //    9,
+                                    //    1, //	time
+                                    //    255),
                                     cyng::make_object(convert_to_tp(value.at(0), value.at(1), value.at(2), value.at(3))),
                                     scaler,
                                     u);

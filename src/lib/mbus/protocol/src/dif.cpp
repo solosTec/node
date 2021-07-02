@@ -79,6 +79,8 @@ namespace smf {
 
         bool dif::is_extended() const { return get_and(0x80) == 0x80; }
 
+        std::size_t dif::get_dife_size() const { return value_.size() - 1; }
+
         bool dif::is_complete() const { return !((get_last() & 0x80) == 0x80); }
 
         std::uint8_t dif::get_tariff() const { return (is_extended()) ? (get_last() & 0x30) >> 4 : 0; }

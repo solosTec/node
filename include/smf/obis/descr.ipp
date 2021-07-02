@@ -1,4 +1,4 @@
-case 0xff: return "0-0:0.0.0.255";	// 0-0:0.0.0.255
+case 0xff: return "device address - 0-0:0.0.0.255";	// device address - 0-0:0.0.0.255
 case 0x1ff: return "0-0:0.0.1.255";	// 0-0:0.0.1.255
 case 0x2ff: return "0-0:0.0.2.255";	// 0-0:0.0.2.255
 case 0x3ff: return "0-0:0.0.3.255";	// 0-0:0.0.3.255
@@ -85,6 +85,9 @@ case 0x100000901ff: return "Current time at time of transmission (hh:mm:ss)";	//
 case 0x100000902ff: return "Date(YY.MM.DD or DD.MM.YY)";	// Date(YY.MM.DD or DD.MM.YY)
 case 0x100000904ff: return "Date and Time(YYMMDDhhmmss)";	// Date and Time(YYMMDDhhmmss)
 case 0x10000090b00: return "readout time in UTC";	// readout time in UTC
+case 0x100010102ff: return "Battery voltage";	// Battery voltage
+case 0x100010106ff: return "Successful readouts since restart";	// Successful readouts since restart
+case 0x100010109ff: return "Temperature";	// Temperature
 case 0x100010200ff: return "Positive active cumulative maximum demand(A+) total";	// Positive active cumulative maximum demand(A+) total
 case 0x100010400ff: return "Positive active demand in a current demand period(A+)";	// Positive active demand in a current demand period(A+)
 case 0x100010500ff: return "Positive active demand in the last completed demand period(A+)";	// Positive active demand in the last completed demand period(A+)
@@ -150,16 +153,16 @@ case 0x100080400ff: return "Reactive demand in a current demand period in Q4(Q4)
 case 0x100080500ff: return "Reactive demand in the last completed demand period in Q4(Q4)";	// Reactive demand in the last completed demand period in Q4(Q4)
 case 0x100080600ff: return "Reactive maximum demand in Q4(Q4) total";	// Reactive maximum demand in Q4(Q4) total
 case 0x100080800ff: return "Exported capacitive reactive energy in 4 - th quadrant(Q4) total";	// Exported capacitive reactive energy in 4 - th quadrant(Q4) total
-case 0x100090200ff: return "Apparent cumulative maximum demand(S + ) total";	// Apparent cumulative maximum demand(S + ) total
+case 0x100090200ff: return "Apparent cumulative maximum demand(S+) total";	// Apparent cumulative maximum demand(S+) total
 case 0x100090400ff: return "Apparent demand in a current demand period(S+)";	// Apparent demand in a current demand period(S+)
-case 0x100090500ff: return "Apparent demand in the last completed demand period(S + )";	// Apparent demand in the last completed demand period(S + )
+case 0x100090500ff: return "Apparent demand in the last completed demand period(S+)";	// Apparent demand in the last completed demand period(S+)
 case 0x100090600ff: return "Apparent maximum demand(S+) total";	// Apparent maximum demand(S+) total
 case 0x100090601ff: return "Apparent maximum demand(S+) in tariff 1";	// Apparent maximum demand(S+) in tariff 1
 case 0x100090602ff: return "Apparent maximum demand(S+) in tariff 2";	// Apparent maximum demand(S+) in tariff 2
 case 0x100090603ff: return "Apparent maximum demand(S+) in tariff 3";	// Apparent maximum demand(S+) in tariff 3
 case 0x100090604ff: return "Apparent maximum demand(S+) in tariff 4";	// Apparent maximum demand(S+) in tariff 4
-case 0x100090700ff: return "Apparent instantaneous power(S + )";	// Apparent instantaneous power(S + )
-case 0x100090800ff: return "Apparent energy(S + ) total";	// Apparent energy(S + ) total
+case 0x100090700ff: return "Apparent instantaneous power(S+)";	// Apparent instantaneous power(S+)
+case 0x100090800ff: return "Apparent energy(S+) total";	// Apparent energy(S+) total
 case 0x1000a0601ff: return "Instantaneous apparent power average (S+) in tariff 1";	// Instantaneous apparent power average (S+) in tariff 1
 case 0x1000a0602ff: return "Instantaneous apparent power average (S+) in tariff 2";	// Instantaneous apparent power average (S+) in tariff 2
 case 0x1000a0603ff: return "Instantaneous apparent power average (S+) in tariff 3";	// Instantaneous apparent power average (S+) in tariff 3
@@ -178,9 +181,9 @@ case 0x1000f0200ff: return "Absolute active cumulative maximum demand(|A| ) tota
 case 0x1000f0400ff: return "Absolute active demand in a current demand period(|A| )";	// Absolute active demand in a current demand period(|A| )
 case 0x1000f0500ff: return "Absolute active demand in the last completed demand period(|A| )";	// Absolute active demand in the last completed demand period(|A| )
 case 0x1000f0600ff: return "Absolute active maximum demand(|A| ) total";	// Absolute active maximum demand(|A| ) total
-case 0x1000f0700ff: return "Absolute active instantaneous power(|A| )";	// Absolute active instantaneous power(|A| )
+case 0x1000f0700ff: return "Absolute active instantaneous power(|A|)";	// Absolute active instantaneous power(|A|)
 case 0x1000f0800ff: return "Absolute active energy(A+) total";	// Absolute active energy(A+) total
-case 0x100100700ff: return "Sum active instantaneous power(A + -A - )";	// Sum active instantaneous power(A + -A - )
+case 0x100100700ff: return "Sum active instantaneous power(A+ - A-)";	// Sum active instantaneous power(A+ - A-)
 case 0x100100800ff: return "Sum active energy without reverse blockade(A + -A - ) total";	// Sum active energy without reverse blockade(A + -A - ) total
 case 0x100150700ff: return "Positive active instantaneous power(A+) in phase L1";	// Positive active instantaneous power(A+) in phase L1
 case 0x100150800ff: return "Positive active energy(A+) in phase L1 total";	// Positive active energy(A+) in phase L1 total
@@ -188,28 +191,28 @@ case 0x100160700ff: return "Negative active instantaneous power(A-) in phase L1"
 case 0x100160800ff: return "Negative active energy(A-) in phase L1 total";	// Negative active energy(A-) in phase L1 total
 case 0x100170700ff: return "Positive reactive instantaneous power(Q+) in phase L1";	// Positive reactive instantaneous power(Q+) in phase L1
 case 0x100180700ff: return "Negative reactive instantaneous power(Q-) in phase L1";	// Negative reactive instantaneous power(Q-) in phase L1
-case 0x1001d0700ff: return "Apparent instantaneous power(S + ) in phase L1";	// Apparent instantaneous power(S + ) in phase L1
+case 0x1001d0700ff: return "Apparent instantaneous power(S+) in phase L1";	// Apparent instantaneous power(S+) in phase L1
 case 0x1001f0600ff: return "Maximum current(I max) in phase L1";	// Maximum current(I max) in phase L1
 case 0x1001f0700ff: return "Instantaneous current(I) in phase L1";	// Instantaneous current(I) in phase L1
 case 0x100200700ff: return "Instantaneous voltage(U) in phase L1";	// Instantaneous voltage(U) in phase L1
 case 0x100210700ff: return "Instantaneous power factor in phase L1";	// Instantaneous power factor in phase L1
-case 0x100230700ff: return "Absolute active instantaneous power(|A| ) in phase L1";	// Absolute active instantaneous power(|A| ) in phase L1
+case 0x100230700ff: return "Absolute active instantaneous power(|A|) in phase L1";	// Absolute active instantaneous power(|A|) in phase L1
 case 0x100230800ff: return "Absolute active energy(|A|) in phase L1 total";	// Absolute active energy(|A|) in phase L1 total
-case 0x100240700ff: return "Sum active instantaneous power(A + -A - ) in phase L1";	// Sum active instantaneous power(A + -A - ) in phase L1
+case 0x100240700ff: return "Sum active instantaneous power(A + - A-) in phase L1";	// Sum active instantaneous power(A + - A-) in phase L1
 case 0x100290700ff: return "Positive active instantaneous power(A+) in phase L2";	// Positive active instantaneous power(A+) in phase L2
 case 0x100290800ff: return "Positive active energy(A+) in phase L2 total";	// Positive active energy(A+) in phase L2 total
 case 0x1002a0700ff: return "Negative active instantaneous power(A-) in phase L2";	// Negative active instantaneous power(A-) in phase L2
 case 0x1002a0800ff: return "Negative active energy(A-) in phase L2 total";	// Negative active energy(A-) in phase L2 total
 case 0x1002b0700ff: return "Positive reactive instantaneous power(Q+) in phase L2";	// Positive reactive instantaneous power(Q+) in phase L2
 case 0x1002c0700ff: return "Negative reactive instantaneous power(Q-) in phase L2";	// Negative reactive instantaneous power(Q-) in phase L2
-case 0x100310700ff: return "Apparent instantaneous power(S + ) in phase L2";	// Apparent instantaneous power(S + ) in phase L2
+case 0x100310700ff: return "Apparent instantaneous power(S+) in phase L2";	// Apparent instantaneous power(S+) in phase L2
 case 0x100330600ff: return "Maximum current(I max) in phase L2";	// Maximum current(I max) in phase L2
 case 0x100330700ff: return "Instantaneous current(I) in phase L2";	// Instantaneous current(I) in phase L2
 case 0x100340700ff: return "Instantaneous voltage(U) in phase L2";	// Instantaneous voltage(U) in phase L2
 case 0x100350700ff: return "Instantaneous power factor in phase L2";	// Instantaneous power factor in phase L2
-case 0x100370700ff: return "Absolute active instantaneous power(|A| ) in phase L2";	// Absolute active instantaneous power(|A| ) in phase L2
+case 0x100370700ff: return "Absolute active instantaneous power(|A|) in phase L2";	// Absolute active instantaneous power(|A|) in phase L2
 case 0x100370800ff: return "Absolute active energy(|A|) in phase L2 total";	// Absolute active energy(|A|) in phase L2 total
-case 0x100380700ff: return "Sum active instantaneous power(A + -A - ) in phase L2";	// Sum active instantaneous power(A + -A - ) in phase L2
+case 0x100380700ff: return "Sum active instantaneous power(A + - A-) in phase L2";	// Sum active instantaneous power(A + - A-) in phase L2
 case 0x1003d0700ff: return "Positive active instantaneous power(A+) in phase L3";	// Positive active instantaneous power(A+) in phase L3
 case 0x1003d0800ff: return "Positive active energy(A+) in phase L3 total";	// Positive active energy(A+) in phase L3 total
 case 0x1003d6100ff: return "Fatal error meter status";	// Fatal error meter status
@@ -217,14 +220,14 @@ case 0x1003e0700ff: return "Negative active instantaneous power(A-) in phase L3"
 case 0x1003e0800ff: return "Negative active energy(A-) in phase L3 total";	// Negative active energy(A-) in phase L3 total
 case 0x1003f0700ff: return "Positive reactive instantaneous power(Q+) in phase L3";	// Positive reactive instantaneous power(Q+) in phase L3
 case 0x100400700ff: return "Negative reactive instantaneous power(Q-) in phase L3";	// Negative reactive instantaneous power(Q-) in phase L3
-case 0x100450700ff: return "Apparent instantaneous power(S + ) in phase L3";	// Apparent instantaneous power(S + ) in phase L3
+case 0x100450700ff: return "Apparent instantaneous power(S+) in phase L3";	// Apparent instantaneous power(S+) in phase L3
 case 0x100470600ff: return "Maximum current(I max) in phase L3";	// Maximum current(I max) in phase L3
 case 0x100470700ff: return "Instantaneous current(I) in phase L3";	// Instantaneous current(I) in phase L3
 case 0x100480700ff: return "Instantaneous voltage(U) in phase L3";	// Instantaneous voltage(U) in phase L3
 case 0x100490700ff: return "Instantaneous power factor in phase L3";	// Instantaneous power factor in phase L3
-case 0x1004b0700ff: return "Absolute active instantaneous power(|A| ) in phase L3";	// Absolute active instantaneous power(|A| ) in phase L3
+case 0x1004b0700ff: return "Absolute active instantaneous power(|A|) in phase L3";	// Absolute active instantaneous power(|A|) in phase L3
 case 0x1004b0800ff: return "Absolute active energy(|A|) in phase L3 total";	// Absolute active energy(|A|) in phase L3 total
-case 0x1004c0700ff: return "Sum active instantaneous power(A + -A - ) in phase L3";	// Sum active instantaneous power(A + -A - ) in phase L3
+case 0x1004c0700ff: return "Sum active instantaneous power(A + - A-) in phase L3";	// Sum active instantaneous power(A + - A-) in phase L3
 case 0x1005b0600ff: return "Maximum current(I max) in neutral";	// Maximum current(I max) in neutral
 case 0x1005b0700ff: return "Instantaneous current(I) in neutral";	// Instantaneous current(I) in neutral
 case 0x100600200ff: return "Event parameters change";	// Event parameters change
@@ -266,6 +269,9 @@ case 0x10060350bff: return "Tamper 5 energy";	// Tamper 5 energy
 case 0x100605700ff: return "Active tariff";	// Active tariff
 case 0x100606009ff: return "Fraud flag";	// Fraud flag
 case 0x101621700ff: return "Power threshold (D.23.0)";	// Power threshold (D.23.0)
+case 0x800010000ff: return "Volume (V), accumulated, total, current value";	// Volume (V), accumulated, total, current value
+case 0x800010200ff: return "Volume (V), accumulated, total, due date value";	// Volume (V), accumulated, total, due date value
+case 0x800020000ff: return "Flow rate, average (Va/t), current value ";	// Flow rate, average (Va/t), current value 
 case 0x810000090b00: return "actSensorTime - current UTC time";	// actSensorTime - current UTC time
 case 0x810000090b01: return "offset to actual time zone in minutes (-720 .. +720)";	// offset to actual time zone in minutes (-720 .. +720)
 case 0x810060050000: return "";

@@ -63,17 +63,17 @@ int main(int argc, char **argv) {
     static edis_map_t edis_map{
 
         // Active energy registers :
-        {cyng::edis(1, 8, 0), {"REG_PAE", "Positive active energy(A+)", "kWh"}},
-        {cyng::edis(1, 8, 1), {"REG_PAE_T1", "Positive active energy(A+) in tariff T1", "kWh"}},
-        {cyng::edis(1, 8, 2), {"REG_PAE_T2", "Positive active energy(A+) in tariff T2", "kWh"}},
-        {cyng::edis(1, 8, 3), {"REG_PAE_T3", "Positive active energy(A+) in tariff T3", "kWh"}},
-        {cyng::edis(1, 8, 4), {"REG_PAE_T4", "Positive active energy(A+) in tariff T4", "kWh"}},
+        {cyng::edis(1, 8, 0), {"REG_POS_ACT_E", "Positive active energy(A+)", "kWh"}},
+        {cyng::edis(1, 8, 1), {"REG_POS_ACT_E_T1", "Positive active energy(A+) in tariff T1", "kWh"}},
+        {cyng::edis(1, 8, 2), {"REG_POS_ACT_E_T2", "Positive active energy(A+) in tariff T2", "kWh"}},
+        {cyng::edis(1, 8, 3), {"REG_POS_ACT_E_T3", "Positive active energy(A+) in tariff T3", "kWh"}},
+        {cyng::edis(1, 8, 4), {"REG_POS_ACT_E_T4", "Positive active energy(A+) in tariff T4", "kWh"}},
 
-        {cyng::edis(2, 8, 0), {"REG_NAE", "Negative active energy(A+) total", "kWh"}},
-        {cyng::edis(2, 8, 1), {"REG_NAE_T1", "Negative active energy(A+) in tariff T1", "kWh"}},
-        {cyng::edis(2, 8, 2), {"REG_NAE_T2", "Negative active energy(A+) in tariff T2", "kWh"}},
-        {cyng::edis(2, 8, 3), {"REG_NAE_T3", "Negative active energy(A+) in tariff T3", "kWh"}},
-        {cyng::edis(2, 8, 4), {"REG_NAE_T4", "Negative active energy(A+) in tariff T4", "kWh"}},
+        {cyng::edis(2, 8, 0), {"REG_NEG_ACT_E", "Negative active energy(A+) total", "kWh"}},
+        {cyng::edis(2, 8, 1), {"REG_NEG_ACT_E_T1", "Negative active energy(A+) in tariff T1", "kWh"}},
+        {cyng::edis(2, 8, 2), {"REG_NEG_ACT_E_T2", "Negative active energy(A+) in tariff T2", "kWh"}},
+        {cyng::edis(2, 8, 3), {"REG_NEG_ACT_E_T3", "Negative active energy(A+) in tariff T3", "kWh"}},
+        {cyng::edis(2, 8, 4), {"REG_NEG_ACT_E_T4", "Negative active energy(A+) in tariff T4", "kWh"}},
 
         {cyng::edis(15, 8, 0), {"REG_AAE", "Absolute active energy(A+) total", "kWh"}},
         // 15.8.1	Absolute active energy(A+) in tariff T1", "kWh" }},
@@ -118,11 +118,11 @@ int main(int argc, char **argv) {
         // 8.8.4	Exported capacitive reactive energy in 4 - th quadr. (Q4)in tariff T4", "kvarh" }},
 
         // 3. Apparent energy registers
-        {cyng::edis(9, 8, 0), {"REG_AE", "Apparent energy(S + ) total", "kVAh"}},
-        // 9.8.1	Apparent energy(S + ) in tariff T1", "kVAh" }},
-        // 9.8.2	Apparent energy(S + ) in tariff T2", "kVAh" }},
-        // 9.8.3	Apparent energy(S + ) in tariff T3", "kVAh" }},
-        // 9.8.4	Apparent energy(S + ) in tariff T4", "kVAh" }},
+        {cyng::edis(9, 8, 0), {"REG_AE", "Apparent energy(S+) total", "kVAh"}},
+        // 9.8.1	Apparent energy(S+) in tariff T1", "kVAh" }},
+        // 9.8.2	Apparent energy(S+) in tariff T2", "kVAh" }},
+        // 9.8.3	Apparent energy(S+) in tariff T3", "kVAh" }},
+        // 9.8.4	Apparent energy(S+) in tariff T4", "kVAh" }},
         {cyng::edis(10, 8, 0), {"REG_AED", "Apparent energy total - Delivery (10.8.0)", ""}},
         {cyng::edis(10, 8, 1), {"REG_AED_T1", "Apparent energy tariff 1 - Delivery (10.8.1)", ""}},
         {cyng::edis(10, 8, 2), {"REG_AED_T2", "Apparent energy tariff 2 - Delivery (10.8.2)", ""}},
@@ -130,28 +130,28 @@ int main(int argc, char **argv) {
         {cyng::edis(10, 8, 4), {"REG_AED_T4", "Apparent energy tariff 4 - Delivery (10.8.4)", ""}},
 
         // 4. Registers of active energy per phases
-        {cyng::edis(21, 8, 0), {"REG_PAEL1", "Positive active energy(A+) in phase L1 total", "kWh"}},
-        {cyng::edis(41, 8, 0), {"REG_PAEL2", "Positive active energy(A+) in phase L2 total", "kWh"}},
-        {cyng::edis(61, 8, 0), {"REG_PAEL1T", "Positive active energy(A+) in phase L3 total", "kWh"}},
-        {cyng::edis(22, 8, 0), {"REG_NAEL1T", "Negative active energy(A-) in phase L1 total", "kWh"}},
-        {cyng::edis(42, 8, 0), {"REG_NAEL2T", "Negative active energy(A-) in phase L2 total", "kWh"}},
-        {cyng::edis(62, 8, 0), {"REG_NAEL3T", "Negative active energy(A-) in phase L3 total", "kWh"}},
+        {cyng::edis(21, 8, 0), {"REG_POS_ACT_EL1", "Positive active energy(A+) in phase L1 total", "kWh"}},
+        {cyng::edis(41, 8, 0), {"REG_POS_ACT_EL2", "Positive active energy(A+) in phase L2 total", "kWh"}},
+        {cyng::edis(61, 8, 0), {"REG_POS_ACT_EL1T", "Positive active energy(A+) in phase L3 total", "kWh"}},
+        {cyng::edis(22, 8, 0), {"REG_NEG_ACT_EL1T", "Negative active energy(A-) in phase L1 total", "kWh"}},
+        {cyng::edis(42, 8, 0), {"REG_NEG_ACT_EL2T", "Negative active energy(A-) in phase L2 total", "kWh"}},
+        {cyng::edis(62, 8, 0), {"REG_NEG_ACT_EL3T", "Negative active energy(A-) in phase L3 total", "kWh"}},
         {cyng::edis(35, 8, 0), {"REG_AAEL1", "Absolute active energy(|A|) in phase L1 total", "kWh"}},
         {cyng::edis(55, 8, 0), {"REG_AAEL2", "Absolute active energy(|A|) in phase L2 total", "kWh"}},
         {cyng::edis(75, 8, 0), {"REG_AAEL3", "Absolute active energy(|A|) in phase L3 total", "kWh"}},
 
         // 5. Maximum demand registers :
-        {cyng::edis(1, 6, 0), {"REG_PAMD", "Positive active maximum demand(A+) total", "kW"}},
-        {cyng::edis(1, 6, 1), {"REG_PAMD_T1", "Positive active maximum demand(A+) in tariff 1", "kW"}},
-        {cyng::edis(1, 6, 2), {"REG_PAMD_T2", "Positive active maximum demand(A+) in tariff 2", "kW"}},
-        {cyng::edis(1, 6, 3), {"REG_PAMD_T3", "Positive active maximum demand(A+) in tariff 3", "kW"}},
-        {cyng::edis(1, 6, 4), {"REG_PAMD_T4", "Positive active maximum demand(A+) in tariff 4", "kW"}},
+        {cyng::edis(1, 6, 0), {"REG_POS_ACT_MD", "Positive active maximum demand(A+) total", "kW"}},
+        {cyng::edis(1, 6, 1), {"REG_POS_ACT_MD_T1", "Positive active maximum demand(A+) in tariff 1", "kW"}},
+        {cyng::edis(1, 6, 2), {"REG_POS_ACT_MD_T2", "Positive active maximum demand(A+) in tariff 2", "kW"}},
+        {cyng::edis(1, 6, 3), {"REG_POS_ACT_MD_T3", "Positive active maximum demand(A+) in tariff 3", "kW"}},
+        {cyng::edis(1, 6, 4), {"REG_POS_ACT_MD_T4", "Positive active maximum demand(A+) in tariff 4", "kW"}},
 
-        {cyng::edis(2, 6, 0), {"REG_NAMD", "Negative active maximum demand(A-) total", "kW"}},
-        {cyng::edis(2, 6, 1), {"REG_NAMD_T1", "Negative active maximum demand(A-) in tariff 1", "kW"}},
-        {cyng::edis(2, 6, 2), {"REG_NAMD_T2", "Negative active maximum demand(A-) in tariff 2", "kW"}},
-        {cyng::edis(2, 6, 3), {"REG_NAMD_T3", "Negative active maximum demand(A-) in tariff 3", "kW"}},
-        {cyng::edis(2, 6, 4), {"REG_NAMD_T4", "Negative active maximum demand(A-) in tariff 4", "kW"}},
+        {cyng::edis(2, 6, 0), {"REG_NEG_ACT_MD", "Negative active maximum demand(A-) total", "kW"}},
+        {cyng::edis(2, 6, 1), {"REG_NEG_ACT_MD_T1", "Negative active maximum demand(A-) in tariff 1", "kW"}},
+        {cyng::edis(2, 6, 2), {"REG_NEG_ACT_MD_T2", "Negative active maximum demand(A-) in tariff 2", "kW"}},
+        {cyng::edis(2, 6, 3), {"REG_NEG_ACT_MD_T3", "Negative active maximum demand(A-) in tariff 3", "kW"}},
+        {cyng::edis(2, 6, 4), {"REG_NEG_ACT_MD_T4", "Negative active maximum demand(A-) in tariff 4", "kW"}},
 
         {cyng::edis(15, 6, 0), {"REG_AAMD", "Absolute active maximum demand(|A| ) total", "kW"}},
         // 15.6.1	Absolute active maximum demand(|A| ) in tariff T1", "kW" }},
@@ -171,12 +171,12 @@ int main(int argc, char **argv) {
         {cyng::edis(9, 6, 4), {"REG_AMDT_T4", "Apparent maximum demand(S+) in tariff 4", "kVA"}},
 
         // 6. Cumulative maximum demand registers
-        {cyng::edis(1, 2, 0), {"REG_PACMD", "Positive active cumulative maximum demand(A+) total", "kW"}},
+        {cyng::edis(1, 2, 0), {"REG_POS_ACT_CMD", "Positive active cumulative maximum demand(A+) total", "kW"}},
         // 1.2.1	Positive active cumulative maximum demand(A+) in tariff T1", "kW" }},
         // 1.2.2	Positive active cumulative maximum demand(A+) in tariff T2", "kW" }},
         // 1.2.3	Positive active cumulative maximum demand(A+) in tariff T3", "kW" }},
         // 1.2.4	Positive active cumulative maximum demand(A+) in tariff T4", "kW" }},
-        {cyng::edis(2, 2, 0), {"REG_NACMD", "Negative active cumulative maximum demand(A-) total", "kW"}},
+        {cyng::edis(2, 2, 0), {"REG_NEG_ACT_CMD", "Negative active cumulative maximum demand(A-) total", "kW"}},
         // 2.2.1	Negative active cumulative maximum demand(A-) in tariff T1", "kW" }},
         // 2.2.2	Negative active cumulative maximum demand(A-) in tariff T2", "kW" }},
         // 2.2.3	Negative active cumulative maximum demand(A-) in tariff T3", "kW" }},
@@ -192,11 +192,11 @@ int main(int argc, char **argv) {
         {cyng::edis(6, 2, 0), {"REG_RCMDQ2", "Reactive cumulative maximum demand in Q2(Q2) total", "kvar"}},
         {cyng::edis(7, 2, 0), {"REG_RCMDQ3", "Reactive cumulative maximum demand in Q3(Q3) total", "kvar"}},
         {cyng::edis(8, 2, 0), {"REG_RCMDQ4", "Reactive cumulative maximum demand in Q4(Q4) total", "kvar"}},
-        {cyng::edis(9, 2, 0), {"REG_RCMDT", "Apparent cumulative maximum demand(S + ) total", "kVA"}},
+        {cyng::edis(9, 2, 0), {"REG_RCMDT", "Apparent cumulative maximum demand(S+) total", "kVA"}},
 
         // 7. Demands in a current demand period
-        {cyng::edis(1, 4, 0), {"REG_PADCDP", "Positive active demand in a current demand period(A+)", "kW"}},
-        {cyng::edis(2, 4, 0), {"REG_NADCDP", "Negative active demand in a current demand period(A-)", "kW"}},
+        {cyng::edis(1, 4, 0), {"REG_POS_ACT_DCDP", "Positive active demand in a current demand period(A+)", "kW"}},
+        {cyng::edis(2, 4, 0), {"REG_NEG_ACT_DCDP", "Negative active demand in a current demand period(A-)", "kW"}},
         {cyng::edis(15, 4, 0), {"REG_AADCDP", "Absolute active demand in a current demand period(|A| )", "kW"}},
         {cyng::edis(3, 4, 0), {"REG_PRDCDP", "Positive reactive demand in a current demand period(Q+)", "kvar"}},
         {cyng::edis(4, 4, 0), {"REG_NRDCDP", "Negative reactive demand in a current demand period(Q-)", "kvar"}},
@@ -207,8 +207,8 @@ int main(int argc, char **argv) {
         {cyng::edis(9, 4, 0), {"REG_RDCDPT", "Apparent demand in a current demand period(S+)", "kVA"}},
 
         // 8. Demands in the last completed demand period
-        {cyng::edis(1, 5, 0), {"REG_PADLCDP", "Positive active demand in the last completed demand period(A+)", "kW"}},
-        {cyng::edis(2, 5, 0), {"REG_NADLCDP", "Negative active demand in the last completed demand period(A-)", "kW"}},
+        {cyng::edis(1, 5, 0), {"REG_POS_ACT_DLCDP", "Positive active demand in the last completed demand period(A+)", "kW"}},
+        {cyng::edis(2, 5, 0), {"REG_NEG_ACT_DLCDP", "Negative active demand in the last completed demand period(A-)", "kW"}},
         {cyng::edis(15, 5, 0), {"REG_AADLCDP", "Absolute active demand in the last completed demand period(|A| )", "kW"}},
         {cyng::edis(3, 5, 0), {"REG_RDLCDP", "Positive reactive demand in the last completed demand period(Q+)", "kvar"}},
         {cyng::edis(4, 5, 0), {"REG_NRDLCDP", "Negative reactive demand in the last completed demand period(Q-)", "kvar"}},
@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
         {cyng::edis(6, 5, 0), {"REG_RDLCDPQ2", "Reactive demand in the last completed demand period in Q2(Q2)", "kvar"}},
         {cyng::edis(7, 5, 0), {"REG_RDLCDPQ3", "Reactive demand in the last completed demand period in Q3(Q3)", "kvar"}},
         {cyng::edis(8, 5, 0), {"REG_RDLCDPQ4", "Reactive demand in the last completed demand period in Q4(Q4)", "kvar"}},
-        {cyng::edis(9, 5, 0), {"REG_ADLCDP", "Apparent demand in the last completed demand period(S + )", "kVA"}},
+        {cyng::edis(9, 5, 0), {"REG_ADLCDP", "Apparent demand in the last completed demand period(S+)", "kVA"}},
 
         {cyng::edis(10, 6, 1), {"REG_TODO_T1", "Instantaneous apparent power average (S+) in tariff 1", "kVA"}},
         {cyng::edis(10, 6, 2), {"REG_TODO_T2", "Instantaneous apparent power average (S+) in tariff 2", "kVA"}},
@@ -224,22 +224,22 @@ int main(int argc, char **argv) {
         {cyng::edis(10, 6, 4), {"REG_TODO_T4", "Instantaneous apparent power average (S+) in tariff 4", "kVA"}},
 
         // 9. Instantaneous power registers
-        {cyng::edis(1, 7, 0), {"REG_PAIP", "Positive active instantaneous power(A+)", "kW"}},
-        {cyng::edis(21, 7, 0), {"REG_PAIPL1", "Positive active instantaneous power(A+) in phase L1", "kW"}},
-        {cyng::edis(41, 7, 0), {"REG_PAIPL2", "Positive active instantaneous power(A+) in phase L2", "kW"}},
-        {cyng::edis(61, 7, 0), {"REG_PAIPL3", "Positive active instantaneous power(A+) in phase L3", "kW"}},
-        {cyng::edis(2, 7, 0), {"REG_NAIP", "Negative active instantaneous power(A-)", "kW"}},
-        {cyng::edis(22, 7, 0), {"REG_NAIPL1", "Negative active instantaneous power(A-) in phase L1", "kW"}},
-        {cyng::edis(42, 7, 0), {"REG_NAIPL2", "Negative active instantaneous power(A-) in phase L2", "kW"}},
-        {cyng::edis(62, 7, 0), {"REG_NAIPL3", "Negative active instantaneous power(A-) in phase L3", "kW"}},
-        {cyng::edis(15, 7, 0), {"REG_AAIP", "Absolute active instantaneous power(|A| )", "kW"}},
-        {cyng::edis(35, 7, 0), {"REG_AAIPL1", "Absolute active instantaneous power(|A| ) in phase L1", "kW"}},
-        {cyng::edis(55, 7, 0), {"REG_AAIPL2", "Absolute active instantaneous power(|A| ) in phase L2", "kW"}},
-        {cyng::edis(75, 7, 0), {"REG_AAIPL3", "Absolute active instantaneous power(|A| ) in phase L3", "kW"}},
-        {cyng::edis(16, 7, 0), {"REG_SIP", "Sum active instantaneous power(A + -A - )", "kW"}},
-        {cyng::edis(36, 7, 0), {"REG_SIPL1", "Sum active instantaneous power(A + -A - ) in phase L1", "kW"}},
-        {cyng::edis(56, 7, 0), {"REG_SIPL2", "Sum active instantaneous power(A + -A - ) in phase L2", "kW"}},
-        {cyng::edis(76, 7, 0), {"REG_SIPL3", "Sum active instantaneous power(A + -A - ) in phase L3", "kW"}},
+        {cyng::edis(1, 7, 0), {"REG_POS_ACT_IP", "Positive active instantaneous power(A+)", "kW"}},
+        {cyng::edis(21, 7, 0), {"REG_POS_ACT_INST_PPOW_L1", "Positive active instantaneous power(A+) in phase L1", "kW"}},  //  u32
+        {cyng::edis(41, 7, 0), {"REG_POS_ACT_INST_PPOW_L2", "Positive active instantaneous power(A+) in phase L2", "kW"}},  //  u32
+        {cyng::edis(61, 7, 0), {"REG_PPOS_ACT_INST_PPOW_L3", "Positive active instantaneous power(A+) in phase L3", "kW"}}, //  u32
+        {cyng::edis(2, 7, 0), {"REG_NEG_ACT_IP", "Negative active instantaneous power(A-)", "kW"}},
+        {cyng::edis(22, 7, 0), {"REG_NEG_ACT_IPL1", "Negative active instantaneous power(A-) in phase L1", "kW"}},
+        {cyng::edis(42, 7, 0), {"REG_NEG_ACT_IPL2", "Negative active instantaneous power(A-) in phase L2", "kW"}},
+        {cyng::edis(62, 7, 0), {"REG_NEG_ACT_IPL3", "Negative active instantaneous power(A-) in phase L3", "kW"}},
+        {cyng::edis(15, 7, 0), {"REG_AAIP", "Absolute active instantaneous power(|A|)", "kW"}},
+        {cyng::edis(35, 7, 0), {"REG_AAIPL1", "Absolute active instantaneous power(|A|) in phase L1", "kW"}},
+        {cyng::edis(55, 7, 0), {"REG_AAIPL2", "Absolute active instantaneous power(|A|) in phase L2", "kW"}},
+        {cyng::edis(75, 7, 0), {"REG_AAIPL3", "Absolute active instantaneous power(|A|) in phase L3", "kW"}},
+        {cyng::edis(16, 7, 0), {"REG_SIP", "Sum active instantaneous power(A+ - A-)", "kW"}},
+        {cyng::edis(36, 7, 0), {"REG_SIPL1", "Sum active instantaneous power(A + - A-) in phase L1", "kW"}},
+        {cyng::edis(56, 7, 0), {"REG_SIPL2", "Sum active instantaneous power(A + - A-) in phase L2", "kW"}},
+        {cyng::edis(76, 7, 0), {"REG_SIPL3", "Sum active instantaneous power(A + - A-) in phase L3", "kW"}},
         {cyng::edis(3, 7, 0), {"REG_PRIP", "Positive reactive instantaneous power(Q+)", "kvar"}},
         {cyng::edis(23, 7, 0), {"REG_PRIPL1", "Positive reactive instantaneous power(Q+) in phase L1", "kvar"}},
         {cyng::edis(43, 7, 0), {"REG_PRIPL2", "Positive reactive instantaneous power(Q+) in phase L2", "kvar"}},
@@ -248,10 +248,10 @@ int main(int argc, char **argv) {
         {cyng::edis(24, 7, 0), {"REG_NRIPL1", "Negative reactive instantaneous power(Q-) in phase L1", "kvar"}},
         {cyng::edis(44, 7, 0), {"REG_NRIPL2", "Negative reactive instantaneous power(Q-) in phase L2", "kvar"}},
         {cyng::edis(64, 7, 0), {"REG_NRIPL3", "Negative reactive instantaneous power(Q-) in phase L3", "kvar"}},
-        {cyng::edis(9, 7, 0), {"REG_AIP", "Apparent instantaneous power(S + )", "kVA"}},
-        {cyng::edis(29, 7, 0), {"REG_AIPL1", "Apparent instantaneous power(S + ) in phase L1", "kVA"}},
-        {cyng::edis(49, 7, 0), {"REG_AIPL2", "Apparent instantaneous power(S + ) in phase L2", "kVA"}},
-        {cyng::edis(69, 7, 0), {"REG_AIPL3", "Apparent instantaneous power(S + ) in phase L3", "kVA"}},
+        {cyng::edis(9, 7, 0), {"REG_AIP", "Apparent instantaneous power(S+)", "kVA"}},
+        {cyng::edis(29, 7, 0), {"REG_AIPL1", "Apparent instantaneous power(S+) in phase L1", "kVA"}},
+        {cyng::edis(49, 7, 0), {"REG_AIPL2", "Apparent instantaneous power(S+) in phase L2", "kVA"}},
+        {cyng::edis(69, 7, 0), {"REG_AIPL3", "Apparent instantaneous power(S+) in phase L3", "kVA"}},
 
         // 10. Electricity network quality registers
         {cyng::edis(11, 7, 0), {"REG_IC", "Instantaneous current(I)", "A"}},
@@ -333,12 +333,18 @@ int main(int argc, char **argv) {
         {cyng::edis(0, 9, 1), {"REG_DT_CURRENT_TIME", "Current time at time of transmission (hh:mm:ss)", ""}},
         {cyng::edis(0, 9, 2), {"REG_DATE", "Date(YY.MM.DD or DD.MM.YY)", ""}},
         {cyng::edis(0, 9, 4), {"REG_DATE_TIME", "Date and Time(YYMMDDhhmmss)", ""}},
+
+        //  special registers
+        {cyng::edis(1, 1, 2), {"REG_BATTERY_VOLTAGE", "Battery voltage", "V"}},
+        {cyng::edis(1, 1, 6), {"REG_READOUTS", "Successful readouts since restart", ""}},
+        {cyng::edis(1, 1, 9), {"REG_TEMPERATURE", "Temperature", ""}},
+
         {cyng::edis(61, 0x61, 0), {"REG_FATAL_ERROR_METER_STATUS", "Fatal error meter status", ""}}};
 
     using obis_map_t = std::map<cyng::obis, obis_ctx>;
     obis_map_t obis_map{
 
-        {DEFINE_OBIS(00, 00, 00, 00, 00, ff), {"METER_ADDRESS", cyng::TC_NULL, "0-0:0.0.0.255"}},
+        {DEFINE_OBIS(00, 00, 00, 00, 00, ff), {"METER_ADDRESS", cyng::TC_NULL, "device address - 0-0:0.0.0.255"}},
         {DEFINE_OBIS(00, 00, 00, 00, 01, ff), {"IDENTITY_NR_1", cyng::TC_NULL, "0-0:0.0.1.255"}},
         {DEFINE_OBIS(00, 00, 00, 00, 02, ff), {"IDENTITY_NR_2", cyng::TC_NULL, "0-0:0.0.2.255"}},
         {DEFINE_OBIS(00, 00, 00, 00, 03, ff), {"IDENTITY_NR_3", cyng::TC_NULL, "0-0:0.0.3.255"}},
@@ -423,12 +429,27 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(01, 00, 00, 02, 00, ff), {"SOFTWARE_ID", cyng::TC_BUFFER, ""}},
         {DEFINE_OBIS(01, 00, 00, 09, 0b, 00), {"CURRENT_UTC", cyng::TC_NULL, "readout time in UTC"}},
 
+        //{DEFINE_OBIS(01, 00, 01, 07, 00, FF), {"INST_POWER", cyng::TC_UINT32, "Instantaneous power L1 + L2 + L3"}},
+
         //	EDL21
         {DEFINE_OBIS(01, 00, 01, 08, 00, 60), {"EDL21_LAST_24h", cyng::TC_NULL, "Consumption over the last 24 hours"}},
         {DEFINE_OBIS(01, 00, 01, 08, 00, 61), {"EDL21_LAST_7d", cyng::TC_NULL, "Consumption over the last 7 days"}},
         {DEFINE_OBIS(01, 00, 01, 08, 00, 62), {"EDL21_LAST_30d", cyng::TC_NULL, "Consumption over the last 30 days"}},
         {DEFINE_OBIS(01, 00, 01, 08, 00, 63), {"EDL21_LAST_365d", cyng::TC_NULL, "Consumption over the last 365 days"}},
         {DEFINE_OBIS(01, 00, 01, 08, 00, 64), {"EDL21_LAST_RESET", cyng::TC_NULL, "Consumption since last reset"}},
+
+        //	-- Group 4 Heat COst Allocator
+        //	-- Group 5 Cooling
+        //	-- Group 6 Heat + Combined Heat/Cooling (section Heat
+        //  -- Group 7 Gas
+        //
+        //  -- Group 8 Water
+        {DEFINE_OBIS(08, 00, 01, 00, 00, FF), {"WATER_CURRENT", cyng::TC_NULL, "Volume (V), accumulated, total, current value"}},
+        {DEFINE_OBIS(08, 00, 01, 02, 00, FF), {"WATER_DATE", cyng::TC_NULL, "Volume (V), accumulated, total, due date value"}},
+        {DEFINE_OBIS(08, 00, 02, 00, 00, FF), {"WATER_FLOW_RATE", cyng::TC_NULL, "Flow rate, average (Va/t), current value "}},
+        //
+
+        //  -- Group 9 Hot Water
 
         //	SMART METER Register
         {DEFINE_OBIS(01, 01, 62, 17, 00, FF), {"REG_SM_POWER_THRESHOLD", cyng::TC_NULL, "Power threshold (D.23.0)"}},

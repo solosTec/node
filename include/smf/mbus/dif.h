@@ -164,6 +164,11 @@ namespace smf {
             bool is_extended() const;
 
             /**
+             * @return 0 if no dife is available
+             */
+            std::size_t get_dife_size() const;
+
+            /**
              * bit [7]
              * Check the entry at the back.
              */

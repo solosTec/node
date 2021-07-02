@@ -125,14 +125,16 @@ namespace smf {
         /**
          *  get the VIB category
          */
-        std::tuple<vib_category, std::int8_t, unit> get_vib_category(vif const &);
+        std::tuple<vib_category, cyng::obis, std::int8_t, unit>
+        get_vib_category(std::uint8_t medium, std::uint8_t tariff, vif const &);
 
         /**
          * value information field
          * OMS-Spec_Vol2_AnnexB_C042.pdf
          */
         class vif {
-            friend std::tuple<vib_category, std::int8_t, unit> get_vib_category(vif const &);
+            friend std::tuple<vib_category, cyng::obis, std::int8_t, unit>
+            get_vib_category(std::uint8_t medium, std::uint8_t tariff, vif const &);
 
           public:
             explicit vif(char);
@@ -145,6 +147,11 @@ namespace smf {
             std::uint8_t get_value() const;
 
             /**
+             * get extended value (VIFE)
+             */
+            std::uint8_t get_ext_value(std::size_t) const;
+
+            /**
              * value & N
              */
             std::uint8_t get_and(std::uint8_t) const;
@@ -154,7 +161,6 @@ namespace smf {
              * @return scaler and unit
              */
             std::tuple<std::int8_t, unit, cyng::obis> get_vib_type(std::uint8_t medium, dif const &) const;
-            // std::tuple<std::int8_t, unit, cyng::obis> get_vib_type(std::uint8_t medium, dif const &, dife const &) const;
 
             /**
              * bit [7]
@@ -167,12 +173,21 @@ namespace smf {
              */
             bool is_complete() const;
 
+            /**
+             * add extension code
+             */
             std::size_t add(char);
 
             /**
              * @return 0 if no vife is available
              */
             std::size_t get_vife_size() const;
+
+            /**
+             * @return true if element with the specified index has
+             * value 0xFF
+             */
+            bool is_manufacturer_specific(std::size_t) const;
 
             /**
              * DT02, DT04

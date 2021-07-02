@@ -1,4 +1,4 @@
-case 0xff: return "METER_ADDRESS";	// 0-0:0.0.0.255
+case 0xff: return "METER_ADDRESS";	// device address - 0-0:0.0.0.255
 case 0x1ff: return "IDENTITY_NR_1";	// 0-0:0.0.1.255
 case 0x2ff: return "IDENTITY_NR_2";	// 0-0:0.0.2.255
 case 0x3ff: return "IDENTITY_NR_3";	// 0-0:0.0.3.255
@@ -85,39 +85,42 @@ case 0x100000901ff: return "REG_DT_CURRENT_TIME";	// Current time at time of tra
 case 0x100000902ff: return "REG_DATE";	// Date(YY.MM.DD or DD.MM.YY)
 case 0x100000904ff: return "REG_DATE_TIME";	// Date and Time(YYMMDDhhmmss)
 case 0x10000090b00: return "CURRENT_UTC";	// readout time in UTC
-case 0x100010200ff: return "REG_PACMD";	// Positive active cumulative maximum demand(A+) total
-case 0x100010400ff: return "REG_PADCDP";	// Positive active demand in a current demand period(A+)
-case 0x100010500ff: return "REG_PADLCDP";	// Positive active demand in the last completed demand period(A+)
-case 0x100010600ff: return "REG_PAMD";	// Positive active maximum demand(A+) total
-case 0x100010601ff: return "REG_PAMD_T1";	// Positive active maximum demand(A+) in tariff 1
-case 0x100010602ff: return "REG_PAMD_T2";	// Positive active maximum demand(A+) in tariff 2
-case 0x100010603ff: return "REG_PAMD_T3";	// Positive active maximum demand(A+) in tariff 3
-case 0x100010604ff: return "REG_PAMD_T4";	// Positive active maximum demand(A+) in tariff 4
-case 0x100010700ff: return "REG_PAIP";	// Positive active instantaneous power(A+)
+case 0x100010102ff: return "REG_BATTERY_VOLTAGE";	// Battery voltage
+case 0x100010106ff: return "REG_READOUTS";	// Successful readouts since restart
+case 0x100010109ff: return "REG_TEMPERATURE";	// Temperature
+case 0x100010200ff: return "REG_POS_ACT_CMD";	// Positive active cumulative maximum demand(A+) total
+case 0x100010400ff: return "REG_POS_ACT_DCDP";	// Positive active demand in a current demand period(A+)
+case 0x100010500ff: return "REG_POS_ACT_DLCDP";	// Positive active demand in the last completed demand period(A+)
+case 0x100010600ff: return "REG_POS_ACT_MD";	// Positive active maximum demand(A+) total
+case 0x100010601ff: return "REG_POS_ACT_MD_T1";	// Positive active maximum demand(A+) in tariff 1
+case 0x100010602ff: return "REG_POS_ACT_MD_T2";	// Positive active maximum demand(A+) in tariff 2
+case 0x100010603ff: return "REG_POS_ACT_MD_T3";	// Positive active maximum demand(A+) in tariff 3
+case 0x100010604ff: return "REG_POS_ACT_MD_T4";	// Positive active maximum demand(A+) in tariff 4
+case 0x100010700ff: return "REG_POS_ACT_IP";	// Positive active instantaneous power(A+)
 case 0x10001080060: return "EDL21_LAST_24h";	// Consumption over the last 24 hours
 case 0x10001080061: return "EDL21_LAST_7d";	// Consumption over the last 7 days
 case 0x10001080062: return "EDL21_LAST_30d";	// Consumption over the last 30 days
 case 0x10001080063: return "EDL21_LAST_365d";	// Consumption over the last 365 days
 case 0x10001080064: return "EDL21_LAST_RESET";	// Consumption since last reset
-case 0x100010800ff: return "REG_PAE";	// Positive active energy(A+)
-case 0x100010801ff: return "REG_PAE_T1";	// Positive active energy(A+) in tariff T1
-case 0x100010802ff: return "REG_PAE_T2";	// Positive active energy(A+) in tariff T2
-case 0x100010803ff: return "REG_PAE_T3";	// Positive active energy(A+) in tariff T3
-case 0x100010804ff: return "REG_PAE_T4";	// Positive active energy(A+) in tariff T4
-case 0x100020200ff: return "REG_NACMD";	// Negative active cumulative maximum demand(A-) total
-case 0x100020400ff: return "REG_NADCDP";	// Negative active demand in a current demand period(A-)
-case 0x100020500ff: return "REG_NADLCDP";	// Negative active demand in the last completed demand period(A-)
-case 0x100020600ff: return "REG_NAMD";	// Negative active maximum demand(A-) total
-case 0x100020601ff: return "REG_NAMD_T1";	// Negative active maximum demand(A-) in tariff 1
-case 0x100020602ff: return "REG_NAMD_T2";	// Negative active maximum demand(A-) in tariff 2
-case 0x100020603ff: return "REG_NAMD_T3";	// Negative active maximum demand(A-) in tariff 3
-case 0x100020604ff: return "REG_NAMD_T4";	// Negative active maximum demand(A-) in tariff 4
-case 0x100020700ff: return "REG_NAIP";	// Negative active instantaneous power(A-)
-case 0x100020800ff: return "REG_NAE";	// Negative active energy(A+) total
-case 0x100020801ff: return "REG_NAE_T1";	// Negative active energy(A+) in tariff T1
-case 0x100020802ff: return "REG_NAE_T2";	// Negative active energy(A+) in tariff T2
-case 0x100020803ff: return "REG_NAE_T3";	// Negative active energy(A+) in tariff T3
-case 0x100020804ff: return "REG_NAE_T4";	// Negative active energy(A+) in tariff T4
+case 0x100010800ff: return "REG_POS_ACT_E";	// Positive active energy(A+)
+case 0x100010801ff: return "REG_POS_ACT_E_T1";	// Positive active energy(A+) in tariff T1
+case 0x100010802ff: return "REG_POS_ACT_E_T2";	// Positive active energy(A+) in tariff T2
+case 0x100010803ff: return "REG_POS_ACT_E_T3";	// Positive active energy(A+) in tariff T3
+case 0x100010804ff: return "REG_POS_ACT_E_T4";	// Positive active energy(A+) in tariff T4
+case 0x100020200ff: return "REG_NEG_ACT_CMD";	// Negative active cumulative maximum demand(A-) total
+case 0x100020400ff: return "REG_NEG_ACT_DCDP";	// Negative active demand in a current demand period(A-)
+case 0x100020500ff: return "REG_NEG_ACT_DLCDP";	// Negative active demand in the last completed demand period(A-)
+case 0x100020600ff: return "REG_NEG_ACT_MD";	// Negative active maximum demand(A-) total
+case 0x100020601ff: return "REG_NEG_ACT_MD_T1";	// Negative active maximum demand(A-) in tariff 1
+case 0x100020602ff: return "REG_NEG_ACT_MD_T2";	// Negative active maximum demand(A-) in tariff 2
+case 0x100020603ff: return "REG_NEG_ACT_MD_T3";	// Negative active maximum demand(A-) in tariff 3
+case 0x100020604ff: return "REG_NEG_ACT_MD_T4";	// Negative active maximum demand(A-) in tariff 4
+case 0x100020700ff: return "REG_NEG_ACT_IP";	// Negative active instantaneous power(A-)
+case 0x100020800ff: return "REG_NEG_ACT_E";	// Negative active energy(A+) total
+case 0x100020801ff: return "REG_NEG_ACT_E_T1";	// Negative active energy(A+) in tariff T1
+case 0x100020802ff: return "REG_NEG_ACT_E_T2";	// Negative active energy(A+) in tariff T2
+case 0x100020803ff: return "REG_NEG_ACT_E_T3";	// Negative active energy(A+) in tariff T3
+case 0x100020804ff: return "REG_NEG_ACT_E_T4";	// Negative active energy(A+) in tariff T4
 case 0x100030200ff: return "REG_PRCMD";	// Positive reactive cumulative maximum demand(Q+) total
 case 0x100030400ff: return "REG_PRDCDP";	// Positive reactive demand in a current demand period(Q+)
 case 0x100030500ff: return "REG_RDLCDP";	// Positive reactive demand in the last completed demand period(Q+)
@@ -150,16 +153,16 @@ case 0x100080400ff: return "REG_RDCDPQ4";	// Reactive demand in a current demand
 case 0x100080500ff: return "REG_RDLCDPQ4";	// Reactive demand in the last completed demand period in Q4(Q4)
 case 0x100080600ff: return "REG_RMDQ4";	// Reactive maximum demand in Q4(Q4) total
 case 0x100080800ff: return "REG_ECRE";	// Exported capacitive reactive energy in 4 - th quadrant(Q4) total
-case 0x100090200ff: return "REG_RCMDT";	// Apparent cumulative maximum demand(S + ) total
+case 0x100090200ff: return "REG_RCMDT";	// Apparent cumulative maximum demand(S+) total
 case 0x100090400ff: return "REG_RDCDPT";	// Apparent demand in a current demand period(S+)
-case 0x100090500ff: return "REG_ADLCDP";	// Apparent demand in the last completed demand period(S + )
+case 0x100090500ff: return "REG_ADLCDP";	// Apparent demand in the last completed demand period(S+)
 case 0x100090600ff: return "REG_AMDT";	// Apparent maximum demand(S+) total
 case 0x100090601ff: return "REG_AMDT_T1";	// Apparent maximum demand(S+) in tariff 1
 case 0x100090602ff: return "REG_AMDT_T2";	// Apparent maximum demand(S+) in tariff 2
 case 0x100090603ff: return "REG_AMDT_T3";	// Apparent maximum demand(S+) in tariff 3
 case 0x100090604ff: return "REG_AMDT_T4";	// Apparent maximum demand(S+) in tariff 4
-case 0x100090700ff: return "REG_AIP";	// Apparent instantaneous power(S + )
-case 0x100090800ff: return "REG_AE";	// Apparent energy(S + ) total
+case 0x100090700ff: return "REG_AIP";	// Apparent instantaneous power(S+)
+case 0x100090800ff: return "REG_AE";	// Apparent energy(S+) total
 case 0x1000a0601ff: return "REG_TODO_T1";	// Instantaneous apparent power average (S+) in tariff 1
 case 0x1000a0602ff: return "REG_TODO_T2";	// Instantaneous apparent power average (S+) in tariff 2
 case 0x1000a0603ff: return "REG_TODO_T3";	// Instantaneous apparent power average (S+) in tariff 3
@@ -178,53 +181,53 @@ case 0x1000f0200ff: return "REG_AACMD";	// Absolute active cumulative maximum de
 case 0x1000f0400ff: return "REG_AADCDP";	// Absolute active demand in a current demand period(|A| )
 case 0x1000f0500ff: return "REG_AADLCDP";	// Absolute active demand in the last completed demand period(|A| )
 case 0x1000f0600ff: return "REG_AAMD";	// Absolute active maximum demand(|A| ) total
-case 0x1000f0700ff: return "REG_AAIP";	// Absolute active instantaneous power(|A| )
+case 0x1000f0700ff: return "REG_AAIP";	// Absolute active instantaneous power(|A|)
 case 0x1000f0800ff: return "REG_AAE";	// Absolute active energy(A+) total
-case 0x100100700ff: return "REG_SIP";	// Sum active instantaneous power(A + -A - )
+case 0x100100700ff: return "REG_SIP";	// Sum active instantaneous power(A+ - A-)
 case 0x100100800ff: return "REG_SAE";	// Sum active energy without reverse blockade(A + -A - ) total
-case 0x100150700ff: return "REG_PAIPL1";	// Positive active instantaneous power(A+) in phase L1
-case 0x100150800ff: return "REG_PAEL1";	// Positive active energy(A+) in phase L1 total
-case 0x100160700ff: return "REG_NAIPL1";	// Negative active instantaneous power(A-) in phase L1
-case 0x100160800ff: return "REG_NAEL1T";	// Negative active energy(A-) in phase L1 total
+case 0x100150700ff: return "REG_POS_ACT_INST_PPOW_L1";	// Positive active instantaneous power(A+) in phase L1
+case 0x100150800ff: return "REG_POS_ACT_EL1";	// Positive active energy(A+) in phase L1 total
+case 0x100160700ff: return "REG_NEG_ACT_IPL1";	// Negative active instantaneous power(A-) in phase L1
+case 0x100160800ff: return "REG_NEG_ACT_EL1T";	// Negative active energy(A-) in phase L1 total
 case 0x100170700ff: return "REG_PRIPL1";	// Positive reactive instantaneous power(Q+) in phase L1
 case 0x100180700ff: return "REG_NRIPL1";	// Negative reactive instantaneous power(Q-) in phase L1
-case 0x1001d0700ff: return "REG_AIPL1";	// Apparent instantaneous power(S + ) in phase L1
+case 0x1001d0700ff: return "REG_AIPL1";	// Apparent instantaneous power(S+) in phase L1
 case 0x1001f0600ff: return "REG_MCL1";	// Maximum current(I max) in phase L1
 case 0x1001f0700ff: return "REG_ICL1";	// Instantaneous current(I) in phase L1
 case 0x100200700ff: return "REG_IVL1";	// Instantaneous voltage(U) in phase L1
 case 0x100210700ff: return "REG_IPFL1";	// Instantaneous power factor in phase L1
-case 0x100230700ff: return "REG_AAIPL1";	// Absolute active instantaneous power(|A| ) in phase L1
+case 0x100230700ff: return "REG_AAIPL1";	// Absolute active instantaneous power(|A|) in phase L1
 case 0x100230800ff: return "REG_AAEL1";	// Absolute active energy(|A|) in phase L1 total
-case 0x100240700ff: return "REG_SIPL1";	// Sum active instantaneous power(A + -A - ) in phase L1
-case 0x100290700ff: return "REG_PAIPL2";	// Positive active instantaneous power(A+) in phase L2
-case 0x100290800ff: return "REG_PAEL2";	// Positive active energy(A+) in phase L2 total
-case 0x1002a0700ff: return "REG_NAIPL2";	// Negative active instantaneous power(A-) in phase L2
-case 0x1002a0800ff: return "REG_NAEL2T";	// Negative active energy(A-) in phase L2 total
+case 0x100240700ff: return "REG_SIPL1";	// Sum active instantaneous power(A + - A-) in phase L1
+case 0x100290700ff: return "REG_POS_ACT_INST_PPOW_L2";	// Positive active instantaneous power(A+) in phase L2
+case 0x100290800ff: return "REG_POS_ACT_EL2";	// Positive active energy(A+) in phase L2 total
+case 0x1002a0700ff: return "REG_NEG_ACT_IPL2";	// Negative active instantaneous power(A-) in phase L2
+case 0x1002a0800ff: return "REG_NEG_ACT_EL2T";	// Negative active energy(A-) in phase L2 total
 case 0x1002b0700ff: return "REG_PRIPL2";	// Positive reactive instantaneous power(Q+) in phase L2
 case 0x1002c0700ff: return "REG_NRIPL2";	// Negative reactive instantaneous power(Q-) in phase L2
-case 0x100310700ff: return "REG_AIPL2";	// Apparent instantaneous power(S + ) in phase L2
+case 0x100310700ff: return "REG_AIPL2";	// Apparent instantaneous power(S+) in phase L2
 case 0x100330600ff: return "REG_MCL2";	// Maximum current(I max) in phase L2
 case 0x100330700ff: return "REG_ICL2";	// Instantaneous current(I) in phase L2
 case 0x100340700ff: return "REG_IVL2";	// Instantaneous voltage(U) in phase L2
 case 0x100350700ff: return "REG_IPFL2";	// Instantaneous power factor in phase L2
-case 0x100370700ff: return "REG_AAIPL2";	// Absolute active instantaneous power(|A| ) in phase L2
+case 0x100370700ff: return "REG_AAIPL2";	// Absolute active instantaneous power(|A|) in phase L2
 case 0x100370800ff: return "REG_AAEL2";	// Absolute active energy(|A|) in phase L2 total
-case 0x100380700ff: return "REG_SIPL2";	// Sum active instantaneous power(A + -A - ) in phase L2
-case 0x1003d0700ff: return "REG_PAIPL3";	// Positive active instantaneous power(A+) in phase L3
-case 0x1003d0800ff: return "REG_PAEL1T";	// Positive active energy(A+) in phase L3 total
+case 0x100380700ff: return "REG_SIPL2";	// Sum active instantaneous power(A + - A-) in phase L2
+case 0x1003d0700ff: return "REG_PPOS_ACT_INST_PPOW_L3";	// Positive active instantaneous power(A+) in phase L3
+case 0x1003d0800ff: return "REG_POS_ACT_EL1T";	// Positive active energy(A+) in phase L3 total
 case 0x1003d6100ff: return "REG_FATAL_ERROR_METER_STATUS";	// Fatal error meter status
-case 0x1003e0700ff: return "REG_NAIPL3";	// Negative active instantaneous power(A-) in phase L3
-case 0x1003e0800ff: return "REG_NAEL3T";	// Negative active energy(A-) in phase L3 total
+case 0x1003e0700ff: return "REG_NEG_ACT_IPL3";	// Negative active instantaneous power(A-) in phase L3
+case 0x1003e0800ff: return "REG_NEG_ACT_EL3T";	// Negative active energy(A-) in phase L3 total
 case 0x1003f0700ff: return "REG_PRIPL3";	// Positive reactive instantaneous power(Q+) in phase L3
 case 0x100400700ff: return "REG_NRIPL3";	// Negative reactive instantaneous power(Q-) in phase L3
-case 0x100450700ff: return "REG_AIPL3";	// Apparent instantaneous power(S + ) in phase L3
+case 0x100450700ff: return "REG_AIPL3";	// Apparent instantaneous power(S+) in phase L3
 case 0x100470600ff: return "REG_MCL3";	// Maximum current(I max) in phase L3
 case 0x100470700ff: return "REG_ICL3";	// Instantaneous current(I) in phase L3
 case 0x100480700ff: return "REG_IVL3";	// Instantaneous voltage(U) in phase L3
 case 0x100490700ff: return "REG_IPFL3";	// Instantaneous power factor in phase L3
-case 0x1004b0700ff: return "REG_AAIPL3";	// Absolute active instantaneous power(|A| ) in phase L3
+case 0x1004b0700ff: return "REG_AAIPL3";	// Absolute active instantaneous power(|A|) in phase L3
 case 0x1004b0800ff: return "REG_AAEL3";	// Absolute active energy(|A|) in phase L3 total
-case 0x1004c0700ff: return "REG_SIPL3";	// Sum active instantaneous power(A + -A - ) in phase L3
+case 0x1004c0700ff: return "REG_SIPL3";	// Sum active instantaneous power(A + - A-) in phase L3
 case 0x1005b0600ff: return "REG_MCN";	// Maximum current(I max) in neutral
 case 0x1005b0700ff: return "REG_ICN";	// Instantaneous current(I) in neutral
 case 0x100600200ff: return "REG_EVT_PARAM_CHANGED_COUNTER";	// Event parameters change
@@ -266,6 +269,9 @@ case 0x10060350bff: return "REG_TAMPER_ENERGY_5";	// Tamper 5 energy
 case 0x100605700ff: return "REG_ACTIVE_TARFIFF";	// Active tariff
 case 0x100606009ff: return "REG_FRAUD_FLAG";	// Fraud flag
 case 0x101621700ff: return "REG_SM_POWER_THRESHOLD";	// Power threshold (D.23.0)
+case 0x800010000ff: return "WATER_CURRENT";	// Volume (V), accumulated, total, current value
+case 0x800010200ff: return "WATER_DATE";	// Volume (V), accumulated, total, due date value
+case 0x800020000ff: return "WATER_FLOW_RATE";	// Flow rate, average (Va/t), current value 
 case 0x810000090b00: return "ACT_SENSOR_TIME";	// actSensorTime - current UTC time
 case 0x810000090b01: return "TZ_OFFSET";	// offset to actual time zone in minutes (-720 .. +720)
 case 0x810060050000: return "CLASS_OP_LOG_STATUS_WORD";
