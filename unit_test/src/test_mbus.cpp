@@ -264,8 +264,9 @@ BOOST_AUTO_TEST_CASE(parser) {
             cyng::object obj;
             std::int8_t scaler = 0;
             smf::mbus::unit u;
+            bool valid = false;
             while (offset < res.size()) {
-                std::tie(offset, code, obj, scaler, u) = smf::mbus::read(res, offset, 1);
+                std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(res, offset, 1);
             }
         });
     p_short.read(std::begin(inp_short), std::end(inp_short));
@@ -302,15 +303,16 @@ BOOST_AUTO_TEST_CASE(esy) {
     cyng::object obj;
     std::int8_t scaler = 0;
     smf::mbus::unit u;
+    bool valid = false;
     while (offset < inp.size()) {
-        std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp, offset, 1);
+        std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(inp, offset, 1);
     }
 
     auto inp2 = cyng::make_buffer({0x2f, 0x2f, 0x03, 0x74, 0x11, 0x00, 0x00, 0x04, 0x14, 0xdb, 0xe6, 0x18, 0x00, 0x44, 0x14, 0xdb,
                                    0xe6, 0x18, 0x00, 0x42, 0x6c, 0x7e, 0x2b, 0x02, 0xfd, 0x74, 0x35, 0x12, 0x0f, 0x01, 0x00, 0xc8});
     offset = 2;
     while (offset < inp.size()) {
-        std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp2, offset, 1);
+        std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(inp2, offset, 1);
 #ifdef _DEBUG
         std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
                   << std::endl
@@ -436,8 +438,9 @@ BOOST_AUTO_TEST_CASE(reader) {
     cyng::object obj;
     std::int8_t scaler = 0;
     smf::mbus::unit u;
+    bool valid = false;
     while (offset + 4 < inp.size()) {
-        std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp, offset, 1);
+        std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(inp, offset, 1);
         std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
     }
 
@@ -544,7 +547,7 @@ BOOST_AUTO_TEST_CASE(reader) {
 
     offset = 0;
     while (offset + 4 < inp_02.size()) {
-        std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp_02, offset, 1);
+        std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(inp_02, offset, 1);
         std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
     }
 
@@ -648,8 +651,9 @@ BOOST_AUTO_TEST_CASE(payload) {
         cyng::object obj;
         std::int8_t scaler = 0;
         smf::mbus::unit u;
+        bool valid = false;
         while (offset < buffer.size()) {
-            std::tie(offset, code, obj, scaler, u) = smf::mbus::read(buffer, offset, 1);
+            std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(buffer, offset, 1);
 #ifdef _DEBUG
             std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
                       << std::endl

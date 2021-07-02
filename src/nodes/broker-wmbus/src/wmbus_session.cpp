@@ -317,24 +317,25 @@ namespace smf {
         std::int8_t scaler = 0;
         smf::mbus::unit u;
         std::stringstream ss;
+        bool valid = false;
         bool init = false;
         while (offset < payload.size()) {
-            std::tie(offset, code, obj, scaler, u) = smf::mbus::read(payload, offset, 1);
-            // std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
-            // CYNG_LOG_TRACE(logger_, "[sml] " << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u));
+            std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(payload, offset, 1);
+            if (valid) {
 
-            //
-            //	store data to csv file
-            //
-            auto const value = cyng::io::to_plain(obj);
-            writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_unit_name(u)));
+                //
+                //	store data to csv file
+                //
+                auto const value = cyng::io::to_plain(obj);
+                writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_unit_name(u)));
 
-            if (!init) {
-                init = true;
-            } else {
-                ss << ", ";
+                if (!init) {
+                    init = true;
+                } else {
+                    ss << ", ";
+                }
+                ss << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
             }
-            ss << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
         }
 
         //

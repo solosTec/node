@@ -125,7 +125,7 @@ namespace smf {
         /**
          *  get the VIB category
          */
-        std::tuple<vib_category, cyng::obis, std::int8_t, unit>
+        std::tuple<vib_category, cyng::obis, std::int8_t, unit, bool>
         get_vib_category(std::uint8_t medium, std::uint8_t tariff, vif const &);
 
         /**
@@ -133,7 +133,7 @@ namespace smf {
          * OMS-Spec_Vol2_AnnexB_C042.pdf
          */
         class vif {
-            friend std::tuple<vib_category, cyng::obis, std::int8_t, unit>
+            friend std::tuple<vib_category, cyng::obis, std::int8_t, unit, bool>
             get_vib_category(std::uint8_t medium, std::uint8_t tariff, vif const &);
 
           public:

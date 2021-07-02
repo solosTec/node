@@ -262,11 +262,7 @@ namespace smf {
             return {0, unit::UNDEFINED_, cyng::make_obis(medium, 0, 0, 0, 0, 255)};
         }
 
-        // std::tuple<std::int8_t, unit, cyng::obis> vif::get_vib_type(std::uint8_t medium, dif const &d, dife const &de) const {
-        //    return {0, unit::UNDEFINED_, cyng::make_obis(medium, 0, 0, 0, d.get_tariff(), d.get_storage_nr())};
-        //}
-
-        std::tuple<vib_category, cyng::obis, std::int8_t, unit>
+        std::tuple<vib_category, cyng::obis, std::int8_t, unit, bool>
         get_vib_category(std::uint8_t medium, std::uint8_t tariff, vif const &v) {
 
             if (v.get_value() == 0xfd) {
@@ -282,6 +278,7 @@ namespace smf {
                 //  VV Voltage [V]
                 //  YD Descriptor
                 BOOST_ASSERT_MSG(false, "ToDo");
+                return {vib_category::UNDEF, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::UNDEFINED_, false};
             } else if (v.get_and(0x78) == 0x00) {
                 //  EW Energy [kWh] <10e-6 ... 10e+1> forward
                 //	0xF8 = 0b1111 1000
@@ -290,7 +287,12 @@ namespace smf {
                     //  ToDo:
                     BOOST_ASSERT_MSG(false, "ToDo");
                 }
-                return {vib_category::EW01, cyng::make_obis(medium, 0, 1, 8, tariff, 255), (v.get_and(0x07)) - 3, unit::WATT_HOUR};
+                return {
+                    vib_category::EW01,
+                    cyng::make_obis(medium, 0, 1, 8, tariff, 255),
+                    (v.get_and(0x07)) - 3,
+                    unit::WATT_HOUR,
+                    true};
             } else if (v.get_and(0x78) == 0x8) {
                 //	0x78 = 0b0111 1000
                 //	0x08 = 0b0000 1000
@@ -299,7 +301,7 @@ namespace smf {
                     //  ToDo: EW04, EW07
                     BOOST_ASSERT_MSG(false, "ToDo");
                 }
-                return {vib_category::EJ01, cyng::make_obis(medium, 0, 1, 0, tariff, 255), v.get_and(0x07), unit::JOULE};
+                return {vib_category::EJ01, cyng::make_obis(medium, 0, 1, 0, tariff, 255), v.get_and(0x07), unit::JOULE, true};
             } else if (v.get_and(0x78) == 0x10) {
                 //  VM Volume [m³]
                 //	b0001 0000 = 0x10
@@ -308,12 +310,18 @@ namespace smf {
                     //  ToDo: VF02, VF03
                     BOOST_ASSERT_MSG(false, "ToDo");
                 }
-                return {vib_category::VM01, cyng::make_obis(medium, 0, 2, 0, tariff, 255), v.get_and(0x07) - 6, unit::CUBIC_METRE};
+                return {
+                    vib_category::VM01,
+                    cyng::make_obis(medium, 0, 2, 0, tariff, 255),
+                    v.get_and(0x07) - 6,
+                    unit::CUBIC_METRE,
+                    true};
             } else if (v.get_and(0x78) == 0x18) {
                 //	b0001 1000 = 0x18
                 //	->E001 1nnn (mass)
                 //  This is not defined by OMS-Spec Vol2 AnnexB D438
-                return {vib_category::UNDEF, cyng::make_obis(medium, 0, 0, 0, tariff, 255), v.get_and(0x07) - 3, unit::KILOGRAM};
+                return {
+                    vib_category::UNDEF, cyng::make_obis(medium, 0, 0, 0, tariff, 255), v.get_and(0x07) - 3, unit::KILOGRAM, true};
             } else if (v.get_and(0x78) == 0x28) {
                 //	    b0010 1000 = 0x28
                 //  PW01 0010 1nnn
@@ -322,7 +330,12 @@ namespace smf {
                     switch (v.get_vife_size()) {
                     case 1:
                         //  1010 1nnn 0011 1100
-                        return {vib_category::PW03, cyng::make_obis(medium, 0, 1, 7, tariff, 255), v.get_and(0x07) - 3, unit::WATT};
+                        return {
+                            vib_category::PW03,
+                            cyng::make_obis(medium, 0, 1, 7, tariff, 255),
+                            v.get_and(0x07) - 3,
+                            unit::WATT,
+                            true};
                     case 2:
                         //  PW07: 1010 1nnn - 1111 1100 - 0001 0000
                         //  PW09: 1010 1nnn - 1111 1100 - 0000 1100
@@ -334,41 +347,54 @@ namespace smf {
                                     vib_category::PW07,
                                     cyng::make_obis(medium, 0, 21, 7, tariff, 255),
                                     v.get_and(0x07) - 6,
-                                    unit::WATT};
+                                    unit::WATT,
+                                    true};
                             case 2:
                                 return {
                                     vib_category::PW07,
                                     cyng::make_obis(medium, 0, 41, 7, tariff, 255),
                                     v.get_and(0x07) - 6,
-                                    unit::WATT};
+                                    unit::WATT,
+                                    true};
                             case 3:
                                 return {
                                     vib_category::PW07,
                                     cyng::make_obis(medium, 0, 61, 7, tariff, 255),
                                     v.get_and(0x07) - 6,
-                                    unit::WATT};
+                                    unit::WATT,
+                                    true};
                             default:
                                 return {
                                     vib_category::PW07,
                                     cyng::make_obis(medium, 0, 1, 7, tariff, v.get_ext_value(1)),
                                     v.get_and(0x07) - 6,
-                                    unit::WATT};
+                                    unit::WATT,
+                                    true};
                             }
                         }
-                        return {vib_category::PW07, cyng::make_obis(medium, 0, 1, 7, tariff, 255), v.get_and(0x07) - 6, unit::WATT};
+                        return {
+                            vib_category::PW07,
+                            cyng::make_obis(medium, 0, 1, 7, tariff, 255),
+                            v.get_and(0x07) - 6,
+                            unit::WATT,
+                            true};
                     case 3:
                     default:
                         break;
                     }
                 }
-                return {vib_category::PW01, cyng::make_obis(medium, 0, 1, 7, tariff, 255), v.get_and(0x07) - 3, unit::WATT};
+                return {vib_category::PW01, cyng::make_obis(medium, 0, 1, 7, tariff, 255), v.get_and(0x07) - 3, unit::WATT, true};
 
             } else if (v.get_and(0xF8) == 0x30) {
                 //  PJ Power [kJ/h]
                 //	    b0011 0000 = 0x30
                 //	PJ01 0011 0nnn
                 return {
-                    vib_category::PJ01, cyng::make_obis(medium, 0, 8, 0, tariff, 255), v.get_and(0x07) - 3, unit::JOULE_PER_HOUR};
+                    vib_category::PJ01,
+                    cyng::make_obis(medium, 0, 8, 0, tariff, 255),
+                    v.get_and(0x07) - 3,
+                    unit::JOULE_PER_HOUR,
+                    true};
 
             } else if (v.get_and(0x78) == 0x38) {
                 //  VF Volume Flow [m³/h]
@@ -380,7 +406,8 @@ namespace smf {
                     vib_category::VF01,
                     cyng::make_obis(medium, 0, 9, 0, tariff, 255),
                     v.get_and(0x07) - 6,
-                    unit::CUBIC_METRE_PER_HOUR};
+                    unit::CUBIC_METRE_PER_HOUR,
+                    true};
 
             } else if (v.get_and(0x78) == 0x40) {
                 //  This is not defined by OMS-Spec Vol2 AnnexB D438
@@ -390,7 +417,8 @@ namespace smf {
                     vib_category::UNDEF,
                     cyng::make_obis(medium, 0, 0, 0, tariff, 255),
                     v.get_and(0x07) - 7,
-                    unit::CUBIC_METRE_PER_MINUTE};
+                    unit::CUBIC_METRE_PER_MINUTE,
+                    true};
 
             } else if (v.get_and(0x78) == 0x48) {
                 //  This is not defined by OMS-Spec Vol2 AnnexB D438
@@ -400,17 +428,18 @@ namespace smf {
                     vib_category::UNDEF,
                     cyng::make_obis(medium, 0, 0, 0, tariff, 255),
                     v.get_and(0x07) - 9,
-                    unit::CUBIC_METRE_PER_SECOND};
+                    unit::CUBIC_METRE_PER_SECOND,
+                    true};
 
             } else if (v.get_and(0xFC) == 0x74) {
                 //  DP Duration/Period
                 //	0111 01nn
-                return {vib_category::DP01, cyng::make_obis(medium, 0, 0, 1, 2, 255), 0, decode_time_unit(v.get_and(0x03))};
+                return {vib_category::DP01, cyng::make_obis(medium, 0, 0, 1, 2, 255), 0, decode_time_unit(v.get_and(0x03)), true};
 
             } else if (v.get_and(0xFC) == 0x70) {
                 //  DP Duration/
                 //  0111 00nn
-                return {vib_category::DP02, cyng::make_obis(medium, 0, 0, 8, 0, 255), 0, decode_time_unit(v.get_and(0x03))};
+                return {vib_category::DP02, cyng::make_obis(medium, 0, 0, 8, 0, 255), 0, decode_time_unit(v.get_and(0x03)), true};
 
             } else if (v.get_and(0x7C) == 0x6C) {
                 //  DT Date / Time (Duration and Time stamp)
@@ -419,7 +448,7 @@ namespace smf {
                     //  ToDo: DT04
                     BOOST_ASSERT_MSG(false, "ToDo");
                 }
-                return {vib_category::DT02, cyng::make_obis(medium, 0, 0, 9, 2, 255), 0, unit::COUNT};
+                return {vib_category::DT02, cyng::make_obis(medium, 0, 0, 9, 2, 255), 0, unit::COUNT, true};
 
             } else if (v.get_and(0x7C) == 0x6D) {
                 //  DT Date / Time (Duration and Time stamp)
@@ -428,7 +457,7 @@ namespace smf {
                     //  ToDo: DT03
                     BOOST_ASSERT_MSG(false, "ToDo");
                 }
-                return {vib_category::DT01, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::COUNT};
+                return {vib_category::DT01, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::COUNT, true};
 
             } else if (v.get_and(0xFC) == 0x6E) {
                 //  HC Heat Cost Allocation unit
@@ -436,22 +465,22 @@ namespace smf {
                     //  ToDo: HC02
                     BOOST_ASSERT_MSG(false, "ToDo");
                 }
-                return {vib_category::HC01, cyng::make_obis(medium, 0, 1, 0, tariff, 255), 0, unit::COUNT};
+                return {vib_category::HC01, cyng::make_obis(medium, 0, 1, 0, tariff, 255), 0, unit::COUNT, true};
 
             } else if (v.get_value() == 0x22) {
                 //	 0010 0010 (hours in service) 3 bytes
                 //  This is not defined by OMS-Spec Vol2 AnnexB D438
-                return {vib_category::UNDEF, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::HOUR};
+                return {vib_category::UNDEF, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::HOUR, true};
             } else if (v.get_value() == 0x78) {
                 //  0111 1000 (Fabrication No)
-                return {vib_category::ID01, cyng::make_obis(medium, 0, 96, 1, 0, 255), 0, unit::OTHER_UNIT};
+                return {vib_category::ID01, cyng::make_obis(medium, 0, 96, 1, 0, 255), 0, unit::OTHER_UNIT, true};
 
             } else if (v.get_value() == 0x79) {
                 //  0111 1001 - (Enhanced) identification = Fabriknummer
-                return {vib_category::ID02, cyng::make_obis(0, 0, 96, 1, 255, 255), 0, unit::OTHER_UNIT};
+                return {vib_category::ID02, cyng::make_obis(0, 0, 96, 1, 255, 255), 0, unit::OTHER_UNIT, true};
             } else if (v.get_value() == 0x7A) {
                 //  0111 1010 (Primary address)
-                return {vib_category::ID03, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::OTHER_UNIT};
+                return {vib_category::ID03, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::OTHER_UNIT, true};
             } else if (v.get_value() == 0xFB) {
                 BOOST_ASSERT_MSG(false, "ToDo");
                 //  PD Phase in Degree
@@ -465,14 +494,22 @@ namespace smf {
                     BOOST_ASSERT_MSG(false, "ToDo");
                 }
                 return {
-                    vib_category::TC01, cyng::make_obis(medium, 0, 10, 0, tariff, 255), v.get_and(0x03) - 3, unit::DEGREE_CELSIUS};
+                    vib_category::TC01,
+                    cyng::make_obis(medium, 0, 10, 0, tariff, 255),
+                    v.get_and(0x03) - 3,
+                    unit::DEGREE_CELSIUS,
+                    true};
             } else if (v.get_value() == 0x5C) {
                 //  TC Temperature [°C]
                 //  0101 11nn (Return Temperature)
                 return {
-                    vib_category::TC02, cyng::make_obis(medium, 0, 11, 0, tariff, 255), v.get_and(0x03) - 3, unit::DEGREE_CELSIUS};
+                    vib_category::TC02,
+                    cyng::make_obis(medium, 0, 11, 0, tariff, 255),
+                    v.get_and(0x03) - 3,
+                    unit::DEGREE_CELSIUS,
+                    true};
             }
-            return {vib_category::UNDEF, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::UNDEFINED_};
+            return {vib_category::UNDEF, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::UNDEFINED_, false};
         }
 
         std::string to_string(vib_category vb) {

@@ -20,7 +20,7 @@
 
 namespace smf {
     namespace mbus {
-        using reader_rt = std::tuple<std::size_t, cyng::obis, cyng::object, std::int8_t, unit>;
+        using reader_rt = std::tuple<std::size_t, cyng::obis, cyng::object, std::int8_t, unit, bool>;
 
         /**
          * read a buffer from the specified offset and return the next vif
