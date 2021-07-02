@@ -559,7 +559,11 @@ namespace smf {
             //	update cluster table (pty counter)
             //
             auto const counter = cache_.update_pty_counter(vm_.get_tag(), peer_);
+#ifdef _DEBUG
             cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users");
+#else
+            boost::ignore_unused(counter);
+#endif
 
         } else {
             CYNG_LOG_WARNING(logger_, "pty login [" << name << "] failed");
@@ -605,7 +609,11 @@ namespace smf {
             //	update cluster table (pty counter)
             //
             auto const counter = cache_.update_pty_counter(vm_.get_tag(), peer_);
+#ifdef _DEBUG
             cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users");
+#else
+            boost::ignore_unused(counter);
+#endif
         }
     }
 
