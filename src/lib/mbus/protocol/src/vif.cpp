@@ -277,6 +277,10 @@ namespace smf {
                 //  MM Meter Management
                 //  VV Voltage [V]
                 //  YD Descriptor
+                if (v.get_ext_value(0) == 0x74) {
+                    //  remaining capacity (C.6.1)
+                    return {vib_category::MM09, cyng::make_obis(0, 0, 96, 6, 1, 255), 0, unit::DAY, true};
+                }
                 BOOST_ASSERT_MSG(false, "ToDo");
                 return {vib_category::UNDEF, cyng::make_obis(medium, 0, 0, 0, tariff, 255), 0, unit::UNDEFINED_, false};
             } else if (v.get_and(0x78) == 0x00) {
@@ -604,6 +608,8 @@ namespace smf {
                 return "Unique message identification";
 
             // MM,   //	Meter Management
+            case vib_category::MM09:
+                return "Remaining battery lifetime";
             // PD,   //	Phase in Degree
             // PJ,   //	Power[kJ / h]
             case vib_category::PJ01:

@@ -371,6 +371,8 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(00, 00, 60, 06, 00, ff), {"COUNTER_POWER_DOWN_TIME", cyng::TC_UINT32, "Power down time counter (C.6.0)"}},
         {DEFINE_OBIS(00, 00, 60, 06, 01, ff),
          {"BATTERY_REMAINING_CAPACITY", cyng::TC_UINT32, "Battery remaining capacity (C.6.1)"}},
+        {DEFINE_OBIS(00, 00, 60, 06, 02, ff), {"BATTERY_LAST_CHANGE", cyng::TC_TIME_POINT, "Date of last battery change (C.6.2)"}},
+        {DEFINE_OBIS(00, 00, 60, 06, 03, ff), {"BATTERY_VOLTAGE", cyng::TC_UINT32, "Battery Voltage (C.6.3)"}},
 
         {DEFINE_OBIS(00, 00, 60, 07, 00, ff), {"POWER_OUTAGES", cyng::TC_UINT32, "Number of power failures "}},
         {DEFINE_OBIS(00, 00, 60, 08, 00, ff), {"SECONDS_INDEX", cyng::TC_NULL, "[SML_Time] seconds index"}},

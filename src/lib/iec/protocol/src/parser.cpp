@@ -289,7 +289,20 @@ namespace smf {
                     auto const [c, d, e] = to_u8(edis_code.at(0), edis_code.at(1), edis_code.at(2));
                     return (c == 0) ? cyng::make_obis(0, 0, c, d, e, 0xFF) : cyng::make_obis(medium, 0, c, d, e, 0xFF);
                 }
+
             } else if (edis_code.size() == 4) {
+
+                if (boost::algorithm::starts_with(code, "L.")) {
+                    //	L.1.0*126		=> Vorwerte
+                    //
+                    try {
+                        auto const d = static_cast<std::int8_t>(std::stoi(edis_code.at(1)));
+                        auto const e = static_cast<std::int8_t>(std::stoi(edis_code.at(2)));
+
+                        return cyng::make_obis(0, 0, 0x62, d, e, 126);
+                    } catch (std::exception const &) {
+                    }
+                }
 
                 //
                 //	example: 2.8.0*88(00000.03)

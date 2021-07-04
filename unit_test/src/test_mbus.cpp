@@ -666,9 +666,41 @@ BOOST_AUTO_TEST_CASE(payload) {
     {
         auto const buffer = cyng::hex_to_buffer(
             "2f2f070218c7ac070000000004a9ff010000000004a9ff020000000004a9ff03cc5a00000429cc5a00000d7910393230323030363230313030303030302f2f2f");
+        std::size_t offset = 2;
+        cyng::obis code;
+        cyng::object obj;
+        std::int8_t scaler = 0;
+        smf::mbus::unit u;
+        bool valid = false;
+        while (offset < buffer.size()) {
+            std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(buffer, offset, 1);
+#ifdef _DEBUG
+            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
+                      << std::endl
+                      << std::endl;
+#endif
+        }
     }
-    // broker_wmbus_1  | [2021-06-29T07:55:47+0000] TRACE  748414797 -- [wmbus] payload
-    // 2f2f07023c61c9040000000004a9ff010000000004a9ff020000000004a9ff03924e00000429924e00000d7910323430323030363230313030303030302f2f2f
+    {
+
+        // broker_wmbus_1  | [2021-06-29T07:55:47+0000] TRACE  748414797 -- [wmbus] payload
+        auto const buffer = cyng::hex_to_buffer(
+            "2f2f07023c61c9040000000004a9ff010000000004a9ff020000000004a9ff03924e00000429924e00000d7910323430323030363230313030303030302f2f2f");
+        std::size_t offset = 2;
+        cyng::obis code;
+        cyng::object obj;
+        std::int8_t scaler = 0;
+        smf::mbus::unit u;
+        bool valid = false;
+        while (offset < buffer.size()) {
+            std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(buffer, offset, 1);
+#ifdef _DEBUG
+            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
+                      << std::endl
+                      << std::endl;
+#endif
+        }
+    }
     // broker_wmbus_1  | [2021-06-29T07:56:11+0000] TRACE 3401179101 -- [wmbus] payload
     // 2f2f0702953749040000000004a9ff010000000004a9ff020000000004a9ff03060200000429060200000d7910333430323030363230313030303030302f2f2f
     // broker_wmbus_1  | [2021-06-29T07:56:47+0000] TRACE 3401179101 -- [wmbus] payload

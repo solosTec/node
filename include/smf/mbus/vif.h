@@ -71,7 +71,9 @@ namespace smf {
             ID05, //	1111 1101 - 0001 0000
             ID06, //	1111 1101 - 0001 0000
 
-            MM,   //	Meter Management
+            MM,   //    Meter Management
+            MM09, //    1111 1101 0111 0100 days Remaining battery life time
+
             PD,   //	Phase in Degree
             PJ,   //	Power[kJ / h]
             PJ01, //	0011 0nnn
