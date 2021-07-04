@@ -538,6 +538,10 @@ namespace smf {
                 return "s, min, h, d average dur";
             case vib_category::DP03:
                 return "s, min Period of nominal transmission";
+            case vib_category::DP05:
+                return "seconds, minutes, hours, days Operation time (Duration of accumulation)";
+            case vib_category::DP06:
+                return "seconds, minutes, hours, days On time (Duration since power up)";
 
             // DT,   //	 Date / Time (Duration and Time stamp)
             case vib_category::DT01:

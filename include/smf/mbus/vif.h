@@ -15,7 +15,12 @@
 
 namespace smf {
     namespace mbus {
+        /**
+         * modelled after https://oms-group.org/fileadmin/files/download4all/technical_reports/OMS-TR05_Sensors_v1.0.6.pdf
+         */
         enum class vib_category {
+
+            AD, //   Alarm Devices(CO and Smoke Alarm)
 
             CA,   //	Current [A]
             CA01, //	1111 1101 - 1101 nnnn - 1111 1100 - 0000 0001
@@ -23,13 +28,20 @@ namespace smf {
             CA03, //	1111 1101 - 1101 nnnn - 1111 1100 - 0000 0011
             CA04, //	1111 1101 - 1101 nnnn - 1111 1100 - 0000 0100
 
+            CC, //  CC Carbon Oxide Content
+            CD, //  Conductivity
+
             CL,   // Control
-            CL01, //	1111 1101 - 0001 1111
+            CL01, //	1111 1101 - 0001 1111 - disconnector control state
+
+            DI, //  Distances
 
             DP,   // Duration/Period
-            DP01, //	0111 01nn
-            DP02, //	0111 00nn
-            DP03, //	1111 1101 - 0011 110n
+            DP01, //	0111 01nn - s, min, h, d actuality dur.
+            DP02, //	0111 00nn - s, min, h, d average dur.
+            DP03, //	1111 1101 - 0011 110n - s, min Period of nominal transmission
+            DP05, //    0010 01nn - seconds, minutes, hours, days Operation time (Duration of accumulation)
+            DP06, //    0010 00nn - seconds, minutes, hours, days On time (Duration since power up)
 
             DT,   //	 Date / Time (Duration and Time stamp)
             DT01, //	0110 1101

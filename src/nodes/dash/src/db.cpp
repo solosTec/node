@@ -475,11 +475,14 @@ namespace smf {
     }
 
     cyng::object convert_to_uuid(cyng::object &obj) {
+        if (obj.rtti().tag() == cyng::TC_NULL)
+            return cyng::make_object(boost::uuids::nil_uuid());
         if (obj.rtti().tag() == cyng::TC_UUID)
             return obj;
         BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
         if (obj.rtti().tag() == cyng::TC_STRING) {
             auto const str = cyng::io::to_plain(obj);
+            BOOST_ASSERT(str.size() == 36);
             return cyng::make_object(cyng::to_uuid(str));
         }
         return cyng::make_object(boost::uuids::nil_uuid());

@@ -91,6 +91,11 @@ namespace smf {
         void db_req_update_gw_iec(cyng::key_t key, cyng::param_map_t, boost::uuids::uuid);
 
         /**
+         * Changes in table "gwIEC" must be applied to table "meterIEC" too
+         */
+        void db_req_update_meter_iec(cyng::key_t key, cyng::param_map_t, boost::uuids::uuid);
+
+        /**
          * table erase()
          */
         void db_req_remove(std::string const &table_name, cyng::key_t key, boost::uuids::uuid source);

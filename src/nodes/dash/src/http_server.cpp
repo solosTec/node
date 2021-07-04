@@ -338,7 +338,7 @@ namespace smf {
             CYNG_LOG_TRACE(logger_, "[HTTP] modify request for table " << rel.table_ << ": " << data);
             cluster_bus_.req_db_update(rel.table_, key, data);
         } else {
-            CYNG_LOG_WARNING(logger_, "[HTTP] modify: undefined channel or empty key" << channel);
+            CYNG_LOG_WARNING(logger_, "[HTTP] modify: undefined channel or empty key: " << channel);
         }
     }
 
