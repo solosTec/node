@@ -338,6 +338,19 @@ namespace smf {
         //	key with multiple columns
         //
         std::reverse(key.begin(), key.end());
+
+        if (boost::algorithm::equals(table_name, "gwIEC")) {
+            //
+            //  Since we are looking for meters with the same host and port we have to use the "old" values
+            //  to find them.
+            //
+            for (auto const &pm : data) {
+                if (boost::algorithm::equals(pm.first, "host") || boost::algorithm::equals(pm.first, "port")) {
+                    db_req_update_meter_iec_host_or_port(key, pm, source);
+                }
+            }
+        }
+
         auto const b = cache_.get_store().modify(table_name, key, data, source);
 
         if (b && boost::algorithm::equals(table_name, "meterIEC")) {
@@ -349,11 +362,17 @@ namespace smf {
             //
             //  update "meterIEC" too
             //
+            for (auto const &pm : data) {
+                if (boost::algorithm::equals(pm.first, "interval")) {
+                    db_req_update_meter_iec(key, data, source);
+                }
+            }
+
             db_req_update_meter_iec(key, data, source);
         }
     }
 
-    void session::db_req_update_gw_iec(cyng::key_t key, cyng::param_map_t pmap, boost::uuids::uuid source) {
+    void session::db_req_update_gw_iec(cyng::key_t key, cyng::param_map_t const &pmap, boost::uuids::uuid source) {
 
         for (auto const &pm : pmap) {
             if (boost::algorithm::equals(pm.first, "host") || boost::algorithm::equals(pm.first, "port")) {
@@ -364,7 +383,46 @@ namespace smf {
         }
     }
 
-    void session::db_req_update_meter_iec(cyng::key_t key, cyng::param_map_t pmap, boost::uuids::uuid source) {
+    void session::db_req_update_meter_iec_host_or_port(cyng::key_t const &key, cyng::param_t const &pm, boost::uuids::uuid source) {
+        BOOST_ASSERT(boost::algorithm::equals(pm.first, "port"));
+        cache_.get_store().access(
+            [&](cyng::table const *tbl_gw, cyng::table *tbl_meter) {
+                //
+                //  get record
+                //
+                auto const rec_gw = tbl_gw->lookup(key);
+                if (!rec_gw.empty()) {
+                    auto const host = rec_gw.value("host", "");
+                    auto const port = rec_gw.value<std::uint16_t>("port", 0);
+
+                    //
+                    //  loop over "meterIEC" and collect all affected IEC meters
+                    //
+                    cyng::key_list_t to_update;
+
+                    tbl_meter->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                        auto const host_tmp = rec.value("host", "");
+                        auto const port_tmp = rec.value<std::uint16_t>("port", 0);
+
+                        if (boost::algorithm::equals(host, host_tmp) && (port == port_tmp)) {
+                            //
+                            //  match
+                            //
+                            to_update.emplace(rec.key());
+                        }
+                        return true;
+                    });
+
+                    for (auto const &key_meter : to_update) {
+                        tbl_meter->modify(key_meter, pm, source);
+                    }
+                }
+            },
+            cyng::access::read("gwIEC"),
+            cyng::access::write("meterIEC"));
+    }
+
+    void session::db_req_update_meter_iec(cyng::key_t key, cyng::param_map_t const &pmap, boost::uuids::uuid source) {
         //
         //  find all affected meters
         //
@@ -400,11 +458,12 @@ namespace smf {
                     //  update values
                     //
                     CYNG_LOG_TRACE(
-                        logger_, "session [" << protocol_layer_ << "] req.update " << to_update.size() << " affected IEC meters");
+                        logger_,
+                        "session [" << protocol_layer_ << "] req.update " << to_update.size()
+                                    << " affected IEC meters: " << cyng::to_string(pmap));
                     for (auto const &key_meter : to_update) {
                         for (auto const &pm : pmap) {
-                            if (boost::algorithm::equals(pm.first, "interval") || boost::algorithm::equals(pm.first, "host") ||
-                                boost::algorithm::equals(pm.first, "port")) {
+                            if (boost::algorithm::equals(pm.first, "interval")) {
                                 //
                                 //  update: all columns have the same name.
                                 //  No re-naming required
