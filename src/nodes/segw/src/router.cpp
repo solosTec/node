@@ -165,6 +165,16 @@ namespace smf {
         //
         auto const buffer = sml::to_sml(messages_);
 
+#ifdef _DEBUG_SEGW
+        {
+            std::stringstream ss;
+            cyng::io::hex_dump<8> hd;
+            hd(ss, std::begin(buffer), std::end(buffer));
+            auto const dmp = ss.str();
+            CYNG_LOG_DEBUG(logger_, "[ipt] response " << buffer.size() << " bytes:\n" << dmp);
+        }
+#endif
+
         //
         //  send
         //

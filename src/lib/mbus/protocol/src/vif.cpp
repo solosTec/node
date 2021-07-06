@@ -314,6 +314,7 @@ namespace smf {
                     //  ToDo: VF02, VF03
                     BOOST_ASSERT_MSG(false, "ToDo");
                 }
+                // static_cast<std::int8_t>(get_value() & 0x07) - 6, unit::CUBIC_METRE, cyng::make_obis(medium, 0, 3, 1, 0, 255)};
                 return {
                     vib_category::VM01,
                     cyng::make_obis(medium, 0, 2, 0, tariff, 255),

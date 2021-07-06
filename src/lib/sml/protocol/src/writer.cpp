@@ -108,7 +108,7 @@ namespace cyng {
             } else if (v < std::numeric_limits<std::uint32_t>::max() / 0x100) {
                 //	only 3 bytes required
                 os.put(0x64); //	TL field
-                write_binary<std::uint32_t, 3, 1>(os, v);
+                write_binary<std::uint32_t, 3, 0>(os, v);
             } else {
                 os.put(0x65); //	TL field
                 write_binary(os, v);
@@ -123,17 +123,17 @@ namespace cyng {
             } else if (v < std::numeric_limits<std::uint64_t>::max() / 0x10000) {
                 //	only 5 bytes required
                 os.put(0x66); //	TL field
-                write_binary<std::uint64_t, 5, 3>(os, v);
+                write_binary<std::uint64_t, 5, 0>(os, v);
 
             } else if (v < std::numeric_limits<std::uint64_t>::max() / 0x1000) {
                 //	only 6 bytes required
                 os.put(0x67); //	TL field
-                write_binary<std::uint64_t, 6, 2>(os, v);
+                write_binary<std::uint64_t, 6, 0>(os, v);
 
             } else if (v < std::numeric_limits<std::uint64_t>::max() / 0x100) {
                 //	only 7 bytes required
                 os.put(0x68); //	TL field
-                write_binary<std::uint64_t, 7, 1>(os, v);
+                write_binary<std::uint64_t, 7, 0>(os, v);
 
             } else {
                 //	up to 18.446.744.073.709.551.615
@@ -167,7 +167,7 @@ namespace cyng {
                 serializer<std::int16_t, SML>::write(os, boost::numeric_cast<std::int16_t>(v));
             } else if (v > -0xFFFFFF && v < 0xFFFFFF) {
                 os.put(0x54); //	TL field
-                write_binary<std::int32_t, 3, 1>(os, v);
+                write_binary<std::int32_t, 3, 0>(os, v);
             } else {
                 os.put(0x55); //	TL field
                 write_binary<std::int32_t, 4, 0>(os, v);
@@ -225,13 +225,34 @@ namespace cyng {
 
             //	serialize each element from the tuple
             for (const auto &obj : v) {
-                //switch (obj.rtti().tag()) {
-                //default:
-                //    BOOST_ASSERT_MSG(false, "cannot convert to SML data type");
-                //    break;
-                //}
-                // serialize(os, obj);
                 serialize<SML>::write(os, obj);
+            }
+
+            return cs;
+        }
+
+        std::size_t serializer<cyng::obis, SML>::write(std::ostream &os, cyng::obis const &v) {
+
+            //	write as buffer
+            auto const buffer = cyng::to_buffer(v);
+            return serializer<cyng::buffer_t, SML>::write(os, buffer);
+        }
+
+        std::size_t serializer<cyng::obis_path_t, SML>::write(std::ostream &os, cyng::obis_path_t const &v) {
+
+            //
+            //  no data at all
+            //
+            if (v.empty())
+                return 0;
+
+            calc_size const cs(os);
+            //	length field
+            write_length_field(os, static_cast<std::uint32_t>(v.size()), 0x70);
+
+            //	serialize each element from the vector
+            for (const auto &code : v) {
+                serializer<cyng::obis, SML>::write(os, code);
             }
 
             return cs;

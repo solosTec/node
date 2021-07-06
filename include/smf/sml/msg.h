@@ -11,6 +11,7 @@
 
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/obj/intrinsics/container.h>
+#include <cyng/obj/intrinsics/obis.h>
 
 #include <cstdint>
 #include <functional>
@@ -61,6 +62,23 @@ namespace smf {
             Args &&...args) {
             return make_message(trx, group_no, abort_code, f(std::forward<Args>(args)...), crc);
         }
+
+        /**
+         * Generate an empty tree
+         */
+        cyng::tuple_t tree_empty(cyng::obis code);
+
+        /**
+         * Generate a tree with an parameter entry and an empty
+         * child list
+         */
+        cyng::tuple_t tree_param(cyng::obis code, cyng::tuple_t param);
+
+        /**
+         * Generate a tree with an child list entry and an empty
+         * parameter entry
+         */
+        cyng::tuple_t tree_child_list(cyng::obis code, cyng::tuple_t child_list);
 
     } // namespace sml
 } // namespace smf

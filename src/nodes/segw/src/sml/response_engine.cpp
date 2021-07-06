@@ -7,6 +7,8 @@
 
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
+#include <smf/sml/generator.h>
+#include <smf/sml/value.hpp>
 #include <sml/response_engine.h>
 
 #include <cyng/io/io_buffer.h>
@@ -21,7 +23,7 @@ namespace smf {
         , res_gen_(rg) {}
 
     void response_engine::generate_get_proc_parameter_response(
-        sml::messages_t &,
+        sml::messages_t &msgs,
         std::string trx,
         cyng::buffer_t server,
         std::string user,
@@ -41,8 +43,10 @@ namespace smf {
             //
             switch (path.front().to_uint64()) {
             case CODE_CLASS_OP_LOG_STATUS_WORD:
+                msgs.push_back(get_proc_parameter_status_word(trx, server, path));
                 break;
             case CODE_ROOT_DEVICE_IDENT:
+                msgs.push_back(get_proc_parameter_device_ident(trx, server, path));
                 break;
             case CODE_ROOT_DEVICE_TIME: //	0x8181C78810FF
                 break;
@@ -137,6 +141,31 @@ namespace smf {
                 "SML_SetProcParameter.Req has no path - trx: " << trx << ", server: " << cyng::io::to_hex(server)
                                                                << ", user: " << user << ", pwd: " << pwd);
         }
+    }
+
+    cyng::tuple_t response_engine::get_proc_parameter_status_word(
+        std::string const &trx,
+        cyng::buffer_t const &server,
+        cyng::obis_path_t const &path) {
+
+        BOOST_ASSERT(!path.empty());
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_param(path.front(), sml::make_value(cfg_.get_status_word())));
+    }
+
+    cyng::tuple_t response_engine::get_proc_parameter_device_ident(
+        std::string const &trx,
+        cyng::buffer_t const &server,
+        cyng::obis_path_t const &path) {
+
+        BOOST_ASSERT(!path.empty());
+        //  contains the following elements as child list:
+        //  81 81 C7 82 02 FF - DEVICE_CLASS
+        //  81 81 C7 82 03 FF - DATA_MANUFACTURER
+        //  81 81 C7 82 04 FF - SERVER_ID
+        //  81 81 C7 82 06 FF - ROOT_FIRMWARE - list of firmware types and versions
+        //  81 81 C7 82 09 FF - HARDWARE_FEATURES
+        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), cyng::tuple_t{}));
     }
 
 } // namespace smf

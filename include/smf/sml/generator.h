@@ -9,6 +9,7 @@
 
 #include <smf/sml/msg.h>
 
+#include <cyng/obj/intrinsics/obis.h>
 #include <cyng/rnd/rnd.hpp>
 
 namespace smf {
@@ -89,6 +90,8 @@ namespace smf {
             public_open(std::string trx, cyng::buffer_t file_id, cyng::buffer_t client, std::string server);
 
             [[nodiscard]] cyng::tuple_t public_close(std::string trx);
+            [[nodiscard]] cyng::tuple_t
+            get_proc_parameter(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path, cyng::tuple_t);
 
           private:
             detail::trx trx_;

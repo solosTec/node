@@ -4,11 +4,14 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <smf/sml/generator.h>
+#include <smf/sml/msg.h>
 #include <smf/sml/parser.h>
 #include <smf/sml/reader.h>
 #include <smf/sml/tokenizer.h>
 #include <smf/sml/unpack.h>
 #include <smf/sml/value.hpp>
+#include <smf/sml/writer.hpp>
 
 #include <cyng/io/ostream.h>
 #include <cyng/parse/buffer.h>
@@ -16,6 +19,12 @@
 
 #include <fstream>
 #include <iostream>
+
+#ifdef _DEBUG
+#include <cyng/io/hex_dump.hpp>
+#include <iostream>
+#include <sstream>
+#endif
 
 BOOST_AUTO_TEST_SUITE(sml_suite)
 
@@ -868,4 +877,59 @@ BOOST_AUTO_TEST_CASE(get_profile_list_response) {
     // BOOST_REQUIRE(p.get_parser().is_closed());
 }
 
+BOOST_AUTO_TEST_CASE(serializer) {
+
+    std::stringstream os;
+    auto const size = cyng::io::serializer<std::uint32_t, cyng::io::SML>::write(os, 139777u);
+    cyng::buffer_t r;
+    r.resize(size);
+    os.read(r.data(), size);
+    BOOST_REQUIRE_EQUAL(r.size(), 4);
+    BOOST_REQUIRE_EQUAL(r.at(0), 0x64);
+    BOOST_REQUIRE_EQUAL(r.at(1), 0x02);
+    BOOST_REQUIRE_EQUAL(r.at(2), 0x22);
+    BOOST_REQUIRE_EQUAL(r.at(3), 0x01);
+}
+
+BOOST_AUTO_TEST_CASE(generator) {
+    smf::sml::response_generator rgen;
+
+    auto const file_id = cyng::hex_to_buffer("21070521492320490-1b");
+    auto const client = cyng::hex_to_buffer("005056C00008");
+
+    {
+        smf::sml::messages_t msgs;
+        msgs.push_back(rgen.public_open("21042716170468656-1", file_id, client, "0500153B01EC46"));
+        auto const buffer = smf::sml::to_sml(msgs);
+
+#ifdef _DEBUG
+        {
+            std::stringstream ss;
+            cyng::io::hex_dump<8> hd;
+            hd(ss, std::begin(buffer), std::end(buffer));
+            auto const dmp = ss.str();
+            std::cerr << "response " << buffer.size() << " bytes:\n" << dmp;
+        }
+#endif
+        BOOST_REQUIRE_EQUAL(buffer.size(), 0x4c);
+        BOOST_REQUIRE_EQUAL(buffer.at(0x38), 0);
+    }
+    auto const server = cyng::hex_to_buffer("005056C00008");
+    {
+        auto const path = cyng::make_obis_path(cyng::hex_to_buffer("8148170700FF"));
+        smf::sml::messages_t msgs;
+        msgs.push_back(rgen.get_proc_parameter(
+            "21042716170468656-1", server, path, smf::sml::tree_param(path.front(), smf::sml::make_value(1234))));
+        auto const buffer = smf::sml::to_sml(msgs);
+#ifdef _DEBUG
+        {
+            std::stringstream ss;
+            cyng::io::hex_dump<8> hd;
+            hd(ss, std::begin(buffer), std::end(buffer));
+            auto const dmp = ss.str();
+            std::cerr << "response " << buffer.size() << " bytes:\n" << dmp;
+        }
+#endif
+    }
+}
 BOOST_AUTO_TEST_SUITE_END()

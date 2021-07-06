@@ -73,7 +73,8 @@ namespace smf {
                     cyng::null{}, //  reference time
                     cyng::null{}  //  version
                     ),
-                0);
+                static_cast<std::uint16_t>(0xFFFF) //  crc placeholder
+            );
         }
 
         cyng::tuple_t response_generator::public_close(std::string trx) {
@@ -83,8 +84,25 @@ namespace smf {
                 1,
                 0,
                 msg_type::CLOSE_RESPONSE,
-                cyng::make_tuple(cyng::null{}), // signature
-                0);
+                cyng::make_tuple(cyng::null{}),    // signature
+                static_cast<std::uint16_t>(0xFFFF) //  crc placeholder
+            );
+        }
+
+        cyng::tuple_t response_generator::get_proc_parameter(
+            std::string const &trx,
+            cyng::buffer_t const &server,
+            cyng::obis_path_t const &path,
+            cyng::tuple_t params) {
+
+            return make_message(
+                trx,
+                1,
+                0,
+                msg_type::GET_PROC_PARAMETER_RESPONSE,
+                cyng::make_tuple(server, path, params), // message: server id, path, parameters
+                static_cast<std::uint16_t>(0xFFFF)      //  crc placeholder
+            );
         }
 
         request_generator::request_generator(std::string const &name, std::string const &pwd)

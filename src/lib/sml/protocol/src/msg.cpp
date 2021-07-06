@@ -95,5 +95,13 @@ namespace smf {
                 trx, group_no, abort_code, cyng::make_tuple(static_cast<std::uint16_t>(type), body), crc, cyng::eod());
         }
 
+        cyng::tuple_t tree_empty(cyng::obis code) { return cyng::make_tuple(code, cyng::null{}, cyng::null{}); }
+
+        cyng::tuple_t tree_param(cyng::obis code, cyng::tuple_t param) { return cyng::make_tuple(code, param, cyng::null{}); }
+
+        cyng::tuple_t tree_child_list(cyng::obis code, cyng::tuple_t child_list) {
+            return cyng::make_tuple(code, cyng::null{}, child_list);
+        }
+
     } // namespace sml
 } // namespace smf

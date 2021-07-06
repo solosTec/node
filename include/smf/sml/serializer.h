@@ -12,9 +12,6 @@
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/obj/intrinsics/container.h>
 
-//#include <cstdint>
-//#include <functional>
-
 namespace smf {
     namespace sml {
 
