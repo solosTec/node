@@ -81,7 +81,8 @@ namespace smf {
                 cyng::make_param("max-LoRa-records", 500),  //	LoRa uplink records
                 cyng::make_param("max-wMBus-records", 500), //	wireless M-Bus uplink records
                 cyng::make_param("max-IEC-records", 600),   //	IECs uplink records
-                cyng::make_param("max-bridges", 300)        //	max. entries in TBridge
+                cyng::make_param("max-bridges", 300),       //	max. entries in TBridge
+                cyng::make_param("def-IEC-interval", 20)    //  IEC default readout interval in minutes
                 ));
     }
 

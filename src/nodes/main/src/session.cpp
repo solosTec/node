@@ -14,6 +14,7 @@
 #include <cyng/obj/algorithm/add.hpp>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/vm/generator.hpp>
 #include <cyng/vm/linearize.hpp>
 #include <cyng/vm/mesh.h>
@@ -369,7 +370,53 @@ namespace smf {
             }
 
             db_req_update_meter_iec(key, data, source);
+
+        } else if (b && boost::algorithm::equals(table_name, "config")) {
+            //
+            //  propagate some special values into other tables
+            //
+            auto const pos = data.find("value");
+            if (!key.empty() && pos != data.end()) {
+                auto const name = cyng::value_cast<std::string>(key.at(0), "");
+                if (boost::algorithm::equals(name, "def-IEC-interval")) {
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "[session] " << protocol_layer_ << " overwrite IEC readout interval to " << pos->second << " minutes");
+                    auto const interval = std::chrono::seconds(cyng::numeric_cast<std::uint32_t>(pos->second, 20) * 60);
+                    update_iec_interval(interval, source);
+                }
+            }
         }
+    }
+
+    void session::update_iec_interval(std::chrono::seconds interval, boost::uuids::uuid source) {
+        cache_.get_store().access(
+            [&](cyng::table *tbl_gw) {
+                cyng::key_list_t to_update;
+                tbl_gw->loop([&](cyng::record &&rec, std::size_t) {
+                    to_update.emplace(rec.key());
+                    return true;
+                });
+
+                for (auto const &key : to_update) {
+                    tbl_gw->modify(key, cyng::make_param("interval", interval), source);
+                }
+            },
+            cyng::access::write("gwIEC"));
+
+        cache_.get_store().access(
+            [&](cyng::table *tbl_meter) {
+                cyng::key_list_t to_update;
+                tbl_meter->loop([&](cyng::record &&rec, std::size_t) {
+                    to_update.emplace(rec.key());
+                    return true;
+                });
+
+                for (auto const &key : to_update) {
+                    tbl_meter->modify(key, cyng::make_param("interval", interval), source);
+                }
+            },
+            cyng::access::write("meterIEC"));
     }
 
     void session::db_req_update_gw_iec(cyng::key_t key, cyng::param_map_t const &pmap, boost::uuids::uuid source) {
