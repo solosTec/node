@@ -53,6 +53,7 @@ namespace smf {
             case state::BBC:
                 cb_(state_, line_, id_);
                 state_ = state::VERSION;
+                id_.clear();
                 break;
             default:
                 BOOST_ASSERT_MSG(false, "illegal parser state");

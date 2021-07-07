@@ -6,7 +6,6 @@
  */
 #include <tasks/client.h>
 #include <tasks/reconnect.h>
-//#include <tasks/writer.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -94,123 +93,7 @@ namespace smf {
                     break;
                 }
             }),
-          //parser_(
-          //    [this](cyng::obis code, std::string value, std::string unit) {
-          //        auto const name = mgr_.get_id();
-          //        CYNG_LOG_TRACE(logger_, "[iec] data " << name << " - " << code << ": " << value << " " << unit);
-
-          //        //
-          //        //	store data to csv file
-          //        //
-          //        writer_->dispatch("store", cyng::make_tuple(code, value, unit));
-
-          //        //
-          //        //	increment counter
-          //        //
-          //        ++entries_;
-
-          //        std::stringstream ss;
-          //        ss << mgr_.get_id() << "#" << entries_;
-          //        auto const msg = ss.str();
-          //        bus_.req_db_update(
-          //            "gwIEC",
-          //            key_gw_iec_,
-          //            cyng::param_map_factory()("meter", msg) //  current meter id
-          //        );
-
-
-          //    },
-          //    [this](std::string dev, bool crc) {
-
-          //          //
-          //          //    get current meter id
-          //          //
-          //          auto const name = mgr_.get_id();
-          //          CYNG_LOG_INFO(logger_, "[iec] " << name << " readout " << mgr_.index() << "/" << mgr_.size() << " complete " << dev);
-
-          //          //
-          //          //	close CSV file
-          //          //  close push channel
-          //          //
-          //          writer_->dispatch("commit", cyng::make_tuple());
-          //          ctl_.get_registry().dispatch(name, "close");
-
-          //          //
-          //          //    message for IEC uplink table
-          //          //
-          //          std::stringstream ss;
-          //          ss << name << " readout " << mgr_.index() << "/" << mgr_.size() << " complete (" << dev << ") #" << entries_;
-          //          auto const msg = ss.str();
-
-          //          //
-          //          //	reset
-          //          //
-          //          entries_ = 0;
-
-          //          try {
-          //              bus_.req_db_insert_auto(
-          //                  "iecUplink",
-          //                  cyng::data_generator(
-          //                      std::chrono::system_clock::now(), msg, socket_.remote_endpoint(), boost::uuids::nil_uuid()));
-          //          } catch (std::exception const &) {
-          //              //  socket already closed
-          //          }
-
-          //          //
-          //          //	next meter
-          //          //
-          //          if (!mgr_.next()) {
-
-          //              if (socket_.is_open()) {
-          //                  //
-          //                  //    update index in gwIEC table
-          //                  //
-          //                  bus_.req_db_update(
-          //                      "gwIEC",
-          //                      key_gw_iec_,
-          //                      cyng::param_map_factory()("index", mgr_.index()) //  current meter index
-          //                      ("meter", mgr_.get_id())                         //  current meter id
-          //                  );
-
-          //                  //
-          //                  //    more meters
-          //                  //
-          //                  auto const name = mgr_.get_id();
-          //                  writer_->dispatch("open", cyng::make_tuple(name));
-          //                  CYNG_LOG_INFO(logger_, "[client] query " << name << " #" << mgr_.index() << "/" << mgr_.size());
-          //                  send_query(name);
-          //              } else {
-          //                  //bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec]");
-          //                  std::stringstream ss;
-          //                  ss << "readout is incomplete - socket closed " << mgr_.get_id() << ": " << mgr_.index() << "/" << mgr_.size();
-          //                  auto const msg = ss.str();
-
-          //                  bus_.req_db_insert_auto(
-          //                      "iecUplink",
-          //                      cyng::data_generator(
-          //                          std::chrono::system_clock::now(),
-          //                          msg,
-          //                          boost::asio::ip::tcp::endpoint(),
-          //                          boost::uuids::nil_uuid()));
-
-          //              }
-
-          //          } else {
-
-          //              //
-          //              //    no more meters
-          //              //
-          //              CYNG_LOG_INFO(logger_, "[iec] close connection " << name << " #" << mgr_.index() << "/" << mgr_.size());
-          //              boost::system::error_code ignored_ec;
-          //              //  required to get a proper error code: connection_aborted
-          //              socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
-          //              socket_.close(ignored_ec);
-          //          }
-          //    },
-          //    1u),
-          //writer_(ctl_.create_channel_with_ref<writer>(logger_, out)),
           reconnect_(ctl_.create_channel_with_ref<reconnect>(logger_, channel_)),
-          //entries_{0},
           retry_counter_{3} {
         auto sp = channel_.lock();
         if (sp) {
