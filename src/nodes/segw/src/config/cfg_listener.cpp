@@ -71,7 +71,7 @@ namespace smf {
         return cfg_.get_value(task_id_ipv4_path(get_index()), static_cast<std::size_t>(0));
     }
     std::size_t cfg_listener::get_IPv6_task_id() const {
-        return cfg_.get_value(task_id_ipv4_path(get_index()), static_cast<std::size_t>(0));
+        return cfg_.get_value(task_id_ipv6_path(get_index()), static_cast<std::size_t>(0));
     }
 
     bool cfg_listener::is_enabled() const { return cfg_.get_value(enabled_path(get_index()), false); }
@@ -117,7 +117,7 @@ namespace smf {
     bool cfg_listener::set_delay(std::chrono::seconds timeout) const { return cfg_.set_value(delay_path(get_index()), timeout); }
 
     bool cfg_listener::set_IPv4_task_id(std::size_t id) const { return cfg_.set_value(task_id_ipv4_path(get_index()), id); }
-    bool cfg_listener::set_IPv6_task_id(std::size_t id) const { return cfg_.set_value(task_id_ipv4_path(get_index()), id); }
+    bool cfg_listener::set_IPv6_task_id(std::size_t id) const { return cfg_.set_value(task_id_ipv6_path(get_index()), id); }
 
     std::ostream &operator<<(std::ostream &os, cfg_listener const &cfg) {
         os << cfg.get_port_name() << '@' << cfg.get_address() << ':' << cfg.get_port();

@@ -469,7 +469,9 @@ namespace smf {
 
             if (!ec) {
 
-                write_buffer_.pop_front();
+                if (!write_buffer_.empty())
+                    write_buffer_.pop_front();
+
                 if (!write_buffer_.empty()) {
                     do_write(sp);
                 } else {

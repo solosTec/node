@@ -7,6 +7,7 @@
 
 #include <config/cfg_listener.h>
 #include <config/cfg_lmn.h>
+#include <config/cfg_nms.h>
 #include <distributor.h>
 
 #include <cyng/task/controller.h>
@@ -27,15 +28,28 @@ namespace smf {
         //  must be bound to the new endpoint.
         //
         if (boost::algorithm::equals(key, "listener/1/port") || boost::algorithm::equals(key, "listener/1/address")) {
+
             cfg_listener cfg(cfg_, lmn_type::WIRED);
+
+            //
+            //  update IPv4 listener
+            //
             auto const task_id_ipv4 = cfg.get_IPv4_task_id();
-            BOOST_ASSERT(task_id_ipv4 != 0);
-            ctl_.get_registry().dispatch(task_id_ipv4, "rebind", cyng::make_tuple(cfg.get_ipv4_ep()));
+            if (task_id_ipv4 != 0) {
+                ctl_.get_registry().dispatch(task_id_ipv4, "rebind", cyng::make_tuple(cfg.get_ipv4_ep()));
+            }
 
+            //
+            //  update IPv6 listener (link-local)
+            //
             auto const task_id_ipv6 = cfg.get_IPv6_task_id();
+            if (task_id_ipv6 != 0) {
 
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-#endif
+                cfg_nms nms(cfg_);
+                auto const addr6 = nms.get_as_ipv6();
+                boost::asio::ip::tcp::endpoint ep(addr6, cfg.get_port());
+                ctl_.get_registry().dispatch(task_id_ipv6, "rebind", cyng::make_tuple(ep));
+            }
         }
     }
 
