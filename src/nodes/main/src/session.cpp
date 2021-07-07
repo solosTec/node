@@ -331,16 +331,18 @@ namespace smf {
 
     void session::db_req_update(std::string const &table_name, cyng::key_t key, cyng::param_map_t data, boost::uuids::uuid source) {
 
-        try {
-            CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.update " << table_name << " - " << data);
-        } catch (std::exception const &ex) {
-            CYNG_LOG_WARNING(logger_, "session " << source << " is offline: " << ex.what());
-        }
-
         //
         //	key with multiple columns
         //
         std::reverse(key.begin(), key.end());
+
+        try {
+            CYNG_LOG_INFO(
+                logger_,
+                "session [" << socket_.remote_endpoint() << "] req.update " << table_name << " - " << key << " = " << data);
+        } catch (std::exception const &ex) {
+            CYNG_LOG_WARNING(logger_, "session " << source << " is offline: " << ex.what());
+        }
 
         if (boost::algorithm::equals(table_name, "gwIEC")) {
             //
