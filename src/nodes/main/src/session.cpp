@@ -32,7 +32,9 @@ namespace smf {
         , buffer_write_()
         , vm_()
         , parser_([this](cyng::object &&obj) {
-            CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
+            //  un-comment this line to debug problems with transferring data over
+            //  the cluster bus.
+            // CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
             vm_.load(std::move(obj));
         })
         , slot_(cyng::make_slot(new slot(this)))
@@ -379,10 +381,11 @@ namespace smf {
             if (!key.empty() && pos != data.end()) {
                 auto const name = cyng::value_cast<std::string>(key.at(0), "");
                 if (boost::algorithm::equals(name, "def-IEC-interval")) {
+                    auto const interval = std::chrono::seconds(cyng::numeric_cast<std::uint32_t>(pos->second, 20) * 60);
                     CYNG_LOG_INFO(
                         logger_,
-                        "[session] " << protocol_layer_ << " overwrite IEC readout interval to " << pos->second << " minutes");
-                    auto const interval = std::chrono::seconds(cyng::numeric_cast<std::uint32_t>(pos->second, 20) * 60);
+                        "[session] " << protocol_layer_ << " overwrite IEC readout interval to " << (interval.count() / 60)
+                                     << " minutes");
                     update_iec_interval(interval, source);
                 }
             }

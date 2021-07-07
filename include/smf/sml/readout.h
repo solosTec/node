@@ -59,7 +59,7 @@ namespace smf {
          * in a meaningfull string. All calculations for positionioning the decimal point
          * will done.
          */
-        cyng::object read_value(cyng::obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj);
+        cyng::object read_value(cyng::obis code, std::int8_t scaler, cyng::object obj);
 
         /**
          * read a parameter consisting of an OBIS code a value and an optional child list.

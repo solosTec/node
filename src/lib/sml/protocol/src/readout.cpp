@@ -129,7 +129,7 @@ namespace smf {
 
         cyng::object read_string(cyng::object obj) { return cyng::make_object(to_string(obj)); }
 
-        cyng::object read_value(cyng::obis code, std::int8_t scaler, std::uint8_t unit, cyng::object obj) {
+        cyng::object read_value(cyng::obis code, std::int8_t scaler, cyng::object obj) {
             if (scaler != 0) {
                 switch (obj.rtti().tag()) {
                 case cyng::TC_INT64: {

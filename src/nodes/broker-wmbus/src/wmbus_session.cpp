@@ -12,6 +12,7 @@
 #include <smf/mbus/radio/header.h>
 #include <smf/mbus/reader.h>
 #include <smf/sml/reader.h>
+#include <smf/sml/readout.h>
 #include <smf/sml/unpack.h>
 
 #include <cyng/io/io_buffer.h>
@@ -324,9 +325,14 @@ namespace smf {
             if (valid) {
 
                 //
+                //  scaling the value
+                //
+                auto const value = sml::read_value(code, scaler, obj);
+
+                //
                 //	store data to csv file
                 //
-                auto const value = cyng::io::to_plain(obj);
+                // auto const str = cyng::io::to_plain(value);
                 writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_unit_name(u)));
 
                 if (!init) {

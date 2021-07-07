@@ -63,40 +63,45 @@ namespace smf {
     }
     void iec_influx_writer::store(cyng::obis code, std::string value, std::string unit) {
 
-        auto const area = influx::get_area_name(id_);
-        std::stringstream ss;
         //
-        //  measurement
+        //  Only send values that also have a physical unit.
         //
-        ss << "IEC";
+        if (!unit.empty()) {
+            auto const area = influx::get_area_name(id_);
+            std::stringstream ss;
+            //
+            //  measurement
+            //
+            ss << "IEC";
 
-        //
-        //	tags:
-        //  tags are indexd
-        //
-        ss << ",server=" << (id_.empty() ? "empty" : id_) << ",obis=" << code << ",area=" << area;
+            //
+            //	tags:
+            //  tags are indexd
+            //
+            ss << ",server=" << (id_.empty() ? "empty" : id_) << ",obis=" << code << ",area=" << area;
 
-        //
-        //   space separator
-        //
-        ss << ' ';
+            //
+            //   space separator
+            //
+            ss << ' ';
 
-        //
-        //	fields:
-        //  fields are not indexed
-        //
-        ss << "meter=\"" << id_ << "\"," << code << "=\"" << value << "\",unit=\"" << unit << "\",fArea=\"" << area
-           << "\",fServer=\"" << id_ << "\"";
-        //
-        //	timestamp
-        //
-        ss << ' ' << influx::to_line_protocol(std::chrono::system_clock::now()) << '\n';
-        auto const stmt = ss.str();
+            //
+            //	fields:
+            //  fields are not indexed
+            //
+            ss << "meter=\"" << id_ << "\"," << code << "=\"" << value << "\",unit=\"" << unit << "\",fArea=\"" << area
+               << "\",fServer=\"" << id_ << "\"";
+            //
+            //	timestamp
+            //
+            ss << ' ' << influx::to_line_protocol(std::chrono::system_clock::now()) << '\n';
+            auto const stmt = ss.str();
 
-        CYNG_LOG_TRACE(logger_, "[iec.influx] write: " << stmt);
-        auto const rs = influx::push_over_http(ctl_.get_ctx(), host_, service_, protocol_, cert_, db_, stmt);
-        if (!rs.empty()) {
-            CYNG_LOG_WARNING(logger_, "[iec.influx] result: " << rs);
+            CYNG_LOG_TRACE(logger_, "[iec.influx] write: " << stmt);
+            auto const rs = influx::push_over_http(ctl_.get_ctx(), host_, service_, protocol_, cert_, db_, stmt);
+            if (!rs.empty()) {
+                CYNG_LOG_WARNING(logger_, "[iec.influx] result: " << rs);
+            }
         }
     }
     void iec_influx_writer::commit() { CYNG_LOG_TRACE(logger_, "[iec.influx] commit \"" << id_ << "\""); }

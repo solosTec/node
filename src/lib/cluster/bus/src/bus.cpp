@@ -42,7 +42,9 @@ namespace smf {
         , input_buffer_()
         , vm_()
         , parser_([this](cyng::object &&obj) {
-            CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
+            //  un-comment this line to debug problems with transferring data over
+            //  the cluster bus.
+            // CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
             vm_.load(std::move(obj));
         }) {
         vm_ = init_vm(bip);

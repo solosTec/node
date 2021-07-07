@@ -423,7 +423,7 @@ namespace smf {
             //	value - note value with OBIS code
             //
             auto raw = *pos;
-            auto val = read_value(code, scaler, unit, raw);
+            auto val = read_value(code, scaler, raw);
             return std::make_pair(
                 code,
                 cyng::param_map_factory("unit", unit)("unit-name", unit_name)(
@@ -477,7 +477,7 @@ namespace smf {
             //	value
             //
             auto raw = *pos++;
-            auto val = read_value(code, scaler, unit, raw);
+            auto val = read_value(code, scaler, raw);
 
             //
             //	valueSignature

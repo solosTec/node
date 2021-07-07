@@ -396,10 +396,60 @@ namespace smf {
         }
 
         std::string get_area_name(std::string const &id) {
-            if (boost::algorithm::equals(id, "3496219") || boost::algorithm::equals(id, "35074662") ||
-                boost::algorithm::equals(id, "10320064") || boost::algorithm::equals(id, "35074718")) {
+
+            if (boost::algorithm::equals(id, "35074612") || boost::algorithm::equals(id, "35074769") ||
+                boost::algorithm::equals(id, "35074759") || boost::algorithm::equals(id, "35074669") ||
+                boost::algorithm::equals(id, "35074664") || boost::algorithm::equals(id, "35074665") ||
+                boost::algorithm::equals(id, "35074742") || boost::algorithm::equals(id, "35074745") ||
+                boost::algorithm::equals(id, "35074728") || boost::algorithm::equals(id, "35074785") ||
+                boost::algorithm::equals(id, "35074743") || boost::algorithm::equals(id, "35074631") ||
+                boost::algorithm::equals(id, "35074613") || boost::algorithm::equals(id, "35074647") ||
+                boost::algorithm::equals(id, "35074622") || boost::algorithm::equals(id, "35074648") ||
+                boost::algorithm::equals(id, "35074731") || boost::algorithm::equals(id, "35074615") ||
+                boost::algorithm::equals(id, "35074655") || boost::algorithm::equals(id, "35074663") ||
+                boost::algorithm::equals(id, "35074712") || boost::algorithm::equals(id, "35074786") ||
+                boost::algorithm::equals(id, "35074770") || boost::algorithm::equals(id, "35074653") ||
+                boost::algorithm::equals(id, "35074692") || boost::algorithm::equals(id, "35074787") ||
+                boost::algorithm::equals(id, "35074676") || boost::algorithm::equals(id, "35074753") ||
+                boost::algorithm::equals(id, "35074754") || boost::algorithm::equals(id, "35074715") ||
+                boost::algorithm::equals(id, "35074701") || boost::algorithm::equals(id, "35074677") ||
+                boost::algorithm::equals(id, "35074694") || boost::algorithm::equals(id, "35074788") ||
+                boost::algorithm::equals(id, "35074691") || boost::algorithm::equals(id, "35074698") ||
+                boost::algorithm::equals(id, "35074750") || boost::algorithm::equals(id, "35074710") ||
+                boost::algorithm::equals(id, "35074708") || boost::algorithm::equals(id, "35074740") ||
+                boost::algorithm::equals(id, "04354752") || boost::algorithm::equals(id, "04354755") ||
+                boost::algorithm::equals(id, "04354754") || boost::algorithm::equals(id, "35074637") ||
+                boost::algorithm::equals(id, "10320043") || boost::algorithm::equals(id, "10320047") ||
+                boost::algorithm::equals(id, "10320044") || boost::algorithm::equals(id, "04354750") ||
+                boost::algorithm::equals(id, "04354751") || boost::algorithm::equals(id, "04354749") ||
+                boost::algorithm::equals(id, "10320042") || boost::algorithm::equals(id, "35074766") ||
+                boost::algorithm::equals(id, "35074619") || boost::algorithm::equals(id, "10320046") ||
+                boost::algorithm::equals(id, "35074738") || boost::algorithm::equals(id, "35074709") ||
+                boost::algorithm::equals(id, "35074725") || boost::algorithm::equals(id, "35074633") ||
+                boost::algorithm::equals(id, "35074783") || boost::algorithm::equals(id, "35074762") ||
+                boost::algorithm::equals(id, "35074658") || boost::algorithm::equals(id, "10320040") ||
+                boost::algorithm::equals(id, "35074763") || boost::algorithm::equals(id, "35074662") ||
+                boost::algorithm::equals(id, "10320064") || boost::algorithm::equals(id, "35074718") ||
+                boost::algorithm::equals(id, "10320071") || boost::algorithm::equals(id, "35074776") ||
+                boost::algorithm::equals(id, "35074746") || boost::algorithm::equals(id, "35074707") ||
+                boost::algorithm::equals(id, "14818483") || boost::algorithm::equals(id, "14818485") ||
+                boost::algorithm::equals(id, "04354747") || boost::algorithm::equals(id, "04354746") ||
+                boost::algorithm::equals(id, "10320041") || boost::algorithm::equals(id, "10320045") ||
+                boost::algorithm::equals(id, "04354753") || boost::algorithm::equals(id, "04354748")) {
                 return "Moumnat";
             }
+
+            if (boost::algorithm::equals(id, "03496219") || boost::algorithm::equals(id, "03496225") ||
+                boost::algorithm::equals(id, "03496230") || boost::algorithm::equals(id, "03496234") ||
+                boost::algorithm::equals(id, "03496233") || boost::algorithm::equals(id, "03496218") ||
+                boost::algorithm::equals(id, "03496220") || boost::algorithm::equals(id, "03496222") ||
+                boost::algorithm::equals(id, "03496226") || boost::algorithm::equals(id, "03496228") ||
+                boost::algorithm::equals(id, "03496236") || boost::algorithm::equals(id, "03496227") ||
+                boost::algorithm::equals(id, "03496232") || boost::algorithm::equals(id, "03496217") ||
+                boost::algorithm::equals(id, "03496223")) {
+                return "Lot Yaku";
+            }
+
             return "Yasmina";
         }
 
