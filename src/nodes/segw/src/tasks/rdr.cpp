@@ -18,7 +18,8 @@ namespace smf {
             : sigs_{
                   std::bind(&server::start, this, std::placeholders::_1), //	0
                   std::bind(&server::pause, this), //	1
-                  std::bind(&server::stop, this, std::placeholders::_1)   //	2
+                  std::bind(&server::rebind, this, std::placeholders::_1), //	2
+                  std::bind(&server::stop, this, std::placeholders::_1)   //	3
               }
             , channel_(wp)
             , srv_type_(srv_type)
@@ -35,6 +36,7 @@ namespace smf {
                 std::size_t slot{0};
                 sp->set_channel_name("start", slot++);
                 sp->set_channel_name("halt", slot++);
+                sp->set_channel_name("rebind", slot++);
                 CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
             }
         }
@@ -167,6 +169,12 @@ namespace smf {
         void server::pause() {
             CYNG_LOG_WARNING(logger_, "[RDR] server paused");
             stop(cyng::eod());
+        }
+
+        void server::rebind(boost::asio::ip::tcp::endpoint ep) {
+
+            CYNG_LOG_INFO(logger_, "[RDR] listener endpoint changed to: " << ep);
+            acceptor_ = boost::asio::ip::tcp::acceptor(acceptor_.get_executor(), ep);
         }
 
     } // namespace rdr

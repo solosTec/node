@@ -35,7 +35,7 @@ namespace smf {
         }
 
         connect();
-        CYNG_LOG_INFO(logger_, "persistence ready");
+        CYNG_LOG_INFO(logger_, "[persistence] ready");
     }
 
     void persistence::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "persistence stopped"); }
@@ -43,24 +43,19 @@ namespace smf {
     void persistence::connect() {
 
         cfg_.get_cache().connect_only("cfg", cyng::make_slot(channel_));
-        CYNG_LOG_INFO(logger_, "persistence connected");
+        CYNG_LOG_INFO(logger_, "[persistence] connected");
     }
 
     void persistence::power_return() {
 
         storage_.generate_op_log(
             cfg_.get_status_word(),
-            sml::LOG_CODE_09 //	0x00100023 - power return
-            ,
-            OBIS_PEER_SCM //	source is SCM
-            ,
-            cfg_.get_srv_id() //	server ID
-            ,
-            "" //	target
-            ,
-            0 //	nr
-            ,
-            "power return"); //	description
+            sml::LOG_CODE_09,  //	0x00100023 - power return
+            OBIS_PEER_SCM,     //	source is SCM
+            cfg_.get_srv_id(), //	server ID
+            "",                //	target
+            0,                 //	nr
+            "power return");   //	description
     }
 
     void persistence::insert(cyng::table const *tbl, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid) {
@@ -85,7 +80,8 @@ namespace smf {
             BOOST_ASSERT(key.size() == 1);
             CYNG_LOG_TRACE(logger_, key.at(0) << " = " << attr.second);
             if (storage_.cfg_update(key.at(0), attr.second)) {
-                distributor_.update(cyng::to_string(key.at(0)), attr.second);
+                auto const name = cyng::to_string(key.at(0));
+                distributor_.update(name, attr.second);
             } else {
                 CYNG_LOG_WARNING(logger_, "[persistence] update " << tbl->meta().get_name() << " failed");
             }

@@ -724,7 +724,7 @@ namespace smf {
 
             //
             //  check the IPv6 case only for linux envronments
-            //  In future version the NIC name is part of the configuration.
+            //  In future versions the NIC name is part of the configuration.
             //  So it's possible to use other NICs than br0
             //
             // init_redirector_ipv6(cfg, "eth2");

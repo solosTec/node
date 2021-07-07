@@ -20,8 +20,9 @@ namespace smf {
             template <typename T> friend class cyng::task;
 
             using signatures_t = std::tuple<
-                std::function<void(std::chrono::seconds)>, //	start
-                std::function<void()>,                     //  pause
+                std::function<void(std::chrono::seconds)>,           //	start
+                std::function<void()>,                               //  pause
+                std::function<void(boost::asio::ip::tcp::endpoint)>, //  rebind
                 std::function<void(cyng::eod)>>;
 
           public:
@@ -42,6 +43,7 @@ namespace smf {
             void stop(cyng::eod);
             void pause();
             void do_accept();
+            void rebind(boost::asio::ip::tcp::endpoint ep);
 
           private:
             signatures_t sigs_;

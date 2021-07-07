@@ -186,7 +186,7 @@ namespace smf {
         void reader::cmd_merge_serial(cyng::param_map_t &pm, cyng::param_map_t &&ports) {
 
             for (auto const &port : ports) {
-                CYNG_LOG_TRACE(logger_, "[NMS] merge port " << port.first << " = " << port.second);
+                CYNG_LOG_TRACE(logger_, "[NMS] merge serial port " << port.first << " = " << port.second);
                 cfg_lmn cfg(cfg_, port.first);
 
                 auto const port_pmap = cyng::container_cast<cyng::param_map_t>(port.second);
