@@ -144,8 +144,8 @@ BOOST_AUTO_TEST_CASE(dbg35074715) {
                        "F.F.1(00000000)\r\n"
                        "F.F.2(00000000)\r\n"
                        "0.0.0(35074715)\r\n"
-                       "0.9.1(204153)\r\n"
-                       "0.9.2(210525)\r\n"
+                       "0.9.1(204153)\r\n" //  hhmmss
+                       "0.9.2(210525)\r\n" //  yymmdd
                        "0.1.2*90(2105010000)\r\n"
                        "0.1.2*89(2104010000)\r\n"
                        "0.1.2*88(2103010000)\r\n"
@@ -347,7 +347,9 @@ BOOST_AUTO_TEST_CASE(dbg35074715) {
         ;
 
     smf::iec::parser p(
-        [](cyng::obis code, std::string value, std::string unit) { std::cout << code << ": " << value << unit << std::endl; },
+        [](cyng::obis code, std::string value, std::string unit) {
+            std::cout << code << ": " << value << ' ' << unit << std::endl;
+        },
         [](std::string dev, bool crc) { std::cout << dev << ": " << (crc ? "ok" : "error") << std::endl; },
         1u);
     p.read(std::begin(inp), std::end(inp));

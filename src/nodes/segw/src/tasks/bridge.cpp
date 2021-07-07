@@ -716,6 +716,7 @@ namespace smf {
             auto channel = ctl_.create_named_channel_with_ref<rdr::server>(
                 name, ctl_, cfg_, logger_, type, rdr::server::type::ipv4, cfg.get_ipv4_ep());
             stash_.lock(channel);
+            cfg.set_IPv4_task_id(channel->get_id());
 
             auto const delay = cfg.get_delay();
             CYNG_LOG_INFO(logger_, "start external listener [" << name << "] in " << delay.count() << " seconds");
@@ -752,6 +753,7 @@ namespace smf {
             auto channel = ctl_.create_named_channel_with_ref<rdr::server>(
                 name, ctl_, cfg_, logger_, cfg.get_type(), rdr::server::type::ipv6, ep);
             stash_.lock(channel);
+            cfg.set_IPv6_task_id(channel->get_id());
 
             CYNG_LOG_INFO(logger_, "link-local listener for port [" << cfg.get_port_name() << "] " << ep);
 

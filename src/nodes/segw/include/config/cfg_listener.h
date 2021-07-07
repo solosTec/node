@@ -54,6 +54,9 @@ namespace smf {
 
         boost::asio::ip::tcp::endpoint get_ipv4_ep() const;
 
+        std::size_t get_IPv4_task_id() const;
+        std::size_t get_IPv6_task_id() const;
+
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
         std::string get_nic() const;
         boost::asio::ip::tcp::endpoint get_ipv6_ep(std::string nic);
@@ -65,6 +68,9 @@ namespace smf {
         bool set_login(bool) const;
         bool set_enabled(bool) const;
         bool set_delay(std::chrono::seconds) const;
+
+        bool set_IPv4_task_id(std::size_t) const;
+        bool set_IPv6_task_id(std::size_t) const;
 
         constexpr static char root[] = "listener";
 

@@ -136,7 +136,9 @@ namespace smf {
                   },
                   cbf)
             , cb_data_(cbd)
-            , medium_(medium) {
+            , medium_(medium)
+            , prev_code_()
+            , prev_unit_() {
             BOOST_ASSERT(cb_data_);
         }
 
@@ -168,7 +170,21 @@ namespace smf {
         void parser::convert(std::string const &code, std::string const &value) {
             auto const c = to_obis(code, medium_);
             auto const [v, unit] = split_edis_value(value);
-            cb_data_(c, v, unit);
+            if (contains(code, '*')) {
+                if (boost::algorithm::starts_with(code, prev_code_)) {
+                    cb_data_(c, v, prev_unit_);
+                } else {
+                    cb_data_(c, v, unit);
+                    prev_code_.clear();
+                    prev_unit_.clear();
+                }
+            } else {
+                cb_data_(c, v, unit);
+                if (!unit.empty()) {
+                    prev_code_ = code;
+                    prev_unit_ = unit;
+                }
+            }
         }
         void parser::convert(std::string const &code, std::string const &index, std::string const &value) {
             // BOOST_ASSERT(index.size() == 2);
@@ -190,19 +206,6 @@ namespace smf {
         }
 
         cyng::obis to_obis(std::string code, std::uint8_t medium) {
-
-            // std::regex delimiter{ "[\\(\\)]" };
-            // std::vector<std::string> vec(std::sregex_token_iterator(str.begin(), str.end(), delimiter, -1), {});
-
-            // BOOST_ASSERT(!vec.empty());
-            // BOOST_ASSERT(vec.size() < 4);
-
-            // if (vec.size() > 1) {
-
-            //	//
-            //	//	extract the edis code
-            //	//
-            //	auto const code = vec.at(0);
 
             //
             //	handle some special cases first

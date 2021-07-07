@@ -431,7 +431,7 @@ namespace smf {
     }
 
     void session::db_req_update_meter_iec_host_or_port(cyng::key_t const &key, cyng::param_t const &pm, boost::uuids::uuid source) {
-        BOOST_ASSERT(boost::algorithm::equals(pm.first, "port"));
+        BOOST_ASSERT(boost::algorithm::equals(pm.first, "host") || boost::algorithm::equals(pm.first, "port"));
         cache_.get_store().access(
             [&](cyng::table const *tbl_gw, cyng::table *tbl_meter) {
                 //

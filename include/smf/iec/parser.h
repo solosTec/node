@@ -147,6 +147,8 @@ namespace smf {
             tokenizer tokenizer_;
             cb_data_f cb_data_;
             std::uint8_t const medium_;
+            std::string prev_code_;
+            std::string prev_unit_;
         };
 
         /**

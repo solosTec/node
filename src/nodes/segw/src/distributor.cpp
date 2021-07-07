@@ -21,10 +21,21 @@ namespace smf {
 
         update_lmn(key, lmn_type::WIRED, val);
         update_lmn(key, lmn_type::WIRELESS, val);
+
+        //
+        //  If the listener port was changed the acceptor of the listener server
+        //  must be bound to the new endpoint.
+        //
         if (boost::algorithm::equals(key, "listener/1/port") || boost::algorithm::equals(key, "listener/1/address")) {
             cfg_listener cfg(cfg_, lmn_type::WIRED);
-            auto const task_name = cfg.get_task_name();
-            ctl_.get_registry().dispatch(task_name, "rebind", cfg.get_ipv4_ep());
+            auto const task_id_ipv4 = cfg.get_IPv4_task_id();
+            BOOST_ASSERT(task_id_ipv4 != 0);
+            ctl_.get_registry().dispatch(task_id_ipv4, "rebind", cyng::make_tuple(cfg.get_ipv4_ep()));
+
+            auto const task_id_ipv6 = cfg.get_IPv6_task_id();
+
+#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
+#endif
         }
     }
 
