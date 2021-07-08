@@ -4,6 +4,7 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
+#include <smf/mbus/server_id.h>
 #include <tasks/push.h>
 
 #include <cyng/log/record.h>
@@ -83,7 +84,6 @@ namespace smf {
     }
 
     void push::send_sml(cyng::buffer_t srv, cyng::buffer_t payload) {
-        CYNG_LOG_INFO(logger_, "[push] sml " << payload.size() << " bytes payload to ");
 
         //
         //  generate SML open response message
@@ -95,6 +95,10 @@ namespace smf {
         //
         auto pos = channels_.find(protocol_type::SML);
         if (pos != channels_.end()) {
+            CYNG_LOG_INFO(
+                logger_,
+                "[push] sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv) << " to " << pos->second.first
+                              << ':' << pos->second.second);
             bus_.transmit(pos->second, payload);
         } else {
             CYNG_LOG_WARNING(logger_, "[push] no SML channel open");

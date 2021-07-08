@@ -52,8 +52,7 @@ namespace smf {
                 break;
             case state::BBC:
                 cb_(state_, line_, id_);
-                state_ = state::VERSION;
-                id_.clear();
+                reset();
                 break;
             default:
                 BOOST_ASSERT_MSG(false, "illegal parser state");
@@ -64,6 +63,7 @@ namespace smf {
         void scanner::reset() {
             state_ = state::VERSION;
             line_ = 0;
+            id_.clear();
         }
 
         std::string to_string(scanner::state s) {
