@@ -50,7 +50,7 @@ namespace smf {
         void push_dlsm_data(cyng::buffer_t const &payload);
         void push_data(cyng::buffer_t const &payload);
 
-        void read_mbus(
+        std::size_t read_mbus(
             srv_id_t const &address,
             std::string const &id,
             std::uint8_t medium,

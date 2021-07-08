@@ -194,15 +194,25 @@ namespace smf {
 
                     switch (frame_type) {
                     case mbus::FIELD_CI_HEADER_LONG:
-                    case mbus::FIELD_CI_HEADER_SHORT:
-                        read_mbus(
+                    case mbus::FIELD_CI_HEADER_SHORT: {
+                        auto const count = read_mbus(
                             address,
                             id, //	meter id
                             get_medium(address),
                             manufacturer,
                             frame_type,
                             payload);
-                        break;
+                        bus_.req_db_insert_auto(
+                            "wMBusUplink",
+                            cyng::data_generator(
+                                std::chrono::system_clock::now(),
+                                id, //	meter id
+                                get_medium(address),
+                                manufacturer,
+                                frame_type,
+                                std::to_string(count) + " records: " + cyng::io::to_hex(payload),
+                                boost::uuids::nil_uuid()));
+                    } break;
                     case mbus::FIELD_CI_RES_LONG_SML:
                     case mbus::FIELD_CI_RES_SHORT_SML: {
                         auto const count = read_sml(address, payload);
@@ -297,7 +307,7 @@ namespace smf {
     }
     void wmbus_session::push_data(cyng::buffer_t const &payload) {}
 
-    void wmbus_session::read_mbus(
+    std::size_t wmbus_session::read_mbus(
         srv_id_t const &address,
         std::string const &id,
         std::uint8_t medium,
@@ -320,6 +330,7 @@ namespace smf {
         std::stringstream ss;
         bool valid = false;
         bool init = false;
+        std::size_t count{0};
         while (offset < payload.size()) {
             std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(payload, offset, 1);
             if (valid) {
@@ -332,7 +343,6 @@ namespace smf {
                 //
                 //	store data to csv file
                 //
-                // auto const str = cyng::io::to_plain(value);
                 writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_unit_name(u)));
 
                 if (!init) {
@@ -341,6 +351,7 @@ namespace smf {
                     ss << ", ";
                 }
                 ss << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
+                ++count;
             }
         }
 
@@ -355,19 +366,20 @@ namespace smf {
         //
         //	insert uplink data
         //
-        bus_.req_db_insert_auto(
-            "wMBusUplink",
-            cyng::data_generator(
-                std::chrono::system_clock::now(),
-                get_id(address), //	meter id
-                get_medium(address),
-                manufacturer,
-                frame_type,
-                // msg, //  payload
-                cyng::io::to_hex(payload), //	"payload",
-                boost::uuids::nil_uuid()));
+        // bus_.req_db_insert_auto(
+        //    "wMBusUplink",
+        //    cyng::data_generator(
+        //        std::chrono::system_clock::now(),
+        //        get_id(address), //	meter id
+        //        get_medium(address),
+        //        manufacturer,
+        //        frame_type,
+        //        msg, //  payload
+        //        // cyng::io::to_hex(payload), //	"payload",
+        //        boost::uuids::nil_uuid()));
 
         ctl_.get_registry().dispatch("push", "send.mbus", cyng::buffer_t(address.begin(), address.end()), payload);
+        return count;
     }
 
     std::size_t wmbus_session::read_sml(srv_id_t const &address, cyng::buffer_t const &payload) {

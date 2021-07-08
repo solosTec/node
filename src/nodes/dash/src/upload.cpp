@@ -35,6 +35,8 @@ namespace smf {
 
     void upload::config_bridge(std::string name, upload_policy policy, std::string const &content, char sep) {
 
+        CYNG_LOG_DEBUG(logger_, "[upload] content: " << content);
+
         std::size_t counter{0};
         cyng::csv::parser p(sep, [&, this](cyng::csv::line_t &&vec) {
             if (counter != 0 && vec.size() > 10) {
@@ -82,11 +84,9 @@ namespace smf {
                 auto const server_id = cleanup_server_id(
                     meter_id,
                     manufacturer_code,
-                    boost::algorithm::equals(adapter_type, "RS485") //	true == wired
-                    ,
-                    1 //	version
-                    ,
-                    2 //	electricity
+                    boost::algorithm::equals(adapter_type, "RS485"), //	true == wired
+                    1,                                               //	version
+                    2                                                //	electricity
                 );
 
                 auto const meter_type = vec.at(5);

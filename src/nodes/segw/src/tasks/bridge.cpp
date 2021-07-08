@@ -289,7 +289,7 @@ namespace smf {
                             cfg_.tag_ = cyng::value_cast(obj, boost::uuids::nil_uuid());
                         } else if (boost::algorithm::equals(path, cyng::to_str(OBIS_SERVER_ID))) {
                             //	init server ID in cache
-                            cfg_.id_ = cyng::to_buffer(val);
+                            cfg_.id_ = cyng::hex_to_buffer(val);
                         } else {
 
                             //

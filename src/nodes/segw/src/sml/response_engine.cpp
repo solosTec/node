@@ -11,6 +11,8 @@
 #include <smf/sml/value.hpp>
 #include <sml/response_engine.h>
 
+#include <config/cfg_hardware.h>
+
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -158,6 +160,10 @@ namespace smf {
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
 
+        // auto const srv_id = cfg_.get_srv_id();
+
+        cfg_hardware const hw(cfg_);
+
         BOOST_ASSERT(!path.empty());
         //  contains the following elements as child list:
         //  81 81 C7 82 02 FF - DEVICE_CLASS
@@ -165,7 +171,32 @@ namespace smf {
         //  81 81 C7 82 04 FF - SERVER_ID
         //  81 81 C7 82 06 FF - ROOT_FIRMWARE - list of firmware types and versions
         //  81 81 C7 82 09 FF - HARDWARE_FEATURES
-        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), cyng::tuple_t{}));
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                path.at(0),
+                cyng::make_tuple(
+                    // obis code that descrives the device class
+                    sml::tree_param(OBIS_DEVICE_CLASS, sml::make_value(hw.get_device_class())),
+                    //  manufacturer
+                    sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(hw.get_manufacturer())),
+                    //  server id (05 + MAC)
+                    sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(cfg_.get_srv_id())),
+
+                    //	ToDo: firmware
+                    //	hardware
+                    sml::tree_child_list(
+                        OBIS_HARDWARE_FEATURES,
+                        cyng::make_tuple(
+                            sml::tree_param(
+                                cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x01),
+                                sml::make_value("VSES-1KW-221-1F0")), //  model code
+                            sml::tree_param(
+                                cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x02),
+                                sml::make_value(hw.get_serial_number())) //  serial number
+                            )))));
     }
 
 } // namespace smf

@@ -413,16 +413,15 @@ namespace smf {
 #endif
                 cyng::make_param("model", "virtual.gateway"), //	Typenschluessel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
                 cyng::make_param("serial", sn),               //	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
+                cyng::make_param("class", "8181C78202FF"), //	device class (129-129:199.130.83*255 - OBIS_DEVICE_CLASS) "2D 2D 2D"
                 cyng::make_param(
-                    "class", "129-129:199.130.83*255") //	device class (81 81 C7 82 02 FF - OBIS_DEVICE_CLASS) "2D 2D 2D"
-                                                       // cyng::make_param("adapter", cyng::tuple_factory(
-                //	cyng::make_param(sml::OBIS_W_MBUS_ADAPTER_MANUFACTURER.to_str(), "RC1180-MBUS3"),	//	manufacturer
-                //(81 06 00 00 01 00) 	cyng::make_param(sml::OBIS_W_MBUS_ADAPTER_ID.to_str(), "A8 15 17 45 89 03 01 31"),	//
-                // adapter ID (81 06 00 00 03 00) 	cyng::make_param(sml::OBIS_W_MBUS_FIRMWARE.to_str(), "3.08"),	//
-                // firmware (81 06 00 02 00 00)
-                //	cyng::make_param(sml::OBIS_W_MBUS_HARDWARE.to_str(), "2.00")	//	hardware (81 06 00 02 03 FF)
-                //))
-                ));
+                    "adapter",
+                    cyng::tuple_factory(
+                        cyng::make_param(cyng::to_str(OBIS_W_MBUS_ADAPTER_MANUFACTURER), "RC1180-MBUS3"), //	manufacturer
+                        cyng::make_param(cyng::to_str(OBIS_W_MBUS_ADAPTER_ID), "A815174589030131"),
+                        cyng::make_param(cyng::to_str(OBIS_W_MBUS_FIRMWARE), "3.08"), // firmware (81 06 00 02 00 00)
+                        cyng::make_param(cyng::to_str(OBIS_W_MBUS_HARDWARE), "2.00")  //	hardware (81 06 00 02 03 FF)
+                        ))));
     }
 
     cyng::param_t controller::create_nms_server_spec(std::filesystem::path const &tmp) const {
