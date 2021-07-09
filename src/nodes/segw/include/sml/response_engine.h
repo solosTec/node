@@ -49,6 +49,9 @@ namespace smf {
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_device_ident(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
 
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_device_time(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
       private:
         cfg &cfg_;
         cyng::logger logger_;

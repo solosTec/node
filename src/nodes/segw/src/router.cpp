@@ -180,6 +180,11 @@ namespace smf {
         //
         if (bus_)
             bus_->transfer(buffer);
+
+        //
+        //  clear message buffer
+        //
+        messages_.clear();
     }
 
     void router::generate_open_response(

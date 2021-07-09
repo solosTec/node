@@ -48,7 +48,10 @@ namespace smf {
             template <> struct factory_policy<std::int64_t> { static cyng::tuple_t create(std::int64_t v); };
 
             template <> struct factory_policy<std::chrono::system_clock::time_point> {
-                static cyng::tuple_t create(std::chrono::system_clock::time_point v);
+                static cyng::tuple_t create(std::chrono::system_clock::time_point &&v);
+            };
+            template <> struct factory_policy<std::chrono::system_clock::time_point const &> {
+                static cyng::tuple_t create(std::chrono::system_clock::time_point const &v);
             };
             template <> struct factory_policy<std::chrono::milliseconds> {
                 static cyng::tuple_t create(std::chrono::milliseconds v);
@@ -56,10 +59,7 @@ namespace smf {
             template <> struct factory_policy<std::chrono::seconds> { static cyng::tuple_t create(std::chrono::seconds v); };
             template <> struct factory_policy<std::chrono::minutes> { static cyng::tuple_t create(std::chrono::minutes v); };
 
-            template <> struct factory_policy<cyng::buffer_t> {
-                static cyng::tuple_t create(cyng::buffer_t &&v);
-                //static cyng::tuple_t create(cyng::buffer_t const &v);
-            };
+            template <> struct factory_policy<cyng::buffer_t> { static cyng::tuple_t create(cyng::buffer_t &&v); };
             template <> struct factory_policy<cyng::buffer_t const &> { static cyng::tuple_t create(cyng::buffer_t const &v); };
             template <> struct factory_policy<std::string> { static cyng::tuple_t create(std::string v); };
             template <std::size_t N> struct factory_policy<const char (&)[N]> {

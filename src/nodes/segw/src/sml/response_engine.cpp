@@ -5,6 +5,7 @@
  *
  */
 
+#include <smf.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/sml/generator.h>
@@ -16,6 +17,7 @@
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
+#include <cyng/sys/info.h>
 
 namespace smf {
 
@@ -51,6 +53,7 @@ namespace smf {
                 msgs.push_back(get_proc_parameter_device_ident(trx, server, path));
                 break;
             case CODE_ROOT_DEVICE_TIME: //	0x8181C78810FF
+                msgs.push_back(get_proc_parameter_device_time(trx, server, path));
                 break;
             case CODE_ROOT_NTP: //	0x8181C78801FF
                 break;
@@ -177,26 +180,62 @@ namespace smf {
             path,
             sml::tree_child_list(
                 path.at(0),
-                cyng::make_tuple(
-                    // obis code that descrives the device class
-                    sml::tree_param(OBIS_DEVICE_CLASS, sml::make_value(hw.get_device_class())),
-                    //  manufacturer
-                    sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(hw.get_manufacturer())),
-                    //  server id (05 + MAC)
-                    sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(cfg_.get_srv_id())),
+                {// obis code that descrives the device class
+                 sml::tree_param(OBIS_DEVICE_CLASS, sml::make_value(hw.get_device_class())),
+                 //  manufacturer
+                 sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(hw.get_manufacturer())),
+                 //  server id (05 + MAC)
+                 sml::tree_param(OBIS_SERVER_ID, sml::make_value(cfg_.get_srv_id())),
 
-                    //	ToDo: firmware
-                    //	hardware
-                    sml::tree_child_list(
-                        OBIS_HARDWARE_FEATURES,
-                        cyng::make_tuple(
-                            sml::tree_param(
-                                cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x01),
-                                sml::make_value("VSES-1KW-221-1F0")), //  model code
-                            sml::tree_param(
-                                cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x02),
-                                sml::make_value(hw.get_serial_number())) //  serial number
-                            )))));
+                 //	firmware
+                 sml::tree_child_list(
+                     OBIS_ROOT_FIRMWARE,
+                     {//	section 1
+                      sml::tree_child_list(
+                          cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x07, 0x01),
+                          {sml::tree_param(OBIS_DEVICE_KERNEL, sml::make_value("CURRENT_VERSION")),
+                           sml::tree_param(OBIS_VERSION, sml::make_value(SMF_VERSION_TAG)),
+                           sml::tree_param(OBIS_DEVICE_ACTIVATED, sml::make_value(true))}),
+                      //	section 2
+                      sml::tree_child_list(
+                          cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x07, 0x02),
+                          {sml::tree_param(OBIS_DEVICE_KERNEL, sml::make_value("KERNEL")),
+                           sml::tree_param(OBIS_VERSION, sml::make_value(cyng::sys::get_os_name())),
+                           sml::tree_param(OBIS_DEVICE_ACTIVATED, sml::make_value(true))})}),
+
+                 //	hardware
+                 sml::tree_child_list(
+                     OBIS_HARDWARE_FEATURES,
+                     {
+                         sml::tree_param(
+                             cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x01),
+                             sml::make_value("VSES-1KW-221-1F0")), //  model code
+                         sml::tree_param(
+                             cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x02),
+                             sml::make_value(hw.get_serial_number())) //  serial number
+                     })}));
     }
 
+    cyng::tuple_t response_engine::get_proc_parameter_device_time(
+        std::string const &trx,
+        cyng::buffer_t const &server,
+        cyng::obis_path_t const &path) {
+
+        auto const now = std::chrono::system_clock::now();
+
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                path.at(0),
+                {sml::tree_child_list(
+                    OBIS_ROOT_DEVICE_TIME,
+                    {
+                        sml::tree_param(OBIS_CURRENT_UTC, sml::make_value(now)),
+                        sml::tree_param(cyng::make_obis(0x00, 0x00, 0x60, 0x08, 0x00, 0xFF), sml::make_value(0u)),  //  second index
+                        sml::tree_param(cyng::make_obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x01), sml::make_value(0u)),  //  timezone
+                        sml::tree_param(cyng::make_obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x02), sml::make_value(true)) //  sync active
+                    })}));
+    }
 } // namespace smf

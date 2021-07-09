@@ -79,6 +79,7 @@ namespace smf {
          * parameter entry
          */
         cyng::tuple_t tree_child_list(cyng::obis code, cyng::tuple_t child_list);
+        cyng::tuple_t tree_child_list(cyng::obis code, std::initializer_list<cyng::tuple_t> list);
 
     } // namespace sml
 } // namespace smf

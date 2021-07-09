@@ -103,5 +103,9 @@ namespace smf {
             return cyng::make_tuple(code, cyng::null{}, child_list);
         }
 
+        cyng::tuple_t tree_child_list(cyng::obis code, std::initializer_list<cyng::tuple_t> list) {
+            return cyng::make_tuple(code, cyng::null{}, cyng::make_tuple(list));
+        }
+
     } // namespace sml
 } // namespace smf
