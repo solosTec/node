@@ -52,11 +52,94 @@ namespace smf {
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_device_time(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
 
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_ntp(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_access_rights(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_custom_interface(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_custom_param(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_wan(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_gsm(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_gprs(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_ipt_state(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_ipt_param(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_wmbus_state(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_wmbus_param(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_lan_dsl_state(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_lan_dsl_param(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_memory(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_visisble_devices(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_active_devices(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_device_info(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_sensor_param(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_data_collector(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_1107_interface(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_storage_timeshift(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_push_ops(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_list_services(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_actuators(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_edl(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_mbus(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t
+        get_proc_parameter_security(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
       private:
         cfg &cfg_;
         cyng::logger logger_;
         sml::response_generator &res_gen_;
     };
+
+    cyng::tuple_t generate_tree_ntp(std::vector<std::string> const &ntp_servers);
 
 } // namespace smf
 

@@ -42,7 +42,7 @@ namespace smf {
                 return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_TIME), make_timestamp(std::move(v)));
             }
             cyng::tuple_t
-            factory_policy<std::chrono::system_clock::time_point const &>::create(std::chrono::system_clock::time_point const &v) {
+            factory_policy<std::chrono::system_clock::time_point>::create(std::chrono::system_clock::time_point const &v) {
                 return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_TIME), make_timestamp(v));
             }
 
@@ -59,7 +59,7 @@ namespace smf {
             cyng::tuple_t factory_policy<cyng::buffer_t>::create(cyng::buffer_t &&v) {
                 return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), std::move(v));
             }
-            cyng::tuple_t factory_policy<cyng::buffer_t const &>::create(cyng::buffer_t const &v) {
+            cyng::tuple_t factory_policy<cyng::buffer_t>::create(cyng::buffer_t const &v) {
                 return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
             }
             cyng::tuple_t factory_policy<std::string>::create(std::string v) {

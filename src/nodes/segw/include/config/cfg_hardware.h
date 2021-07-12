@@ -21,6 +21,14 @@ namespace smf {
         std::string get_manufacturer() const;
         cyng::obis get_device_class() const;
 
+        /**
+         * as defined in EN 13757-3/4
+         */
+        cyng::buffer_t get_adapter_id() const;
+        std::string get_adapter_manufacturer() const;
+        std::string get_adapter_firmware_version() const;
+        std::string get_adapter_hardware_version() const;
+
         constexpr static char root[] = "hw";
 
       private:
