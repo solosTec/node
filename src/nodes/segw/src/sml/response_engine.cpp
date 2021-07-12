@@ -14,11 +14,16 @@
 
 #include <config/cfg_hardware.h>
 
+#include <boost/predef.h>
+
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
 #include <cyng/sys/info.h>
 #include <cyng/sys/ntp.h>
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+#include <cyng/scm/mgr.h>
+#endif
 
 namespace smf {
 
@@ -98,7 +103,7 @@ namespace smf {
                 // msgs.push_back(get_proc_parameter_lan_dsl_param(trx, server, path));
                 break;
             case CODE_ROOT_MEMORY_USAGE: //	0x0080800010FF
-                // msgs.push_back(get_proc_parameter_memory(trx, server, path));
+                msgs.push_back(get_proc_parameter_memory(trx, server, path));
                 break;
             case CODE_ROOT_VISIBLE_DEVICES: //	81 81 10 06 FF FF
                 // msgs.push_back(get_proc_parameter_visisble_devices(trx, server, path));
@@ -119,13 +124,13 @@ namespace smf {
                 // msgs.push_back(get_proc_parameter_1107_interface(trx, server, path));
                 break;
             case CODE_STORAGE_TIME_SHIFT: //	0x0080800000FF
-                // msgs.push_back(get_proc_parameter_storage_timeshift(trx, server, path));
+                msgs.push_back(get_proc_parameter_storage_timeshift(trx, server, path));
                 break;
             case CODE_ROOT_PUSH_OPERATIONS: //	0x8181C78A01FF
                 // msgs.push_back(get_proc_parameter_push_ops(trx, server, path));
                 break;
             case CODE_LIST_SERVICES: //	0x990000000004
-                // msgs.push_back(get_proc_parameter_list_services(trx, server, path));
+                msgs.push_back(get_proc_parameter_list_services(trx, server, path));
                 break;
             case CODE_ACTUATORS: //	0x0080801100FF
                 // msgs.push_back(get_proc_parameter_actuators(trx, server, path));
@@ -262,8 +267,8 @@ namespace smf {
             sml::tree_child_list(
                 path.at(0),
                 {sml::tree_child_list(
-                    // path.at(0),
-                    OBIS_ROOT_DEVICE_TIME,
+                    path.at(0),
+                    // OBIS_ROOT_DEVICE_TIME,
                     {
                         sml::tree_param(OBIS_CURRENT_UTC, sml::make_value(now)),
                         sml::tree_param(cyng::make_obis(0x00, 0x00, 0x60, 0x08, 0x00, 0xFF), sml::make_value(0u)),  //  second index
@@ -295,7 +300,7 @@ namespace smf {
             sml::tree_child_list(
                 path.at(0),
                 {sml::tree_child_list(
-                    OBIS_ROOT_NTP,
+                    path.at(0),
                     {sml::tree_param(OBIS_CODE_NTP_PORT, sml::make_value(ntp_port)),
                      sml::tree_param(OBIS_CODE_NTP_ACTIVE, sml::make_value(ntp_active)), //  second index
                      sml::tree_param(OBIS_CODE_NTP_TZ, sml::make_value(ntp_tz)),         //  timezone
@@ -408,7 +413,23 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+
+        //  00 80 80 00 10 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_MEMORY_USAGE);
+
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                path.at(0),
+                {sml::tree_child_list(
+                    path.at(0),
+                    {
+                        sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x11, 0xFF), sml::make_value(10u)), //  mirror
+                        sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x12, 0xFF), sml::make_value(12u))  //  tmp
+                    })}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_visisble_devices(
@@ -457,7 +478,22 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+
+        //  00 80 80 00 00 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_STORAGE_TIME_SHIFT);
+
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                path.at(0),
+                {sml::tree_child_list(
+                    path.at(0),
+                    {
+                        sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x01, 0xFF), sml::make_value(10u)) //  seconds
+                    })}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_push_ops(
@@ -471,7 +507,29 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+        scm::mgr m(false); //	no admin required
+        auto r = m.get_active_services();
+        std::stringstream ss;
+        std::size_t counter{0};
+        for (auto const &srv : r) {
+            ss << srv.name_ << ':' << srv.display_name << ';';
+            ++counter;
+            //	problems with handling larger strings
+            if (counter > 36)
+                break;
+        }
+
+        auto data = ss.str();
+        CYNG_LOG_INFO(logger_, "active services: " << data);
+
+        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_param(path.front(), sml::make_value(data)));
+
+#else
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_param(path.front(), sml::make_value("smfService:smfConfiguration-001;")));
+#endif
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_actuators(

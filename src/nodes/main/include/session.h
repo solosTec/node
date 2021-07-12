@@ -133,9 +133,9 @@ namespace smf {
          */
         void pty_forward_open_connection(std::string msisdn, boost::uuids::uuid dev, bool local, cyng::param_map_t token);
 
-        /** @brief node internal command
+        /** @brief SMF internal command
          *
-         * pty.return.open.connection
+         * smf node answer to the "pty.forward.open.connection" command
          */
         void pty_return_open_connection(
             bool success,

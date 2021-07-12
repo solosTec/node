@@ -134,7 +134,7 @@ namespace smf {
         /**
          * Search for a remote session (if connected)
          */
-        pty get_remote(boost::uuids::uuid);
+        std::tuple<boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid> get_remote(boost::uuids::uuid);
 
         /**
          * insert new system message
@@ -188,6 +188,11 @@ namespace smf {
          * remove push channel
          */
         std::size_t close_channel(std::uint32_t);
+
+        /**
+         * update "throughput" in "connection" table
+         */
+        void update_connection_throughput(boost::uuids::uuid rtag, boost::uuids::uuid dev, std::uint64_t size);
 
       private:
         void set_start_values(cyng::param_map_t const &session_cfg, std::string const &country_code, std::string const &lang_code);

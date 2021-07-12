@@ -144,30 +144,26 @@ namespace smf {
                 name,
                 ep,
                 rtag,
-                source_++ //	source
-                ,
-                std::chrono::system_clock::now() //	login time
-                ,
-                boost::uuids::uuid() //	rTag
-                ,
-                "ipt" //	player
-                ,
+                source_++,                        //	source
+                std::chrono::system_clock::now(), //	login time
+                boost::uuids::uuid(),             //	rTag
+                "ipt",                            //	player
                 data_layer,
                 static_cast<std::uint64_t>(0),
                 static_cast<std::uint64_t>(0),
                 static_cast<std::uint64_t>(0)),
-            1u //	only needed for insert operations
-            ,
+            1u, //	only needed for insert operations
             cfg_.get_tag());
     }
 
     std::pair<cyng::key_list_t, bool> db::remove_pty(boost::uuids::uuid tag, boost::uuids::uuid dev) {
 
         bool r = false;
-        cyng::key_list_t open_connections;
+        cyng::key_list_t remote_sessions;
         cache_.access(
-            [&](cyng::table *tbl_pty, cyng::table *tbl_target, cyng::table *tbl_channel) {
+            [&](cyng::table *tbl_pty, cyng::table *tbl_target, cyng::table *tbl_channel, cyng::table *tbl_conn) {
                 //
+                //  get session
                 //	clean up open connections
                 //
                 auto const key = cyng::key_generator(dev);
@@ -178,19 +174,44 @@ namespace smf {
                     //
                     CYNG_LOG_WARNING(logger_, "[db] remove pty " << dev << " not found");
                 } else {
+                    //
+                    //  remote session tag, if session has an open connection
+                    //
                     auto const rtag = rec_pty.value("rConnect", boost::uuids::nil_uuid());
                     if (!rtag.is_nil()) {
+
+                        //
+                        //  maintain a list of keys of open remote sessions
+                        //
+                        cyng::key_list_t open_connections;
+
                         tbl_pty->loop([&](cyng::record const &rec, std::size_t) -> bool {
                             auto const remote = rec.value("rTag", boost::uuids::nil_uuid());
                             if (remote == rtag) {
-                                open_connections.insert(rec.key());
-                                CYNG_LOG_TRACE(logger_, "[db] remove connection to " << rec.value("name", ""));
+                                //
+                                //  build key for "connection" table
+                                //
+                                auto const caller_dev = rec.value("tag", boost::uuids::nil_uuid());
+                                auto const key_connection = cyng::key_generator(cyng::merge(caller_dev, dev));
+                                open_connections.insert(key_connection);
+
+                                //
+                                //  add key of open remote sessions
+                                //
+                                remote_sessions.insert(rec.key());
+                                CYNG_LOG_TRACE(logger_, "[db] remove connection to " << rec.value("name", "") << '@' << caller_dev);
+                                // return false; //  only one connection allowed
                             }
                             return true;
                         });
 
                         BOOST_ASSERT(open_connections.size() < 2);
                         for (auto const &key : open_connections) {
+                            auto const b = tbl_conn->erase(key, cfg_.get_tag());
+                            BOOST_ASSERT_MSG(b, "connection does not exists");
+                        }
+
+                        for (auto const &key : remote_sessions) {
                             tbl_pty->modify(key, cyng::make_param("rConnect", boost::uuids::nil_uuid()), cfg_.get_tag());
                         }
                     }
@@ -243,14 +264,16 @@ namespace smf {
                 for (auto const &pk : keys) {
                     tbl_channel->erase(pk, cfg_.get_tag());
                 }
-                if (!keys.empty())
+                if (!keys.empty()) {
                     CYNG_LOG_INFO(logger_, "[db] remove session " << dev << ", with " << keys.size() << " channels");
+                }
             },
             cyng::access::write("session"),
             cyng::access::write("target"),
-            cyng::access::write("channel"));
+            cyng::access::write("channel"),
+            cyng::access::write("connection"));
 
-        return {open_connections, r};
+        return {remote_sessions, r};
     }
 
     pty db::get_access_params(cyng::key_t key) {
@@ -459,20 +482,18 @@ namespace smf {
         boost::uuids::uuid caller_dev,
         std::string caller_name,
         std::string callee_name,
-        boost::uuids::uuid tag //	callee tag
-        ,
-        boost::uuids::uuid dev //	callee dev-tag
-        ,
-        boost::uuids::uuid callee //	callee vm-tag
-        ,
+        boost::uuids::uuid tag,    //	callee tag
+        boost::uuids::uuid dev,    //	callee dev-tag
+        boost::uuids::uuid callee, //	callee vm-tag
         bool local) {
 
         cache_.access(
             [&](cyng::table *tbl_session, cyng::table *tbl_connection) {
-                auto const b1 =
-                    tbl_session->modify(cyng::key_generator(caller_dev), cyng::make_param("rConnect", tag), cfg_.get_tag());
-                auto const b2 =
-                    tbl_session->modify(cyng::key_generator(dev), cyng::make_param("rConnect", caller_tag), cfg_.get_tag());
+                auto const key_caller = cyng::key_generator(caller_dev);
+                auto const key_callee = cyng::key_generator(dev);
+
+                auto const b1 = tbl_session->modify(key_caller, cyng::make_param("rConnect", tag), cfg_.get_tag());
+                auto const b2 = tbl_session->modify(key_callee, cyng::make_param("rConnect", caller_tag), cfg_.get_tag());
 
             // BOOST_ASSERT_MSG(b1, "caller not found");
             // BOOST_ASSERT_MSG(b2, "callee not found");
@@ -493,14 +514,29 @@ namespace smf {
                         return true;
                     });
                 }
+#else
+                boost::ignore_unused(b1);
+                boost::ignore_unused(b2);
 #endif
+                auto const rec_caller = tbl_session->lookup(key_caller);
+                auto const rec_callee = tbl_session->lookup(key_callee);
+
+                auto const layer_caller = rec_caller.value("pLayer", "");
+                auto const layer_callee = rec_callee.value("pLayer", "");
+
                 //
                 //	both "dev-tags" are merged to one UUID that is independend from the ordering of the parameters.
                 //
                 tbl_connection->insert(
                     cyng::key_generator(cyng::merge(caller_dev, dev)),
                     cyng::data_generator(
-                        caller_name, callee_name, std::chrono::system_clock::now(), local, static_cast<std::uint64_t>(0)),
+                        caller_name,
+                        callee_name,
+                        std::chrono::system_clock::now(),
+                        local,
+                        layer_caller,
+                        layer_callee,
+                        static_cast<std::uint64_t>(0)),
                     1,
                     cfg_.get_tag());
             },
@@ -508,20 +544,36 @@ namespace smf {
             cyng::access::write("connection"));
     }
 
-    pty db::get_remote(boost::uuids::uuid dev) {
+    std::tuple<boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid> db::get_remote(boost::uuids::uuid dev) {
 
-        boost::uuids::uuid rtag = boost::uuids::nil_uuid(), rpeer = boost::uuids::nil_uuid();
+        //
+        //  This function loops over all sessions to find the matching remote session.
+        //  This doesn't scale well for a high number of sessions with much open
+        //  connections.
+        //  ToDo: Store the key "tag" of the remote session instead the "rtag" or implement some kind
+        //  of index in the in-memory table class.
+        //
+        boost::uuids::uuid rtag = boost::uuids::nil_uuid(), rpeer = boost::uuids::nil_uuid(), rdev = boost::uuids::nil_uuid();
         cache_.access(
             [&](cyng::table const *tbl_session) {
                 auto const rec = tbl_session->lookup(cyng::key_generator(dev));
                 if (!rec.empty()) {
-                    rtag = rec.value("rConnect", rtag);
-                    //	ToDo: rPeer
+                    rtag = rec.value("rConnect", rtag); //  same as dev
+
+                    tbl_session->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                        auto const rtag_remote = rec.value("rTag", rpeer); //  get key
+                        if (rtag_remote == rtag) {
+                            rdev = rec.value("tag", rdev); //  key
+                            rpeer = rec.value("peer", rpeer);
+                            return false;
+                        }
+                        return true;
+                    });
                 }
             },
             cyng::access::read("session"));
 
-        return {rtag, rpeer};
+        return {rtag, rpeer, rdev};
     }
 
     void db::init_sys_msg() {
@@ -1812,6 +1864,19 @@ namespace smf {
             },
             cyng::access::write("channel"));
         return keys.size();
+    }
+
+    void db::update_connection_throughput(boost::uuids::uuid rtag, boost::uuids::uuid dev, std::uint64_t size) {
+        auto const key_conn = cyng::key_generator(cyng::merge(rtag, dev));
+        cache_.access(
+            [&, this](cyng::table *tbl_conn) {
+                auto const rec = tbl_conn->lookup(key_conn);
+                if (!rec.empty()) {
+                    auto const throughput = rec.value<std::uint64_t>("throughput", 0u) + size;
+                    tbl_conn->modify(key_conn, cyng::make_param("throughput", throughput), cfg_.get_tag());
+                }
+            },
+            cyng::access::write("connection"));
     }
 
     push_target::push_target()
