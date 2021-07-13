@@ -93,6 +93,8 @@ namespace smf {
         std::uint8_t version,
         std::uint8_t medium);
 
+    std::string extract_value(std::map<std::string, std::string> const &data, std::string const &key, std::string def);
+
 } // namespace smf
 
 #endif
