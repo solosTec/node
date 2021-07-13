@@ -23,6 +23,7 @@ namespace smf {
         std::string enabled_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "enabled"); }
         std::string debug_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "debug"); }
         std::string script_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "script-path"); }
+        std::string nic_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic"); }
     } // namespace
 
     cfg_nms::cfg_nms(cfg &c)
@@ -69,6 +70,21 @@ namespace smf {
     bool cfg_nms::set_enabled(bool b) const { return cfg_.set_value(enabled_path(), b); }
 
     bool cfg_nms::is_debug() const { return cfg_.get_value(debug_path(), false); }
+
+    std::string cfg_nms::get_nic() const {
+        return cfg_.get_value(
+            nic_path(),
+#if defined(BOOST_OS_LINUX_AVAILABLE)
+#if defined(__CROSS_PLATFORM)
+            "br0"
+#else
+            "eth0"
+#endif
+#else
+            "Ethernet"
+#endif
+        );
+    }
 
     bool cfg_nms::set_debug(bool b) const { return cfg_.set_value(debug_path(), b); }
 

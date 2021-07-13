@@ -31,6 +31,11 @@ namespace smf {
         bool is_debug() const;
 
         /**
+         * Designated NIC for link-local communication
+         */
+        std::string get_nic() const;
+
+        /**
          * check username and password
          */
         bool check_credentials(std::string const &, std::string const &);
