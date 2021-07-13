@@ -719,7 +719,7 @@ namespace smf {
             cfg.set_IPv4_task_id(channel->get_id());
 
             auto const delay = cfg.get_delay();
-            CYNG_LOG_INFO(logger_, "start external listener [" << name << "] in " << delay.count() << " seconds");
+            CYNG_LOG_INFO(logger_, "start external listener/rdr [" << name << "] in " << delay.count() << " seconds");
 
             channel->suspend(delay, "start", cyng::make_tuple(delay));
 
@@ -732,7 +732,12 @@ namespace smf {
             init_redirector_ipv6(cfg, "br0");
 
         } else {
-            CYNG_LOG_WARNING(logger_, "external listener for port [" << cfg.get_port_name() << "] is not enabled");
+            CYNG_LOG_WARNING(logger_, "external listener/rdr for port [" << cfg.get_port_name() << "] is not enabled");
+            //
+            //  no listener tasks are running
+            //
+            cfg.set_IPv4_task_id(0);
+            cfg.set_IPv6_task_id(0);
         }
     }
 

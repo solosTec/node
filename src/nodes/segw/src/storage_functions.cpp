@@ -467,6 +467,12 @@ namespace smf {
 
     void transfer_nms(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap) {
 
+        //
+        //  This flag is used to check if one of the NICs is selected
+        //  for the communication over a local-link address.
+        //
+        bool flag_nic = false;
+
         for (auto const &param : pmap) {
             if (boost::algorithm::equals(param.first, "address")) {
 
@@ -491,7 +497,21 @@ namespace smf {
             } else {
 
                 insert_config_record(stmt, cyng::to_path(cfg::sep, "nms", param.first), param.second, "NMS: " + param.first);
+                if (boost::algorithm::equals(param.first, "nic")) {
+                    flag_nic = true;
+                }
             }
+        }
+
+        if (!flag_nic) {
+            //
+            //  set a default NIC to communicate over a link-local address
+            //
+            insert_config_record(
+                stmt,
+                cyng::to_path(cfg::sep, "nms", "nic"),
+                cyng::make_object("br0"),
+                "designated nic for communication over a local-link address");
         }
     }
 

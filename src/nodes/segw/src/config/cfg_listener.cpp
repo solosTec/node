@@ -43,10 +43,10 @@ namespace smf {
             return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "delay");
         }
         std::string task_id_ipv4_path(std::uint8_t type) {
-            return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "taskIDipv4");
+            return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "taskIdIPv4");
         }
         std::string task_id_ipv6_path(std::uint8_t type) {
-            return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "taskIDipv6");
+            return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "taskIdIPv6");
         }
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
         std::string nic_path(std::uint8_t type) { return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "nic"); }
