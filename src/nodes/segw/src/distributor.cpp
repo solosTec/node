@@ -38,7 +38,9 @@ namespace smf {
             //
             auto const task_id_ipv4 = cfg.get_IPv4_task_id();
             if (task_id_ipv4 != 0) {
-                ctl_.get_registry().dispatch(task_id_ipv4, "rebind", cyng::make_tuple(cfg.get_ipv4_ep()));
+                auto const ep = cfg.get_ipv4_ep();
+                CYNG_LOG_INFO(logger_, "[distributor] set global listener ep to " << ep);
+                ctl_.get_registry().dispatch(task_id_ipv4, "rebind", cyng::make_tuple(ep));
             }
 
             //
@@ -50,7 +52,9 @@ namespace smf {
                 cfg_nms nms(cfg_);
                 auto const addr6 = nms.get_as_ipv6();
                 boost::asio::ip::tcp::endpoint const ep(addr6, cfg.get_port());
-                CYNG_LOG_INFO(logger_, "[distributor] build listener ep from " << addr6 << " and " << cfg.get_port() << " = " << ep);
+                CYNG_LOG_INFO(
+                    logger_,
+                    "[distributor] build link-local listener ep from " << addr6 << " and " << cfg.get_port() << " = " << ep);
                 ctl_.get_registry().dispatch(task_id_ipv6, "rebind", cyng::make_tuple(ep));
             }
         }
