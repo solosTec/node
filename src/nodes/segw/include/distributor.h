@@ -9,6 +9,7 @@
 
 #include <config/cfg_lmn.h>
 
+#include <cyng/log/logger.h>
 #include <cyng/task/task_fwd.h>
 
  namespace smf {
@@ -19,7 +20,7 @@
 	 class distributor
 	 {
 	 public:
-		 distributor(cyng::controller&, cfg& config);
+		 distributor(cyng::logger logger, cyng::controller&, cfg& config);
 
 		 void update(std::string key, cyng::object const&);
 
@@ -27,8 +28,9 @@
 		 void update_lmn(std::string const& key, lmn_type, cyng::object const& val);
 
 	 private:
-		 cyng::controller& ctl_;
-		 cfg& cfg_;
+	 	cyng::logger logger_;
+		cyng::controller& ctl_;
+		cfg& cfg_;
 	 };
 }
 

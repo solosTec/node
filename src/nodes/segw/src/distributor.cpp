@@ -10,12 +10,14 @@
 #include <config/cfg_nms.h>
 #include <distributor.h>
 
+#include <cyng/log/record.h>
 #include <cyng/task/controller.h>
 
 namespace smf {
 
-    distributor::distributor(cyng::controller &ctl, cfg &config)
-        : ctl_(ctl)
+    distributor::distributor(cyng::logger logger, cyng::controller &ctl, cfg &config)
+        : logger_(logger)
+        , ctl_(ctl)
         , cfg_(config) {}
 
     void distributor::update(std::string key, cyng::object const &val) {
@@ -47,7 +49,8 @@ namespace smf {
 
                 cfg_nms nms(cfg_);
                 auto const addr6 = nms.get_as_ipv6();
-                boost::asio::ip::tcp::endpoint ep(addr6, cfg.get_port());
+                boost::asio::ip::tcp::endpoint const ep(addr6, cfg.get_port());
+                CYNG_LOG_INFO(logger_, "[distributor] build listener ep from " << addr6 << " and " << cfg.get_port() << " = " << ep);
                 ctl_.get_registry().dispatch(task_id_ipv6, "rebind", cyng::make_tuple(ep));
             }
         }

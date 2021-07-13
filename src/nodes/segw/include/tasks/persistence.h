@@ -12,7 +12,7 @@
 
 #include <cyng/log/logger.h>
 #include <cyng/store/db.h>
-//#include <cyng/store/slot_interface.h>
+
 
 #include <cyng/task/task_fwd.h>
 

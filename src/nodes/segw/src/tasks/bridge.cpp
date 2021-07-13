@@ -661,6 +661,8 @@ namespace smf {
 
     void bridge::init_nms_server() {
         cfg_nms cfg(cfg_);
+        auto const nic = cfg.get_nic();
+        CYNG_LOG_INFO(logger_, "designated nic for link-local communication is \"" << nic << "\"");
         if (cfg.is_enabled()) {
 
             //  cyng::channel_weak wp, cyng::controller &ctl, cfg &, cyng::logger
@@ -729,7 +731,7 @@ namespace smf {
             //  So it's possible to use other NICs than br0
             //
             // init_redirector_ipv6(cfg, "eth2");
-            init_redirector_ipv6(cfg, "br0");
+            init_redirector_ipv6(cfg);
 
         } else {
             CYNG_LOG_WARNING(logger_, "external listener/rdr for port [" << cfg.get_port_name() << "] is not enabled");
@@ -741,11 +743,14 @@ namespace smf {
         }
     }
 
-    void bridge::init_redirector_ipv6(cfg_listener const &cfg, std::string nic) {
+    void bridge::init_redirector_ipv6(cfg_listener const &cfg) {
 
         //  use same link-local address as NMS and the ip port from the listener
         cfg_nms nms(cfg_);
+        auto const nic = nms.get_nic();
+
         auto const addr6 = nms.get_as_ipv6();
+        CYNG_LOG_TRACE(logger_, "build listener ep from " << addr6 << " and " << cfg.get_port());  
         boost::asio::ip::tcp::endpoint ep(addr6, cfg.get_port());
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)

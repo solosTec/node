@@ -7,6 +7,8 @@
 
 #include <config/cfg_nms.h>
 
+#include <cyng/sys/net.h>
+
 #ifdef _DEBUG_SEGW
 #include <iostream>
 #endif
@@ -45,8 +47,8 @@ namespace smf {
         } catch (std::exception const &) {
         }
 
-        //  unspecified
-        return boost::asio::ip::address_v6();
+        //  next try
+        return cyng::sys::get_address_IPv6(get_nic());
     }
 
     std::string cfg_nms::get_address() const { return cfg_.get_value(address_path(), "0.0.0.0"); }

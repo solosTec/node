@@ -22,7 +22,7 @@ namespace smf {
         , logger_(logger)
         , cfg_(config)
         , storage_(s)
-        , distributor_(ctl, config) {
+        , distributor_(logger, ctl, config) {
         auto sp = channel_.lock();
         if (sp) {
             sp->set_channel_name("db.insert", 1);
