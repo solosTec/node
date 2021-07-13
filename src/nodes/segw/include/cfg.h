@@ -62,6 +62,11 @@ namespace smf {
         bool set_obj(std::string name, cyng::object &&obj);
         bool set_value(std::string name, cyng::object obj);
 
+        /**
+         * remove the value with the specified key/path
+         */
+        bool remove_value(std::string name);
+
         template <typename T> bool set_value(std::string name, T value) {
             return set_obj(name, cyng::make_object(std::move(value)));
         }

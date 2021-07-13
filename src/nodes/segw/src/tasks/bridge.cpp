@@ -736,8 +736,8 @@ namespace smf {
             //
             //  no listener tasks are running
             //
-            cfg.set_IPv4_task_id(0);
-            cfg.set_IPv6_task_id(0);
+            cfg.remove_IPv4_task_id();
+            cfg.remove_IPv6_task_id();
         }
     }
 

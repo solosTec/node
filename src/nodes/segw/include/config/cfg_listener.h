@@ -72,6 +72,9 @@ namespace smf {
         bool set_IPv4_task_id(std::size_t) const;
         bool set_IPv6_task_id(std::size_t) const;
 
+        bool remove_IPv4_task_id();
+        bool remove_IPv6_task_id();
+
         constexpr static char root[] = "listener";
 
       private:
