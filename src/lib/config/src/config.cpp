@@ -175,18 +175,11 @@ namespace smf {
                         boost::program_options::bool_switch(&start.log_eventlog_)->default_value(cyng::has_event_log()),
                         "start event logger")
 #endif
-                        ("log.console",
-                         boost::program_options::bool_switch(&start.log_console_)->default_value(true),
-                         "start console logger")(
-                            "log.file",
-                            boost::program_options::bool_switch(&start.log_file_)->default_value(true),
-                            "start file logger")(
-                            "log.file-name",
-                            boost::program_options::value<std::string>(&start.log_file_path_)->default_value(log_file_path),
-                            "log file name")(
-                            "log.file-size",
-                            boost::program_options::value<std::uint64_t>(&start.log_file_size_)->default_value(log_file_size),
-                            "log file size (bytes)");
+                ("log.console", boost::program_options::bool_switch(&start.log_console_)->default_value(true), "start console logger")    //  console logger - default: true
+                ("log.file", boost::program_options::bool_switch(&start.log_file_)->default_value(true), "start file logger") //    file logger - default true
+                ("log.file-name", boost::program_options::value<std::string>(&start.log_file_path_)->default_value(log_file_path), "log file name") //  log file name
+                ("log.file-size", boost::program_options::value<std::uint64_t>(&start.log_file_size_)->default_value(log_file_size), "log file size (bytes)") //    log file size
+                ;
 
             return options;
         }
