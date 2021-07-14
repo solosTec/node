@@ -85,9 +85,13 @@ namespace smf {
                             //  disconnect from LMN
                             //
                             auto const id = s->get_redirector_id();
-                            BOOST_ASSERT(id != 0u);
+                            // BOOST_ASSERT(id != 0u);
                             cfg_listener cfg(cfg_, type_);
-                            registry_.dispatch(cfg.get_port_name(), "remove-data-sink", id);
+                            if (id != 0) {
+                                registry_.dispatch(cfg.get_port_name(), "remove-data-sink", id);
+                            } else {
+                                CYNG_LOG_WARNING(logger_, "[RDR] disconnect from LMN " << cfg.get_port_name() << " failed");
+                            }
 
                             //
                             //  stop "redirector" task
@@ -176,6 +180,14 @@ namespace smf {
             if (acceptor_.is_open()) {
                 CYNG_LOG_INFO(logger_, "[RDR] listener endpoint changed to: " << ep);
                 acceptor_ = boost::asio::ip::tcp::acceptor(acceptor_.get_executor(), ep);
+                acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
+                boost::system::error_code ec;
+                acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
+                if (!ec) {
+                    do_accept();
+                } else {
+                    CYNG_LOG_WARNING(logger_, "[RDR] listener failed with: " << ec.message());
+                }
             } else {
                 CYNG_LOG_WARNING(logger_, "[RDR] listener (still) closed - cannot changed endpoint to: " << ep);
             }

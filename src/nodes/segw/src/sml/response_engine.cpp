@@ -85,7 +85,7 @@ namespace smf {
                 // msgs.push_back(get_proc_parameter_gprs(trx, server, path));
                 break;
             case CODE_ROOT_IPT_STATE: //	0x81490D0600FF
-                // msgs.push_back(get_proc_parameter_ipt_state(trx, server, path));
+                msgs.push_back(get_proc_parameter_ipt_state(trx, server, path));
                 break;
             case CODE_ROOT_IPT_PARAM: //	0x81490D0700FF
                 // msgs.push_back(get_proc_parameter_ipt_param(trx, server, path));
@@ -305,8 +305,6 @@ namespace smf {
                      sml::tree_param(OBIS_CODE_NTP_ACTIVE, sml::make_value(ntp_active)), //  second index
                      sml::tree_param(OBIS_CODE_NTP_TZ, sml::make_value(ntp_tz)),         //  timezone
                      sml::tree_child_list(OBIS_ROOT_NTP, generate_tree_ntp(ntp_servers))})}));
-
-        return cyng::tuple_t{};
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_access_rights(
@@ -349,7 +347,26 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+
+        //  81 49 0D 06 00 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_IPT_STATE);
+
+        std::uint32_t const ip_address = 1;
+        std::uint16_t const target_port = 2;
+        std::uint16_t const source_port = 3;
+
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                path.at(0),
+                {sml::tree_child_list(
+                    path.at(0),
+                    {sml::tree_param(OBIS_TARGET_IP_ADDRESS, sml::make_value(ip_address)),
+                     sml::tree_param(OBIS_TARGET_PORT, sml::make_value(target_port)),
+                     sml::tree_param(OBIS_SOURCE_PORT, sml::make_value(source_port))})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_ipt_param(
