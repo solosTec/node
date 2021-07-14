@@ -73,7 +73,7 @@ namespace smf {
 
                     //	ip address
                     auto const address = extract_value(data, "GWY_IP", "0.0.0.0");
-                    auto const port = cyng::to_numeric<std::uint16_t>(extract_value(data, "Port", "9999"));
+                    auto const port = cyng::to_numeric<std::uint16_t>(extract_value(data, "Ports", "6000"));
 
                     //	Manufacturer
                     auto const manufacturer_code = cleanup_manufacturer_code(extract_value(data, "Manufacturer", "generic"));
