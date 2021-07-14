@@ -73,9 +73,9 @@ namespace smf {
             std::string const &data_layer);
 
         /**
-         * @return session keys to open connections (should be 0 up to 1 - otherwise this indicates an error)
+         * @return session key to an possible open connection
          */
-        std::pair<cyng::key_list_t, bool> remove_pty(boost::uuids::uuid, boost::uuids::uuid);
+        std::pair<cyng::key_t, bool> remove_pty(boost::uuids::uuid, boost::uuids::uuid);
 
         /**
          * @return rTag and peer of the specified session

@@ -287,7 +287,7 @@ namespace smf {
                     cyng::column("rTag", cyng::TC_UUID),            //	remote session tag (FORWARD op)
                     cyng::column("source", cyng::TC_UINT32),        //	ip-t source id (unique)
                     cyng::column("loginTime", cyng::TC_TIME_POINT), //	login time
-                    cyng::column("rConnect", cyng::TC_UUID),        //	remote client session if connected (rTag)
+                    cyng::column("cTag", cyng::TC_UUID),            //	session tag (pk) to the connected session
                     cyng::column("pLayer", cyng::TC_STRING),        //	protocol layer (from session)
                     cyng::column("dLayer", cyng::TC_STRING),        //	data layer (from pty)
                     cyng::column("rx", cyng::TC_UINT64),            //	received bytes (from device)

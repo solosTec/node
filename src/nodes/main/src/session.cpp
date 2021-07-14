@@ -761,7 +761,7 @@ namespace smf {
         //	Remove session table, targets and channels.
         //  connections holds a list of sessions connected to this session.
         //
-        auto const [connections, success] = cache_.remove_pty(tag, dev);
+        auto const [connection_key, success] = cache_.remove_pty(tag, dev);
         if (!success) {
             CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << " logout [" << dev << "] failed");
         } else {
@@ -769,9 +769,8 @@ namespace smf {
             //
             //	remove open connections
             //
-            BOOST_ASSERT(connections.size() < 2);
-            for (auto const &key : connections) {
-                auto const [rtag, peer] = cache_.get_access_params(key);
+            if (!connection_key.empty()) {
+                auto const [rtag, peer] = cache_.get_access_params(connection_key);
                 BOOST_ASSERT(peer == vm_.get_tag()); //	ToDo: correct implementation later
                 //"pty.req.close.connection"
                 send_cluster_response(cyng::serialize_forward("pty.req.close.connection", rtag));
@@ -825,7 +824,8 @@ namespace smf {
             token.emplace("local", cyng::make_object(vm_key == vm_.get_tag()));
 
             //
-            //	send to next VM in the fabric
+            //	send to next VM in the fabric.
+            //  So parties on different sessions/VMs can communicate with each other
             //
             vm_.load(cyng::generate_forward("pty.forward.open.connection", vm_key, msisdn, remote, vm_key == vm_.get_tag(), token));
             vm_.run();
@@ -845,9 +845,13 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "pty forward open connection " << msisdn << " - " << (local ? "local " : "distributed "));
 
         //
-        //	send to cluster node
+        //	forward connection open request to cluster node
         //
         send_cluster_response(cyng::serialize_forward("pty.req.open.connection", tag, msisdn, local, token));
+
+        //
+        //	cluster node will send a response to "pty.return.open.connection" (pty_return_open_connection())
+        //
     }
 
     void session::pty_return_open_connection(
@@ -896,7 +900,11 @@ namespace smf {
     }
 
     void session::pty_transfer_data(boost::uuids::uuid tag, boost::uuids::uuid dev, cyng::buffer_t data) {
-        auto const [rtag, rpeer, rdev] = cache_.get_remote(dev);
+
+        //  * key of remote session
+        //  * uuid of remote peer/vm
+        //  * uuid or remote session
+        auto const [rdev, rtag, rpeer] = cache_.get_remote(dev);
         if (!rtag.is_nil()) {
 
             BOOST_ASSERT(tag != rtag);
