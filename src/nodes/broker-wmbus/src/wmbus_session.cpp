@@ -11,6 +11,7 @@
 #include <smf/mbus/radio/decode.h>
 #include <smf/mbus/radio/header.h>
 #include <smf/mbus/reader.h>
+#include <smf/sml/msg.h>
 #include <smf/sml/reader.h>
 #include <smf/sml/readout.h>
 #include <smf/sml/unpack.h>
@@ -331,6 +332,7 @@ namespace smf {
         bool valid = false;
         bool init = false;
         std::size_t count{0};
+        cyng::tuple_t sml_list;
         while (offset < payload.size()) {
             std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(payload, offset, 1);
             if (valid) {
@@ -352,6 +354,15 @@ namespace smf {
                 }
                 ss << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
                 ++count;
+
+                //
+                //  produce a SML_ListEntry
+                // ToDo: extra handling of time points
+                // How to serialize time points in SML Lists?
+                //
+                if (obj.rtti().tag() != cyng::TC_TIME_POINT) {
+                    sml_list.push_back(cyng::make_object(sml::list_entry(code, 0, mbus::to_u8(u), scaler, obj)));
+                }
             }
         }
 
@@ -363,22 +374,7 @@ namespace smf {
         auto const msg = ss.str();
         CYNG_LOG_TRACE(logger_, "[sml] CI_HEADER_SHORT: " << msg);
 
-        //
-        //	insert uplink data
-        //
-        // bus_.req_db_insert_auto(
-        //    "wMBusUplink",
-        //    cyng::data_generator(
-        //        std::chrono::system_clock::now(),
-        //        get_id(address), //	meter id
-        //        get_medium(address),
-        //        manufacturer,
-        //        frame_type,
-        //        msg, //  payload
-        //        // cyng::io::to_hex(payload), //	"payload",
-        //        boost::uuids::nil_uuid()));
-
-        ctl_.get_registry().dispatch("push", "send.mbus", cyng::buffer_t(address.begin(), address.end()), payload);
+        ctl_.get_registry().dispatch("push", "send.mbus", cyng::buffer_t(address.begin(), address.end()), sml_list);
         return count;
     }
 

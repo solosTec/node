@@ -83,6 +83,44 @@ namespace smf {
             return buf;
         }
 
+        cyng::buffer_t boxing(cyng::buffer_t const &msg) {
+            //
+            //	trailer v1.0
+            //
+            cyng::buffer_t buf{0x1b, 0x1b, 0x1b, 0x1b, 0x01, 0x01, 0x01, 0x01};
+
+            //
+            //	append message
+            //
+            buf.insert(buf.end(), msg.begin(), msg.end());
+
+            //
+            //	padding bytes
+            //
+            const char pad = ((buf.size() % 4) == 0) ? 0 : (4 - (buf.size() % 4));
+            for (std::size_t pos = 0; pos < pad; ++pos) {
+                buf.push_back(0x0);
+            }
+
+            //
+            //	tail v1.0
+            //
+            buf.insert(buf.end(), {0x1b, 0x1b, 0x1b, 0x1b, 0x1a, pad});
+
+            //
+            //	CRC calculation over complete buffer
+            //
+            crc_16_data crc;
+            BOOST_ASSERT(buf.size() < std::numeric_limits<int>::max());
+            crc.crc_ = crc16_calculate(reinterpret_cast<const unsigned char *>(buf.data()), buf.size());
+
+            //	network order
+            buf.push_back(crc.data_[1]);
+            buf.push_back(crc.data_[0]);
+
+            return buf;
+        }
+
         cyng::tuple_t make_message(
             std::string trx,
             std::uint8_t group_no,
@@ -105,6 +143,18 @@ namespace smf {
 
         cyng::tuple_t tree_child_list(cyng::obis code, std::initializer_list<cyng::tuple_t> list) {
             return cyng::make_tuple(code, cyng::null{}, cyng::make_tuple(list));
+        }
+
+        cyng::tuple_t list_entry(cyng::obis code, std::uint32_t status, std::uint8_t unit, std::int8_t scaler, cyng::object value) {
+            return cyng::make_tuple(
+                code,         // object name
+                status,       // status
+                cyng::null{}, // valTime (optional)
+                unit,         // unit code
+                scaler,       // scale factor
+                value,        // readout value
+                cyng::null{}  // signature
+            );
         }
 
     } // namespace sml

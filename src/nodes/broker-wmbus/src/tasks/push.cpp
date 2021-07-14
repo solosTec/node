@@ -4,14 +4,19 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#include <smf/mbus/server_id.h>
 #include <tasks/push.h>
 
+#include <smf/mbus/server_id.h>
+#include <smf/sml/crc16.h>
+#include <smf/sml/serializer.h>
+
+#include <cyng/io/hex_dump.hpp>
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
 
 #include <iostream>
+#include <sstream>
 
 #include <boost/algorithm/string.hpp>
 
@@ -25,7 +30,7 @@ namespace smf {
         ipt::push_channel &&pcc_sml,
         ipt::push_channel &&pcc_iec,
         ipt::push_channel &&pcc_dlms)
-        : sigs_ {
+    : sigs_ {
         std::bind(&push::connect, this), 
         std::bind(&push::send_sml, this, std::placeholders::_1, std::placeholders::_2),
         std::bind(&push::send_mbus, this, std::placeholders::_1, std::placeholders::_2), 
@@ -41,16 +46,17 @@ namespace smf {
 
         std::bind(&push::stop, this, std::placeholders::_1),
     }
-    , channel_(wp), logger_(logger), pcc_sml_(pcc_sml), pcc_iec_(pcc_iec), pcc_dlms_(pcc_dlms),
-    bus_(
+    , channel_(wp), logger_(logger), pcc_sml_(pcc_sml), pcc_iec_(pcc_iec), pcc_dlms_(pcc_dlms)
+    , bus_(
         ctl.get_ctx(),
         logger,
         std::move(cfg),
         "model",
         std::bind(&push::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
         std::bind(&push::ipt_stream, this, std::placeholders::_1),
-        std::bind(&push::auth_state, this, std::placeholders::_1)),
-    channels_{}
+        std::bind(&push::auth_state, this, std::placeholders::_1))
+    , channels_()
+    , sml_generator_()
     {
         auto sp = channel_.lock();
         if (sp) {
@@ -108,7 +114,7 @@ namespace smf {
         //  generate SML close response message
         //
     }
-    void push::send_mbus(cyng::buffer_t srv, cyng::buffer_t payload) {
+    void push::send_mbus(cyng::buffer_t srv, cyng::tuple_t sml_list) {
         CYNG_LOG_INFO(logger_, "[push] mbus data");
 
         //
@@ -118,18 +124,36 @@ namespace smf {
         //
         //  generate SML  message
         //
+        auto const tpl = sml_generator_.get_list(srv, sml_list);
+        auto const msg = sml::set_crc16(sml::serialize(tpl));
+        auto const payload = sml::boxing(msg);
 
-        //
-        //  send payload
-        //
+        {
+            std::stringstream ss;
+            cyng::io::hex_dump<8> hd;
+            hd(ss, payload.begin(), payload.end());
+            auto const dmp = ss.str();
+            CYNG_LOG_TRACE(logger_, "[synthetic SML_GetList.Res] :\n" << dmp);
+        }
 
         //
         //  generate SML close response message
         //
 
         //
-        //  close message
+        //  send payload
         //
+
+        auto pos = channels_.find(protocol_type::SML);
+        if (pos != channels_.end()) {
+            CYNG_LOG_INFO(
+                logger_,
+                "[push] mbus/sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv) << " to " << pos->second.first
+                                   << ':' << pos->second.second);
+            bus_.transmit(pos->second, payload);
+        } else {
+            CYNG_LOG_WARNING(logger_, "[push] no SML channel open");
+        }
     }
 
     void push::send_dlms() {

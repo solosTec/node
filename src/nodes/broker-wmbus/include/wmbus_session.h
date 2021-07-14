@@ -8,8 +8,8 @@
 #define SMF_WMBUS_SESSION_H
 
 #include <db.h>
-#include <smf/cluster/bus.h>
 
+#include <smf/cluster/bus.h>
 #include <smf/mbus/radio/parser.h>
 
 #include <cyng/io/parser/parser.h>

@@ -35,6 +35,7 @@ namespace smf {
          * Add SML trailer and tail
          */
         cyng::buffer_t boxing(std::vector<cyng::buffer_t> const &);
+        cyng::buffer_t boxing(cyng::buffer_t const &);
 
         /**
          * generic function to produce a SML message
@@ -80,6 +81,11 @@ namespace smf {
          */
         cyng::tuple_t tree_child_list(cyng::obis code, cyng::tuple_t child_list);
         cyng::tuple_t tree_child_list(cyng::obis code, std::initializer_list<cyng::tuple_t> list);
+
+        /**
+         * SML_ListEntry
+         */
+        cyng::tuple_t list_entry(cyng::obis code, std::uint32_t status, std::uint8_t unit, std::int8_t scaler, cyng::object value);
 
     } // namespace sml
 } // namespace smf
