@@ -52,7 +52,7 @@ namespace smf {
             cfg &cfg_;
             cyng::logger logger_;
             lmn_type const type_;
-            boost::asio::ip::tcp::endpoint const ep_;
+            boost::asio::ip::tcp::endpoint ep_;
             cyng::registry &registry_;
             boost::asio::ip::tcp::acceptor acceptor_;
             std::uint64_t session_counter_;

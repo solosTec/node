@@ -179,15 +179,15 @@ namespace smf {
 
             if (acceptor_.is_open()) {
                 CYNG_LOG_INFO(logger_, "[RDR] listener endpoint changed to: " << ep);
-                acceptor_ = boost::asio::ip::tcp::acceptor(acceptor_.get_executor(), ep);
-                acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
+                ep_ = ep;
                 boost::system::error_code ec;
-                acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
-                if (!ec) {
-                    do_accept();
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[RDR] listener failed with: " << ec.message());
-                }
+                acceptor_.cancel(ec);
+                acceptor_.close(ec);
+
+                //
+                //  restart
+                //
+                start(std::chrono::seconds(12));
             } else {
                 CYNG_LOG_WARNING(logger_, "[RDR] listener (still) closed - cannot changed endpoint to: " << ep);
             }
