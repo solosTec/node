@@ -743,6 +743,51 @@ target_link_libraries(smf_serial_bus
 )
 
 #
+# add library: smf_modbus
+#
+include (src/lib/modbus/protocol/lib.cmake)
+add_library(smf_modbus ${GLOBAL_LIBRARY_TYPE} ${modbus_lib})
+
+target_include_directories(smf_modbus
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_modbus PRIVATE 
+    cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug modbus protocol
+#
+target_compile_definitions(smf_modbus 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_MODBUS>
+)
+
+target_link_libraries(smf_modbus 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # nodes
 #
 add_subdirectory(src/nodes/broker-iec)
