@@ -177,20 +177,23 @@ namespace smf {
 
         void server::rebind(boost::asio::ip::tcp::endpoint ep) {
 
+            CYNG_LOG_INFO(logger_, "[RDR] listener endpoint changed to: " << ep);
+            ep_ = ep;
+
             if (acceptor_.is_open()) {
-                CYNG_LOG_INFO(logger_, "[RDR] listener endpoint changed to: " << ep);
-                ep_ = ep;
+
                 boost::system::error_code ec;
                 acceptor_.cancel(ec);
                 acceptor_.close(ec);
 
-                //
-                //  restart
-                //
-                start(std::chrono::seconds(12));
             } else {
                 CYNG_LOG_WARNING(logger_, "[RDR] listener (still) closed - cannot changed endpoint to: " << ep);
             }
+
+            //
+            //  restart
+            //
+            start(std::chrono::seconds(12));
         }
 
     } // namespace rdr
