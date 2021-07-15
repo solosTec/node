@@ -42,6 +42,9 @@ namespace smf {
         std::string delay_path(std::uint8_t type) {
             return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "delay");
         }
+        std::string timeout_path(std::uint8_t type) {
+            return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "timeout");
+        }
         std::string task_id_ipv4_path(std::uint8_t type) {
             return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "taskIdIPv4");
         }
@@ -63,6 +66,10 @@ namespace smf {
 
     std::chrono::seconds cfg_listener::get_delay() const {
         return cfg_.get_value(delay_path(get_index()), std::chrono::seconds(20));
+    }
+
+    boost::posix_time::seconds cfg_listener::get_timeout() const {
+        return boost::posix_time::seconds(cfg_.get_value(timeout_path(get_index()), 10));
     }
 
     boost::asio::ip::tcp::endpoint cfg_listener::get_ipv4_ep() const { return {get_address(), get_port()}; }
@@ -115,6 +122,7 @@ namespace smf {
     bool cfg_listener::set_enabled(bool b) const { return cfg_.set_value(enabled_path(get_index()), b); }
 
     bool cfg_listener::set_delay(std::chrono::seconds timeout) const { return cfg_.set_value(delay_path(get_index()), timeout); }
+    bool cfg_listener::set_timeout(int timeout) const { return cfg_.set_value(timeout_path(get_index()), timeout); }
 
     bool cfg_listener::set_IPv4_task_id(std::size_t id) const { return cfg_.set_value(task_id_ipv4_path(get_index()), id); }
     bool cfg_listener::set_IPv6_task_id(std::size_t id) const { return cfg_.set_value(task_id_ipv6_path(get_index()), id); }

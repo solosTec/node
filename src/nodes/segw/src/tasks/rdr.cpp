@@ -43,7 +43,7 @@ namespace smf {
 
         void server::start(std::chrono::seconds delay) {
             boost::system::error_code ec;
-            acceptor_.open(ep_.protocol());
+            acceptor_.open(ep_.protocol(), ec);
             if (!ec) {
                 CYNG_LOG_TRACE(logger_, "[RDR] acceptor open: " << ep_);
                 acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
@@ -80,24 +80,28 @@ namespace smf {
                     CYNG_LOG_INFO(logger_, "[RDR] " << get_name(type_) << " new session " << socket.remote_endpoint());
 
                     auto sp = std::shared_ptr<session>(
-                        new session(std::move(socket), registry_, cfg_, logger_, type_), [this](session *s) {
+                        new session(ctl_.get_ctx(), std::move(socket), registry_, cfg_, logger_, type_), [this](session *s) {
+                            //
+                            //  stop deadline timer
+                            //
+                            s->stop_timer();
+
+                            cfg_listener cfg(cfg_, type_);
+
                             //
                             //  disconnect from LMN
                             //
                             auto const id = s->get_redirector_id();
-                            // BOOST_ASSERT(id != 0u);
-                            cfg_listener cfg(cfg_, type_);
                             if (id != 0) {
                                 registry_.dispatch(cfg.get_port_name(), "remove-data-sink", id);
+                                //
+                                //  stop "redirector" task
+                                //
+                                s->stop_redirector();
+                                CYNG_LOG_TRACE(logger_, "[RDR] redirector " << cfg.get_port_name() << " #" << id << " stopped");
                             } else {
                                 CYNG_LOG_WARNING(logger_, "[RDR] disconnect from LMN " << cfg.get_port_name() << " failed");
                             }
-
-                            //
-                            //  stop "redirector" task
-                            //
-                            s->stop_redirector();
-                            CYNG_LOG_TRACE(logger_, "[RDR] redirector #" << id << " stopped");
 
                             //
                             //	update session counter
@@ -177,6 +181,7 @@ namespace smf {
 
         void server::rebind(boost::asio::ip::tcp::endpoint ep) {
 
+            cfg_listener cfg(cfg_, type_);
             CYNG_LOG_INFO(logger_, "[RDR] listener endpoint changed to: " << ep);
             ep_ = ep;
 
@@ -193,7 +198,8 @@ namespace smf {
             //
             //  restart
             //
-            start(std::chrono::seconds(12));
+            auto const delay = cfg.get_delay();
+            start(delay);
         }
 
     } // namespace rdr

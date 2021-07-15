@@ -22,7 +22,13 @@ namespace smf {
 
         class session : public std::enable_shared_from_this<session> {
           public:
-            session(boost::asio::ip::tcp::socket socket, cyng::registry &, cfg &, cyng::logger, lmn_type);
+            session(
+                boost::asio::io_context &,
+                boost::asio::ip::tcp::socket socket,
+                cyng::registry &,
+                cfg &,
+                cyng::logger,
+                lmn_type);
 
             void start(cyng::controller &);
 
@@ -33,15 +39,22 @@ namespace smf {
              */
             bool stop_redirector();
 
+            /**
+             * stop deadline timer
+             */
+            void stop_timer();
+
           private:
             void do_read();
             void do_write(cyng::buffer_t);
+            void timeout(boost::system::error_code);
 
           private:
             boost::asio::ip::tcp::socket socket_;
             cyng::registry &registry_;
             cyng::logger logger_;
             cfg_listener cfg_;
+            boost::asio::deadline_timer idle_timer_;
 
             /**
              * Buffer for incoming data.

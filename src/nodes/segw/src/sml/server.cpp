@@ -20,7 +20,7 @@ namespace smf {
 
         void server::start(boost::asio::ip::tcp::endpoint ep) {
             boost::system::error_code ec;
-            acceptor_.open(ep.protocol());
+            acceptor_.open(ep.protocol(), ec);
             if (!ec)
                 acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
             if (!ec)

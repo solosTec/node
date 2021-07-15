@@ -50,7 +50,18 @@ namespace smf {
 
         boost::asio::ip::address get_address() const;
         std::uint16_t get_port() const;
+
+        /**
+         * This is the timespan to wait before the server re-try to bind
+         * the specified listener endpoint.
+         */
         std::chrono::seconds get_delay() const;
+
+        /**
+         * The time period for maximum inactivity. If this time period is exceeded,
+         *  the connection is closed.
+         */
+        boost::posix_time::seconds get_timeout() const;
 
         boost::asio::ip::tcp::endpoint get_ipv4_ep() const;
 
@@ -67,7 +78,18 @@ namespace smf {
 
         bool set_login(bool) const;
         bool set_enabled(bool) const;
+
+        /**
+         * This is the timespan to wait before the server re-try to bind
+         * the specified listener endpoint.
+         */
         bool set_delay(std::chrono::seconds) const;
+
+        /**
+         * The time period for maximum inactivity. If this time period is exceeded,
+         *  the connection is closed.
+         */
+        bool set_timeout(int seconds) const;
 
         bool set_IPv4_task_id(std::size_t) const;
         bool set_IPv6_task_id(std::size_t) const;

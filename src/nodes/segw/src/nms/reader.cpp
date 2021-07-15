@@ -260,9 +260,12 @@ namespace smf {
                     cfg.set_port(port);
                 } else if (boost::algorithm::equals(param.first, "pwd")) {
                     auto const pwd = cyng::value_cast(param.second, "");
-                } else if (boost::algorithm::equals(param.first, "delay") || boost::algorithm::equals(param.first, "timeout")) {
-                    auto const timeout = cyng::numeric_cast<std::uint32_t>(param.second, 30);
-                    cfg.set_delay(std::chrono::seconds(timeout));
+                } else if (boost::algorithm::equals(param.first, "delay")) {
+                    auto const delay = cyng::numeric_cast<std::uint32_t>(param.second, 30);
+                    cfg.set_delay(std::chrono::seconds(delay));
+                } else if (boost::algorithm::equals(param.first, "timeout")) {
+                    auto const timeout = cyng::numeric_cast<std::uint32_t>(param.second, 10);
+                    cfg.set_timeout(timeout);
                 } else {
                     cyng::merge(pm, {"nms", "listener", param.first}, cyng::make_object("error: unknown NMS/listener attribute"));
                     CYNG_LOG_WARNING(logger_, "[NMS] unknown listener attribute: " << param.first);

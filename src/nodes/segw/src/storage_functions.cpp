@@ -677,6 +677,15 @@ namespace smf {
                     cyng::make_object(delay),
                     "default startup delay " + inp);
 
+            } else if (boost::algorithm::equals(listener.first, "timeout")) {
+                auto const inp = cyng::value_cast(listener.second, "00:00:10.000000");
+                auto const timeout = cyng::to_seconds(inp);
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "listener", std::to_string(counter), listener.first),
+                    cyng::make_object(timeout),
+                    "default maximum idle time " + inp);
+
             } else {
                 insert_config_record(
                     stmt,
@@ -704,6 +713,18 @@ namespace smf {
                 cyng::make_object("Ethernet"),
 #endif
                 "interface to use for link-local connections");
+        }
+
+        //
+        //  reintroduced in v0.9.2.12
+        //
+        pos = pmap.find("timeout");
+        if (pos == pmap.end()) {
+            insert_config_record(
+                stmt,
+                cyng::to_path(cfg::sep, "listener", std::to_string(counter), "timeout"),
+                cyng::make_object(std::chrono::seconds(10)),
+                "default maximum idle time is 10 seconds");
         }
     }
 
