@@ -121,8 +121,8 @@ namespace smf {
             pmap_reader const &dom,
             std::function<void(boost::asio::ip::tcp::endpoint ep)> rebind) {
 
-            cyng::param_map_t pmap = cyng::param_map_factory("command", cmd)("ec", "ok")(
-                "source", tag)("version", protocol_version_)("serial-port", cyng::param_map_factory()());
+            cyng::param_map_t pmap =
+                cyng::param_map_factory("command", cmd)("ec", "ok")("source", tag)("version", protocol_version_);
 
             cmd_merge_serial(pmap, cyng::container_cast<cyng::param_map_t>(dom["serial-port"].get()));
             cmd_merge_nms(pmap, cyng::container_cast<cyng::param_map_t>(dom["nms"].get()), rebind);
@@ -220,9 +220,10 @@ namespace smf {
                         cfg.set_protocol(protocol);
                         cyng::merge(pm, {"serial-port", port.first, param.first}, cyng::make_object("ok"));
                     } else if (boost::algorithm::equals(param.first, "broker")) {
-                        cmd_merge_broker(pm, cfg.get_lmn_type(), cyng::container_cast<cyng::vector_t>(param.second));
+                        cmd_merge_broker(pm, port.first, cfg.get_lmn_type(), cyng::container_cast<cyng::vector_t>(param.second));
                     } else if (boost::algorithm::equals(param.first, "listener")) {
-                        cmd_merge_listener(pm, cfg.get_lmn_type(), cyng::container_cast<cyng::param_map_t>(param.second));
+                        cmd_merge_listener(
+                            pm, port.first, cfg.get_lmn_type(), cyng::container_cast<cyng::param_map_t>(param.second));
                     } else if (boost::algorithm::equals(param.first, "blocklist")) {
                         cmd_merge_blocklist(pm, cfg.get_lmn_type(), cyng::container_cast<cyng::param_map_t>(param.second));
                     } else if (boost::algorithm::equals(param.first, "max-readout-frequency")) {
@@ -240,12 +241,17 @@ namespace smf {
             }
         }
 
-        void reader::cmd_merge_listener(cyng::param_map_t &pm, lmn_type type, cyng::param_map_t &&params) {
+        void reader::cmd_merge_listener(
+            cyng::param_map_t &pm,
+            std::string const &serial_port,
+            lmn_type type,
+            cyng::param_map_t &&params) {
             cfg_listener cfg(cfg_, type);
             for (auto const &param : params) {
                 if (boost::algorithm::equals(param.first, "enabled")) {
                     auto const enabled = cyng::value_cast(param.second, true);
                     cfg.set_enabled(enabled);
+                    cyng::merge(pm, {"serial-port", serial_port, "listener", param.first}, cyng::make_object(enabled));
                 } else if (boost::algorithm::equals(param.first, "account")) {
                     auto const account = cyng::value_cast(param.second, "");
                 } else if (boost::algorithm::equals(param.first, "address")) {
@@ -254,8 +260,13 @@ namespace smf {
                 } else if (boost::algorithm::equals(param.first, "port")) {
                     auto const port = cyng::numeric_cast<std::uint16_t>(param.second, 6006u);
                     if (port < 1024) {
-                        cyng::merge(pm, {"nms", "listener", param.first}, cyng::make_object("warning: privileged port configured"));
+                        cyng::merge(
+                            pm,
+                            {"serial-port", serial_port, "listener", param.first},
+                            cyng::make_object("warning: privileged port configured"));
                         CYNG_LOG_WARNING(logger_, "[NMS] listener with privileged port: " << port);
+                    } else {
+                        cyng::merge(pm, {"serial-port", serial_port, "listener", param.first}, cyng::make_object(port));
                     }
                     cfg.set_port(port);
                 } else if (boost::algorithm::equals(param.first, "pwd")) {
@@ -263,11 +274,16 @@ namespace smf {
                 } else if (boost::algorithm::equals(param.first, "delay")) {
                     auto const delay = cyng::numeric_cast<std::uint32_t>(param.second, 30);
                     cfg.set_delay(std::chrono::seconds(delay));
+                    cyng::merge(pm, {"serial-port", serial_port, "listener", param.first}, cyng::make_object(delay));
                 } else if (boost::algorithm::equals(param.first, "timeout")) {
                     auto const timeout = cyng::numeric_cast<std::uint32_t>(param.second, 10);
                     cfg.set_timeout(timeout);
+                    cyng::merge(pm, {"serial-port", serial_port, "listener", param.first}, cyng::make_object(timeout));
                 } else {
-                    cyng::merge(pm, {"nms", "listener", param.first}, cyng::make_object("error: unknown NMS/listener attribute"));
+                    cyng::merge(
+                        pm,
+                        {"serial-port", serial_port, "listener", param.first},
+                        cyng::make_object("error: unknown NMS/listener attribute"));
                     CYNG_LOG_WARNING(logger_, "[NMS] unknown listener attribute: " << param.first);
                 }
             }
@@ -296,7 +312,7 @@ namespace smf {
             }
         }
 
-        void reader::cmd_merge_broker(cyng::param_map_t &pm, lmn_type type, cyng::vector_t &&vec) {
+        void reader::cmd_merge_broker(cyng::param_map_t &pm, std::string const &serial_port, lmn_type type, cyng::vector_t &&vec) {
 
             cfg_broker cfg(cfg_, type);
 
@@ -316,8 +332,12 @@ namespace smf {
                         cfg.set_port(idx, port);
                         if (port < 1024) {
                             cyng::merge(
-                                pm, {"nms", "broker", broker.first}, cyng::make_object("warning: privileged port configured"));
+                                pm,
+                                {"serial-port", serial_port, "broker", broker.first},
+                                cyng::make_object("warning: privileged port configured"));
                             CYNG_LOG_WARNING(logger_, "[NMS] broker with privileged port: " << port);
+                        } else {
+                            cyng::merge(pm, {"serial-port", serial_port, "broker", broker.first}, cyng::make_object("ok"));
                         }
                     } else if (boost::algorithm::equals(broker.first, "account")) {
                         auto const account = cyng::value_cast(broker.second, "");

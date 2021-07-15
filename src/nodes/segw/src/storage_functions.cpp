@@ -494,6 +494,12 @@ namespace smf {
                 std::filesystem::path const script_path = cyng::find_value(pmap, param.first, std::string(""));
                 insert_config_record(
                     stmt, cyng::to_path(cfg::sep, "nms", param.first), cyng::make_object(script_path), "path to update script");
+            } else if (boost::algorithm::equals(param.first, "delay")) {
+                auto const inp = cyng::value_cast(param.second, "00:00:12.000000");
+                auto const delay = cyng::to_seconds(inp);
+                insert_config_record(
+                    stmt, cyng::to_path(cfg::sep, "nms", param.first), cyng::make_object(delay), "default bind delay " + inp);
+
             } else {
 
                 insert_config_record(stmt, cyng::to_path(cfg::sep, "nms", param.first), param.second, "NMS: " + param.first);

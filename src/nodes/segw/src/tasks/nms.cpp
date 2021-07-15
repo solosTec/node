@@ -122,7 +122,10 @@ namespace smf {
 
         void server::rebind(boost::asio::ip::tcp::endpoint ep) {
 
-            acceptor_ = boost::asio::ip::tcp::acceptor(acceptor_.get_executor(), ep);
+            boost::system::error_code ec;
+            acceptor_.cancel(ec);
+            acceptor_.close(ec);
+            start(ep);
         }
 
     } // namespace nms

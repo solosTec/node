@@ -26,6 +26,7 @@ namespace smf {
         std::string debug_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "debug"); }
         std::string script_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "script-path"); }
         std::string nic_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic"); }
+        std::string delay_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "delay"); }
     } // namespace
 
     cfg_nms::cfg_nms(cfg &c)
@@ -73,6 +74,8 @@ namespace smf {
 
     bool cfg_nms::is_debug() const { return cfg_.get_value(debug_path(), false); }
 
+    std::chrono::seconds cfg_nms::get_delay() const { return cfg_.get_value(delay_path(), std::chrono::seconds(12)); }
+
     std::string cfg_nms::get_nic() const {
         return cfg_.get_value(
             nic_path(),
@@ -87,6 +90,8 @@ namespace smf {
 #endif
         );
     }
+
+    bool cfg_nms::set_delay(std::chrono::seconds delay) const { return cfg_.set_value(delay_path(), delay); }
 
     bool cfg_nms::set_debug(bool b) const { return cfg_.set_value(debug_path(), b); }
 

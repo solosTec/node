@@ -29,6 +29,10 @@ namespace smf {
         std::string get_pwd() const;
         bool is_enabled() const;
         bool is_debug() const;
+        /**
+         * listener rebind()
+         */
+        std::chrono::seconds get_delay() const;
 
         /**
          * Designated NIC for link-local communication
@@ -53,6 +57,7 @@ namespace smf {
         bool set_pwd(std::string) const;
         bool set_enabled(bool) const;
         bool set_debug(bool) const;
+        bool set_delay(std::chrono::seconds) const;
 
         constexpr static char root[] = "nms";
 

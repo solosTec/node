@@ -455,10 +455,11 @@ namespace smf {
 #endif
                         ),
 #ifdef _DEBUG
-                cyng::make_param("debug", true)
+                cyng::make_param("debug", true),
 #else
-                cyng::make_param("debug", false)
+                cyng::make_param("debug", false),
 #endif
+                cyng::make_param("delay", std::chrono::seconds(12))
 
                     ));
     }
