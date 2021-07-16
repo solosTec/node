@@ -8,6 +8,7 @@
 #include <cfg.h>
 
 #include <cyng/obj/container_cast.hpp>
+#include <cyng/parse/string.h>
 
 #ifdef _DEBUG_SEGW
 #include <iostream>
@@ -37,8 +38,7 @@ namespace smf {
                 r = cfg->merge(
                     cyng::key_generator(name),
                     cyng::data_generator(obj),
-                    1u //	only needed for insert operations
-                    ,
+                    1u,    //	only needed for insert operations
                     tag_); //	tag not available yet
             },
             cyng::access::write("cfg"));
@@ -54,5 +54,38 @@ namespace smf {
     }
 
     sml::status_word_t cfg::get_status_word() const { return status_word_; }
+
+    void cfg::loop(std::function<void(std::vector<std::string> &&, cyng::object)> cb) {
+        cache_.access(
+            [&](cyng::table const *cfg) {
+                std::string const delimiter(1, sep);
+                cfg->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                    if (!rec.empty()) {
+                        auto const path = rec.value("path", "");
+                        cb(cyng::split(path, delimiter), rec.data().at(0));
+                    }
+
+                    return true;
+                });
+            },
+            cyng::access::read("cfg"));
+    }
+
+    void cfg::loop(std::string const &filter, std::function<void(std::vector<std::string> &&, cyng::object)> cb) {
+        cache_.access(
+            [&](cyng::table const *cfg) {
+                std::string const delimiter(1, sep);
+                cfg->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                    if (!rec.empty()) {
+                        auto const path = rec.value("path", "");
+                        if (boost::algorithm::starts_with(path, filter)) {
+                            cb(cyng::split(path, delimiter), rec.data().at(0));
+                        }
+                    }
+                    return true;
+                });
+            },
+            cyng::access::read("cfg"));
+    }
 
 } // namespace smf

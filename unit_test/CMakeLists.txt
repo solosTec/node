@@ -15,6 +15,7 @@ add_executable(unit_test
     src/test_iec.cpp
     src/test_ipt.cpp
     src/test_mbus.cpp
+    src/test_obis.cpp
     ${test_assets}
 )
 
@@ -57,6 +58,7 @@ target_link_libraries(unit_test
         smf_iec
         smf_ipt
         smf_mbus
+        smf_obis
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}

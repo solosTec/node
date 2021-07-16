@@ -54,7 +54,7 @@ namespace smf {
         //
         void ipt_cmd(ipt::header const &, cyng::buffer_t &&);
         void ipt_stream(cyng::buffer_t &&);
-        void auth_state(bool);
+        void auth_state(bool, boost::asio::ip::tcp::endpoint, boost::asio::ip::tcp::endpoint);
         void open_push_channels();
 
         void on_channel_open(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string);

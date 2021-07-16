@@ -7,6 +7,7 @@ set (obis_cpp
     src/lib/obis/src/defs.cpp
     src/lib/obis/src/conv.cpp
     src/lib/obis/src/db.cpp
+    src/lib/obis/src/tree.cpp
 )
     
 set (obis_h
@@ -15,6 +16,7 @@ set (obis_h
     include/smf/obis/defs.ipp
     include/smf/obis/conv.h   
     include/smf/obis/db.h   
+    include/smf/obis/tree.h   
 )
 
 

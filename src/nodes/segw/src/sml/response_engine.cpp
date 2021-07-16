@@ -13,6 +13,7 @@
 #include <sml/response_engine.h>
 
 #include <config/cfg_hardware.h>
+#include <config/cfg_ipt.h>
 
 #include <boost/predef.h>
 
@@ -24,6 +25,7 @@
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
 #include <cyng/scm/mgr.h>
 #endif
+#include <cyng/obj/algorithm/swap_bytes.h>
 
 namespace smf {
 
@@ -65,10 +67,10 @@ namespace smf {
                 msgs.push_back(get_proc_parameter_ntp(trx, server, path));
                 break;
             case CODE_ROOT_ACCESS_RIGHTS: //	81 81 81 60 FF FF
-                // msgs.push_back(get_proc_parameter_access_rights(trx, server, path));
+                msgs.push_back(get_proc_parameter_access_rights(trx, server, path));
                 break;
             case CODE_ROOT_CUSTOM_INTERFACE: //	81 02 00 07 00 FF
-                // msgs.push_back(get_proc_parameter_custom_interface(trx, server, path));
+                msgs.push_back(get_proc_parameter_custom_interface(trx, server, path));
                 break;
             case CODE_ROOT_CUSTOM_PARAM: //	0x8102000710FF
                 // msgs.push_back(get_proc_parameter_custom_param(trx, server, path));
@@ -88,40 +90,40 @@ namespace smf {
                 msgs.push_back(get_proc_parameter_ipt_state(trx, server, path));
                 break;
             case CODE_ROOT_IPT_PARAM: //	0x81490D0700FF
-                // msgs.push_back(get_proc_parameter_ipt_param(trx, server, path));
+                msgs.push_back(get_proc_parameter_ipt_param(trx, server, path));
                 break;
             case CODE_ROOT_W_MBUS_STATUS: //	0x81060F0600FF
                 msgs.push_back(get_proc_parameter_wmbus_state(trx, server, path));
                 break;
             case CODE_IF_wMBUS: //	0x8106190700FF
-                // msgs.push_back(get_proc_parameter_wmbus_param(trx, server, path));
+                msgs.push_back(get_proc_parameter_wmbus_param(trx, server, path));
                 break;
             case CODE_ROOT_LAN_DSL: //	0x81480D0600FF
-                // msgs.push_back(get_proc_parameter_lan_dsl_state(trx, server, path));
+                msgs.push_back(get_proc_parameter_lan_dsl_state(trx, server, path));
                 break;
             case CODE_IF_LAN_DSL: //	0x8148170700FF
-                // msgs.push_back(get_proc_parameter_lan_dsl_param(trx, server, path));
+                msgs.push_back(get_proc_parameter_lan_dsl_param(trx, server, path));
                 break;
             case CODE_ROOT_MEMORY_USAGE: //	0x0080800010FF
                 msgs.push_back(get_proc_parameter_memory(trx, server, path));
                 break;
             case CODE_ROOT_VISIBLE_DEVICES: //	81 81 10 06 FF FF
-                // msgs.push_back(get_proc_parameter_visisble_devices(trx, server, path));
+                msgs.push_back(get_proc_parameter_visisble_devices(trx, server, path));
                 break;
             case CODE_ROOT_ACTIVE_DEVICES: //	81 81 11 06 FF FF
-                // msgs.push_back(get_proc_parameter_active_devices(trx, server, path));
+                msgs.push_back(get_proc_parameter_active_devices(trx, server, path));
                 break;
             case CODE_ROOT_DEVICE_INFO: //	81 81 12 06 FF FF
-                // msgs.push_back(get_proc_parameter_device_info(trx, server, path));
+                msgs.push_back(get_proc_parameter_device_info(trx, server, path));
                 break;
             case CODE_ROOT_SENSOR_PARAMS: //	81 81 C7 86 00 FF
                 // msgs.push_back(get_proc_parameter_sensor_param(trx, server, path));
                 break;
             case CODE_ROOT_DATA_COLLECTOR: //	 0x8181C78620FF (Datenspiegel)
-                // msgs.push_back(get_proc_parameter_data_collector(trx, server, path));
+                msgs.push_back(get_proc_parameter_data_collector(trx, server, path));
                 break;
             case CODE_IF_1107: //	0x8181C79300FF
-                // msgs.push_back(get_proc_parameter_1107_interface(trx, server, path));
+                msgs.push_back(get_proc_parameter_1107_interface(trx, server, path));
                 break;
             case CODE_STORAGE_TIME_SHIFT: //	0x0080800000FF
                 msgs.push_back(get_proc_parameter_storage_timeshift(trx, server, path));
@@ -311,14 +313,24 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        // 81 81 81 60 FF FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_ACCESS_RIGHTS);
+
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_custom_interface(
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 02 00 07 00 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_CUSTOM_INTERFACE);
+
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_custom_param(
@@ -352,9 +364,15 @@ namespace smf {
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_IPT_STATE);
 
-        std::uint32_t const ip_address = 1;
-        std::uint16_t const target_port = 2;
-        std::uint16_t const source_port = 3;
+        cfg_ipt const cfg(cfg_);
+
+        auto const lep = cfg.get_local_ep();
+        auto const rep = cfg.get_remote_ep();
+
+        //  network ordering required for IP address
+        std::uint32_t const ip_address = cyng::swap_bytes(rep.address().to_v4().to_uint());
+        std::uint16_t const target_port = rep.port();
+        std::uint16_t const source_port = lep.port();
 
         return res_gen_.get_proc_parameter(
             trx,
@@ -373,7 +391,17 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 49 0D 07 00 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_IPT_PARAM);
+
+        cfg_ipt const cfg(cfg_);
+
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), cfg.get_params_as_child_list())}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_wmbus_state(
@@ -409,21 +437,34 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+
+        //  81 06 19 07 00 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_IF_wMBUS);
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_lan_dsl_state(
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 48 0D 06 00 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_LAN_DSL);
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_lan_dsl_param(
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 48 17 07 00 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_IF_LAN_DSL);
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_memory(
@@ -453,21 +494,33 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 81 10 06 FF FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_VISIBLE_DEVICES);
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_active_devices(
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 81 11 06 FF FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_ACTIVE_DEVICES);
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_device_info(
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 81 12 06 FF FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_DEVICE_INFO);
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_sensor_param(
@@ -481,14 +534,22 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 81 C7 86 20 FF (Datenspiegel)
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_DATA_COLLECTOR);
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_1107_interface(
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+        //  81 81 C7 93 00 FF
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_IF_1107);
+        return res_gen_.get_proc_parameter(
+            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_storage_timeshift(

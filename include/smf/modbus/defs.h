@@ -31,8 +31,8 @@ namespace smf {
 
         constexpr std::uint8_t BROADCAST_ADDRESS = 0x00;
 
-        constexpr std::uint8_t MAX_READ_BITS = 2000;
-        constexpr std::uint8_t MAX_WRITE_BITS = 1968;
+        constexpr std::uint32_t MAX_READ_BITS = 2000;
+        constexpr std::uint32_t MAX_WRITE_BITS = 1968;
 
         constexpr std::uint8_t MAX_WR_WRITE_REGISTERS = 121;
         constexpr std::uint8_t MAX_WR_READ_REGISTERS = 125;
@@ -40,7 +40,7 @@ namespace smf {
         constexpr std::uint8_t MAX_READ_REGISTERS = 125;
 
         constexpr std::uint8_t MAX_PDU_LENGTH = 253;
-        constexpr std::uint8_t MAX_ADU_LENGTH = 260;
+        constexpr std::uint32_t MAX_ADU_LENGTH = 260;
 
         /**
          * exceptions

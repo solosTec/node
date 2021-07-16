@@ -71,7 +71,7 @@ namespace smf {
 
           public:
             //	call back to signal changed IP-T authorization state
-            using auth_cb = std::function<void(bool)>;
+            using auth_cb = std::function<void(bool, boost::asio::ip::tcp::endpoint, boost::asio::ip::tcp::endpoint)>;
 
           public:
             bus(boost::asio::io_context &ctx,

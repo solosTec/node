@@ -54,7 +54,7 @@ namespace smf {
         "model",
         std::bind(&push::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
         std::bind(&push::ipt_stream, this, std::placeholders::_1),
-        std::bind(&push::auth_state, this, std::placeholders::_1))
+        std::bind(&push::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
     , channels_()
     , sml_generator_()
     {
@@ -182,9 +182,9 @@ namespace smf {
     }
     void push::ipt_stream(cyng::buffer_t &&data) { CYNG_LOG_TRACE(logger_, "[ipt] stream " << data.size() << " byte"); }
 
-    void push::auth_state(bool auth) {
+    void push::auth_state(bool auth, boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep) {
         if (auth) {
-            // CYNG_LOG_INFO(logger_, "[ipt] authorized - open " << pcc_.targets_.size() << " push channels");
+            CYNG_LOG_INFO(logger_, "[ipt] authorized at " << rep);
             BOOST_ASSERT(bus_.is_authorized());
             //
             //  open push channel

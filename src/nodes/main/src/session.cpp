@@ -452,7 +452,7 @@ namespace smf {
                     //
                     cyng::key_list_t to_update;
 
-                    tbl_meter->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                    tbl_meter->loop([&](cyng::record &&rec, std::size_t) -> bool {
                         auto const host_tmp = rec.value("host", "");
                         auto const port_tmp = rec.value<std::uint16_t>("port", 0);
 
@@ -494,7 +494,7 @@ namespace smf {
                     //
                     cyng::key_list_t to_update;
 
-                    tbl_meter->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                    tbl_meter->loop([&](cyng::record &&rec, std::size_t) -> bool {
                         auto const host_tmp = rec.value("host", "");
                         auto const port_tmp = rec.value<std::uint16_t>("port", 0);
 
@@ -547,7 +547,7 @@ namespace smf {
 #ifdef _DEBUG
             cache_.get_store().access(
                 [&](cyng::table const *tbl) {
-                    tbl->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                    tbl->loop([&](cyng::record &&rec, std::size_t) -> bool {
                         CYNG_LOG_DEBUG(logger_, "search " << key << " - " << rec.to_string());
 
                         return true;
@@ -574,7 +574,7 @@ namespace smf {
                     //  are there more IEC meters with the same host / port configuration
                     //
                     std::size_t counter{0};
-                    tbl_meter->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                    tbl_meter->loop([&](cyng::record &&rec, std::size_t) -> bool {
                         auto const host_tmp = rec.value("host", "");
                         auto const port_tmp = rec.value<std::uint16_t>("port", 0);
 

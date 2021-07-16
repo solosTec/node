@@ -96,7 +96,7 @@ namespace smf {
                     hw_cfg.get_model(),
                     std::bind(&router::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
                     std::bind(&router::ipt_stream, this, std::placeholders::_1),
-                    std::bind(&router::auth_state, this, std::placeholders::_1));
+                    std::bind(&router::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
                 bus_->start();
             } catch (std::exception const &ex) {
                 CYNG_LOG_ERROR(logger_, "[ipt bus] start failed " << ex.what());
@@ -147,9 +147,12 @@ namespace smf {
         parser_.read(data.begin(), data.end());
     }
 
-    void router::auth_state(bool auth) {
+    void router::auth_state(bool auth, boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep) {
         if (auth) {
-            CYNG_LOG_INFO(logger_, "[ipt] authorized");
+            CYNG_LOG_INFO(logger_, "[ipt] authorized at " << rep);
+            cfg_ipt ipt_cfg(cfg_);
+            ipt_cfg.set_local_enpdoint(lep);
+            ipt_cfg.set_remote_enpdoint(rep);
             register_targets();
         } else {
             CYNG_LOG_WARNING(logger_, "[ipt] authorization lost");

@@ -247,15 +247,16 @@ namespace smf {
         //
         // check AES consistency
         auto const buffer = cyng::to_buffer(aes);
-        if (cyng::is_ascii(buffer)) {
-            std::string const str(buffer.begin(), buffer.end());
-            cluster_bus_.sys_msg(
-                cyng::severity::LEVEL_WARNING,
-                "[upload] AES key for meter[",
-                meter_id,
-                "] is most likely wrong - did you mean ",
-                str);
-        }
+        //  The following assumption is not true
+        // if (cyng::is_ascii(buffer)) {
+        //    std::string const str(buffer.begin(), buffer.end());
+        //    cluster_bus_.sys_msg(
+        //        cyng::severity::LEVEL_WARNING,
+        //        "[upload] AES key for meter[",
+        //        meter_id,
+        //        "] is most likely wrong - did you mean ",
+        //        str);
+        //}
 
         auto const tag = uidgen_();
         auto const key = cyng::key_generator(tag);

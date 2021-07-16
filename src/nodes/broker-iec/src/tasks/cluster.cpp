@@ -112,7 +112,7 @@ namespace smf {
         std::uint32_t counter{0};
         store_.access(
             [&](cyng::table const *tbl_iec, cyng::table const *tbl_meter, cyng::table const *tbl_device) {
-                tbl_iec->loop([&](cyng::record const &rec_iec, std::size_t) -> bool {
+                tbl_iec->loop([&](cyng::record &&rec_iec, std::size_t) -> bool {
                     auto const host_iec = rec_iec.value("host", "");
                     auto const port_iec = rec_iec.value<std::uint16_t>("port", 0);
 

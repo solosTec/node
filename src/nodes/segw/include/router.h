@@ -32,7 +32,7 @@ namespace smf {
       private:
         void ipt_cmd(ipt::header const &, cyng::buffer_t &&);
         void ipt_stream(cyng::buffer_t &&);
-        void auth_state(bool);
+        void auth_state(bool, boost::asio::ip::tcp::endpoint, boost::asio::ip::tcp::endpoint);
         void register_targets();
         void reply();
 

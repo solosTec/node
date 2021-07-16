@@ -131,7 +131,8 @@ namespace smf {
                         //
                         //	signal changed authorization state
                         //
-                        cb_auth_(false);
+                        auto const ep = boost::asio::ip::tcp::endpoint();
+                        cb_auth_(false, ep, ep);
                     }
                 }
             }
@@ -515,7 +516,7 @@ namespace smf {
                     //
                     //	signal changed authorization state
                     //
-                    cb_auth_(true);
+                    cb_auth_(true, socket_.local_endpoint(), socket_.remote_endpoint());
                 } else {
                     CYNG_LOG_WARNING(logger_, "ipt [" << tgl_.get() << "] login failed: " << r.get_response_name());
                     boost::system::error_code ignored_ec;

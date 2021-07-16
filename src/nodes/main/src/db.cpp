@@ -209,7 +209,7 @@ namespace smf {
                 if (!r) {
                     CYNG_LOG_WARNING(logger_, "[db] remove session " << dev << ", tag: " << tag << " failed");
 #ifdef _DEBUG
-                    tbl_pty->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                    tbl_pty->loop([&](cyng::record &&rec, std::size_t) -> bool {
                         CYNG_LOG_TRACE(logger_, "[db] remove session " << dev << ", tag: " << tag << ", rec: " << rec.to_string());
                         return true;
                     });
@@ -485,7 +485,7 @@ namespace smf {
 #ifdef _DEBUG
                 if (!b1) {
                     CYNG_LOG_WARNING(logger_, "[db] session (1) " << caller_dev << " not modified");
-                    tbl_session->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                    tbl_session->loop([&](cyng::record &&rec, std::size_t) -> bool {
                         CYNG_LOG_TRACE(
                             logger_,
                             "[db] search session " << caller_dev << ", tag: " << caller_tag << ", rec: " << rec.to_string());
@@ -494,7 +494,7 @@ namespace smf {
                 }
                 if (!b2) {
                     CYNG_LOG_WARNING(logger_, "[db] session (2) " << dev << " not modified");
-                    tbl_session->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                    tbl_session->loop([&](cyng::record &&rec, std::size_t) -> bool {
                         CYNG_LOG_TRACE(logger_, "[db] search session " << dev << ", tag: " << tag << ", rec: " << rec.to_string());
                         return true;
                     });
@@ -1734,7 +1734,7 @@ namespace smf {
         cyng::key_list_t keys;
         std::uint16_t packet_size = std::numeric_limits<std::uint16_t>::max();
 
-        tbl->loop([&](cyng::record const &rec, std::size_t) -> bool {
+        tbl->loop([&](cyng::record &&rec, std::size_t) -> bool {
             auto const target = rec.value("name", "");
             BOOST_ASSERT(!target.empty());
             auto const device = rec.value("device", boost::uuids::nil_uuid());
@@ -1778,7 +1778,7 @@ namespace smf {
 
         cache_.access(
             [&, this](cyng::table const *tbl_channel, cyng::table *tbl_target) {
-                tbl_channel->loop([&](cyng::record const &rec, std::size_t) -> bool {
+                tbl_channel->loop([&](cyng::record &&rec, std::size_t) -> bool {
                     auto const c = rec.value<std::uint32_t>("channel", 0);
                     BOOST_ASSERT(c != 0);
                     if (channel == c) {

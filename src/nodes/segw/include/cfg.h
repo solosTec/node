@@ -77,6 +77,16 @@ namespace smf {
         sml::status_word_t get_status_word() const;
 
         /**
+         * loop over all elements
+         */
+        void loop(std::function<void(std::vector<std::string> &&, cyng::object)> cb);
+
+        /**
+         * loop over all elements filtered
+         */
+        void loop(std::string const &filter, std::function<void(std::vector<std::string> &&, cyng::object)> cb);
+
+        /**
          * the separator character
          */
         constexpr static char sep = '/';

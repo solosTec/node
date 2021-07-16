@@ -49,7 +49,7 @@ namespace smf {
               model,
               std::bind(&network::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
               std::bind(&network::ipt_stream, this, std::placeholders::_1),
-              std::bind(&network::auth_state, this, std::placeholders::_1))
+              std::bind(&network::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
         , stash_(ctl_.get_ctx()) {
         auto sp = channel_.lock();
         if (sp) {
@@ -84,9 +84,9 @@ namespace smf {
     }
     void network::ipt_stream(cyng::buffer_t &&data) { CYNG_LOG_TRACE(logger_, "[ipt] stream " << data.size() << " byte"); }
 
-    void network::auth_state(bool auth) {
+    void network::auth_state(bool auth, boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep) {
         if (auth) {
-            CYNG_LOG_INFO(logger_, "[ipt] authorized");
+            CYNG_LOG_INFO(logger_, "[ipt] authorized at " << rep);
             BOOST_ASSERT(bus_.is_authorized());
             register_targets();
         } else {
