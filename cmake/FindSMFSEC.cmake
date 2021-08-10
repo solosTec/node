@@ -32,16 +32,18 @@ set(SMFSEC_LIBS "smfsec")
 if(NOT SMFSEC_FOUND)
 
 	#
-	#	cyng header files
+	#	Crypto header files
 	#
     find_path(SMFSEC_INCLUDE_DIR_SRC
         NAMES 
 			smfsec/crypto.h
             smfsec/bio.h
         PATH_SUFFIXES
-            crypto
+			smfsec
+			crypto
         HINTS
             "${PROJECT_SOURCE_DIR}/../crypto/include"
+			"${PROJECT_SOURCE_DIR}/crypto-*/include"
         PATHS
             /usr/include/
             /usr/local/include/
@@ -50,6 +52,36 @@ if(NOT SMFSEC_FOUND)
     )
     
 	message(STATUS "** SMFSEC_INCLUDE_DIR_SRC: ${SMFSEC_INCLUDE_DIR_SRC}")
+
+	#
+	#	crypto generated header files
+	#
+	find_path(SMFSEC_INCLUDE_DIR_BUILD
+	NAMES 
+		libsmfsec.so
+		cross.cmake
+	PATH_SUFFIXES
+		crypto
+		crypto-0.9
+		build
+		v5te
+		build/v5te
+	HINTS
+		"${PROJECT_SOURCE_DIR}/../crypto/build/include"
+		"${PROJECT_SOURCE_DIR}/../crypto/v5te/include"
+		"${PROJECT_SOURCE_DIR}/../crypto/build/x64/include"
+		"${PROJECT_SOURCE_DIR}/../crypto/build/v5te/include"
+		"${PROJECT_SOURCE_DIR}/../../crypto*/build/v5te/include"
+		"${PROJECT_SOURCE_DIR}/../crypto*/build/v5te/include"
+		"${PROJECT_SOURCE_DIR}/crypto*/build/v5te/include"
+	PATHS
+		/usr/include/
+		/usr/local/include/
+	DOC 
+		"Crypto headers"
+	)
+
+	message(STATUS "** SMFSEC_INCLUDE_DIR_BUILD: ${SMFSEC_INCLUDE_DIR_BUILD}")
 
 
 	if (WIN32)
@@ -95,6 +127,8 @@ if(NOT SMFSEC_FOUND)
 				"${SMFSEC_INCLUDE_DIR_SRC}/../v5te"
 				"${SMFSEC_INCLUDE_DIR_SRC}/../build/x64"
 				"${SMFSEC_INCLUDE_DIR_SRC}/../build/v5te"
+				"${SMFSEC_INCLUDE_DIR_BUILD}/"
+				"${SMFSEC_INCLUDE_DIR_BUILD}/.."
 			PATHS
 				/usr/lib/
 				/usr/local/lib
@@ -110,8 +144,9 @@ if(NOT SMFSEC_FOUND)
 	endif()
 
     
-	set(SMFSEC_INCLUDE_DIRS "${SMFSEC_INCLUDE_DIR_SRC}")
+	set(SMFSEC_INCLUDE_DIRS "${SMFSEC_INCLUDE_DIR_SRC};${SMFSEC_INCLUDE_DIR_BUILD}")
 	unset(SMFSEC_INCLUDE_DIR_SRC CACHE)
+	unset(SMFSEC_INCLUDE_DIR_BUILD CACHE)
     
 
 	if (SMFSEC_INCLUDE_DIRS AND SMFSEC_LIBRARIES)

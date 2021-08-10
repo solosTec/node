@@ -40,11 +40,13 @@ if(NOT CYNG_FOUND)
     find_path(CYNG_INCLUDE_DIR_SRC
         NAMES 
             cyng/version.hpp
-            cyng/obj/object.h
+			cyng/meta.hpp
+            cyng.h.in
         PATH_SUFFIXES
             cyng
         HINTS
             "${PROJECT_SOURCE_DIR}/../cyng/include"
+			"${PROJECT_SOURCE_DIR}/cyng-*/include"
         PATHS
             /usr/include/
             /usr/local/include/
@@ -60,11 +62,18 @@ if(NOT CYNG_FOUND)
    find_path(CYNG_INCLUDE_DIR_BUILD
         NAMES 
             cyng.h
-         HINTS
+		PATH_SUFFIXES
+			cyng
+			cyng-0.9
+			build/v5te/include
+		HINTS
 			"${PROJECT_SOURCE_DIR}/../cyng/build/include"
-			"${PROJECT_SOURCE_DIR}/../cyng/v5te/include"
+            "${PROJECT_SOURCE_DIR}/../cyng/v5te/include"
             "${PROJECT_SOURCE_DIR}/../cyng/build/x64/include"
             "${PROJECT_SOURCE_DIR}/../cyng/build/v5te/include"
+            "${PROJECT_SOURCE_DIR}/../../cyng*/build/v5te/include"
+            "${PROJECT_SOURCE_DIR}/../cyng*/build/v5te/include"
+			"${PROJECT_SOURCE_DIR}/cyng*/build/v5te/include"
         PATHS
             /usr/include/
             /usr/local/include/
@@ -108,19 +117,20 @@ if(NOT CYNG_FOUND)
 	#
 	foreach(__CYNG_LIB ${CYNG_LIBS})
 
-		#message(STATUS "** hint : lib${__CYNG_LIB}")
+		message(STATUS "** hint : lib${__CYNG_LIB}")
 		find_library("${__CYNG_LIB}" ${__CYNG_LIB}
 			NAMES
 				${__CYNG_BUILD}
 			HINTS
 				"${CYNG_INCLUDE_DIR_BUILD}/.."
+				"${CYNG_INCLUDE_DIR_BUILD}/"
 			PATHS
 				/usr/lib/
 				/usr/local/lib
 			DOC 
 				"CYNG libraries"
 		)
-		#message(STATUS "** found : ${${__CYNG_LIB}}")
+		message(STATUS "** found : ${${__CYNG_LIB}}")
 		list(APPEND CYNG_LIBRARIES ${${__CYNG_LIB}})
 #		message(STATUS "** CYNG_LIBRARIES    : ${CYNG_LIBRARIES}")
 
@@ -135,11 +145,9 @@ if(NOT CYNG_FOUND)
     
 
 	if (CYNG_INCLUDE_DIRS AND CYNG_LIBRARIES)
+		message(STATUS "** CYNG_LIBRARIES    : ${CYNG_LIBRARIES}")
+		message(STATUS "** CYNG_INCLUDE_DIRS : ${CYNG_INCLUDE_DIRS}")
 		set(CYNG_FOUND ON)
-		set(CYNG_SQLITE3 "CYNG_INCLUDE_DIR_BUILD/../sqlite3")
-		message(STATUS "** CYNG_LIBRARIES        : ${CYNG_LIBRARIES}")
-		message(STATUS "** CYNG_INCLUDE_DIRS     : ${CYNG_INCLUDE_DIRS}")
-		message(STATUS "** CYNG_SQLITE3          : ${CYNG_SQLITE3}")
 	endif()
     
 endif(NOT CYNG_FOUND)
