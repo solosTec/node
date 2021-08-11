@@ -38,9 +38,9 @@ int main(int argc, char **argv) {
         ("add-value",
          boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
          "add configuration value: \"path\" \"value\" \"type\"") //  --add-value
-        //("del-value",
-        // boost::program_options::value<std::string>()->default_value("")->implicit_value("-"),
-        // "remove configuration value: \"path\"") // --del-value
+        ("del-value",
+         boost::program_options::value<std::string>()->default_value(""),
+         "remove configuration value: \"path\"") // --del-value
         ("switch-gpio",
          boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
          "switch GPIO: \"number\" [on|off]") //  --switch-gpio

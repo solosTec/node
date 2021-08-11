@@ -78,9 +78,18 @@ namespace smf {
 
         if (boost::algorithm::equals(tbl->meta().get_name(), "cfg")) {
             BOOST_ASSERT(key.size() == 1);
-            CYNG_LOG_TRACE(logger_, key.at(0) << " = " << attr.second);
+            auto const name = cyng::to_string(key.at(0));
+            //  don't store the following values:
+            // listener/1/taskIdIPv4
+            if (boost::algorithm::ends_with(name, "taskIdIPv4")) {
+                return;
+            }
+
+            //
+            //  make changes permanent
+            //
+            CYNG_LOG_TRACE(logger_, name << " = " << attr.second);
             if (storage_.cfg_update(key.at(0), attr.second)) {
-                auto const name = cyng::to_string(key.at(0));
                 distributor_.update(name, attr.second);
             } else {
                 CYNG_LOG_WARNING(logger_, "[persistence] update " << tbl->meta().get_name() << " failed");
