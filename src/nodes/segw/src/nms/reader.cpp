@@ -57,16 +57,16 @@ namespace smf {
             auto const pwd = cyng::value_cast(dom["credentials"]["pwd"].get(), "");
             if (user.empty()) {
                 CYNG_LOG_WARNING(logger_, "no user not specified");
-                return cyng::param_map_factory("command", cmd)("ec", "missing credentials")(
-                    "version", protocol_version_)("source", tag);
+                return cyng::param_map_factory("command", cmd)("ec", "missing credentials")("version", protocol_version_)(
+                    "source", tag);
             }
 
             cfg_nms nms_cfg(cfg_);
             if (!nms_cfg.check_credentials(user, pwd)) {
 
                 CYNG_LOG_WARNING(logger_, "unknown account or invalid password");
-                return cyng::param_map_factory("command", cmd)("ec", "invalid credentials")(
-                    "version", protocol_version_)("source", tag);
+                return cyng::param_map_factory("command", cmd)("ec", "invalid credentials")("version", protocol_version_)(
+                    "source", tag);
             }
 
             if (boost::algorithm::equals(cmd, "merge") || boost::algorithm::equals(cmd, "serialset") ||
@@ -105,8 +105,8 @@ namespace smf {
                 return cmd_cm(cmd, tag, dom);
             } else {
                 CYNG_LOG_WARNING(logger_, "unknown NMS command: " << cmd);
-                return cyng::param_map_factory("command", cmd)("ec", "unknown command")(
-                    "version", protocol_version_)("source", tag);
+                return cyng::param_map_factory("command", cmd)("ec", "unknown command")("version", protocol_version_)(
+                    "source", tag);
             }
 
             //
@@ -353,7 +353,7 @@ namespace smf {
             }
 
             BOOST_ASSERT(idx == vec.size());
-            cfg.set_size(idx);
+            cfg.set_count(idx);
         }
 
         cyng::param_map_t reader::cmd_query(std::string const &cmd, boost::uuids::uuid tag) {
@@ -455,9 +455,10 @@ namespace smf {
                 ec = std::make_error_code(std::errc::file_exists);
             }
 
-            return cyng::param_map_factory("command", cmd)("ec", !ec ? "ok" : ec.message())(
-                "version",
-                protocol_version_)("source", tag)("script-path", script_path_without_quotes)("address", address)("port", port)("user", username)("fw-filename", filename)("download-ca-path", ca_path_download)("vendor-ca-path", ca_path_vendor)("firmware-path", path_firmware);
+            return cyng::param_map_factory("command", cmd)("ec", !ec ? "ok" : ec.message())("version", protocol_version_)(
+                "source", tag)("script-path", script_path_without_quotes)("address", address)("port", port)("user", username)(
+                "fw-filename",
+                filename)("download-ca-path", ca_path_download)("vendor-ca-path", ca_path_vendor)("firmware-path", path_firmware);
         }
 
         cyng::param_map_t reader::cmd_update_status(std::string const &cmd, boost::uuids::uuid tag, pmap_reader const &dom) {
@@ -493,13 +494,12 @@ namespace smf {
                             try {
                                 int code = std::stoi(vec.at(1));
 
-                                return cyng::param_map_factory("command", cmd)("ec", "ok")(
-                                    "version",
-                                    protocol_version_)("source", tag)("path", path)("line", line)("code", code)("msg", get_code_name(code))("modified", tp);
+                                return cyng::param_map_factory("command", cmd)("ec", "ok")("version", protocol_version_)(
+                                    "source",
+                                    tag)("path", path)("line", line)("code", code)("msg", get_code_name(code))("modified", tp);
                             } catch (std::exception const &ex) {
-                                return cyng::param_map_factory("command", cmd)("ec", ex.what())(
-                                    "version",
-                                    protocol_version_)("source", tag)("path", path)("line", line)("code", -99)("modified", tp);
+                                return cyng::param_map_factory("command", cmd)("ec", ex.what())("version", protocol_version_)(
+                                    "source", tag)("path", path)("line", line)("code", -99)("modified", tp);
                             }
                         } else {
                             return cyng::param_map_factory("command", cmd)("ec", "error: invalid format")(
@@ -510,15 +510,14 @@ namespace smf {
                 }
             }
 
-            return cyng::param_map_factory("command", cmd)("ec", "error: file not found")(
-                "version", protocol_version_)("source", tag)("path", path)("code", -99);
+            return cyng::param_map_factory("command", cmd)("ec", "error: file not found")("version", protocol_version_)(
+                "source", tag)("path", path)("code", -99);
         }
 
         cyng::param_map_t reader::cmd_version(std::string const &cmd, boost::uuids::uuid tag) {
 
-            return cyng::param_map_factory("command", cmd)("ec", "ok")(
-                "version",
-                protocol_version_)("source", tag)("name", cyng::sys::get_os_name())("release", cyng::sys::get_os_release());
+            return cyng::param_map_factory("command", cmd)("ec", "ok")("version", protocol_version_)("source", tag)(
+                "name", cyng::sys::get_os_name())("release", cyng::sys::get_os_release());
         }
 
         cyng::param_map_t reader::cmd_reboot(std::string const &cmd, boost::uuids::uuid tag) {
@@ -553,8 +552,8 @@ namespace smf {
                 std::cout << "file could not be opened." << std::endl;
             }
 
-            return cyng::param_map_factory("command", cmd)("ec", (!ec) ? "ok" : ec.message())(
-                "version", protocol_version_)("source", tag)("rc", "reboot scheduled");
+            return cyng::param_map_factory("command", cmd)("ec", (!ec) ? "ok" : ec.message())("version", protocol_version_)(
+                "source", tag)("rc", "reboot scheduled");
 
 #else
             //	after 1 minute
@@ -603,8 +602,8 @@ namespace smf {
                 ec = std::make_error_code(std::errc::file_exists);
             }
 
-            return cyng::param_map_factory("command", cmd)("ec", (ec ? ec.message() : "ok"))(
-                "version", protocol_version_)("source", tag)("path", script_path);
+            return cyng::param_map_factory("command", cmd)("ec", (ec ? ec.message() : "ok"))("version", protocol_version_)(
+                "source", tag)("path", script_path);
         }
 
         std::string get_code_name(int status) {

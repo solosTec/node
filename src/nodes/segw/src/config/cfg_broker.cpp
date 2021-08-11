@@ -57,7 +57,7 @@ namespace smf {
         }
     } // namespace
 
-    std::size_t cfg_broker::size() const { return cfg_.get_value(count_path(get_index()), static_cast<std::size_t>(0)); }
+    std::size_t cfg_broker::get_count() const { return cfg_.get_value(count_path(get_index()), static_cast<std::size_t>(0)); }
 
     std::string cfg_broker::get_address(std::size_t idx) const { return cfg_.get_value(address_path(get_index(), idx), ""); }
 
@@ -97,7 +97,7 @@ namespace smf {
     target_vec cfg_broker::get_all_targets() const {
         target_vec r;
 
-        for (std::size_t idx = 0; idx < size(); ++idx) {
+        for (std::size_t idx = 0; idx < get_count(); ++idx) {
             r.push_back(get_target(idx));
         }
         return r;
@@ -127,7 +127,18 @@ namespace smf {
 
     bool cfg_broker::set_pwd(std::size_t idx, std::string pwd) const { return cfg_.set_value(pwd_path(get_index(), idx), pwd); }
 
-    bool cfg_broker::set_size(std::size_t size) const { return cfg_.set_value(count_path(get_index()), size); }
+    bool cfg_broker::set_count(std::size_t size) const { return cfg_.set_value(count_path(get_index()), size); }
+
+    std::size_t cfg_broker::update_count() {
+
+        std::size_t count{0};
+        for (;; ++count) {
+            if (get_address(count).empty())
+                break;
+        }
+        set_count(count);
+        return count;
+    }
 
     target::target(
         std::string account,
@@ -159,14 +170,16 @@ namespace smf {
     std::string target::get_login_sequence() const { return account_ + ":" + pwd_; }
 
     std::ostream &operator<<(std::ostream &os, target const &brk) {
-        os << brk.get_account() << ':' << brk.get_pwd() << '@' << brk.get_address() << ':' << brk.get_port()
-           << (brk.is_connect_on_demand() ? "*" : "+");
+        if (!brk.get_account().empty()) {
+            os << brk.get_account() << ':' << brk.get_pwd() << '@';
+        }
+        os << brk.get_address() << ':' << brk.get_port() << (brk.is_connect_on_demand() ? "*" : "+");
         return os;
     }
 
     cyng::param_map_t to_param_map(target const &srv) {
-        return cyng::param_map_factory("address", srv.get_address())("port", srv.get_port())(
-            "account", srv.get_account())("pwd", srv.get_pwd())("connect-on-demand", srv.is_connect_on_demand());
+        return cyng::param_map_factory("address", srv.get_address())("port", srv.get_port())("account", srv.get_account())(
+            "pwd", srv.get_pwd())("connect-on-demand", srv.is_connect_on_demand());
     }
 
 } // namespace smf

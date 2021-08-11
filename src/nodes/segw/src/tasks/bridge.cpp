@@ -467,7 +467,7 @@ namespace smf {
             // auto const timeout = cfg.get_timeout();
             auto const login = cfg.has_login();
 
-            auto const size = cfg.size();
+            auto const size = cfg.update_count();
             CYNG_LOG_INFO(logger_, size << " broker \"" << name << "\" configured for [" << port << "]");
             auto const vec = cfg.get_all_targets();
             for (auto const &trg : vec) {
@@ -750,7 +750,7 @@ namespace smf {
         auto const nic = nms.get_nic();
 
         auto const addr6 = nms.get_as_ipv6();
-        CYNG_LOG_TRACE(logger_, "build listener ep from " << addr6 << " and " << cfg.get_port());  
+        CYNG_LOG_TRACE(logger_, "build listener ep from " << addr6 << " and " << cfg.get_port());
         boost::asio::ip::tcp::endpoint ep(addr6, cfg.get_port());
 
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)

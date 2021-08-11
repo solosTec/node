@@ -112,7 +112,7 @@ namespace smf {
          * @return the specified number of broker configurations
          * for this serial port.
          */
-        std::size_t size() const;
+        std::size_t get_count() const;
 
         std::string get_address(std::size_t idx) const;
         std::uint16_t get_port(std::size_t idx) const;
@@ -147,7 +147,12 @@ namespace smf {
         bool set_account(std::size_t idx, std::string) const;
         bool set_pwd(std::size_t idx, std::string) const;
 
-        bool set_size(std::size_t size) const;
+        bool set_count(std::size_t size) const;
+
+        /**
+         * update the "broker/N/count" entry
+         */
+        std::size_t update_count();
 
         constexpr static char root[] = "broker";
 
