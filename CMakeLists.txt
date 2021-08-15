@@ -378,6 +378,14 @@ target_compile_definitions(smf_http
         $<$<CONFIG:Debug>:_DEBUG_HTTP>
 )
 
+#
+# -Wno-psabi for gcc > 7.1
+#
+target_compile_options(smf_http 
+    PRIVATE 
+        $<$<AND:$<VERSION_GREATER_EQUAL:${CMAKE_CXX_COMPILER_VERSION},7.1>,$<CXX_COMPILER_ID:GNU>>:-Wno-psabi>
+)
+
 target_link_libraries(smf_http 
     PRIVATE 
         Boost::boost 
