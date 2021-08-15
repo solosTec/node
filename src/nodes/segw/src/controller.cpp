@@ -196,9 +196,10 @@ namespace smf {
             "net",
             cyng::tuple_factory(
                 cyng::make_param("mac", srv_mac),
-                cyng::make_param("nics", macs),
-                cyng::make_param(cyng::to_str(OBIS_SERVER_ID), cyng::io::to_hex(tmp)),
-                cyng::make_param("local-links", local_links)));
+                // cyng::make_param("nics", macs),
+                cyng::make_param(cyng::to_str(OBIS_SERVER_ID), cyng::io::to_hex(tmp))
+                // cyng::make_param("local-links", local_links)));
+                ));
     }
 
     cyng::param_t controller::create_virtual_meter_spec() const {
@@ -428,23 +429,21 @@ namespace smf {
 
     cyng::param_t controller::create_nms_server_spec(std::filesystem::path const &tmp) const {
 
+        auto const nic = get_nic();
         return cyng::make_param(
             "nms",
             cyng::tuple_factory(
-                cyng::make_param("address", get_nms_address("br0")),
+                cyng::make_param("address", get_nms_address(nic)),
                 cyng::make_param("port", 7562),
                 cyng::make_param("account", "operator"),
                 cyng::make_param("pwd", "operator"),
+                cyng::make_param("nic", nic),
+                cyng::make_param("nic-ipv4", get_ipv4_address(nic)),
+                cyng::make_param("nic-linklocal", get_ipv6_linklocal(nic)),
 #if defined(BOOST_OS_LINUX_AVAILABLE)
                 cyng::make_param("enabled", true),
-#if defined(__CROSS_PLATFORM)
-                cyng::make_param("nic", "br0"),
-#else
-                cyng::make_param("nic", "eth0"),
-#endif
 #else
                 cyng::make_param("enabled", false),
-                cyng::make_param("nic", "Ethernet"),
 #endif
                 cyng::make_param(
                     "script-path",
@@ -459,9 +458,7 @@ namespace smf {
 #else
                 cyng::make_param("debug", false),
 #endif
-                cyng::make_param("delay", std::chrono::seconds(12))
-
-                    ));
+                cyng::make_param("delay", std::chrono::seconds(12))));
     }
     cyng::param_t controller::create_sml_server_spec() const {
 
@@ -735,6 +732,47 @@ namespace smf {
         //	stop all running tasks
         //
         // reg.shutdown();
+    }
+
+    std::string get_nic() {
+
+#if defined(BOOST_OS_LINUX_AVAILABLE)
+#if defined(__CROSS_PLATFORM)
+        std::string const preferred = "br0";
+#else
+        std::string const preferred = "eth0";
+#endif
+#else
+        std::string const preferred = "Ethernet";
+#endif
+        auto const nics = cyng::sys::get_nic_names();
+        if (std::find(std::begin(nics), std::end(nics), preferred) == nics.end()) {
+            std::cerr << "device: " << preferred << " not available" << std::endl;
+            //
+            //  select an available device
+            //
+            if (!nics.empty()) {
+                std::cout << "use " << nics.front() << " instead" << std::endl;
+                return nics.front();
+            }
+        }
+        return preferred;
+    }
+
+    boost::asio::ip::address get_ipv4_address(std::string const &nic) {
+        auto const cfg_v4 = cyng::sys::get_ipv4_configuration();
+        auto const cfg_filtered = cyng::sys::filter(cfg_v4, cyng::sys::filter_by_name(nic));
+        return (cfg_filtered.empty()) ? boost::asio::ip::address_v4() : cfg_filtered.front().address_;
+    }
+
+    boost::asio::ip::address get_ipv6_linklocal(std::string const &nic) {
+        auto const cfg_v6 = cyng::sys::get_ipv6_configuration();
+        auto const cfg_filtered = cyng::sys::filter(cfg_v6, cyng::sys::filter_by_name(nic));
+        for (auto const &cfg : cfg_filtered) {
+            if (cfg.address_.to_v6().is_link_local())
+                return cfg.address_.to_v6();
+        }
+        return boost::asio::ip::address_v6();
     }
 
 } // namespace smf

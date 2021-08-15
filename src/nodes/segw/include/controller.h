@@ -73,6 +73,17 @@ namespace smf {
      */
     std::string get_nms_address(std::string nic);
 
+    /**
+     * @return the preferred network device to communicate with.
+     */
+    std::string get_nic();
+
+    /**
+     * @return all
+     */
+    boost::asio::ip::address get_ipv4_address(std::string const &);
+    boost::asio::ip::address get_ipv6_linklocal(std::string const &);
+
 } // namespace smf
 
 #endif

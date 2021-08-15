@@ -298,14 +298,10 @@ namespace smf {
                             cfg->merge(
                                 rec.key(),
                                 cyng::data_generator(obj),
-                                1u //	only needed for insert operations
-                                ,
-                                boost::uuids::nil_uuid()); //	tag not
-                                                           // available yet
+                                1u,         //	only needed for insert operations
+                                cfg_.tag_); //	tag mybe not available yet
                         }
-
                     } catch (std::exception const &ex) {
-
                         CYNG_LOG_ERROR(logger_, "cannot load " << path << ": " << ex.what());
                     }
 
@@ -661,9 +657,18 @@ namespace smf {
 
     void bridge::init_nms_server() {
         cfg_nms cfg(cfg_);
-        auto const nic = cfg.get_nic();
-        CYNG_LOG_INFO(logger_, "designated nic for link-local communication is \"" << nic << "\"");
         if (cfg.is_enabled()) {
+
+            auto const nic = cfg.get_nic();
+
+            //
+            //  test if nic is avilable
+            //
+            if (test_nic(nic)) {
+                CYNG_LOG_INFO(logger_, "designated nic for link-local communication is \"" << nic << "\"");
+            } else {
+                CYNG_LOG_ERROR(logger_, "designated nic for link-local communication \"" << nic << "\" is not available");
+            }
 
             //  cyng::channel_weak wp, cyng::controller &ctl, cfg &, cyng::logger
             auto channel = ctl_.create_named_channel_with_ref<nms::server>("nms", ctl_, cfg_, logger_);
@@ -694,6 +699,11 @@ namespace smf {
         } else {
             CYNG_LOG_TRACE(logger_, "[NMS] not running");
         }
+    }
+
+    bool bridge::test_nic(std::string const &nic) {
+        auto const nics = cyng::sys::get_nic_names();
+        return std::find(std::begin(nics), std::end(nics), nic) != nics.end();
     }
 
     void bridge::init_redirectors() {

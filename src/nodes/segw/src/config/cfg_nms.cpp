@@ -17,7 +17,7 @@
 
 namespace smf {
 
-    namespace {
+    namespace { //  static linkage
         std::string address_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "address"); }
         std::string port_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "port"); }
         std::string account_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "account"); }
@@ -26,6 +26,8 @@ namespace smf {
         std::string debug_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "debug"); }
         std::string script_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "script-path"); }
         std::string nic_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic"); }
+        std::string nic_v4_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-ipv4"); }
+        std::string nic_linklocal_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-linklocal"); }
         std::string delay_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "delay"); }
     } // namespace
 
@@ -79,6 +81,9 @@ namespace smf {
     std::string cfg_nms::get_nic() const {
         return cfg_.get_value(
             nic_path(),
+        //
+        //  duplicate code from controller.h: get_nic()
+        //
 #if defined(BOOST_OS_LINUX_AVAILABLE)
 #if defined(__CROSS_PLATFORM)
             "br0"
@@ -89,6 +94,11 @@ namespace smf {
             "Ethernet"
 #endif
         );
+    }
+
+    boost::asio::ip::address cfg_nms::get_nic_ipv4() const { return cfg_.get_value(nic_v4_path(), boost::asio::ip::address_v4()); }
+    boost::asio::ip::address cfg_nms::get_nic_linklocal() const {
+        return cfg_.get_value(nic_linklocal_path(), boost::asio::ip::address_v6());
     }
 
     bool cfg_nms::set_delay(std::chrono::seconds delay) const { return cfg_.set_value(delay_path(), delay); }

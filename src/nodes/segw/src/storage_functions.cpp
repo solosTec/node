@@ -425,10 +425,19 @@ namespace smf {
                     cyng::to_path(cfg::sep, "hw", param.first),
                     cyng::make_object(serial_number),
                     "serial number " + std::to_string(serial_number));
+            } else if (boost::algorithm::equals(param.first, "adapter")) {
+                transfer_hardware_adapter(stmt, cyng::container_cast<cyng::param_map_t>(param.second));
             } else {
 
                 insert_config_record(stmt, cyng::to_path(cfg::sep, "hw", param.first), param.second, "hardware: " + param.first);
             }
+        }
+    }
+
+    void transfer_hardware_adapter(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap) {
+        for (auto const &param : pmap) {
+            insert_config_record(
+                stmt, cyng::to_path(cfg::sep, "hw", "adapter", param.first), param.second, "adapter: " + param.first);
         }
     }
 
@@ -476,11 +485,45 @@ namespace smf {
         for (auto const &param : pmap) {
             if (boost::algorithm::equals(param.first, "address")) {
 
-                boost::system::error_code ec;
                 auto const address = cyng::value_cast(param.second, "0.0.0.0");
                 insert_config_record(
                     stmt, cyng::to_path(cfg::sep, "nms", param.first), cyng::make_object(address), "default NMS bind address");
 
+            } else if (boost::algorithm::equals(param.first, "nic-ipv4")) {
+                auto const s = cyng::value_cast(param.second, "0.0.0.0");
+
+                boost::system::error_code ec;
+                auto const address = boost::asio::ip::make_address(s, ec);
+                if (!ec) {
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "nms", param.first),
+                        cyng::make_object(address),
+                        "IPv4 address of NMS adapter");
+                } else {
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "nms", param.first),
+                        cyng::make_object(boost::asio::ip::make_address("169.254.0.1", ec)),
+                        "IPv4 address of NMS adapter");
+                }
+            } else if (boost::algorithm::equals(param.first, "nic-linklocal")) {
+                auto const s = cyng::value_cast(param.second, "fe80::");
+                boost::system::error_code ec;
+                auto const address = boost::asio::ip::make_address(s, ec);
+                if (!ec) {
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "nms", param.first),
+                        cyng::make_object(address),
+                        "link local address of NMS adapter");
+                } else {
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "nms", param.first),
+                        cyng::make_object(boost::asio::ip::make_address("[fe80::]", ec)),
+                        "link local address of NMS adapter");
+                }
             } else if (boost::algorithm::equals(param.first, "port")) {
 
                 auto const nms_port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);

@@ -62,6 +62,7 @@ namespace smf {
          */
         void init_nms_server();
         void stop_nms_server();
+        bool test_nic(std::string const &nic);
 
         /**
          * start reading from serial ports

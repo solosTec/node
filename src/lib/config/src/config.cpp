@@ -123,19 +123,21 @@ namespace smf {
             boost::program_options::options_description generic("Generic options");
             generic.add_options()
 
-                ("help,h",
-                 "print usage message")("version,v", "print version string")("build,b", "last built timestamp and platform")(
-                    "net,N", boost::program_options::bool_switch()->default_value(false), "show local network configuration")(
-                    "config,C",
-                    boost::program_options::value<std::string>(&config.config_file_)->default_value(config.cfg_default_),
-                    "specify the configuration file")(
-                    "log-level,L",
-                    boost::program_options::value<std::string>(&config.log_level_str_)->default_value(config.log_level_str_),
-                    "log levels are T[RACE], D[EBUG], I[NFO], W[ARNING], E[RROR] and F[ATAL]")(
-                    "default,D",
-                    boost::program_options::bool_switch()->default_value(false),
-                    "generate a default configuration and exit")(
-                    "show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
+                ("help,h", "print usage message")("version,v", "print version string") //  print version string
+                ("build,b", "last built timestamp and platform")                       //  print build time
+                ("net,N",
+                 boost::program_options::bool_switch()->default_value(false),
+                 "show local network configuration") //  print some network configuration data
+                ("config,C",
+                 boost::program_options::value<std::string>(&config.config_file_)->default_value(config.cfg_default_),
+                 "specify the configuration file") //  specify configuration file
+                ("log-level,L",
+                 boost::program_options::value<std::string>(&config.log_level_str_)->default_value(config.log_level_str_),
+                 "log levels are T[RACE], D[EBUG], I[NFO], W[ARNING], E[RROR] and F[ATAL]") //  specify logging level
+                ("default,D",
+                 boost::program_options::bool_switch()->default_value(false),
+                 "generate a default configuration and exit") //  create a default configuration
+                ("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration")
 
                 ;
 
@@ -153,32 +155,50 @@ namespace smf {
             auto log_file_size = 32UL * 1024UL * 1024UL;
 
             boost::program_options::options_description options(start.node_);
-            options.add_options()
-                ("setup.json,J", boost::program_options::value(&start.json_path_)->default_value(json_path_default),"JSON configuration file")  // --setup.json
-                ("setup.config-index", boost::program_options::value(&start.config_index_)->default_value(start.config_index_),"Default configuration index")   // --setup.config-index
-                ("setup.pool-size,P", boost::program_options::value(&start.pool_size_)->default_value(pool_size), "Thread pool size")
+            options.add_options()(
+                "setup.json,J",
+                boost::program_options::value(&start.json_path_)->default_value(json_path_default),
+                "JSON configuration file") // --setup.json
+                ("setup.config-index",
+                 boost::program_options::value(&start.config_index_)->default_value(start.config_index_),
+                 "Default configuration index") // --setup.config-index
+                ("setup.pool-size,P",
+                 boost::program_options::value(&start.pool_size_)->default_value(pool_size),
+                 "Thread pool size")
 #if defined(BOOST_OS_LINUX_AVAILABLE)
-                ("RLIMIT_NOFILE.soft",
-                 boost::program_options::value<rlim_t>()->default_value(start.rl_.rlim_cur),
-                 "RLIMIT_NOFILE soft")(
-                    "RLIMIT_NOFILE.hard",
-                    boost::program_options::value<rlim_t>()->default_value(start.rl_.rlim_max),
-                    "RLIMIT_NOFILE hard")(
-                    "log.syslog",
-                    boost::program_options::bool_switch(&start.log_syslog_)->default_value(cyng::has_sys_log()),
-                    "start syslog logger")
+                    ("RLIMIT_NOFILE.soft",
+                     boost::program_options::value<rlim_t>()->default_value(start.rl_.rlim_cur),
+                     "RLIMIT_NOFILE soft")(
+                        "RLIMIT_NOFILE.hard",
+                        boost::program_options::value<rlim_t>()->default_value(start.rl_.rlim_max),
+                        "RLIMIT_NOFILE hard")(
+                        "log.syslog",
+                        boost::program_options::bool_switch(&start.log_syslog_)->default_value(cyng::has_sys_log()),
+                        "start syslog logger")
 #endif
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
-                ("service.enabled,S", boost::program_options::value<bool>()->default_value(false), "run as NT service") // -- service.enabled
-                ("service.name", boost::program_options::value<std::string>()->default_value(derive_service_name(start.node_)),"NT service name")   // -- service.name
+                        ("service.enabled,S",
+                         boost::program_options::value<bool>()->default_value(false),
+                         "run as NT service") // -- service.enabled
+                ("service.name",
+                 boost::program_options::value<std::string>()->default_value(derive_service_name(start.node_)),
+                 "NT service name") // -- service.name
                 ("log.eventlog",
-                        boost::program_options::bool_switch(&start.log_eventlog_)->default_value(cyng::has_event_log()),
-                        "start event logger")
+                 boost::program_options::bool_switch(&start.log_eventlog_)->default_value(cyng::has_event_log()),
+                 "start event logger")
 #endif
-                ("log.console", boost::program_options::bool_switch(&start.log_console_)->default_value(true), "start console logger")    //  console logger - default: true
-                ("log.file", boost::program_options::bool_switch(&start.log_file_)->default_value(true), "start file logger") //    file logger - default true
-                ("log.file-name", boost::program_options::value<std::string>(&start.log_file_path_)->default_value(log_file_path), "log file name") //  log file name
-                ("log.file-size", boost::program_options::value<std::uint64_t>(&start.log_file_size_)->default_value(log_file_size), "log file size (bytes)") //    log file size
+                    ("log.console",
+                     boost::program_options::bool_switch(&start.log_console_)->default_value(true),
+                     "start console logger") //  console logger - default: true
+                ("log.file",
+                 boost::program_options::bool_switch(&start.log_file_)->default_value(true),
+                 "start file logger") //    file logger - default true
+                ("log.file-name",
+                 boost::program_options::value<std::string>(&start.log_file_path_)->default_value(log_file_path),
+                 "log file name") //  log file name
+                ("log.file-size",
+                 boost::program_options::value<std::uint64_t>(&start.log_file_size_)->default_value(log_file_size),
+                 "log file size (bytes)") //    log file size
                 ;
 
             return options;
@@ -273,55 +293,32 @@ namespace smf {
 
         void print_net_config(std::ostream &os) {
 
-            auto const macs = cyng::sys::get_mac48_adresses();
+            std::string const host = boost::asio::ip::host_name();
+            std::cout << std::endl << "hostname is \"" << host << "\"" << std::endl;
+            std::cout << std::endl;
 
-            // os
-            //	<< "host name: "
-            //	<< host
-            //	<< std::endl
-            //<< "effective OS: "
-            //<< cyng::sys::get_os_name()
-            //<< std::endl
-            //;
-
-            if (!macs.empty()) {
-                std::cout << macs.size() << " physical address(es)" << std::endl;
-                for (auto const &m : macs) {
-                    using cyng::operator<<;
-                    std::cout << m;
-                    if (cyng::is_private(m)) {
-                        std::cout << "\t(private)";
-                    }
-                    std::cout << std::endl;
-                }
-            }
-
+            //
+            //  list of all network adapters
+            //
             auto const nics = cyng::sys::get_nic_names();
             if (!nics.empty()) {
-                std::cout << std::endl;
-                std::cout << nics.size() << " network interface controller(s)" << std::endl;
+                std::cout << nics.size() << " network device(s)" << std::endl;
                 for (auto const &nic : nics) {
-#if defined(BOOST_OS_WINDOWS_AVAILABLE)
-                    std::cout << nic << std::endl;
-#else
-                    std::cout << nic << " - " << cyng::sys::get_address_IPv6(nic) << std::endl;
-#endif
+                    using cyng::operator<<;
+                    std::cout << "\"" << nic << "\" - " << cyng::sys::get_mac48_adress(nic) << std::endl;
                 }
             }
+            std::cout << std::endl;
 
-            try {
-                std::string const host = boost::asio::ip::host_name();
-                std::cout << std::endl << "address(es) of \"" << host << "\"" << std::endl;
-                boost::asio::io_service io_service;
-                boost::asio::ip::tcp::resolver resolver(io_service);
-                boost::asio::ip::tcp::resolver::iterator it = resolver.resolve(host, "");
-
-                while (it != boost::asio::ip::tcp::resolver::iterator()) {
-                    boost::asio::ip::address addr = (it++)->endpoint().address();
-
-                    std::cout << addr.to_string() << std::endl;
-                }
-            } catch (std::exception const &) {
+            auto const cfgv4 = cyng::sys::get_ipv4_configuration();
+            auto const cfgv6 = cyng::sys::get_ipv6_configuration();
+            std::cout << cfgv4.size() << " IPv4 address(es) and " << cfgv6.size() << " IPv6 address(es)" << std::endl;
+            // auto const cfg = cyng::sys::merge(cfgv4, cfgv6);
+            for (auto const cfg : cfgv4) {
+                std::cout << cfg << std::endl;
+            }
+            for (auto const cfg : cfgv6) {
+                std::cout << cfg << std::endl;
             }
         }
 

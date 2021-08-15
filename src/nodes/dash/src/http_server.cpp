@@ -707,13 +707,8 @@ namespace smf {
     void http_server::response_update_channel(ws_sptr wsp, std::string const &name) {
 
         if (boost::algorithm::starts_with(name, "sys.cpu.usage.total")) {
-#if defined(BOOST_OS_WINDOWS_AVAILABLE)
             auto const load = cyng::sys::get_cpu_load(0);
             wsp->push_msg(json_update_channel(name, load));
-#else
-            auto rnd = cyng::crypto::make_rnd(0, 100);
-            wsp->push_msg(json_update_channel(name, rnd()));
-#endif
         } else if (boost::algorithm::starts_with(name, "sys.cpu.count")) {
             wsp->push_msg(json_update_channel(name, std::thread::hardware_concurrency()));
         } else if (boost::algorithm::starts_with(name, "sys.mem.virtual.total")) {

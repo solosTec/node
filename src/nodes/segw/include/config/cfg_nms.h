@@ -22,7 +22,7 @@ namespace smf {
         /**
          * @return address as IPv6 address if possible. If conversion of the the string failed ir returns an unspecified address.
          */
-        boost::asio::ip::address get_as_ipv6() const;
+        [[deprecated("use get_nic_linklocal() instead")]] boost::asio::ip::address get_as_ipv6() const;
         std::string get_address() const;
         std::uint16_t get_port() const;
         std::string get_account() const;
@@ -38,6 +38,8 @@ namespace smf {
          * Designated NIC for link-local communication
          */
         std::string get_nic() const;
+        boost::asio::ip::address get_nic_ipv4() const;
+        boost::asio::ip::address get_nic_linklocal() const;
 
         /**
          * check username and password
