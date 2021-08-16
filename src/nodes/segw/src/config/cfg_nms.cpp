@@ -9,9 +9,7 @@
 
 #include <cyng/sys/net.h>
 
-#ifdef _DEBUG_SEGW
 #include <iostream>
-#endif
 
 #include <boost/predef.h>
 
