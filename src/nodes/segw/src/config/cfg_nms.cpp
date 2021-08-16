@@ -124,7 +124,17 @@ namespace smf {
         if (std::find(std::begin(nics), std::end(nics), preferred) == nics.end()) {
             std::cerr << "device: " << preferred << " not available" << std::endl;
             //
-            //  select an available device
+            //  select an available device.
+            //  (1) try the the device of the first available IPv4 address
+            //
+            auto const cfg_v4 = cyng::sys::get_ipv4_configuration();
+            if (!cfg_v4.empty()) {
+                std::cout << "use " << cfg_v4.front().device_ << " instead" << std::endl;
+                return cfg_v4.front().device_;
+            }
+            
+            //  
+            //  (2) take the first available device
             //
             if (!nics.empty()) {
                 std::cout << "use " << nics.front() << " instead" << std::endl;
