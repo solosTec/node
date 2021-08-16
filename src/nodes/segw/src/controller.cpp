@@ -5,9 +5,11 @@
  *
  */
 
+#include <config/cfg_nms.h>
 #include <controller.h>
 #include <smf.h>
 #include <storage_functions.h>
+
 #include <tasks/bridge.h>
 #include <tasks/gpio.h>
 
@@ -430,6 +432,7 @@ namespace smf {
     cyng::param_t controller::create_nms_server_spec(std::filesystem::path const &tmp) const {
 
         auto const nic = get_nic();
+        auto const link_local = get_ipv6_linklocal(nic);
         return cyng::make_param(
             "nms",
             cyng::tuple_factory(
@@ -439,7 +442,8 @@ namespace smf {
                 cyng::make_param("pwd", "operator"),
                 cyng::make_param("nic", nic),
                 cyng::make_param("nic-ipv4", get_ipv4_address(nic)),
-                cyng::make_param("nic-linklocal", get_ipv6_linklocal(nic)),
+                cyng::make_param("nic-linklocal", link_local.first),
+                cyng::make_param("nic-index", link_local.second),
 #if defined(BOOST_OS_LINUX_AVAILABLE)
                 cyng::make_param("enabled", true),
 #else
@@ -732,47 +736,6 @@ namespace smf {
         //	stop all running tasks
         //
         // reg.shutdown();
-    }
-
-    std::string get_nic() {
-
-#if defined(BOOST_OS_LINUX_AVAILABLE)
-#if defined(__CROSS_PLATFORM)
-        std::string const preferred = "br0";
-#else
-        std::string const preferred = "eth0";
-#endif
-#else
-        std::string const preferred = "Ethernet";
-#endif
-        auto const nics = cyng::sys::get_nic_names();
-        if (std::find(std::begin(nics), std::end(nics), preferred) == nics.end()) {
-            std::cerr << "device: " << preferred << " not available" << std::endl;
-            //
-            //  select an available device
-            //
-            if (!nics.empty()) {
-                std::cout << "use " << nics.front() << " instead" << std::endl;
-                return nics.front();
-            }
-        }
-        return preferred;
-    }
-
-    boost::asio::ip::address get_ipv4_address(std::string const &nic) {
-        auto const cfg_v4 = cyng::sys::get_ipv4_configuration();
-        auto const cfg_filtered = cyng::sys::filter(cfg_v4, cyng::sys::filter_by_name(nic));
-        return (cfg_filtered.empty()) ? boost::asio::ip::address_v4() : cfg_filtered.front().address_;
-    }
-
-    boost::asio::ip::address get_ipv6_linklocal(std::string const &nic) {
-        auto const cfg_v6 = cyng::sys::get_ipv6_configuration();
-        auto const cfg_filtered = cyng::sys::filter(cfg_v6, cyng::sys::filter_by_name(nic));
-        for (auto const &cfg : cfg_filtered) {
-            if (cfg.address_.to_v6().is_link_local())
-                return cfg.address_.to_v6();
-        }
-        return boost::asio::ip::address_v6();
     }
 
 } // namespace smf

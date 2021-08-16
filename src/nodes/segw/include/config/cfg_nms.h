@@ -36,10 +36,25 @@ namespace smf {
 
         /**
          * Designated NIC for link-local communication
+         * @note These nic releated functions are slow since every call queries
+         * the network configuration of the system.
          */
         std::string get_nic() const;
+
+        /**
+         * @return first IPv4 address of the specified nic
+         */
         boost::asio::ip::address get_nic_ipv4() const;
+
+        /**
+         * @return link-local (IPv6) address of the specified nic
+         */
         boost::asio::ip::address get_nic_linklocal() const;
+
+        /**
+         * @return device index of the specified nic
+         */
+        std::uint32_t get_nic_index() const;
 
         /**
          * check username and password
@@ -66,6 +81,21 @@ namespace smf {
       private:
         cfg &cfg_;
     };
+
+    /**
+     * @return the preferred network device to communicate with.
+     */
+    std::string get_nic();
+
+    /**
+     * @return first IPv4 address of specified device
+     */
+    boost::asio::ip::address get_ipv4_address(std::string const &);
+
+    /**
+     * @return link-local (IPv6) address of specified device
+     */
+    std::pair<boost::asio::ip::address, std::uint32_t> get_ipv6_linklocal(std::string const &);
 
 } // namespace smf
 

@@ -28,6 +28,7 @@ namespace smf {
         std::string nic_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic"); }
         std::string nic_v4_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-ipv4"); }
         std::string nic_linklocal_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-linklocal"); }
+        std::string nic_index_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-index"); }
         std::string delay_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "delay"); }
     } // namespace
 
@@ -78,27 +79,17 @@ namespace smf {
 
     std::chrono::seconds cfg_nms::get_delay() const { return cfg_.get_value(delay_path(), std::chrono::seconds(12)); }
 
-    std::string cfg_nms::get_nic() const {
-        return cfg_.get_value(
-            nic_path(),
-        //
-        //  duplicate code from controller.h: get_nic()
-        //
-#if defined(BOOST_OS_LINUX_AVAILABLE)
-#if defined(__CROSS_PLATFORM)
-            "br0"
-#else
-            "eth0"
-#endif
-#else
-            "Ethernet"
-#endif
-        );
+    std::string cfg_nms::get_nic() const { return cfg_.get_value(nic_path(), smf::get_nic()); }
+
+    boost::asio::ip::address cfg_nms::get_nic_ipv4() const { return cfg_.get_value(nic_v4_path(), get_ipv4_address(get_nic())); }
+    boost::asio::ip::address cfg_nms::get_nic_linklocal() const {
+        auto const r = get_ipv6_linklocal(get_nic());
+        return cfg_.get_value(nic_linklocal_path(), r.first);
     }
 
-    boost::asio::ip::address cfg_nms::get_nic_ipv4() const { return cfg_.get_value(nic_v4_path(), boost::asio::ip::address_v4()); }
-    boost::asio::ip::address cfg_nms::get_nic_linklocal() const {
-        return cfg_.get_value(nic_linklocal_path(), boost::asio::ip::address_v6());
+    std::uint32_t cfg_nms::get_nic_index() const {
+        auto const r = get_ipv6_linklocal(get_nic());
+        return cfg_.get_value(nic_index_path(), r.second);
     }
 
     bool cfg_nms::set_delay(std::chrono::seconds delay) const { return cfg_.set_value(delay_path(), delay); }
@@ -118,6 +109,47 @@ namespace smf {
 
     bool cfg_nms::check_credentials(std::string const &user, std::string const &pwd) {
         return boost::algorithm::equals(user, get_account()) && boost::algorithm::equals(pwd, get_pwd());
+    }
+
+    std::string get_nic() {
+
+#if defined(BOOST_OS_LINUX_AVAILABLE)
+#if defined(__CROSS_PLATFORM)
+        std::string const preferred = "br0";
+#else
+        std::string const preferred = "eth0";
+#endif
+#else
+        std::string const preferred = "Ethernet";
+#endif
+        auto const nics = cyng::sys::get_nic_names();
+        if (std::find(std::begin(nics), std::end(nics), preferred) == nics.end()) {
+            std::cerr << "device: " << preferred << " not available" << std::endl;
+            //
+            //  select an available device
+            //
+            if (!nics.empty()) {
+                std::cout << "use " << nics.front() << " instead" << std::endl;
+                return nics.front();
+            }
+        }
+        return preferred;
+    }
+
+    boost::asio::ip::address get_ipv4_address(std::string const &nic) {
+        auto const cfg_v4 = cyng::sys::get_ipv4_configuration();
+        auto const cfg_filtered = cyng::sys::filter(cfg_v4, cyng::sys::filter_by_name(nic));
+        return (cfg_filtered.empty()) ? boost::asio::ip::address_v4() : cfg_filtered.front().address_;
+    }
+
+    std::pair<boost::asio::ip::address, std::uint32_t> get_ipv6_linklocal(std::string const &nic) {
+        auto const cfg_v6 = cyng::sys::get_ipv6_configuration();
+        auto const cfg_filtered = cyng::sys::filter(cfg_v6, cyng::sys::filter_by_name(nic));
+        for (auto const &cfg : cfg_filtered) {
+            if (cfg.address_.to_v6().is_link_local())
+                return {cfg.address_.to_v6(), cfg.index_};
+        }
+        return {boost::asio::ip::address_v6(), 0};
     }
 
 } // namespace smf
