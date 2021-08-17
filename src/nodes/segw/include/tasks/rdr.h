@@ -38,6 +38,10 @@ namespace smf {
                 type,
                 boost::asio::ip::tcp::endpoint ep);
 
+#ifdef _DEBUG
+            virtual ~server();
+#endif
+
           private:
             void start(std::chrono::seconds);
             void stop(cyng::eod);

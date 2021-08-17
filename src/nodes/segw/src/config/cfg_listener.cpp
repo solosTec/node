@@ -7,6 +7,7 @@
 
 #include <config/cfg_listener.h>
 #include <config/cfg_lmn.h>
+#include <config/cfg_nms.h>
 
 #include <cyng/sys/net.h>
 
@@ -51,9 +52,6 @@ namespace smf {
         std::string task_id_ipv6_path(std::uint8_t type) {
             return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "taskIdIPv6");
         }
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-        std::string nic_path(std::uint8_t type) { return cyng::to_path(cfg::sep, cfg_listener::root, std::to_string(type), "nic"); }
-#endif
     } // namespace
 
     boost::asio::ip::address cfg_listener::get_address() const {
@@ -74,6 +72,11 @@ namespace smf {
 
     boost::asio::ip::tcp::endpoint cfg_listener::get_ipv4_ep() const { return {get_address(), get_port()}; }
 
+    boost::asio::ip::tcp::endpoint cfg_listener::get_ipv6_ep() const {
+        cfg_nms nms(cfg_);
+        return {nms.get_nic_linklocal(), get_port()};
+    }
+
     std::size_t cfg_listener::get_IPv4_task_id() const {
         return cfg_.get_value(task_id_ipv4_path(get_index()), static_cast<std::size_t>(0));
     }
@@ -84,34 +87,6 @@ namespace smf {
     bool cfg_listener::is_enabled() const { return cfg_.get_value(enabled_path(get_index()), false); }
 
     bool cfg_listener::has_login() const { return cfg_.get_value(login_path(get_index()), false); }
-
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-
-    std::string cfg_listener::get_nic() const { return cfg_.get_value(nic_path(get_index()), "ens33"); }
-
-    boost::asio::ip::tcp::endpoint cfg_listener::get_ipv6_ep(std::string nic) {
-        auto const pres = cyng::sys::get_nic_prefix();
-        auto const pos = std::find(pres.begin(), pres.end(), nic);
-
-        if (pos != pres.end()) {
-
-            //  this is something like: fe80::225:18ff:fea4:9982%32
-            std::string local_address_with_scope = cyng::sys::get_address_IPv6(nic, cyng::sys::LINKLOCAL).to_string();
-
-            //
-            //  substitute %nn with % nic
-            //
-            auto const pos = local_address_with_scope.find_last_of('%');
-            if (pos != std::string::npos) {
-                local_address_with_scope = local_address_with_scope.substr(0, pos + 1) + nic;
-
-                return boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(local_address_with_scope), get_port());
-            }
-        }
-
-        return boost::asio::ip::tcp::endpoint();
-    }
-#endif
 
     bool cfg_listener::set_address(std::string address) const { return cfg_.set_value(address_path(get_index()), address); }
 

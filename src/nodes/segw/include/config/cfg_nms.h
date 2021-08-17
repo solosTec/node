@@ -17,14 +17,17 @@ namespace smf {
         cfg_nms(cfg &);
         cfg_nms(cfg_nms &) = default;
 
-        boost::asio::ip::tcp::endpoint get_ep() const;
-
         /**
-         * @return address as IPv6 address if possible. If conversion of the the string failed ir returns an unspecified address.
+         * @return default IPv4 listener address
          */
-        [[deprecated("use get_nic_linklocal() instead")]] boost::asio::ip::address get_as_ipv6() const;
         std::string get_address() const;
         std::uint16_t get_port() const;
+
+        /**
+         * @return external endpoint (IPv4)
+         */
+        boost::asio::ip::tcp::endpoint get_ep() const;
+
         std::string get_account() const;
         std::string get_pwd() const;
         bool is_enabled() const;
@@ -57,6 +60,13 @@ namespace smf {
         std::uint32_t get_nic_index() const;
 
         /**
+         * Same as get_nic_linklocal() but with an already scoped IPv6 address.
+         * This is always an IPv6 address since IPv4 doesm' have a concept of scoped
+         * addresses.
+         */
+        boost::asio::ip::address get_linklocal_scoped() const;
+
+        /**
          * check username and password
          */
         bool check_credentials(std::string const &, std::string const &);
@@ -86,6 +96,11 @@ namespace smf {
      * @return the preferred network device to communicate with.
      */
     std::string get_nic();
+
+    /**
+     * @return the preferred IP port number for NMS,
+     */
+    std::uint16_t get_default_nms_port();
 
     /**
      * @return first IPv4 address of specified device

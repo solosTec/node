@@ -30,6 +30,10 @@ namespace smf {
                 cyng::logger,
                 lmn_type);
 
+#ifdef _DEBUG
+            virtual ~session();
+#endif
+
             void start(cyng::controller &);
 
             std::size_t get_redirector_id() const;

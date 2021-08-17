@@ -73,7 +73,12 @@ namespace smf {
      */
     std::string get_nms_address(std::string nic);
 
-    void print_nms_deafults(std::ostream &);
+    void print_nms_defaults(std::ostream &);
+
+    /**
+     * Examine hardware to generate the model name.
+     */
+    std::string detect_model();
 
 } // namespace smf
 

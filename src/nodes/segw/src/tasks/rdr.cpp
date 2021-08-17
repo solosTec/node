@@ -17,7 +17,7 @@ namespace smf {
         server::server(cyng::channel_weak wp, cyng::controller &ctl, cfg &c, cyng::logger logger, lmn_type type, server::type srv_type, boost::asio::ip::tcp::endpoint ep)
             : sigs_{
                   std::bind(&server::start, this, std::placeholders::_1), //	0
-                  std::bind(&server::pause, this), //	1
+                  std::bind(&server::pause, this), //	1 (halt)
                   std::bind(&server::rebind, this, std::placeholders::_1), //	2
                   std::bind(&server::stop, this, std::placeholders::_1)   //	3
               }
@@ -41,27 +41,35 @@ namespace smf {
             }
         }
 
+#ifdef _DEBUG
+        server::~server() { CYNG_LOG_TRACE(logger_, "[RDR] server::~server()"); }
+#endif
+
         void server::start(std::chrono::seconds delay) {
+            auto sp = channel_.lock();
+            BOOST_ASSERT(sp);
             boost::system::error_code ec;
             acceptor_.open(ep_.protocol(), ec);
             if (!ec) {
-                CYNG_LOG_TRACE(logger_, "[RDR] acceptor open: " << ep_);
+                CYNG_LOG_TRACE(logger_, "[RDR] #" << sp->get_id() << " acceptor open: " << ep_);
                 acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
             }
             if (!ec) {
-                CYNG_LOG_TRACE(logger_, "[RDR] reuse address");
+                CYNG_LOG_TRACE(logger_, "[RDR] #" << sp->get_id() << " reuse address");
                 acceptor_.bind(ep_, ec);
             }
             if (!ec) {
-                CYNG_LOG_TRACE(logger_, "[RDR] bind: " << ep_);
+                CYNG_LOG_TRACE(logger_, "[RDR] #" << sp->get_id() << " bind: " << ep_);
                 acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
             }
             if (!ec) {
-                CYNG_LOG_INFO(logger_, "[RDR] " << get_name(type_) << " starts listening at " << ep_);
+                CYNG_LOG_INFO(logger_, "[RDR] #" << sp->get_id() << " " << get_name(type_) << " starts listening at " << ep_);
                 do_accept();
             } else {
                 CYNG_LOG_WARNING(
-                    logger_, "[RDR] " << get_name(type_) << " server cannot start listening at " << ep_ << ": " << ec.message());
+                    logger_,
+                    "[RDR] #" << sp->get_id() << " " << get_name(type_) << " server cannot start listening at " << ep_ << ": "
+                              << ec.message());
                 //
                 //  reset acceptor
                 //
@@ -75,39 +83,26 @@ namespace smf {
         }
 
         void server::do_accept() {
-            acceptor_.async_accept([this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
+            auto cp = channel_.lock();
+            BOOST_ASSERT(cp);
+            acceptor_.async_accept([this, cp](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
                 if (!ec) {
-                    CYNG_LOG_INFO(logger_, "[RDR] " << get_name(type_) << " new session " << socket.remote_endpoint());
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "[RDR] #" << cp->get_id() << " " << get_name(type_) << " new session " << socket.remote_endpoint());
 
                     auto sp = std::shared_ptr<session>(
-                        new session(ctl_.get_ctx(), std::move(socket), registry_, cfg_, logger_, type_), [this](session *s) {
+                        new session(ctl_.get_ctx(), std::move(socket), registry_, cfg_, logger_, type_), [this, cp](session *s) {
                             //
                             //  stop deadline timer
                             //
                             s->stop_timer();
 
-                            cfg_listener cfg(cfg_, type_);
-
-                            //
-                            //  disconnect from LMN
-                            //
-                            auto const id = s->get_redirector_id();
-                            if (id != 0) {
-                                registry_.dispatch(cfg.get_port_name(), "remove-data-sink", id);
-                                //
-                                //  stop "redirector" task
-                                //
-                                s->stop_redirector();
-                                CYNG_LOG_TRACE(logger_, "[RDR] redirector " << cfg.get_port_name() << " #" << id << " stopped");
-                            } else {
-                                CYNG_LOG_WARNING(logger_, "[RDR] disconnect from LMN " << cfg.get_port_name() << " failed");
-                            }
-
                             //
                             //	update session counter
                             //
                             --session_counter_;
-                            CYNG_LOG_TRACE(logger_, "[RDR] " << session_counter_ << " session(s) running");
+                            CYNG_LOG_TRACE(logger_, "[RDR] #" << cp->get_id() << " " << session_counter_ << " session(s) running");
 
                             //
                             //	remove session
@@ -121,12 +116,13 @@ namespace smf {
                             if (sp && session_counter_ == 0) {
                                 cfg_listener cfg(cfg_, type_);
                                 auto const delay = cfg.get_delay();
-                                CYNG_LOG_INFO(logger_, "[RDR] restart other listener");
+                                CYNG_LOG_INFO(logger_, "[RDR] #" << cp->get_id() << " restart other listener");
                                 auto const count = ctl_.get_registry().dispatch_exclude(sp, "start", cyng::make_tuple(delay));
                                 if (count == 0) {
-                                    CYNG_LOG_WARNING(logger_, "[RDR] no other listener available");
+                                    CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " no other listener available");
                                 } else {
-                                    CYNG_LOG_TRACE(logger_, "[RDR] #" << count << " other listener(s) restarted");
+                                    CYNG_LOG_TRACE(
+                                        logger_, "[RDR] #" << cp->get_id() << " " << count << " other listener(s) restarted");
                                 }
                             }
                         });
@@ -146,14 +142,14 @@ namespace smf {
                         //
                         //  stop/start other server of the same type
                         //
-                        auto sp = channel_.lock();
-                        if (sp && session_counter_ == 1) {
-                            CYNG_LOG_WARNING(logger_, "[RDR] halt other listener than " << sp->get_id());
-                            auto const count = ctl_.get_registry().dispatch_exclude(sp, "halt", cyng::make_tuple());
+                        auto cp = channel_.lock();
+                        if (cp && session_counter_ == 1) {
+                            CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " halt other listener(s)");
+                            auto const count = ctl_.get_registry().dispatch_exclude(cp, "halt", cyng::make_tuple());
                             if (count == 0) {
-                                CYNG_LOG_WARNING(logger_, "[RDR] no other listener available");
+                                CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " no other listeners available");
                             } else {
-                                CYNG_LOG_TRACE(logger_, "[RDR] #" << count << " other listener(s) halted");
+                                CYNG_LOG_TRACE(logger_, "[RDR] #" << cp->get_id() << " " << count << " other listener(s) halted");
                             }
                         }
                     }
@@ -175,14 +171,18 @@ namespace smf {
         }
 
         void server::pause() {
-            CYNG_LOG_WARNING(logger_, "[RDR] server paused");
+            auto sp = channel_.lock();
+            BOOST_ASSERT(sp);
+            CYNG_LOG_WARNING(logger_, "[RDR] #" << sp->get_id() << " server paused");
             stop(cyng::eod());
         }
 
         void server::rebind(boost::asio::ip::tcp::endpoint ep) {
 
+            auto sp = channel_.lock();
+            BOOST_ASSERT(sp);
             cfg_listener cfg(cfg_, type_);
-            CYNG_LOG_INFO(logger_, "[RDR] listener endpoint changed to: " << ep);
+            CYNG_LOG_INFO(logger_, "[RDR] #" << sp->get_id() << " listener endpoint changed to: " << ep);
             ep_ = ep;
 
             if (acceptor_.is_open()) {

@@ -50,7 +50,7 @@ namespace smf {
             if (task_id_ipv6 != 0) {
 
                 cfg_nms nms(cfg_);
-                auto const addr6 = nms.get_as_ipv6();
+                auto const addr6 = nms.get_nic_linklocal();
                 boost::asio::ip::tcp::endpoint const ep(addr6, cfg.get_port());
                 CYNG_LOG_INFO(
                     logger_,

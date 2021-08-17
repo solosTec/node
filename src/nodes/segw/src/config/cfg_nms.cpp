@@ -43,21 +43,11 @@ namespace smf {
 
     boost::asio::ip::tcp::endpoint cfg_nms::get_ep() const { return {boost::asio::ip::make_address(get_address()), get_port()}; }
 
-    boost::asio::ip::address cfg_nms::get_as_ipv6() const {
-        try {
-            return boost::asio::ip::make_address_v6(get_address());
-        } catch (std::exception const &) {
-        }
-
-        //  next try
-        return cyng::sys::get_address_IPv6(get_nic());
-    }
-
     std::string cfg_nms::get_address() const { return cfg_.get_value(address_path(), "0.0.0.0"); }
 
     bool cfg_nms::set_address(std::string address) const { return cfg_.set_value(address_path(), address); }
 
-    std::uint16_t cfg_nms::get_port() const { return cfg_.get_value(port_path(), static_cast<std::uint16_t>(7261)); }
+    std::uint16_t cfg_nms::get_port() const { return cfg_.get_value(port_path(), get_default_nms_port()); }
 
     bool cfg_nms::set_port(std::uint16_t port) const { return cfg_.set_value(port_path(), port); }
 
@@ -88,6 +78,11 @@ namespace smf {
     std::uint32_t cfg_nms::get_nic_index() const {
         auto const r = get_ipv6_linklocal(get_nic());
         return cfg_.get_value(nic_index_path(), r.second);
+    }
+
+    boost::asio::ip::address cfg_nms::get_linklocal_scoped() const {
+        auto const r = get_nic_linklocal();
+        return boost::asio::ip::make_address_v6(r.to_v6().to_bytes(), get_nic_index());
     }
 
     bool cfg_nms::set_delay(std::chrono::seconds delay) const { return cfg_.set_value(delay_path(), delay); }
@@ -132,8 +127,8 @@ namespace smf {
                 std::cout << "use " << cfg_v4.front().device_ << " instead" << std::endl;
                 return cfg_v4.front().device_;
             }
-            
-            //  
+
+            //
             //  (2) take the first available device
             //
             if (!nics.empty()) {
@@ -143,6 +138,8 @@ namespace smf {
         }
         return preferred;
     }
+
+    std::uint16_t get_default_nms_port() { return 7562; }
 
     boost::asio::ip::address get_ipv4_address(std::string const &nic) {
         auto const cfg_v4 = cyng::sys::get_ipv4_configuration();

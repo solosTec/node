@@ -32,6 +32,10 @@ namespace smf {
             , buffer_{0}
             , channel_() {}
 
+#ifdef _DEBUG
+        session::~session() { CYNG_LOG_TRACE(logger_, "[RDR] session::~session()"); }
+#endif
+
         void session::start(cyng::controller &ctl) {
 
             //
@@ -72,7 +76,7 @@ namespace smf {
                     //
                     //  timeout - close socket
                     //
-                    CYNG_LOG_WARNING(logger_, "[RDR] timeout");
+                    CYNG_LOG_WARNING(logger_, "[RDR] timeout: " << socket_.remote_endpoint());
                     socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ec);
                     socket_.close(ec);
                 }
@@ -132,6 +136,7 @@ namespace smf {
                         do_read();
                     } else if (ec != boost::asio::error::connection_aborted) {
                         CYNG_LOG_WARNING(logger_, "[RDR] session stopped: " << ec.message());
+                        stop_redirector();
                     }
                 });
         }
@@ -140,6 +145,9 @@ namespace smf {
 
         bool session::stop_redirector() {
             if (channel_) {
+                auto const id = channel_->get_id();
+                CYNG_LOG_TRACE(logger_, "[RDR] stop redirector #" << channel_->get_id());
+                registry_.dispatch(cfg_.get_port_name(), "remove-data-sink", id);
                 channel_->stop();
                 return true;
             }

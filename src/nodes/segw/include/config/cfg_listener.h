@@ -48,7 +48,14 @@ namespace smf {
          */
         bool is_lmn_enabled() const;
 
+        /**
+         * @return specified listener address
+         */
         boost::asio::ip::address get_address() const;
+
+        /**
+         * @return specified listener port
+         */
         std::uint16_t get_port() const;
 
         /**
@@ -63,15 +70,18 @@ namespace smf {
          */
         boost::posix_time::seconds get_timeout() const;
 
+        /**
+         * @return specified external listener endpoint
+         */
         boost::asio::ip::tcp::endpoint get_ipv4_ep() const;
+
+        /**
+         * Take IPv6 address from NMS configuration
+         */
+        boost::asio::ip::tcp::endpoint get_ipv6_ep() const;
 
         std::size_t get_IPv4_task_id() const;
         std::size_t get_IPv6_task_id() const;
-
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-        std::string get_nic() const;
-        boost::asio::ip::tcp::endpoint get_ipv6_ep(std::string nic);
-#endif
 
         bool set_address(std::string) const;
         bool set_port(std::uint16_t) const;

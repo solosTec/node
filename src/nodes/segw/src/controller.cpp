@@ -106,7 +106,7 @@ namespace smf {
         }
         if (vars["nms"].as<bool>()) {
             //	print NMS defaults
-            print_nms_deafults(std::cout);
+            print_nms_defaults(std::cout);
             return true;
         }
         //
@@ -408,6 +408,8 @@ namespace smf {
         std::uint32_t sn{0};
         sn_ss >> sn;
 
+        auto const model = detect_model();
+
         return cyng::make_param(
             "hardware",
             cyng::tuple_factory(
@@ -417,8 +419,8 @@ namespace smf {
 #else
                 cyng::make_param("manufacturer", "solosTec"),
 #endif
-                cyng::make_param("model", "virtual.gateway"), //	Typenschluessel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
-                cyng::make_param("serial", sn),               //	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
+                cyng::make_param("model", model),          //	Typenschluessel (81 81 C7 82 09 FF --> 81 81 C7 82 0A 01)
+                cyng::make_param("serial", sn),            //	Seriennummer (81 81 C7 82 09 FF --> 81 81 C7 82 0A 02)
                 cyng::make_param("class", "8181C78202FF"), //	device class (129-129:199.130.83*255 - OBIS_DEVICE_CLASS) "2D 2D 2D"
                 cyng::make_param(
                     "adapter",
@@ -506,6 +508,11 @@ namespace smf {
 
     cyng::param_t controller::create_ipt_config(std::string const &hostname) const {
 
+        //
+        //  no cryptographic hash (like SHAn) required
+        //
+        auto const pwd = std::hash<std::string>{}(hostname);
+
         return cyng::make_param(
             "config", cyng::make_vector({
                 //
@@ -513,22 +520,14 @@ namespace smf {
                 //
                 cyng::make_tuple(
 
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-                    cyng::make_param("host", "segw.ch"),
+                    cyng::make_param("host", "localhost"),
                     cyng::make_param("account", hostname),
                     cyng::make_param("service", "26862"),
-#else
-                    cyng::make_param("host", "127.0.0.1"),
-                    cyng::make_param("account", "segw"),
-                    cyng::make_param("service", "26862"),
-#endif
-
-                    cyng::make_param("pwd", "NODE_PWD"),
+                    cyng::make_param("pwd", std::to_string(pwd)),
                     cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                     cyng::make_param("scrambled", true)
-                    // cyng::make_param("monitor", rnd_monitor())),	//	seconds
 
-                    ),
+                        ),
 
                     //
                     //	redundancy II
@@ -544,11 +543,10 @@ namespace smf {
                         cyng::make_param("account", "segw"),
                         cyng::make_param("service", "26863"),
 #endif
-                        cyng::make_param("pwd", "NODE_PWD"),
+                        cyng::make_param("pwd", std::to_string(pwd)),
                         cyng::make_param(
                             "def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                         cyng::make_param("scrambled", true)
-                        // cyng::make_param("monitor", rnd_monitor())),	//	seconds
 
                     )
             }));
@@ -739,13 +737,34 @@ namespace smf {
         // reg.shutdown();
     }
 
-    void print_nms_deafults(std::ostream &os) {
+    void print_nms_defaults(std::ostream &os) {
         auto const nic = get_nic();
         auto const r = get_ipv6_linklocal(nic);
-        std::cout << "nic               : [" << nic << "]" << std::endl;
-        std::cout << "first IPv4 address: " << get_ipv4_address(nic) << std::endl;
-        std::cout << "link-local address: " << r.first << std::endl;
-        std::cout << "adapter index     : " << r.second << std::endl;
+        std::cout << "default configuration: " << std::endl;
+        std::cout << "nic                  : [" << nic << "]" << std::endl;
+        std::cout << "first IPv4 address   : " << get_ipv4_address(nic) << std::endl;
+        std::cout << "link-local address   : " << r.first << std::endl;
+        std::cout << "adapter index        : " << r.second << std::endl;
+        std::cout << "port number          : " << get_default_nms_port() << std::endl;
+    }
+
+    std::string detect_model() {
+        auto const nics = cyng::sys::get_nic_names();
+
+        if (std::find(std::begin(nics), std::end(nics), "br0") != nics.end()) {
+            return "smf-gw:plc";
+        }
+        if (std::find(std::begin(nics), std::end(nics), "eth0") != nics.end()) {
+            return "smf-gw:eth";
+        }
+        if (std::find(std::begin(nics), std::end(nics), "ens33") != nics.end()) {
+            return "smf-gw:virt"; //  linux on VMware
+        }
+        if (std::find(std::begin(nics), std::end(nics), "Ethernet") != nics.end()) {
+            return "smf-gw:win"; //  Windows
+        }
+
+        return "virtual.gateway";
     }
 
 } // namespace smf

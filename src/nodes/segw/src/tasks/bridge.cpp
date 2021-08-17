@@ -713,9 +713,16 @@ namespace smf {
     }
 
     void bridge::init_redirector(lmn_type type) {
+
+        //
+        // https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/netstat
+        //  debug open listeners with (windows):
+        //  > netstat -an  2 | find "6006"
+        //
+
         cfg_listener cfg(cfg_, type);
         if (cfg.is_enabled()) {
-            CYNG_LOG_INFO(logger_, "create external listener for port [" << cfg.get_port_name() << "] " << cfg);
+            CYNG_LOG_INFO(logger_, "create external listener/rdr for port [" << cfg.get_port_name() << "] " << cfg.get_ipv4_ep());
             if (!cfg.is_lmn_enabled()) {
                 CYNG_LOG_WARNING(
                     logger_,
@@ -731,7 +738,9 @@ namespace smf {
             cfg.set_IPv4_task_id(channel->get_id());
 
             auto const delay = cfg.get_delay();
-            CYNG_LOG_INFO(logger_, "start external listener/rdr [" << name << "] in " << delay.count() << " seconds");
+            CYNG_LOG_INFO(
+                logger_,
+                "start external listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id());
 
             channel->suspend(delay, "start", cyng::make_tuple(delay));
 
@@ -740,7 +749,6 @@ namespace smf {
             //  In future versions the NIC name is part of the configuration.
             //  So it's possible to use other NICs than br0
             //
-            // init_redirector_ipv6(cfg, "eth2");
             init_redirector_ipv6(cfg);
 
         } else {
@@ -756,19 +764,16 @@ namespace smf {
     void bridge::init_redirector_ipv6(cfg_listener const &cfg) {
 
         //  use same link-local address as NMS and the ip port from the listener
+        auto const ep = cfg.get_ipv6_ep();
         cfg_nms nms(cfg_);
-        auto const nic = nms.get_nic();
+        if (nms.get_port() == cfg.get_port()) {
+            CYNG_LOG_ERROR(logger_, "IP port number " << cfg.get_port() << " is used for NMS and RDR");
+        }
 
-        auto const addr6 = nms.get_as_ipv6();
-        CYNG_LOG_TRACE(logger_, "build listener ep from " << addr6 << " and " << cfg.get_port());
-        boost::asio::ip::tcp::endpoint ep(addr6, cfg.get_port());
-
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-        CYNG_LOG_INFO(logger_, "link-local listener for port [" << cfg.get_port_name() << "] " << ep);
         if (!ep.address().is_unspecified()) {
 
             auto const name = cfg.get_task_name();
-            CYNG_LOG_INFO(logger_, "create link-local listener [" << name << "]");
+            CYNG_LOG_INFO(logger_, "create link-local listener/rdr [" << name << "] " << ep);
 
             auto channel = ctl_.create_named_channel_with_ref<rdr::server>(
                 name, ctl_, cfg_, logger_, cfg.get_type(), rdr::server::type::ipv6, ep);
@@ -781,18 +786,16 @@ namespace smf {
             //  start listener
             //
             auto const delay = cfg.get_delay();
-            CYNG_LOG_INFO(logger_, "start link-local listener [" << name << "] in " << delay.count() << " seconds");
+            CYNG_LOG_INFO(
+                logger_,
+                "start link-local listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id());
 
             channel->suspend(delay, "start", cyng::make_tuple(delay));
 
         } else {
             CYNG_LOG_WARNING(
-                logger_, "link-local listener for port [" << cfg.get_port_name() << "] \"" << nic << "\" is not present");
+                logger_, "link-local ep " << ep.address() << " for port [" << cfg.get_port_name() << "] is not present");
         }
-#else
-        CYNG_LOG_WARNING(
-            logger_, "link-local listener for port [" << cfg.get_port_name() << "] " << ep << " not supported on this platform");
-#endif
     }
 
     void bridge::stop_redirectors() {
