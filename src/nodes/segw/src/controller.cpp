@@ -104,10 +104,11 @@ namespace smf {
             }
             return true;
         }
-        // if (vars.count("readout-serial") != 0) {
-        //	auto const idx = vars["readout-serial"].as< std::uint8_t >();
-        //	readout_serial(read_config_section(config_.json_path_, config_.config_index_), idx);
-        //}
+        if (vars["nms"].as<bool>()) {
+            //	print NMS defaults
+            print_nms_deafults(std::cout);
+            return true;
+        }
         //
         //	call base classe
         //
@@ -736,6 +737,15 @@ namespace smf {
         //	stop all running tasks
         //
         // reg.shutdown();
+    }
+
+    void print_nms_deafults(std::ostream &os) {
+        auto const nic = get_nic();
+        auto const r = get_ipv6_linklocal(nic);
+        std::cout << "nic               : [" << nic << "]" << std::endl;
+        std::cout << "first IPv4 address: " << get_ipv4_address(nic) << std::endl;
+        std::cout << "link-local address: " << r.first << std::endl;
+        std::cout << "adapter index     : " << r.second << std::endl;
     }
 
 } // namespace smf

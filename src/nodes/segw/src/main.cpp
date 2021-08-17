@@ -43,7 +43,8 @@ int main(int argc, char **argv) {
          "remove configuration value: \"path\"") // --del-value
         ("switch-gpio",
          boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
-         "switch GPIO: \"number\" [on|off]") //  --switch-gpio
+         "switch GPIO: \"number\" [on|off]")                                                       //  --switch-gpio
+        ("nms", boost::program_options::bool_switch()->default_value(false), "print NMS defaults") //  --nms
         ;
 
     //

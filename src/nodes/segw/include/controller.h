@@ -73,6 +73,8 @@ namespace smf {
      */
     std::string get_nms_address(std::string nic);
 
+    void print_nms_deafults(std::ostream &);
+
 } // namespace smf
 
 #endif
