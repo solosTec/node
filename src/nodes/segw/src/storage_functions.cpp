@@ -6,6 +6,7 @@
  */
 
 #include <cfg.h>
+#include <config/cfg_nms.h>
 #include <storage.h>
 #include <storage_functions.h>
 
@@ -481,6 +482,13 @@ namespace smf {
         //  for the communication over a local-link address.
         //
         bool flag_nic = false;
+        bool flag_nic_ipv4 = false;
+        bool flag_nic_linklocal = false;
+        bool flag_nic_index = false;
+
+        auto const nic = get_nic();
+        auto const ipv4_addr = get_ipv4_address(nic);
+        auto const link_local = get_ipv6_linklocal(nic);
 
         for (auto const &param : pmap) {
             if (boost::algorithm::equals(param.first, "address")) {
@@ -490,7 +498,7 @@ namespace smf {
                     stmt, cyng::to_path(cfg::sep, "nms", param.first), cyng::make_object(address), "default NMS bind address");
 
             } else if (boost::algorithm::equals(param.first, "nic-ipv4")) {
-                auto const s = cyng::value_cast(param.second, "0.0.0.0");
+                auto const s = cyng::value_cast(param.second, ipv4_addr.to_string());
 
                 boost::system::error_code ec;
                 auto const address = boost::asio::ip::make_address(s, ec);
@@ -507,6 +515,7 @@ namespace smf {
                         cyng::make_object(boost::asio::ip::make_address("169.254.0.1", ec)),
                         "IPv4 address of NMS adapter");
                 }
+                flag_nic_ipv4 = true;
             } else if (boost::algorithm::equals(param.first, "nic-linklocal")) {
                 auto const s = cyng::value_cast(param.second, "fe80::");
                 boost::system::error_code ec;
@@ -524,6 +533,7 @@ namespace smf {
                         cyng::make_object(boost::asio::ip::make_address("[fe80::]", ec)),
                         "link local address of NMS adapter");
                 }
+                flag_nic_linklocal = true;
             } else if (boost::algorithm::equals(param.first, "port")) {
 
                 auto const nms_port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
@@ -548,6 +558,8 @@ namespace smf {
                 insert_config_record(stmt, cyng::to_path(cfg::sep, "nms", param.first), param.second, "NMS: " + param.first);
                 if (boost::algorithm::equals(param.first, "nic")) {
                     flag_nic = true;
+                } else if (boost::algorithm::equals(param.first, "nic-index")) {
+                    flag_nic_index = true;
                 }
             }
         }
@@ -559,8 +571,26 @@ namespace smf {
             insert_config_record(
                 stmt,
                 cyng::to_path(cfg::sep, "nms", "nic"),
-                cyng::make_object("br0"),
+                cyng::make_object(nic),
                 "designated nic for communication over a local-link address");
+        }
+        if (!flag_nic_ipv4) {
+            insert_config_record(
+                stmt, cyng::to_path(cfg::sep, "nms", "nic-ipv4"), cyng::make_object(ipv4_addr), "IPv4 address of NMS adapter");
+        }
+        if (!flag_nic_linklocal) {
+            insert_config_record(
+                stmt,
+                cyng::to_path(cfg::sep, "nms", "nic-linklocal"),
+                cyng::make_object(link_local.first),
+                "link local address of NMS adapter");
+        }
+        if (!flag_nic_index) {
+            insert_config_record(
+                stmt,
+                cyng::to_path(cfg::sep, "nms", "nic-index"),
+                cyng::make_object(link_local.second),
+                "device index of NMS adapter");
         }
     }
 
