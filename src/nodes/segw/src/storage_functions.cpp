@@ -775,29 +775,9 @@ namespace smf {
         }
 
         //
-        //  new element since v0.9.1.21
-        //
-        auto pos = pmap.find("link-local");
-        if (pos == pmap.end()) {
-            insert_config_record(
-                stmt,
-                cyng::to_path(cfg::sep, "listener", std::to_string(counter), "link-local"),
-#if defined(BOOST_OS_LINUX_AVAILABLE)
-#if defined(__CROSS_PLATFORM)
-                cyng::make_object("br0"),
-#else
-                cyng::make_object("eth0"),
-#endif
-#else
-                cyng::make_object("Ethernet"),
-#endif
-                "interface to use for link-local connections");
-        }
-
-        //
         //  reintroduced in v0.9.2.12
         //
-        pos = pmap.find("timeout");
+        auto pos = pmap.find("timeout");
         if (pos == pmap.end()) {
             insert_config_record(
                 stmt,

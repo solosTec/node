@@ -322,7 +322,7 @@ namespace smf {
             "listener",
             cyng::tuple_factory(
                 cyng::make_param("address", "0.0.0.0"),
-                cyng::make_param("link-local", get_nms_address("br0")),
+                // cyng::make_param("link-local", get_nms_address("br0")),
                 cyng::make_param("port", 6006),
                 cyng::make_param("login", false),                     //	request login
                 cyng::make_param("enabled", true),                    //	start rs485 server
@@ -439,7 +439,7 @@ namespace smf {
         return cyng::make_param(
             "nms",
             cyng::tuple_factory(
-                cyng::make_param("address", get_nms_address(nic)),
+                cyng::make_param("address", "0.0.0.0"),
                 cyng::make_param("port", 7562),
                 cyng::make_param("account", "operator"),
                 cyng::make_param("pwd", "operator"),
@@ -690,35 +690,6 @@ namespace smf {
         bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s);
         BOOST_ASSERT(bridge_->is_open());
         bridge_->dispatch("start", cyng::make_tuple());
-    }
-
-    std::string get_nms_address(std::string nic) {
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-
-        auto const pres = cyng::sys::get_nic_prefix();
-        auto const pos = std::find(pres.begin(), pres.end(), nic);
-
-        if (pos != pres.end()) {
-            // address may contain the "%32" as suffix
-            std::string local_address_with_scope = cyng::sys::get_address_IPv6(nic, cyng::sys::LINKLOCAL).to_string();
-
-            //
-            //  substitute %nn with % br0
-            //
-            auto const pos = local_address_with_scope.find_last_of('%');
-            if (pos != std::string::npos) {
-                local_address_with_scope = local_address_with_scope.substr(0, pos + 1) + nic;
-            } else {
-                std::cerr << "invalid address: " << local_address_with_scope << std::endl;
-            }
-
-            return local_address_with_scope;
-        }
-        return "0.0.0.0";
-
-#else
-        return "0.0.0.0";
-#endif
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
