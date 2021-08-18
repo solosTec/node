@@ -460,26 +460,25 @@ namespace smf {
 
             //	All broker for this port have the same name.
             auto const name = cfg.get_task_name();
-            // auto const timeout = cfg.get_timeout();
             auto const login = cfg.has_login();
 
-            auto const size = cfg.update_count();
-            CYNG_LOG_INFO(logger_, size << " broker \"" << name << "\" configured for [" << port << "]");
+            auto const size = cfg.update_count(); //  broker/N/count
+            CYNG_LOG_INFO(logger_, size << " broker task \"" << name << "\" configured for [" << port << "]");
             auto const vec = cfg.get_all_targets();
             for (auto const &trg : vec) {
 
                 //
-                //	start broker with addition information like timeout and
-                // login
+                //	start broker with additional information like timeout and
+                //  login
                 //
                 if (trg.is_connect_on_demand()) {
 
                     auto channel =
-                        ctl_.create_named_channel_with_ref<broker_on_demand>(name, ctl_, logger_, trg, login, trg.get_timeout());
+                        ctl_.create_named_channel_with_ref<broker_on_demand>(name, ctl_, logger_, cfg_, type, trg.get_index());
                     BOOST_ASSERT(channel->is_open());
                     stash_.lock(channel);
                 } else {
-                    auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, trg, login);
+                    auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, cfg_, type, trg.get_index());
                     BOOST_ASSERT(channel->is_open());
                     stash_.lock(channel);
                     channel->dispatch("check-status", trg.get_watchdog());

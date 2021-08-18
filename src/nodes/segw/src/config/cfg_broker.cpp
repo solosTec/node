@@ -24,8 +24,6 @@ namespace smf {
 
     bool cfg_broker::is_lmn_enabled() const { return cfg_lmn(cfg_, type_).is_enabled(); }
 
-    // std::chrono::seconds cfg_broker::get_timeout() const { return cfg_lmn(cfg_, type_).get_broker_timeout(); }
-
     std::string cfg_broker::get_port() const { return cfg_lmn(cfg_, type_).get_port(); }
 
     std::string cfg_broker::get_task_name() const { return "broker@" + get_port(); }
@@ -83,6 +81,8 @@ namespace smf {
         return std::chrono::seconds((wd < 5) ? 5 : wd);
     }
 
+    std::string cfg_broker::get_login_sequence(std::size_t idx) const { return get_account(idx) + ":" + get_pwd(idx); }
+
     target cfg_broker::get_target(std::size_t idx) const {
         return target(
             get_account(idx),
@@ -91,7 +91,8 @@ namespace smf {
             get_port(idx),
             is_connect_on_demand(idx),
             get_timeout(idx),
-            get_watchdog(idx));
+            get_watchdog(idx),
+            idx);
     }
 
     target_vec cfg_broker::get_all_targets() const {
@@ -147,14 +148,16 @@ namespace smf {
         std::uint16_t port,
         bool on_demand,
         std::chrono::seconds timeout,
-        std::chrono::seconds watchdog)
+        std::chrono::seconds watchdog,
+        std::size_t index)
         : account_(account)
         , pwd_(pwd)
         , address_(address)
         , port_(port)
         , on_demand_(on_demand)
         , timeout_(timeout)
-        , watchdog_(watchdog) {}
+        , watchdog_(watchdog)
+        , index_(index) {}
 
     std::string const &target::get_account() const { return account_; }
 
@@ -162,6 +165,7 @@ namespace smf {
     bool target::is_connect_on_demand() const { return on_demand_; }
     std::chrono::seconds target::get_timeout() const { return timeout_; }
     std::chrono::seconds target::get_watchdog() const { return watchdog_; }
+    std::size_t target::get_index() const { return index_; }
 
     std::string const &target::get_address() const { return address_; }
 
@@ -171,7 +175,7 @@ namespace smf {
 
     std::ostream &operator<<(std::ostream &os, target const &brk) {
         if (!brk.get_account().empty()) {
-            os << brk.get_account() << ':' << brk.get_pwd() << '@';
+            os << '#' << brk.get_index() << ' ' << brk.get_account() << ':' << brk.get_pwd() << '@';
         }
         os << brk.get_address() << ':' << brk.get_port() << (brk.is_connect_on_demand() ? "*" : "+");
         return os;

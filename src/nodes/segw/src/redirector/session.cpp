@@ -39,7 +39,7 @@ namespace smf {
         void session::start(cyng::controller &ctl) {
 
             //
-            //	start receiver task
+            //	the callback of the receiver task holds a reference of this session
             //
             channel_ = ctl.create_named_channel_with_ref<forwarder>(
                 "redirector", registry_, logger_, std::bind(&session::do_write, this->shared_from_this(), std::placeholders::_1));

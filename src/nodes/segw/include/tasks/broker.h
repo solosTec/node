@@ -17,6 +17,23 @@
 
 namespace smf {
 
+    namespace state {
+        enum class value { OFFLINE, CONNECTING, CONNECTED, STOPPED };
+
+        struct mgr : std::enable_shared_from_this<mgr> {
+            mgr(boost::asio::ip::tcp::resolver::results_type &&);
+            constexpr bool is_stopped() const { return has_state(value::STOPPED); }
+            constexpr bool is_connected() const { return has_state(value::CONNECTED); }
+            constexpr bool has_state(value s) const { return s == value_; }
+
+            value value_;
+            boost::asio::ip::tcp::resolver::results_type endpoints_;
+        };
+
+        using ptr = std::shared_ptr<mgr>;
+
+    } // namespace state
+
     /**
      * connect to MDM system
      * https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/example/cpp03/timeouts/async_tcp_client.cpp
@@ -33,15 +50,14 @@ namespace smf {
         using signatures_t = std::
             tuple<std::function<void(cyng::buffer_t)>, std::function<void(std::chrono::seconds)>, std::function<void(cyng::eod)>>;
 
-        enum class state {
-            START,
-            WAIT,
-            CONNECTED,
-            STOPPED,
-        } state_;
+        /**
+         * helps to control state from the outside without
+         * to establish an additional reference to the state object.
+         */
+        state::ptr state_holder_;
 
       public:
-        broker(cyng::channel_weak, cyng::controller &ctl, cyng::logger, target const &, bool login);
+        broker(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cfg &, lmn_type type, std::size_t idx);
 
       private:
         void stop(cyng::eod);
@@ -52,28 +68,27 @@ namespace smf {
          */
         void receive(cyng::buffer_t);
 
-        void connect(boost::asio::ip::tcp::resolver::results_type endpoints);
-        void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void
-        handle_connect(const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void do_read();
-        void handle_read(const boost::system::error_code &ec, std::size_t n);
-        void do_write();
-        void handle_write(const boost::system::error_code &ec);
+        void connect(state::ptr sp);
+        void start_connect(state::ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void handle_connect(
+            state::ptr sp,
+            const boost::system::error_code &ec,
+            boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void do_read(state::ptr sp);
+        void handle_read(state::ptr sp, const boost::system::error_code &ec, std::size_t n);
+        void do_write(state::ptr sp);
+        void handle_write(state::ptr sp, const boost::system::error_code &ec);
         void check_status(std::chrono::seconds);
 
-        constexpr bool is_stopped() const { return state_ == state::STOPPED; }
-        constexpr bool is_connected() const { return state_ == state::CONNECTED; }
-
-        void reset(state);
+        void reset(state::ptr sp, state::value);
 
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
-        target const target_;
-        bool const login_;
+        cfg_broker cfg_;
+        std::size_t const index_;
 
         boost::asio::ip::tcp::resolver::results_type endpoints_;
         boost::asio::ip::tcp::socket socket_;
@@ -112,37 +127,19 @@ namespace smf {
             std::function<void(cyng::eod)>       // stop()
             >;
 
-        enum class state_value { OFFLINE, CONNECTING, CONNECTED, STOPPED };
-
-        struct state : std::enable_shared_from_this<state> {
-            state(boost::asio::ip::tcp::resolver::results_type &&);
-            constexpr bool is_stopped() const { return has_state(state_value::STOPPED); }
-            constexpr bool is_connected() const { return has_state(state_value::CONNECTED); }
-            constexpr bool has_state(state_value s) const { return s == value_; }
-
-            state_value value_;
-            boost::asio::ip::tcp::resolver::results_type endpoints_;
-        };
-        using state_ptr = std::shared_ptr<state>;
         /**
          * helps to control state from the outside without
          * to establish an additional reference to the state object.
          */
-        state_ptr state_holder_;
+        state::ptr state_holder_;
 
       public:
-        broker_on_demand(
-            cyng::channel_weak,
-            cyng::controller &ctl,
-            cyng::logger,
-            target const &,
-            bool login,
-            std::chrono::seconds timeout);
+        broker_on_demand(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cfg &, lmn_type type, std::size_t idx);
 
       private:
         void stop(cyng::eod);
         void start();
-        void reset(state_ptr sp, state_value);
+        void reset(state::ptr sp, state::value);
 
         /**
          * incoming raw data from serial interface
@@ -156,27 +153,26 @@ namespace smf {
         void close_connection();
 
         void store(cyng::buffer_t);
-        void send(state_ptr sp, cyng::buffer_t);
+        void send(state::ptr sp, cyng::buffer_t);
 
-        void do_write(state_ptr sp);
-        void handle_write(state_ptr sp, boost::system::error_code const &ec, std::size_t n);
-        void connect(state_ptr sp);
-        void start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+        void do_write(state::ptr sp);
+        void handle_write(state::ptr sp, boost::system::error_code const &ec, std::size_t n);
+        void connect(state::ptr sp);
+        void start_connect(state::ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
         void handle_connect(
-            state_ptr sp,
+            state::ptr sp,
             const boost::system::error_code &ec,
             boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void do_read(state_ptr sp);
-        void handle_read(state_ptr sp, const boost::system::error_code &ec, std::size_t n);
+        void do_read(state::ptr sp);
+        void handle_read(state::ptr sp, const boost::system::error_code &ec, std::size_t n);
 
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
-        target const target_;
-        bool const login_;
-        std::chrono::seconds const timeout_;
+        cfg_broker cfg_;
+        std::size_t const index_;
 
         boost::asio::ip::tcp::socket socket_;
         boost::asio::io_context::strand dispatcher_;

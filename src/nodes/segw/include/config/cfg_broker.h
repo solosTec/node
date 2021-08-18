@@ -25,7 +25,8 @@ namespace smf {
             std::uint16_t port,
             bool on_demand,
             std::chrono::seconds timeout,
-            std::chrono::seconds watchdog);
+            std::chrono::seconds watchdog,
+            std::size_t);
 
         std::string const &get_address() const;
         std::uint16_t get_port() const;
@@ -34,6 +35,7 @@ namespace smf {
         bool is_connect_on_demand() const;
         std::chrono::seconds get_timeout() const;
         std::chrono::seconds get_watchdog() const;
+        std::size_t get_index() const;
 
         std::string get_login_sequence() const;
 
@@ -45,6 +47,7 @@ namespace smf {
         bool const on_demand_;
         std::chrono::seconds const timeout_;
         std::chrono::seconds const watchdog_;
+        std::size_t const index_;
     };
 
     /**
@@ -75,7 +78,16 @@ namespace smf {
 
         std::string get_path_id() const;
 
+        /**
+         *  @brief LMN configuration
+         *  lmn/N/broker-login
+         */
         bool is_enabled() const;
+
+        /**
+         *  @brief LMN configuration
+         *  lmn/N/broker-login
+         */
         bool has_login() const;
 
         /**
@@ -133,6 +145,11 @@ namespace smf {
          * watchdog timer for connection state (on-start only)
          */
         std::chrono::seconds get_watchdog(std::size_t idx) const;
+
+        /**
+         * account + ':' + pwd
+         */
+        std::string get_login_sequence(std::size_t idx) const;
 
         target get_target(std::size_t idx) const;
         target_vec get_all_targets() const;
