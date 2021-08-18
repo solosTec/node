@@ -45,7 +45,8 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("start", 0);
+            std::size_t slot{0};
+            sp->set_channel_name("start", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
 
@@ -77,6 +78,19 @@ namespace smf {
             do_accept();
         } else {
             CYNG_LOG_WARNING(logger_, "server cannot start listening at " << ep << ": " << ec.message());
+
+            //
+            //  reset acceptor
+            //
+            acceptor_.cancel(ec);
+            acceptor_.close(ec);
+
+            //
+            //  retry
+            //
+            auto sp = channel_.lock();
+            if (sp)
+                sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple(ep));
         }
     }
 
@@ -92,7 +106,7 @@ namespace smf {
                     //
                     //  stop ping
                     //
-                    // pt->stop();
+                    // ping_tsk->stop();
 
                     //
                     //	remove from cluster table

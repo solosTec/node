@@ -16,6 +16,8 @@
 #include <cyng/vm/proxy.h>
 #include <cyng/vm/vm_fwd.h>
 
+#include <chrono>
+
 namespace smf {
     /**
      * The bus interface defines the requirements of any kind of cluster
@@ -26,6 +28,7 @@ namespace smf {
         virtual auto get_fabric() -> cyng::mesh * = 0;
 
         virtual void on_login(bool) = 0;
+        // virtual void on_ping(std::chrono::system_clock::time_point) = 0;
 
         /**
          * connection to cluster lost
@@ -125,13 +128,9 @@ namespace smf {
         //	"pty.res.open.connection"
         void pty_res_open_connection(
             bool,
-            boost::uuids::uuid peer
-            //, boost::uuids::uuid tag
-            ,
-            boost::uuids::uuid dev //	callee dev-tag
-            ,
-            boost::uuids::uuid callee //	callee vm-tag
-            ,
+            boost::uuids::uuid peer,
+            boost::uuids::uuid dev,    //	callee dev-tag
+            boost::uuids::uuid callee, //	callee vm-tag
             cyng::param_map_t &&token);
 
         //	"pty.close.connection"
@@ -215,11 +214,14 @@ namespace smf {
          */
         auto init_vm(bus_interface *) -> cyng::vm_proxy;
 
+        void on_ping(std::chrono::system_clock::time_point);
+
         //
         //	generate VM channel functions
         //
 
         static auto get_vm_func_on_login(bus_interface *) -> std::function<void(bool)>;
+        static auto get_vm_func_on_ping(bus *) -> std::function<void(std::chrono::system_clock::time_point)>;
 
         static auto get_vm_func_on_disconnect(bus_interface *) -> std::function<void(std::string)>;
 

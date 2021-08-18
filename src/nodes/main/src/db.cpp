@@ -1861,6 +1861,13 @@ namespace smf {
             cyng::access::write("connection"));
     }
 
+    void db::update_ping_result(boost::uuids::uuid peer, std::chrono::microseconds delta) {
+        auto const key_peer = cyng::key_generator(peer);
+        cache_.access(
+            [&, this](cyng::table *tbl_cluster) { tbl_cluster->modify(key_peer, cyng::make_param("ping", delta), cfg_.get_tag()); },
+            cyng::access::write("cluster"));
+    }
+
     push_target::push_target()
         : pty_(boost::uuids::nil_uuid(), boost::uuids::nil_uuid())
         , channel_(0) {}

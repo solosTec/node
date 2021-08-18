@@ -27,6 +27,7 @@ namespace smf {
     session::session(boost::asio::ip::tcp::socket socket, db &cache, cyng::mesh &fabric, cyng::logger logger)
         : socket_(std::move(socket))
         , cache_(cache)
+        , ctl_(fabric.get_ctl())
         , logger_(logger)
         , buffer_()
         , buffer_write_()
@@ -40,10 +41,13 @@ namespace smf {
         , slot_(cyng::make_slot(new slot(this)))
         , peer_(boost::uuids::nil_uuid())
         , protocol_layer_("any")
-        , dep_key_() {
+        , dep_key_()
+        , ping_() {
+
         vm_ = init_vm(fabric);
         std::size_t slot{0};
         vm_.set_channel_name("cluster.req.login", slot++);           //	get_vm_func_cluster_req_login
+        vm_.set_channel_name("cluster.res.ping", slot++);            //	get_vm_func_cluster_res_ping
         vm_.set_channel_name("db.req.subscribe", slot++);            //	get_vm_func_db_req_subscribe
         vm_.set_channel_name("db.req.insert", slot++);               //	get_vm_func_db_req_insert
         vm_.set_channel_name("db.req.insert.auto", slot++);          //	get_vm_func_db_req_insert_auto
@@ -63,12 +67,6 @@ namespace smf {
         vm_.set_channel_name("pty.close.channel", slot++);           //	get_vm_func_pty_close_channel
         vm_.set_channel_name("pty.push.data.req", slot++);           //	get_vm_func_pty_push_data_req
         vm_.set_channel_name("sys.msg", slot++);                     //	get_vm_func_sys_msg
-
-        //
-        //	start ping
-        //
-        // auto pt = fabric.get_ctl().create_channel_with_ref<ping>(fabric.get_ctl(), logger_);
-        // BOOST_ASSERT(pt->is_open());
     }
 
     session::~session() {
@@ -82,6 +80,12 @@ namespace smf {
     boost::uuids::uuid session::get_remote_peer() const { return peer_; }
 
     void session::stop() {
+
+        //
+        //  stop depended ping task
+        //
+        ping_->stop();
+
         //	https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/reference/basic_stream_socket/close/overload2.html
         CYNG_LOG_WARNING(logger_, "stop session");
         boost::system::error_code ec;
@@ -101,7 +105,16 @@ namespace smf {
         vm_.stop();
     }
 
-    void session::start() { do_read(); }
+    void session::start() {
+        do_read();
+        //
+        //	start ping
+        //
+        ping_ = ctl_.create_channel_with_ref<ping>(
+            ctl_, logger_, cache_, std::bind(&session::send_ping_request, this->shared_from_this()));
+        BOOST_ASSERT(ping_->is_open());
+        ping_->suspend(std::chrono::minutes(1), "update");
+    }
 
     void session::do_read() {
         auto self = shared_from_this();
@@ -132,6 +145,7 @@ namespace smf {
 
         return fabric.create_proxy(
             get_vm_func_cluster_req_login(this),
+            get_vm_func_cluster_res_ping(this),
             get_vm_func_db_req_subscribe(this),
             get_vm_func_db_req_insert(this),
             get_vm_func_db_req_insert_auto(this),
@@ -208,6 +222,16 @@ namespace smf {
         //	send response
         //
         send_cluster_response(cyng::serialize_invoke("cluster.res.login", true));
+    }
+
+    void session::cluster_ping(std::chrono::system_clock::time_point tp) {
+        auto const delta = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - tp);
+        CYNG_LOG_TRACE(logger_, "ping: " << delta);
+
+        //
+        //  update "cluster" table
+        //
+        cache_.update_ping_result(peer_, delta);
     }
 
     void session::db_req_subscribe(std::string table, boost::uuids::uuid tag) {
@@ -621,6 +645,10 @@ namespace smf {
             if (b)
                 do_write();
         });
+    }
+
+    void session::send_ping_request() {
+        send_cluster_response(cyng::serialize_invoke("cluster.req.ping", std::chrono::system_clock::now()));
     }
 
     //
@@ -1072,6 +1100,10 @@ namespace smf {
             std::placeholders::_4,
             std::placeholders::_5,
             std::placeholders::_6);
+    }
+
+    std::function<void(std::chrono::system_clock::time_point)> session::get_vm_func_cluster_res_ping(session *ptr) {
+        return std::bind(&session::cluster_ping, ptr, std::placeholders::_1);
     }
 
     std::function<void(std::string, boost::uuids::uuid tag)> session::get_vm_func_db_req_subscribe(session *ptr) {

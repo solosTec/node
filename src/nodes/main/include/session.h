@@ -67,6 +67,7 @@ namespace smf {
         void handle_write(const boost::system::error_code &ec);
 
         void cluster_login(std::string, std::string, cyng::pid, std::string node, boost::uuids::uuid tag, cyng::version v);
+        void cluster_ping(std::chrono::system_clock::time_point);
 
         void db_req_subscribe(std::string, boost::uuids::uuid tag);
 
@@ -201,6 +202,11 @@ namespace smf {
          */
         void send_cluster_response(std::deque<cyng::buffer_t> &&);
 
+        /**
+         * update node status
+         */
+        void send_ping_request();
+
         //
         //	generate VM channel functions
         //
@@ -208,6 +214,9 @@ namespace smf {
         //	"cluster.req.login"
         static std::function<void(std::string, std::string, cyng::pid, std::string, boost::uuids::uuid, cyng::version)>
         get_vm_func_cluster_req_login(session *);
+
+        //	"cluster.res.ping"
+        static std::function<void(std::chrono::system_clock::time_point)> get_vm_func_cluster_res_ping(session *);
 
         //	"db.req.subscribe"
         static std::function<void(std::string, boost::uuids::uuid tag)> get_vm_func_db_req_subscribe(session *);
@@ -280,6 +289,7 @@ namespace smf {
       private:
         boost::asio::ip::tcp::socket socket_;
         db &cache_;
+        cyng::controller &ctl_;
         cyng::logger logger_;
 
         /**
@@ -310,6 +320,11 @@ namespace smf {
          * Generate dependend keys for table "gwIEC"
          */
         config::dependend_key dep_key_;
+
+        /**
+         * ping task to update node status
+         */
+        cyng::channel_ptr ping_;
     };
 
     /**

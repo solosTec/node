@@ -48,20 +48,23 @@ namespace smf {
             vm_.load(std::move(obj));
         }) {
         vm_ = init_vm(bip);
-        vm_.set_channel_name("cluster.res.login", 0);
-        vm_.set_channel_name("cluster.disconnect", 1);
-        vm_.set_channel_name("db.res.insert", 2);
-        vm_.set_channel_name("db.res.trx", 3);
-        vm_.set_channel_name("db.res.update", 4);
-        vm_.set_channel_name("db.res.remove", 5);
-        vm_.set_channel_name("db.res.clear", 6);
-        vm_.set_channel_name("pty.res.login", 7);
+        std::size_t slot{0};
+        vm_.set_channel_name("cluster.res.login", slot++);
+        vm_.set_channel_name("cluster.req.ping", slot++);
+        vm_.set_channel_name("cluster.disconnect", slot++);
+        vm_.set_channel_name("db.res.insert", slot++);
+        vm_.set_channel_name("db.res.trx", slot++);
+        vm_.set_channel_name("db.res.update", slot++);
+        vm_.set_channel_name("db.res.remove", slot++);
+        vm_.set_channel_name("db.res.clear", slot++);
+        vm_.set_channel_name("pty.res.login", slot++);
     }
 
     cyng::vm_proxy bus::init_vm(bus_interface *bip) {
 
         return bip->get_fabric()->create_proxy(
             get_vm_func_on_login(bip),      //	"cluster.res.login"
+            get_vm_func_on_ping(this),      //	"cluster.req.ping"
             get_vm_func_on_disconnect(bip), //	"cluster.disconnect"
             get_vm_func_db_res_insert(bip), //	"db.res.insert"
             get_vm_func_db_res_trx(bip),    //	"db.res.trx"
@@ -481,8 +484,21 @@ namespace smf {
         req_db_update("cluster", cyng::key_generator(tag_), cyng::param_map_factory("clients", count));
     }
 
+    void bus::on_ping(std::chrono::system_clock::time_point tp) {
+        CYNG_LOG_TRACE(logger_, "ping: " << tp);
+        //
+        //  echo
+        //
+        // send_cluster_response(cyng::serialize_invoke("cluster.res.ping", tp));
+        add_msg(state_holder_, cyng::serialize_invoke("cluster.res.ping", tp));
+    }
+
     std::function<void(bool)> bus::get_vm_func_on_login(bus_interface *bip) {
         return std::bind(&bus_interface::on_login, bip, std::placeholders::_1);
+    }
+
+    std::function<void(std::chrono::system_clock::time_point)> bus::get_vm_func_on_ping(bus *bp) {
+        return std::bind(&bus::on_ping, bp, std::placeholders::_1);
     }
 
     std::function<void(std::string)> bus::get_vm_func_on_disconnect(bus_interface *bip) {

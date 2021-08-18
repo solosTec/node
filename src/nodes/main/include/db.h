@@ -194,6 +194,8 @@ namespace smf {
          */
         void update_connection_throughput(boost::uuids::uuid rtag, boost::uuids::uuid dev, std::uint64_t size);
 
+        void update_ping_result(boost::uuids::uuid peer, std::chrono::microseconds delta);
+
       private:
         void set_start_values(cyng::param_map_t const &session_cfg, std::string const &country_code, std::string const &lang_code);
         void init_sys_msg();
