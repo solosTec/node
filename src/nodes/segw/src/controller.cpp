@@ -711,12 +711,15 @@ namespace smf {
     void print_nms_defaults(std::ostream &os) {
         auto const nic = get_nic();
         auto const r = get_ipv6_linklocal(nic);
+        auto const port = get_default_nms_port();
         std::cout << "default configuration: " << std::endl;
         std::cout << "nic                  : [" << nic << "]" << std::endl;
         std::cout << "first IPv4 address   : " << get_ipv4_address(nic) << std::endl;
         std::cout << "link-local address   : " << r.first << std::endl;
         std::cout << "adapter index        : " << r.second << std::endl;
-        std::cout << "port number          : " << get_default_nms_port() << std::endl;
+        std::cout << "port number          : " << port << std::endl;
+        std::cout << "link-local endpoint  : "
+                  << boost::asio::ip::tcp::endpoint(cyng::sys::make_link_local_address(r.first, r.second), port) << std::endl;
     }
 
     std::string detect_model() {
