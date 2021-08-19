@@ -184,8 +184,8 @@ namespace smf {
                 cyng::make_param("timeout", 15),                       //	seconds
                 cyng::make_param("max-upload-size", 1024 * 1024 * 10), //	10 MB
                 cyng::make_param("document-root", root.string()),
-                cyng::make_param("server-nickname", "Coraline"), //	x-servernickname
-                cyng::make_param("auth-type", "Basic"),          //	none, cookie
+                cyng::make_param("server-nickname", "P@ladin"), //	x-servernickname
+                cyng::make_param("auth-type", "Basic"),         //	none, cookie
                 create_auth_spec(),
                 create_block_list(),
                 create_redirects() //	intrinsic redirections

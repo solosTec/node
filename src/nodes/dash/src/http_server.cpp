@@ -86,7 +86,7 @@ namespace smf {
             redirects_intrinsic_,
             auths_,
             db_.cfg_.get_value("http-max-upload-size", static_cast<std::uint64_t>(0xA00000)),
-            db_.cfg_.get_value("http-server-nickname", "coraline"),
+            db_.cfg_.get_value("http-server-nickname", "p@ladin"),
             db_.cfg_.get_value("http-session-timeout", std::chrono::seconds(30)),
             std::bind(&http_server::upgrade, this, std::placeholders::_1, std::placeholders::_2),
             std::bind(&http_server::post, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
