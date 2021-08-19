@@ -70,7 +70,7 @@ namespace smf {
     std::string cfg_nms::get_nic() const { return cfg_.get_value(nic_path(), smf::get_nic()); }
 
     boost::asio::ip::address cfg_nms::get_nic_ipv4() const { return cfg_.get_value(nic_v4_path(), get_ipv4_address(get_nic())); }
-    boost::asio::ip::address cfg_nms::get_nic_linklocal() const {
+    boost::asio::ip::address cfg_nms::get_nic_ipv6() const {
         auto const r = get_ipv6_linklocal(get_nic());
         return cfg_.get_value(nic_linklocal_path(), r.first);
     }
@@ -80,9 +80,13 @@ namespace smf {
         return cfg_.get_value(nic_index_path(), r.second);
     }
 
-    boost::asio::ip::address cfg_nms::get_linklocal_scoped() const {
-        auto const r = get_nic_linklocal();
-        return boost::asio::ip::make_address_v6(r.to_v6().to_bytes(), get_nic_index());
+    boost::asio::ip::address cfg_nms::get_nic_linklocal() const {
+        auto const addr = get_nic_ipv6();
+        return cyng::sys::make_link_local_address(addr, get_nic_index());
+    }
+
+    boost::asio::ip::tcp::endpoint cfg_nms::get_nic_linklocal_ep() const {
+        return boost::asio::ip::tcp::endpoint(get_nic_linklocal(), get_port());
     }
 
     bool cfg_nms::set_delay(std::chrono::seconds delay) const { return cfg_.set_value(delay_path(), delay); }

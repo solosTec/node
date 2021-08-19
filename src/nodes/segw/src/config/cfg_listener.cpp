@@ -77,6 +77,13 @@ namespace smf {
         return {nms.get_nic_linklocal(), get_port()};
     }
 
+    boost::asio::ip::tcp::endpoint cfg_listener::get_link_local_ep() const {
+        cfg_nms nms(cfg_);
+        auto const index = nms.get_nic_index();
+        auto const addr = cyng::sys::make_link_local_address(nms.get_nic_ipv6(), index);
+        return {addr, get_port()};
+    }
+
     std::size_t cfg_listener::get_IPv4_task_id() const {
         return cfg_.get_value(task_id_ipv4_path(get_index()), static_cast<std::size_t>(0));
     }

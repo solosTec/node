@@ -675,9 +675,10 @@ namespace smf {
             stash_.lock(channel);
 
             //	get endpoint
-            auto const ep = cfg.get_ep();
-            CYNG_LOG_INFO(logger_, "start NMS server " << ep << " (delayed)");
-            channel->suspend(std::chrono::seconds(12), "start", cyng::make_tuple(ep));
+            auto const ep = cfg.get_nic_linklocal_ep();
+            auto const delay = cfg.get_delay();
+            CYNG_LOG_INFO(logger_, "start NMS server " << ep << " (delayed by " << delay.count() << " seconds)");
+            channel->suspend(delay, "start", ep);
 
         } else {
             CYNG_LOG_WARNING(logger_, "NMS is not enabled");

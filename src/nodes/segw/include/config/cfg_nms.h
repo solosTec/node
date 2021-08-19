@@ -52,7 +52,7 @@ namespace smf {
         /**
          * @return link-local (IPv6) address of the specified nic
          */
-        boost::asio::ip::address get_nic_linklocal() const;
+        boost::asio::ip::address get_nic_ipv6() const;
 
         /**
          * @return device index of the specified nic
@@ -60,11 +60,12 @@ namespace smf {
         std::uint32_t get_nic_index() const;
 
         /**
-         * Same as get_nic_linklocal() but with an already scoped IPv6 address.
-         * This is always an IPv6 address since IPv4 doesm' have a concept of scoped
+         * Same as get_nic_ipv6() but with an already scoped IPv6 address.
+         * This is always an IPv6 address since IPv4 doesn't have a concept of scoped
          * addresses.
          */
-        boost::asio::ip::address get_linklocal_scoped() const;
+        boost::asio::ip::address get_nic_linklocal() const;
+        boost::asio::ip::tcp::endpoint get_nic_linklocal_ep() const;
 
         /**
          * check username and password

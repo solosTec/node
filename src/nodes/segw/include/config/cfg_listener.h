@@ -79,6 +79,7 @@ namespace smf {
          * Take IPv6 address from NMS configuration
          */
         boost::asio::ip::tcp::endpoint get_ipv6_ep() const;
+        boost::asio::ip::tcp::endpoint get_link_local_ep() const;
 
         std::size_t get_IPv4_task_id() const;
         std::size_t get_IPv6_task_id() const;
