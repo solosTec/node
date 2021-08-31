@@ -270,7 +270,7 @@ namespace smf {
                     if (!cfg->exist(key_index)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-index: " << r.second);
                         cfg->merge(
-                            key,
+                            key_index,
                             cyng::data_generator(r.second),
                             1u,         //	only needed for insert operations
                             cfg_.tag_); //	tag mybe not available yet
@@ -279,7 +279,7 @@ namespace smf {
                     if (!cfg->exist(key_linklocal)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-linklocal: " << r.first);
                         cfg->merge(
-                            key,
+                            key_linklocal,
                             cyng::data_generator(r.first),
                             1u,         //	only needed for insert operations
                             cfg_.tag_); //	tag mybe not available yet
