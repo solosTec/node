@@ -248,6 +248,69 @@ namespace smf {
         BOOST_ASSERT(channel->is_open());
         stash_.lock(channel);
         channel->dispatch("power-return", cyng::make_tuple());
+
+        //
+        //  check some values
+        //
+        cache_.access(
+            [&](cyng::table *cfg) {
+                auto const nic = get_nic();
+                auto const key = cyng::key_generator("nms/nic");
+                if (!cfg->exist(key)) {
+                    CYNG_LOG_INFO(logger_, "insert nms/nic: " << nic);
+                    cfg->merge(
+                        key,
+                        cyng::data_generator(nic),
+                        1u,         //	only needed for insert operations
+                        cfg_.tag_); //	tag mybe not available yet
+                }
+                {
+                    auto const r = get_ipv6_linklocal(nic);
+                    auto const key_index = cyng::key_generator("nms/nic-index");
+                    if (!cfg->exist(key_index)) {
+                        CYNG_LOG_INFO(logger_, "insert nms/nic-index: " << r.second);
+                        cfg->merge(
+                            key,
+                            cyng::data_generator(r.second),
+                            1u,         //	only needed for insert operations
+                            cfg_.tag_); //	tag mybe not available yet
+                    }
+                    auto const key_linklocal = cyng::key_generator("nms/nic-linklocal");
+                    if (!cfg->exist(key_linklocal)) {
+                        CYNG_LOG_INFO(logger_, "insert nms/nic-linklocal: " << r.first);
+                        cfg->merge(
+                            key,
+                            cyng::data_generator(r.first),
+                            1u,         //	only needed for insert operations
+                            cfg_.tag_); //	tag mybe not available yet
+                    }
+                }
+                {
+                    auto const ipv4 = get_ipv4_address(nic);
+                    auto const key = cyng::key_generator("nms/nic-ipv4");
+                    if (!cfg->exist(key)) {
+                        CYNG_LOG_INFO(logger_, "insert nms/nic-ipv4: " << ipv4);
+                        cfg->merge(
+                            key,
+                            cyng::data_generator(ipv4),
+                            1u,         //	only needed for insert operations
+                            cfg_.tag_); //	tag mybe not available yet
+                    }
+                }
+                {
+                    auto const delay = std::chrono::seconds(12);
+                    auto const key = cyng::key_generator("nms/delay");
+                    if (!cfg->exist(key)) {
+                        CYNG_LOG_INFO(logger_, "insert nms/delay: " << delay);
+                        cfg->merge(
+                            key,
+                            cyng::data_generator(delay),
+                            1u,         //	only needed for insert operations
+                            cfg_.tag_); //	tag mybe not available yet
+                    }
+                }
+            },
+            cyng::access::write("cfg"));
     }
 
     void bridge::stop_cache_persistence() {
