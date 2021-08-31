@@ -232,7 +232,7 @@ namespace smf {
         //
         load_configuration();
         // auto tpl = cfg_.get_obj("language-code");
-        // load_devices_mbus();
+        load_meter(); //  "TMeter"
         // load_data_collectors();
         // load_data_mirror();
         // load_iec_devices();
@@ -309,6 +309,19 @@ namespace smf {
                 });
             },
             cyng::access::write("cfg"));
+    }
+    void bridge::load_meter() {
+        cache_.access(
+            [&](cyng::table *tbl) {
+                cyng::db::storage s(db_);
+                s.loop(get_table_meter(), [&](cyng::record const &rec) -> bool {
+                    //
+                    //  ToDo: fill "meter" table
+                    //
+                    return true;
+                });
+            },
+            cyng::access::write("meter"));
     }
 
     void bridge::init_lmn_ports() {

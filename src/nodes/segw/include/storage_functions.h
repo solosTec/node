@@ -21,6 +21,7 @@ namespace smf {
 
     cyng::meta_sql get_table_cfg();
     cyng::meta_sql get_table_oplog();
+    cyng::meta_sql get_table_meter();
 
     /**
      * create all tables defined in get_sql_meta_data()

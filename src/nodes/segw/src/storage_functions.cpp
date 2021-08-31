@@ -86,27 +86,32 @@ namespace smf {
             0);
     }
 
-    cyng::meta_sql get_table_oplog() { return cyng::to_sql(get_store_oplog(), {0, 0, 0, 0, 0, 0, 0, 13, 0, 23, 64, 0, 128}); }
+    cyng::meta_store get_store_meter() {
 
-    std::vector<cyng::meta_store> get_store_meta_data() { return {get_store_cfg(), get_store_oplog()}; }
+        return cyng::meta_store(
+            "meter",
+            {
+                cyng::column("id", cyng::TC_UINT64),           //	hash of "meter"
+                cyng::column("meter", cyng::TC_STRING),        //	02-e61e-03197715-3c-07, or 03197715
+                cyng::column("type", cyng::TC_STRING),         //	IEC, M-Bus, wM-Bus
+                cyng::column("activity", cyng::TC_TIME_POINT), //	last activity
+                cyng::column("enabled", cyng::TC_BOOL),        //	active
+                cyng::column("desc", cyng::TC_STRING)          //	optional description
+            },
+            0);
+    }
+
+    cyng::meta_sql get_table_oplog() { return cyng::to_sql(get_store_oplog(), {0, 0, 0, 0, 0, 0, 0, 13, 0, 23, 64, 0, 128}); }
+    cyng::meta_sql get_table_meter() { return cyng::to_sql(get_store_meter(), {0, 23, 0, 0, 0, 128}); }
+
+    std::vector<cyng::meta_store> get_store_meta_data() { return {get_store_cfg(), get_store_oplog(), get_store_meter()}; }
 
     std::vector<cyng::meta_sql> get_sql_meta_data() {
 
         return {
             get_table_cfg(),
             get_table_oplog(),
-
-            cyng::meta_sql(
-                "TMeter",
-                {
-                    cyng::column_sql("id", cyng::TC_UINT64, 0),           //	hash of "meter"
-                    cyng::column_sql("meter", cyng::TC_STRING, 23),       //	02-e61e-03197715-3c-07, or 03197715
-                    cyng::column_sql("type", cyng::TC_STRING, 0),         //	IEC, M-Bus, wM-Bus
-                    cyng::column_sql("activity", cyng::TC_TIME_POINT, 0), //	last activity
-                    cyng::column_sql("enabled", cyng::TC_BOOL, 0),        //	active
-                    cyng::column_sql("desc", cyng::TC_STRING, 128)        //	optional description
-                },
-                1),
+            get_table_meter(),
 
             cyng::meta_sql(
                 "TMeterMBus",

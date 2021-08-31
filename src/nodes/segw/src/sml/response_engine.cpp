@@ -422,8 +422,7 @@ namespace smf {
             sml::tree_child_list(
                 path.at(0),
                 {sml::tree_child_list(
-                    // path.at(0),
-                    OBIS_ROOT_W_MBUS_STATUS,
+                    path.at(0),
                     {
                         sml::tree_param(
                             OBIS_W_MBUS_ADAPTER_MANUFACTURER, sml::make_value(hw.get_adapter_manufacturer())),     //  string
@@ -497,6 +496,11 @@ namespace smf {
         //  81 81 10 06 FF FF
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_VISIBLE_DEVICES);
+        //
+        //  * server ID
+        //  * device class
+        //  * timestamp (last seen)
+        //
         return res_gen_.get_proc_parameter(
             trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }

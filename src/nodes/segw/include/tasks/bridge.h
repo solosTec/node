@@ -49,6 +49,7 @@ namespace smf {
         void stop_cache_persistence();
 
         void load_configuration();
+        void load_meter();
 
         void init_gpio();
         void stop_gpio();
