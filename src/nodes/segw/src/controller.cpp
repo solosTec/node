@@ -614,7 +614,18 @@ namespace smf {
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
             if (smf::set_config_value(s, path, value, type)) {
-                std::cout << path << " := " << value << " (" << type << ")" << std::endl;
+                if (boost::algorithm::equals(type, "u16")) {
+                    auto const u16 = static_cast<std::uint16_t>(std::stoul(value));
+                    std::cout << path << " := " << value << " / 0x" << std::hex << u16 << " (" << type << ")" << std::endl;
+                } else if (boost::algorithm::equals(type, "u32")) {
+                    auto const u32 = static_cast<std::uint32_t>(std::stoul(value));
+                    std::cout << path << " := " << value << " / 0x" << std::hex << u32 << " (" << type << ")" << std::endl;
+                } else if (boost::algorithm::equals(type, "u64")) {
+                    auto const u64 = static_cast<std::uint64_t>(std::stoull(value));
+                    std::cout << path << " := " << value << " / 0x" << std::hex << u64 << " (" << type << ")" << std::endl;
+                } else {
+                    std::cout << path << " := " << value << " (" << type << ")" << std::endl;
+                }
             }
         }
     }
