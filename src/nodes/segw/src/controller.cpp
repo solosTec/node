@@ -474,7 +474,8 @@ namespace smf {
 #else
                 cyng::make_param("debug", false),
 #endif
-                cyng::make_param("delay", std::chrono::seconds(12))));
+                cyng::make_param("delay", std::chrono::seconds(12)),
+                cyng::make_param("mode", "production")));
     }
     cyng::param_t controller::create_sml_server_spec() const {
 

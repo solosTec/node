@@ -14,6 +14,13 @@ namespace smf {
 
     class cfg_nms {
       public:
+        enum class mode {
+            PRODUCTION, //  link-local address
+            TEST,       //  0.0.0.0
+            LOCAL       //  IPv4 address
+        };
+
+      public:
         cfg_nms(cfg &);
         cfg_nms(cfg_nms &) = default;
 
@@ -24,7 +31,7 @@ namespace smf {
         std::uint16_t get_port() const;
 
         /**
-         * @return external endpoint (IPv4)
+         * @return IP endpoint build from "nms/address" and "nms/port"
          */
         boost::asio::ip::tcp::endpoint get_ep() const;
 
@@ -36,6 +43,8 @@ namespace smf {
          * listener rebind()
          */
         std::chrono::seconds get_delay() const;
+
+        std::string get_mode_name() const;
 
         /**
          * Designated NIC for link-local communication
@@ -52,7 +61,7 @@ namespace smf {
         /**
          * @return link-local (IPv6) address of the specified nic
          */
-        boost::asio::ip::address get_nic_ipv6() const;
+        // boost::asio::ip::address get_nic_ipv6() const;
 
         /**
          * @return device index of the specified nic
@@ -112,6 +121,11 @@ namespace smf {
      * @return link-local (IPv6) address of specified device
      */
     std::pair<boost::asio::ip::address, std::uint32_t> get_ipv6_linklocal(std::string const &);
+
+    /**
+     * @return the enum of one of the following strings: production, test, local
+     */
+    cfg_nms::mode get_mode(std::string);
 
 } // namespace smf
 

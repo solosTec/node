@@ -1127,12 +1127,14 @@ namespace smf {
             //
             //  set "nms/address" to link local address
             //
+            store.cfg_update(cyng::make_object("nms/mode"), cyng::make_object("production"));
             return store.cfg_update(cyng::make_object("nms/address"), cyng::make_object(link_local_addr));
 
         } else if (boost::algorithm::equals(mode, "test")) {
             //
             //  set "nms/address" to "0.0.0.0"
             //
+            store.cfg_update(cyng::make_object("nms/mode"), cyng::make_object(mode));
             boost::system::error_code ec;
             return store.cfg_update(
                 cyng::make_object("nms/address"), cyng::make_object(boost::asio::ip::make_address("0.0.0.0", ec)));
@@ -1150,6 +1152,7 @@ namespace smf {
             //
             //  set "nms/address" to local IPv4 address
             //
+            store.cfg_update(cyng::make_object("nms/mode"), cyng::make_object(mode));
             return store.cfg_update(cyng::make_object("nms/address"), cyng::make_object(address));
         }
         return false;

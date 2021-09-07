@@ -92,6 +92,8 @@ namespace smf {
         void stop_redirectors();
         void stop_redirector(lmn_type);
 
+        std::uint32_t validate_nic_index(std::uint32_t);
+
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
@@ -106,6 +108,7 @@ namespace smf {
         sml::server sml_;
         cyng::stash stash_;
     };
+
 } // namespace smf
 
 #endif

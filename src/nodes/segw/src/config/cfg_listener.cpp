@@ -72,16 +72,14 @@ namespace smf {
 
     boost::asio::ip::tcp::endpoint cfg_listener::get_ipv4_ep() const { return {get_address(), get_port()}; }
 
-    boost::asio::ip::tcp::endpoint cfg_listener::get_ipv6_ep() const {
-        cfg_nms nms(cfg_);
-        return {nms.get_nic_linklocal(), get_port()};
-    }
+    // boost::asio::ip::tcp::endpoint cfg_listener::get_ipv6_ep() const {
+    //    cfg_nms nms(cfg_);
+    //    return {nms.get_nic_linklocal(), get_port()};
+    //}
 
     boost::asio::ip::tcp::endpoint cfg_listener::get_link_local_ep() const {
         cfg_nms nms(cfg_);
-        auto const index = nms.get_nic_index();
-        auto const addr = cyng::sys::make_link_local_address(nms.get_nic_ipv6(), index);
-        return {addr, get_port()};
+        return {nms.get_nic_linklocal(), get_port()};
     }
 
     std::size_t cfg_listener::get_IPv4_task_id() const {

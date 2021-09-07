@@ -27,6 +27,7 @@
 
 #include <cyng/db/storage.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/parse/buffer.h>
 #include <cyng/sys/net.h>
 #include <cyng/task/channel.h>
@@ -258,7 +259,7 @@ namespace smf {
                 auto const key = cyng::key_generator("nms/nic");
                 if (!cfg->exist(key)) {
                     CYNG_LOG_INFO(logger_, "insert nms/nic: " << nic);
-                    cfg->merge(
+                    cfg->insert(
                         key,
                         cyng::data_generator(nic),
                         1u,         //	only needed for insert operations
@@ -269,7 +270,7 @@ namespace smf {
                     auto const key_index = cyng::key_generator("nms/nic-index");
                     if (!cfg->exist(key_index)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-index: " << r.second);
-                        cfg->merge(
+                        cfg->insert(
                             key_index,
                             cyng::data_generator(r.second),
                             1u,         //	only needed for insert operations
@@ -278,7 +279,7 @@ namespace smf {
                     auto const key_linklocal = cyng::key_generator("nms/nic-linklocal");
                     if (!cfg->exist(key_linklocal)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-linklocal: " << r.first);
-                        cfg->merge(
+                        cfg->insert(
                             key_linklocal,
                             cyng::data_generator(r.first),
                             1u,         //	only needed for insert operations
@@ -290,7 +291,7 @@ namespace smf {
                     auto const key = cyng::key_generator("nms/nic-ipv4");
                     if (!cfg->exist(key)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-ipv4: " << ipv4);
-                        cfg->merge(
+                        cfg->insert(
                             key,
                             cyng::data_generator(ipv4),
                             1u,         //	only needed for insert operations
@@ -301,10 +302,22 @@ namespace smf {
                     auto const delay = std::chrono::seconds(12);
                     auto const key = cyng::key_generator("nms/delay");
                     if (!cfg->exist(key)) {
-                        CYNG_LOG_INFO(logger_, "insert nms/delay: " << delay);
-                        cfg->merge(
+                        CYNG_LOG_INFO(logger_, "insert nms/delay: " << delay << " seconds");
+                        cfg->insert(
                             key,
                             cyng::data_generator(delay),
+                            1u,         //	only needed for insert operations
+                            cfg_.tag_); //	tag mybe not available yet
+                    }
+                }
+                {
+                    auto const key = cyng::key_generator("nms/mode");
+                    if (!cfg->exist(key)) {
+                        std::string const mode("production");
+                        CYNG_LOG_INFO(logger_, "insert nms/mode: \"" << mode << "\"");
+                        cfg->insert(
+                            key,
+                            cyng::data_generator(mode),
                             1u,         //	only needed for insert operations
                             cfg_.tag_); //	tag mybe not available yet
                     }
@@ -353,6 +366,14 @@ namespace smf {
                         } else if (boost::algorithm::equals(path, cyng::to_str(OBIS_SERVER_ID))) {
                             //	init server ID in cache
                             cfg_.id_ = cyng::hex_to_buffer(val);
+                        } else if (boost::algorithm::equals(path, "nms/nic-index")) {
+                            //  enforce u32
+                            auto const index = validate_nic_index(cyng::numeric_cast<std::uint32_t>(obj, 0u));
+                            cfg->merge(
+                                rec.key(),
+                                cyng::data_generator(index),
+                                1u,         //	only needed for insert operations
+                                cfg_.tag_); //	tag mybe not available yet
                         } else {
 
                             //
@@ -744,14 +765,16 @@ namespace smf {
             } else {
                 CYNG_LOG_ERROR(logger_, "designated nic for link-local communication \"" << nic << "\" is not available");
             }
+            auto const mode = cfg.get_mode_name();
+            CYNG_LOG_INFO(logger_, "[NMS] is in \"" << mode << "\" mode");
 
             //  cyng::channel_weak wp, cyng::controller &ctl, cfg &, cyng::logger
             auto channel = ctl_.create_named_channel_with_ref<nms::server>("nms", ctl_, cfg_, logger_);
             BOOST_ASSERT(channel->is_open());
             stash_.lock(channel);
 
-            //	get endpoint
-            auto const ep = cfg.get_nic_linklocal_ep();
+            //	get endpoint: "nms/address" and "nms/port"
+            auto const ep = cfg.get_ep();
             auto const delay = cfg.get_delay();
             CYNG_LOG_INFO(logger_, "start NMS server " << ep << " (delayed by " << delay.count() << " seconds)");
             channel->suspend(delay, "start", ep);
@@ -840,7 +863,7 @@ namespace smf {
     void bridge::init_redirector_ipv6(cfg_listener const &cfg) {
 
         //  use same link-local address as NMS and the ip port from the listener
-        auto const ep = cfg.get_ipv6_ep();
+        auto const ep = cfg.get_link_local_ep();
         cfg_nms nms(cfg_);
         if (nms.get_port() == cfg.get_port()) {
             CYNG_LOG_ERROR(logger_, "IP port number " << cfg.get_port() << " is used for NMS and RDR");
@@ -895,6 +918,23 @@ namespace smf {
         } else {
             CYNG_LOG_TRACE(logger_, "[redirector] not running");
         }
+    }
+
+    std::uint32_t bridge::validate_nic_index(std::uint32_t index) {
+        auto const cfg_v6 = cyng::sys::get_ipv6_configuration();
+        auto const pos = std::find_if(
+            std::begin(cfg_v6), std::end(cfg_v6), [index](cyng::sys::ipv_cfg const &cfg) { return cfg.index_ == index; });
+        if (pos == cfg_v6.end()) {
+            auto const nic = get_nic();
+            auto const r = get_ipv6_linklocal(nic);
+            CYNG_LOG_ERROR(logger_, "[" << index << "] is an invalid nic index - use [" << r.second << "]");
+
+            //
+            //  return an existing index
+            //
+            return r.second;
+        }
+        return index;
     }
 
 } // namespace smf

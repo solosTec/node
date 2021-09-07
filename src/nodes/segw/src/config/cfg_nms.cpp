@@ -28,6 +28,7 @@ namespace smf {
         std::string nic_linklocal_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-linklocal"); }
         std::string nic_index_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-index"); }
         std::string delay_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "delay"); }
+        std::string mode_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "mode"); }
     } // namespace
 
     cfg_nms::cfg_nms(cfg &c)
@@ -67,13 +68,26 @@ namespace smf {
 
     std::chrono::seconds cfg_nms::get_delay() const { return cfg_.get_value(delay_path(), std::chrono::seconds(12)); }
 
+    std::string cfg_nms::get_mode_name() const { return cfg_.get_value(mode_path(), "production"); }
+
+    cfg_nms::mode get_mode(std::string name) {
+        if (boost::algorithm::equals(name, "test")) {
+            return cfg_nms::mode::TEST;
+        } else if (boost::algorithm::equals(name, "local")) {
+            return cfg_nms::mode::LOCAL;
+        }
+        //  default
+        return cfg_nms::mode::PRODUCTION;
+    }
+
     std::string cfg_nms::get_nic() const { return cfg_.get_value(nic_path(), smf::get_nic()); }
 
     boost::asio::ip::address cfg_nms::get_nic_ipv4() const { return cfg_.get_value(nic_v4_path(), get_ipv4_address(get_nic())); }
-    boost::asio::ip::address cfg_nms::get_nic_ipv6() const {
-        auto const r = get_ipv6_linklocal(get_nic());
-        return cfg_.get_value(nic_linklocal_path(), r.first);
-    }
+
+    // boost::asio::ip::address cfg_nms::get_nic_ipv6() const {
+    //    auto const r = get_ipv6_linklocal(get_nic());
+    //    return cfg_.get_value(nic_linklocal_path(), r.first);
+    //}
 
     std::uint32_t cfg_nms::get_nic_index() const {
         auto const r = get_ipv6_linklocal(get_nic());
@@ -81,7 +95,8 @@ namespace smf {
     }
 
     boost::asio::ip::address cfg_nms::get_nic_linklocal() const {
-        auto const addr = get_nic_ipv6();
+        auto const r = get_ipv6_linklocal(get_nic()); //  default
+        auto const addr = cfg_.get_value(nic_linklocal_path(), r.first);
         BOOST_ASSERT_MSG(addr.is_v6(), "not an IPv6 address");
         return cyng::sys::make_link_local_address(addr, get_nic_index());
     }

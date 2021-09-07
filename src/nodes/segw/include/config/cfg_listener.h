@@ -76,9 +76,9 @@ namespace smf {
         boost::asio::ip::tcp::endpoint get_ipv4_ep() const;
 
         /**
-         * Take IPv6 address from NMS configuration
+         * Take IPv6 address from NMS configuration and port from
+         * listener configuration to define an TCP/IP endpoint.
          */
-        boost::asio::ip::tcp::endpoint get_ipv6_ep() const;
         boost::asio::ip::tcp::endpoint get_link_local_ep() const;
 
         std::size_t get_IPv4_task_id() const;
