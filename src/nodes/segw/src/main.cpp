@@ -37,14 +37,15 @@ int main(int argc, char **argv) {
          "set configuration value: \"path\" \"value\" \"type\"") //  --set-value
         ("add-value",
          boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
-         "add configuration value: \"path\" \"value\" \"type\"") //  --add-value
-        ("del-value",
-         boost::program_options::value<std::string>() /*->default_value("")*/,
-         "remove configuration value: \"path\"") // --del-value
+         "add configuration value: \"path\" \"value\" \"type\"")                                            // --add-value
+        ("del-value", boost::program_options::value<std::string>(), "remove configuration value: \"path\"") // --del-value
         ("switch-gpio",
          boost::program_options::value<std::vector<std::string>>()->multitoken()->composing(),
-         "switch GPIO: \"number\" [on|off]")                                                       //  --switch-gpio
-        ("nms", boost::program_options::bool_switch()->default_value(false), "print NMS defaults") //  --nms
+         "switch GPIO: \"number\" [on|off]")                                                               //  --switch-gpio
+        ("nms-default", boost::program_options::bool_switch()->default_value(false), "print NMS defaults") //  --nms-default
+        ("nms-mode",
+         boost::program_options::value<std::string>(),
+         "set NMS mode [production|test|local]") //  --nms-mode=[production|test|local]
         ;
 
     //

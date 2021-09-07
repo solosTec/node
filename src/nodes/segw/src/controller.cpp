@@ -104,9 +104,15 @@ namespace smf {
             }
             return true;
         }
-        if (vars["nms"].as<bool>()) {
+        if (vars["nms-default"].as<bool>()) {
             //	print NMS defaults
             print_nms_defaults(std::cout);
+            return true;
+        }
+        if (vars.count("nms-mode") != 0) {
+            std::string const mode = vars["nms-mode"].as<std::string>();
+            //	set nms/address
+            set_nms_mode(read_config_section(config_.json_path_, config_.config_index_), mode.empty() ? "production" : mode);
             return true;
         }
         //
@@ -436,10 +442,13 @@ namespace smf {
 
         auto const nic = get_nic();
         auto const link_local = get_ipv6_linklocal(nic);
+        auto const address = cyng::sys::make_link_local_address(link_local.first, link_local.second);
+        // auto const ep = boost::asio::ip::tcp::endpoint(address, 7562);
+
         return cyng::make_param(
             "nms",
             cyng::tuple_factory(
-                cyng::make_param("address", "0.0.0.0"),
+                cyng::make_param("address", address), //  link-local address is default
                 cyng::make_param("port", 7562),
                 cyng::make_param("account", "operator"),
                 cyng::make_param("pwd", "operator"),
@@ -657,6 +666,25 @@ namespace smf {
         if (s.is_alive()) {
             if (smf::del_config_value(s, path)) {
                 std::cout << path << " removed" << std::endl;
+            }
+        }
+    }
+
+    void controller::set_nms_mode(cyng::object &&cfg, std::string mode) {
+        auto const reader = cyng::make_reader(std::move(cfg));
+
+        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
+        auto s = cyng::db::create_db_session(reader.get("DB"));
+        if (s.is_alive()) {
+            if (boost::algorithm::equals(mode, "production") || boost::algorithm::equals(mode, "test") ||
+                boost::algorithm::equals(mode, "local")) {
+                if (smf::set_nms_mode(s, mode)) {
+                    std::cout << "NMS mode is " << mode << std::endl;
+                } else {
+                    std::cerr << "set NMS mode failed" << std::endl;
+                }
+            } else {
+                std::cerr << "unknown NMS mode - use [production|test|local]" << mode << std::endl;
             }
         }
     }

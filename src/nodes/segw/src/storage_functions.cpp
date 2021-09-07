@@ -25,6 +25,7 @@
 #include <cyng/parse/duration.h>
 #include <cyng/parse/string.h>
 #include <cyng/sql/sql.hpp>
+#include <cyng/sys/net.h>
 
 #include <iostream>
 
@@ -558,13 +559,20 @@ namespace smf {
                 insert_config_record(
                     stmt, cyng::to_path(cfg::sep, "nms", param.first), cyng::make_object(delay), "default bind delay " + inp);
 
+            } else if (boost::algorithm::equals(param.first, "nic-index")) {
+                flag_nic_index = true;
+                auto const nic_index = cyng::numeric_cast<std::uint32_t>(param.second, 0u);
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "nms", param.first),
+                    cyng::make_object(nic_index),
+                    "default NMS nic index (" + std::to_string(nic_index) + ")");
+
             } else {
 
                 insert_config_record(stmt, cyng::to_path(cfg::sep, "nms", param.first), param.second, "NMS: " + param.first);
                 if (boost::algorithm::equals(param.first, "nic")) {
                     flag_nic = true;
-                } else if (boost::algorithm::equals(param.first, "nic-index")) {
-                    flag_nic_index = true;
                 }
             }
         }
@@ -594,7 +602,7 @@ namespace smf {
             insert_config_record(
                 stmt,
                 cyng::to_path(cfg::sep, "nms", "nic-index"),
-                cyng::make_object(link_local.second),
+                cyng::make_object(link_local.second), //  u32
                 "device index of NMS adapter");
         }
     }
@@ -1086,6 +1094,67 @@ namespace smf {
         return store.cfg_remove(obj);
     }
 
+    bool set_nms_mode(cyng::db::session &db, std::string const &mode) {
+        storage store(db);
+
+        //  nms/nic..............: Ethernet (Ethernet:s) - NMS: nic
+        //  nms/nic-index........: 9 (9:i64) - NMS: nic-index
+        //  nms/nic-ipv4.........: 192.168.1.82 (192.168.1.82:ip:address) - IPv4 address of NMS adapter
+        //  nms/nic-linklocal....: fe80::1566:fadd:d93e:2576 (fe80::1566:fadd:d93e:2576:ip:address) - link-local address
+        //  nms/port.............: 1d8a (1d8a:u16) - default NMS listener port (7562)
+        if (boost::algorithm::starts_with(mode, "prod")) {
+            auto const nic_def = get_nic();
+            auto const nic = cyng::value_cast(store.cfg_read(cyng::make_object("nms/nic"), cyng::make_object(nic_def)), nic_def);
+            auto const linklocal = get_ipv6_linklocal(nic); //  std::pair<boost::asio::ip::address, std::uint32_t>
+
+            //
+            //  read "nms/nic-linklocal" and "nms/nic-index"
+            //
+            auto obj = store.cfg_read(cyng::make_object("nms/nic-linklocal"), cyng::make_object(linklocal.first));
+            auto const address = cyng::value_cast<boost::asio::ip::address>(obj, linklocal.first);
+            BOOST_ASSERT_MSG(address.is_v6(), "not an IPv6 address");
+
+            auto const index = cyng::numeric_cast<std::uint32_t>(
+                store.cfg_read(cyng::make_object("nms/nic-index"), cyng::make_object<std::uint32_t>(0)), 0u);
+
+            //
+            //  build a link-local address
+            //
+            auto const link_local_addr = cyng::sys::make_link_local_address(address, index);
+#ifdef _DEBUG
+            std::cout << "nms/address = " << link_local_addr << std::endl;
+#endif
+            //
+            //  set "nms/address" to link local address
+            //
+            return store.cfg_update(cyng::make_object("nms/address"), cyng::make_object(link_local_addr));
+
+        } else if (boost::algorithm::equals(mode, "test")) {
+            //
+            //  set "nms/address" to "0.0.0.0"
+            //
+            boost::system::error_code ec;
+            return store.cfg_update(
+                cyng::make_object("nms/address"), cyng::make_object(boost::asio::ip::make_address("0.0.0.0", ec)));
+        } else if (boost::algorithm::equals(mode, "local")) {
+            //
+            //  set "nms/address" to local IPv4 address
+            //
+            auto const nic_def = get_nic();
+            auto const nic = cyng::value_cast(store.cfg_read(cyng::make_object("nms/nic"), cyng::make_object(nic_def)), nic_def);
+            auto const address = get_ipv4_address(nic); //  boost::asio::ip::address
+            BOOST_ASSERT_MSG(address.is_v4(), "not an IPv4 address");
+#ifdef _DEBUG
+            std::cout << "nms/address = " << address << std::endl;
+#endif
+            //
+            //  set "nms/address" to local IPv4 address
+            //
+            return store.cfg_update(cyng::make_object("nms/address"), cyng::make_object(address));
+        }
+        return false;
+    }
+
     bool insert_config_record(cyng::db::statement_ptr stmt, std::string key, cyng::object obj, std::string desc) {
         //
         //	use already prepared statements
@@ -1142,6 +1211,19 @@ namespace smf {
             return true;
         }
         return false;
+    }
+
+    cyng::object read_config_record(cyng::db::statement_ptr stmt, cyng::object const &key) {
+        stmt->push(key, 128); //	pk
+        auto const res = stmt->get_result();
+        if (res) {
+            auto const ms = get_table_cfg();
+            auto const rec = cyng::to_record(ms, res);
+            auto const val = rec.value("val", "");
+            auto const type = rec.value("type", static_cast<std::uint16_t>(0));
+            return cyng::restore(val, type);
+        }
+        return cyng::make_object();
     }
 
 } // namespace smf

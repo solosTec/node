@@ -58,6 +58,7 @@ namespace smf {
     bool set_config_value(cyng::db::session &, std::string const &path, std::string const &value, std::string const &type);
     bool add_config_value(cyng::db::session &, std::string const &path, std::string const &value, std::string const &type);
     bool del_config_value(cyng::db::session &, std::string const &path);
+    bool set_nms_mode(cyng::db::session &db, std::string const &mode);
 
     /**
      * split string by "/" and return the first section
@@ -69,6 +70,7 @@ namespace smf {
     bool insert_config_record(cyng::db::statement_ptr stmt, cyng::object const &, cyng::object obj);
     bool update_config_record(cyng::db::statement_ptr stmt, cyng::object const &key, cyng::object obj);
     bool remove_config_record(cyng::db::statement_ptr stmt, cyng::object const &key);
+    cyng::object read_config_record(cyng::db::statement_ptr stmt, cyng::object const &key);
 } // namespace smf
 
 #endif

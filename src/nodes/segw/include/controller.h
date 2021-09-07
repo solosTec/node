@@ -61,6 +61,7 @@ namespace smf {
         void set_config_value(cyng::object &&, std::string const &path, std::string const &value, std::string const &type);
         void add_config_value(cyng::object &&, std::string const &path, std::string const &value, std::string const &type);
         void del_config_value(cyng::object &&, std::string const &path);
+        void set_nms_mode(cyng::object &&cfg, std::string mode);
         void switch_gpio(cyng::object &&cfg, std::string const &number, std::string const &state);
 
       private:

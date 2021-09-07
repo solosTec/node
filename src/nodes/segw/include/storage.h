@@ -9,34 +9,35 @@
 
 #include <storage_functions.h>
 
-#include <cyng/task/task_fwd.h>
 #include <cyng/obj/intrinsics/obis.h>
+#include <cyng/task/task_fwd.h>
 
- namespace smf {
+namespace smf {
 
-	 /**
-	  * manage SQL tables
-	  */
-	 class storage
-	 {
-	 public:
-		 storage(cyng::db::session);
+    /**
+     * manage SQL tables
+     */
+    class storage {
+      public:
+        storage(cyng::db::session);
 
-		 bool cfg_insert(cyng::object const&, cyng::object const&);
-		 bool cfg_update(cyng::object const&, cyng::object const&);
-		 bool cfg_remove(cyng::object const&);
+        bool cfg_insert(cyng::object const &, cyng::object const &);
+        bool cfg_update(cyng::object const &, cyng::object const &);
+        bool cfg_remove(cyng::object const &);
+        cyng::object cfg_read(cyng::object const &, cyng::object def);
 
-		 void generate_op_log(std::uint64_t status
-			 , std::uint32_t evt
-			 , cyng::obis code
-			 , cyng::buffer_t srv
-			 , std::string target
-			 , std::uint8_t nr
-			 , std::string description);
+        void generate_op_log(
+            std::uint64_t status,
+            std::uint32_t evt,
+            cyng::obis code,
+            cyng::buffer_t srv,
+            std::string target,
+            std::uint8_t nr,
+            std::string description);
 
-	 private:
-		 cyng::db::session db_;
-	 };
-}
+      private:
+        cyng::db::session db_;
+    };
+} // namespace smf
 
 #endif

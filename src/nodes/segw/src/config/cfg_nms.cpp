@@ -82,6 +82,7 @@ namespace smf {
 
     boost::asio::ip::address cfg_nms::get_nic_linklocal() const {
         auto const addr = get_nic_ipv6();
+        BOOST_ASSERT_MSG(addr.is_v6(), "not an IPv6 address");
         return cyng::sys::make_link_local_address(addr, get_nic_index());
     }
 
