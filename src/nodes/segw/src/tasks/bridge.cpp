@@ -578,6 +578,7 @@ namespace smf {
                     auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, cfg_, type, trg.get_index());
                     BOOST_ASSERT(channel->is_open());
                     stash_.lock(channel);
+                    channel->dispatch("start"); //  init state_holder_
                     channel->dispatch("check-status", trg.get_watchdog());
                 }
             }

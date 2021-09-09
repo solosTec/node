@@ -134,8 +134,9 @@ namespace smf {
 
         std::size_t count{0};
         for (;; ++count) {
-            if (get_address(count).empty())
+            if (get_address(count).empty() || (count > 32)) {
                 break;
+            }
         }
         set_count(count);
         return count;

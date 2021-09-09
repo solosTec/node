@@ -26,6 +26,7 @@ namespace smf {
     broker::broker(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cfg & config, lmn_type type, std::size_t index)
         : state_holder_()   //  initial state
         , sigs_{
+            std::bind(&broker::start, this), //    start
             std::bind(&broker::receive, this, std::placeholders::_1), //    receive
             std::bind(&broker::check_status, this, std::placeholders::_1), // check status
             std::bind(&broker::stop, this, std::placeholders::_1)
@@ -43,6 +44,7 @@ namespace smf {
         auto sp = channel_.lock();
         if (sp) {
             std::size_t slot{0};
+            sp->set_channel_name("start", slot++);
             sp->set_channel_name("receive", slot++);
             sp->set_channel_name("check-status", slot++);
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
@@ -101,6 +103,9 @@ namespace smf {
 
         try {
             boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
+            //
+            //  create new state holder in case configuartion was changed
+            //
             state_holder_ = std::make_shared<state::mgr>(r.resolve(address, std::to_string(port)));
             reset(state_holder_, state::value::CONNECTING);
             connect(state_holder_->shared_from_this());
@@ -166,7 +171,7 @@ namespace smf {
                 break;
             case state::value::CONNECTING:
                 CYNG_LOG_TRACE(logger_, "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] check status: CONNECTING");
-                start();
+                // start();
                 break;
             default:
                 CYNG_LOG_ERROR(
@@ -227,7 +232,8 @@ namespace smf {
             else {
                 CYNG_LOG_INFO(
                     logger_,
-                    "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] connected to " << endpoint_iter->endpoint());
+                    "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] address resolved "
+                                        << endpoint_iter->endpoint());
                 reset(sp, state::value::CONNECTED);
 
                 // Start the input actor.
@@ -281,6 +287,10 @@ namespace smf {
                 CYNG_LOG_WARNING(
                     logger_,
                     "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] read " << ec.value() << ": " << ec.message());
+
+                //
+                //  reset state
+                //
                 reset(sp, state::value::OFFLINE);
             }
         }
@@ -629,7 +639,8 @@ namespace smf {
             else {
                 CYNG_LOG_INFO(
                     logger_,
-                    "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] connected to " << endpoint_iter->endpoint());
+                    "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] address resolved "
+                                         << endpoint_iter->endpoint());
                 reset(sp, state::value::CONNECTED);
 
                 // Start the input actor to detect closed connection

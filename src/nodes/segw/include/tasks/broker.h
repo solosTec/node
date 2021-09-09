@@ -47,8 +47,12 @@ namespace smf {
     class broker {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::
-            tuple<std::function<void(cyng::buffer_t)>, std::function<void(std::chrono::seconds)>, std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<
+            std::function<void()>,                     //  start
+            std::function<void(cyng::buffer_t)>,       //  receive
+            std::function<void(std::chrono::seconds)>, //  check status
+            std::function<void(cyng::eod)>             //  stop
+            >;
 
         /**
          * helps to control state from the outside without
