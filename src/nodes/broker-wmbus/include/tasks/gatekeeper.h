@@ -19,22 +19,27 @@ namespace smf {
     class gatekeeper {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void()>, std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<
+            std::function<void()>, //   timeout
+            std::function<void()>, //  defer
+            std::function<void(cyng::eod)>>;
 
       public:
-        gatekeeper(cyng::channel_weak, cyng::logger, std::shared_ptr<wmbus_session>);
+        gatekeeper(cyng::channel_weak, cyng::logger, std::shared_ptr<wmbus_session>, std::chrono::seconds timeout);
         ~gatekeeper();
 
         void stop(cyng::eod);
 
       private:
         void timeout();
+        void defer();
 
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
         cyng::logger logger_;
         std::shared_ptr<wmbus_session> wmbussp_;
+        std::chrono::seconds const timeout_;
     };
 
 } // namespace smf

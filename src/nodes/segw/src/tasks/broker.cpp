@@ -67,6 +67,7 @@ namespace smf {
                 boost::asio::post(dispatcher_, [this]() { write_buffer_.clear(); });
                 break;
             case state::value::STOPPED:
+            case state::value::CONNECTED:
                 break;
             default:
                 //  required to get a proper error code: connection_aborted

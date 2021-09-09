@@ -72,19 +72,21 @@ namespace smf {
     }
 
     void wmbus_session::start(std::chrono::seconds timeout) {
+
+        gatekeeper_ = ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), timeout);
+        BOOST_ASSERT(gatekeeper_->is_open());
+
         //
         //	start reading
         //
         do_read();
 
-        gatekeeper_ = ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this());
-        BOOST_ASSERT(gatekeeper_->is_open());
-        CYNG_LOG_TRACE(logger_, "start gatekeeper with a timeout of " << timeout.count() << " seconds");
-        gatekeeper_->suspend(timeout, "timeout", cyng::make_tuple());
+        // CYNG_LOG_TRACE(logger_, "start gatekeeper with a timeout of " << timeout.count() << " seconds");
     }
 
     void wmbus_session::do_read() {
         auto self = shared_from_this();
+        gatekeeper_->dispatch("defer");
 
         socket_.async_read_some(
             boost::asio::buffer(buffer_.data(), buffer_.size()),
@@ -258,8 +260,8 @@ namespace smf {
                     bus_.req_db_update(
                         "meterwMBus",
                         cyng::key_generator(tag),
-                        cyng::param_map_factory()("address", ep.address())(
-                            "port", ep.port())("lastSeen", std::chrono::system_clock::now()));
+                        cyng::param_map_factory()("address", ep.address())("port", ep.port())(
+                            "lastSeen", std::chrono::system_clock::now()));
                 }
 
                 switch (frame_type) {
