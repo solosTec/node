@@ -1,5 +1,7 @@
 #include <smf/sml/value.hpp>
 
+#include <cyng/obj/value_cast.hpp>
+
 #ifdef _DEBUG_SML
 #include <iostream>
 #endif
@@ -118,6 +120,31 @@ namespace smf {
             return cyng::make_tuple(static_cast<std::uint8_t>(TIME_SECINDEX), static_cast<std::uint32_t>(ut));
         }
         cyng::tuple_t make_value() { return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::null()); }
+
+        cyng::tuple_t to_value(cyng::object obj) {
+            switch (obj.rtti().tag()) {
+            case cyng::TC_BOOL:
+            case cyng::TC_UINT8:
+            case cyng::TC_UINT16:
+            case cyng::TC_UINT32:
+            case cyng::TC_UINT64:
+            case cyng::TC_INT8:
+            case cyng::TC_INT16:
+            case cyng::TC_INT32:
+            case cyng::TC_INT64:
+            case cyng::TC_BUFFER:
+                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), obj);
+            case cyng::TC_STRING:
+                return detail::factory_policy<std::string>::create(cyng::value_cast<std::string>(obj, ""));
+            case cyng::TC_TIME_POINT:
+                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_TIME), obj);
+            case cyng::TC_SECOND: //	convert to [uint]
+                return detail::factory_policy<std::uint32_t>::create(cyng::value_cast(obj, std::chrono::seconds(900)).count());
+            default:
+                break;
+            }
+            return make_value();
+        }
 
     } // namespace sml
 } // namespace smf

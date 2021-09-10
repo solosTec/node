@@ -6,16 +6,136 @@
  */
 
 #include <smf/obis/tree.h>
+#include <smf/sml/value.hpp>
 
 #include <cyng/io/ostream.h>
 #include <cyng/obj/factory.hpp>
+#include <cyng/obj/util.hpp>
 
 #include <iostream>
 
 #include <boost/assert.hpp>
 
 namespace smf {
-    namespace obis {
+    namespace sml {
+
+        namespace { //  static linkage
+
+            cyng::tuple_t get_child_list(tree_node::list_t const &node) {
+                if (node.size() == 1) {
+                    auto const pos = node.begin();
+                    return cyng::make_tuple(pos->first, pos->second.value_, get_child_list(pos->second.nodes_));
+                }
+                cyng::tuple_t child_list;
+
+                //  std::map<cyng::obis, tree_node>
+                std::transform(
+                    std::begin(node),
+                    std::end(node),
+                    std::back_inserter(child_list),
+                    [](tree_node::list_t::value_type const &node) {
+                        return cyng::make_object(
+                            (node.second.nodes_.empty())
+                                ? cyng::make_tuple(node.first, to_value(node.second.value_), cyng::make_object())
+                                : cyng::make_tuple(node.first, to_value(node.second.value_), get_child_list(node.second.nodes_)));
+                    });
+                return child_list;
+            }
+
+            /**
+             * @return an empty tree if path does not exists
+             */
+            tree_node::list_t get_subtree(
+                tree_node::list_t const &nodes,
+                cyng::obis_path_t::const_iterator pos,
+                cyng::obis_path_t::const_iterator path_end) {
+
+                auto pos_nodes = nodes.find(*pos);
+                if (pos_nodes != nodes.end()) {
+                    ++pos;
+                    return (pos == path_end) ? pos_nodes->second.nodes_ : get_subtree(pos_nodes->second.nodes_, pos, path_end);
+                }
+                //
+                //  not found
+                //
+                return tree_node::list_t{};
+            }
+
+            cyng::object find(
+                tree_node::list_t const &nodes,
+                cyng::obis_path_t::const_iterator pos,
+                cyng::obis_path_t::const_iterator path_end) {
+
+                auto pos_nodes = nodes.find(*pos);
+                if (pos_nodes != nodes.end()) {
+                    ++pos;
+                    return (pos == path_end) ? pos_nodes->second.value_ : find(pos_nodes->second.nodes_, pos, path_end);
+                }
+                //
+                //  not found
+                //
+                return cyng::make_object();
+            }
+
+            /**
+             * @return true if node was added otherwise false (for updated)
+             */
+            bool
+            add(tree_node::list_t &nodes,
+                cyng::obis_path_t::const_iterator pos,
+                cyng::obis_path_t::const_iterator path_end,
+                cyng::obis code,
+                cyng::object value) {
+
+                auto pos_nodes = nodes.find(code);
+                if (pos == path_end) {
+                    //
+                    //  end of path
+                    //
+                    if (pos_nodes != nodes.end()) {
+                        //
+                        //  subtree/node exists
+                        //
+                        pos_nodes->second.value_ = std::move(value);
+                    } else {
+                        auto r = nodes.emplace(code, tree_node(value));
+                        BOOST_ASSERT(r.second);
+                        return r.second;
+                    }
+
+                } else {
+                    //
+                    //  continue
+                    //
+                    if (pos_nodes != nodes.end()) {
+                        code = *pos++;
+                        return add(pos_nodes->second.nodes_, pos, path_end, code, value);
+                    } else {
+                        auto r = nodes.emplace(code, tree_node());
+                        BOOST_ASSERT(r.second);
+                        code = *pos++;
+                        return add(r.first->second.nodes_, pos, path_end, code, value);
+                    }
+                }
+
+                return false;
+            }
+
+            bool
+            add(tree_node::list_t &nodes,
+                cyng::obis_path_t::const_iterator pos,
+                cyng::obis_path_t::const_iterator path_end,
+                cyng::object value) {
+
+                if (pos != path_end) {
+
+                    auto const code = *pos;
+                    return add(nodes, ++pos, path_end, code, value);
+                }
+                return false;
+            }
+        } // namespace
+
         tree_node::tree_node()
             : value_()
             , nodes_() {}
@@ -24,139 +144,34 @@ namespace smf {
             : value_(obj)
             , nodes_() {}
 
-        void
-        tree_node::add(cyng::obis_path_t::const_iterator pos_path, cyng::obis_path_t::const_iterator path_end, cyng::object value) {
-            auto pos = pos_path++;
-            if (pos_path == path_end) {
-                auto pos_nodes = nodes_.find(*pos);
-                if (pos_nodes != nodes_.end()) {
-                    std::cout << "append " << *pos << " = " << value << std::endl;
-                    pos_nodes->second.value_ = std::move(value);
-                } else {
-                    std::cout << "new " << *pos << " = " << value << std::endl;
-                    nodes_.emplace(*pos, tree_node(value));
-                }
-            } else {
-                auto pos_nodes = nodes_.find(*pos);
-                if (pos_nodes != nodes_.end()) {
-                    //
-                    //  update
-                    //
-                    std::cout << "next " << *pos << std::endl;
-                    pos_nodes->second.add(pos_path, path_end, value);
-                } else {
-                    //
-                    //  insert
-                    //
-                    std::cout << "insert " << *pos << std::endl;
-                    auto r = nodes_.emplace(*pos, tree_node());
-                    BOOST_ASSERT(r.second);
-                    if (r.second) {
-                        r.first->second.add(pos_path, path_end, value);
-                    }
-                }
-            }
-        }
-
-        cyng::object tree_node::find(cyng::obis_path_t::const_iterator pos_path, cyng::obis_path_t::const_iterator path_end) const {
-            auto pos = pos_path++;
-            std::cout << "lookup " << *pos << std::endl;
-            auto pos_nodes = nodes_.find(*pos);
-            if (pos_nodes != nodes_.end()) {
-                return (pos_path == path_end) ? pos_nodes->second.value_ : pos_nodes->second.find(pos_path, path_end);
-            }
-            //
-            //  not found
-            //
-            return cyng::make_object();
-        }
-
         tree::tree()
             : nodes_() {}
 
-        void tree::add(cyng::obis_path_t path, cyng::object value) {
+        tree::tree(tree_node::list_t nl)
+            : nodes_(nl) {}
+
+        bool tree::add(cyng::obis_path_t path, cyng::object value) {
 
             BOOST_ASSERT(!path.empty());
-
-            //
-            //  start
-            //
-            auto pos_path = path.begin();
-            if (pos_path != path.end()) {
-                auto pos_nodes = nodes_.find(*pos_path);
-                if (pos_nodes != nodes_.end()) {
-                    //
-                    //  exists
-                    //
-                    auto pos = pos_path++;
-                    if (pos_path == path.end()) {
-                        //
-                        //  update
-                        //
-                        std::cout << "update" << std::endl;
-                    } else {
-                        //
-                        //  next node
-                        //
-                        std::cout << "next " << *pos << std::endl;
-                        pos_nodes->second.add(pos_path, path.end(), value);
-                    }
-
-                } else {
-                    //
-                    //  doesn't exist
-                    //
-                    auto pos = pos_path++;
-                    if (pos_path == path.end()) {
-                        //
-                        //  insert
-                        //
-                        std::cout << "insert " << *pos << std::endl;
-
-                    } else {
-                        //
-                        //  next node
-                        //
-                        std::cout << "emplace " << *pos << std::endl;
-                        auto r = nodes_.emplace(*pos, tree_node());
-                        BOOST_ASSERT(r.second);
-                        if (r.second) {
-                            r.first->second.add(pos_path, path.end(), value);
-                        }
-                    }
-                }
-            }
+            return sml::add(nodes_, std::begin(path), std::end(path), value);
         }
 
         cyng::object tree::find(cyng::obis_path_t path) const {
             BOOST_ASSERT(!path.empty());
 
-            //
-            //  start
-            //
-            auto pos_path = path.begin();
-            if (pos_path != path.end()) {
-                auto pos_nodes = nodes_.find(*pos_path);
-                if (pos_nodes != nodes_.end()) {
-                    //
-                    //  exists
-                    //
-                    auto pos = pos_path++;
-                    if (pos_path == path.end()) {
-                        //
-                        //  end of path
-                        //
-                        return pos_nodes->second.value_;
-                    } else {
-                        //
-                        //  walk down
-                        //
-                        return pos_nodes->second.find(pos_path, path.end());
-                    }
-                }
-            }
-            return cyng::make_object();
+            return sml::find(nodes_, std::begin(path), std::end(path));
         }
 
-    } // namespace obis
+        tree tree::get_subtree(cyng::obis_path_t path) const {
+            return tree(sml::get_subtree(nodes_, std::begin(path), std::end(path)));
+        }
+
+        cyng::tuple_t tree::to_child_list() const { return get_child_list(nodes_); }
+
+        std::size_t tree::size(cyng::obis_path_t path) const {
+
+            return sml::get_subtree(nodes_, std::begin(path), std::end(path)).size();
+        }
+
+    } // namespace sml
 } // namespace smf

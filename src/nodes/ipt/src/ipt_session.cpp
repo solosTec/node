@@ -367,8 +367,8 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[ipt] unknown command " << ipt::ctrl_res_unknown_cmd(std::move(body)));
             break;
         default:
-            CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " dropped");
-            ipt_send(std::bind(&ipt::serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
+            CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " ignored");
+            // ipt_send(std::bind(&ipt::serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
             break;
         }
     }

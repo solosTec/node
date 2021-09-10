@@ -61,14 +61,7 @@ namespace smf {
                 static cyng::tuple_t create(cyng::buffer_t &&v);
                 static cyng::tuple_t create(cyng::buffer_t const &v);
             };
-            // template <> struct factory_policy<cyng::buffer_t const &> { static cyng::tuple_t create(cyng::buffer_t const &v); };
             template <> struct factory_policy<std::string> { static cyng::tuple_t create(std::string v); };
-
-            // template <std::size_t N> struct factory_policy<const char (&)[N]> {
-            //    static cyng::tuple_t create(const char (&p)[N]) {
-            //        return factory_policy<std::string>::create(std::string(p, N - 1));
-            //    }
-            //};
 
             template <> struct factory_policy<char const *> {
                 static cyng::tuple_t create(char const *p) { return factory_policy<std::string>::create(std::string(p)); }
@@ -129,6 +122,12 @@ namespace smf {
          * generate an empty value
          */
         cyng::tuple_t make_value();
+
+        /**
+         * Convert an object to a SML value.
+         * Works for simple data types only.
+         */
+        cyng::tuple_t to_value(cyng::object);
 
     } // namespace sml
 } // namespace smf
