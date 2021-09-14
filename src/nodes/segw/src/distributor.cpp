@@ -40,7 +40,7 @@ namespace smf {
             if (task_id_ipv4 != 0) {
                 auto const ep = cfg.get_ipv4_ep();
                 CYNG_LOG_INFO(logger_, "[distributor] set global listener tcp/ip endpoint to " << ep);
-                ctl_.get_registry().dispatch(task_id_ipv4, "rebind", cyng::make_tuple(ep));
+                ctl_.get_registry().dispatch(task_id_ipv4, "restart", cyng::make_tuple());
             }
 
             //
@@ -51,7 +51,7 @@ namespace smf {
 
                 auto const ep = cfg.get_link_local_ep();
                 CYNG_LOG_INFO(logger_, "[distributor] use link-local tcp/ip endpoint " << ep);
-                ctl_.get_registry().dispatch(task_id_ipv6, "rebind", cyng::make_tuple(ep));
+                ctl_.get_registry().dispatch(task_id_ipv6, "restart", cyng::make_tuple());
             }
         }
     }

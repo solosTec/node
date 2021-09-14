@@ -838,13 +838,11 @@ namespace smf {
             cfg.set_IPv4_task_id(channel->get_id());
 
             auto const delay = cfg.get_delay();
-            auto const ep = cfg.get_ipv4_ep();
             CYNG_LOG_INFO(
                 logger_,
-                "start external listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id()
-                                                << " on ep " << ep);
+                "start external listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id());
 
-            channel->suspend(delay, "start", cyng::make_tuple(delay, ep));
+            channel->suspend(delay, "start", cyng::make_tuple(delay));
 
             //
             //  check the IPv6 case only for linux envronments
@@ -892,7 +890,7 @@ namespace smf {
                 logger_,
                 "start link-local listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id());
 
-            channel->suspend(delay, "start", cyng::make_tuple(delay, ep));
+            channel->suspend(delay, "start", cyng::make_tuple(delay));
 
         } else {
             CYNG_LOG_WARNING(

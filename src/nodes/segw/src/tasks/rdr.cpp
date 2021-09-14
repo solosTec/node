@@ -16,9 +16,9 @@ namespace smf {
 
         server::server(cyng::channel_weak wp, cyng::controller &ctl, cfg &c, cyng::logger logger, lmn_type type, server::type srv_type)
             : sigs_{
-                  std::bind(&server::start, this, std::placeholders::_1, std::placeholders::_2), //	0
+                  std::bind(&server::start, this, std::placeholders::_1), //	0
                   std::bind(&server::pause, this), //	1 (halt)
-                  std::bind(&server::rebind, this, std::placeholders::_1), //	2
+                  std::bind(&server::restart, this), //	2
                   std::bind(&server::stop, this, std::placeholders::_1)   //	3
               }
             , channel_(wp)
@@ -35,7 +35,7 @@ namespace smf {
                 std::size_t slot{0};
                 sp->set_channel_name("start", slot++);
                 sp->set_channel_name("halt", slot++);
-                sp->set_channel_name("rebind", slot++);
+                sp->set_channel_name("restart", slot++);
                 CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
             }
         }
@@ -44,10 +44,21 @@ namespace smf {
         server::~server() { CYNG_LOG_TRACE(logger_, "[RDR] server::~server()"); }
 #endif
 
-        void server::start(std::chrono::seconds delay, boost::asio::ip::tcp::endpoint ep) {
+        void server::start(std::chrono::seconds delay) {
             auto sp = channel_.lock();
             BOOST_ASSERT(sp);
             if (sp) {
+
+                //
+                //  get TPC/IP endpoint
+                //
+                auto const ep = get_endpoint();
+                if (!ep.address().is_unspecified()) {
+                    CYNG_LOG_INFO(logger_, "[RDR] #" << sp->get_id() << " start at endpoint [" << ep << "]");
+                } else {
+                    CYNG_LOG_WARNING(logger_, "[RDR] #" << sp->get_id() << " endpoint [" << ep << "] is not present");
+                }
+
                 boost::system::error_code ec;
                 acceptor_.open(ep.protocol(), ec);
                 if (!ec) {
@@ -76,28 +87,16 @@ namespace smf {
                     acceptor_.cancel(ec);
                     acceptor_.close(ec);
 
-                    //  ep ist not working, check for new one
-                    cfg_listener cfg(cfg_, type_);
-                    if (srv_type_ == type::ipv6) {
-                        auto const ep = cfg.get_link_local_ep();
-                        CYNG_LOG_TRACE(
-                            logger_,
-                            "[RDR] #" << sp->get_id() << " (link-local) " << get_name(type_) << " restart with " << ep << " in "
-                                      << delay.count() << " seconds");
-
-                        sp->suspend(delay, "start", cyng::make_tuple(delay, ep));
-                    } else {
-                        BOOST_ASSERT(srv_type_ == type::ipv4);
-                        auto const ep = cfg.get_ipv4_ep();
-                        CYNG_LOG_TRACE(
-                            logger_,
-                            "[RDR] #" << sp->get_id() << " (IPv4) " << get_name(type_) << " restart with " << ep << " in "
-                                      << delay.count() << " seconds");
-
-                        sp->suspend(delay, "start", cyng::make_tuple(delay, ep));
-                    }
+                    sp->suspend(delay, "start", cyng::make_tuple(delay));
                 }
+            } else {
+                CYNG_LOG_FATAL(logger_, "[RDR] task removed");
             }
+        }
+
+        boost::asio::ip::tcp::endpoint server::get_endpoint() {
+            cfg_listener cfg(cfg_, type_);
+            return (srv_type_ == type::ipv6) ? cfg.get_link_local_ep() : cfg.get_ipv4_ep();
         }
 
         void server::do_accept() {
@@ -195,13 +194,12 @@ namespace smf {
             stop(cyng::eod());
         }
 
-        void server::rebind(boost::asio::ip::tcp::endpoint ep) {
+        void server::restart() {
 
             auto sp = channel_.lock();
             BOOST_ASSERT(sp);
             cfg_listener cfg(cfg_, type_);
-            CYNG_LOG_INFO(logger_, "[RDR] #" << sp->get_id() << " listener endpoint changed to: " << ep);
-            // ep_ = ep;
+            CYNG_LOG_INFO(logger_, "[RDR] #" << sp->get_id() << " restart");
 
             if (acceptor_.is_open()) {
 
@@ -210,14 +208,14 @@ namespace smf {
                 acceptor_.close(ec);
 
             } else {
-                CYNG_LOG_WARNING(logger_, "[RDR] listener (still) closed - cannot changed endpoint to: " << ep);
+                CYNG_LOG_WARNING(logger_, "[RDR]] #" << sp->get_id() << " listener (still) closed - cannot change endpoint");
             }
 
             //
             //  restart
             //
             auto const delay = cfg.get_delay();
-            start(delay, ep);
+            start(delay);
         }
 
     } // namespace rdr
