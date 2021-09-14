@@ -20,30 +20,23 @@ namespace smf {
             template <typename T> friend class cyng::task;
 
             using signatures_t = std::tuple<
-                std::function<void(std::chrono::seconds)>,           //	start
-                std::function<void()>,                               //  pause
-                std::function<void(boost::asio::ip::tcp::endpoint)>, //  rebind
+                std::function<void(std::chrono::seconds, boost::asio::ip::tcp::endpoint)>, //	start
+                std::function<void()>,                                                     //  pause
+                std::function<void(boost::asio::ip::tcp::endpoint)>,                       //  rebind
                 std::function<void(cyng::eod)>>;
 
           public:
             enum class type : std::uint8_t { ipv4, ipv6 } const srv_type_;
 
           public:
-            server(
-                cyng::channel_weak wp,
-                cyng::controller &ctl,
-                cfg &,
-                cyng::logger,
-                lmn_type,
-                type,
-                boost::asio::ip::tcp::endpoint ep);
+            server(cyng::channel_weak wp, cyng::controller &ctl, cfg &, cyng::logger, lmn_type, type);
 
 #ifdef _DEBUG
             virtual ~server();
 #endif
 
           private:
-            void start(std::chrono::seconds);
+            void start(std::chrono::seconds, boost::asio::ip::tcp::endpoint ep);
             void stop(cyng::eod);
             void pause();
             void do_accept();
@@ -56,7 +49,6 @@ namespace smf {
             cfg &cfg_;
             cyng::logger logger_;
             lmn_type const type_;
-            boost::asio::ip::tcp::endpoint ep_;
             cyng::registry &registry_;
             boost::asio::ip::tcp::acceptor acceptor_;
             std::uint64_t session_counter_;

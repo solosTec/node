@@ -832,17 +832,19 @@ namespace smf {
             }
             auto const name = cfg.get_task_name();
 
-            auto channel = ctl_.create_named_channel_with_ref<rdr::server>(
-                name, ctl_, cfg_, logger_, type, rdr::server::type::ipv4, cfg.get_ipv4_ep());
+            auto channel =
+                ctl_.create_named_channel_with_ref<rdr::server>(name, ctl_, cfg_, logger_, type, rdr::server::type::ipv4);
             stash_.lock(channel);
             cfg.set_IPv4_task_id(channel->get_id());
 
             auto const delay = cfg.get_delay();
+            auto const ep = cfg.get_ipv4_ep();
             CYNG_LOG_INFO(
                 logger_,
-                "start external listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id());
+                "start external listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id()
+                                                << " on ep " << ep);
 
-            channel->suspend(delay, "start", cyng::make_tuple(delay));
+            channel->suspend(delay, "start", cyng::make_tuple(delay, ep));
 
             //
             //  check the IPv6 case only for linux envronments
@@ -875,8 +877,8 @@ namespace smf {
             auto const name = cfg.get_task_name();
             CYNG_LOG_INFO(logger_, "create link-local listener/rdr [" << name << "] " << ep);
 
-            auto channel = ctl_.create_named_channel_with_ref<rdr::server>(
-                name, ctl_, cfg_, logger_, cfg.get_type(), rdr::server::type::ipv6, ep);
+            auto channel =
+                ctl_.create_named_channel_with_ref<rdr::server>(name, ctl_, cfg_, logger_, cfg.get_type(), rdr::server::type::ipv6);
             stash_.lock(channel);
             cfg.set_IPv6_task_id(channel->get_id());
 
@@ -890,7 +892,7 @@ namespace smf {
                 logger_,
                 "start link-local listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id());
 
-            channel->suspend(delay, "start", cyng::make_tuple(delay));
+            channel->suspend(delay, "start", cyng::make_tuple(delay, ep));
 
         } else {
             CYNG_LOG_WARNING(
