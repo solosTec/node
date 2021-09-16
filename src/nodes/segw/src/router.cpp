@@ -5,11 +5,11 @@
  *
  */
 
+#include <router.h>
+
 #include <config/cfg_hardware.h>
 #include <config/cfg_ipt.h>
 #include <config/cfg_sml.h>
-
-#include <router.h>
 
 #include <smf/ipt/codes.h>
 #include <smf/ipt/transpiler.h>

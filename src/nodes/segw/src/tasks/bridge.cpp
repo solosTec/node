@@ -248,7 +248,7 @@ namespace smf {
         auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", ctl_, logger_, cfg_, storage_);
         BOOST_ASSERT(channel->is_open());
         stash_.lock(channel);
-        channel->dispatch("power-return", cyng::make_tuple());
+        channel->dispatch("power-return");
 
         //
         //  check some values
@@ -443,8 +443,7 @@ namespace smf {
                 //	init CP210x
                 //
                 channel->dispatch("reset-data-sinks");
-                // channel->dispatch("add-data-sink", cyng::make_tuple("CP210x"));
-                channel->dispatch("add-data-sink", hci->get_id());
+                channel->dispatch("add-data-sink", hci->get_id()); //  this is the only dataa sink
                 channel->dispatch("open");
                 channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
 

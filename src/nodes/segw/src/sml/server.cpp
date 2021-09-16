@@ -31,7 +31,7 @@ namespace smf {
                 acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
                 do_accept();
             } else {
-                CYNG_LOG_WARNING(logger_, "[SML] server cannot start listening at " << ep << ": " << ec.message());
+                CYNG_LOG_ERROR(logger_, "[SML] server cannot start listening at " << ep << ": " << ec.message());
             }
         }
 

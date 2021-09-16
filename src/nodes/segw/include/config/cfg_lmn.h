@@ -20,6 +20,7 @@ namespace smf {
         WIRED = 1,    //	rs485 (GPIO 53)
         ETHERNET,
         MOBILE,
+        LORA,
         OTHER /* = 0*/,
     };
 
@@ -35,6 +36,8 @@ namespace smf {
             return "ETHERNET";
         case lmn_type::MOBILE:
             return "MOBILE";
+        case lmn_type::LORA:
+            return "LORA";
         case lmn_type::OTHER:
             return "OTHER";
         default:

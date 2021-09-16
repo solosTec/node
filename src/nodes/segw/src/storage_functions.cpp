@@ -116,22 +116,23 @@ namespace smf {
 
             cyng::meta_sql(
                 "TMeterMBus",
-                {cyng::column_sql("serverID", cyng::TC_BUFFER, 9),     //	server/meter ID
-                 cyng::column_sql("lastSeen", cyng::TC_TIME_POINT, 0), //	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
-                 cyng::column_sql("class", cyng::TC_STRING, 16),       //	device class (always "---" == 2D 2D 2D)
-                 cyng::column_sql("active", cyng::TC_BOOL, 0),         //	active
-                 cyng::column_sql("descr", cyng::TC_STRING, 128),      //	manufacturer/description
-                 //	---
-                 cyng::column_sql("status", cyng::TC_UINT32, 0), //	"Statusinformation: 00"
-                 //	Contains a bit mask to define the bits of the status word, that if changed
-                 //	will result in an entry in the log-book.
-                 cyng::column_sql("mask", cyng::TC_BUFFER, 0),     //	"Bitmaske: 00 00"
-                 cyng::column_sql("interval", cyng::TC_UINT32, 0), //	"Zeit zwischen zwei Datensätzen: 49000"
-                 //	--- optional data
-                 cyng::column_sql("pubKey", cyng::TC_BUFFER, 16), //	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
-                 cyng::column_sql("aes", cyng::TC_AES128, 32),    //	AES-Key
-                 cyng::column_sql("user", cyng::TC_STRING, 32),
-                 cyng::column_sql("pwd", cyng::TC_STRING, 32)
+                {
+                    cyng::column_sql("serverID", cyng::TC_BUFFER, 9),     //	server/meter ID
+                    cyng::column_sql("lastSeen", cyng::TC_TIME_POINT, 0), //	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
+                    cyng::column_sql("class", cyng::TC_STRING, 16),       //	device class (always "---" == 2D 2D 2D)
+                    cyng::column_sql("active", cyng::TC_BOOL, 0),         //	active
+                    cyng::column_sql("descr", cyng::TC_STRING, 128),      //	manufacturer/description
+                    //	---
+                    cyng::column_sql("status", cyng::TC_UINT32, 0), //	"Statusinformation: 00"
+                    //	Contains a bit mask to define the bits of the status word, that if changed
+                    //	will result in an entry in the log-book.
+                    cyng::column_sql("mask", cyng::TC_BUFFER, 0),     //	"Bitmaske: 00 00"
+                    cyng::column_sql("interval", cyng::TC_UINT32, 0), //	Time between two data sets: 49000
+                    //	--- optional data
+                    cyng::column_sql("pubKey", cyng::TC_BUFFER, 16), //	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
+                    cyng::column_sql("aes", cyng::TC_AES128, 32)     //	AES-Key
+                                                                     // cyng::column_sql("user", cyng::TC_STRING, 32),
+                    // cyng::column_sql("pwd", cyng::TC_STRING, 32)
 
                 },
                 1),
