@@ -45,28 +45,7 @@ namespace smf {
         , ping_() {
 
         vm_ = init_vm(fabric);
-        std::size_t slot{0};
-        vm_.set_channel_name("cluster.req.login", slot++);           //	get_vm_func_cluster_req_login
-        vm_.set_channel_name("cluster.res.ping", slot++);            //	get_vm_func_cluster_res_ping
-        vm_.set_channel_name("db.req.subscribe", slot++);            //	get_vm_func_db_req_subscribe
-        vm_.set_channel_name("db.req.insert", slot++);               //	get_vm_func_db_req_insert
-        vm_.set_channel_name("db.req.insert.auto", slot++);          //	get_vm_func_db_req_insert_auto
-        vm_.set_channel_name("db.req.update", slot++);               //	table modify()
-        vm_.set_channel_name("db.req.remove", slot++);               //	table erase()
-        vm_.set_channel_name("db.req.clear", slot++);                //	table clear()
-        vm_.set_channel_name("pty.req.login", slot++);               //	get_vm_func_pty_login
-        vm_.set_channel_name("pty.req.logout", slot++);              //	get_vm_func_pty_logout
-        vm_.set_channel_name("pty.open.connection", slot++);         //	get_vm_func_pty_open_connection
-        vm_.set_channel_name("pty.forward.open.connection", slot++); //	get_vm_func_pty_forward_open_connection
-        vm_.set_channel_name("pty.return.open.connection", slot++);  //	get_vm_func_pty_return_open_connection
-        vm_.set_channel_name("pty.transfer.data", slot++);           //	get_vm_func_pty_transfer_data
-        vm_.set_channel_name("pty.close.connection", slot++);        //	get_vm_func_pty_close_connection
-        vm_.set_channel_name("pty.register.target", slot++);         //	get_vm_func_pty_register_target
-        vm_.set_channel_name("pty.deregister", slot++);              //	get_vm_func_pty_deregister
-        vm_.set_channel_name("pty.open.channel", slot++);            //	get_vm_func_pty_open_channel
-        vm_.set_channel_name("pty.close.channel", slot++);           //	get_vm_func_pty_close_channel
-        vm_.set_channel_name("pty.push.data.req", slot++);           //	get_vm_func_pty_push_data_req
-        vm_.set_channel_name("sys.msg", slot++);                     //	get_vm_func_sys_msg
+        // std::size_t slot{0};
     }
 
     session::~session() {
@@ -143,28 +122,28 @@ namespace smf {
 
     cyng::vm_proxy session::init_vm(cyng::mesh &fabric) {
 
-        return fabric.create_proxy(
-            get_vm_func_cluster_req_login(this),
-            get_vm_func_cluster_res_ping(this),
-            get_vm_func_db_req_subscribe(this),
-            get_vm_func_db_req_insert(this),
-            get_vm_func_db_req_insert_auto(this),
-            get_vm_func_db_req_update(this),
-            get_vm_func_db_req_remove(this),
-            get_vm_func_db_req_clear(this),
-            get_vm_func_pty_login(this),
-            get_vm_func_pty_logout(this),
-            get_vm_func_pty_open_connection(this),
-            get_vm_func_pty_forward_open_connection(this),
-            get_vm_func_pty_return_open_connection(this),
-            get_vm_func_pty_transfer_data(this),
-            get_vm_func_pty_close_connection(this),
-            get_vm_func_pty_register_target(this),
-            get_vm_func_pty_deregister(this),
-            get_vm_func_pty_open_channel(this),
-            get_vm_func_pty_close_channel(this),
-            get_vm_func_pty_push_data_req(this),
-            get_vm_func_sys_msg(&cache_));
+        return fabric.make_proxy(
+            cyng::make_description("cluster.req.login", get_vm_func_cluster_req_login(this)),
+            cyng::make_description("cluster.res.ping", get_vm_func_cluster_res_ping(this)),
+            cyng::make_description("db.req.subscribe", get_vm_func_db_req_subscribe(this)),
+            cyng::make_description("db.req.insert", get_vm_func_db_req_insert(this)),
+            cyng::make_description("db.req.insert.auto", get_vm_func_db_req_insert_auto(this)),
+            cyng::make_description("db.req.update", get_vm_func_db_req_update(this)),
+            cyng::make_description("db.req.remove", get_vm_func_db_req_remove(this)),
+            cyng::make_description("db.req.clear", get_vm_func_db_req_clear(this)),
+            cyng::make_description("pty.req.login", get_vm_func_pty_login(this)),
+            cyng::make_description("pty.req.logout", get_vm_func_pty_logout(this)),
+            cyng::make_description("pty.open.connection", get_vm_func_pty_open_connection(this)),
+            cyng::make_description("pty.forward.open.connection", get_vm_func_pty_forward_open_connection(this)),
+            cyng::make_description("pty.return.open.connection", get_vm_func_pty_return_open_connection(this)),
+            cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
+            cyng::make_description("pty.close.connection", get_vm_func_pty_close_connection(this)),
+            cyng::make_description("pty.register.target", get_vm_func_pty_register_target(this)),
+            cyng::make_description("pty.deregister", get_vm_func_pty_deregister(this)),
+            cyng::make_description("pty.open.channel", get_vm_func_pty_open_channel(this)),
+            cyng::make_description("pty.close.channel", get_vm_func_pty_close_channel(this)),
+            cyng::make_description("pty.push.data.req", get_vm_func_pty_push_data_req(this)),
+            cyng::make_description("sys.msg", get_vm_func_sys_msg(&cache_)));
     }
 
     void session::do_write() {

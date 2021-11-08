@@ -13,7 +13,6 @@
 #include <cyng/log/logger.h>
 #include <cyng/store/db.h>
 
-
 #include <cyng/task/task_fwd.h>
 
 namespace smf {
@@ -28,14 +27,13 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(cyng::eod)>,
             std::function<void(cyng::table const *, cyng::key_t, cyng::data_t, std::uint64_t, boost::uuids::uuid)>,
             std::function<void(cyng::table const *, cyng::key_t, cyng::attr_t, std::uint64_t, boost::uuids::uuid)>,
             std::function<void(cyng::table const *, cyng::key_t, boost::uuids::uuid)>,
             std::function<void(cyng::table const *, boost::uuids::uuid)>,
             std::function<void(cyng::table const *, bool)>,
-            std::function<void()> //	power_return
-            >;
+            std::function<void()>, //	power_return
+            std::function<void(cyng::eod)>>;
 
       public:
         persistence(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cfg &, storage &);

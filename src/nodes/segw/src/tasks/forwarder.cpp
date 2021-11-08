@@ -32,10 +32,7 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("connect", slot++);
-            sp->set_channel_name("disconnect", slot++);
-            sp->set_channel_name("receive", slot++);
+            sp->set_channel_names({"connect", "disconnect", "receive"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
     }

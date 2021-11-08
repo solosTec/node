@@ -45,13 +45,7 @@ namespace smf {
         , sql_map_() {
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("open", 0);
-            sp->set_channel_name("load", 1);
-            sp->set_channel_name("update", 2);
-            sp->set_channel_name("insert", 3);
-            sp->set_channel_name("remove", 4);
-            sp->set_channel_name("clear", 5);
-
+            sp->set_channel_names({"open", "load", "update", "insert", "remove", "clear"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
     }

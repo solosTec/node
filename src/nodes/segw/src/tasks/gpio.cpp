@@ -29,6 +29,7 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
+            //  starts with 1!
             std::size_t slot{1};
             sp->set_channel_name("turn", slot++);
             sp->set_channel_name("flashing", slot++);

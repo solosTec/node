@@ -40,8 +40,7 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("connect", 0);
-            sp->set_channel_name("listen", 1); //	wmbus_server
+            sp->set_channel_names({"connect", "listen"}); //	wmbus_server
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

@@ -43,10 +43,7 @@ namespace smf {
         , write_buffer_() {
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("start", slot++);
-            sp->set_channel_name("receive", slot++);
-            sp->set_channel_name("check-status", slot++);
+            sp->set_channel_names({"start", "receive", "check-status"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
     }

@@ -20,6 +20,7 @@ namespace smf {
         , targets_() {
         auto sp = channel_.lock();
         if (sp) {
+            //  starts with 1!
             sp->set_channel_name("receive", 1);
             sp->set_channel_name("reset-data-sinks", 2);
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");

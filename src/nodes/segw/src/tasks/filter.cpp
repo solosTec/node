@@ -59,6 +59,7 @@ namespace smf {
         // channel_.lock()->get_name()
         auto sp = channel_.lock();
         if (sp) {
+            //  starts with 1!
             sp->set_channel_name("receive", 1);
             sp->set_channel_name("reset-data-sinks", 2);
             sp->set_channel_name("update-statistics", 3);

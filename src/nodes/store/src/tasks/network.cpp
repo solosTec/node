@@ -53,7 +53,7 @@ namespace smf {
         , stash_(ctl_.get_ctx()) {
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("connect", 0);
+            sp->set_channel_names({"connect"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

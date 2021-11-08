@@ -30,7 +30,7 @@ namespace smf {
         BOOST_ASSERT(iptsp_);
         auto sp = wp.lock();
         if (sp) {
-            sp->set_channel_name("timeout", 0);
+            sp->set_channel_names({"timeout"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

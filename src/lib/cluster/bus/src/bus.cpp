@@ -47,30 +47,24 @@ namespace smf {
             // CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
             vm_.load(std::move(obj));
         }) {
+
+        //
+        //  create and initialize VM with named functions
+        //
         vm_ = init_vm(bip);
-        std::size_t slot{0};
-        vm_.set_channel_name("cluster.res.login", slot++);
-        vm_.set_channel_name("cluster.req.ping", slot++);
-        vm_.set_channel_name("cluster.disconnect", slot++);
-        vm_.set_channel_name("db.res.insert", slot++);
-        vm_.set_channel_name("db.res.trx", slot++);
-        vm_.set_channel_name("db.res.update", slot++);
-        vm_.set_channel_name("db.res.remove", slot++);
-        vm_.set_channel_name("db.res.clear", slot++);
-        vm_.set_channel_name("pty.res.login", slot++);
     }
 
     cyng::vm_proxy bus::init_vm(bus_interface *bip) {
 
-        return bip->get_fabric()->create_proxy(
-            get_vm_func_on_login(bip),      //	"cluster.res.login"
-            get_vm_func_on_ping(this),      //	"cluster.req.ping"
-            get_vm_func_on_disconnect(bip), //	"cluster.disconnect"
-            get_vm_func_db_res_insert(bip), //	"db.res.insert"
-            get_vm_func_db_res_trx(bip),    //	"db.res.trx"
-            get_vm_func_db_res_update(bip), //	"db.res.update"
-            get_vm_func_db_res_remove(bip), //	"db.res.remove"
-            get_vm_func_db_res_clear(bip)   //	"db.res.clear"
+        return bip->get_fabric()->make_proxy(
+            cyng::make_description("cluster.res.login", get_vm_func_on_login(bip)),       //	"cluster.res.login"
+            cyng::make_description("cluster.req.ping", get_vm_func_on_ping(this)),        //	"cluster.req.ping"
+            cyng::make_description("cluster.disconnect", get_vm_func_on_disconnect(bip)), //	"cluster.disconnect"
+            cyng::make_description("db.res.insert", get_vm_func_db_res_insert(bip)),      //	"db.res.insert"
+            cyng::make_description("db.res.trx", get_vm_func_db_res_trx(bip)),            //	"db.res.trx"
+            cyng::make_description("db.res.update", get_vm_func_db_res_update(bip)),      //	"db.res.update"
+            cyng::make_description("db.res.remove", get_vm_func_db_res_remove(bip)),      //	"db.res.remove"
+            cyng::make_description("db.res.clear", get_vm_func_db_res_clear(bip))         //	"db.res.clear"
         );
     }
 

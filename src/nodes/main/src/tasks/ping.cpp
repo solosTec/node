@@ -20,8 +20,7 @@ namespace smf {
         , trigger_(trigger) {
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("update", slot++);
+            sp->set_channel_names({"update"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

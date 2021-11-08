@@ -53,37 +53,22 @@ namespace smf {
         , serializer_(sk)
         , vm_()
         , dev_(boost::uuids::nil_uuid())
-        , oce_map_()
-        , //	store temporary data during connection establishment
-        gatekeeper_() {
-        vm_ = fabric.create_proxy(
+        , oce_map_() //	store temporary data during connection establishment
+        , gatekeeper_() {
+
+        vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
-            get_vm_func_pty_res_login(this),
-            get_vm_func_pty_res_register(this),
-            get_vm_func_pty_res_open_channel(this),
-            get_vm_func_pty_req_push_data(this),
-            get_vm_func_pty_res_push_data(this),
-            get_vm_func_pty_res_close_channel(this),
-            get_vm_func_pty_res_open_connection(this),
-            get_vm_func_pty_transfer_data(this),
-            get_vm_func_pty_res_close_connection(this),
-            get_vm_func_pty_req_open_connection(this),
-            get_vm_func_pty_req_close_connection(this));
-
-        std::size_t slot{0};
-        vm_.set_channel_name("pty.res.login", slot++);        //	get_vm_func_pty_res_login
-        vm_.set_channel_name("pty.res.register", slot++);     //	get_vm_func_pty_res_register
-        vm_.set_channel_name("pty.res.open.channel", slot++); //	get_vm_func_pty_res_open_channel
-
-        vm_.set_channel_name("pty.push.data.req", slot++); //	get_vm_func_pty_req_push_data
-        vm_.set_channel_name("pty.push.data.res", slot++); //	get_vm_func_pty_res_push_data
-
-        vm_.set_channel_name("pty.res.close.channel", slot++);    //	get_vm_func_pty_res_close_channel
-        vm_.set_channel_name("pty.res.open.connection", slot++);  //	get_vm_func_pty_res_open_connection
-        vm_.set_channel_name("pty.transfer.data", slot++);        //	get_vm_func_pty_transfer_data
-        vm_.set_channel_name("pty.res.close.connection", slot++); //	get_vm_func_pty_res_close_connection
-        vm_.set_channel_name("pty.req.open.connection", slot++);  //	get_vm_func_pty_req_open_connection
-        vm_.set_channel_name("pty.req.close.connection", slot++); //	get_vm_func_pty_req_close_connection
+            cyng::make_description("pty.res.login", get_vm_func_pty_res_login(this)),
+            cyng::make_description("pty.res.register", get_vm_func_pty_res_register(this)),
+            cyng::make_description("pty.res.open.channel", get_vm_func_pty_res_open_channel(this)),
+            cyng::make_description("pty.push.data.req", get_vm_func_pty_req_push_data(this)),
+            cyng::make_description("pty.push.data.res", get_vm_func_pty_res_push_data(this)),
+            cyng::make_description("pty.res.close.channel", get_vm_func_pty_res_close_channel(this)),
+            cyng::make_description("pty.res.open.connection", get_vm_func_pty_res_open_connection(this)),
+            cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
+            cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
+            cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
+            cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }

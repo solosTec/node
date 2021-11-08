@@ -29,9 +29,7 @@ namespace smf {
         BOOST_ASSERT(wmbussp_);
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("timeout", slot++);
-            sp->set_channel_name("defer", slot++);
+            sp->set_channel_names({"timeout", "defer"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

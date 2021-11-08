@@ -17,7 +17,7 @@
 
 namespace smf {
     persistence::persistence(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cfg &config, storage &s)
-        : sigs_{std::bind(&persistence::stop, this, std::placeholders::_1), std::bind(&persistence::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), std::bind(&persistence::modify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), std::bind(&persistence::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2), std::bind(&persistence::trx, this, std::placeholders::_1, std::placeholders::_2), std::bind(&persistence::power_return, this)}
+        : sigs_{std::bind(&persistence::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), std::bind(&persistence::modify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), std::bind(&persistence::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2), std::bind(&persistence::trx, this, std::placeholders::_1, std::placeholders::_2), std::bind(&persistence::power_return, this), std::bind(&persistence::stop, this, std::placeholders::_1)}
         , channel_(wp)
         , logger_(logger)
         , cfg_(config)
@@ -25,12 +25,7 @@ namespace smf {
         , distributor_(logger, ctl, config) {
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("db.insert", 1);
-            sp->set_channel_name("db.modify", 2);
-            sp->set_channel_name("db.remove", 3);
-            sp->set_channel_name("db.clear", 4);
-            sp->set_channel_name("db.trx", 5);
-            sp->set_channel_name("power-return", 6);
+            sp->set_channel_names({"db.insert", "db.modify", "db.remove", "db.clear", "db.trx", "power-return"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
 

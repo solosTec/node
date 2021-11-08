@@ -59,13 +59,7 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("connect", slot++);
-            sp->set_channel_name("open", slot++);
-            sp->set_channel_name("close", slot++);
-            sp->set_channel_name("push", slot++); //  forward
-            sp->set_channel_name("channel.open", slot++);
-            sp->set_channel_name("channel.close", slot++);
+            sp->set_channel_names({"connect", "open", "close", "push", "channel.open", "channel.close"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

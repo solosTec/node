@@ -51,8 +51,7 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("connect", slot++);
+            sp->set_channel_names({"connect"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
         CYNG_LOG_TRACE(logger, "reconnect timeout is " << reconnect_timeout << " seconds");

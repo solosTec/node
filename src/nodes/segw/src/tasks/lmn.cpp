@@ -47,18 +47,18 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("open", slot++);
-            sp->set_channel_name("write", slot++);
-            sp->set_channel_name("reset-data-sinks", slot++);
-            sp->set_channel_name("add-data-sink", slot++);
-            sp->set_channel_name("remove-data-sink", slot++);
-            sp->set_channel_name("set-baud-rate", slot++);
-            sp->set_channel_name("set-parity", slot++);
-            sp->set_channel_name("set-flow-control", slot++);
-            sp->set_channel_name("set-stopbits", slot++);
-            sp->set_channel_name("set-databits", slot++);
-            sp->set_channel_name("update-statistics", slot++);
+            sp->set_channel_names(
+                {"open",
+                 "write",
+                 "reset-data-sinks",
+                 "add-data-sink",
+                 "remove-data-sink",
+                 "set-baud-rate",
+                 "set-parity",
+                 "set-flow-control",
+                 "set-stopbits",
+                 "set-databits",
+                 "update-statistics"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }
@@ -173,19 +173,18 @@ namespace smf {
         port_.async_read_some(boost::asio::buffer(buffer_), [this](boost::system::error_code ec, std::size_t bytes_transferred) {
             if (!ec) {
                 accumulated_bytes_ += bytes_transferred;
- 
+
                 if (cfg_.is_hex_dump()) {
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
                     hd(ss, std::begin(buffer_), std::begin(buffer_) + bytes_transferred);
                     auto const dmp = ss.str();
                     CYNG_LOG_TRACE(logger_, "[" << cfg_.get_port() << "] received " << bytes_transferred << " bytes:\n" << dmp);
-                }
-                else {
+                } else {
                     CYNG_LOG_TRACE(
                         logger_,
                         "[" << cfg_.get_port() << "] received " << bytes_transferred << " / " << accumulated_bytes_ << " bytes");
-               }
+                }
 
                 //
                 //	post data to receiver

@@ -26,7 +26,7 @@ namespace smf {
               session_counter_{0} {
             auto sp = channel_.lock();
             if (sp) {
-                sp->set_channel_name("start", 0);
+                sp->set_channel_names({"start"});
                 CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
             }
         }

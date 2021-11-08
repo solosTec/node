@@ -39,8 +39,7 @@ namespace smf {
 	{
         auto sp = channel_.lock();
         if (sp) {
-            sp->set_channel_name("connect", 0);
-            sp->set_channel_name("listen", 1);
+            sp->set_channel_names({"connect", "listen"});
         }
 
         CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");

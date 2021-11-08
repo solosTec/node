@@ -55,9 +55,7 @@ namespace smf {
               auths) {
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("connect", slot++);
-            sp->set_channel_name("listen", slot++);
+            sp->set_channel_names({"connect", "listen"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
 

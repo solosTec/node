@@ -29,11 +29,7 @@ namespace smf {
         , logger_(logger) {
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("open.response", slot++);
-            sp->set_channel_name("close.response", slot++);
-            sp->set_channel_name("get.profile.list.response", slot++);
-            sp->set_channel_name("get.proc.parameter.response", slot++);
+            sp->set_channel_names({"open.response", "close.response", "get.profile.list.response", "get.proc.parameter.response"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

@@ -60,12 +60,7 @@ namespace smf {
     {
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("connect", slot++);
-            sp->set_channel_name("send.sml", slot++);
-            sp->set_channel_name("send.mbus", slot++);
-            sp->set_channel_name("send.dlms", slot++);
-            sp->set_channel_name("channel.open", slot++);
+            sp->set_channel_names({"connect", "send.sml", "send.mbus", "send.dlms", "channel.open"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

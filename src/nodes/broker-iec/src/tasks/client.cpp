@@ -97,15 +97,8 @@ namespace smf {
           retry_counter_{3} {
         auto sp = channel_.lock();
         if (sp) {
-            std::size_t slot{0};
-            sp->set_channel_name("init", slot++);
-            sp->set_channel_name("start", slot++);
-            sp->set_channel_name("connect", slot++);
-            sp->set_channel_name("add.meter", slot++);
-            sp->set_channel_name("remove.meter", slot++);
-            sp->set_channel_name("shutdown", slot++);
-            sp->set_channel_name("channel.open", slot++);
-            sp->set_channel_name("channel.close", slot++);
+            sp->set_channel_names(
+                {"init", "start", "connect", "add.meter", "remove.meter", "shutdown", "channel.open", "channel.close"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
 
