@@ -267,17 +267,20 @@ namespace smf {
             key,
             db_.complete(
                 "device",
-                cyng::param_map_factory("name", mc)("pwd", meter_id)("msisdn", meter_id)("descr", area + ", " + name)(
-                    "id", meter_type)("enabled", true)),
+                cyng::param_map_factory("name", mc) //
+                ("pwd", meter_id)                   //
+                ("msisdn", meter_id)                //
+                ("descr", area + ", " + name)       //
+                ("id", meter_type)                  //
+                ("enabled", true)),
             0);
         cluster_bus_.req_db_insert(
             "meter",
             key,
             db_.complete(
                 "meter",
-                cyng::param_map_factory("ident", server_id)("meter", meter_id)(
-                    "code",
-                    mc)("maker", maker)("protocol", config::get_name(config::protocol::WIRED_MBUS))("item", boost::uuids::to_string(tag))),
+                cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)(
+                    "protocol", config::get_name(config::protocol::WIRED_MBUS))("item", boost::uuids::to_string(tag))),
             0);
         cluster_bus_.req_db_insert(
             "meterwMBus",
@@ -299,19 +302,35 @@ namespace smf {
         std::string const &maker) {
 
         CYNG_LOG_TRACE(logger_, "[upload] update IEC device " << mc);
-        // cluster_bus_.req_db_update("device", key, cyng::param_map_factory
-        //	("name", mc)
-        //	("pwd", meter_id)
-        //	("msisdn", meter_id)
-        //	("descr", name)
-        //	("id", meter_type));
+        cluster_bus_.req_db_update(
+            "device",
+            key,
+            cyng::param_map_factory
+            //	("name", mc)
+            //	("pwd", meter_id)
+            //	("msisdn", meter_id)
+            //	("descr", name)
+            ("descr", area + ", " + name) //
+            ("id", meter_type)            //
+        );
 
         cluster_bus_.req_db_update(
             "meter",
             key,
-            cyng::param_map_factory("ident", server_id)("meter", meter_id)("code", mc)("maker", maker)("protocol", "IEC:62056"));
+            cyng::param_map_factory("ident", server_id) //  server id
+            ("meter", meter_id)                         //
+            ("code", mc)                                //
+            ("maker", maker)                            //
+            ("protocol", "IEC:62056")                   //
+            ("item", meter_type)                        // i.e "Elster AS 220"
+        );
 
-        cluster_bus_.req_db_update("meterIEC", key, cyng::param_map_factory("host", address)("port", port));
+        cluster_bus_.req_db_update(
+            "meterIEC",
+            key,
+            cyng::param_map_factory("host", address) //
+            ("port", port)                           //
+        );
     }
 
     void upload::update_wmbus(
@@ -326,17 +345,28 @@ namespace smf {
         std::string const &maker) {
 
         CYNG_LOG_TRACE(logger_, "[upload] update wM-Bus device " << mc);
-        // cluster_bus_.req_db_update("device", key, cyng::param_map_factory
-        //	("name", mc)
-        //	("pwd", meter_id)
-        //	("msisdn", meter_id)
-        //	("descr", name)
-        //	("id", meter_type));
+
+        cluster_bus_.req_db_update(
+            "device",
+            key,
+            cyng::param_map_factory
+            //	("name", mc)
+            //	("pwd", meter_id)
+            //	("msisdn", meter_id)
+            //	("descr", name)
+            ("descr", area + ", " + name) //
+            ("id", meter_type)            //
+        );
+
         cluster_bus_.req_db_update(
             "meter",
             key,
-            cyng::param_map_factory("ident", server_id)("meter", meter_id)(
-                "code", mc)("maker", maker)("protocol", "wM-Bus:EN13757-4"));
+            cyng::param_map_factory("ident", server_id)      //
+            ("meter", meter_id)                              //
+            ("code", mc)                                     //
+            ("maker", maker)("protocol", "wM-Bus:EN13757-4") //
+            ("item", meter_type)                             // i.e "Elster AS 220"
+        );
         cluster_bus_.req_db_update("meterwMBus", key, cyng::param_map_factory("aes", aes));
     }
 
