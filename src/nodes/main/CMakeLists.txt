@@ -42,13 +42,18 @@ target_link_libraries(main
 )
 
 if(UNIX)
+    set(SMF_UNIT_FILE_MAIN "${PROJECT_BINARY_DIR}/config/main.service")
+
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"
 		    "${PROJECT_BINARY_DIR}/config/main_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/unit.in"
-		    "${PROJECT_BINARY_DIR}/config/main.service")
+		    ${SMF_UNIT_FILE_MAIN})
+
+# https://github.com/andrew-hardin/cpack-systemd-demo/blob/master/CMakeLists.txt            
+    install(FILES ${SMF_UNIT_FILE_MAIN} DESTINATION share)
 
 else()
     configure_file (

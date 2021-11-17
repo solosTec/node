@@ -885,11 +885,16 @@ if(${CMAKE_CROSSCOMPILING})
 
 endif()
 
+if(UNIX)
+include(GNUInstallDirs)
+endif()
+
 #
 # install
 #
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
-        DESTINATION "include" # target directory
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" # target directory
+#        DESTINATION "install" # target directory
         FILES_MATCHING # install only matched files
         PATTERN "*.h"
         PATTERN "*hpp"
@@ -899,12 +904,11 @@ set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_hci smf_http smf_
 
 message(STATUS "** Target list                  : ${SMF_TARGET_LIST}")
 
-include(GNUInstallDirs)
 install(TARGETS ${SMF_TARGET_LIST}
     EXPORT SMFTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BIN_DIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDE_DIR}
 )
 
