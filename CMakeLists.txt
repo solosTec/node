@@ -43,6 +43,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     #
     include(cmake/safeguards.cmake)
 
+    #
+    #   print CMake version
+    #
+    message(STATUS "** CMAKE_VERSION      : ${CMAKE_VERSION}")
+
     math(EXPR "${PROJECT_NAME}_VERSION_NUMERAL" "${PROJECT_VERSION_MAJOR}*100000+${PROJECT_VERSION_MINOR}*1000+${PROJECT_VERSION_PATCH}" OUTPUT_FORMAT DECIMAL)
     message(STATUS "** Version numeral    : ${${PROJECT_NAME}_VERSION_NUMERAL}")
 
@@ -100,10 +105,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
 endif()
 
-#
-#   print CMake version
-#
-message(STATUS "** CMAKE_VERSION            : ${CMAKE_VERSION}")
 
 #
 # detect address model
