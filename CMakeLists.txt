@@ -100,6 +100,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
 endif()
 
+#
+#   print CMake version
+#
+message(STATUS "** CMAKE_VERSION            : ${CMAKE_VERSION}")
 
 #
 # detect address model
@@ -164,12 +168,9 @@ add_compile_definitions(BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE BOOST_BIND_NO_PLA
 # Boost_VERSION => 107700
 message(STATUS "** Boost Version                : ${Boost_VERSION}")
 # this failes on linux since there is the version string 1.77.0
-#math(EXPR Boost_VERSION_MAJOR "${Boost_VERSION} / 100000" OUTPUT_FORMAT DECIMAL)      # major version
-#math(EXPR Boost_VERSION_MINOR "${Boost_VERSION} / 100 % 1000" OUTPUT_FORMAT DECIMAL)  # minor version
-#math(EXPR Boost_VERSION_PATCH "${Boost_VERSION} % 100" OUTPUT_FORMAT DECIMAL)  # patch level
-#set(Boost_VERSION_NUMERIC "${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH}")
-# hard coded for testing
-set(Boost_VERSION_NUMERIC "1.77.0")
+set(Boost_VERSION_NUMERIC "${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH}")
+# hard coded for testing - Changed in version 3.15 (CMP0093)
+#set(Boost_VERSION_NUMERIC "1.77.0")
 
 message(STATUS "** Boost Version numeric        : ${Boost_VERSION_NUMERIC}")
 message(STATUS "** Boost Include                : ${Boost_INCLUDE_DIRS}")
