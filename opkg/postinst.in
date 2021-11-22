@@ -63,25 +63,25 @@ update_libs()
 	echo "[POST-INSTALL] ... set symbolic links to Boost libraries ... "
 
 	#rm -f /usr/local/lib/libboost_date_time.so
-	#ln -s /usr/local/lib/libboost_date_time.so.1.75.0 /usr/local/lib/libboost_date_time.so
+	#ln -s /usr/local/lib/libboost_date_time.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_date_time.so
 	#rm -f /usr/local/lib/libboost_iostreams.so
-	#ln -s /usr/local/lib/libboost_iostreams.so.1.75.0 /usr/local/lib/libboost_iostreams.so
+	#ln -s /usr/local/lib/libboost_iostreams.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_iostreams.so
 	rm -f /usr/local/lib/libboost_filesystem.so
-	ln -s /usr/local/lib/libboost_filesystem.so.1.75.0 /usr/local/lib/libboost_filesystem.so
+	ln -s /usr/local/lib/libboost_filesystem.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_filesystem.so
 	rm -f /usr/local/lib/libboost_program_options.so
-	ln -s /usr/local/lib/libboost_program_options.so.1.75.0 /usr/local/lib/libboost_program_options.so
+	ln -s /usr/local/lib/libboost_program_options.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_program_options.so
 	rm -f /usr/local/lib/libboost_random.so
-	ln -s /usr/local/lib/libboost_random.so.1.75.0 /usr/local/lib/libboost_random.so
+	ln -s /usr/local/lib/libboost_random.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_random.so
 	#rm -f /usr/local/lib/libboost_regex.so
-	#ln -s /usr/local/lib/libboost_regex.so.1.75.0 /usr/local/lib/libboost_regex.so
+	#ln -s /usr/local/lib/libboost_regex.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_regex.so
 	rm -f /usr/local/lib/libboost_system.so
-	ln -s /usr/local/lib/libboost_system.so.1.75.0 /usr/local/lib/libboost_system.so
+	ln -s /usr/local/lib/libboost_system.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_system.so
 	#rm -f /usr/local/lib/libboost_test.so
-	#ln -s /usr/local/lib/libboost_test.so.1.75.0 /usr/local/lib/libboost_test.so
+	#ln -s /usr/local/lib/libboost_test.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_test.so
 	rm -f /usr/local/lib/libboost_thread.so
-	ln -s /usr/local/lib/libboost_thread.so.1.75.0 /usr/local/lib/libboost_thread.so
+	ln -s /usr/local/lib/libboost_thread.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_thread.so
 	#rm -f /usr/local/lib/libboost_timer.so
-	#ln -s /usr/local/lib/libboost_timer.so.1.75.0 /usr/local/lib/libboost_timer.so 
+	#ln -s /usr/local/lib/libboost_timer.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_timer.so 
 
 	echo "[POST-INSTALL] ... create lib links in /usr/lib/ /usr/local/lib/ ... "
 

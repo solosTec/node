@@ -157,6 +157,9 @@ namespace smf {
             });
             parser.read(content.begin(), content.end());
 
+        } else if (boost::algorithm::starts_with(type, "application/xml")) {
+            CYNG_LOG_INFO(logger_, "post: " << target << ", content_type: " << type << ", content: " << content);
+
         } else {
             CYNG_LOG_WARNING(logger_, "post: " << target << ", content_type: [" << type << "] not supported, content: " << content);
         }

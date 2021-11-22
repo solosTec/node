@@ -161,7 +161,13 @@ find_package(Boost 1.75
 # note: https://github.com/chriskohlhoff/asio/issues/585
 add_compile_definitions(BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE BOOST_BIND_NO_PLACEHOLDERS BOOST_SPIRIT_UNICODE BOOST_MPL_LIMIT_LIST_SIZE=50)
 
-message(STATUS "** Boost Version                : ${Boost_VERSION}")
+# Boost_VERSION => 107700
+math(EXPR Boost_VERSION_MAJOR "${Boost_VERSION} / 100000" OUTPUT_FORMAT DECIMAL)      # major version
+math(EXPR Boost_VERSION_MINOR "${Boost_VERSION} / 100 % 1000" OUTPUT_FORMAT DECIMAL)  # minor version
+math(EXPR Boost_VERSION_PATCH "${Boost_VERSION} % 100" OUTPUT_FORMAT DECIMAL)  # patch level
+set(Boost_VERSION_NUMERIC "${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH}")
+
+message(STATUS "** Boost Version                : ${Boost_VERSION} (${Boost_VERSION_NUMERIC})")
 message(STATUS "** Boost Include                : ${Boost_INCLUDE_DIRS}")
 message(STATUS "** Boost Path                   : ${Boost_LIBRARY_DIRS}")
 	
@@ -173,6 +179,7 @@ message(STATUS "** Boost_PROGRAM_OPTIONS_LIBRARY: ${Boost_PROGRAM_OPTIONS_LIBRAR
 message(STATUS "** Boost_RANDOM_LIBRARY         : ${Boost_RANDOM_LIBRARY}")
 message(STATUS "** Boost_REGEX_LIBRARY          : ${Boost_REGEX_LIBRARY}")
 message(STATUS "** Boost_UNIT_TEST_FRAMEWORK    : ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
+
 
 message(STATUS "** Search openSSL   : ${OPENSSL_ROOT_DIR}")
 find_package(OpenSSL 1.0.2 REQUIRED)

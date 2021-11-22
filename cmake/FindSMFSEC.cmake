@@ -4,7 +4,7 @@
 #
 # This will define the following variables
 #
-#   SMFSEC_FOUND          - system has cyng
+#   SMFSEC_FOUND          - system has SMFSEC
 #   SMFSEC_INCLUDE_DIR    - the crypto include directories
 #   SMFSEC_LIBRARIES      - crypto libraries directories
 #
