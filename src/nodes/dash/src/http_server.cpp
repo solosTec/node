@@ -109,6 +109,10 @@ namespace smf {
 
     std::filesystem::path http_server::post(std::string target, std::string content, std::string type) {
 
+        //
+        //  parse content
+        //  content: {"type":"iec","fmt":"CSV"}
+        //
         std::filesystem::path download;
         if (boost::algorithm::starts_with(type, "application/json")) {
             CYNG_LOG_INFO(logger_, "post: " << target << ", content_type: " << type << ", content: " << content);
