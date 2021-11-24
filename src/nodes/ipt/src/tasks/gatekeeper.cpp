@@ -4,7 +4,7 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#include <ipt_session.h>
+#include <session.h>
 #include <tasks/gatekeeper.h>
 
 #include <cyng/log/record.h>
