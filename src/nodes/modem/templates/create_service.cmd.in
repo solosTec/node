@@ -1,18 +1,18 @@
 REM
-REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is part of the "@cmake_project_name_toupper@" project.
 REM	This file is generated automatically. Do not edit.
 REM install modem service
 REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo create service node_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo create service ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create node_modem_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\modem.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF modem server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description node_modem_v${${PROJECT_NAME}_VERSION_MAJOR} "Modem Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
-sc failure node_modem_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+sc create ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\modem.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF modem server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} "Modem Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc failure ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
-REM Add a dependency to SMF master service.
-REM Modify or remove this dependency if SMF master is running on a different node.
+REM Add a dependency to @cmake_project_name_toupper@ master service.
+REM Modify or remove this dependency if @cmake_project_name_toupper@ main is running on a different node.
 REM
-sc config node_modem_v${${PROJECT_NAME}_VERSION_MAJOR} depend= node_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc config ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} depend= ${cmake_project_name_tolower}_main_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

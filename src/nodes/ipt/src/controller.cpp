@@ -148,10 +148,10 @@ namespace smf {
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
             "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout);
         BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect", cyng::make_tuple());
+        cluster_->dispatch("connect");
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-        cluster_->dispatch("listen", cyng::make_tuple(ep));
+        cluster_->dispatch("listen", ep);
     }
 
 } // namespace smf

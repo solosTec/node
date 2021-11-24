@@ -4,8 +4,8 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_IPT_TASK_CLUSTER_H
-#define SMF_IPT_TASK_CLUSTER_H
+#ifndef SMF_MODEM_TASK_CLUSTER_H
+#define SMF_MODEM_TASK_CLUSTER_H
 
 #include <server.h>
 
@@ -37,12 +37,11 @@ namespace smf {
             cyng::channel_weak,
             cyng::controller &,
             boost::uuids::uuid tag,
-            std::uint32_t query,
             std::string const &node_name,
             cyng::logger,
             toggle::server_vec_t &&,
-            ipt::scramble_key const &sk,
-            std::chrono::minutes watchdog,
+            bool auto_answer,
+            std::chrono::milliseconds guard,
             std::chrono::seconds timeout);
         ~cluster();
 
@@ -77,7 +76,7 @@ namespace smf {
          * cluster bus
          */
         bus bus_;
-        ipt_server server_;
+        modem_server server_;
     };
 
 } // namespace smf

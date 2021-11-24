@@ -721,6 +721,49 @@ target_link_libraries(smf_ipt_bus
 )
 
 #
+# add library: smf_modem
+#
+include (src/lib/modem/protocol/lib.cmake)
+add_library(smf_modem ${GLOBAL_LIBRARY_TYPE} ${modem_lib})
+
+target_include_directories(smf_modem
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_modem PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug modem protocol
+#
+target_compile_definitions(smf_modem 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_IPT>
+)
+
+target_link_libraries(smf_modem 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # add library: smf_serial_bus
 #
 include (src/lib/serial/bus/lib.cmake)
@@ -869,6 +912,7 @@ message(STATUS "** CMAKE_CROSSCOMPILING         : ${CMAKE_CROSSCOMPILING}")
 
 if(${CMAKE_CROSSCOMPILING})
 
+ # same as ${cmake_project_name_tolower}
 	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
     message(STATUS "** cross compile project       : ${OECP_NAME}")
 

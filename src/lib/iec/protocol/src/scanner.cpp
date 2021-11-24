@@ -7,10 +7,7 @@
 
 #include <smf/iec/scanner.h>
 
-//#include <cyng/parse/string.h>
-
 #include <iostream>
-//#include <regex>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/assert.hpp>

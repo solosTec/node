@@ -6,11 +6,23 @@ set (modem_node)
 set (modem_cpp
     src/main.cpp
     src/controller.cpp
+    src/server.cpp
+    src/session.cpp
 )
     
 set (modem_h
     include/controller.h
+    include/server.h
+    include/session.h
 )
+
+set (modem_tasks
+    include/tasks/cluster.h
+    include/tasks/gatekeeper.h
+    src/tasks/cluster.cpp
+    src/tasks/gatekeeper.cpp
+)
+
 
 if(WIN32)
     set(modem_assets
@@ -28,11 +40,13 @@ endif()
 
 
 source_group("modem-assets" FILES ${modem_assets})
+source_group("tasks" FILES ${modem_tasks})
 
 
 set (modem_node
-  ${modem_cpp}
-  ${modem_h}
-  ${modem_assets}
+    ${modem_cpp}
+    ${modem_h}
+    ${modem_assets}
+    ${modem_tasks}
 )
 

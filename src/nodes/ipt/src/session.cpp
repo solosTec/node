@@ -4,7 +4,7 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#include <ipt_session.h>
+#include <session.h>
 #include <tasks/gatekeeper.h>
 
 #include <smf/ipt/codes.h>
@@ -99,7 +99,7 @@ namespace smf {
         gatekeeper_ = ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), cluster_bus_);
         BOOST_ASSERT(gatekeeper_->is_open());
         CYNG_LOG_TRACE(logger_, "start gatekeeper with a timeout of " << timeout.count() << " seconds");
-        gatekeeper_->suspend(timeout, "timeout", cyng::make_tuple());
+        gatekeeper_->suspend(timeout, "timeout");
     }
 
     void ipt_session::do_read() {

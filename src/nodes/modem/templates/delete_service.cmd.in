@@ -1,12 +1,12 @@
 REM
-REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is part of the "@cmake_project_name_toupper@" project.
 REM	This file is generated automatically. Do not edit.
-REM delete modem service
+REM delete @cmake_project_name_toupper@ modem service
 REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo delete service node_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo delete service ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop node_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc delete node_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc delete ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on
