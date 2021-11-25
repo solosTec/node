@@ -39,7 +39,12 @@ namespace smf {
         , sx_{0}
         , px_{0}
         , buffer_write_()
-        , parser_([&, this](std::string &&cmd) { CYNG_LOG_DEBUG(logger_, "cmd: " << cmd); }, [](cyng::buffer_t &&data) {}, guard)
+        , parser_(
+              [&, this](std::pair<std::string, std::string> const &cmd) {
+                  CYNG_LOG_DEBUG(logger_, "cmd: " << cmd.first << ": " << cmd.second);
+              },
+              [](cyng::buffer_t &&data) {},
+              guard)
         //, serializer_(sk)
         , vm_()
         //, dev_(boost::uuids::nil_uuid())

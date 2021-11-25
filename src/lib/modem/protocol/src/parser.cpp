@@ -23,7 +23,10 @@ namespace smf {
             : state_(state::COMMAND)
             , command_cb_(cmd_cb)
             , data_cb_(d_cb)
-            , guard_time_(guard_time) {
+            , guard_time_(guard_time)
+            , cmd_()
+            , buffer_()
+            , esc_() {
             BOOST_ASSERT_MSG(cmd_cb, "no command callback specified");
             BOOST_ASSERT_MSG(d_cb, "no data callback specified");
         }
@@ -35,6 +38,9 @@ namespace smf {
             switch (state_) {
             case state::COMMAND:
                 std::tie(state_, advance) = state_command(c);
+                break;
+            case state::DATA:
+                std::tie(state_, advance) = state_data(c);
                 break;
             case state::STREAM:
                 std::tie(state_, advance) = state_stream(c);
@@ -51,13 +57,33 @@ namespace smf {
 
         std::pair<parser::state, bool> parser::state_command(char c) {
             if (is_eol(c)) {
-                if (!buffer_.empty()) {
-                    command_cb_(std::string(buffer_.begin(), buffer_.end()));
-                    buffer_.clear();
+                if (!cmd_.first.empty()) {
+                    command_cb_(cmd_);
+                    cmd_.first.clear();
                 }
             } else {
-                buffer_.push_back(c);
+                if (c >= 'a' && c <= 'z') {
+                    //  uppercase
+                    cmd_.first.push_back(c - 32);
+                } else if (c >= 'A' && c <= 'Z') {
+                    cmd_.first.push_back(c);
+                } else if (c == '+') {
+                    return {state::DATA, true};
+                } else {
+                    return {state::DATA, false};
+                }
             }
+            return {state_, true};
+        }
+
+        std::pair<parser::state, bool> parser::state_data(char c) {
+            if (is_eol(c)) {
+                command_cb_(cmd_);
+                cmd_.first.clear();
+                cmd_.second.clear();
+                return {state::COMMAND, false};
+            }
+            cmd_.second.push_back(c);
             return {state_, true};
         }
 

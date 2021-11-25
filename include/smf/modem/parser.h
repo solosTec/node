@@ -62,7 +62,7 @@ namespace smf {
 
         class parser {
           public:
-            using command_cb = std::function<void(std::string &&)>;
+            using command_cb = std::function<void(std::pair<std::string, std::string> const &)>;
             using data_cb = std::function<void(cyng::buffer_t &&)>;
 
           private:
@@ -74,6 +74,7 @@ namespace smf {
              */
             enum class state {
                 COMMAND,
+                DATA,
                 STREAM,
                 ESC,
                 ERROR_,
@@ -155,6 +156,7 @@ namespace smf {
             void post_processing();
 
             std::pair<state, bool> state_command(char);
+            std::pair<state, bool> state_data(char);
             std::pair<state, bool> state_stream(char);
             std::pair<state, bool> state_esc(char);
 
@@ -166,6 +168,8 @@ namespace smf {
             data_cb data_cb_;
 
             std::chrono::milliseconds const guard_time_;
+
+            std::pair<std::string, std::string> cmd_;
 
             /**
              * temporary data
