@@ -43,18 +43,17 @@ namespace smf {
         void do_read();
         void do_write();
         void handle_write(const boost::system::error_code &ec);
+        void print(cyng::buffer_t &&);
 
         //
         //	bus interface
         //
-        // void ipt_cmd(ipt::header const &h, cyng::buffer_t &&body);
-        // void ipt_stream(cyng::buffer_t &&data);
+        void pty_res_login(bool success, boost::uuids::uuid dev);
+        static auto get_vm_func_pty_res_login(modem_session *p) -> std::function<void(bool success, boost::uuids::uuid)>;
 
-        /**
-         * start an async write
-         * @param f to provide a function that produces a buffer instead of the buffer itself
-         * guaranties that scrambled content is has the correct index in the scramble key.
-         */
+        void pty_res_open_connection(bool success, cyng::param_map_t token);
+        static auto get_vm_func_pty_res_open_connection(modem_session *ptr) -> std::function<void(bool success, cyng::param_map_t)>;
+
       private:
         cyng::controller &ctl_;
         boost::asio::ip::tcp::socket socket_;
@@ -78,14 +77,17 @@ namespace smf {
          */
         modem::parser parser_;
 
-        // modem::serializer serializer_;
+        /**
+         * serializer for modem data
+         */
+        modem::serializer serializer_;
 
         cyng::vm_proxy vm_;
 
         /**
          * tag/pk of device
          */
-        // boost::uuids::uuid dev_;
+        boost::uuids::uuid dev_;
 
         /**
          * gatekeeper

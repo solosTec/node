@@ -10,6 +10,7 @@
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/parse/string.h>
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
 
@@ -40,27 +41,62 @@ namespace smf {
         , px_{0}
         , buffer_write_()
         , parser_(
-              [&, this](std::pair<std::string, std::string> const &cmd) {
-                  CYNG_LOG_DEBUG(logger_, "cmd: " << cmd.first << ": " << cmd.second);
+              [&, this](std::string const &cmd, std::string const &data) {
+                  if (boost::algorithm::equals(cmd, "AT+")) {
+                      //    AT+name?password
+                      auto const vec = cyng::split(data, "?");
+                      if (vec.size() == 2) {
+                          CYNG_LOG_INFO(logger_, "login: " << vec.at(0) << ':' << vec.at(1));
+                          cluster_bus_.pty_login(vec.at(0), vec.at(1), vm_.get_tag(), "sml", socket_.remote_endpoint());
+                      } else {
+                          CYNG_LOG_WARNING(logger_, "incomplete login data: " << data);
+                      }
+                  } else if (boost::algorithm::equals(cmd, "ATD")) {
+                      CYNG_LOG_INFO(logger_, "dial: " << data);
+                      cluster_bus_.pty_open_connection(
+                          data, dev_, vm_.get_tag(), cyng::param_map_factory("auto-answer", auto_answer));
+                  } else if (boost::algorithm::equals(cmd, "+++")) {
+                      //    back to command mode
+                      CYNG_LOG_INFO(logger_, "back to command mode");
+                      parser_.set_cmd_mode();
+                  } else if (boost::algorithm::equals(cmd, "ATH")) {
+                      //    hang up
+                      CYNG_LOG_INFO(logger_, "hang up");
+                      cluster_bus_.pty_close_connection(dev_, vm_.get_tag(), cyng::param_map_factory());
+                  } else if (boost::algorithm::equals(cmd, "ATI")) {
+                      //    print info
+                      try {
+                          const auto info = std::stoul(data);
+                          //                p.cb_(cyng::generate_invoke("modem.req.info", cyng::code::IDENT,
+                          //                static_cast<std::uint32_t>(info)));
+                      } catch (std::exception const &ex) {
+                          boost::ignore_unused(ex);
+                          //                p.cb_(cyng::generate_invoke("modem.req.info", cyng::code::IDENT,
+                          //                static_cast<std::uint32_t>(0u)));
+                      }
+                  } else {
+                      CYNG_LOG_WARNING(logger_, "unknown AT command" << cmd << ": " << data);
+                  }
               },
               [](cyng::buffer_t &&data) {},
               guard)
-        //, serializer_(sk)
+        , serializer_()
         , vm_()
-        //, dev_(boost::uuids::nil_uuid())
+        , dev_(boost::uuids::nil_uuid())
         , gatekeeper_() {
-        vm_ = fabric.make_proxy(cluster_bus_.get_tag()
-                                // cyng::make_description("pty.res.login", get_vm_func_pty_res_login(this)),
-                                // cyng::make_description("pty.res.register", get_vm_func_pty_res_register(this)),
-                                // cyng::make_description("pty.res.open.channel", get_vm_func_pty_res_open_channel(this)),
-                                // cyng::make_description("pty.push.data.req", get_vm_func_pty_req_push_data(this)),
-                                // cyng::make_description("pty.push.data.res", get_vm_func_pty_res_push_data(this)),
-                                // cyng::make_description("pty.res.close.channel", get_vm_func_pty_res_close_channel(this)),
-                                // cyng::make_description("pty.res.open.connection", get_vm_func_pty_res_open_connection(this)),
-                                // cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
-                                // cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
-                                // cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
-                                // cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this))
+        vm_ = fabric.make_proxy(
+            cluster_bus_.get_tag(),
+            cyng::make_description("pty.res.login", get_vm_func_pty_res_login(this)),
+            // cyng::make_description("pty.res.register", get_vm_func_pty_res_register(this)),
+            // cyng::make_description("pty.res.open.channel", get_vm_func_pty_res_open_channel(this)),
+            // cyng::make_description("pty.push.data.req", get_vm_func_pty_req_push_data(this)),
+            // cyng::make_description("pty.push.data.res", get_vm_func_pty_res_push_data(this)),
+            // cyng::make_description("pty.res.close.channel", get_vm_func_pty_res_close_channel(this)),
+            cyng::make_description("pty.res.open.connection", get_vm_func_pty_res_open_connection(this))
+            // cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
+            // cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
+            // cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
+            // cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this))
         );
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
@@ -108,15 +144,15 @@ namespace smf {
                         "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
                                      << socket_.remote_endpoint() << "]");
 
-                    // if (bytes_transferred == 45) {
-                    //    int i = 0; //  start debugging here
-                    //               //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
-                    //               //  garble data from wMBus broker to oen a second channel when scrambling is active
-                    //}
+                // if (bytes_transferred == 45) {
+                //    int i = 0; //  start debugging here
+                //               //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
+                //               //  garble data from wMBus broker to oen a second channel when scrambling is active
+                //}
 
-                    if (gatekeeper_->is_open()) {
-                        gatekeeper_->stop();
-                    }
+                // if (gatekeeper_->is_open()) {
+                //     gatekeeper_->stop();
+                // }
 #ifdef _DEBUG_MODEM
                     {
                         std::stringstream ss;
@@ -152,10 +188,10 @@ namespace smf {
                     //	update rx
                     //
                     rx_ += static_cast<std::uint64_t>(bytes_transferred);
-                    // if (!dev_.is_nil() && cluster_bus_.is_connected()) {
+                    if (!dev_.is_nil() && cluster_bus_.is_connected()) {
 
-                    //    cluster_bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("rx", rx_));
-                    //}
+                        cluster_bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("rx", rx_));
+                    }
 
                     //
                     //	continue reading
@@ -186,10 +222,10 @@ namespace smf {
             //	update sx
             //
             sx_ += static_cast<std::uint64_t>(buffer_write_.front().size());
-            // if (!dev_.is_nil() && cluster_bus_.is_connected()) {
+            if (!dev_.is_nil() && cluster_bus_.is_connected()) {
 
-            //    cluster_bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("sx", sx_));
-            //}
+                cluster_bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("sx", sx_));
+            }
 
             buffer_write_.pop_front();
             if (!buffer_write_.empty()) {
@@ -206,6 +242,61 @@ namespace smf {
 
             // reset();
         }
+    }
+
+    void modem_session::print(cyng::buffer_t &&data) {
+        cyng::exec(vm_, [this, data]() {
+            bool const b = buffer_write_.empty();
+            buffer_write_.push_back(std::move(data));
+            if (b)
+                do_write();
+        });
+    }
+
+    void modem_session::pty_res_login(bool success, boost::uuids::uuid dev) {
+        if (success) {
+
+            //
+            //	stop gatekeeper
+            //
+            gatekeeper_->stop();
+
+            //
+            //	update device tag
+            //
+            dev_ = dev;
+
+            CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " login ok");
+            print(serializer_.ok());
+        } else {
+            CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
+            print(serializer_.error());
+        }
+    }
+
+    void modem_session::pty_res_open_connection(bool success, cyng::param_map_t token) {
+
+        auto const reader = cyng::make_reader(token);
+        auto const auto_answer = cyng::value_cast(reader["auto-answer"].get(), true);
+
+        if (success) {
+            CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " dialup ok: " << token);
+            print(serializer_.connect());
+            parser_.set_stream_mode();
+
+        } else {
+            CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " dialup failed: " << token);
+            print(serializer_.no_answer());
+        }
+    }
+
+    auto modem_session::get_vm_func_pty_res_login(modem_session *ptr) -> std::function<void(bool success, boost::uuids::uuid)> {
+        return std::bind(&modem_session::pty_res_login, ptr, std::placeholders::_1, std::placeholders::_2);
+    }
+
+    auto modem_session::get_vm_func_pty_res_open_connection(modem_session *ptr)
+        -> std::function<void(bool success, cyng::param_map_t)> {
+        return std::bind(&modem_session::pty_res_open_connection, ptr, std::placeholders::_1, std::placeholders::_2);
     }
 
 } // namespace smf

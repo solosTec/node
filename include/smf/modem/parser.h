@@ -62,7 +62,7 @@ namespace smf {
 
         class parser {
           public:
-            using command_cb = std::function<void(std::pair<std::string, std::string> const &)>;
+            using command_cb = std::function<void(std::string const &, std::string const &)>;
             using data_cb = std::function<void(cyng::buffer_t &&)>;
 
           private:

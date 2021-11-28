@@ -34,18 +34,7 @@ namespace smf {
         }
 
         sequence_t serializer::push_seq() { return last_seq_; }
-        //
-        //		void serializer::transfer_data(cyng::context& ctx)
-        //		{
-        //			const cyng::vector_t frame = ctx.get_frame();
-        //			cyng::buffer_t const data = cyng::to_buffer(frame.at(0));
-        //			write(data);
-        //
-        //#ifdef _DEBUG
-        //			ctx.queue(cyng::generate_invoke("log.msg.trace", data.size(), cyng::invoke("log.fmt.byte"), "
-        // transferred")); #endif
-        //		}
-        //
+
         cyng::buffer_t serializer::req_login_public(std::string const &name, std::string const &pwd) {
             reset();
             auto deq = write_header(code::CTRL_REQ_LOGIN_PUBLIC, 0, name.size() + pwd.size() + 2);

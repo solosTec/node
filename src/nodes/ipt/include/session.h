@@ -117,7 +117,7 @@ namespace smf {
 
         void open_connection(std::string msisdn, ipt::sequence_t seq);
 
-        auto get_vm_func_pty_res_login(ipt_session *p) -> std::function<void(bool success, boost::uuids::uuid)>;
+        static auto get_vm_func_pty_res_login(ipt_session *p) -> std::function<void(bool success, boost::uuids::uuid)>;
 
         static auto get_vm_func_pty_res_register(ipt_session *p)
             -> std::function<void(bool success, std::uint32_t, cyng::param_map_t)>;

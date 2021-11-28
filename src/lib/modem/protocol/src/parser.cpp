@@ -58,8 +58,9 @@ namespace smf {
         std::pair<parser::state, bool> parser::state_command(char c) {
             if (is_eol(c)) {
                 if (!cmd_.first.empty()) {
-                    command_cb_(cmd_);
+                    command_cb_(cmd_.first, cmd_.second);
                     cmd_.first.clear();
+                    BOOST_ASSERT_MSG(cmd_.first.empty(), "command data not cleared");
                 }
             } else {
                 if (c >= 'a' && c <= 'z') {
@@ -68,17 +69,21 @@ namespace smf {
                 } else if (c >= 'A' && c <= 'Z') {
                     cmd_.first.push_back(c);
                 } else if (c == '+') {
+                    cmd_.first.push_back(c); //  AT+
                     return {state::DATA, true};
                 } else {
                     return {state::DATA, false};
                 }
+            }
+            if (cmd_.first.size() > 2) {
+                return {state::DATA, true};
             }
             return {state_, true};
         }
 
         std::pair<parser::state, bool> parser::state_data(char c) {
             if (is_eol(c)) {
-                command_cb_(cmd_);
+                command_cb_(cmd_.first, cmd_.second);
                 cmd_.first.clear();
                 cmd_.second.clear();
                 return {state::COMMAND, false};
@@ -105,6 +110,7 @@ namespace smf {
                         if (!buffer_.empty()) {
                             data_cb_(std::move(buffer_));
                             BOOST_ASSERT_MSG(buffer_.empty(), "buffer not cleared");
+                            command_cb_("+++", "");
                         }
                         return {state::COMMAND, true};
                     } else {

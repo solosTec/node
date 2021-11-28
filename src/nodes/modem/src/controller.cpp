@@ -70,7 +70,11 @@ namespace smf {
         auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
         auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 9000);
         auto const answer = cyng::value_cast(reader["server"]["auto-answer"].get(), true);
+#ifdef _DEBUG
+        auto const guard = cyng::numeric_cast<std::uint64_t>(reader["server"]["guard-time"].get(), 30);
+#else
         auto const guard = cyng::numeric_cast<std::uint64_t>(reader["server"]["guard-time"].get(), 10);
+#endif
         auto const timeout = cyng::numeric_cast<std::uint64_t>(reader["server"]["timeout"].get(), 10);
 
         //
@@ -103,7 +107,7 @@ namespace smf {
             "server",
             cyng::make_tuple(
                 cyng::make_param("address", "0.0.0.0"),
-                cyng::make_param("port", "9000"),
+                cyng::make_param("port", 9000),
                 cyng::make_param("auto-answer", true), //	accept incoming calls automatically
                 cyng::make_param("guard-time", 1000),  //	milliseconds
                 cyng::make_param("timeout", 10)        //	connection timeout in seconds (gatekeeper)
