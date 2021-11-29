@@ -957,7 +957,7 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
         PATTERN "*hpp"
 )
 
-set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_hci smf_http smf_ipt smf_iec smf_ipt_bus smf_mbus smf_obis smf_serial_bus smf_sml dash imega ipt segw store lora main modem setup mqtt broker-iec broker-wmbus report)
+set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_hci smf_http smf_ipt smf_modem smf_iec smf_ipt_bus smf_mbus smf_obis smf_serial_bus smf_sml dash imega ipt segw store lora main modem setup mqtt broker-iec broker-wmbus report)
 
 message(STATUS "** Target list                  : ${SMF_TARGET_LIST}")
 
