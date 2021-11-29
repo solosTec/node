@@ -47,7 +47,7 @@ namespace smf {
                       auto const vec = cyng::split(data, "?");
                       if (vec.size() == 2) {
                           CYNG_LOG_INFO(logger_, "login: " << vec.at(0) << ':' << vec.at(1));
-                          cluster_bus_.pty_login(vec.at(0), vec.at(1), vm_.get_tag(), "sml", socket_.remote_endpoint());
+                          cluster_bus_.pty_login(vec.at(0), vec.at(1), vm_.get_tag(), "modem", socket_.remote_endpoint());
                       } else {
                           CYNG_LOG_WARNING(logger_, "incomplete login data: " << data);
                       }
