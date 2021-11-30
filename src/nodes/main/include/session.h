@@ -134,6 +134,11 @@ namespace smf {
          */
         void pty_forward_open_connection(std::string msisdn, boost::uuids::uuid dev, bool local, cyng::param_map_t token);
 
+        /** @brief "pty.forward.open.connection"
+         *
+         */
+        void pty_forward_res_open_connection(boost::uuids::uuid caller_tag, bool success, cyng::param_map_t token);
+
         /** @brief SMF internal command
          *
          * smf node answer to the "pty.forward.open.connection" command
@@ -148,6 +153,11 @@ namespace smf {
          * pty.transfer.data
          */
         void pty_transfer_data(boost::uuids::uuid tag, boost::uuids::uuid dev, cyng::buffer_t);
+
+        /** @brief "pty.forward.transfer.data"
+         *
+         */
+        void pty_forward_transfer_data(boost::uuids::uuid tag, cyng::buffer_t);
 
         /**
          * pty.close.connection
@@ -251,10 +261,16 @@ namespace smf {
         static std::function<void(std::string, boost::uuids::uuid, bool, cyng::param_map_t)>
         get_vm_func_pty_forward_open_connection(session *);
 
+        // "pty.forward.open.connection"
+        static std::function<void(boost::uuids::uuid, bool, cyng::param_map_t)>
+        get_vm_func_pty_forward_res_open_connection(session *);
+
         static std::function<void(bool, boost::uuids::uuid, boost::uuids::uuid, cyng::param_map_t)>
         get_vm_func_pty_return_open_connection(session *);
 
         static std::function<void(boost::uuids::uuid, boost::uuids::uuid, cyng::buffer_t)> get_vm_func_pty_transfer_data(session *);
+
+        static std::function<void(boost::uuids::uuid, cyng::buffer_t)> get_vm_func_pty_forward_transfer_data(session *);
 
         static std::function<void(boost::uuids::uuid, boost::uuids::uuid, cyng::param_map_t)>
         get_vm_func_pty_close_connection(session *);

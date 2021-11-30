@@ -312,7 +312,7 @@ namespace smf {
 
                     cluster_bus_.pty_res_open_connection(
                         ipt::tp_res_open_connection_policy::is_success(res),
-                        caller_vm,
+                        // caller_vm,
                         dev_,
                         vm_.get_tag(),
                         std::move(pos->second));

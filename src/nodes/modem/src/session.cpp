@@ -33,6 +33,7 @@ namespace smf {
         cyng::logger logger)
         : ctl_(fabric.get_ctl())
         , socket_(std::move(socket))
+        , auto_answer_(auto_answer)
         , logger_(logger)
         , cluster_bus_(cluster_bus)
         , buffer_()
@@ -63,22 +64,32 @@ namespace smf {
                       //    hang up
                       CYNG_LOG_INFO(logger_, "hang up");
                       cluster_bus_.pty_close_connection(dev_, vm_.get_tag(), cyng::param_map_factory());
+                  } else if (boost::algorithm::equals(cmd, "ATA")) {
+                      //    call answer
+                      CYNG_LOG_INFO(logger_, "call answer");
+                      // parser_.set_stream_mode();
+                      // cluster_bus_.pty_res_open_connection(); //  insert stored token
                   } else if (boost::algorithm::equals(cmd, "ATI")) {
                       //    print info
                       try {
                           const auto info = std::stoul(data);
                           //                p.cb_(cyng::generate_invoke("modem.req.info", cyng::code::IDENT,
                           //                static_cast<std::uint32_t>(info)));
+                          print(serializer_.ok());
                       } catch (std::exception const &ex) {
                           boost::ignore_unused(ex);
                           //                p.cb_(cyng::generate_invoke("modem.req.info", cyng::code::IDENT,
                           //                static_cast<std::uint32_t>(0u)));
+                          print(serializer_.error());
                       }
                   } else {
                       CYNG_LOG_WARNING(logger_, "unknown AT command" << cmd << ": " << data);
                   }
               },
-              [](cyng::buffer_t &&data) {},
+              [&, this](cyng::buffer_t &&data) {
+                  //    tarnsfer data over open connection
+                  cluster_bus_.pty_transfer_data(this->dev_, this->vm_.get_tag(), std::move(data));
+              },
               guard)
         , serializer_()
         , vm_()
@@ -92,12 +103,11 @@ namespace smf {
             // cyng::make_description("pty.push.data.req", get_vm_func_pty_req_push_data(this)),
             // cyng::make_description("pty.push.data.res", get_vm_func_pty_res_push_data(this)),
             // cyng::make_description("pty.res.close.channel", get_vm_func_pty_res_close_channel(this)),
-            cyng::make_description("pty.res.open.connection", get_vm_func_pty_res_open_connection(this))
-            // cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
-            // cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
-            // cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
-            // cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this))
-        );
+            cyng::make_description("pty.res.open.connection", get_vm_func_pty_res_open_connection(this)),
+            cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
+            cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
+            cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
+            cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }
@@ -119,8 +129,7 @@ namespace smf {
         vm_.stop();
     }
 
-    void modem_session::logout() { // cluster_bus_.pty_logout(dev_, vm_.get_tag());
-    }
+    void modem_session::logout() { cluster_bus_.pty_logout(dev_, vm_.get_tag()); }
 
     boost::asio::ip::tcp::endpoint modem_session::get_remote_endpoint() const { return socket_.remote_endpoint(); }
 
@@ -290,6 +299,57 @@ namespace smf {
         }
     }
 
+    void modem_session::pty_res_close_connection(bool success, cyng::param_map_t token) {
+
+        auto const reader = cyng::make_reader(token);
+        // auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
+
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed " << token);
+
+        print(success ? serializer_.ok() : serializer_.error());
+
+        // ipt_send(std::bind(
+        //     &ipt::serializer::res_close_connection,
+        //     &serializer_,
+        //     seq,
+        //     success ? ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED
+        //     : ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
+    }
+
+    void modem_session::pty_transfer_data(cyng::buffer_t data) {
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " transfer " << data.size() << " byte");
+#ifdef _DEBUG_MODEM
+        {
+            std::stringstream ss;
+            cyng::io::hex_dump<8> hd;
+            hd(ss, data.begin(), data.end());
+            auto const dmp = ss.str();
+            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] emit " << data.size() << " bytes:\n" << dmp);
+        }
+#endif
+        //  print binary data
+        print(std::move(data));
+    }
+
+    void modem_session::pty_req_open_connection(std::string msisdn, bool local, cyng::param_map_t token) {
+
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " req open connection " << msisdn);
+        if (auto_answer_) {
+            //  auto response
+            cluster_bus_.pty_res_open_connection(true, dev_, vm_.get_tag(), std::move(token));
+            parser_.set_stream_mode();
+        } else {
+            print(serializer_.ring());
+            //  store "token" and wait for ATA
+        }
+    }
+
+    void modem_session::pty_req_close_connection() {
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " close connection");
+        print(serializer_.no_carrier());
+        // ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
+    }
+
     auto modem_session::get_vm_func_pty_res_login(modem_session *ptr) -> std::function<void(bool success, boost::uuids::uuid)> {
         return std::bind(&modem_session::pty_res_login, ptr, std::placeholders::_1, std::placeholders::_2);
     }
@@ -297,6 +357,25 @@ namespace smf {
     auto modem_session::get_vm_func_pty_res_open_connection(modem_session *ptr)
         -> std::function<void(bool success, cyng::param_map_t)> {
         return std::bind(&modem_session::pty_res_open_connection, ptr, std::placeholders::_1, std::placeholders::_2);
+    }
+
+    auto modem_session::get_vm_func_pty_transfer_data(modem_session *ptr) -> std::function<void(cyng::buffer_t)> {
+        return std::bind(&modem_session::pty_transfer_data, ptr, std::placeholders::_1);
+    }
+
+    auto modem_session::get_vm_func_pty_res_close_connection(modem_session *ptr)
+        -> std::function<void(bool success, cyng::param_map_t)> {
+        return std::bind(&modem_session::pty_res_close_connection, ptr, std::placeholders::_1, std::placeholders::_2);
+    }
+
+    auto modem_session::get_vm_func_pty_req_open_connection(modem_session *ptr)
+        -> std::function<void(std::string, bool, cyng::param_map_t)> {
+        return std::bind(
+            &modem_session::pty_req_open_connection, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    }
+
+    auto modem_session::get_vm_func_pty_req_close_connection(modem_session *ptr) -> std::function<void()> {
+        return std::bind(&modem_session::pty_req_close_connection, ptr);
     }
 
 } // namespace smf

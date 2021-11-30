@@ -11,6 +11,7 @@
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/add.hpp>
+#include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/sys/process.h>
 #include <cyng/vm/generator.hpp>
@@ -382,10 +383,13 @@ namespace smf {
 
     void bus::pty_res_open_connection(
         bool success,
-        boost::uuids::uuid peer,   //	caller_vm
         boost::uuids::uuid dev,    //	callee dev-tag
         boost::uuids::uuid callee, //	callee vm-tag
         cyng::param_map_t &&token) {
+
+        auto const reader = cyng::make_reader(token);
+        auto const peer = cyng::value_cast(reader["caller-vm"].get(), boost::uuids::nil_uuid());
+        BOOST_ASSERT(!peer.is_nil());
 
         add_msg(
             state_holder_,

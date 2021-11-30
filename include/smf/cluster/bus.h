@@ -128,7 +128,7 @@ namespace smf {
         //	"pty.res.open.connection"
         void pty_res_open_connection(
             bool,
-            boost::uuids::uuid peer,
+            // boost::uuids::uuid peer,
             boost::uuids::uuid dev,    //	callee dev-tag
             boost::uuids::uuid callee, //	callee vm-tag
             cyng::param_map_t &&token);

@@ -25,11 +25,7 @@ namespace smf {
         }
     }
 
-    ping::~ping() {
-#ifdef _DEBUG_MAIN
-        std::cout << "ping(~)" << std::endl;
-#endif
-    }
+    ping::~ping() {}
 
     void ping::update() {
         auto sp = channel_.lock();

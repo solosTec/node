@@ -109,9 +109,9 @@ namespace smf {
                     if (esc_.is_on_time(guard_time_)) {
                         if (!buffer_.empty()) {
                             data_cb_(std::move(buffer_));
-                            BOOST_ASSERT_MSG(buffer_.empty(), "buffer not cleared");
-                            command_cb_("+++", "");
+                            buffer_.clear();
                         }
+                        command_cb_("+++", "");
                         return {state::COMMAND, true};
                     } else {
                         //  timeout
@@ -136,7 +136,7 @@ namespace smf {
                 //
                 //
                 data_cb_(std::move(buffer_));
-                BOOST_ASSERT_MSG(buffer_.empty(), "buffer not cleared");
+                buffer_.clear();
             }
         }
 
@@ -300,7 +300,7 @@ namespace smf {
 
         bool parser::esc::is_on_time(std::chrono::milliseconds guard) const {
             auto const delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
-            return delta < guard;
+            return delta > guard;
         }
 
         parser::esc &parser::esc::operator++() {

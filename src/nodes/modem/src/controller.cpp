@@ -109,8 +109,12 @@ namespace smf {
                 cyng::make_param("address", "0.0.0.0"),
                 cyng::make_param("port", 9000),
                 cyng::make_param("auto-answer", true), //	accept incoming calls automatically
-                cyng::make_param("guard-time", 1000),  //	milliseconds
-                cyng::make_param("timeout", 10)        //	connection timeout in seconds (gatekeeper)
+#ifdef _DEBUG
+                cyng::make_param("guard-time", 0), //	no guard time
+#else
+                cyng::make_param("guard-time", 1000), //	milliseconds
+#endif
+                cyng::make_param("timeout", 10) //	connection timeout in seconds (gatekeeper)
                 ));
     }
 

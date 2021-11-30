@@ -1,23 +1,12 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Sylko Olzscher
- *
- */
-
-#include <smf/ipt/codes.h>
 #include <smf/modem/serializer.h>
 
-//#include <cyng/vm/generator.h>
 #include <cyng/io/serialize.h>
-#include <cyng/obj/tuple_cast.hpp>
-#include <cyng/obj/value_cast.hpp>
 #ifdef SMF_MODEM_DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
 
-#include <boost/core/ignore_unused.hpp>
-#include <boost/predef.h>
+//#include <boost/core/ignore_unused.hpp>
+//#include <boost/predef.h>
 
 namespace smf {
     namespace modem {

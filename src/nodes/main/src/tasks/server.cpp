@@ -55,11 +55,7 @@ namespace smf {
         cache_.init(session_cfg, country_code, lang_code);
     }
 
-    server::~server() {
-#ifdef _DEBUG_MAIN
-        std::cout << "server(~)" << std::endl;
-#endif
-    }
+    server::~server() {}
 
     void server::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop cluster task(" << tag_ << ")"); }
 
