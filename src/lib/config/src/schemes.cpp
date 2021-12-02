@@ -281,13 +281,13 @@ namespace smf {
                 "session",
                 {
                     cyng::column("tag", cyng::TC_UUID),             //	pty (same as dev)
-                    cyng::column("peer", cyng::TC_UUID),            //	vm-tag of cluster session
+                    cyng::column("peer", cyng::TC_UUID),            //	vm-tag (local)
                     cyng::column("name", cyng::TC_STRING),          //	account
                     cyng::column("ep", cyng::TC_IP_TCP_ENDPOINT),   //	seen from pty
                     cyng::column("rTag", cyng::TC_UUID),            //	remote session tag (FORWARD op)
                     cyng::column("source", cyng::TC_UINT32),        //	ip-t source id (unique)
                     cyng::column("loginTime", cyng::TC_TIME_POINT), //	login time
-                    cyng::column("cTag", cyng::TC_UUID),            //	session tag (pk) to the connected session
+                    cyng::column("cTag", cyng::TC_UUID),            //	session tag (pk/rdev) to the connected session
                     cyng::column("pLayer", cyng::TC_STRING),        //	protocol layer (from session)
                     cyng::column("dLayer", cyng::TC_STRING),        //	data layer (from pty)
                     cyng::column("rx", cyng::TC_UINT64),            //	received bytes (from device)

@@ -164,6 +164,12 @@ namespace smf {
          */
         void pty_close_connection(boost::uuids::uuid tag, boost::uuids::uuid dev, cyng::param_map_t);
 
+        /**
+         * forward to other VM
+         */
+        void pty_forward_close_connection(boost::uuids::uuid tag, cyng::param_map_t);
+        void pty_forward_req_close_connection(boost::uuids::uuid tag);
+
         void pty_register_target(
             boost::uuids::uuid tag,
             boost::uuids::uuid dev,
@@ -222,66 +228,77 @@ namespace smf {
         //
 
         //	"cluster.req.login"
-        static std::function<void(std::string, std::string, cyng::pid, std::string, boost::uuids::uuid, cyng::version)>
-        get_vm_func_cluster_req_login(session *);
+        [[nodiscard]] static std::function<
+            void(std::string, std::string, cyng::pid, std::string, boost::uuids::uuid, cyng::version)>
+        make_vm_func_cluster_req_login(session *);
 
         //	"cluster.res.ping"
-        static std::function<void(std::chrono::system_clock::time_point)> get_vm_func_cluster_res_ping(session *);
+        [[nodiscard]] static std::function<void(std::chrono::system_clock::time_point)> make_vm_func_cluster_res_ping(session *);
 
         //	"db.req.subscribe"
-        static std::function<void(std::string, boost::uuids::uuid tag)> get_vm_func_db_req_subscribe(session *);
+        [[nodiscard]] static std::function<void(std::string, boost::uuids::uuid tag)> make_vm_func_db_req_subscribe(session *);
 
         //	"db.req.insert"
-        static std::function<void(std::string, cyng::key_t, cyng::data_t, std::uint64_t, boost::uuids::uuid)>
-        get_vm_func_db_req_insert(session *);
+        [[nodiscard]] static std::function<void(std::string, cyng::key_t, cyng::data_t, std::uint64_t, boost::uuids::uuid)>
+        make_vm_func_db_req_insert(session *);
 
         //	"db.req.insert.auto"
-        static std::function<void(std::string, cyng::data_t, boost::uuids::uuid)> get_vm_func_db_req_insert_auto(session *);
+        [[nodiscard]] static std::function<void(std::string, cyng::data_t, boost::uuids::uuid)>
+        make_vm_func_db_req_insert_auto(session *);
 
         //	"db.req.update" aka merge()
-        static std::function<void(std::string, cyng::key_t, cyng::param_map_t, boost::uuids::uuid)>
-        get_vm_func_db_req_update(session *);
+        [[nodiscard]] static std::function<void(std::string, cyng::key_t, cyng::param_map_t, boost::uuids::uuid)>
+        make_vm_func_db_req_update(session *);
 
         //	"db.req.remove"
-        static std::function<void(std::string, cyng::key_t, boost::uuids::uuid)> get_vm_func_db_req_remove(session *);
+        [[nodiscard]] static std::function<void(std::string, cyng::key_t, boost::uuids::uuid)>
+        make_vm_func_db_req_remove(session *);
 
         //	"db.req.clear"
-        static std::function<void(std::string, boost::uuids::uuid)> get_vm_func_db_req_clear(session *);
+        [[nodiscard]] static std::function<void(std::string, boost::uuids::uuid)> make_vm_func_db_req_clear(session *);
 
         //	"cluster.req.login"
-        static std::function<void(boost::uuids::uuid, std::string, std::string, boost::asio::ip::tcp::endpoint, std::string)>
-        get_vm_func_pty_login(session *);
+        [[nodiscard]] static std::function<
+            void(boost::uuids::uuid, std::string, std::string, boost::asio::ip::tcp::endpoint, std::string)>
+        make_vm_func_pty_login(session *);
 
         //	"cluster.req.logout"
-        static std::function<void(boost::uuids::uuid, boost::uuids::uuid)> get_vm_func_pty_logout(session *);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid)> make_vm_func_pty_logout(session *);
 
-        static std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::string, cyng::param_map_t)>
-        get_vm_func_pty_open_connection(session *);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::string, cyng::param_map_t)>
+        make_vm_func_pty_open_connection(session *);
 
-        static std::function<void(std::string, boost::uuids::uuid, bool, cyng::param_map_t)>
-        get_vm_func_pty_forward_open_connection(session *);
+        [[nodiscard]] static std::function<void(std::string, boost::uuids::uuid, bool, cyng::param_map_t)>
+        make_vm_func_pty_forward_open_connection(session *);
 
         // "pty.forward.open.connection"
-        static std::function<void(boost::uuids::uuid, bool, cyng::param_map_t)>
-        get_vm_func_pty_forward_res_open_connection(session *);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, bool, cyng::param_map_t)>
+        make_vm_func_pty_forward_res_open_connection(session *);
 
-        static std::function<void(bool, boost::uuids::uuid, boost::uuids::uuid, cyng::param_map_t)>
-        get_vm_func_pty_return_open_connection(session *);
+        [[nodiscard]] static std::function<void(bool, boost::uuids::uuid, boost::uuids::uuid, cyng::param_map_t)>
+        make_vm_func_pty_return_open_connection(session *);
 
-        static std::function<void(boost::uuids::uuid, boost::uuids::uuid, cyng::buffer_t)> get_vm_func_pty_transfer_data(session *);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, cyng::buffer_t)>
+        make_vm_func_pty_transfer_data(session *);
 
-        static std::function<void(boost::uuids::uuid, cyng::buffer_t)> get_vm_func_pty_forward_transfer_data(session *);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, cyng::buffer_t)>
+        make_vm_func_pty_forward_transfer_data(session *);
 
-        static std::function<void(boost::uuids::uuid, boost::uuids::uuid, cyng::param_map_t)>
-        get_vm_func_pty_close_connection(session *);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, cyng::param_map_t)>
+        make_vm_func_pty_close_connection(session *);
 
-        static std::function<
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, cyng::param_map_t)>
+        make_vm_func_pty_forward_close_connection(session *);
+
+        [[nodiscard]] static std::function<void(boost::uuids::uuid)> make_vm_func_pty_forward_req_close_connection(session *);
+
+        [[nodiscard]] static std::function<
             void(boost::uuids::uuid, boost::uuids::uuid, std::string, std::uint16_t, std::uint8_t, cyng::param_map_t)>
-        get_vm_func_pty_register_target(session *);
+        make_vm_func_pty_register_target(session *);
 
-        static std::function<void(boost::uuids::uuid, std::string)> get_vm_func_pty_deregister(session *);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, std::string)> make_vm_func_pty_deregister(session *);
 
-        static std::function<void(
+        [[nodiscard]] static std::function<void(
             boost::uuids::uuid,
             boost::uuids::uuid,
             std::string,
@@ -291,16 +308,16 @@ namespace smf {
             std::string,
             std::chrono::seconds,
             cyng::param_map_t)>
-        get_vm_func_pty_open_channel(session *);
+        make_vm_func_pty_open_channel(session *);
 
-        static std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, cyng::param_map_t)>
-        get_vm_func_pty_close_channel(session *);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, cyng::param_map_t)>
+        make_vm_func_pty_close_channel(session *);
 
-        static std::function<
+        [[nodiscard]] static std::function<
             void(boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, std::uint32_t, cyng::buffer_t, cyng::param_map_t)>
-        get_vm_func_pty_push_data_req(session *);
+        make_vm_func_pty_push_data_req(session *);
 
-        static std::function<bool(std::string msg, cyng::severity)> get_vm_func_sys_msg(db *);
+        [[nodiscard]] static std::function<bool(std::string msg, cyng::severity)> make_vm_func_sys_msg(db *);
 
       private:
         boost::asio::ip::tcp::socket socket_;

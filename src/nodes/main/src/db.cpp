@@ -529,6 +529,74 @@ namespace smf {
             cyng::access::write("connection"));
     }
 
+    std::tuple<boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid, bool> db::clear_connection(boost::uuids::uuid dev) {
+        boost::uuids::uuid rdev = boost::uuids::nil_uuid(), rpeer = boost::uuids::nil_uuid(), rtag = boost::uuids::nil_uuid();
+        bool local = false;
+        cache_.access(
+            [&](cyng::table *tbl_session, cyng::table *tbl_connection) {
+                auto const rec_dev = tbl_session->lookup(cyng::key_generator(dev));
+                if (!rec_dev.empty()) {
+                    rdev = rec_dev.value("cTag", dev); //  remote
+                    auto const peer = rec_dev.value("peer", dev);
+#ifdef _DEBUG_MAIN
+                    auto const name = rec_dev.value("name", "");
+                    auto const ep = rec_dev.value("ep", boost::asio::ip::tcp::endpoint());
+                    auto const source = rec_dev.value("source", std::uint32_t(0));
+                    auto const pLayer = rec_dev.value("pLayer", "");
+                    auto const dLayer = rec_dev.value("dLayer", "");
+
+                    CYNG_LOG_DEBUG(
+                        logger_,
+                        "dev record"
+                            << "\ndev (key)\t: " << dev << "\npeer\t: " << peer << "\nname\t: " << name << "\nep\t: " << ep
+                            << "\nr-vm\t: " << rtag << "\nsource\t: " << source << "\ncTag\t: " << rdev << "\npLayer\t: " << pLayer
+                            << "\ndLayer\t: " << dLayer);
+#endif
+                    tbl_session->modify(rec_dev.key(), cyng::make_param("cTag", boost::uuids::nil_uuid()), cfg_.get_tag());
+
+                    auto const rec_rdev = tbl_session->lookup(cyng::key_generator(rdev));
+                    if (!rec_rdev.empty()) {
+                        rtag = rec_rdev.value("rTag", dev);
+                        rpeer = rec_rdev.value("peer", dev);
+                        local = peer == rpeer;
+#ifdef _DEBUG_MAIN
+                        // auto const r_peer = rec_rdev.value("peer", dev);
+                        auto const r_name = rec_rdev.value("name", "");
+                        auto const r_ep = rec_rdev.value("ep", boost::asio::ip::tcp::endpoint());
+                        auto const r_rTag = rec_rdev.value("rTag", dev);
+                        auto const r_cTag = rec_rdev.value("cTag", dev);
+                        auto const r_source = rec_rdev.value("source", std::uint32_t(0));
+                        auto const r_pLayer = rec_rdev.value("pLayer", "");
+                        auto const r_dLayer = rec_rdev.value("dLayer", "");
+
+                        CYNG_LOG_DEBUG(
+                            logger_,
+                            "rdev record"
+                                << "\ndev (key)\t: " << rdev << "\npeer\t: " << rpeer << "\nname\t: " << r_name
+                                << "\nep\t: " << r_ep << "\nr-vm\t: " << r_rTag << "\nsource\t: " << r_source
+                                << "\ncTag\t: " << r_cTag << "\npLayer\t: " << r_pLayer << "\ndLayer\t: " << r_dLayer);
+
+                        //  definition of a connection
+                        BOOST_ASSERT(dev == r_cTag);
+
+#endif
+                        tbl_session->modify(rec_rdev.key(), cyng::make_param("cTag", boost::uuids::nil_uuid()), cfg_.get_tag());
+
+                        //
+                        //  remove connection record
+                        //
+                        if (!tbl_connection->erase(cyng::key_generator(cyng::merge(dev, rdev)), cfg_.get_tag())) {
+                            CYNG_LOG_ERROR(logger_, "connection clearing failed");
+                        }
+                    }
+                }
+            },
+            cyng::access::write("session"),
+            cyng::access::write("connection"));
+
+        return {rdev, rtag, rpeer, local};
+    }
+
     std::tuple<boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid> db::get_remote(boost::uuids::uuid dev) {
 
         //

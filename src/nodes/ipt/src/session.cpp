@@ -304,18 +304,14 @@ namespace smf {
 
                     auto const reader = cyng::make_reader(pos->second);
                     auto const caller_tag = cyng::value_cast(reader["caller-tag"].get(), boost::uuids::nil_uuid());
-                    auto const caller_vm = cyng::value_cast(reader["caller-vm"].get(), boost::uuids::nil_uuid());
+                    auto const caller_vm = cyng::value_cast(reader["caller-peer"].get(), boost::uuids::nil_uuid());
                     BOOST_ASSERT(!caller_tag.is_nil());
                     BOOST_ASSERT(!caller_vm.is_nil());
 
                     CYNG_LOG_TRACE(logger_, "[ipt] forward response to " << caller_tag << " on vm:" << caller_vm);
 
                     cluster_bus_.pty_res_open_connection(
-                        ipt::tp_res_open_connection_policy::is_success(res),
-                        // caller_vm,
-                        dev_,
-                        vm_.get_tag(),
-                        std::move(pos->second));
+                        ipt::tp_res_open_connection_policy::is_success(res), dev_, vm_.get_tag(), std::move(pos->second));
 
                     //
                     //	cleanup oce map
@@ -724,6 +720,11 @@ namespace smf {
             auto const dmp = ss.str();
             CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] emit " << data.size() << " bytes:\n" << dmp);
         }
+
+        if (boost::algorithm::equals(std::string(data.begin(), data.end()), "hello")) {
+            std::string const answer("welcome!\n");
+            cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), cyng::buffer_t(answer.begin(), answer.end()));
+        }
 #endif
         cyng::exec(vm_, [this, data]() {
             bool const b = buffer_write_.empty();
@@ -735,7 +736,7 @@ namespace smf {
     }
 
     void ipt_session::pty_req_close_connection() {
-        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " close connection");
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed");
         ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
     }
 

@@ -59,11 +59,15 @@ namespace smf {
                   } else if (boost::algorithm::equals(cmd, "+++")) {
                       //    back to command mode
                       CYNG_LOG_INFO(logger_, "back to command mode");
-                      parser_.set_cmd_mode();
+                      // parser_.set_cmd_mode();
+                      print(serializer_.ok());
                   } else if (boost::algorithm::equals(cmd, "ATH")) {
                       //    hang up
                       CYNG_LOG_INFO(logger_, "hang up");
-                      cluster_bus_.pty_close_connection(dev_, vm_.get_tag(), cyng::param_map_factory());
+                      cluster_bus_.pty_close_connection(
+                          dev_, vm_.get_tag(), cyng::param_map_factory("tp", std::chrono::system_clock::now()));
+                      //    wait for close response
+                      // print(serializer_.ok());
                   } else if (boost::algorithm::equals(cmd, "ATA")) {
                       //    call answer
                       CYNG_LOG_INFO(logger_, "call answer");
@@ -302,11 +306,10 @@ namespace smf {
     void modem_session::pty_res_close_connection(bool success, cyng::param_map_t token) {
 
         auto const reader = cyng::make_reader(token);
-        // auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
 
-        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed " << token);
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed (response)" << token);
 
-        print(success ? serializer_.ok() : serializer_.error());
+        print(success ? serializer_.no_carrier() : serializer_.error());
 
         // ipt_send(std::bind(
         //     &ipt::serializer::res_close_connection,
@@ -345,7 +348,7 @@ namespace smf {
     }
 
     void modem_session::pty_req_close_connection() {
-        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " close connection");
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed (request)");
         print(serializer_.no_carrier());
         // ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
     }

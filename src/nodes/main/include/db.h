@@ -132,9 +132,15 @@ namespace smf {
             bool local);
 
         /**
+         * update session and connection table
+         */
+        [[nodiscard]] std::tuple<boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid, bool>
+        clear_connection(boost::uuids::uuid dev);
+
+        /**
          * Search for a remote session (if connected)
          */
-        std::tuple<boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid> get_remote(boost::uuids::uuid);
+        [[nodiscard]] std::tuple<boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid> get_remote(boost::uuids::uuid);
 
         /**
          * insert new system message
@@ -151,7 +157,7 @@ namespace smf {
             return push_sys_msg(ss.str(), level);
         }
 
-        std::pair<std::uint32_t, bool> register_target(
+        [[nodiscard]] std::pair<std::uint32_t, bool> register_target(
             boost::uuids::uuid tag,
             boost::uuids::uuid dev,
             boost::uuids::uuid peer,
@@ -169,7 +175,7 @@ namespace smf {
          *  @param timeout channel timeout
          *  @return [channel, source, packet_size, count]
          */
-        std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t> open_channel( // boost::uuids::uuid tag
+        [[nodiscard]] std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t> open_channel(
             boost::uuids::uuid dev,
             std::string name,
             std::string account,
@@ -182,7 +188,7 @@ namespace smf {
          * lookup "channel" table for matching channels and return all
          * targets connected to this channel.
          */
-        std::vector<push_target> get_matching_channels(std::uint32_t, std::size_t);
+        [[nodiscard]] std::vector<push_target> get_matching_channels(std::uint32_t, std::size_t);
 
         /**
          * remove push channel

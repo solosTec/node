@@ -388,7 +388,7 @@ namespace smf {
         cyng::param_map_t &&token) {
 
         auto const reader = cyng::make_reader(token);
-        auto const peer = cyng::value_cast(reader["caller-vm"].get(), boost::uuids::nil_uuid());
+        auto const peer = cyng::value_cast(reader["caller-peer"].get(), boost::uuids::nil_uuid());
         BOOST_ASSERT(!peer.is_nil());
 
         add_msg(

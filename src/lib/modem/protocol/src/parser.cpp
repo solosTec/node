@@ -300,7 +300,7 @@ namespace smf {
 
         bool parser::esc::is_on_time(std::chrono::milliseconds guard) const {
             auto const delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_);
-            return delta > guard;
+            return delta >= guard;
         }
 
         parser::esc &parser::esc::operator++() {
