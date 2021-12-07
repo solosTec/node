@@ -161,7 +161,7 @@ set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build SHARED libraries")
 set(Boost_NO_BOOST_CMAKE OFF)
 find_package(Boost 1.75 
     REQUIRED 
-    COMPONENTS regex iostreams program_options unit_test_framework system thread random date_time
+    COMPONENTS regex iostreams program_options unit_test_framework system thread random date_time locale
 )
 # note: https://github.com/chriskohlhoff/asio/issues/585
 add_compile_definitions(BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE BOOST_BIND_NO_PLACEHOLDERS BOOST_SPIRIT_UNICODE BOOST_MPL_LIMIT_LIST_SIZE=50)
