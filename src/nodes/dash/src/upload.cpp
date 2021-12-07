@@ -18,7 +18,6 @@
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/value_cast.hpp>
 #include <cyng/parse/csv.h>
-//#include <cyng/parse/csv/line_cast.hpp>
 #include <cyng/parse/string.h>
 
 #include <iostream>
@@ -197,7 +196,7 @@ namespace smf {
         auto const tag = uidgen_();
         auto const key = cyng::key_generator(tag);
 
-        // auto country_code = db_.cfg_.get_value("country-code", "CH");
+        // auto country_code = db_.cfg_.get_value("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY));
         // auto const mc = gen_metering_code(country_code, tag);
 
         //

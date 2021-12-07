@@ -50,8 +50,8 @@ namespace smf {
             cyng::make_param("version", SMF_VERSION_TAG),
             cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", tag),
-            cyng::make_param("country-code", "CH"),
-            cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             cyng::make_param("network-delay", 20), //  seconds to wait before starting ip-t client
             create_server_spec(cwd),
             create_push_spec(),
@@ -207,20 +207,20 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param(
                     "SML",
-                    cyng::param_map_factory("target", "sml@store")("account", "account")(
-                        "number", "number")("version", "version")("timeout", 30)
+                    cyng::param_map_factory("target", "sml@store")("account", "account")("number", "number")("version", "version")(
+                        "timeout", 30)
                         .
                         operator cyng::param_map_t()),
                 cyng::make_param(
                     "IEC",
-                    cyng::param_map_factory("target", "iec@store")("account", "account")(
-                        "number", "number")("version", "version")("timeout", 30)
+                    cyng::param_map_factory("target", "iec@store")("account", "account")("number", "number")("version", "version")(
+                        "timeout", 30)
                         .
                         operator cyng::param_map_t()),
                 cyng::make_param(
                     "DLMS",
-                    cyng::param_map_factory("target", "dlms@store")("account", "account")(
-                        "number", "number")("version", "version")("timeout", 30)
+                    cyng::param_map_factory("target", "dlms@store")("account", "account")("number", "number")("version", "version")(
+                        "timeout", 30)
                         .
                         operator cyng::param_map_t())));
     }

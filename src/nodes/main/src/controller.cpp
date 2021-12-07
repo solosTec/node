@@ -42,8 +42,8 @@ namespace smf {
             cyng::make_param("version", SMF_VERSION_TAG),
             cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", "CH"),
-            cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             create_server_spec(),
             create_session_spec(tmp),
             create_cluster_spec())});
@@ -99,7 +99,8 @@ namespace smf {
         auto const reader = cyng::make_reader(cfg);
         auto const tag = read_tag(reader["tag"].get());
 
-        auto const country_code = cyng::value_cast(reader["country-code"].get(), "CH");
+        auto const country_code =
+            cyng::value_cast(reader["country-code"].get(), cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY));
         auto const lang_code = cyng::value_cast(reader["language-code"].get(), "en-GB");
 
         auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");

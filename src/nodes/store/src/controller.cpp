@@ -60,8 +60,8 @@ namespace smf {
             cyng::make_param("version", SMF_VERSION_TAG),
             cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", "CH"),
-            cyng::make_param("language-code", cyng::sys::get_system_locale()),
+            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             cyng::make_param("model", "smf.store"),
             cyng::make_param("network-delay", 6), //  seconds to wait before starting ip-t client
 
