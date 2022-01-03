@@ -174,6 +174,9 @@ namespace smf {
             boost::uuids::uuid tag,
             cyng::param_map_t &&token);
 
+        //	"pty.stop"
+        void pty_stop(std::string const&, cyng::key_t);
+
         /**
          * push system message
          * "sys.msg"

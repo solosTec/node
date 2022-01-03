@@ -68,7 +68,8 @@ namespace smf {
             cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
             cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
             cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
-            cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)));
+            cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)),
+            cyng::make_description("pty.req.stop", get_vm_func_pty_stop(this)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }
@@ -740,6 +741,11 @@ namespace smf {
         ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
     }
 
+    void ipt_session::pty_stop() {
+        CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " stop");
+        stop();
+    }
+
     void ipt_session::query() {
 
         if (ipt::test_bit(query_, ipt::query::PROTOCOL_VERSION)) {
@@ -856,5 +862,10 @@ namespace smf {
     auto ipt_session::get_vm_func_pty_req_close_connection(ipt_session *ptr) -> std::function<void()> {
         return std::bind(&ipt_session::pty_req_close_connection, ptr);
     }
+
+    auto ipt_session::get_vm_func_pty_stop(ipt_session* ptr)->std::function<void()> {
+        return std::bind(&ipt_session::pty_stop, ptr);
+    }
+
 
 } // namespace smf

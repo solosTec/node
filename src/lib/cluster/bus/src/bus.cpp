@@ -45,7 +45,7 @@ namespace smf {
         , parser_([this](cyng::object &&obj) {
             //  un-comment this line to debug problems with transferring data over
             //  the cluster bus.
-            // CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
+            CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
             vm_.load(std::move(obj));
         }) {
 
@@ -460,6 +460,11 @@ namespace smf {
         cyng::param_map_t &&token) {
 
         add_msg(state_holder_, cyng::serialize_invoke("pty.push.data.req", tag, dev, channel, source, data, token));
+    }
+
+    void bus::pty_stop(std::string const& table_name, cyng::key_t key) {
+
+        add_msg(state_holder_, cyng::serialize_invoke("pty.stop", table_name, key));
     }
 
     void bus::push_sys_msg(std::string msg, cyng::severity level) {

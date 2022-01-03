@@ -247,6 +247,14 @@ namespace smf {
                     auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
                     CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] delete request from channel " << channel);
                     delete_request(channel, cyng::container_cast<cyng::vector_t>(reader["key"]["tag"].get()));
+
+                } else if (boost::algorithm::equals(cmd, "stop")) {
+                    auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+                    CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] stop request from channel " << channel);
+                    stop_request(
+                        channel,
+                        cyng::container_cast<cyng::vector_t>(reader["key"].get()));
+
                 } else {
                     CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
                 }
@@ -320,6 +328,23 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[HTTP] delete: undefined channel " << channel);
         }
     }
+
+    void http_server::stop_request(std::string const& channel, cyng::vector_t&& key) {
+        BOOST_ASSERT_MSG(!key.empty(), "no modify key");
+        auto const rel = db_.by_channel(channel);
+        if (!rel.empty()) {
+
+            BOOST_ASSERT(boost::algorithm::equals(channel, rel.channel_));
+            db_.convert(rel.table_, key);
+
+            CYNG_LOG_TRACE(logger_, "[HTTP] stop session " << rel.table_ << ": " << key);
+            cluster_bus_.pty_stop(rel.table_, key);
+        }
+        else {
+            CYNG_LOG_WARNING(logger_, "[HTTP] stop: undefined channel " << channel);
+        }
+    }
+
 
     void http_server::modify_request(std::string const &channel, cyng::vector_t &&key, cyng::param_map_t &&data) {
 

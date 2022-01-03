@@ -122,12 +122,9 @@ namespace smf {
     }
 
     bool db::insert_pty(
-        boost::uuids::uuid tag //	device tag
-        ,
-        boost::uuids::uuid peer //	local vm-tag
-        ,
-        boost::uuids::uuid rtag //	remote vm-tag (required for forward ops)
-        ,
+        boost::uuids::uuid tag, //	device tag
+        boost::uuids::uuid peer, //	local vm-tag
+        boost::uuids::uuid rtag, //	remote vm-tag (required for forward ops)
         std::string const &name,
         std::string const &pwd,
         boost::asio::ip::tcp::endpoint ep,

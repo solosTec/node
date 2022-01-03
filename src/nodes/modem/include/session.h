@@ -45,6 +45,8 @@ namespace smf {
         void handle_write(const boost::system::error_code &ec);
         void print(cyng::buffer_t &&);
 
+        void pty_stop();
+
         //
         //	bus interface
         //
@@ -66,6 +68,8 @@ namespace smf {
 
         void pty_req_close_connection();
         static auto get_vm_func_pty_req_close_connection(modem_session *p) -> std::function<void()>;
+
+        static auto get_vm_func_pty_stop(modem_session* p)->std::function<void()>;
 
       private:
         cyng::controller &ctl_;

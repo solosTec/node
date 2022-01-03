@@ -214,9 +214,15 @@ namespace smf {
             cyng::param_map_t);
 
         /**
+         * pty.stop session
+         */
+        void pty_stop(std::string, cyng::key_t);
+        void pty_forward_stop(boost::uuids::uuid);
+
+        /**
          * send data to cluster node
          */
-        void send_cluster_response(std::deque<cyng::buffer_t> &&);
+        void send_cluster_msg(std::deque<cyng::buffer_t> &&);
 
         /**
          * update node status
@@ -316,6 +322,14 @@ namespace smf {
         [[nodiscard]] static std::function<
             void(boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, std::uint32_t, cyng::buffer_t, cyng::param_map_t)>
         make_vm_func_pty_push_data_req(session *);
+
+        [[nodiscard]] static std::function<
+            void(std::string, cyng::key_t)>
+        make_vm_func_pty_stop(session*);
+
+        [[nodiscard]] static std::function<
+            void(boost::uuids::uuid)>
+        make_vm_func_pty_forward_stop(session*);
 
         [[nodiscard]] static std::function<bool(std::string msg, cyng::severity)> make_vm_func_sys_msg(db *);
 

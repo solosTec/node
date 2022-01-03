@@ -85,6 +85,8 @@ namespace smf {
 
         void pty_transfer_data(cyng::buffer_t data);
 
+        void pty_stop();
+
         /**
          * query some device data
          */
@@ -144,6 +146,8 @@ namespace smf {
             -> std::function<void(std::string, bool, cyng::param_map_t)>;
 
         static auto get_vm_func_pty_req_close_connection(ipt_session *p) -> std::function<void()>;
+
+        static auto get_vm_func_pty_stop(ipt_session* p)->std::function<void()>;
 
       private:
         cyng::controller &ctl_;

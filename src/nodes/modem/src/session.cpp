@@ -111,7 +111,8 @@ namespace smf {
             cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
             cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
             cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
-            cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)));
+            cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)),
+            cyng::make_description("pty.req.stop", get_vm_func_pty_stop(this)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }
@@ -353,6 +354,10 @@ namespace smf {
         // ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
     }
 
+    void modem_session::pty_stop() {
+        stop();
+    }
+
     auto modem_session::get_vm_func_pty_res_login(modem_session *ptr) -> std::function<void(bool success, boost::uuids::uuid)> {
         return std::bind(&modem_session::pty_res_login, ptr, std::placeholders::_1, std::placeholders::_2);
     }
@@ -379,6 +384,10 @@ namespace smf {
 
     auto modem_session::get_vm_func_pty_req_close_connection(modem_session *ptr) -> std::function<void()> {
         return std::bind(&modem_session::pty_req_close_connection, ptr);
+    }
+
+    auto modem_session::get_vm_func_pty_stop(modem_session* ptr)->std::function<void()> {
+        return std::bind(&modem_session::pty_stop, ptr);
     }
 
 } // namespace smf

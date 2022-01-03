@@ -118,6 +118,8 @@ namespace smf {
 
         void delete_request(std::string const &channel, cyng::vector_t &&key);
 
+        void stop_request(std::string const& channel, cyng::vector_t&& key);
+
       private:
         bus &cluster_bus_;
 
