@@ -25,7 +25,6 @@ namespace smf {
 		, cyng::logger logger
 		, toggle::server_vec_t&& cfg_cluster
 		, bool login
-		, std::filesystem::path out
         , std::size_t reconnect_timeout
         , ipt::toggle::server_vec_t && cfg_ipt
         , ipt::push_channel &&pcc)
@@ -37,7 +36,6 @@ namespace smf {
 		, ctl_(ctl)
 		, tag_(tag)
 		, logger_(logger)
-		, out_(out)
         , reconnect_timeout_(reconnect_timeout)
         , cfg_ipt_(std::move(cfg_ipt))
         , pcc_(std::move(pcc))
@@ -96,7 +94,6 @@ namespace smf {
             ctl_,
             bus_,
             logger_,
-            out_,
             rec.key(),
             connect_counter,
             failure_counter,

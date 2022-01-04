@@ -122,7 +122,7 @@ namespace smf {
     }
 
     bool db::insert_pty(
-        boost::uuids::uuid tag, //	device tag
+        boost::uuids::uuid tag,  //	device tag
         boost::uuids::uuid peer, //	local vm-tag
         boost::uuids::uuid rtag, //	remote vm-tag (required for forward ops)
         std::string const &name,
@@ -165,6 +165,7 @@ namespace smf {
                 //
                 auto const key = cyng::key_generator(dev);
                 auto const rec_pty = tbl_pty->lookup(key);
+                // auto const source = rec_pty.value("source", 0); //  ip-t source id (unique)
                 if (rec_pty.empty()) {
                     //
                     //	most likely reason: login failed
@@ -202,20 +203,31 @@ namespace smf {
                 //
                 //	remove from session table
                 //
+                //#ifdef _DEBUG
+                // tbl_pty->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                //     // if (key == rec.key())
+                //     CYNG_LOG_TRACE(
+                //         logger_,
+                //         "[db] " << (key == rec.key() ? "removed" : "running") << " session " << dev << ", tag: " << tag
+                //                 << ", rec : " << rec.to_string());
+                //     return true;
+                // });
+                //#endif
                 r = tbl_pty->erase(key, cfg_.get_tag());
                 if (!r) {
                     CYNG_LOG_WARNING(logger_, "[db] remove session " << dev << ", tag: " << tag << " failed");
-#ifdef _DEBUG
-                    tbl_pty->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                        CYNG_LOG_TRACE(logger_, "[db] remove session " << dev << ", tag: " << tag << ", rec: " << rec.to_string());
-                        return true;
-                    });
-#endif
                 }
 
                 //
                 //	remove from target table
                 //
+                //#ifdef _DEBUG
+                // tbl_target->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                //     CYNG_LOG_TRACE(logger_, "[db] target: " << rec.to_string());
+                //     return true;
+                // });
+                //#endif
+
                 cyng::key_list_t keys;
                 tbl_target->loop([&](cyng::record &&rec, std::size_t) -> bool {
                     auto const device = rec.value("device", boost::uuids::nil_uuid());
@@ -235,10 +247,30 @@ namespace smf {
                 //
                 //	remove from channel table
                 //
+                //#ifdef _DEBUG
+                // tbl_channel->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                //     CYNG_LOG_TRACE(logger_, "[db] channel: " << rec.to_string());
+                //     return true;
+                // });
+                //#endif
                 tbl_channel->loop([&](cyng::record &&rec, std::size_t) -> bool {
                     auto const target = rec.value("target_tag", boost::uuids::nil_uuid());
                     if (target == tag) {
                         keys.insert(rec.key());
+                    }
+                    auto const owner = rec.value("owner", boost::uuids::nil_uuid());
+                    if (owner == dev) {
+
+                        //
+                        //  decrease listener count in table "target"
+                        //
+                        auto const target = rec.value<std::uint32_t>("target", 0);
+                        auto const key_target = cyng::key_generator(target);
+                        auto const rec_target = tbl_target->lookup(key_target);
+                        if (!rec_target.empty()) {
+                            auto const channels = rec_target.value<std::uint64_t>("channels", 0);
+                            tbl_target->modify(key_target, cyng::param_map_factory("channels", channels - 1), cfg_.get_tag());
+                        }
                     }
                     return true;
                 });
@@ -259,7 +291,6 @@ namespace smf {
     }
 
     pty db::get_access_params(cyng::key_t key) {
-
         //	 rTag and peer of the specified session
         boost::uuids::uuid rtag = boost::uuids::nil_uuid(), peer = boost::uuids::nil_uuid();
 
@@ -277,7 +308,6 @@ namespace smf {
     }
 
     std::size_t db::remove_pty_by_peer(boost::uuids::uuid peer, boost::uuids::uuid remote_peer) {
-
         cyng::key_list_t keys;
 
         cache_.access(
@@ -333,7 +363,6 @@ namespace smf {
     }
 
     std::size_t db::update_pty_counter(boost::uuids::uuid peer, boost::uuids::uuid remote_peer) {
-
         std::uint64_t count{0};
         cache_.access(
             [&](cyng::table const *tbl_pty, cyng::table *tbl_cls) {
@@ -357,7 +386,6 @@ namespace smf {
     }
 
     std::pair<boost::uuids::uuid, bool> db::lookup_device(std::string const &name, std::string const &pwd) {
-
         boost::uuids::uuid tag = boost::uuids::nil_uuid();
         bool enabled = false;
 
@@ -383,7 +411,6 @@ namespace smf {
     }
 
     bool db::insert_device(boost::uuids::uuid tag, std::string const &name, std::string const &pwd, bool enabled) {
-
         return cache_.insert(
             "device",
             cyng::key_generator(tag),
@@ -395,7 +422,6 @@ namespace smf {
 
     std::tuple<bool, bool, boost::uuids::uuid, boost::uuids::uuid, std::string, std::string>
     db::lookup_msisdn(std::string msisdn, boost::uuids::uuid dev) {
-
         //	(1) session already connected,
         //	(2) remote session online, enabled and not connected,
         //	(3) remote session vm-tag
@@ -468,7 +494,6 @@ namespace smf {
         boost::uuids::uuid dev,    //	callee dev-tag - pk
         boost::uuids::uuid callee, //	callee vm-tag
         bool local) {
-
         cache_.access(
             [&](cyng::table *tbl_session, cyng::table *tbl_connection) {
                 auto const key_caller = cyng::key_generator(caller_dev);
@@ -595,7 +620,6 @@ namespace smf {
     }
 
     std::tuple<boost::uuids::uuid, boost::uuids::uuid, boost::uuids::uuid> db::get_remote(boost::uuids::uuid dev) {
-
         //
         //  This function loops over all sessions to find the matching remote session.
         //  This doesn't scale well for a high number of sessions with much open
@@ -624,7 +648,6 @@ namespace smf {
     }
 
     void db::init_sys_msg() {
-
         auto const max_msg = cfg_.get_value<std::int64_t>("max-messages", 1000);
         auto const tag = get_cfg().get_tag();
 
@@ -649,7 +672,6 @@ namespace smf {
     }
 
     void db::init_LoRa_uplink() {
-
         auto const max_msg = cfg_.get_value<std::int64_t>("max-LoRa-records", 500);
         auto const tag = get_cfg().get_tag();
 
@@ -674,7 +696,6 @@ namespace smf {
     }
 
     void db::init_iec_uplink() {
-
         auto const max_msg = cfg_.get_value<std::int64_t>("max-IEC-records", 600);
         auto const tag = get_cfg().get_tag();
 
@@ -699,7 +720,6 @@ namespace smf {
     }
 
     void db::init_wmbus_uplink() {
-
         auto const max_msg = cfg_.get_value<std::int64_t>("max-wMBus-records", 500);
         auto const tag = get_cfg().get_tag();
 
@@ -775,7 +795,8 @@ namespace smf {
 
         //
         // onee
-        // MA0000000000000000000000003496219,RS485,10.132.28.150,6000,Elster,Elster AS 1440,IEC 62056,Lot Yakut,C1 House 101,Yes,,,
+        // MA0000000000000000000000003496219,RS485,10.132.28.150,6000,Elster,Elster AS 1440,IEC 62056,Lot Yakut,C1 House
+        // 101,Yes,,,
         //
         auto const tag_03 = cyng::to_uuid("be3931f9-6266-44db-b2b6-bd3b94b7a563");
         b = cache_.insert(
@@ -820,7 +841,8 @@ namespace smf {
                 ,
                 "MAN" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "11600000" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -898,13 +920,14 @@ namespace smf {
                 ,
                 "35074614" //	[string] meter number (i.e. 16000913) 4 bytes
                 ,
-                "MA0000000000000000000000035074614" // cyng::column("code", cyng::TC_STRING),		//	[string] metering
-                                                    // code
+                "MA0000000000000000000000035074614" // cyng::column("code", cyng::TC_STRING),		//	[string]
+                                                    // metering code
                                                     // - changed at 2019-01-31
                 ,
                 "ELS" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1051,7 +1074,8 @@ namespace smf {
                 ,
                 "MAN" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1066,7 +1090,8 @@ namespace smf {
                 ,
                 boost::uuids::nil_uuid() // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 ,
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                        // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1110,7 +1135,8 @@ namespace smf {
                 ,
                 "MAN" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1125,7 +1151,8 @@ namespace smf {
                 ,
                 boost::uuids::nil_uuid() // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 ,
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                        // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1169,7 +1196,8 @@ namespace smf {
                 ,
                 "MAN" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1184,7 +1212,8 @@ namespace smf {
                 ,
                 boost::uuids::nil_uuid() // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 ,
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                        // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1228,7 +1257,8 @@ namespace smf {
                 ,
                 "MAN" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1243,7 +1273,8 @@ namespace smf {
                 ,
                 boost::uuids::nil_uuid() // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 ,
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                        // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1287,7 +1318,8 @@ namespace smf {
                 ,
                 "MAN" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1302,7 +1334,8 @@ namespace smf {
                 ,
                 boost::uuids::nil_uuid() // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 ,
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                        // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1347,7 +1380,8 @@ namespace smf {
                 ,
                 "MAN" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1362,7 +1396,8 @@ namespace smf {
                 ,
                 boost::uuids::nil_uuid() // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 ,
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
+                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                        // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1441,13 +1476,14 @@ namespace smf {
                 ,
                 "03218421" //	[string] meter number (i.e. 16000913) 4 bytes
                 ,
-                "CH0000000000000000000000003218421" // cyng::column("code", cyng::TC_STRING),		//	[string] metering
-                                                    // code
+                "CH0000000000000000000000003218421" // cyng::column("code", cyng::TC_STRING),		//	[string]
+                                                    // metering code
                                                     // - changed at 2019-01-31
                 ,
                 "ELS" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1511,13 +1547,14 @@ namespace smf {
                 ,
                 "35074616" //	[string] meter number (i.e. 16000913) 4 bytes
                 ,
-                "MA0000000000000000000000035074616" // cyng::column("code", cyng::TC_STRING),		//	[string] metering
-                                                    // code
+                "MA0000000000000000000000035074616" // cyng::column("code", cyng::TC_STRING),		//	[string]
+                                                    // metering code
                                                     // - changed at 2019-01-31
                 ,
                 "ELS" // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 ,
-                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
+                std::chrono::system_clock::now() // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                 // manufacture
                 ,
                 "" // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 ,
@@ -1651,7 +1688,6 @@ namespace smf {
         std::string name,
         std::uint16_t paket_size,
         std::uint8_t window_size) {
-
         //
         //	ToDo: test for duplicate target names of same session
         //
@@ -1680,8 +1716,9 @@ namespace smf {
                             paket_size,
                             window_size,
                             std::chrono::system_clock::now(),
-                            static_cast<std::uint64_t>(0), //	px
-                            static_cast<std::uint64_t>(0)),
+                            static_cast<std::uint64_t>(0),  //	px
+                            static_cast<std::uint64_t>(0),  //  msg counter
+                            static_cast<std::uint64_t>(0)), //  open channels
                         1,
                         cfg_.get_tag());
 
@@ -1695,7 +1732,7 @@ namespace smf {
         return {channel, r};
     }
 
-    std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t> db::open_channel(
+    std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t, std::string> db::open_channel(
         boost::uuids::uuid dev, //  key in table "device"
         std::string name,       // target name
         std::string account,    // account (unused yet)
@@ -1703,7 +1740,6 @@ namespace smf {
         std::string sv,         // software version (unused yet)
         std::string id,         // device id / model (unused yet)
         std::chrono::seconds timeout) {
-
         //
         //  initialize with an invalid value
         //
@@ -1721,10 +1757,15 @@ namespace smf {
         cyng::key_list_t targets;
 
         //
+        //  device name as debug/log info
+        //
+        std::string device;
+
+        //
         //	get source channel from session
         //
         cache_.access(
-            [&, this](cyng::table const *tbl_session, cyng::table const *tbl_target, cyng::table *tbl_channel) {
+            [&, this](cyng::table const *tbl_session, cyng::table *tbl_target, cyng::table *tbl_channel) {
                 auto const key = cyng::key_generator(dev);
                 auto const rec_session = tbl_session->lookup(key);
                 if (!rec_session.empty()) {
@@ -1732,6 +1773,8 @@ namespace smf {
                     source = rec_session.value<std::uint32_t>("source", 0);
                     CYNG_LOG_DEBUG(logger_, "channel to " << name << " has source id: " << source);
                     BOOST_ASSERT(source != 0);
+
+                    device = rec_session.value("name", "");
 
                     //
                     //	ToDo: check if device is enabled
@@ -1770,9 +1813,15 @@ namespace smf {
 
                         tbl_channel->insert(
                             cyng::key_generator(channel, target_id),
-                            cyng::data_generator(target_tag, target_peer, packet_size, timeout),
+                            cyng::data_generator(target_tag, target_peer, packet_size, timeout, dev),
                             1,
                             cfg_.get_tag());
+
+                        //
+                        //  increase channel counter in table "target"
+                        //
+                        auto const channels = rec_target.value<std::uint64_t>("channels", 0);
+                        tbl_target->modify(rec_target.key(), cyng::param_map_factory("channels", channels + 1), cfg_.get_tag());
                     }
 
                 } else {
@@ -1780,11 +1829,11 @@ namespace smf {
                 }
             },
             cyng::access::read("session"),
-            cyng::access::read("target"),
+            cyng::access::write("target"),
             cyng::access::write("channel"));
 
         //	[channel, source, packet_size, count]
-        return {channel, source, packet_size, static_cast<std::uint32_t>(targets.size())};
+        return {channel, source, packet_size, static_cast<std::uint32_t>(targets.size()), device};
     }
 
     std::pair<cyng::key_list_t, std::uint16_t> db::get_matching_targets(
@@ -1795,7 +1844,6 @@ namespace smf {
         std::string sv,
         std::string id,
         boost::uuids::uuid dev) {
-
         cyng::key_list_t keys;
         std::uint16_t packet_size = std::numeric_limits<std::uint16_t>::max();
 
@@ -1837,7 +1885,6 @@ namespace smf {
     }
 
     std::vector<push_target> db::get_matching_channels(std::uint32_t channel, std::size_t size) {
-
         std::vector<push_target> vec;
         BOOST_ASSERT(channel != 0);
 
@@ -1893,23 +1940,40 @@ namespace smf {
     }
 
     std::size_t db::close_channel(std::uint32_t channel) {
-
         cyng::key_list_t keys;
         cache_.access(
-            [&, this](cyng::table *tbl_channel) {
+            [&, this](cyng::table *tbl_channel, cyng::table *tbl_target) {
                 tbl_channel->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
                     auto const c = rec.value<std::uint32_t>("channel", 0);
                     if (c == channel) {
                         keys.insert(rec.key());
+
+                        //
+                        //  decrease listener count in table "target"
+                        //
+                        auto const target = rec.value<std::uint32_t>("target", 0);
+                        auto const key_target = cyng::key_generator(target);
+                        auto const rec_target = tbl_target->lookup(key_target);
+                        if (!rec_target.empty()) {
+                            auto const channels = rec_target.value<std::uint64_t>("channels", 0);
+                            tbl_target->modify(key_target, cyng::param_map_factory("channels", channels - 1), cfg_.get_tag());
+                        } else {
+                            CYNG_LOG_WARNING(logger_, "[db] target: #" << target << " not found");
+                        }
                     }
                     return true;
                 });
 
                 for (auto const &key : keys) {
+
+                    //
+                    //  remove channel
+                    //
                     tbl_channel->erase(key, cfg_.get_tag());
                 }
             },
-            cyng::access::write("channel"));
+            cyng::access::write("channel"),
+            cyng::access::write("target"));
         return keys.size();
     }
 

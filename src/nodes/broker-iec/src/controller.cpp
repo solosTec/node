@@ -76,14 +76,15 @@ namespace smf {
         }
 
         auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
-#if defined(BOOST_OS_WINDOWS_AVAILABLE)
-        std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "D:\\projects\\data\\csv");
-#else
-        std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "/data/csv");
-#endif
-        if (!std::filesystem::exists(client_out)) {
-            CYNG_LOG_FATAL(logger, "output path not found: [" << client_out << "]");
-        }
+        //#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+        //        std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(),
+        //        "D:\\projects\\data\\csv");
+        //#else
+        //        std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "/data/csv");
+        //#endif
+        // if (!std::filesystem::exists(client_out)) {
+        //     CYNG_LOG_FATAL(logger, "output path not found: [" << client_out << "]");
+        // }
         auto const reconnect_timeout = cyng::numeric_cast<std::size_t>(reader["client"]["reconnect.timeout"].get(), 40);
         auto const filter_enabled = cyng::numeric_cast<std::size_t>(reader["client"]["filter.enabled"].get(), false);
         // cyng::make_param("filter.enabled", false), //	use filter
@@ -139,7 +140,7 @@ namespace smf {
             node_name,
             std::move(tgl_cluster),
             client_login,
-            client_out,
+            // client_out,
             (reconnect_timeout < 10) ? 10 : reconnect_timeout,
             std::move(tgl_ipt),
             // std::chrono::seconds(delay),
@@ -163,7 +164,6 @@ namespace smf {
         std::string const &node_name,
         toggle::server_vec_t &&tgl_cluster,
         bool login,
-        std::filesystem::path out,
         std::size_t reconnect_timeout,
         ipt::toggle::server_vec_t &&tgl_ipt,
         ipt::push_channel &&pcc) {
@@ -176,7 +176,6 @@ namespace smf {
             logger,
             std::move(tgl_cluster),
             login,
-            out,
             reconnect_timeout,
             std::move(tgl_ipt),
             std::move(pcc));
@@ -206,11 +205,11 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param("login", false),
                 cyng::make_param("verbose", false), //	parser
-#if defined(BOOST_OS_WINDOWS_AVAILABLE)
-                cyng::make_param("out", "D:\\projects\\data\\csv"), //	output path
-#else
-                cyng::make_param("out", "/data/csv"), //	output path
-#endif
+                                                    //#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                //                cyng::make_param("out", "D:\\projects\\data\\csv"), //	output path
+                //#else
+                //                cyng::make_param("out", "/data/csv"), //	output path
+                //#endif
                 cyng::make_param("reconnect.timeout", 40), //	delay between reconnects in seconds
                 cyng::make_param("filter.enabled", false), //	use filter
                 cyng::make_param("filter", cyng::make_vector({"12345678"}))

@@ -107,7 +107,6 @@ namespace smf {
             cyng::controller &,
             bus &,
             cyng::logger,
-            std::filesystem::path,
             cyng::key_t key, //  "gwIEC"
             std::uint32_t connect_counter,
             std::uint32_t failure_counter,

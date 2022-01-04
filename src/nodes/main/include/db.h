@@ -175,7 +175,7 @@ namespace smf {
          *  @param timeout channel timeout
          *  @return [channel, source, packet_size, count]
          */
-        [[nodiscard]] std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t> open_channel(
+        [[nodiscard]] std::tuple<std::uint32_t, std::uint32_t, std::uint16_t, std::uint32_t, std::string> open_channel(
             boost::uuids::uuid dev,
             std::string name,
             std::string account,

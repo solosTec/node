@@ -733,13 +733,16 @@ namespace smf {
             //
             //	insert into session table
             //
-            cache_.insert_pty(dev   //  pk
-                , vm_.get_tag()     //  peer
-                , rtag
-                , name
-                , pwd
-                , ep
-                , data_layer);
+            cache_.insert_pty(
+                dev //  pk
+                ,
+                vm_.get_tag() //  peer
+                ,
+                rtag,
+                name,
+                pwd,
+                ep,
+                data_layer);
 
             //
             //	send response
@@ -764,7 +767,7 @@ namespace smf {
             //	send response
             //
             send_cluster_msg(cyng::serialize_forward("pty.res.login", rtag, false, boost::uuids::nil_uuid())); //	no
-                                                                                                                   // device
+                                                                                                               // device
 
             //	check auto insert
             auto const auto_login = cache_.get_cfg().get_value("auto-login", false);
@@ -1094,13 +1097,16 @@ namespace smf {
 
         } else {
 
-            auto const [channel, source, packet_size, count] = cache_.open_channel(dev, name, account, number, sv, id, timeout);
+            auto const [channel, source, packet_size, count, device] =
+                cache_.open_channel(dev, name, account, number, sv, id, timeout);
 
             if (count == 0) {
                 cache_.sys_msg(cyng::severity::LEVEL_WARNING, protocol_layer_, "target [", name, "] not found");
                 CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << "target [" << name << "] not found");
             } else {
-                CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " open channel [" << name << "] " << channel << ':' << source);
+                CYNG_LOG_INFO(
+                    logger_,
+                    "pty " << device << '/' << protocol_layer_ << " open channel [" << name << "] " << channel << ':' << source);
             }
 
             send_cluster_msg(cyng::serialize_forward(
@@ -1176,18 +1182,21 @@ namespace smf {
 
             auto const tag = cyng::value_cast(key.at(0), boost::uuids::nil_uuid());
 
-            cache_.get_store().access([&](cyng::table const* tbl_session) {
+            cache_.get_store().access(
+                [&](cyng::table const *tbl_session) {
+                    auto const rec = tbl_session->lookup(key);
+                    auto const rtag = rec.value("rTag", boost::uuids::nil_uuid());
+                    auto const peer = rec.value("peer", boost::uuids::nil_uuid());
 
-                auto const rec = tbl_session->lookup(key);
-                auto const rtag = rec.value("rTag", boost::uuids::nil_uuid());
-                auto const peer = rec.value("peer", boost::uuids::nil_uuid());
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "session [" << socket_.remote_endpoint() << "] will stop " << table_name << ": " << rtag << " on peer "
+                                    << peer);
 
-                CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] will stop " << table_name << ": " << rtag << " on peer " << peer);
+                    vm_.load(cyng::generate_forward("pty.forward.stop", peer, rtag));
+                },
+                cyng::access::read(table_name));
 
-                vm_.load(cyng::generate_forward("pty.forward.stop", peer, rtag));
-
-            }, cyng::access::read(table_name));
-            
             //
             //  execute loaded program
             //
@@ -1196,9 +1205,7 @@ namespace smf {
     }
 
     void session::pty_forward_stop(boost::uuids::uuid rtag) {
-        CYNG_LOG_WARNING(
-            logger_,
-            "stop " << rtag);
+        CYNG_LOG_WARNING(logger_, "stop " << rtag);
         send_cluster_msg(cyng::serialize_forward("pty.req.stop", rtag));
     }
 
@@ -1407,22 +1414,12 @@ namespace smf {
             std::placeholders::_6);
     }
 
-    std::function<void(std::string, cyng::key_t)>
-        session::make_vm_func_pty_stop(session* ptr) {
-        return std::bind(
-            &session::pty_stop,
-            ptr,
-            std::placeholders::_1,
-            std::placeholders::_2);
+    std::function<void(std::string, cyng::key_t)> session::make_vm_func_pty_stop(session *ptr) {
+        return std::bind(&session::pty_stop, ptr, std::placeholders::_1, std::placeholders::_2);
     }
 
-    std::function<
-        void(boost::uuids::uuid)>
-        session::make_vm_func_pty_forward_stop(session* ptr) {
-        return std::bind(
-            &session::pty_forward_stop,
-            ptr,
-            std::placeholders::_1);
+    std::function<void(boost::uuids::uuid)> session::make_vm_func_pty_forward_stop(session *ptr) {
+        return std::bind(&session::pty_forward_stop, ptr, std::placeholders::_1);
     }
 
     std::function<bool(std::string msg, cyng::severity)> session::make_vm_func_sys_msg(db *ptr) {

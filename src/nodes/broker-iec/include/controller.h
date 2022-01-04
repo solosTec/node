@@ -38,20 +38,9 @@ namespace smf {
             std::string const &node_name,
             toggle::server_vec_t &&tgl_cluster,
             bool,
-            std::filesystem::path,
             std::size_t reconnect_timeout,
             ipt::toggle::server_vec_t &&tgl_ipt,
             ipt::push_channel &&);
-
-        // void join_network(
-        //    cyng::controller &ctl,
-        //    cyng::stash &,
-        //    cyng::logger logger,
-        //    boost::uuids::uuid tag,
-        //    std::string const &node_name,
-        //    ipt::toggle::server_vec_t &&tgl,
-        //    std::chrono::seconds delay,
-        //    ipt::push_channel &&);
 
       private:
         cyng::param_t create_client_spec();

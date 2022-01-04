@@ -43,7 +43,6 @@ namespace smf {
             cyng::logger,
             toggle::server_vec_t &&,
             bool login,
-            std::filesystem::path out,
             std::size_t reconnect_timeout,
             ipt::toggle::server_vec_t &&,
             ipt::push_channel &&pcc);
@@ -89,7 +88,6 @@ namespace smf {
         cyng::controller &ctl_;
         boost::uuids::uuid const tag_;
         cyng::logger logger_;
-        std::filesystem::path const out_;
         std::size_t const reconnect_timeout_;
         ipt::toggle::server_vec_t const cfg_ipt_;
         ipt::push_channel const pcc_;
