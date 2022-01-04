@@ -15,7 +15,6 @@
 
 #include <iostream>
 
-//#include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
 
 namespace smf {
@@ -362,6 +361,82 @@ namespace smf {
         return key;
     }
 
+    void db::update_table_meter_full() {
+
+        cache_.access(
+            [&](cyng::table* tbl_full
+                , cyng::table const* tbl_device
+                , cyng::table const* tbl_meter
+                , cyng::table const* tbl_iec
+                , cyng::table const* tbl_wmbus
+                , cyng::table const* tbl_loc) {
+
+                //
+                //  remove old data
+                //
+                tbl_full->clear(cfg_.get_tag());
+
+                tbl_iec->loop([&](cyng::record&& rec_iec, std::size_t) -> bool {
+
+                    auto const& key = rec_iec.key();
+                    auto const rec_meter = tbl_meter->lookup(key);
+                    if (!rec_meter.empty()) {
+
+                        auto const rec_loc = tbl_loc->lookup(key);
+                        auto const region = rec_loc.empty() ? std::string("-") : rec_loc.value("region", "");
+                        auto const address = rec_loc.empty() ? std::string("-") : rec_loc.value("address", "");
+
+                        //  insert into "meterFull"
+                        tbl_full->insert(key, cyng::data_generator(
+                            rec_meter.at("meter"),  //  meter -> "Meter ID"
+                            rec_meter.at("code"),   //  code -> Meter_ID
+                            rec_meter.at("maker"),  //  maker-> Manufacturer
+                            rec_meter.at("protocol"),  //  protocol -> Protocol
+                            rec_iec.at("host"),     //  host -> GWY_IP
+                            rec_iec.at("port"),     //  port -> Ports
+                            "-",                     //  no AES key avaliable
+                            region,
+                            address
+                        ), 1u, cfg_.get_tag());
+                    }
+
+                    return true;
+                    });
+                tbl_wmbus->loop([&](cyng::record&& rec_wmbus, std::size_t) -> bool {
+
+                    auto const& key = rec_wmbus.key();
+                    auto const rec_meter = tbl_meter->lookup(key);
+                    if (!rec_meter.empty()) {
+
+                        auto const rec_loc = tbl_loc->lookup(key);
+                        auto const region = rec_loc.empty() ? std::string("-") : rec_loc.value("region", "");
+                        auto const address = rec_loc.empty() ? std::string("-") : rec_loc.value("address", "");
+
+                        //  insert into "meterFull"
+                        tbl_full->insert(key, cyng::data_generator(
+                            rec_meter.at("meter"),      //  meter -> "Meter ID"
+                            rec_meter.at("code"),       //  code -> Meter_ID
+                            rec_meter.at("maker"),      //  maker-> Manufacturer
+                            rec_meter.at("protocol"),   //  protocol -> Protocol
+                            rec_wmbus.at("address"),    //  address -> GWY_IP
+                            rec_wmbus.at("port"),       //  port -> Ports
+                            rec_wmbus.at("aes"),        //  aes -> Key
+                            region,
+                            address
+                        ), 1u, cfg_.get_tag());
+                    }
+                    return true;
+                 });
+            },
+            cyng::access::write("meterFull"),
+            cyng::access::read("device"),
+            cyng::access::read("meter"),
+            cyng::access::read("meterIEC"),
+            cyng::access::read("meterwMBus"),
+            cyng::access::read("location"));
+    }
+
+
     db::rel::rel(std::string table, std::string channel, std::string counter)
         : table_(table)
         , channel_(channel)
@@ -388,17 +463,7 @@ namespace smf {
         db::rel{"iecUplink", "monitor.IEC", "table.IECUplink.count"},
         db::rel{"gwIEC", "status.IECgw", "table.gwIEC.count"},
         db::rel{"gwwMBus", "status.wMBusgw", "table.gwwMBus.count"}
-        //
-        // db::rel{"TMeterAccess", "config.meterwMBus", "table.meterwMBus.count"},
-        // db::rel{"TBridge", "config.bridge", "table.bridge.count"},
-        // db::rel{"---", "config.web", ""},
-        // db::rel{"_HTTPSession", "web.sessions", "table.web.count"},
-        // db::rel{"_TimeSeries", "monitor.tsdb", ""},
-        // db::rel{"_LoRaUplink", "monitor.lora", "table.loRaUplink.count"},
-        // db::rel{"_CSV", "task.csv", ""},
-        // db::rel{"TGWSnapshot", "monitor.snapshot", "table.snapshot.count"},
-        // db::rel{"_EventQueue", "event.queue", "table.event.queue"}
-
+        //  don't add table "meterFull" - no syncing
     };
 
     std::vector<cyng::meta_store> get_store_meta_data() {
@@ -420,7 +485,9 @@ namespace smf {
             config::get_store_uplink_wmbus(),
             config::get_store_uplink_iec(),
             config::get_store_gwIEC(),
-            config::get_store_gwwMBus()};
+            config::get_store_gwwMBus(),
+            config::get_store_meter_full()
+        };
     }
 
     cyng::object convert_to_type(cyng::type_code tc, cyng::object &obj) {

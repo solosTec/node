@@ -111,6 +111,11 @@ namespace smf {
          */
         cyng::key_t lookup_meter_by_id(std::string const &);
 
+        /**
+         * Fill table "meterFull" with data
+         */
+        void update_table_meter_full();
+
       private:
         void set_start_values(
             std::uint64_t max_upload_size,

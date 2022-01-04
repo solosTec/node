@@ -88,6 +88,62 @@ namespace smf {
                 });
         }
 
+        cyng::meta_store get_store_meter_full() {
+            //  Meter_ID,Ift_Type,GWY_IP,Ports,Manufacturer,Meter_Type,Protocol,Area,Name,Meter ID,SMF Data?,Key,AMR Address,Comments,In_enDS
+            //  Meter_ID:   MA0000000000000000000000010320045 - metering code
+            //  Ift_Type:   wMBus/RS485 - wireless M-Bus / serial
+            //  GWY_IP:     10.132.32.149 - host, IP address
+            //  Ports:      2000 - IP port
+            //  Manufacturer:   Easymeter, Elster, EMH
+            //  Meter_Type:     EasymeterQ3D, Elster AS 220, EMH ED100L
+            //  Protocol:   Wireless MBUS, IEC 62056
+            //  Area:       Moumnat
+            //  Name:       House 49
+            //  "Meter ID":   10320043
+            //  SMF Data?:
+            //  Key:        34393539343530393137313033313233 - AES key (wM-Bus only)
+            //  AMR Address,Comments,In_enDS
+
+            return cyng::meta_store(
+                "meterFull",
+                {
+                    //  meter
+                    cyng::column("tag", cyng::TC_UUID),             //	same as device
+                    //cyng::column("ident", cyng::TC_STRING),       //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                    cyng::column("Meter ID", cyng::TC_STRING),       //	[string] meter -> "Meter ID"
+                    cyng::column("Meter_ID", cyng::TC_STRING),      //	[string] code -> Meter_ID
+                    cyng::column("Manufacturer", cyng::TC_STRING),       //	[string] maker-> Manufacturer
+                    //cyng::column("tom", cyng::TC_TIME_POINT),     //	[ts] time of manufacture
+                    //cyng::column("vFirmware", cyng::TC_STRING), //	[string] firmwareversion (i.e. 11600000)
+                    //cyng::column("vParam", cyng::TC_STRING),    //	[string] parametrierversion (i.e. 16A098828.pse)
+                    //cyng::column("factoryNr", cyng::TC_STRING), //	[string] fabrik nummer (i.e. 06441734)
+                    //cyng::column("item", cyng::TC_STRING),    //	[string] ArtikeltypBezeichnung = "NXT4-S20EW-6N00-4000-5020-E50/Q"
+                    //cyng::column("mClass", cyng::TC_STRING),  //	[string] Metrological Class: A, B, C, Q3/Q1, ...
+                    //cyng::column("gw", cyng::TC_UUID),        //	optional gateway pk
+                    cyng::column("Protocol", cyng::TC_STRING), //	[string] protocol -> Protocol
+
+                    //  device
+                    //cyng::column("name", cyng::TC_STRING),
+                    //cyng::column("msisdn", cyng::TC_STRING),
+                    //cyng::column("descr", cyng::TC_STRING),
+                    //cyng::column("id", cyng::TC_STRING), //	model
+
+                    //  IEC/ wM-Bus
+                    cyng::column("GWY_IP", cyng::TC_STRING),        //	host -> GWY_IP
+                    cyng::column("Ports", cyng::TC_UINT16),         //	port -> Ports
+                    //cyng::column("interval", cyng::TC_SECOND),    //	pull cycle
+
+                    //  wM-Bus
+                    cyng::column("Key", cyng::TC_AES128),            //	aes -> Key
+
+                    //  location
+                    cyng::column("Area", cyng::TC_STRING),          //	[string] region -> Area
+                    cyng::column("Name", cyng::TC_STRING)           //	[string] address -> Name
+
+                },
+                1);
+        }
+
         cyng::meta_store get_store_meterIEC() {
             return cyng::meta_store(
                 "meterIEC",

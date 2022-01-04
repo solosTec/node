@@ -28,6 +28,12 @@ namespace smf {
         cyng::meta_sql get_table_meter();
 
         /**
+         * temporary table withh full info of all meters.
+         * This includes data from IEC and wM-Bus meters
+         */
+        cyng::meta_store get_store_meter_full();
+
+        /**
          * meterIEC/TMeterIEC
          */
         cyng::meta_store get_store_meterIEC();

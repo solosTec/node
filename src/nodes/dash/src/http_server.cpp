@@ -155,6 +155,10 @@ namespace smf {
                 } else if (boost::algorithm::equals(type, "gwwMBus")) {
                     BOOST_ASSERT(boost::algorithm::equals(target, "/download.gwwMBus"));
                     download = download_.generate("gwwMBus", fmt);
+                } else if (boost::algorithm::equals(type, "bridge")) {
+                    BOOST_ASSERT(boost::algorithm::equals(target, "/download.bridge"));
+                    db_.update_table_meter_full();
+                    download = download_.generate("meterFull", fmt);
                 } else {
                     CYNG_LOG_WARNING(logger_, "[HTTP] unknown download type: [" << type << "]");
                 }
