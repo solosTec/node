@@ -114,7 +114,7 @@ namespace smf {
                 cyng::find_value(pmap, std::string("number"), std::string()),
                 cyng::find_value(pmap, std::string("version"), std::string()),
                 cyng::find_value(pmap, std::string("id"), std::string()),
-                cyng::find_value<std::int64_t>(pmap, std::string("monitor"), 12));
+                cyng::find_value<std::int16_t>(pmap, std::string("monitor"), 12));
         }
 
     } // namespace ipt

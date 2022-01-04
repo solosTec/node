@@ -22,7 +22,7 @@ namespace smf {
                 break;
             }
 
-            return "not-found";
+            return cyng::to_str(o);
         }
 
         std::string get_description(cyng::obis o) {
