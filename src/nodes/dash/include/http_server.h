@@ -105,12 +105,13 @@ namespace smf {
         void on_msg(boost::uuids::uuid tag, std::string);
 
         bool response_subscribe_channel(ws_sptr, std::string const &, boost::uuids::uuid tag);
-        bool response_subscribe_channel_def(ws_sptr, std::string const &, std::string const &);
-        bool response_subscribe_channel_meterwMBus(ws_sptr, std::string const &, std::string const &);
-        bool response_subscribe_channel_meterIEC(ws_sptr, std::string const &, std::string const &);
-        bool response_subscribe_channel_gwIEC(ws_sptr wsp, std::string const &name, std::string const &table_name);
-        bool response_subscribe_channel_gateway(ws_sptr, std::string const &, std::string const &);
-        void response_update_channel(ws_sptr, std::string const &);
+        bool response_subscribe_channel(ws_sptr, std::string const &, std::string const &);
+        void response_update_channel(ws_sptr, std::string const&);
+        void response_subscribe_channel_meterwMBus(ws_sptr, std::string const &, std::string const &);
+        void response_subscribe_channel_meterIEC(ws_sptr, std::string const &, std::string const &);
+        void response_subscribe_channel_gwIEC(ws_sptr wsp, std::string const &name, std::string const &table_name);
+        void response_subscribe_channel_gateway(ws_sptr, std::string const &, std::string const &);
+        void response_subscribe_channel_meter(ws_sptr, std::string const &, std::string const &);
 
         void modify_request(std::string const &channel, cyng::vector_t &&key, cyng::param_map_t &&data);
 
@@ -118,7 +119,7 @@ namespace smf {
 
         void delete_request(std::string const &channel, cyng::vector_t &&key);
 
-        void stop_request(std::string const& channel, cyng::vector_t&& key);
+        void stop_request(std::string const &channel, cyng::vector_t &&key);
 
       private:
         bus &cluster_bus_;

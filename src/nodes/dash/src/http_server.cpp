@@ -255,10 +255,9 @@ namespace smf {
                 } else if (boost::algorithm::equals(cmd, "stop")) {
                     auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
                     CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] stop request from channel " << channel);
-                    stop_request(
-                        channel,
-                        cyng::container_cast<cyng::vector_t>(reader["key"].get()));
+                    stop_request(channel, cyng::container_cast<cyng::vector_t>(reader["key"].get()));
 
+                    //} else if (boost::algorithm::equals(cmd, "query")) {
                 } else {
                     CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
                 }
@@ -333,7 +332,7 @@ namespace smf {
         }
     }
 
-    void http_server::stop_request(std::string const& channel, cyng::vector_t&& key) {
+    void http_server::stop_request(std::string const &channel, cyng::vector_t &&key) {
         BOOST_ASSERT_MSG(!key.empty(), "no modify key");
         auto const rel = db_.by_channel(channel);
         if (!rel.empty()) {
@@ -343,12 +342,10 @@ namespace smf {
 
             CYNG_LOG_TRACE(logger_, "[HTTP] stop session " << rel.table_ << ": " << key);
             cluster_bus_.pty_stop(rel.table_, key);
-        }
-        else {
+        } else {
             CYNG_LOG_WARNING(logger_, "[HTTP] stop: undefined channel " << channel);
         }
     }
-
 
     void http_server::modify_request(std::string const &channel, cyng::vector_t &&key, cyng::param_map_t &&data) {
 
@@ -384,21 +381,8 @@ namespace smf {
         if (!rel.empty()) {
 
             BOOST_ASSERT(boost::algorithm::equals(name, rel.channel_));
+            return response_subscribe_channel(wsp, name, rel.table_);
 
-            //
-            //	some tables require additional data
-            //
-            if (boost::algorithm::equals(rel.table_, "meterwMBus")) {
-                return response_subscribe_channel_meterwMBus(wsp, name, rel.table_);
-            } else if (boost::algorithm::equals(rel.table_, "meterIEC")) {
-                return response_subscribe_channel_meterIEC(wsp, name, rel.table_);
-            } else if (boost::algorithm::equals(rel.table_, "gwIEC")) {
-                return response_subscribe_channel_gwIEC(wsp, name, rel.table_);
-            } else if (boost::algorithm::equals(rel.table_, "gateway")) {
-                return response_subscribe_channel_gateway(wsp, name, rel.table_);
-            } else {
-                return response_subscribe_channel_def(wsp, name, rel.table_);
-            }
         } else {
 
             auto const rel = db_.by_counter(name);
@@ -423,64 +407,73 @@ namespace smf {
         return false;
     }
 
-    bool http_server::response_subscribe_channel_def(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+    bool http_server::response_subscribe_channel(ws_sptr wsp, std::string const &name, std::string const &table_name) {
         //
-        //	Send initial data set
+        //	inform client that data upload is starting
         //
-        db_.cache_.access(
-            [&](cyng::table const *tbl) -> void {
-                //
-                //	inform client that data upload is starting
-                //
-                wsp->push_msg(json_load_icon(name, true));
+        wsp->push_msg(json_load_icon(name, true));
 
-                //
-                //	get total record size
-                //
-                auto total_size{tbl->size()};
-                std::size_t percent{0}, idx{0};
-
-                tbl->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
-                    auto const str = json_insert_record(name, rec.to_tuple());
-                    CYNG_LOG_DEBUG(logger_, str);
-                    wsp->push_msg(str);
-
+        //
+        //	some tables require additional data
+        //
+        if (boost::algorithm::equals(table_name, "meterwMBus")) {
+            response_subscribe_channel_meterwMBus(wsp, table_name, table_name);
+        } else if (boost::algorithm::equals(table_name, "meterIEC")) {
+            response_subscribe_channel_meterIEC(wsp, name, table_name);
+        } else if (boost::algorithm::equals(table_name, "gwIEC")) {
+            response_subscribe_channel_gwIEC(wsp, name, table_name);
+        } else if (boost::algorithm::equals(table_name, "gateway")) {
+            response_subscribe_channel_gateway(wsp, name, table_name);
+        } else if (boost::algorithm::equals(table_name, "meter")) {
+            response_subscribe_channel_meter(wsp, name, table_name);
+        } else {
+            //
+            //	Send initial data set
+            //
+            db_.cache_.access(
+                [&](cyng::table const *tbl) -> void {
                     //
-                    //	update current index and percentage calculation
+                    //	get total record size
                     //
-                    ++idx;
-                    const auto prev_percent = percent;
-                    percent = (100u * idx) / total_size;
-                    if (prev_percent != percent) {
-                        wsp->push_msg(json_load_level(name, percent));
-                    }
+                    auto total_size{tbl->size()};
+                    std::size_t percent{0}, idx{0};
 
-                    return true;
-                });
+                    tbl->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
+                        auto const str = json_insert_record(name, rec.to_tuple());
+                        CYNG_LOG_DEBUG(logger_, str);
+                        wsp->push_msg(str);
 
-                //
-                //	inform client that data upload is finished
-                //
-                if (percent != 100)
-                    wsp->push_msg(json_load_level(name, 100));
-                wsp->push_msg(json_load_icon(name, false));
-            },
-            cyng::access::read(table_name));
+                        //
+                        //	update current index and percentage calculation
+                        //
+                        ++idx;
+                        const auto prev_percent = percent;
+                        percent = (100u * idx) / total_size;
+                        if (prev_percent != percent) {
+                            wsp->push_msg(json_load_level(name, percent));
+                        }
+
+                        return true;
+                    });
+                },
+                cyng::access::read(table_name));
+        }
+
+        //
+        //	inform client that data upload is finished
+        //
+        wsp->push_msg(json_load_level(name, 100));
+        wsp->push_msg(json_load_icon(name, false));
 
         return true; //	valid channel
     }
 
-    bool http_server::response_subscribe_channel_meterwMBus(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+    void http_server::response_subscribe_channel_meterwMBus(ws_sptr wsp, std::string const &name, std::string const &table_name) {
         //
         //	Send initial data set
         //
         db_.cache_.access(
             [&](cyng::table const *tbl_wmbus, cyng::table const *tbl_meter) -> void {
-                //
-                //	inform client that data upload is starting
-                //
-                wsp->push_msg(json_load_icon(name, true));
-
                 //
                 //	get total record size
                 //
@@ -518,31 +511,17 @@ namespace smf {
 
                     return true;
                 });
-
-                //
-                //	inform client that data upload is finished
-                //
-                if (percent != 100)
-                    wsp->push_msg(json_load_level(name, 100));
-                wsp->push_msg(json_load_icon(name, false));
             },
             cyng::access::read(table_name),
             cyng::access::read("meter"));
-
-        return true;
     }
 
-    bool http_server::response_subscribe_channel_meterIEC(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+    void http_server::response_subscribe_channel_meterIEC(ws_sptr wsp, std::string const &name, std::string const &table_name) {
         //
         //	Send initial data set
         //
         db_.cache_.access(
             [&](cyng::table const *tbl_wmbus, cyng::table const *tbl_meter) -> void {
-                //
-                //	inform client that data upload is starting
-                //
-                wsp->push_msg(json_load_icon(name, true));
-
                 //
                 //	get total record size
                 //
@@ -580,31 +559,17 @@ namespace smf {
 
                     return true;
                 });
-
-                //
-                //	inform client that data upload is finished
-                //
-                if (percent != 100)
-                    wsp->push_msg(json_load_level(name, 100));
-                wsp->push_msg(json_load_icon(name, false));
             },
             cyng::access::read(table_name),
             cyng::access::read("meter"));
-
-        return true;
     }
 
-    bool http_server::response_subscribe_channel_gwIEC(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+    void http_server::response_subscribe_channel_gwIEC(ws_sptr wsp, std::string const &name, std::string const &table_name) {
         //
         //	Send initial data set
         //
         db_.cache_.access(
             [&](cyng::table const *tbl_gw, cyng::table const *tbl_meter, cyng::table const *tbl_iec) -> void {
-                //
-                //	inform client that data upload is starting
-                //
-                wsp->push_msg(json_load_icon(name, true));
-
                 //
                 //	get total record size
                 //
@@ -656,32 +621,18 @@ namespace smf {
                     wsp->push_msg(str);
                     return true;
                 });
-
-                //
-                //	inform client that data upload is finished
-                //
-                if (percent != 100)
-                    wsp->push_msg(json_load_level(name, 100));
-                wsp->push_msg(json_load_icon(name, false));
             },
             cyng::access::read(table_name),
             cyng::access::read("meter"),
             cyng::access::read("meterIEC"));
-
-        return true;
     }
 
-    bool http_server::response_subscribe_channel_gateway(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+    void http_server::response_subscribe_channel_gateway(ws_sptr wsp, std::string const &name, std::string const &table_name) {
         //
         //	Send initial data set
         //
         db_.cache_.access(
             [&](cyng::table const *tbl_wmbus, cyng::table const *tbl_dev, cyng::table const *tbl_session) -> void {
-                //
-                //	inform client that data upload is starting
-                //
-                wsp->push_msg(json_load_icon(name, true));
-
                 //
                 //	get total record size
                 //
@@ -726,18 +677,53 @@ namespace smf {
 
                     return true;
                 });
-
-                //
-                //	inform client that data upload is finished
-                //
-                if (percent != 100)
-                    wsp->push_msg(json_load_level(name, 100));
-                wsp->push_msg(json_load_icon(name, false));
             },
             cyng::access::read(table_name),
             cyng::access::read("device"),
             cyng::access::read("session"));
-        return true;
+    }
+
+    void http_server::response_subscribe_channel_meter(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        //
+        //	Send initial data set
+        //
+        db_.cache_.access(
+            [&](cyng::table const *tbl, cyng::table const *tbl_session) -> void {
+                //
+                //	get total record size
+                //
+                auto total_size{tbl->size()};
+                std::size_t percent{0}, idx{0};
+
+                tbl->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
+                    //
+                    // get online state
+                    //
+                    auto const online = tbl_session->exist(rec.key());
+
+                    //
+                    //  append online state
+                    //
+                    auto tpl = rec.to_tuple(cyng::param_map_factory("online", online ? 1 : 0));
+                    auto const str = json_insert_record(name, std::move(tpl));
+                    CYNG_LOG_DEBUG(logger_, str);
+                    wsp->push_msg(str);
+
+                    //
+                    //	update current index and percentage calculation
+                    //
+                    ++idx;
+                    const auto prev_percent = percent;
+                    percent = (100u * idx) / total_size;
+                    if (prev_percent != percent) {
+                        wsp->push_msg(json_load_level(name, percent));
+                    }
+
+                    return true;
+                });
+            },
+            cyng::access::read(table_name),
+            cyng::access::read("session"));
     }
 
     void http_server::response_update_channel(ws_sptr wsp, std::string const &name) {

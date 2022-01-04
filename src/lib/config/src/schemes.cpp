@@ -336,7 +336,7 @@ namespace smf {
             return cyng::meta_store(
                 "session",
                 {
-                    cyng::column("tag", cyng::TC_UUID),             //	pty (same as dev)
+                    cyng::column("tag", cyng::TC_UUID),             //	pty (same as device)
                     cyng::column("peer", cyng::TC_UUID),            //	vm-tag (local)
                     cyng::column("name", cyng::TC_STRING),          //	account
                     cyng::column("ep", cyng::TC_IP_TCP_ENDPOINT),   //	seen from pty
