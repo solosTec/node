@@ -257,7 +257,14 @@ namespace smf {
                     CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] stop request from channel " << channel);
                     stop_request(channel, cyng::container_cast<cyng::vector_t>(reader["key"].get()));
 
-                    //} else if (boost::algorithm::equals(cmd, "query")) {
+                } else if (boost::algorithm::equals(cmd, "query")) {
+                    auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+                    CYNG_LOG_WARNING(logger_, "[HTTP] query request from channel " << channel);
+                    auto wsp = pos->second.lock();
+                    if (wsp) {
+                        query_request(channel, cyng::container_cast<cyng::vector_t>(reader["rec"]["key"].get()), wsp);
+                    }
+
                 } else {
                     CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
                 }
@@ -344,6 +351,37 @@ namespace smf {
             cluster_bus_.pty_stop(rel.table_, key);
         } else {
             CYNG_LOG_WARNING(logger_, "[HTTP] stop: undefined channel " << channel);
+        }
+    }
+
+    void http_server::query_request(std::string const &channel, cyng::vector_t &&key, ws_sptr wps) {
+        BOOST_ASSERT_MSG(!key.empty(), "no modify key");
+        auto const rel = db_.by_channel(channel);
+        if (!rel.empty()) {
+
+            BOOST_ASSERT(boost::algorithm::equals(channel, rel.channel_));
+
+            //
+            //	convert key data type(s)
+            //
+            db_.convert(rel.table_, key);
+
+            CYNG_LOG_TRACE(logger_, "[HTTP] query request for table " << rel.table_ << ": " << key);
+            //  obj.cmd === "update"
+
+            db_.cache_.access(
+                [&](cyng::table const *tbl) -> void {
+                    auto const rec = tbl->lookup(key);
+                    if (!rec.empty()) {
+                        wps->push_msg(json_update_record(channel, key, rec.to_tuple()));
+                    } else {
+                        CYNG_LOG_WARNING(logger_, "[HTTP] table " << rel.table_ << " has no data for key " << key);
+                    }
+                },
+                cyng::access::read(rel.table_));
+
+        } else {
+            CYNG_LOG_WARNING(logger_, "[HTTP] query: undefined channel " << channel);
         }
     }
 
@@ -826,6 +864,14 @@ namespace smf {
             cyng::make_param("channel", channel),
             cyng::make_param("key", key),
             cyng::make_param("value", param)));
+    }
+
+    std::string json_update_record(std::string channel, cyng::key_t const &key, cyng::tuple_t &&tpl) {
+        return cyng::io::to_json(cyng::make_tuple(
+            cyng::make_param("cmd", "modify"),
+            cyng::make_param("channel", channel),
+            cyng::make_param("key", key),
+            cyng::make_param("data", tpl)));
     }
 
     std::string json_load_icon(std::string channel, bool b) {

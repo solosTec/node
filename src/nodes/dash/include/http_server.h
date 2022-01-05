@@ -106,7 +106,7 @@ namespace smf {
 
         bool response_subscribe_channel(ws_sptr, std::string const &, boost::uuids::uuid tag);
         bool response_subscribe_channel(ws_sptr, std::string const &, std::string const &);
-        void response_update_channel(ws_sptr, std::string const&);
+        void response_update_channel(ws_sptr, std::string const &);
         void response_subscribe_channel_meterwMBus(ws_sptr, std::string const &, std::string const &);
         void response_subscribe_channel_meterIEC(ws_sptr, std::string const &, std::string const &);
         void response_subscribe_channel_gwIEC(ws_sptr wsp, std::string const &name, std::string const &table_name);
@@ -120,6 +120,8 @@ namespace smf {
         void delete_request(std::string const &channel, cyng::vector_t &&key);
 
         void stop_request(std::string const &channel, cyng::vector_t &&key);
+
+        void query_request(std::string const &channel, cyng::vector_t &&key, ws_sptr);
 
       private:
         bus &cluster_bus_;
@@ -169,6 +171,7 @@ namespace smf {
 
     std::string json_insert_record(std::string channel, cyng::tuple_t &&tpl);
     std::string json_update_record(std::string channel, cyng::key_t const &key, cyng::param_t const &param);
+    std::string json_update_record(std::string channel, cyng::key_t const &key, cyng::tuple_t &&tpl);
     std::string json_load_icon(std::string channel, bool);
     std::string json_load_level(std::string channel, std::size_t);
     std::string json_delete_record(std::string channel, cyng::key_t const &);
