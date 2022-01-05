@@ -277,9 +277,10 @@ namespace smf {
             //
             if (!sp->is_stopped()) {
 
+                // BOOST_ASSERT(!buffer_write_.empty());
                 CYNG_LOG_TRACE(
                     logger_,
-                    "ipt [" << tgl_.get() << "] write #" << buffer_write_.size() << ": " << buffer_write_.front().size()
+                    "ipt [" << tgl_.get() << "] queue #" << buffer_write_.size() << ": " << buffer_write_.front().size()
                             << " bytes");
 
 #ifdef __DEBUG_IPT
@@ -369,6 +370,11 @@ namespace smf {
 
                 if (!ec) {
 
+                    CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] write #" << buffer_write_.size());
+                    if (buffer_write_.empty()) {
+                        CYNG_LOG_FATAL(logger_, "ipt write empty buffer");
+                    }
+                    // BOOST_ASSERT(!buffer_write_.empty());
                     buffer_write_.pop_front();
                     if (!buffer_write_.empty()) {
                         do_write(sp);
@@ -383,10 +389,17 @@ namespace smf {
 
         void bus::send(state_ptr sp, std::function<cyng::buffer_t()> f) {
             boost::asio::post(dispatcher_, [this, sp, f]() {
-                bool const b = buffer_write_.empty();
-                if (b && sp) {
+                if (sp) {
+                    //  if true - already writing
+                    auto const b = buffer_write_.empty();
                     buffer_write_.push_back(f());
-                    do_write(sp);
+                    //
+                    //  it's essential not to start a new write operation
+                    //  if one is already running.
+                    //
+                    if (b) {
+                        do_write(sp);
+                    }
                 }
             });
         }
@@ -534,8 +547,10 @@ namespace smf {
 
             if (!name.empty() && wp.lock()) {
 
-                boost::asio::post(dispatcher_, [this, name, wp]() {
-                    bool const b = buffer_write_.empty();
+                //
+                //	send request
+                //
+                send(state_holder_, [=, this]() -> cyng::buffer_t {
                     auto r = serializer_.req_register_push_target(
                         name,
                         std::numeric_limits<std::uint16_t>::max(), //	0xffff
@@ -545,15 +560,9 @@ namespace smf {
                     //	send register command to ip-t server
                     //
                     pending_targets_.emplace(r.second, std::make_pair(name, wp));
-                    buffer_write_.push_back(r.first);
 
-                    //
-                    //	send request
-                    //
-                    if (b && state_holder_) {
-                        BOOST_ASSERT_MSG(state_holder_->has_state(state_value::AUTHORIZED), "AUTHORIZED state expected");
-                        do_write(state_holder_);
-                    }
+                    //  buffer
+                    return r.first;
                 });
 
                 return true;
@@ -565,48 +574,26 @@ namespace smf {
 
         bool bus::open_channel(push_channel pc_cfg, cyng::channel_weak wp) {
 
-            BOOST_ASSERT(!wp.expired());
-            if (!pc_cfg.target_.empty()) {
+            if (!wp.expired() && !pc_cfg.target_.empty()) {
 
-                boost::asio::post(dispatcher_, [this, pc_cfg, wp]() {
-                    bool const b = buffer_write_.empty();
+                //
+                //	send request
+                //
+                send(state_holder_, [=, this]() -> cyng::buffer_t {
                     auto const r = serializer_.req_open_push_channel(
                         pc_cfg.target_, pc_cfg.account_, pc_cfg.number_, pc_cfg.version_, pc_cfg.id_, pc_cfg.timeout_);
-
-                    CYNG_LOG_INFO(
-                        logger_,
-                        "[ipt] open channel \"" << pc_cfg.target_ << "\" - #" << opening_channel_.size() << " pending request(s)");
 
                     //
                     //  update list of pending channel openings
                     //
                     opening_channel_.emplace(r.second, std::make_pair(pc_cfg, wp));
 
-#ifdef __DEBUG_IPT
-                    {
-                        std::stringstream ss;
-                        cyng::io::hex_dump<8> hd;
-                        hd(ss, r.first.begin(), r.first.end());
-                        auto const dmp = ss.str();
-                        CYNG_LOG_DEBUG(
-                            logger_,
-                            "[" << +r.second << "] open channel " << pc_cfg.target_ << " sk = " << to_string(serializer_.get_sk())
-                                << "@" << serializer_.get_scrambler_index() << ":\n"
-                                << dmp);
-                    }
-#endif
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "[ipt] open channel \"" << pc_cfg.target_ << "\" - #" << opening_channel_.size() << " pending request(s)");
 
-                    //
-                    //	send request
-                    //
-                    if (b && state_holder_) {
-                        BOOST_ASSERT_MSG(state_holder_->has_state(state_value::AUTHORIZED), "AUTHORIZED state expected");
-                        //
-                        //	send "open push channel" command to ip-t server
-                        //
-                        buffer_write_.push_back(r.first);
-                        do_write(state_holder_);
-                    }
+                    //  buffer
+                    return r.first;
                 });
 
                 return true;
@@ -618,17 +605,13 @@ namespace smf {
 
         bool bus::close_channel(std::uint32_t channel, cyng::channel_weak wp) {
             BOOST_ASSERT(!wp.expired());
-            boost::asio::post(dispatcher_, [this, channel, wp]() {
-                bool const b = buffer_write_.empty();
 
-                //
-                //	send request
-                //
-                if (b && state_holder_) {
+            if (!wp.expired()) {
+                send(state_holder_, [=, this]() -> cyng::buffer_t {
+                    CYNG_LOG_INFO(logger_, "[ipt] close channel: " << channel);
+
                     BOOST_ASSERT_MSG(state_holder_->has_state(state_value::AUTHORIZED), "AUTHORIZED state expected");
                     auto const r = serializer_.req_close_push_channel(channel);
-
-                    CYNG_LOG_INFO(logger_, "[ipt] close channel: " << channel);
 
                     //
                     //  update list of pending channel closings
@@ -638,10 +621,11 @@ namespace smf {
                     //
                     //	send "close push channel" command to ip-t server
                     //
-                    buffer_write_.push_back(r.first);
-                    do_write(state_holder_);
-                }
-            });
+                    return r.first;
+                });
+                return true;
+            }
+
             return false;
         }
 
@@ -691,6 +675,9 @@ namespace smf {
                     //  cleanup list
                     //
                     opening_channel_.erase(pos);
+
+                    CYNG_LOG_INFO(logger_, "[ipt] open channel #" << opening_channel_.size() << " pending request(s)");
+
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing list entry");
                 }

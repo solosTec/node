@@ -194,14 +194,24 @@ namespace smf {
             //
             auto sp = channel_.lock();
             if (sp) {
+                CYNG_LOG_INFO(logger_, "[push] reconnect in one minute");
                 sp->suspend(std::chrono::minutes(1), "connect");
+            } else {
+                CYNG_LOG_ERROR(logger_, "[push] channel invalid - cannot reconnect");
             }
         }
     }
 
     void push::open_push_channels() {
+        CYNG_LOG_INFO(logger_, "[push] open SML channel " << pcc_sml_);
         bus_.open_channel(pcc_sml_, channel_);
+
+        // std::this_thread::sleep_for(std::chrono::seconds(1));
+        CYNG_LOG_INFO(logger_, "[push] open IEC channel " << pcc_iec_);
         bus_.open_channel(pcc_iec_, channel_);
+
+        // std::this_thread::sleep_for(std::chrono::seconds(1));
+        CYNG_LOG_INFO(logger_, "[push] open DLMS channel " << pcc_dlms_);
         bus_.open_channel(pcc_dlms_, channel_);
     }
 

@@ -106,6 +106,12 @@ namespace smf {
             , version_(version)
             , timeout_(timeout) {}
 
+        std::ostream &operator<<(std::ostream &os, push_channel const &pc) {
+            os << pc.target_ << ':' << pc.account_ << ':' << pc.number_ << ':' << pc.id_ << ':' << pc.version_ << '+'
+               << pc.timeout_;
+            return os;
+        }
+
         push_channel read_push_channel_config(cyng::param_map_t const &pmap) {
 
             return push_channel(

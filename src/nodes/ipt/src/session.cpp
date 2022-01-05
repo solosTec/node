@@ -77,7 +77,7 @@ namespace smf {
     ipt_session::~ipt_session() {
         gatekeeper_->stop();
 #ifdef _DEBUG_IPT
-        std::cout << "session(~)" << std::endl;
+        // std::cout << "session(~)" << std::endl;
 #endif
     }
 
@@ -115,11 +115,6 @@ namespace smf {
                         "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
                                      << socket_.remote_endpoint() << "]");
 
-                // if (bytes_transferred == 45) {
-                //    int i = 0; //  start debugging here
-                //               //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
-                //               //  garble data from wMBus broker to oen a second channel when scrambling is active
-                //}
 #ifdef _DEBUG_IPT
                     {
                         std::stringstream ss;
@@ -863,9 +858,8 @@ namespace smf {
         return std::bind(&ipt_session::pty_req_close_connection, ptr);
     }
 
-    auto ipt_session::get_vm_func_pty_stop(ipt_session* ptr)->std::function<void()> {
+    auto ipt_session::get_vm_func_pty_stop(ipt_session *ptr) -> std::function<void()> {
         return std::bind(&ipt_session::pty_stop, ptr);
     }
-
 
 } // namespace smf

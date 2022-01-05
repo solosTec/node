@@ -88,7 +88,7 @@ namespace smf {
          */
         struct push_channel {
             push_channel();
-            push_channel(push_channel const &) = default;
+            // push_channel(push_channel const &) = default;
             push_channel(
                 std::string const &,
                 std::string const &,
@@ -96,6 +96,8 @@ namespace smf {
                 std::string const &,
                 std::string const &,
                 std::uint16_t);
+
+            friend std::ostream &operator<<(std::ostream &, push_channel const &);
 
             std::string const target_;
             std::string const account_;
@@ -108,6 +110,7 @@ namespace smf {
         push_channel read_push_channel_config(cyng::param_map_t const &pmap);
 
     } // namespace ipt
+
 } // namespace smf
 
 #endif
