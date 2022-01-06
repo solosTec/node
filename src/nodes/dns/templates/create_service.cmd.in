@@ -1,0 +1,18 @@
+REM
+REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM install DNS service
+REM	created : ${_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo create service smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo off
+sc create smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\dns.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\dns_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF DNS server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR} "DNS Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc failure smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+REM
+REM Add a dependency to SMF master service.
+REM Modify or remove this dependency if SMF master is running on a different node.
+REM
+sc config smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+@echo on

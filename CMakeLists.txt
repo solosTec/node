@@ -857,6 +857,7 @@ target_link_libraries(smf_modbus
 add_subdirectory(src/nodes/broker-iec)
 add_subdirectory(src/nodes/broker-wmbus)
 add_subdirectory(src/nodes/dash)
+add_subdirectory(src/nodes/dns)
 add_subdirectory(src/nodes/imega)
 add_subdirectory(src/nodes/ipt)
 add_subdirectory(src/nodes/lora)
