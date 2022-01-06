@@ -13,7 +13,6 @@
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/task_fwd.h>
-//#include <cyng/vm/mesh.h>
 
 #include <boost/uuid/uuid.hpp>
 
@@ -27,8 +26,6 @@ namespace smf {
             std::function<void()>,         //   update
             std::function<void(cyng::eod)> //  stop
             >;
-
-        // friend class session;
 
       public:
         ping(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger, db &, std::function<void()>);

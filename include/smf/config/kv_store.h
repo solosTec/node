@@ -34,7 +34,7 @@ namespace smf {
          */
         template <typename T> T get_value(std::string name, T def) {
             if constexpr (std::is_arithmetic_v<T>) {
-                return numeric_cast<T>(get_obj(name), std::forward<T>(def));
+                return cyng::numeric_cast<T>(get_obj(name), std::forward<T>(def));
             }
             return cyng::value_cast(get_obj(name), def);
         }

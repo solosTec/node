@@ -45,13 +45,12 @@ namespace smf {
         , ping_() {
 
         vm_ = init_vm(fabric);
-        // std::size_t slot{0};
     }
 
     session::~session() {
-#ifdef _DEBUG_MAIN
-        std::cout << "session(~)" << std::endl;
-#endif
+        //#ifdef _DEBUG_MAIN
+        //        std::cout << "session(~)" << std::endl;
+        //#endif
     }
 
     boost::uuids::uuid session::get_peer() const { return vm_.get_tag(); }
@@ -116,6 +115,11 @@ namespace smf {
                     do_read();
                 } else {
                     CYNG_LOG_WARNING(logger_, "[session] read: " << ec.message());
+                    //  ping holds a reference of this session and must be terminated.
+                    if (ping_ && ping_->is_open()) {
+                        ping_->stop();
+                    }
+                    CYNG_LOG_TRACE(logger_, "[session] use count: " << self.use_count());
                 }
             });
     }
