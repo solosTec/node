@@ -648,7 +648,7 @@ namespace smf {
     }
 
     void db::init_sys_msg() {
-        auto const max_msg = cfg_.get_value<std::int64_t>("max-messages", 1000);
+        auto const max_msg = cfg_.get_value<std::size_t>("max-messages", 1000);
         auto const tag = get_cfg().get_tag();
 
         auto const ms = config::get_store_sys_msg();

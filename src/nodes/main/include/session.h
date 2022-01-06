@@ -132,7 +132,7 @@ namespace smf {
          *
          * pty.forward.open.connection
          */
-        void pty_forward_open_connection(std::string msisdn, boost::uuids::uuid dev, bool local, cyng::param_map_t token);
+        void pty_forward_open_connection(boost::uuids::uuid dev, std::string msisdn, bool local, cyng::param_map_t token);
 
         /** @brief "pty.forward.open.connection"
          *
@@ -274,10 +274,10 @@ namespace smf {
         [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::string, cyng::param_map_t)>
         make_vm_func_pty_open_connection(session *);
 
-        [[nodiscard]] static std::function<void(std::string, boost::uuids::uuid, bool, cyng::param_map_t)>
+        //  internal usage only
+        [[nodiscard]] static std::function<void(boost::uuids::uuid, std::string, bool, cyng::param_map_t)>
         make_vm_func_pty_forward_open_connection(session *);
 
-        // "pty.forward.open.connection"
         [[nodiscard]] static std::function<void(boost::uuids::uuid, bool, cyng::param_map_t)>
         make_vm_func_pty_forward_res_open_connection(session *);
 
@@ -323,13 +323,9 @@ namespace smf {
             void(boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, std::uint32_t, cyng::buffer_t, cyng::param_map_t)>
         make_vm_func_pty_push_data_req(session *);
 
-        [[nodiscard]] static std::function<
-            void(std::string, cyng::key_t)>
-        make_vm_func_pty_stop(session*);
+        [[nodiscard]] static std::function<void(std::string, cyng::key_t)> make_vm_func_pty_stop(session *);
 
-        [[nodiscard]] static std::function<
-            void(boost::uuids::uuid)>
-        make_vm_func_pty_forward_stop(session*);
+        [[nodiscard]] static std::function<void(boost::uuids::uuid)> make_vm_func_pty_forward_stop(session *);
 
         [[nodiscard]] static std::function<bool(std::string msg, cyng::severity)> make_vm_func_sys_msg(db *);
 

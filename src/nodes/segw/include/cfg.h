@@ -49,7 +49,12 @@ namespace smf {
         /**
          * read a configuration value from table "_Cfg"
          */
-        template <typename T> T get_value(std::string name, T def) { return cyng::value_cast(get_obj(name), def); }
+        template <typename T> T get_value(std::string name, T def) {
+            if constexpr (std::is_arithmetic_v<T>) {
+                return numeric_cast<T>(get_obj(name), std::forward<T>(def));
+            }
+            return cyng::value_cast(get_obj(name), def);
+        }
 
         /**
          * The non-template function wins.

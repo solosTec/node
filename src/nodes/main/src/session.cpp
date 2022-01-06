@@ -866,10 +866,8 @@ namespace smf {
                 send_cluster_msg(cyng::serialize_forward("pty.req.open.connection", remote, msisdn, local, token));
             } else {
                 //  forward to pty_forward_open_connection()
-                //  ToDo: check parameter ordering
-                //  maybe "msisdn" and "remote" have to swap
                 vm_.load(
-                    cyng::generate_forward("pty.forward.open.connection", vm_key, msisdn, remote, vm_key == vm_.get_tag(), token));
+                    cyng::generate_forward("pty.forward.open.connection", vm_key, remote, msisdn, vm_key == vm_.get_tag(), token));
                 vm_.run();
             }
 
@@ -884,7 +882,7 @@ namespace smf {
         }
     }
 
-    void session::pty_forward_open_connection(std::string msisdn, boost::uuids::uuid tag, bool local, cyng::param_map_t token) {
+    void session::pty_forward_open_connection(boost::uuids::uuid tag, std::string msisdn, bool local, cyng::param_map_t token) {
         CYNG_LOG_TRACE(logger_, "pty forward open connection " << msisdn << " - " << (local ? "local " : "distributed "));
 
         //
@@ -1296,7 +1294,7 @@ namespace smf {
             std::placeholders::_4);
     }
 
-    std::function<void(std::string, boost::uuids::uuid, bool, cyng::param_map_t)>
+    std::function<void(boost::uuids::uuid, std::string, bool, cyng::param_map_t)>
     session::make_vm_func_pty_forward_open_connection(session *ptr) {
         return std::bind(
             &session::pty_forward_open_connection,
@@ -1307,7 +1305,6 @@ namespace smf {
             std::placeholders::_4);
     }
 
-    // "pty.forward.open.connection"
     std::function<void(boost::uuids::uuid, bool, cyng::param_map_t)>
     session::make_vm_func_pty_forward_res_open_connection(session *ptr) {
         return std::bind(
