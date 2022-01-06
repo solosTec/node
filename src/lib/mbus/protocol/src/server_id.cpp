@@ -42,8 +42,7 @@ namespace smf {
         std::fill_n(std::back_inserter(r), 4, 0);
         if (id.size() == 8) {
             for (std::size_t idx = 0; idx < id.size(); idx += 2) {
-                r.at(idx / 2) = std::stoul(id.substr(idx, 2));
-                // r.at(idx / 2) = cyng::hex_to_u8(id.at(idx), id.at(idx + 1));
+                r.at(idx / 2) = static_cast<cyng::buffer_t::value_type>(std::stoul(id.substr(idx, 2)));
             }
         }
         return r;

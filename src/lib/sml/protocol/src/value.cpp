@@ -15,30 +15,6 @@ namespace smf {
             cyng::tuple_t factory_policy<bool>::create(bool b) {
                 return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), b);
             }
-            cyng::tuple_t factory_policy<std::uint8_t>::create(std::uint8_t v) {
-                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-            }
-            cyng::tuple_t factory_policy<std::uint16_t>::create(std::uint16_t v) {
-                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-            }
-            cyng::tuple_t factory_policy<std::uint32_t>::create(std::uint32_t v) {
-                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-            }
-            cyng::tuple_t factory_policy<std::uint64_t>::create(std::uint64_t v) {
-                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-            }
-            cyng::tuple_t factory_policy<std::int8_t>::create(std::int8_t v) {
-                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-            }
-            cyng::tuple_t factory_policy<std::int16_t>::create(std::int16_t v) {
-                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-            }
-            cyng::tuple_t factory_policy<std::int32_t>::create(std::int32_t v) {
-                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-            }
-            cyng::tuple_t factory_policy<std::int64_t>::create(std::int64_t v) {
-                return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), v);
-            }
 
             cyng::tuple_t factory_policy<std::chrono::system_clock::time_point>::create(std::chrono::system_clock::time_point &&v) {
                 return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_TIME), make_timestamp(std::move(v)));
