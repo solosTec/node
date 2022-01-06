@@ -85,6 +85,7 @@ namespace smf {
         } catch (std::exception const &ex) {
             CYNG_LOG_ERROR(logger_, "[cluster] connect: " << ex.what());
 
+            state_holder_ = std::make_shared<state>(boost::asio::ip::tcp::resolver::results_type());
             tgl_.changeover();
             CYNG_LOG_WARNING(logger_, "[cluster] connect failed - switch to " << tgl_.get());
         }
@@ -462,7 +463,7 @@ namespace smf {
         add_msg(state_holder_, cyng::serialize_invoke("pty.push.data.req", tag, dev, channel, source, data, token));
     }
 
-    void bus::pty_stop(std::string const& table_name, cyng::key_t key) {
+    void bus::pty_stop(std::string const &table_name, cyng::key_t key) {
 
         add_msg(state_holder_, cyng::serialize_invoke("pty.stop", table_name, key));
     }

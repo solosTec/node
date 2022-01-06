@@ -89,6 +89,7 @@ namespace smf {
                 //
                 //  it's safe to to set timer here because this is the START state
                 //
+                state_holder_ = std::make_shared<state>(boost::asio::ip::tcp::resolver::results_type());
                 set_reconnect_timer(std::chrono::seconds(60));
             }
         }
@@ -117,7 +118,8 @@ namespace smf {
                 //  required to get a proper error code: bad_descriptor (EBADF) instead of connection_aborted
                 socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
                 socket_.close(ignored_ec);
-                timer_.cancel();
+                auto const count = timer_.cancel();
+                CYNG_LOG_TRACE(logger_, "[ipt] cancel " << count << " timer");
                 if (s != state_value::STOPPED) {
 
                     buffer_write_.clear();
@@ -140,10 +142,10 @@ namespace smf {
 
         void bus::set_reconnect_timer(std::chrono::seconds delay) {
 
-            // BOOST_ASSERT(state_holder_.expired());
+            BOOST_ASSERT_MSG(state_holder_, "state holder is empty");
 
-            CYNG_LOG_TRACE(logger_, "[ipt] set reconnect timer: " << delay.count() << " seconds");
-            timer_.expires_after(delay);
+            auto const count = timer_.expires_after(delay);
+            CYNG_LOG_INFO(logger_, "[ipt] set reconnect timer: " << delay.count() << " seconds - " << count << " timer cancelled");
             timer_.async_wait(boost::asio::bind_executor(
                 dispatcher_, boost::bind(&bus::reconnect_timeout, this, state_holder_, boost::asio::placeholders::error)));
         }
@@ -251,7 +253,7 @@ namespace smf {
             if (sp && !sp->is_stopped()) {
 
                 if (!ec) {
-                    CYNG_LOG_TRACE(logger_, "[ipt] reconnect timeout " << ec);
+                    CYNG_LOG_INFO(logger_, "[ipt] reconnect to " << tgl_.get().host_);
                     if (!sp->is_authorized()) {
                         start();
                     }

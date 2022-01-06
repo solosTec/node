@@ -193,12 +193,6 @@ namespace smf {
             if (!buffer_write_.empty()) {
                 do_write();
             }
-            // else {
-
-            //	// Wait 10 seconds before sending the next heartbeat.
-            //	//heartbeat_timer_.expires_after(boost::asio::chrono::seconds(10));
-            //	//heartbeat_timer_.async_wait(std::bind(&bus::do_write, this));
-            //}
         } else {
             CYNG_LOG_ERROR(logger_, "[session] " << vm_.get_tag() << " write: " << ec.message());
 
