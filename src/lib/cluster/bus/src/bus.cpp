@@ -40,7 +40,7 @@ namespace smf {
         , socket_(ctx_)
         , timer_(ctx_)
         , buffer_write_()
-        , input_buffer_()
+        , input_buffer_({0})
         , vm_()
         , parser_([this](cyng::object &&obj) {
             //  un-comment this line to debug problems with transferring data over

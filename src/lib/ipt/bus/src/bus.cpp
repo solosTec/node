@@ -51,7 +51,7 @@ namespace smf {
             , serializer_(tgl_.get().sk_)
             , parser_(tgl_.get().sk_, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), cb_stream)
             , buffer_write_()
-            , input_buffer_()
+            , input_buffer_({0})
             , pending_targets_()
             , targets_()
             , opening_channel_()
