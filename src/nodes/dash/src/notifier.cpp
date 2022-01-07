@@ -185,7 +185,7 @@ namespace smf {
             "[channel] "
                 << "config.meter"
                 << " update (#" << count << "): " << col_name << " => " << (online ? "on" : "off"));
-        auto const param = cyng::make_param(col_name, online);
+        auto const param = cyng::make_param(col_name, online ? 1 : 0);
         for (auto pos = range.first; pos != range.second; ++pos) {
             http_server_.notify_update("config.meter", key, param, pos->second);
         }
@@ -194,13 +194,13 @@ namespace smf {
         auto const range = db_.subscriptions_.equal_range("config.gateway");
         auto const count = std::distance(range.first, range.second);
         //	get column name
-        auto const col_name = "online";
+        std::string const col_name = "online";
         CYNG_LOG_INFO(
             logger_,
             "[channel] "
                 << "config.gateway"
                 << " update (#" << count << "): " << col_name << " => " << (online ? "on" : "off"));
-        auto const param = cyng::make_param(col_name, online);
+        auto const param = cyng::make_param(col_name, online ? 1 : 0);
         for (auto pos = range.first; pos != range.second; ++pos) {
             http_server_.notify_update("config.gateway", key, param, pos->second);
         }
