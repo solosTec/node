@@ -62,9 +62,8 @@ target_link_libraries(unit_test
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
-        "$<$<PLATFORM_ID:Linux>:pthread>"
         "$<$<PLATFORM_ID:Windows>:odbc32>"
-        "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
+        "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         Boost::date_time 
         Boost::unit_test_framework
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
