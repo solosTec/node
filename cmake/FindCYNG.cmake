@@ -126,6 +126,7 @@ if(NOT CYNG_FOUND)
 			HINTS
 				"${CYNG_INCLUDE_DIR_BUILD}/.."
 				"${CYNG_INCLUDE_DIR_BUILD}/"
+				"${CYNG_INCLUDE_DIR_BUILD}/../src/net"
 			PATHS
 				/usr/lib/
 				/usr/local/lib
