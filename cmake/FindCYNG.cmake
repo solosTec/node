@@ -27,7 +27,7 @@ if(CYNG_PKG_FOUND)
        
 endif(CYNG_PKG_FOUND)
 
-set(CYNG_LIBS "cyng_db;cyng_io;cyng_log;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm;cyng_sqlite3")
+set(CYNG_LIBS "cyng_db;cyng_io;cyng_log;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm;cyng_net;cyng_sqlite3")
 if(WIN32)
 	list(APPEND CYNG_LIBS "cyng_scm")
 endif()
@@ -98,6 +98,8 @@ if(NOT CYNG_FOUND)
 			HINTS
 				"${CYNG_INCLUDE_DIR_BUILD}/../Debug"
 				"${CYNG_INCLUDE_DIR_BUILD}/../Release"
+				"${CYNG_INCLUDE_DIR_BUILD}/../src/net/Debug"
+				"${CYNG_INCLUDE_DIR_BUILD}/../src/net/Release"
 			PATHS
 				/usr/lib/
 				/usr/local/lib
