@@ -47,7 +47,7 @@ target_link_libraries(segw
         smf_obis
 		"$<$<PLATFORM_ID:Windows>:odbc32>"
         "$<$<PLATFORM_ID:Linux>:${OPENSSL_LIBRARIES}>"
-        "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${Boost_LOCALE_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
+        "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
 
