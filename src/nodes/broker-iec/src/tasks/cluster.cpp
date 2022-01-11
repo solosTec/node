@@ -177,8 +177,7 @@ namespace smf {
         channel->dispatch("init", cyng::make_tuple(interval));
         channel->suspend(
             std::chrono::seconds(delay_) + std::chrono::seconds(12), //  +12 sec offset
-            "start",
-            cyng::make_tuple());
+            "start");
 
         //
         //  client stays alive since using a timer with a reference to the task
@@ -298,6 +297,8 @@ namespace smf {
         BOOST_ASSERT(channel->is_open());
         channel->suspend(std::chrono::seconds(15) + std::chrono::milliseconds(stash_.size() * 120), "connect");
         stash_.lock(channel);
+        CYNG_LOG_INFO(logger_, "[cluster] " << stash_.size() << " push tasks stashed");
+
         return channel->get_id();
     }
 

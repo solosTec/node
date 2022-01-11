@@ -256,10 +256,14 @@ namespace smf {
             //  this is an absolute time
             //
             next_readout_ += interval_;
-            sp->suspend(next_readout_, "start");
+            if (sp->suspend(next_readout_, "start")) {
 
-            CYNG_LOG_INFO(logger_, "start client: " << host_ << ':' << service_ << " #" << mgr_.size() << " @" << next_readout_);
-            connect();
+                CYNG_LOG_INFO(
+                    logger_, "start client: " << host_ << ':' << service_ << " #" << mgr_.size() << " @" << next_readout_);
+                connect();
+            } else {
+                CYNG_LOG_FATAL(logger_, "cannot start client: " << host_ << ':' << service_);
+            }
         }
     }
 
@@ -402,7 +406,7 @@ namespace smf {
                     key_gw_iec_,
                     cyng::param_map_factory()("state", static_cast<std::uint16_t>(2)) //  state: online/connected
                     ("index", mgr_.index())                                           //  current meter index
-                    ("meter", mgr_.get_id())                                          //  current meter id
+                    ("meter", name)                                                   //  current meter id
                 );
 
                 //
