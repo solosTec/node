@@ -136,20 +136,25 @@ namespace smf {
                                 auto const account = rec_device.value("name", "");
                                 auto const pwd = rec_device.value("pwd", "");
                                 auto const enabled = rec_device.value("enabled", false);
-                                if (enabled) {
-
-                                    CYNG_LOG_INFO(
-                                        logger_,
-                                        "[db] " << task_name << " add meter " << name << " - " << counter << "/" << meter_counter);
-                                    channel->dispatch("add.meter", name, rec_iec.key());
-                                    //
-                                    //  create push task
-                                    //
-                                    auto const tid = create_push_task(name, account, pwd, task_name);
-                                } else {
+                                if (!enabled) {
                                     CYNG_LOG_WARNING(logger_, "[db] device " << account << " is not enabled");
-                                    bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device ", account, " is not enabled");
+                                    bus_.sys_msg(
+                                        cyng::severity::LEVEL_WARNING, "[iec] device ", rec_device.to_string(), " is not enabled");
                                 }
+
+                                //
+                                //  There is a bug - have to ignore the enables attribute
+                                //
+                                CYNG_LOG_INFO(
+                                    logger_,
+                                    "[db] " << task_name << " add meter " << name << " - " << counter << "/" << meter_counter);
+                                channel->dispatch("add.meter", name, rec_iec.key());
+
+                                //
+                                //  create push task
+                                //
+                                auto const tid = create_push_task(name, account, pwd, task_name);
+
                             } else {
                                 CYNG_LOG_WARNING(logger_, "[db] device for meter " << name << " not found");
                                 bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device for meter ", name, " not found");
@@ -247,22 +252,26 @@ namespace smf {
                             auto const account = rec_device.value("name", "");
                             auto const pwd = rec_device.value("pwd", "");
                             auto const enabled = rec_device.value("enabled", false);
-                            if (enabled) {
-
-                                //
-                                //  add meter
-                                //
-                                CYNG_LOG_INFO(logger_, "[db] " << task_name << " add meter " << name);
-                                ctl_.get_registry().dispatch(task_name, "add.meter", name, rec.key());
-
-                                //
-                                //  create push task
-                                //
-                                auto const tid = create_push_task(name, account, pwd, task_name);
-                            } else {
+                            if (!enabled) {
                                 CYNG_LOG_WARNING(logger_, "[db] device " << account << " is not enabled");
-                                bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[iec] device ", account, " is not enabled");
+                                bus_.sys_msg(
+                                    cyng::severity::LEVEL_WARNING, "[iec] device ", rec_device.to_string(), " is not enabled");
                             }
+
+                            //
+                            //  There is a bug so we have to ignore the enabled attribute
+                            //
+
+                            //
+                            //  add meter
+                            //
+                            CYNG_LOG_INFO(logger_, "[db] " << task_name << " add meter " << name);
+                            ctl_.get_registry().dispatch(task_name, "add.meter", name, rec.key());
+
+                            //
+                            //  create push task
+                            //
+                            auto const tid = create_push_task(name, account, pwd, task_name);
 
                         } else {
                             CYNG_LOG_WARNING(logger_, "[db] device for meter " << name << " not found");
