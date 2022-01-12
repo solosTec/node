@@ -156,6 +156,7 @@ namespace smf {
             cyng::make_description("pty.push.data.req", make_vm_func_pty_push_data_req(this)),
             cyng::make_description("pty.stop", make_vm_func_pty_stop(this)),
             cyng::make_description("pty.forward.stop", make_vm_func_pty_forward_stop(this)),
+            cyng::make_description("cfg.backup", make_vm_func_cfg_backup(this)),
             cyng::make_description("sys.msg", make_vm_func_sys_msg(&cache_)));
     }
 
@@ -207,7 +208,7 @@ namespace smf {
         //
         BOOST_ASSERT(!tag.is_nil());
         peer_ = tag;
-        protocol_layer_ = node;
+        protocol_layer_ = node; //  class
         cache_.insert_cluster_member(tag, node, v, socket_.remote_endpoint(), n);
 
         //
@@ -738,10 +739,8 @@ namespace smf {
             //	insert into session table
             //
             cache_.insert_pty(
-                dev //  pk
-                ,
-                vm_.get_tag() //  peer
-                ,
+                dev,           //  pk
+                vm_.get_tag(), //  peer
                 rtag,
                 name,
                 pwd,
@@ -1211,6 +1210,16 @@ namespace smf {
         send_cluster_msg(cyng::serialize_forward("pty.req.stop", rtag));
     }
 
+    void session::cfg_backup(std::string table, cyng::key_t key, std::chrono::system_clock::time_point) {
+        CYNG_LOG_WARNING(logger_, "backup \"" << table << "\" not implemented yet");
+        //
+        //  ToDo:
+        // * search session table for a matching gateway
+        // * find peer and rTag
+        // * forward backup request to (ipt) node
+        //
+    }
+
     std::function<void(std::string, std::string, cyng::pid, std::string, boost::uuids::uuid, cyng::version)>
     session::make_vm_func_cluster_req_login(session *ptr) {
         return std::bind(
@@ -1421,6 +1430,11 @@ namespace smf {
 
     std::function<void(boost::uuids::uuid)> session::make_vm_func_pty_forward_stop(session *ptr) {
         return std::bind(&session::pty_forward_stop, ptr, std::placeholders::_1);
+    }
+
+    std::function<void(std::string, cyng::key_t, std::chrono::system_clock::time_point)>
+    session::make_vm_func_cfg_backup(session *ptr) {
+        return std::bind(&session::cfg_backup, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     }
 
     std::function<bool(std::string msg, cyng::severity)> session::make_vm_func_sys_msg(db *ptr) {

@@ -468,6 +468,11 @@ namespace smf {
         add_msg(state_holder_, cyng::serialize_invoke("pty.stop", table_name, key));
     }
 
+    void bus::cfg_backup(std::string const &table_name, cyng::key_t key, std::chrono::system_clock::time_point tp) {
+
+        add_msg(state_holder_, cyng::serialize_invoke("cfg.backup", table_name, key, tp));
+    }
+
     void bus::push_sys_msg(std::string msg, cyng::severity level) {
         add_msg(state_holder_, cyng::serialize_invoke("sys.msg", msg, level));
     }

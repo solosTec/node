@@ -220,6 +220,11 @@ namespace smf {
         void pty_forward_stop(boost::uuids::uuid);
 
         /**
+         * cfg.backup session
+         */
+        void cfg_backup(std::string, cyng::key_t, std::chrono::system_clock::time_point);
+
+        /**
          * send data to cluster node
          */
         void send_cluster_msg(std::deque<cyng::buffer_t> &&);
@@ -326,6 +331,9 @@ namespace smf {
         [[nodiscard]] static std::function<void(std::string, cyng::key_t)> make_vm_func_pty_stop(session *);
 
         [[nodiscard]] static std::function<void(boost::uuids::uuid)> make_vm_func_pty_forward_stop(session *);
+
+        [[nodiscard]] static std::function<void(std::string, cyng::key_t, std::chrono::system_clock::time_point)>
+        make_vm_func_cfg_backup(session *);
 
         [[nodiscard]] static std::function<bool(std::string msg, cyng::severity)> make_vm_func_sys_msg(db *);
 

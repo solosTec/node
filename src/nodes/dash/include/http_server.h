@@ -123,6 +123,13 @@ namespace smf {
 
         void query_request(std::string const &channel, cyng::vector_t &&key, ws_sptr);
 
+        void config_request(
+            std::string const &channel,
+            cyng::vector_t &&key,
+            std::string table,
+            std::string id,
+            std::vector<std::string> &&sections);
+
       private:
         bus &cluster_bus_;
 

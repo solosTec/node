@@ -177,6 +177,9 @@ namespace smf {
         //	"pty.stop"
         void pty_stop(std::string const&, cyng::key_t);
 
+        //	"cfg.backup"
+        void cfg_backup(std::string const &, cyng::key_t, std::chrono::system_clock::time_point);
+
         /**
          * push system message
          * "sys.msg"

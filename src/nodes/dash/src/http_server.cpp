@@ -9,6 +9,7 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/util.hpp>
+#include <cyng/obj/vector_cast.hpp>
 #include <cyng/parse/json/json_parser.h>
 #include <cyng/rnd/rnd.hpp>
 #include <cyng/sys/cpu.h>
@@ -264,7 +265,17 @@ namespace smf {
                     if (wsp) {
                         query_request(channel, cyng::container_cast<cyng::vector_t>(reader["rec"]["key"].get()), wsp);
                     }
-
+                } else if (boost::algorithm::equals(cmd, "config")) {
+                    auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+                    CYNG_LOG_WARNING(logger_, "[HTTP] config request from channel " << channel);
+                    //  ws (3a368bd6-a125-4a30-a377-1134c2aecdaf) received
+                    //  {"cmd":"config","channel":"backup","key":["28c4b783-f35d-49f1-9027-a75dbae9f5e2"],"type":"gateway","sections":["81818160FFFF","81811106FFFF","81811006FFFF"]}
+                    config_request(
+                        channel,
+                        cyng::container_cast<cyng::vector_t>(reader["key"].get()),
+                        reader["meta"].get("type", ""),
+                        reader["meta"].get("id", ""),
+                        cyng::vector_cast<std::string>(reader.get("sections"), ""));
                 } else {
                     CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
                 }
@@ -382,6 +393,32 @@ namespace smf {
 
         } else {
             CYNG_LOG_WARNING(logger_, "[HTTP] query: undefined channel " << channel);
+        }
+    }
+
+    void http_server::config_request(
+        std::string const &channel,
+        cyng::vector_t &&key,
+        std::string table,
+        std::string id,
+        std::vector<std::string> &&sections) {
+        BOOST_ASSERT_MSG(!key.empty(), "no modify key");
+        auto const rel = db_.by_table(table);
+        if (!rel.empty()) {
+            BOOST_ASSERT(boost::algorithm::equals(table, rel.table_));
+            //
+            //	convert key data type(s)
+            //
+            db_.convert(rel.table_, key);
+
+            CYNG_LOG_TRACE(logger_, "[HTTP] config \"" << channel << "\" request for " << rel.table_ << ": " << id);
+            if (boost::algorithm::equals(channel, "backup")) {
+                //  ignore sections (backup contains all data)
+                cluster_bus_.cfg_backup(rel.table_, key, std::chrono::system_clock::now());
+            }
+
+        } else {
+            CYNG_LOG_WARNING(logger_, "[HTTP] config: undefined device type " << table);
         }
     }
 
