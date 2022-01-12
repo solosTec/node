@@ -153,6 +153,13 @@ namespace smf {
              */
             boost::uuids::name_generator_sha1 uuid_gen_;
         };
+
+        /**
+         * @return true if the specified table name is one of the defined
+         * in-memory tables in this module.
+         */
+        bool is_known_store_name(std::string);
+
     } // namespace config
 } // namespace smf
 

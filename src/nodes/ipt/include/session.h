@@ -87,6 +87,8 @@ namespace smf {
 
         void pty_stop();
 
+        void cfg_backup(std::string, std::string, std::string, std::chrono::system_clock::time_point tp);
+
         /**
          * query some device data
          */
@@ -147,7 +149,10 @@ namespace smf {
 
         static auto get_vm_func_pty_req_close_connection(ipt_session *p) -> std::function<void()>;
 
-        static auto get_vm_func_pty_stop(ipt_session* p)->std::function<void()>;
+        static auto get_vm_func_pty_stop(ipt_session *p) -> std::function<void()>;
+
+        static auto get_vm_func_cfg_backup(ipt_session *p)
+            -> std::function<void(std::string, std::string, std::string, std::chrono::system_clock::time_point tp)>;
 
       private:
         cyng::controller &ctl_;
@@ -191,6 +196,11 @@ namespace smf {
          * gatekeeper
          */
         cyng::channel_ptr gatekeeper_;
+
+        /**
+         * proxy
+         */
+        cyng::channel_ptr proxy_;
     };
 
 } // namespace smf

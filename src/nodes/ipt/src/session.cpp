@@ -6,6 +6,7 @@
  */
 #include <session.h>
 #include <tasks/gatekeeper.h>
+#include <tasks/proxy.h>
 
 #include <smf/ipt/codes.h>
 #include <smf/ipt/query.h>
@@ -54,7 +55,8 @@ namespace smf {
         , vm_()
         , dev_(boost::uuids::nil_uuid())
         , oce_map_() //	store temporary data during connection establishment
-        , gatekeeper_() {
+        , gatekeeper_()
+        , proxy_() {
 
         vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
@@ -69,13 +71,14 @@ namespace smf {
             cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
             cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
             cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)),
-            cyng::make_description("pty.req.stop", get_vm_func_pty_stop(this)));
+            cyng::make_description("pty.req.stop", get_vm_func_pty_stop(this)),
+            cyng::make_description("cfg.req.backup", get_vm_func_cfg_backup(this)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }
 
     ipt_session::~ipt_session() {
-        gatekeeper_->stop();
+        // gatekeeper_->stop(); //  this is impossible
 #ifdef _DEBUG_IPT
         // std::cout << "session(~)" << std::endl;
 #endif
@@ -87,6 +90,10 @@ namespace smf {
         boost::system::error_code ec;
         socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
         socket_.close(ec);
+
+        if (proxy_ && proxy_->is_open()) {
+            proxy_->stop();
+        }
 
         vm_.stop();
     }
@@ -161,6 +168,7 @@ namespace smf {
                     do_read();
                 } else {
                     CYNG_LOG_WARNING(logger_, "[session] " << vm_.get_tag() << " read: " << ec.message());
+                    stop();
                 }
             });
     }
@@ -310,7 +318,11 @@ namespace smf {
                 } else {
                     CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " without request");
                 }
+            } else {
+                //  close connection
+                ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
             }
+
             break;
         case ipt::code::TP_RES_OPEN_PUSH_CHANNEL:
             //
@@ -441,7 +453,6 @@ namespace smf {
     }
 
     void ipt_session::ipt_stream(cyng::buffer_t &&data) {
-        CYNG_LOG_TRACE(logger_, "ipt stream " << data.size() << " byte");
 #ifdef _DEBUG_IPT
         {
             std::stringstream ss;
@@ -451,8 +462,12 @@ namespace smf {
             CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] " << data.size() << " stream bytes:\n" << dmp);
         }
 #endif
+        //  ToDo: redirect data optionally to proxy
         if (cluster_bus_.is_connected()) {
+            CYNG_LOG_TRACE(logger_, "ipt stream " << data.size() << " byte");
             cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), std::move(data));
+        } else {
+            CYNG_LOG_WARNING(logger_, "ipt stream " << data.size() << " byte");
         }
     }
 
@@ -467,12 +482,12 @@ namespace smf {
 
     void ipt_session::pty_res_login(bool success, boost::uuids::uuid dev) {
 
-        if (success) {
+        //
+        //	stop gatekeeper
+        //
+        gatekeeper_->stop();
 
-            //
-            //	stop gatekeeper
-            //
-            gatekeeper_->stop();
+        if (success) {
 
             //
             //	update device tag
@@ -485,14 +500,18 @@ namespace smf {
 
             query();
 
+            //
+            //  start SML proxy
+            //
+            proxy_ = ctl_.create_channel_with_ref<proxy>(logger_, this->shared_from_this(), cluster_bus_);
+            BOOST_ASSERT(proxy_->is_open());
+
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
             ipt_send(std::bind(
                 &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
 
-            //
-            //  gatekeeper will close this session
-            //
+            stop();
         }
     }
 
@@ -735,6 +754,16 @@ namespace smf {
         stop();
     }
 
+    void ipt_session::cfg_backup(std::string name, std::string pwd, std::string id, std::chrono::system_clock::time_point tp) {
+        if (proxy_ && proxy_->is_open()) {
+            CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " backup: " << name << ':' << pwd << '@' << id);
+            proxy_->dispatch("cfg.backup", name, pwd, id);
+            //  ToDo: redirect incoming IPT data to proxy
+        } else {
+            CYNG_LOG_ERROR(logger_, "[pty] " << vm_.get_tag() << " cannot backup - proxy is closed");
+        }
+    }
+
     void ipt_session::query() {
 
         if (ipt::test_bit(query_, ipt::query::PROTOCOL_VERSION)) {
@@ -854,6 +883,17 @@ namespace smf {
 
     auto ipt_session::get_vm_func_pty_stop(ipt_session *ptr) -> std::function<void()> {
         return std::bind(&ipt_session::pty_stop, ptr);
+    }
+
+    auto ipt_session::get_vm_func_cfg_backup(ipt_session *ptr)
+        -> std::function<void(std::string, std::string, std::string, std::chrono::system_clock::time_point tp)> {
+        return std::bind(
+            &ipt_session::cfg_backup,
+            ptr,
+            std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3,
+            std::placeholders::_4);
     }
 
 } // namespace smf

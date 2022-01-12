@@ -157,6 +157,7 @@ namespace smf {
             cyng::make_description("pty.stop", make_vm_func_pty_stop(this)),
             cyng::make_description("pty.forward.stop", make_vm_func_pty_forward_stop(this)),
             cyng::make_description("cfg.backup", make_vm_func_cfg_backup(this)),
+            cyng::make_description("cfg.forward.backup", make_vm_func_cfg_forward_backup(this)),
             cyng::make_description("sys.msg", make_vm_func_sys_msg(&cache_)));
     }
 
@@ -243,6 +244,7 @@ namespace smf {
         std::reverse(key.begin(), key.end());
         std::reverse(data.begin(), data.end());
 
+        BOOST_ASSERT(config::is_known_store_name(table_name));
         auto const b = cache_.get_store().insert(table_name, key, data, generation, tag);
 
         if (b) {
@@ -327,6 +329,8 @@ namespace smf {
 
     void session::db_req_insert_auto(std::string const &table_name, cyng::data_t data, boost::uuids::uuid tag) {
 
+        BOOST_ASSERT(config::is_known_store_name(table_name));
+
         std::reverse(data.begin(), data.end());
 
         try {
@@ -347,6 +351,8 @@ namespace smf {
     }
 
     void session::db_req_update(std::string const &table_name, cyng::key_t key, cyng::param_map_t data, boost::uuids::uuid source) {
+
+        BOOST_ASSERT(config::is_known_store_name(table_name));
 
         //
         //	key with multiple columns
@@ -548,6 +554,9 @@ namespace smf {
     }
 
     void session::db_req_remove(std::string const &table_name, cyng::key_t key, boost::uuids::uuid source) {
+
+        BOOST_ASSERT(config::is_known_store_name(table_name));
+
         std::reverse(key.begin(), key.end());
         if (boost::algorithm::equals(table_name, "meterIEC")) {
             //
@@ -1178,7 +1187,9 @@ namespace smf {
 
     void session::pty_stop(std::string table_name, cyng::key_t key) {
 
+        BOOST_ASSERT(config::is_known_store_name(table_name));
         BOOST_ASSERT(key.size() == 1);
+
         if (key.size() == 1) {
 
             auto const tag = cyng::value_cast(key.at(0), boost::uuids::nil_uuid());
@@ -1186,15 +1197,21 @@ namespace smf {
             cache_.get_store().access(
                 [&](cyng::table const *tbl_session) {
                     auto const rec = tbl_session->lookup(key);
-                    auto const rtag = rec.value("rTag", boost::uuids::nil_uuid());
-                    auto const peer = rec.value("peer", boost::uuids::nil_uuid());
+                    if (!rec.empty()) {
+                        auto const rtag = rec.value("rTag", boost::uuids::nil_uuid());
+                        auto const peer = rec.value("peer", boost::uuids::nil_uuid());
 
-                    CYNG_LOG_INFO(
-                        logger_,
-                        "session [" << socket_.remote_endpoint() << "] will stop " << table_name << ": " << rtag << " on peer "
-                                    << peer);
+                        CYNG_LOG_INFO(
+                            logger_,
+                            "session [" << socket_.remote_endpoint() << "] will stop " << table_name << ": " << rtag << " on peer "
+                                        << peer);
 
-                    vm_.load(cyng::generate_forward("pty.forward.stop", peer, rtag));
+                        vm_.load(cyng::generate_forward("pty.forward.stop", peer, rtag));
+
+                    } else {
+                        CYNG_LOG_ERROR(
+                            logger_, "session [" << socket_.remote_endpoint() << "] cannot stop " << table_name << ": " << tag);
+                    }
                 },
                 cyng::access::read(table_name));
 
@@ -1210,14 +1227,83 @@ namespace smf {
         send_cluster_msg(cyng::serialize_forward("pty.req.stop", rtag));
     }
 
-    void session::cfg_backup(std::string table, cyng::key_t key, std::chrono::system_clock::time_point) {
-        CYNG_LOG_WARNING(logger_, "backup \"" << table << "\" not implemented yet");
+    void session::cfg_backup(std::string table_name, cyng::key_t key, std::chrono::system_clock::time_point tp) {
+        CYNG_LOG_INFO(logger_, "backup \"" << table_name << "\": " << key);
+
+        BOOST_ASSERT(config::is_known_store_name(table_name));
+        BOOST_ASSERT(boost::algorithm::equals(table_name, "gateway"));
+
         //
         //  ToDo:
         // * search session table for a matching gateway
         // * find peer and rTag
         // * forward backup request to (ipt) node
         //
+        if (boost::algorithm::equals(table_name, "gateway")) {
+            cache_.get_store().access(
+                [&](cyng::table const *tbl_session, cyng::table const *tbl_gw, cyng::table const *tbl_dev) {
+                    auto const rec = tbl_session->lookup(key);
+                    if (!rec.empty()) {
+                        auto const rtag = rec.value("rTag", boost::uuids::nil_uuid());
+                        auto const peer = rec.value("peer", boost::uuids::nil_uuid());
+                        auto const name = rec.value("name", "");
+
+                        //
+                        //  ToDo: check connection state
+                        //  and set connection state (to block incoming calls)
+                        //
+
+                        auto const rec_gw = tbl_gw->lookup(key);
+                        if (!rec_gw.empty()) {
+                            auto const id = rec_gw.value("serverId", "");
+                            auto const rec_dev = tbl_dev->lookup(key);
+
+                            if (!rec_dev.empty()) {
+                                auto const account = rec_dev.value("name", "");
+                                auto const pwd = rec_dev.value("pwd", "");
+                                auto const msisdn = rec_dev.value("msisdn", "");
+                                BOOST_ASSERT(boost::algorithm::equals(account, name));
+
+                                CYNG_LOG_INFO(
+                                    logger_,
+                                    "session [" << socket_.remote_endpoint() << "] will backup " << table_name << ": " << name
+                                                << '@' << msisdn << " on peer " << peer);
+
+                                vm_.load(cyng::generate_forward("cfg.forward.backup", peer, rtag, name, pwd, id, tp));
+                            }
+                        }
+                    } else {
+                        CYNG_LOG_ERROR(
+                            logger_, "session [" << socket_.remote_endpoint() << "] cannot backup " << table_name << ": " << key);
+                        tbl_session->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                            CYNG_LOG_DEBUG(logger_, rec.to_string());
+                            return true;
+                        });
+                    }
+                },
+                cyng::access::read("session"),
+                cyng::access::read(table_name),
+                cyng::access::read("device"));
+
+            //
+            //  execute loaded program
+            //
+            vm_.run();
+
+        } else {
+            CYNG_LOG_ERROR(
+                logger_, "session [" << socket_.remote_endpoint() << "] backup of \"" << table_name << "\" is not supported");
+        }
+    }
+
+    void session::cfg_forward_backup(
+        boost::uuids::uuid rtag,
+        std::string name,
+        std::string pwd,
+        std::string id,
+        std::chrono::system_clock::time_point tp) {
+        CYNG_LOG_INFO(logger_, "forward backup " << name << '@' << id);
+        send_cluster_msg(cyng::serialize_forward("cfg.req.backup", rtag, name, pwd, id, tp));
     }
 
     std::function<void(std::string, std::string, cyng::pid, std::string, boost::uuids::uuid, cyng::version)>
@@ -1435,6 +1521,18 @@ namespace smf {
     std::function<void(std::string, cyng::key_t, std::chrono::system_clock::time_point)>
     session::make_vm_func_cfg_backup(session *ptr) {
         return std::bind(&session::cfg_backup, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    }
+
+    std::function<void(boost::uuids::uuid, std::string, std::string, std::string, std::chrono::system_clock::time_point)>
+    session::make_vm_func_cfg_forward_backup(session *ptr) {
+        return std::bind(
+            &session::cfg_forward_backup,
+            ptr,
+            std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3,
+            std::placeholders::_4,
+            std::placeholders::_5);
     }
 
     std::function<bool(std::string msg, cyng::severity)> session::make_vm_func_sys_msg(db *ptr) {

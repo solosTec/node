@@ -19,8 +19,10 @@ set (ipt_h
 set (ipt_tasks
     include/tasks/cluster.h
     include/tasks/gatekeeper.h
+    include/tasks/proxy.h
     src/tasks/cluster.cpp
     src/tasks/gatekeeper.cpp
+    src/tasks/proxy.cpp
 )
 
 if(WIN32)

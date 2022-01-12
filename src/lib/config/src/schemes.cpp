@@ -494,5 +494,18 @@ namespace smf {
             return host + std::string(":") + std::to_string(port);
         }
 
+        bool is_known_store_name(std::string name) {
+            return boost::algorithm::equals(name, "cluster") || boost::algorithm::equals(name, "device") ||
+                   boost::algorithm::equals(name, "meter") || boost::algorithm::equals(name, "meterFull") ||
+                   boost::algorithm::equals(name, "meterIEC") || boost::algorithm::equals(name, "gwIEC") ||
+                   boost::algorithm::equals(name, "meterwMBus") || boost::algorithm::equals(name, "gwwMBus") ||
+                   boost::algorithm::equals(name, "gateway") || boost::algorithm::equals(name, "loRaDevice") ||
+                   boost::algorithm::equals(name, "guiUser") || boost::algorithm::equals(name, "location") ||
+                   boost::algorithm::equals(name, "session") || boost::algorithm::equals(name, "connection") ||
+                   boost::algorithm::equals(name, "target") || boost::algorithm::equals(name, "config") ||
+                   boost::algorithm::equals(name, "loRaUplink") || boost::algorithm::equals(name, "iecUplink") ||
+                   boost::algorithm::equals(name, "wMBusUplink");
+        }
+
     } // namespace config
 } // namespace smf
