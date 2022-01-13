@@ -43,7 +43,7 @@ namespace smf {
         std::uint32_t,
         cyng::obis_path_t,
         cyng::param_map_t values) {
-        CYNG_LOG_TRACE(logger_, "[sml.xml] get_profile_list_response #" << values.size());
+        CYNG_LOG_TRACE(logger_, "[sml.log.writer] get_profile_list_response #" << values.size());
     }
     void sml_log_writer::get_proc_parameter_response() {}
 

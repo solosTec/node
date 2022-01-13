@@ -35,11 +35,7 @@ namespace smf {
         }
     }
 
-    sml_csv_writer::~sml_csv_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "iec_target(~)" << std::endl;
-#endif
-    }
+    sml_csv_writer::~sml_csv_writer() {}
 
     void sml_csv_writer::stop(cyng::eod) {}
     void sml_csv_writer::open_response(cyng::buffer_t, cyng::buffer_t) {}
@@ -51,7 +47,7 @@ namespace smf {
         std::uint32_t,
         cyng::obis_path_t,
         cyng::param_map_t values) {
-        CYNG_LOG_TRACE(logger_, "[sml.csv] get_profile_list_response: #" << values.size());
+        CYNG_LOG_TRACE(logger_, "[sml.csv.writer] get_profile_list_response: #" << values.size());
     }
     void sml_csv_writer::get_proc_parameter_response() {}
 

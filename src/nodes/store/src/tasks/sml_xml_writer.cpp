@@ -34,11 +34,7 @@ namespace smf {
         }
     }
 
-    sml_xml_writer::~sml_xml_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "sml_xml_writer(~)" << std::endl;
-#endif
-    }
+    sml_xml_writer::~sml_xml_writer() {}
 
     void sml_xml_writer::stop(cyng::eod) {}
     void sml_xml_writer::open_response(cyng::buffer_t, cyng::buffer_t) {}
@@ -50,7 +46,7 @@ namespace smf {
         std::uint32_t,
         cyng::obis_path_t,
         cyng::param_map_t values) {
-        CYNG_LOG_TRACE(logger_, "[sml.xml] get_profile_list_response #" << values.size());
+        CYNG_LOG_TRACE(logger_, "[sml.xml.writer] get_profile_list_response #" << values.size());
     }
     void sml_xml_writer::get_proc_parameter_response() {}
 

@@ -91,14 +91,14 @@ namespace smf {
     void sml_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data, std::string target) {
 
         if (boost::algorithm::equals(channel_.lock()->get_name(), target)) {
-            // CYNG_LOG_TRACE(logger_, "[sml] " << target << " receive " << data.size() << " bytes");
-            {
-                std::stringstream ss;
-                cyng::io::hex_dump<8> hd;
-                hd(ss, data.begin(), data.end());
-                auto const dmp = ss.str();
-                CYNG_LOG_TRACE(logger_, "[sml] " << target << " recived " << data.size() << " bytes:\n" << dmp);
-            }
+            CYNG_LOG_TRACE(logger_, "[sml] " << target << " receive " << data.size() << " bytes");
+            //{
+            //    std::stringstream ss;
+            //    cyng::io::hex_dump<8> hd;
+            //    hd(ss, data.begin(), data.end());
+            //    auto const dmp = ss.str();
+            //    CYNG_LOG_TRACE(logger_, "[sml] " << target << " recived " << data.size() << " bytes:\n" << dmp);
+            //}
             parser_.read(std::begin(data), std::end(data));
 
         } else {

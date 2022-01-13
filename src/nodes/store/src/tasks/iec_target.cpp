@@ -61,7 +61,7 @@ namespace smf {
             pos->second.parser_.read(data.begin(), data.end());
         } else {
             //
-            //  create parser/writer
+            //  create consumer (parser)
             //
             auto const r = channel_list_.emplace(
                 std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(logger_, writers_));
@@ -96,6 +96,9 @@ namespace smf {
               },
               [this](std::string dev, bool crc) {
                   boost::ignore_unused(crc);
+                  //    examples:
+                  //    dev = ELS5\@V8.22
+                  //    id_ = 35074757
                   CYNG_LOG_INFO(logger_, "[iec] readout complete: " << dev << " \"" << id_ << "\"");
 
                   //

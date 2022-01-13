@@ -56,14 +56,17 @@ namespace smf {
     void iec_influx_writer::stop(cyng::eod) {}
     void iec_influx_writer::open(std::string id) {
         id_ = id;
-        CYNG_LOG_TRACE(logger_, "[iec.influx] update meter \"" << id << "\"");
+        CYNG_LOG_TRACE(logger_, "[iec.influx.writer] update meter \"" << id << "\"");
     }
     void iec_influx_writer::store(cyng::obis code, std::string value, std::string unit) {
 
         //
         //  Only send values that also have a physical unit.
         //
-        if (!unit.empty()) {
+        if (unit.empty() || id_.empty()) {
+            CYNG_LOG_WARNING(logger_, "[iec.influx.writer] missing server id or unit: " << id_ << ", " << unit);
+        } else {
+
             auto const area = influx::get_area_name(id_);
             std::stringstream ss;
             //
@@ -75,7 +78,7 @@ namespace smf {
             //	tags:
             //  tags are indexd
             //
-            ss << ",server=" << (id_.empty() ? "empty" : id_) << ",obis=" << code << ",area=" << area;
+            ss << ",server=" << id_ << ",obis=" << code << ",area=" << area;
 
             //
             //   space separator
@@ -85,6 +88,8 @@ namespace smf {
             //
             //	fields:
             //  fields are not indexed
+            //  ToDo: Remove "meter" field because it's a duplicate of "fServer".
+            //  Make sure that Grafana has no more references on it.
             //
             ss << "meter=\"" << id_ << "\"," << code << "=\"" << value << "\",unit=\"" << unit << "\",fArea=\"" << area
                << "\",fServer=\"" << id_ << "\"";
@@ -94,13 +99,13 @@ namespace smf {
             ss << ' ' << influx::to_line_protocol(std::chrono::system_clock::now()) << '\n';
             auto const stmt = ss.str();
 
-            CYNG_LOG_TRACE(logger_, "[iec.influx] write: " << stmt);
+            CYNG_LOG_TRACE(logger_, "[iec.influx.writer] write: " << stmt);
             auto const rs = influx::push_over_http(ctl_.get_ctx(), host_, service_, protocol_, cert_, db_, stmt);
             if (!rs.empty()) {
-                CYNG_LOG_WARNING(logger_, "[iec.influx] result: " << rs);
+                CYNG_LOG_WARNING(logger_, "[iec.influx.writer] result: " << rs);
             }
         }
     }
-    void iec_influx_writer::commit() { CYNG_LOG_TRACE(logger_, "[iec.influx] commit \"" << id_ << "\""); }
+    void iec_influx_writer::commit() { CYNG_LOG_TRACE(logger_, "[iec.influx.writer] commit \"" << id_ << "\""); }
 
 } // namespace smf

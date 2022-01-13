@@ -45,6 +45,7 @@ namespace smf {
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
+        std::string id_;
     };
 
 } // namespace smf

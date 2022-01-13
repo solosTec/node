@@ -34,11 +34,7 @@ namespace smf {
         }
     }
 
-    sml_abl_writer::~sml_abl_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "sml_abl_writer(~)" << std::endl;
-#endif
-    }
+    sml_abl_writer::~sml_abl_writer() {}
 
     void sml_abl_writer::stop(cyng::eod) {}
     void sml_abl_writer::open_response(cyng::buffer_t, cyng::buffer_t) {}
@@ -49,7 +45,9 @@ namespace smf {
         cyng::object,
         std::uint32_t,
         cyng::obis_path_t,
-        cyng::param_map_t) {}
+        cyng::param_map_t values) {
+        CYNG_LOG_TRACE(logger_, "[sml.abl.writer] get_profile_list_response #" << values.size());
+    }
     void sml_abl_writer::get_proc_parameter_response() {}
 
 } // namespace smf

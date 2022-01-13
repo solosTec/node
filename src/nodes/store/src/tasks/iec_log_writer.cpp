@@ -39,16 +39,12 @@ namespace smf {
         }
     }
 
-    iec_log_writer::~iec_log_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "iec_target(~)" << std::endl;
-#endif
-    }
+    iec_log_writer::~iec_log_writer() {}
 
     void iec_log_writer::stop(cyng::eod) {}
 
-    void iec_log_writer::open(std::string) {}
+    void iec_log_writer::open(std::string id) { id_ = id; }
     void iec_log_writer::store(cyng::obis code, std::string value, std::string unit) {}
-    void iec_log_writer::commit() {}
+    void iec_log_writer::commit() { CYNG_LOG_TRACE(logger_, "[iec.db.writer] commit \"" << id_ << "\""); }
 
 } // namespace smf
