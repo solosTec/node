@@ -15,6 +15,7 @@
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/numeric_cast.hpp>
+#include <cyng/parse/buffer.h>
 #include <cyng/vm/generator.hpp>
 #include <cyng/vm/linearize.hpp>
 #include <cyng/vm/mesh.h>
@@ -1234,7 +1235,6 @@ namespace smf {
         BOOST_ASSERT(boost::algorithm::equals(table_name, "gateway"));
 
         //
-        //  ToDo:
         // * search session table for a matching gateway
         // * find peer and rTag
         // * forward backup request to (ipt) node
@@ -1255,7 +1255,8 @@ namespace smf {
 
                         auto const rec_gw = tbl_gw->lookup(key);
                         if (!rec_gw.empty()) {
-                            auto const id = rec_gw.value("serverId", "");
+                            //  convert server ID to cyng::buffer_t
+                            auto const id = cyng::hex_to_buffer(rec_gw.value("serverId", ""));
                             auto const rec_dev = tbl_dev->lookup(key);
 
                             if (!rec_dev.empty()) {
@@ -1300,7 +1301,7 @@ namespace smf {
         boost::uuids::uuid rtag,
         std::string name,
         std::string pwd,
-        std::string id,
+        cyng::buffer_t id,
         std::chrono::system_clock::time_point tp) {
         CYNG_LOG_INFO(logger_, "forward backup " << name << '@' << id);
         send_cluster_msg(cyng::serialize_forward("cfg.req.backup", rtag, name, pwd, id, tp));
@@ -1523,7 +1524,7 @@ namespace smf {
         return std::bind(&session::cfg_backup, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     }
 
-    std::function<void(boost::uuids::uuid, std::string, std::string, std::string, std::chrono::system_clock::time_point)>
+    std::function<void(boost::uuids::uuid, std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point)>
     session::make_vm_func_cfg_forward_backup(session *ptr) {
         return std::bind(
             &session::cfg_forward_backup,

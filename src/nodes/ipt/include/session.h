@@ -87,7 +87,7 @@ namespace smf {
 
         void pty_stop();
 
-        void cfg_backup(std::string, std::string, std::string, std::chrono::system_clock::time_point tp);
+        void cfg_backup(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp);
 
         /**
          * query some device data
@@ -152,7 +152,7 @@ namespace smf {
         static auto get_vm_func_pty_stop(ipt_session *p) -> std::function<void()>;
 
         static auto get_vm_func_cfg_backup(ipt_session *p)
-            -> std::function<void(std::string, std::string, std::string, std::chrono::system_clock::time_point tp)>;
+            -> std::function<void(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp)>;
 
       private:
         cyng::controller &ctl_;

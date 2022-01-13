@@ -41,6 +41,8 @@ target_link_libraries(ipt
         smf_cluster_bus
         smf_ipt
         smf_ipt_bus
+        smf_sml
+        smf_mbus
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

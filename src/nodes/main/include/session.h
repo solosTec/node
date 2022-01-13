@@ -223,7 +223,8 @@ namespace smf {
          * cfg.backup session
          */
         void cfg_backup(std::string, cyng::key_t, std::chrono::system_clock::time_point);
-        void cfg_forward_backup(boost::uuids::uuid, std::string, std::string, std::string, std::chrono::system_clock::time_point);
+        void
+            cfg_forward_backup(boost::uuids::uuid, std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point);
 
         /**
          * send data to cluster node
@@ -337,7 +338,7 @@ namespace smf {
         make_vm_func_cfg_backup(session *);
 
         [[nodiscard]] static std::function<
-            void(boost::uuids::uuid, std::string, std::string, std::string, std::chrono::system_clock::time_point)>
+            void(boost::uuids::uuid, std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point)>
         make_vm_func_cfg_forward_backup(session *);
 
         [[nodiscard]] static std::function<bool(std::string msg, cyng::severity)> make_vm_func_sys_msg(db *);

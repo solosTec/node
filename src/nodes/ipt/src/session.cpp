@@ -500,12 +500,6 @@ namespace smf {
 
             query();
 
-            //
-            //  start SML proxy
-            //
-            proxy_ = ctl_.create_channel_with_ref<proxy>(logger_, this->shared_from_this(), cluster_bus_);
-            BOOST_ASSERT(proxy_->is_open());
-
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
             ipt_send(std::bind(
@@ -707,15 +701,11 @@ namespace smf {
 
     void ipt_session::pty_req_open_connection(std::string msisdn, bool local, cyng::param_map_t token) {
 
-        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " req open connection " << msisdn);
-        cyng::exec(vm_, [this, msisdn, token]() {
-            bool const b = buffer_write_.empty();
-            // std::pair<cyng::buffer_t, sequence_t>
+        ipt_send([=, this]() -> cyng::buffer_t {
+            CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " req open connection " << msisdn);
             auto r = serializer_.req_open_connection(msisdn);
-            buffer_write_.push_back(r.first);
             oce_map_.emplace(r.second, token);
-            if (b)
-                do_write();
+            return r.first;
         });
     }
 
@@ -735,13 +725,10 @@ namespace smf {
             cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), cyng::buffer_t(answer.begin(), answer.end()));
         }
 #endif
-        cyng::exec(vm_, [this, data]() {
-            bool const b = buffer_write_.empty();
-            // scramble data
-            buffer_write_.push_back(serializer_.escape_data(data));
-            if (b)
-                do_write();
-        });
+        //
+        //  send data to device/gateway
+        //
+        ipt_send([=, this]() -> cyng::buffer_t { return serializer_.escape_data(data); });
     }
 
     void ipt_session::pty_req_close_connection() {
@@ -754,14 +741,22 @@ namespace smf {
         stop();
     }
 
-    void ipt_session::cfg_backup(std::string name, std::string pwd, std::string id, std::chrono::system_clock::time_point tp) {
+    void ipt_session::cfg_backup(std::string name, std::string pwd, cyng::buffer_t id, std::chrono::system_clock::time_point tp) {
+        //
+        //  start SML proxy
+        //
+#ifdef _DEBUG
+        //  not production ready
+        proxy_ = ctl_.create_channel_with_ref<proxy>(logger_, this->shared_from_this(), cluster_bus_, name, pwd, id);
+        BOOST_ASSERT(proxy_->is_open());
         if (proxy_ && proxy_->is_open()) {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " backup: " << name << ':' << pwd << '@' << id);
-            proxy_->dispatch("cfg.backup", name, pwd, id);
+            proxy_->dispatch("cfg.backup");
             //  ToDo: redirect incoming IPT data to proxy
         } else {
             CYNG_LOG_ERROR(logger_, "[pty] " << vm_.get_tag() << " cannot backup - proxy is closed");
         }
+#endif
     }
 
     void ipt_session::query() {
@@ -886,7 +881,7 @@ namespace smf {
     }
 
     auto ipt_session::get_vm_func_cfg_backup(ipt_session *ptr)
-        -> std::function<void(std::string, std::string, std::string, std::chrono::system_clock::time_point tp)> {
+        -> std::function<void(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp)> {
         return std::bind(
             &ipt_session::cfg_backup,
             ptr,

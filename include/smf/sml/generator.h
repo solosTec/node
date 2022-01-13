@@ -9,6 +9,7 @@
 
 #include <smf/sml/msg.h>
 
+#include <cyng/obj/intrinsics/mac.h>
 #include <cyng/obj/intrinsics/obis.h>
 #include <cyng/rnd/rnd.hpp>
 
@@ -105,6 +106,7 @@ namespace smf {
           private:
             detail::trx trx_;
         };
+
         /**
          * Generate SML requests
          */
@@ -112,8 +114,25 @@ namespace smf {
           public:
             request_generator(std::string const &name, std::string const &pwd);
 
+            /**
+             * public open request
+             */
+            [[nodiscard]] cyng::tuple_t public_open(cyng::mac48 client_id, cyng::buffer_t const &server_id);
+
+            /**
+             * public close request
+             */
+            [[nodiscard]] cyng::tuple_t public_close();
+
+            std::string const &get_name() const;
+            std::string const &get_pwd() const;
+
           private:
             detail::trx trx_;
+            /**
+             * buffer for current SML message
+             */
+            std::uint8_t group_no_;
             std::string const name_;
             std::string const pwd_;
         };

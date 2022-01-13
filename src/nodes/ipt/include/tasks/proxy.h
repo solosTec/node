@@ -8,6 +8,9 @@
 #define SMF_IPT_TASK_PROXY_H
 
 #include <smf/cluster/bus.h>
+//#include <smf/sml/reader.h>
+#include <smf/sml/generator.h>
+#include <smf/sml/unpack.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/task/controller.h>
@@ -24,7 +27,7 @@ namespace smf {
     class proxy {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void(std::string, std::string, std::string)>, std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<std::function<void()>, std::function<void(cyng::eod)>>;
 
         enum class state {
             INITIAL,
@@ -32,12 +35,19 @@ namespace smf {
         } state_;
 
       public:
-        proxy(cyng::channel_weak wp, cyng::logger, std::shared_ptr<ipt_session>, bus &cluster_bus);
+        proxy(
+            cyng::channel_weak wp,
+            cyng::logger,
+            std::shared_ptr<ipt_session>,
+            bus &cluster_bus,
+            std::string name,
+            std::string pwd,
+            cyng::buffer_t id);
         ~proxy();
 
       private:
         void stop(cyng::eod);
-        void cfg_backup(std::string name, std::string pwd, std::string id);
+        void cfg_backup();
 
       private:
         signatures_t sigs_;
@@ -45,6 +55,10 @@ namespace smf {
         cyng::logger logger_;
         std::shared_ptr<ipt_session> iptsp_;
         bus &cluster_bus_;
+        cyng::buffer_t const id_;
+        sml::unpack parser_;
+        sml::request_generator req_gen_;
+        //  request_generator(std::string const& name, std::string const& pwd);
     };
 
 } // namespace smf

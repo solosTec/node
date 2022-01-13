@@ -109,8 +109,8 @@ namespace smf {
 
             return make_message(
                 *trx_,
-                1,
-                0,
+                1, //  group
+                0, //  abort code
                 msg_type::GET_LIST_RESPONSE,
                 cyng::make_tuple(
                     cyng::null{},                  // client id
@@ -126,8 +126,43 @@ namespace smf {
 
         request_generator::request_generator(std::string const &name, std::string const &pwd)
             : trx_()
+            , group_no_(0)
             , name_(name)
             , pwd_(pwd) {}
+
+        cyng::tuple_t request_generator::public_open(cyng::mac48 client_id, cyng::buffer_t const &server_id) {
+
+            return make_message(
+                *trx_,
+                group_no_++, //  group
+                0,           //  abort code
+                msg_type::OPEN_REQUEST,
+                cyng::make_tuple(
+                    cyng::null{},                  // code page
+                    cyng::null{},                  // client id
+                    generate_file_id(),            // req file id
+                    server_id,                     // server id
+                    name_,                         // act. sensor time
+                    pwd_,                          // SML_List / SML_ListEntry
+                    cyng::null{}),                 // sml-Version
+                static_cast<std::uint16_t>(0xFFFF) // crc placeholder
+            );
+        }
+
+        cyng::tuple_t request_generator::public_close() {
+            group_no_ = 0;
+            return make_message(
+                *trx_,
+                group_no_, //  group
+                0,         //  abort code
+                msg_type::CLOSE_REQUEST,
+                cyng::make_tuple(cyng::null{}),    // signature
+                static_cast<std::uint16_t>(0xFFFF) // crc placeholder
+            );
+        }
+
+        std::string const &request_generator::get_name() const { return name_; }
+        std::string const &request_generator::get_pwd() const { return pwd_; }
 
     } // namespace sml
 } // namespace smf
