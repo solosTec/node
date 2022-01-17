@@ -83,42 +83,37 @@ namespace smf {
             return buf;
         }
 
-        cyng::buffer_t boxing(cyng::buffer_t const &msg) {
+        cyng::buffer_t boxing(cyng::buffer_t &&msg) {
             //
             //	trailer v1.0
             //
-            cyng::buffer_t buf{0x1b, 0x1b, 0x1b, 0x1b, 0x01, 0x01, 0x01, 0x01};
-
-            //
-            //	append message
-            //
-            buf.insert(buf.end(), msg.begin(), msg.end());
+            msg.insert(msg.begin(), {0x1b, 0x1b, 0x1b, 0x1b, 0x01, 0x01, 0x01, 0x01});
 
             //
             //	padding bytes
             //
-            const char pad = ((buf.size() % 4) == 0) ? 0 : (4 - (buf.size() % 4));
+            const char pad = ((msg.size() % 4) == 0) ? 0 : (4 - (msg.size() % 4));
             for (std::size_t pos = 0; pos < pad; ++pos) {
-                buf.push_back(0x0);
+                msg.push_back(0x0);
             }
 
             //
             //	tail v1.0
             //
-            buf.insert(buf.end(), {0x1b, 0x1b, 0x1b, 0x1b, 0x1a, pad});
+            msg.insert(msg.end(), {0x1b, 0x1b, 0x1b, 0x1b, 0x1a, pad});
 
             //
             //	CRC calculation over complete buffer
             //
             crc_16_data crc;
-            BOOST_ASSERT(buf.size() < std::numeric_limits<int>::max());
-            crc.crc_ = crc16_calculate(reinterpret_cast<const unsigned char *>(buf.data()), buf.size());
+            BOOST_ASSERT(msg.size() < std::numeric_limits<int>::max());
+            crc.crc_ = crc16_calculate(reinterpret_cast<const unsigned char *>(msg.data()), msg.size());
 
             //	network order
-            buf.push_back(crc.data_[1]);
-            buf.push_back(crc.data_[0]);
+            msg.push_back(crc.data_[1]);
+            msg.push_back(crc.data_[0]);
 
-            return buf;
+            return msg;
         }
 
         cyng::tuple_t make_message(

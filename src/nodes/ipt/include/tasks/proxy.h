@@ -27,7 +27,7 @@ namespace smf {
     class proxy {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void()>, std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<std::function<void(cyng::mac48)>, std::function<void(cyng::eod)>>;
 
         enum class state {
             INITIAL,
@@ -47,7 +47,7 @@ namespace smf {
 
       private:
         void stop(cyng::eod);
-        void cfg_backup();
+        void cfg_backup(cyng::mac48);
 
       private:
         signatures_t sigs_;

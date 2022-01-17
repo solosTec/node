@@ -124,6 +124,19 @@ namespace smf {
              */
             [[nodiscard]] cyng::tuple_t public_close();
 
+            /**
+             * Restart system - 81 81 C7 83 82 01
+             */
+            [[nodiscard]] cyng::tuple_t set_proc_parameter_reboot(cyng::buffer_t const &server_id);
+
+            /**
+             * Simple root query - BODY_GET_PROC_PARAMETER_REQUEST (0x500)
+             * @return transaction ID
+             */
+            [[nodiscard]] cyng::tuple_t get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis);
+
+            [[nodiscard]] cyng::tuple_t get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis_path_t);
+
             std::string const &get_name() const;
             std::string const &get_pwd() const;
 

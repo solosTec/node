@@ -120,7 +120,7 @@ namespace smf {
             /**
              * send data over an open connection
              */
-            void transfer(cyng::buffer_t const &);
+            void transfer(cyng::buffer_t &&);
 
           private:
             void reset(state_ptr, state_value);

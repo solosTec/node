@@ -32,16 +32,18 @@ namespace smf {
 
     ipt_session::ipt_session(
         boost::asio::ip::tcp::socket socket,
+        cyng::logger logger,
         bus &cluster_bus,
         cyng::mesh &fabric,
         ipt::scramble_key const &sk,
         std::uint32_t query,
-        cyng::logger logger)
+        cyng::mac48 client_id)
         : ctl_(fabric.get_ctl())
         , socket_(std::move(socket))
         , logger_(logger)
         , cluster_bus_(cluster_bus)
         , query_(query)
+        , client_id_(client_id)
         , buffer_()
         , rx_{0}
         , sx_{0}
@@ -293,6 +295,8 @@ namespace smf {
                 auto const res = ipt::tp_res_open_connection(std::move(body));
                 CYNG_LOG_INFO(
                     logger_, "[ipt] response open connection: " << ipt::tp_res_open_connection_policy::get_response_name(res));
+                CYNG_LOG_TRACE(
+                    logger_, "[ipt] connect success: " << (ipt::tp_res_open_connection_policy::is_success(res) ? "yes" : " no"));
 
                 //
                 //	search for temporary connection establishment data
@@ -721,14 +725,15 @@ namespace smf {
         }
 
         if (boost::algorithm::equals(std::string(data.begin(), data.end()), "hello")) {
-            std::string const answer("welcome!\n");
+            std::string const answer("welcome!\r\n");
             cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), cyng::buffer_t(answer.begin(), answer.end()));
         }
 #endif
         //
         //  send data to device/gateway
+        //  escape and scramble data
         //
-        ipt_send([=, this]() -> cyng::buffer_t { return serializer_.escape_data(data); });
+        ipt_send([=, this]() mutable -> cyng::buffer_t { return serializer_.escape_data(std::move(data)); });
     }
 
     void ipt_session::pty_req_close_connection() {
@@ -747,11 +752,16 @@ namespace smf {
         //
 #ifdef _DEBUG
         //  not production ready
-        proxy_ = ctl_.create_channel_with_ref<proxy>(logger_, this->shared_from_this(), cluster_bus_, name, pwd, id);
+        if (!proxy_) {
+            proxy_ = ctl_.create_channel_with_ref<proxy>(logger_, this->shared_from_this(), cluster_bus_, name, pwd, id);
+        }
+        if (proxy_ && !proxy_->is_open()) {
+            proxy_ = ctl_.create_channel_with_ref<proxy>(logger_, this->shared_from_this(), cluster_bus_, name, pwd, id);
+        }
         BOOST_ASSERT(proxy_->is_open());
         if (proxy_ && proxy_->is_open()) {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " backup: " << name << ':' << pwd << '@' << id);
-            proxy_->dispatch("cfg.backup");
+            proxy_->dispatch("cfg.backup", client_id_);
             //  ToDo: redirect incoming IPT data to proxy
         } else {
             CYNG_LOG_ERROR(logger_, "[pty] " << vm_.get_tag() << " cannot backup - proxy is closed");

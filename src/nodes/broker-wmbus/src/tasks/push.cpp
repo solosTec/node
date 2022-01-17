@@ -10,7 +10,9 @@
 #include <smf/sml/crc16.h>
 #include <smf/sml/serializer.h>
 
+#ifdef _DEBUG
 #include <cyng/io/hex_dump.hpp>
+#endif
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
@@ -120,9 +122,10 @@ namespace smf {
         //  generate SML  message
         //
         auto const tpl = sml_generator_.get_list(srv, sml_list);
-        auto const msg = sml::set_crc16(sml::serialize(tpl));
-        auto const payload = sml::boxing(msg);
+        auto msg = sml::set_crc16(sml::serialize(tpl));
+        auto const payload = sml::boxing(std::move(msg));
 
+#ifdef _DEBUG
         {
             std::stringstream ss;
             cyng::io::hex_dump<8> hd;
@@ -130,6 +133,7 @@ namespace smf {
             auto const dmp = ss.str();
             CYNG_LOG_TRACE(logger_, "[synthetic SML_GetList.Res] :\n" << dmp);
         }
+#endif
 
         //
         //  generate SML close response message

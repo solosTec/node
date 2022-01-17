@@ -171,12 +171,13 @@ if(UNIX)
 	)
 endif(UNIX)
 
-if(CYNG_FOUND AND NOT TARGET CYNG::CYNG)
+# if(NOT TARGET cyng::cyng) evaluates to true if there is no target called cyng::cyng.
+if(CYNG_FOUND AND NOT TARGET cyng::cyng)
 
-    add_library(CYNG::CYNG INTERFACE IMPORTED)
+    add_library(cyng::cyng INTERFACE IMPORTED)
 
 #	define a target
-   	set_target_properties(CYNG::CYNG 
+   	set_target_properties(cyng::cyng 
 		PROPERTIES
 			INTERFACE_INCLUDE_DIRECTORIES 
 				"${CYNG_INCLUDE_DIRS}"

@@ -22,15 +22,19 @@
 
 namespace smf {
 
+    class proxy;
     class ipt_session : public std::enable_shared_from_this<ipt_session> {
+        friend class proxy;
+
       public:
         ipt_session(
             boost::asio::ip::tcp::socket socket,
+            cyng::logger logger,
             bus &cluster_bus,
             cyng::mesh &fabric,
             ipt::scramble_key const &sk,
             std::uint32_t query,
-            cyng::logger logger);
+            cyng::mac48 client_id);
         ~ipt_session();
 
         void start(std::chrono::seconds timeout);
@@ -161,6 +165,7 @@ namespace smf {
 
         bus &cluster_bus_;
         std::uint32_t const query_;
+        cyng::mac48 const client_id_;
 
         /**
          * Buffer for incoming data.

@@ -246,8 +246,8 @@ namespace smf {
                     cyng::column("pwdDef", cyng::TC_STRING),   //	(7) Default PW
                     cyng::column("pwdRoot", cyng::TC_STRING),  //	(8) root PW
                     cyng::column("mbus", cyng::TC_STRING),     //	(9) W-Mbus ID (i.e. A815408943050131)
-                    cyng::column("userName", cyng::TC_STRING), //	(10)
-                    cyng::column("userPwd", cyng::TC_STRING)   //	(11)
+                    cyng::column("userName", cyng::TC_STRING), //	(10) operator
+                    cyng::column("userPwd", cyng::TC_STRING)   //	(11) operator
                 },
                 1);
         }

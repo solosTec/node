@@ -7,65 +7,64 @@
 #ifndef SMF_IPT_SERVER_H
 #define SMF_IPT_SERVER_H
 
-#include <smf/ipt/scramble_key.h>
 #include <smf/cluster/bus.h>
+#include <smf/ipt/scramble_key.h>
 
-#include <cyng/obj/intrinsics/eod.h>
 #include <cyng/log/logger.h>
+#include <cyng/obj/intrinsics/eod.h>
 #include <cyng/vm/mesh.h>
 
-#include <tuple>
 #include <functional>
-#include <string>
 #include <memory>
+#include <string>
+#include <tuple>
 
 #include <boost/uuid/uuid.hpp>
 
 namespace smf {
 
-	class ipt_session;
-	class ipt_server
-	{
-		friend class ipt_session;
-		using blocklist_type = std::vector<boost::asio::ip::address>;
+    class ipt_session;
+    class ipt_server {
+        friend class ipt_session;
+        using blocklist_type = std::vector<boost::asio::ip::address>;
 
-	public:
-		ipt_server(boost::asio::io_context&
-			, cyng::logger
-			, ipt::scramble_key const& sk
-			, std::chrono::minutes watchdog
-			, std::chrono::seconds timeout
-			, std::uint32_t query
-			, bus&
-			, cyng::mesh& fabric);
-		~ipt_server();
+      public:
+        ipt_server(
+            boost::asio::io_context &,
+            cyng::logger,
+            bus &,
+            cyng::mesh &fabric,
+            ipt::scramble_key const &sk,
+            std::chrono::minutes watchdog,
+            std::chrono::seconds timeout,
+            std::uint32_t query,
+            cyng::mac48);
+        ~ipt_server();
 
-		void stop(cyng::eod);
-		void listen(boost::asio::ip::tcp::endpoint);
+        void stop(cyng::eod);
+        void listen(boost::asio::ip::tcp::endpoint);
 
-	private:
-		/**
-		 * incoming connection
-		 */
-		void do_accept();
+      private:
+        /**
+         * incoming connection
+         */
+        void do_accept();
 
+      private:
+        cyng::logger logger_;
+        bus &cluster_bus_;
+        cyng::mesh &fabric_;
 
-	private:
-		cyng::logger logger_;
+        ipt::scramble_key const sk_;
+        std::chrono::minutes const watchdog_;
+        std::chrono::seconds const timeout_;
+        std::uint32_t const query_;
+        cyng::mac48 const client_id_;
 
-		ipt::scramble_key const sk_;
-		std::chrono::minutes const watchdog_;
-		std::chrono::seconds const timeout_;
-		std::uint32_t const query_;
+        boost::asio::ip::tcp::acceptor acceptor_;
+        std::uint64_t session_counter_;
+    };
 
-		bus& cluster_bus_;
-		cyng::mesh& fabric_;
-
-		boost::asio::ip::tcp::acceptor acceptor_;
-		std::uint64_t session_counter_;
-
-	};
-
-}
+} // namespace smf
 
 #endif

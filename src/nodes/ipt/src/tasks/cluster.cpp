@@ -24,7 +24,8 @@ namespace smf {
 		, toggle::server_vec_t&& tgl
 		, ipt::scramble_key const& sk
 		, std::chrono::minutes watchdog
-		, std::chrono::seconds timeout)
+		, std::chrono::seconds timeout
+        , cyng::mac48 client_id)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&ipt_server::listen, &server_, std::placeholders::_1),
@@ -35,7 +36,7 @@ namespace smf {
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl.get_ctx(), logger, std::move(tgl), node_name, tag, this)
-		, server_(ctl.get_ctx(), logger, sk, watchdog, timeout, query, bus_, fabric_)
+		, server_(ctl.get_ctx(), logger, bus_, fabric_, sk, watchdog, timeout, query, client_id)
 	{
         auto sp = channel_.lock();
         if (sp) {

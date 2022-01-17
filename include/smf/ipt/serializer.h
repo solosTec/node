@@ -159,11 +159,11 @@ namespace smf {
             [[nodiscard]] cyng::buffer_t scramble(cyng::buffer_t &&data);
 
             /**
-             * Send data escaped over the wire.
+             * Scramble and escape data.
              * In IP-T layer data bytes should not contain single
              * escape values (0x1b).
              */
-            [[nodiscard]] cyng::buffer_t escape_data(cyng::buffer_t const &data);
+            [[nodiscard]] cyng::buffer_t escape_data(cyng::buffer_t &&data);
 
             /**
              * @return current scramble key

@@ -132,7 +132,7 @@ namespace smf {
     }
 
     void router::ipt_stream(cyng::buffer_t &&data) {
-        CYNG_LOG_TRACE(logger_, "[ipt]  stream " << data.size() << " byte");
+        CYNG_LOG_TRACE(logger_, "[ipt] stream " << data.size() << " byte");
 
 #ifdef _DEBUG_SEGW
         {
@@ -140,7 +140,7 @@ namespace smf {
             cyng::io::hex_dump<8> hd;
             hd(ss, std::begin(data), std::end(data));
             auto const dmp = ss.str();
-            CYNG_LOG_DEBUG(logger_, "[ipt]  stream " << data.size() << " bytes:\n" << dmp);
+            CYNG_LOG_DEBUG(logger_, "[ipt] stream " << data.size() << " bytes:\n" << dmp);
         }
 #endif
 
@@ -166,7 +166,7 @@ namespace smf {
         //
         //  convert to SML
         //
-        auto const buffer = sml::to_sml(messages_);
+        auto buffer = sml::to_sml(messages_);
 
 #ifdef _DEBUG_SEGW
         {
@@ -181,8 +181,9 @@ namespace smf {
         //
         //  send
         //
-        if (bus_)
-            bus_->transfer(buffer);
+        if (bus_) {
+            bus_->transfer(std::move(buffer));
+        }
 
         //
         //  clear message buffer

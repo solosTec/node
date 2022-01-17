@@ -1,4 +1,5 @@
 #include <smf/mbus/server_id.h>
+#include <smf/obis/defs.h>
 #include <smf/sml/generator.h>
 #include <smf/sml/msg.h>
 
@@ -138,12 +139,12 @@ namespace smf {
                 0,           //  abort code
                 msg_type::OPEN_REQUEST,
                 cyng::make_tuple(
-                    cyng::null{},                  // code page
-                    cyng::null{},                  // client id
-                    generate_file_id(),            // req file id
-                    server_id,                     // server id
-                    name_,                         // act. sensor time
-                    pwd_,                          // SML_List / SML_ListEntry
+                    cyng::null{},       // code page
+                    cyng::null{},       // client id
+                    generate_file_id(), // req file id
+                    server_id,          // server id
+                    name_,
+                    pwd_,
                     cyng::null{}),                 // sml-Version
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder
             );
@@ -152,11 +153,73 @@ namespace smf {
         cyng::tuple_t request_generator::public_close() {
             group_no_ = 0;
             return make_message(
-                *trx_,
+                *++trx_,
                 group_no_, //  group
                 0,         //  abort code
                 msg_type::CLOSE_REQUEST,
                 cyng::make_tuple(cyng::null{}),    // signature
+                static_cast<std::uint16_t>(0xFFFF) // crc placeholder
+            );
+        }
+
+        cyng::tuple_t request_generator::set_proc_parameter_reboot(cyng::buffer_t const &server_id) {
+            return make_message(
+                *++trx_,
+                group_no_++,                          //  group
+                0,                                    //  abort code
+                msg_type::SET_PROC_PARAMETER_REQUEST, //  0x600
+                cyng::make_tuple(
+                    server_id,
+                    name_,
+                    pwd_,
+                    cyng::make_tuple(OBIS_REBOOT), //  path entry
+                    tree_empty(OBIS_REBOOT)),      //  params
+                static_cast<std::uint16_t>(0xFFFF) // crc placeholder
+            );
+        }
+
+        cyng::tuple_t request_generator::get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis code) {
+            return make_message(
+                *++trx_,
+                group_no_++,                          //  group
+                0,                                    //  abort code
+                msg_type::GET_PROC_PARAMETER_REQUEST, //  0x600
+                // get process parameter request has 5 elements:
+                //
+                //	* server ID
+                //	* username
+                //	* password
+                //	* parameter tree (OBIS)
+                //	* attribute (not set = 01)
+                cyng::make_tuple(
+                    server_id,
+                    name_,
+                    pwd_,
+                    cyng::make_tuple(code),        //   parameter tree (OBIS)
+                    cyng::null{}),                 //  attribute
+                static_cast<std::uint16_t>(0xFFFF) // crc placeholder
+            );
+        }
+
+        cyng::tuple_t request_generator::get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis_path_t path) {
+            return make_message(
+                *++trx_,
+                group_no_++,                          //  group
+                0,                                    //  abort code
+                msg_type::GET_PROC_PARAMETER_REQUEST, //  0x600
+                // get process parameter request has 5 elements:
+                //
+                //	* server ID
+                //	* username
+                //	* password
+                //	* parameter tree (OBIS)
+                //	* attribute (not set = 01)
+                cyng::make_tuple(
+                    server_id,
+                    name_,
+                    pwd_,
+                    cyng::make_tuple(path),        //   parameter tree (OBIS)
+                    cyng::null{}),                 //  attribute
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder
             );
         }

@@ -316,7 +316,7 @@ namespace smf {
                     //  get de-obfuscated data
                     //
                     auto const data = parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
-#ifdef __DEBUG_IPT
+#ifdef _DEBUG_IPT
                     {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;
@@ -914,9 +914,10 @@ namespace smf {
             send(state_holder_, std::bind(&serializer::req_transfer_push_data, &serializer_, id.first, id.second, 0xc1, 0, data));
         }
 
-        void bus::transfer(cyng::buffer_t const &data) {
+        void bus::transfer(cyng::buffer_t &&data) {
             CYNG_LOG_TRACE(logger_, "[ipt] transfer " << data.size() << " bytes");
-            send(state_holder_, std::bind(&serializer::escape_data, &serializer_, data));
+            //  escape and scramble data
+            send(state_holder_, [=, this]() mutable -> cyng::buffer_t { return serializer_.escape_data(std::move(data)); });
         }
 
         bus::state::state(boost::asio::ip::tcp::resolver::results_type &&res)

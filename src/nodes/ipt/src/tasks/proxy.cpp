@@ -1,9 +1,15 @@
 #include <session.h>
 #include <tasks/proxy.h>
 
+#include <smf/obis/defs.h>
+#include <smf/sml/serializer.h>
+
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
+#ifdef _DEBUG
+#include <cyng/io/hex_dump.hpp>
+#endif
 
 #include <iostream>
 
@@ -11,13 +17,14 @@ namespace smf {
 
     proxy::proxy(cyng::channel_weak wp
 		, cyng::logger logger
-		, std::shared_ptr<ipt_session> iptsp, bus &cluster_bus
+		, std::shared_ptr<ipt_session> iptsp
+        , bus &cluster_bus
         , std::string name
         , std::string pwd
         , cyng::buffer_t id)
     : state_(state::INITIAL)
 	, sigs_{ 
-        std::bind(&proxy::cfg_backup, this),
+        std::bind(&proxy::cfg_backup, this, std::placeholders::_1),
         std::bind(&proxy::stop, this, std::placeholders::_1),
 	}
 	, channel_(wp)
@@ -56,7 +63,11 @@ namespace smf {
             }
      })
      , id_(id)
+#ifdef _DEBUG
+     , req_gen_("operator", "operator")
+#else
      , req_gen_(name, pwd)
+#endif
      {
         BOOST_ASSERT(iptsp_);
         auto sp = wp.lock();
@@ -72,7 +83,7 @@ namespace smf {
 #endif
     }
 
-    void proxy::cfg_backup() {
+    void proxy::cfg_backup(cyng::mac48 client_id) {
         CYNG_LOG_TRACE(logger_, "[proxy] config backup " << req_gen_.get_name() << '@' << id_);
 
         //
@@ -86,8 +97,55 @@ namespace smf {
         //
 
         //  login
-        // sml::serialize(req_gen_.public_open(id_));
-        // sml::serialize(cyng::tuple_t tpl);
+        iptsp_->ipt_send([=, this]() -> cyng::buffer_t {
+            auto msg = sml::set_crc16(sml::serialize(req_gen_.public_open(client_id, id_)));
+
+#ifdef _DEBUG
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, msg.begin(), msg.end());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(logger_, "[public login] :\n" << dmp);
+            }
+#endif
+            //  only scrambling (no escaping)
+            return iptsp_->serializer_.scramble(std::move(msg));
+        });
+
+        //  get_proc_parameter
+        iptsp_->ipt_send([=, this]() -> cyng::buffer_t {
+            auto msg = sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL)));
+
+#ifdef _DEBUG
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, msg.begin(), msg.end());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(logger_, "[get proc parameter] :\n" << dmp);
+            }
+#endif
+            //  only scrambling (no escaping)
+            return iptsp_->serializer_.scramble(std::move(msg));
+        });
+
+        //  logout
+        iptsp_->ipt_send([=, this]() -> cyng::buffer_t {
+            auto msg = sml::set_crc16(sml::serialize(req_gen_.public_close()));
+
+#ifdef _DEBUG
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, msg.begin(), msg.end());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(logger_, "[public close] :\n" << dmp);
+            }
+#endif
+            //  only scrambling (no escaping)
+            return iptsp_->serializer_.scramble(std::move(msg));
+        });
     }
 
     void proxy::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[proxy] stop"); }

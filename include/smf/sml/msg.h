@@ -35,7 +35,7 @@ namespace smf {
          * Add SML trailer and tail
          */
         cyng::buffer_t boxing(std::vector<cyng::buffer_t> const &);
-        cyng::buffer_t boxing(cyng::buffer_t const &);
+        cyng::buffer_t boxing(cyng::buffer_t &&);
 
         /**
          * generic function to produce a SML message

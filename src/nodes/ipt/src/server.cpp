@@ -12,19 +12,21 @@ namespace smf {
     ipt_server::ipt_server(
         boost::asio::io_context &ioc,
         cyng::logger logger,
+        bus &cluster_bus,
+        cyng::mesh &fabric,
         ipt::scramble_key const &sk,
         std::chrono::minutes watchdog,
         std::chrono::seconds timeout,
         std::uint32_t query,
-        bus &cluster_bus,
-        cyng::mesh &fabric)
+        cyng::mac48 client_id)
         : logger_(logger)
+        , cluster_bus_(cluster_bus)
+        , fabric_(fabric)
         , sk_(sk)
         , watchdog_(watchdog)
         , timeout_(timeout)
         , query_(query)
-        , cluster_bus_(cluster_bus)
-        , fabric_(fabric)
+        , client_id_(client_id)
         , acceptor_(ioc)
         , session_counter_{0} {}
 
@@ -59,7 +61,8 @@ namespace smf {
                 CYNG_LOG_INFO(logger_, "new session " << socket.remote_endpoint());
 
                 auto sp = std::shared_ptr<ipt_session>(
-                    new ipt_session(std::move(socket), cluster_bus_, fabric_, sk_, query_, logger_), [this](ipt_session *s) {
+                    new ipt_session(std::move(socket), logger_, cluster_bus_, fabric_, sk_, query_, client_id_),
+                    [this](ipt_session *s) {
                         //
                         //	update cluster state
                         //

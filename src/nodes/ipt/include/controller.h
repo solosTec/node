@@ -26,6 +26,7 @@ namespace smf {
 
       private:
         cyng::param_t create_server_spec();
+        cyng::param_t create_client_spec();
         cyng::param_t create_cluster_spec();
 
         void join_cluster(
@@ -39,7 +40,8 @@ namespace smf {
             std::uint16_t port,
             ipt::scramble_key const &,
             std::chrono::minutes watchdog,
-            std::chrono::seconds timeout);
+            std::chrono::seconds timeout,
+            cyng::mac48);
 
       private:
         cyng::channel_ptr cluster_;

@@ -43,7 +43,8 @@ namespace smf {
             toggle::server_vec_t &&,
             ipt::scramble_key const &sk,
             std::chrono::minutes watchdog,
-            std::chrono::seconds timeout);
+            std::chrono::seconds timeout,
+            cyng::mac48 client_id);
         ~cluster();
 
         void connect();

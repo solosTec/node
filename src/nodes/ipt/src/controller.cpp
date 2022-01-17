@@ -20,7 +20,9 @@
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
+#include <cyng/parse/mac.h>
 #include <cyng/sys/locale.h>
+#include <cyng/sys/mac.h>
 #include <cyng/task/controller.h>
 
 #include <iostream>
@@ -49,6 +51,7 @@ namespace smf {
             cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             cyng::make_param("query", 6),
             create_server_spec(),
+            create_client_spec(),
             create_cluster_spec())});
     }
 
@@ -62,6 +65,18 @@ namespace smf {
                 cyng::make_param("watchdog", 30), //	for IP-T connection (minutes)
                 cyng::make_param("timeout", 10)   //	connection timeout in seconds
                 ));
+    }
+
+    cyng::param_t controller::create_client_spec() {
+        //	get adapter data
+        //
+        auto macs = cyng::sys::get_mac48_adresses();
+        if (macs.empty()) {
+            //	random private MAC
+            macs.push_back(cyng::generate_random_mac48());
+        }
+
+        return cyng::make_param("client", cyng::make_tuple(cyng::make_param("mac", macs.front())));
     }
 
     cyng::param_t controller::create_cluster_spec() {
@@ -105,6 +120,10 @@ namespace smf {
         auto const watchdog = cyng::numeric_cast<std::uint16_t>(reader["server"]["watchdog"].get(), 30);
         auto const timeout = cyng::numeric_cast<std::uint16_t>(reader["server"]["timeout"].get(), 10);
 
+        //  client mac
+        auto def_mac = cyng::to_string(cyng::generate_random_mac48());
+        auto const client_mac = cyng::to_mac48(cyng::value_cast(reader["client"]["mac"].get(), def_mac));
+
         //
         //	connect to cluster
         //
@@ -119,7 +138,8 @@ namespace smf {
             port,
             sk,
             std::chrono::minutes(watchdog),
-            std::chrono::seconds(timeout));
+            std::chrono::seconds(timeout),
+            client_mac);
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
@@ -143,10 +163,11 @@ namespace smf {
         std::uint16_t port,
         ipt::scramble_key const &sk,
         std::chrono::minutes watchdog,
-        std::chrono::seconds timeout) {
+        std::chrono::seconds timeout,
+        cyng::mac48 client_id) {
 
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
-            "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout);
+            "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout, client_id);
         BOOST_ASSERT(cluster_->is_open());
         cluster_->dispatch("connect");
 

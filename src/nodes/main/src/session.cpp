@@ -908,6 +908,7 @@ namespace smf {
         //
     }
 
+    //  "pty.forward.open.connection"
     void session::pty_forward_res_open_connection(boost::uuids::uuid caller_tag, bool success, cyng::param_map_t token) {
         send_cluster_msg(cyng::serialize_forward("pty.res.open.connection", caller_tag, success, token));
     }
@@ -918,6 +919,9 @@ namespace smf {
         boost::uuids::uuid callee, //	callee vm-tag
         cyng::param_map_t token) {
 
+        //
+        //  reply to "pty.req.open.connection"
+        //
         CYNG_LOG_DEBUG(logger_, "pty establish connection vm:" << vm_.get_tag() << ", token: " << token);
         CYNG_LOG_DEBUG(logger_, "pty establish connection callee dev-tag:" << dev << ", callee vm-tag: " << callee);
 
@@ -942,7 +946,7 @@ namespace smf {
             "pty establish connection "
                 << "\ndev\t\t: " << dev << "\ncallee\t\t: " << callee << "\ncaller_tag\t: " << caller_tag
                 << "\ncaller_vm\t: " << caller_vm << "\ncaller_dev\t: " << caller_dev << "\ncaller_name\t: " << caller_name
-                << "\ncallee_vm\t: " << callee_vm << "\ncallee_name\t: " << callee_name << "\ntype\t\t: " << (local ? "Y" : "N"));
+                << "\ncallee_vm\t: " << callee_vm << "\ncallee_name\t: " << callee_name << "\nlocal\t\t: " << (local ? "Y" : "N"));
 #endif
 
         BOOST_ASSERT_MSG(caller_dev != dev, "same dev tag");
@@ -966,8 +970,8 @@ namespace smf {
         //
         //	forward response to [ip-t] node
         //
-        if (caller_vm == callee_vm) {
-            BOOST_ASSERT(local);
+        if (local) {
+            BOOST_ASSERT(caller_vm == callee_vm);
             send_cluster_msg(cyng::serialize_forward("pty.res.open.connection", caller_tag, success, token)); //	complete
         } else {
             //  caller on different VM
@@ -994,7 +998,7 @@ namespace smf {
                 logger_,
                 "pty transfer data"
                     << "\nr-vm\t: " << tag << "\ndev\t: " << dev << "\nl-vm\t: " << vm_.get_tag() << "\nr-dev\t: " << rdev
-                    << "\nrtag\t: " << rtag << "\nr-vm\t: " << rvm << "\ntype\t: " << (local ? "Y" : "N"));
+                    << "\nrtag\t: " << rtag << "\nr-vm\t: " << rvm << "\nlocal\t: " << (local ? "Y" : "N"));
 #endif
 
             //
@@ -1257,6 +1261,8 @@ namespace smf {
                         if (!rec_gw.empty()) {
                             //  convert server ID to cyng::buffer_t
                             auto const id = cyng::hex_to_buffer(rec_gw.value("serverId", ""));
+                            auto const operator_name = cyng::hex_to_buffer(rec_gw.value("userName", ""));
+                            auto const operator_pwd = cyng::hex_to_buffer(rec_gw.value("userPwd", ""));
                             auto const rec_dev = tbl_dev->lookup(key);
 
                             if (!rec_dev.empty()) {
@@ -1270,7 +1276,8 @@ namespace smf {
                                     "session [" << socket_.remote_endpoint() << "] will backup " << table_name << ": " << name
                                                 << '@' << msisdn << " on peer " << peer);
 
-                                vm_.load(cyng::generate_forward("cfg.forward.backup", peer, rtag, name, pwd, id, tp));
+                                vm_.load(
+                                    cyng::generate_forward("cfg.forward.backup", peer, rtag, operator_name, operator_pwd, id, tp));
                             }
                         }
                     } else {

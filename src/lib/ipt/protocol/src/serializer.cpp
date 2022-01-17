@@ -507,19 +507,20 @@ namespace smf {
             return data;
         }
 
-        cyng::buffer_t serializer::escape_data(cyng::buffer_t const &data) {
-            cyng::buffer_t buffer;
-            buffer.reserve(data.size() + 4);
+        cyng::buffer_t serializer::escape_data(cyng::buffer_t &&data) {
 
-            for (auto c : data) {
+            for (std::size_t idx = 0; idx < data.size(); ++idx) {
+                auto const c = data.at(idx);
+                data.at(idx) = scrambler_[c];
                 if (c == ESCAPE_SIGN) {
-                    //	duplicate escapes
-                    buffer.push_back(scrambler_[c]);
+                    //  duplicate ESC
+                    auto pos = data.begin();
+                    ++idx;
+                    std::advance(pos, idx);
+                    data.insert(pos, scrambler_[c]);
                 }
-                buffer.push_back(scrambler_[c]);
             }
-
-            return buffer;
+            return data;
         }
 
         scramble_key::key_type const &serializer::get_sk() const { return scrambler_.key(); }

@@ -149,8 +149,8 @@ if(NOT SMFSEC_FOUND)
     
 
 	if (SMFSEC_INCLUDE_DIRS AND SMFSEC_LIBRARIES)
-		message(STATUS "** SMFSEC_LIBRARIES        : ${SMFSEC_LIBRARIES}")
-		message(STATUS "** SMFSEC_INCLUDE_DIRS     : ${SMFSEC_INCLUDE_DIRS}")
+#		message(STATUS "** SMFSEC_LIBRARIES        : ${SMFSEC_LIBRARIES}")
+#		message(STATUS "** SMFSEC_INCLUDE_DIRS     : ${SMFSEC_INCLUDE_DIRS}")
 		set(SMFSEC_FOUND ON)
 	endif()
     
@@ -172,12 +172,13 @@ if(UNIX)
 	)
 endif(UNIX)
 
-if(SMFSEC_FOUND AND NOT TARGET SMFSEC::SMFSEC)
+# if(NOT TARGET smfsec::smfsec) evaluates to true if there is no target called smfsec::smfsec.
+if(SMFSEC_FOUND AND NOT TARGET smfsec::smfsec)
 
-    add_library(SMFSEC::SMFSEC INTERFACE IMPORTED)
+    add_library(smfsec::smfsec INTERFACE IMPORTED)
 
 #	define a target
-   	set_target_properties(SMFSEC::SMFSEC 
+   	set_target_properties(smfsec::smfsec 
 		PROPERTIES
 			INTERFACE_INCLUDE_DIRECTORIES 
 				"${SMFSEC_INCLUDE_DIRS}"
