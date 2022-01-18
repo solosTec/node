@@ -555,11 +555,6 @@ namespace smf {
             //
             auto const code = read_obis(*pos++);
 
-#ifdef _DEBUG
-            if (cyng::make_obis(0x81, 0x49, 0x63, 0x3c, 0x01, 0x01) == code) {
-                std::cout << "debug" << std::endl;
-            }
-#endif
             //
             //	parameterValue SML_ProcParValue OPTIONAL,
             //

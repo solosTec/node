@@ -5,6 +5,7 @@
 #include <smf/obis/defs.h>
 #include <smf/sml/generator.h>
 #include <smf/sml/reader.h>
+#include <smf/sml/select.h>
 #include <smf/sml/serializer.h>
 
 #include <cyng/log/record.h>
@@ -140,10 +141,13 @@ namespace smf {
             // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM));
 
             messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT));
-            // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE));
             messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM));
-            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
+            // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE));
             messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES));
+            //
+            //  access rights need to know the active devices, so this comes first
+            //
+            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
             messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM));
             messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_NTP));
 
@@ -221,7 +225,7 @@ namespace smf {
 
     void
     proxy::get_proc_parameter_response(cyng::obis_path_t const &path, cyng::obis code, cyng::attr_t, cyng::tuple_t const &tpl) {
-        if (code == OBIS_ROOT_NMS) {
+        if (code == OBIS_ROOT_NTP) {
             //
             //  send to configuration storage
             //
@@ -242,6 +246,7 @@ namespace smf {
             //
             //  query device configuration
             //
+            sml::select_devices(tpl);
 
         } else {
             CYNG_LOG_WARNING(logger_, "unknown get proc parameter response :" << obis::get_name(code));

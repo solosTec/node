@@ -39,8 +39,10 @@ set (sml_producer
 set (sml_consumer
     include/smf/sml/reader.h
     include/smf/sml/readout.h
+    include/smf/sml/select.h
     src/lib/sml/protocol/src/reader.cpp
     src/lib/sml/protocol/src/readout.cpp
+    src/lib/sml/protocol/src/select.cpp
 )
 
 source_group("producer" FILES ${sml_producer})

@@ -57,10 +57,12 @@ namespace smf {
                 code.starts_with(cyng::make_buffer({0x81, 0x81, 0xC7, 0x82, 0x0A})) || OBIS_ACCESS_USER_NAME == code ||
                 OBIS_ACCESS_PASSWORD == code || OBIS_NMS_USER == code || OBIS_NMS_PWD == code ||
                 OBIS_PEER_ADDRESS == code //	//	OBIS-T-Kennzahl der Ereignisquelle
-                || OBIS_DATA_PUSH_DETAILS == code || OBIS_DEVICE_MODEL == code || OBIS_DEVICE_SERIAL == code) {
+                || OBIS_DATA_PUSH_DETAILS == code || OBIS_DEVICE_MODEL == code || OBIS_DEVICE_SERIAL == code ||
+                OBIS_DEVICE_CLASS == code) {
                 //	buffer to string
                 cyng::buffer_t const buffer = cyng::to_buffer(obj);
-                return cyng::make_object(cyng::make_string(buffer));
+                return (cyng::is_ascii(buffer)) ? cyng::make_object(cyng::make_string(buffer)) : cyng::make_object(buffer);
+
             } else if (OBIS_TARGET_IP_ADDRESS == code) {
                 return cyng::make_object(to_ip_address_v4(obj));
             } else if (OBIS_DEVICE_CLASS == code || OBIS_DATA_AES_KEY == code) {
@@ -118,7 +120,8 @@ namespace smf {
                     break;
                 }
             }
-            return cyng::make_object(std::chrono::system_clock::now());
+            return cyng::make_object(std::chrono::system_clock::time_point().time_since_epoch());
+            // return cyng::make_object(std::chrono::system_clock::now());
         }
 
         std::string to_string(cyng::object obj) {
