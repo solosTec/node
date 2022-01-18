@@ -6,7 +6,6 @@
  */
 #include <session.h>
 #include <tasks/gatekeeper.h>
-#include <tasks/proxy.h>
 
 #include <smf/ipt/codes.h>
 #include <smf/ipt/query.h>
@@ -43,7 +42,7 @@ namespace smf {
         , logger_(logger)
         , cluster_bus_(cluster_bus)
         , query_(query)
-        , client_id_(client_id)
+        //, client_id_(client_id)
         , buffer_()
         , rx_{0}
         , sx_{0}
@@ -58,7 +57,7 @@ namespace smf {
         , dev_(boost::uuids::nil_uuid())
         , oce_map_() //	store temporary data during connection establishment
         , gatekeeper_()
-        , proxy_() {
+        , proxy_(logger, *this, cluster_bus_, client_id) {
 
         vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
@@ -93,9 +92,9 @@ namespace smf {
         socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
         socket_.close(ec);
 
-        if (proxy_ && proxy_->is_open()) {
-            proxy_->stop();
-        }
+        // if (proxy_ && proxy_->is_open()) {
+        //     proxy_->stop();
+        // }
 
         vm_.stop();
     }
@@ -177,6 +176,13 @@ namespace smf {
 
     void ipt_session::do_write() {
         // if (is_stopped())	return;
+
+#ifdef _DEBUG
+        CYNG_LOG_DEBUG(
+            logger_,
+            "send ipt msg #" << buffer_write_.size() << ": " << buffer_write_.front().size() << " bytes to "
+                             << socket_.remote_endpoint());
+#endif
 
         // Start an asynchronous operation to send a heartbeat message.
         boost::asio::async_write(
@@ -319,6 +325,10 @@ namespace smf {
                     //	cleanup oce map
                     //
                     oce_map_.erase(pos);
+
+                    //#ifdef _DEBUG
+                    //                    debug_get_profile_list();
+                    //#endif
                 } else {
                     CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " without request");
                 }
@@ -359,6 +369,30 @@ namespace smf {
             break;
         }
     }
+
+    //#ifdef _DEBUG
+    //    void ipt_session::debug_get_profile_list() {
+    //
+    //        CYNG_LOG_DEBUG(logger_, "[ipt] debug_get_profile_list **********************");
+    //
+    //        pty_transfer_data(cyng::make_buffer(
+    //            {0x1b, 0x1b, 0x1b, 0x1b, 0x01, 0x01, 0x01, 0x01, 0x76, 0x81, 0x06, 0x32, 0x32, 0x30, 0x31, 0x31, 0x37, 0x31, 0x37,
+    //             0x35, 0x31, 0x31, 0x33, 0x35, 0x34, 0x33, 0x34, 0x34, 0x31, 0x2d, 0x31, 0x62, 0x00, 0x62, 0x00, 0x72, 0x63, 0x01,
+    //             0x00, 0x77, 0x01, 0x07, 0x00, 0x50, 0x56, 0xc0, 0x00, 0x08, 0x0f, 0x32, 0x30, 0x32, 0x32, 0x30, 0x31, 0x31, 0x37,
+    //             0x31, 0x37, 0x35, 0x31, 0x31, 0x33, 0x08, 0x05, 0x00, 0x15, 0x3b, 0x01, 0xec, 0x46, 0x09, 0x6f, 0x70, 0x65, 0x72,
+    //             0x61, 0x74, 0x6f, 0x72, 0x09, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x01, 0x63, 0xca, 0x56, 0x00, 0x76,
+    //             0x81, 0x06, 0x32, 0x32, 0x30, 0x31, 0x31, 0x37, 0x31, 0x37, 0x35, 0x31, 0x31, 0x33, 0x35, 0x34, 0x33, 0x34, 0x34,
+    //             0x31, 0x2d, 0x32, 0x62, 0x01, 0x62, 0x00, 0x72, 0x63, 0x05, 0x00, 0x75, 0x08, 0x05, 0x00, 0x15, 0x3b, 0x01, 0xec,
+    //             0x46, 0x09, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x09, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72,
+    //             0x71, 0x07, 0x81, 0x49, 0x0d, 0x07, 0x00, 0xff, 0x01, 0x63, 0x4e, 0xe2, 0x00, 0x76, 0x81, 0x06, 0x32, 0x32, 0x30,
+    //             0x31, 0x31, 0x37, 0x31, 0x37, 0x35, 0x31, 0x31, 0x33, 0x35, 0x34, 0x33, 0x34, 0x34, 0x31, 0x2d, 0x33, 0x62, 0x02,
+    //             0x62, 0x00, 0x72, 0x63, 0x05, 0x00, 0x75, 0x08, 0x05, 0x00, 0x15, 0x3b, 0x01, 0xec, 0x46, 0x09, 0x6f, 0x70, 0x65,
+    //             0x72, 0x61, 0x74, 0x6f, 0x72, 0x09, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x71, 0x07, 0x81, 0x49, 0x0d,
+    //             0x06, 0x00, 0xff, 0x01, 0x63, 0x82, 0x78, 0x00, 0x76, 0x81, 0x06, 0x32, 0x32, 0x30, 0x31, 0x31, 0x37, 0x31, 0x37,
+    //             0x35, 0x31, 0x31, 0x33, 0x35, 0x34, 0x33, 0x34, 0x34, 0x31, 0x2d, 0x34, 0x62, 0x00, 0x62, 0x00, 0x72, 0x63, 0x02,
+    //             0x00, 0x71, 0x01, 0x63, 0xa6, 0x52, 0x00, 0x00, 0x00, 0x00, 0x1b, 0x1b, 0x1b, 0x1b, 0x1a, 0x03, 0xb1, 0x37}));
+    //    }
+    //#endif
 
     void ipt_session::register_target(std::string name, std::uint16_t paket_size, std::uint8_t window_size, ipt::sequence_t seq) {
 
@@ -466,10 +500,16 @@ namespace smf {
             CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] " << data.size() << " stream bytes:\n" << dmp);
         }
 #endif
-        //  ToDo: redirect data optionally to proxy
+        //  redirect data optionally to proxy
         if (cluster_bus_.is_connected()) {
-            CYNG_LOG_TRACE(logger_, "ipt stream " << data.size() << " byte");
-            cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), std::move(data));
+            if (proxy_.is_on()) {
+                CYNG_LOG_TRACE(logger_, "routing " << data.size() << " bytes to proxy");
+                proxy_.read(std::move(data));
+            }
+            else {
+                CYNG_LOG_TRACE(logger_, "ipt stream " << data.size() << " byte");
+                cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), std::move(data));
+            }
         } else {
             CYNG_LOG_WARNING(logger_, "ipt stream " << data.size() << " byte");
         }
@@ -714,7 +754,7 @@ namespace smf {
     }
 
     void ipt_session::pty_transfer_data(cyng::buffer_t data) {
-        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " transfer " << data.size() << " byte");
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " transfer " << data.size() << " bytes to gateway");
 #ifdef _DEBUG_IPT
         {
             std::stringstream ss;
@@ -752,20 +792,7 @@ namespace smf {
         //
 #ifdef _DEBUG
         //  not production ready
-        if (!proxy_) {
-            proxy_ = ctl_.create_channel_with_ref<proxy>(logger_, this->shared_from_this(), cluster_bus_, name, pwd, id);
-        }
-        if (proxy_ && !proxy_->is_open()) {
-            proxy_ = ctl_.create_channel_with_ref<proxy>(logger_, this->shared_from_this(), cluster_bus_, name, pwd, id);
-        }
-        BOOST_ASSERT(proxy_->is_open());
-        if (proxy_ && proxy_->is_open()) {
-            CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " backup: " << name << ':' << pwd << '@' << id);
-            proxy_->dispatch("cfg.backup", client_id_);
-            //  ToDo: redirect incoming IPT data to proxy
-        } else {
-            CYNG_LOG_ERROR(logger_, "[pty] " << vm_.get_tag() << " cannot backup - proxy is closed");
-        }
+        proxy_.cfg_backup(name, pwd, id);
 #endif
     }
 

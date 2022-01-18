@@ -255,7 +255,7 @@ target_compile_definitions(smf_config
 
 target_link_libraries(smf_config 
     PRIVATE 
-    "$<$<PLATFORM_ID:Linux>:CYNG::CYNG>"
+    "$<$<PLATFORM_ID:Linux>:cyng::cyng>"
     Boost::boost 
 )
 

@@ -12,6 +12,8 @@
 #include <cyng/obj/object.h>
 
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 namespace smf {
     namespace sml {
@@ -20,6 +22,10 @@ namespace smf {
          * define data type to hold a SML list
          */
         using sml_list_t = std::map<cyng::obis, cyng::param_map_t>;
+
+        /**
+         * define a recursive child list
+         */
 
         /**
          * @return codepage, client ID (05+MAC), reqFileId, server ID, username, password, SML version
@@ -68,12 +74,18 @@ namespace smf {
 
         /** @brief GET_PROC_PARAMETER_RESPONSE (1281)
          */
-        [[nodiscard]] std::pair<cyng::obis_path_t, cyng::param_t> read_get_proc_parameter_response(cyng::tuple_t msg);
+        [[nodiscard]] std::tuple<cyng::obis_path_t, cyng::obis, cyng::attr_t, cyng::tuple_t>
+        read_get_proc_parameter_response(cyng::tuple_t msg);
 
         /** @brief message_e::GET_PROFILE_LIST_RESPONSE (1025)
          */
         [[nodiscard]] std::tuple<cyng::buffer_t, cyng::object, std::uint32_t, std::uint32_t, cyng::obis_path_t, sml_list_t>
         read_get_profile_list_response(cyng::tuple_t msg);
+
+        /**
+         * @return attention code
+         */
+        [[nodiscard]] cyng::obis read_attention_response(cyng::tuple_t msg);
 
         [[nodiscard]] sml_list_t read_sml_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
@@ -101,7 +113,7 @@ namespace smf {
          * A SML tree consists of a parameter name (OBIS), a value and and an child list. In most cases the value and the child list
          * are exclusive.
          */
-        [[nodiscard]] std::pair<cyng::obis, cyng::object>
+        [[nodiscard]] std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t>
         read_param_tree(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end);
 
     } // namespace sml

@@ -62,18 +62,13 @@ namespace smf {
         cyng::object read_value(cyng::obis code, std::int8_t scaler, cyng::object obj);
 
         /**
-         * read a parameter consisting of an OBIS code a value and an optional child list.
-         */
-        // cyng::param_t read_param_tree(std::size_t, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator);
-
-        /**
          * A SML parameter consists of a type (PROC_PAR_VALUE, PROC_PAR_TIME, ...) and a value.
          * This functions read the parameter and creates an attribute that contains these
          * two informations
          *
          * Precondition is that the object contains a list/tuple with the a size of 2.
          */
-        cyng::attr_t read_parameter(cyng::object);
+        cyng::attr_t read_parameter(cyng::obis code, cyng::object);
 
         /**
          * convinience function

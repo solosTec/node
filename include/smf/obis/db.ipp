@@ -18,6 +18,8 @@ case 0x600300ff: return "PULSE_CONST_ACTIVE";	// Active pulse constant (C.3.0)
 case 0x600301ff: return "PULSE_CONST_REACTIVE";	// Reactive pulse constant (C.3.1)
 case 0x600600ff: return "COUNTER_POWER_DOWN_TIME";	// Power down time counter (C.6.0)
 case 0x600601ff: return "BATTERY_REMAINING_CAPACITY";	// Battery remaining capacity (C.6.1)
+case 0x600602ff: return "BATTERY_LAST_CHANGE";	// Date of last battery change (C.6.2)
+case 0x600603ff: return "BATTERY_VOLTAGE";	// Battery Voltage (C.6.3)
 case 0x600700ff: return "POWER_OUTAGES";	// Number of power failures 
 case 0x600800ff: return "SECONDS_INDEX";	// [SML_Time] seconds index
 case 0x601000ff: return "LOGICAL_NAME";
@@ -425,6 +427,8 @@ case 0x8181c78205ff: return "DATA_PUBLIC_KEY";
 case 0x8181c78206ff: return "ROOT_FIRMWARE";	// Firmware
 case 0x8181c78208ff: return "DEVICE_KERNEL";
 case 0x8181c78209ff: return "HARDWARE_FEATURES";	// hardware equipment (charge, type, ...) 81 81 C7 82 0A NN
+case 0x8181c7820a01: return "DEVICE_MODEL";	// model code (VMET-1KW-221-1F0)
+case 0x8181c7820a02: return "DEVICE_SERIAL";	// serial number (3894517)
 case 0x8181c7820eff: return "DEVICE_ACTIVATED";
 case 0x8181c78241ff: return "DEV_CLASS_BASIC_DIRECT";	// 3 x 230 /400 V and 5 (100) A 
 case 0x8181c78242ff: return "DEV_CLASS_BASIC_SEMI";	// 3 x 230 /400 V and 1 (6) A
@@ -507,28 +511,28 @@ case 0x8181c79311ff: return "IF_1107_TIME_GRID";	// time grid of load profile re
 case 0x8181c79313ff: return "IF_1107_TIME_SYNC";	// time sync in seconds
 case 0x8181c79314ff: return "IF_1107_MAX_VARIATION";	// seconds
 case 0x8181c7c7fd00: return "ATTENTION_OK";	// no error
-case 0x8181c7c7fd01: return "ATTENTION_JOB_IS_RUNNINNG";
-case 0x8181c7c7fe00: return "ATTENTION_UNKNOWN_ERROR";
-case 0x8181c7c7fe01: return "ATTENTION_UNKNOWN_SML_ID";
-case 0x8181c7c7fe02: return "ATTENTION_NOT_AUTHORIZED";
-case 0x8181c7c7fe03: return "ATTENTION_NO_SERVER_ID";	// unable to find recipient for request
-case 0x8181c7c7fe04: return "ATTENTION_NO_REQ_FIELD";
-case 0x8181c7c7fe05: return "ATTENTION_CANNOT_WRITE";
-case 0x8181c7c7fe06: return "ATTENTION_CANNOT_READ";
-case 0x8181c7c7fe07: return "ATTENTION_COMM_ERROR";
-case 0x8181c7c7fe08: return "ATTENTION_PARSER_ERROR";
-case 0x8181c7c7fe09: return "ATTENTION_OUT_OF_RANGE";
-case 0x8181c7c7fe0a: return "ATTENTION_NOT_EXECUTED";
-case 0x8181c7c7fe0b: return "ATTENTION_INVALID_CRC";
-case 0x8181c7c7fe0c: return "ATTENTION_NO_BROADCAST";
-case 0x8181c7c7fe0d: return "ATTENTION_UNEXPECTED_MSG";
-case 0x8181c7c7fe0e: return "ATTENTION_UNKNOWN_OBIS_CODE";
-case 0x8181c7c7fe0f: return "ATTENTION_UNSUPPORTED_DATA_TYPE";
-case 0x8181c7c7fe10: return "ATTENTION_ELEMENT_NOT_OPTIONAL";
-case 0x8181c7c7fe11: return "ATTENTION_NO_ENTRIES";
-case 0x8181c7c7fe12: return "ATTENTION_END_LIMIT_BEFORE_START";
-case 0x8181c7c7fe13: return "ATTENTION_NO_ENTRIES_IN_RANGE";	// range is empty - not the profile
-case 0x8181c7c7fe14: return "ATTENTION_MISSING_CLOSE_MSG";
+case 0x8181c7c7fd01: return "ATTENTION_JOB_IS_RUNNINNG";	// attention: job is running
+case 0x8181c7c7fe00: return "ATTENTION_UNKNOWN_ERROR";	// attention: unknown error
+case 0x8181c7c7fe01: return "ATTENTION_UNKNOWN_SML_ID";	// attention: unknown SML ID
+case 0x8181c7c7fe02: return "ATTENTION_NOT_AUTHORIZED";	// attention: not authorized
+case 0x8181c7c7fe03: return "ATTENTION_NO_SERVER_ID";	// attention: unable to find recipient for request
+case 0x8181c7c7fe04: return "ATTENTION_NO_REQ_FIELD";	// attention: no request field
+case 0x8181c7c7fe05: return "ATTENTION_CANNOT_WRITE";	// attention: cannot write
+case 0x8181c7c7fe06: return "ATTENTION_CANNOT_READ";	// attention: cannot read
+case 0x8181c7c7fe07: return "ATTENTION_COMM_ERROR";	// attention: communication error
+case 0x8181c7c7fe08: return "ATTENTION_PARSER_ERROR";	// attention: parser error
+case 0x8181c7c7fe09: return "ATTENTION_OUT_OF_RANGE";	// attention: out of range
+case 0x8181c7c7fe0a: return "ATTENTION_NOT_EXECUTED";	// attention: not executed
+case 0x8181c7c7fe0b: return "ATTENTION_INVALID_CRC";	// attention: invalid CRC
+case 0x8181c7c7fe0c: return "ATTENTION_NO_BROADCAST";	// attention: no broadcast
+case 0x8181c7c7fe0d: return "ATTENTION_UNEXPECTED_MSG";	// attention: unexpected message
+case 0x8181c7c7fe0e: return "ATTENTION_UNKNOWN_OBIS_CODE";	// attention: unknown OBIS code
+case 0x8181c7c7fe0f: return "ATTENTION_UNSUPPORTED_DATA_TYPE";	// attention: data type not supported
+case 0x8181c7c7fe10: return "ATTENTION_ELEMENT_NOT_OPTIONAL";	// attention: element is not optional
+case 0x8181c7c7fe11: return "ATTENTION_NO_ENTRIES";	// attention: no entries
+case 0x8181c7c7fe12: return "ATTENTION_END_LIMIT_BEFORE_START";	// attention: end limit before start
+case 0x8181c7c7fe13: return "ATTENTION_NO_ENTRIES_IN_RANGE";	// attention: range is empty - not the profile
+case 0x8181c7c7fe14: return "ATTENTION_MISSING_CLOSE_MSG";	// attention: missing close message
 case 0x9000000000ff: return "ROOT_BROKER";	// 90 00 00 00 00 NN - broker list
 case 0x9000000001ff: return "BROKER_LOGIN";
 case 0x9000000002ff: return "BROKER_SERVER";	// ip address

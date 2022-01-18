@@ -9,6 +9,7 @@
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/intrinsics/eod.h>
+#include <cyng/obj/intrinsics/mac.h>
 #include <cyng/obj/intrinsics/obis.h>
 
 #include <chrono>
@@ -65,6 +66,8 @@ namespace cyng {
         template <> struct serializer<cyng::obis_path_t, SML> {
             static std::size_t write(std::ostream &os, cyng::obis_path_t const &v);
         };
+
+        template <> struct serializer<cyng::mac48, SML> { static std::size_t write(std::ostream &os, cyng::mac48 const &v); };
 
 #ifdef NODE_UNIT_TEST
         void write_length_field(std::ostream &os, std::uint32_t length, std::uint8_t type);

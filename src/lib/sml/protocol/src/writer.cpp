@@ -258,5 +258,10 @@ namespace cyng {
             return cs;
         }
 
+        std::size_t serializer<cyng::mac48, SML>::write(std::ostream &os, cyng::mac48 const &v) {
+            auto const buffer = cyng::to_buffer(v);
+            return serializer<cyng::buffer_t, SML>::write(os, buffer);
+        }
+
     } // namespace io
 } // namespace cyng

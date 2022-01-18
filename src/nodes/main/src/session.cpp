@@ -1261,8 +1261,8 @@ namespace smf {
                         if (!rec_gw.empty()) {
                             //  convert server ID to cyng::buffer_t
                             auto const id = cyng::hex_to_buffer(rec_gw.value("serverId", ""));
-                            auto const operator_name = cyng::hex_to_buffer(rec_gw.value("userName", ""));
-                            auto const operator_pwd = cyng::hex_to_buffer(rec_gw.value("userPwd", ""));
+                            auto const operator_name = rec_gw.value("userName", "");
+                            auto const operator_pwd = rec_gw.value("userPwd", "");
                             auto const rec_dev = tbl_dev->lookup(key);
 
                             if (!rec_dev.empty()) {

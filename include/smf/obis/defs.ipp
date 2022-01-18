@@ -1,5 +1,5 @@
-	// generated at 2021-07-02 09:28:46
-	// 562 OBIS codes (3372 Bytes)
+	// generated at 2022-01-18 16:48:36
+	// 566 OBIS codes (3396 Bytes)
 
 	// #1
 	// Abstract objects
@@ -23,6 +23,8 @@
 	OBIS_CODE_DEFINITION(00, 00, 60, 03, 01, ff, PULSE_CONST_REACTIVE);	// u32 - Reactive pulse constant (C.3.1)
 	OBIS_CODE_DEFINITION(00, 00, 60, 06, 00, ff, COUNTER_POWER_DOWN_TIME);	// u32 - Power down time counter (C.6.0)
 	OBIS_CODE_DEFINITION(00, 00, 60, 06, 01, ff, BATTERY_REMAINING_CAPACITY);	// u32 - Battery remaining capacity (C.6.1)
+	OBIS_CODE_DEFINITION(00, 00, 60, 06, 02, ff, BATTERY_LAST_CHANGE);	// chrono:tp - Date of last battery change (C.6.2)
+	OBIS_CODE_DEFINITION(00, 00, 60, 06, 03, ff, BATTERY_VOLTAGE);	// u32 - Battery Voltage (C.6.3)
 	OBIS_CODE_DEFINITION(00, 00, 60, 07, 00, ff, POWER_OUTAGES);	// u32 - Number of power failures 
 	OBIS_CODE_DEFINITION(00, 00, 60, 08, 00, ff, SECONDS_INDEX);	// [SML_Time] seconds index
 	OBIS_CODE_DEFINITION(00, 00, 60, 10, 00, ff, LOGICAL_NAME);
@@ -68,7 +70,7 @@
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 03, CLASS_MBUS_SEARCH_DEVICE);	// bool - search device now and by restart
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 04, CLASS_MBUS_AUTO_ACTIVATE);	// bool - automatic activation of meters
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 05, CLASS_MBUS_BITRATE);	// used baud rates(bitmap)
-	// #66
+	// #68
 	// Electricity
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 00, ff, SERVER_ID_1_1);	// Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 01, ff, SERVER_ID_1_2);	// Identifikationsnummer 1.2
@@ -276,12 +278,12 @@
 	OBIS_CODE_DEFINITION(01, 00, 60, 57, 00, ff, REG_ACTIVE_TARFIFF);	// Active tariff
 	OBIS_CODE_DEFINITION(01, 00, 60, 60, 09, ff, REG_FRAUD_FLAG);	// Fraud flag
 	OBIS_CODE_DEFINITION(01, 01, 62, 17, 00, ff, REG_SM_POWER_THRESHOLD);	// Power threshold (D.23.0)
-	// #272
+	// #274
 	// Water (cold)
 	OBIS_CODE_DEFINITION(08, 00, 01, 00, 00, ff, WATER_CURRENT);	// Volume (V), accumulated, total, current value
 	OBIS_CODE_DEFINITION(08, 00, 01, 02, 00, ff, WATER_DATE);	// Volume (V), accumulated, total, due date value
 	OBIS_CODE_DEFINITION(08, 00, 02, 00, 00, ff, WATER_FLOW_RATE);	// Flow rate, average (Va/t), current value 
-	// #275
+	// #277
 	// next group
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 00, ACT_SENSOR_TIME);	// actSensorTime - current UTC time
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 01, TZ_OFFSET);	// u16 - offset to actual time zone in minutes (-720 .. +720)
@@ -436,6 +438,8 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, 82, 06, ff, ROOT_FIRMWARE);	// Firmware
 	OBIS_CODE_DEFINITION(81, 81, c7, 82, 08, ff, DEVICE_KERNEL);	// s
 	OBIS_CODE_DEFINITION(81, 81, c7, 82, 09, ff, HARDWARE_FEATURES);	// hardware equipment (charge, type, ...) 81 81 C7 82 0A NN
+	OBIS_CODE_DEFINITION(81, 81, c7, 82, 0a, 01, DEVICE_MODEL);	// s - model code (VMET-1KW-221-1F0)
+	OBIS_CODE_DEFINITION(81, 81, c7, 82, 0a, 02, DEVICE_SERIAL);	// s - serial number (3894517)
 	OBIS_CODE_DEFINITION(81, 81, c7, 82, 0e, ff, DEVICE_ACTIVATED);
 	OBIS_CODE_DEFINITION(81, 81, c7, 82, 41, ff, DEV_CLASS_BASIC_DIRECT);	// 3 x 230 /400 V and 5 (100) A 
 	OBIS_CODE_DEFINITION(81, 81, c7, 82, 42, ff, DEV_CLASS_BASIC_SEMI);	// 3 x 230 /400 V and 1 (6) A
@@ -518,29 +522,29 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, 93, 13, ff, IF_1107_TIME_SYNC);	// time sync in seconds
 	OBIS_CODE_DEFINITION(81, 81, c7, 93, 14, ff, IF_1107_MAX_VARIATION);	// seconds
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fd, 00, ATTENTION_OK);	// no error
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fd, 01, ATTENTION_JOB_IS_RUNNINNG);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 00, ATTENTION_UNKNOWN_ERROR);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 01, ATTENTION_UNKNOWN_SML_ID);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 02, ATTENTION_NOT_AUTHORIZED);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 03, ATTENTION_NO_SERVER_ID);	// unable to find recipient for request
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 04, ATTENTION_NO_REQ_FIELD);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 05, ATTENTION_CANNOT_WRITE);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 06, ATTENTION_CANNOT_READ);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 07, ATTENTION_COMM_ERROR);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 08, ATTENTION_PARSER_ERROR);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 09, ATTENTION_OUT_OF_RANGE);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0a, ATTENTION_NOT_EXECUTED);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0b, ATTENTION_INVALID_CRC);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0c, ATTENTION_NO_BROADCAST);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0d, ATTENTION_UNEXPECTED_MSG);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0e, ATTENTION_UNKNOWN_OBIS_CODE);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0f, ATTENTION_UNSUPPORTED_DATA_TYPE);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 10, ATTENTION_ELEMENT_NOT_OPTIONAL);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 11, ATTENTION_NO_ENTRIES);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 12, ATTENTION_END_LIMIT_BEFORE_START);
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	// range is empty - not the profile
-	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 14, ATTENTION_MISSING_CLOSE_MSG);
-	// #532
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fd, 01, ATTENTION_JOB_IS_RUNNINNG);	// attention: job is running
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 00, ATTENTION_UNKNOWN_ERROR);	// attention: unknown error
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 01, ATTENTION_UNKNOWN_SML_ID);	// attention: unknown SML ID
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 02, ATTENTION_NOT_AUTHORIZED);	// attention: not authorized
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 03, ATTENTION_NO_SERVER_ID);	// attention: unable to find recipient for request
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 04, ATTENTION_NO_REQ_FIELD);	// attention: no request field
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 05, ATTENTION_CANNOT_WRITE);	// attention: cannot write
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 06, ATTENTION_CANNOT_READ);	// attention: cannot read
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 07, ATTENTION_COMM_ERROR);	// attention: communication error
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 08, ATTENTION_PARSER_ERROR);	// attention: parser error
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 09, ATTENTION_OUT_OF_RANGE);	// attention: out of range
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0a, ATTENTION_NOT_EXECUTED);	// attention: not executed
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0b, ATTENTION_INVALID_CRC);	// attention: invalid CRC
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0c, ATTENTION_NO_BROADCAST);	// attention: no broadcast
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0d, ATTENTION_UNEXPECTED_MSG);	// attention: unexpected message
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0e, ATTENTION_UNKNOWN_OBIS_CODE);	// attention: unknown OBIS code
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 0f, ATTENTION_UNSUPPORTED_DATA_TYPE);	// attention: data type not supported
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 10, ATTENTION_ELEMENT_NOT_OPTIONAL);	// attention: element is not optional
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 11, ATTENTION_NO_ENTRIES);	// attention: no entries
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 12, ATTENTION_END_LIMIT_BEFORE_START);	// attention: end limit before start
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	// attention: range is empty - not the profile
+	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 14, ATTENTION_MISSING_CLOSE_MSG);	// attention: missing close message
+	// #536
 	// next group
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 00, ff, ROOT_BROKER);	// 90 00 00 00 00 NN - broker list
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 01, ff, BROKER_LOGIN);
@@ -550,7 +554,7 @@
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 05, ff, BROKER_PWD);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 06, ff, BROKER_TIMEOUT);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, a0, ff, BROKER_BLOCKLIST);
-	// #540
+	// #544
 	// next group
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 00, ff, ROOT_SERIAL);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 01, ff, SERIAL_NAME);	// example: /dev/ttyAPP0
@@ -560,7 +564,7 @@
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 05, ff, SERIAL_STOPBITS);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 06, ff, SERIAL_SPEED);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 07, ff, SERIAL_TASK);	// LMN port task
-	// #548
+	// #552
 	// next group
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 00, ff, ROOT_NMS);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 01, ff, NMS_ADDRESS);
@@ -568,7 +572,7 @@
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 03, ff, NMS_USER);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 04, ff, NMS_PWD);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 05, ff, NMS_ENABLED);
-	// #554
+	// #558
 	// next group
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 00, ff, ROOT_REDIRECTOR);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 01, ff, REDIRECTOR_LOGIN);
@@ -576,7 +580,7 @@
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 03, ff, REDIRECTOR_SERVICE);	// u16 - port
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 04, ff, REDIRECTOR_USER);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 05, ff, REDIRECTOR_PWD);
-	// #560
+	// #564
 	// next group
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	// current data set
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 04, LIST_SERVICES);

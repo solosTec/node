@@ -7,6 +7,7 @@
 #ifndef SMF_IPT_SESSION_H
 #define SMF_IPT_SESSION_H
 
+#include <proxy.h>
 #include <smf/cluster/bus.h>
 #include <smf/ipt/parser.h>
 #include <smf/ipt/serializer.h>
@@ -125,6 +126,10 @@ namespace smf {
 
         void open_connection(std::string msisdn, ipt::sequence_t seq);
 
+        //#ifdef _DEBUG
+        //        void debug_get_profile_list();
+        //#endif
+
         static auto get_vm_func_pty_res_login(ipt_session *p) -> std::function<void(bool success, boost::uuids::uuid)>;
 
         static auto get_vm_func_pty_res_register(ipt_session *p)
@@ -165,7 +170,6 @@ namespace smf {
 
         bus &cluster_bus_;
         std::uint32_t const query_;
-        cyng::mac48 const client_id_;
 
         /**
          * Buffer for incoming data.
@@ -205,7 +209,7 @@ namespace smf {
         /**
          * proxy
          */
-        cyng::channel_ptr proxy_;
+        proxy proxy_;
     };
 
 } // namespace smf

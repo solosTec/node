@@ -47,6 +47,8 @@ namespace smf {
 
         void pty_stop();
 
+        void cfg_backup(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp);
+
         //
         //	bus interface
         //
@@ -69,7 +71,10 @@ namespace smf {
         void pty_req_close_connection();
         static auto get_vm_func_pty_req_close_connection(modem_session *p) -> std::function<void()>;
 
-        static auto get_vm_func_pty_stop(modem_session* p)->std::function<void()>;
+        static auto get_vm_func_pty_stop(modem_session *p) -> std::function<void()>;
+
+        static auto get_vm_func_cfg_backup(modem_session *p)
+            -> std::function<void(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp)>;
 
       private:
         cyng::controller &ctl_;

@@ -112,7 +112,8 @@ namespace smf {
             cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
             cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
             cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)),
-            cyng::make_description("pty.req.stop", get_vm_func_pty_stop(this)));
+            cyng::make_description("pty.req.stop", get_vm_func_pty_stop(this)),
+            cyng::make_description("cfg.req.backup", get_vm_func_cfg_backup(this)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }
@@ -354,8 +355,10 @@ namespace smf {
         // ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
     }
 
-    void modem_session::pty_stop() {
-        stop();
+    void modem_session::pty_stop() { stop(); }
+
+    void modem_session::cfg_backup(std::string name, std::string pwd, cyng::buffer_t id, std::chrono::system_clock::time_point tp) {
+        CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " backup: " << name << ':' << pwd << '@' << id);
     }
 
     auto modem_session::get_vm_func_pty_res_login(modem_session *ptr) -> std::function<void(bool success, boost::uuids::uuid)> {
@@ -386,8 +389,19 @@ namespace smf {
         return std::bind(&modem_session::pty_req_close_connection, ptr);
     }
 
-    auto modem_session::get_vm_func_pty_stop(modem_session* ptr)->std::function<void()> {
+    auto modem_session::get_vm_func_pty_stop(modem_session *ptr) -> std::function<void()> {
         return std::bind(&modem_session::pty_stop, ptr);
+    }
+
+    auto modem_session::get_vm_func_cfg_backup(modem_session *ptr)
+        -> std::function<void(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp)> {
+        return std::bind(
+            &modem_session::cfg_backup,
+            ptr,
+            std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3,
+            std::placeholders::_4);
     }
 
 } // namespace smf

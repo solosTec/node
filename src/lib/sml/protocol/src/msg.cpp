@@ -3,6 +3,9 @@
 #include <smf/sml/serializer.h>
 
 #include <cyng/obj/util.hpp>
+#ifdef _DEBUG
+#include <cyng/obj/container_cast.hpp>
+#endif
 
 #include <algorithm>
 #ifdef _DEBUG_SML
@@ -133,10 +136,21 @@ namespace smf {
         cyng::tuple_t tree_param(cyng::obis code, cyng::tuple_t param) { return cyng::make_tuple(code, param, cyng::null{}); }
 
         cyng::tuple_t tree_child_list(cyng::obis code, cyng::tuple_t child_list) {
+#ifdef _DEBUG
+            for (auto const &obj : child_list) {
+                auto const tpl = cyng::container_cast<cyng::tuple_t>(obj);
+                BOOST_ASSERT(tpl.size() == 3 || tpl.empty());
+            }
+#endif
             return cyng::make_tuple(code, cyng::null{}, child_list);
         }
 
         cyng::tuple_t tree_child_list(cyng::obis code, std::initializer_list<cyng::tuple_t> list) {
+#ifdef _DEBUG
+            for (auto &tpl : list) {
+                BOOST_ASSERT(tpl.size() == 3 || tpl.empty());
+            }
+#endif
             return cyng::make_tuple(code, cyng::null{}, cyng::make_tuple(list));
         }
 

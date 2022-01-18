@@ -8,21 +8,21 @@ set (ipt_cpp
     src/controller.cpp
     src/server.cpp
     src/session.cpp
+    src/proxy.cpp
 )
     
 set (ipt_h
     include/controller.h
     include/server.h
     include/session.h
+    include/proxy.h
 )
 
 set (ipt_tasks
     include/tasks/cluster.h
     include/tasks/gatekeeper.h
-    include/tasks/proxy.h
     src/tasks/cluster.cpp
     src/tasks/gatekeeper.cpp
-    src/tasks/proxy.cpp
 )
 
 if(WIN32)

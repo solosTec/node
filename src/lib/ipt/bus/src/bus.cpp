@@ -280,13 +280,21 @@ namespace smf {
             if (!sp->is_stopped()) {
 
                 // BOOST_ASSERT(!buffer_write_.empty());
+#ifdef _DEBUG
                 CYNG_LOG_TRACE(
                     logger_,
-                    "ipt [" << tgl_.get() << "] queue #" << buffer_write_.size() << ": " << buffer_write_.front().size()
+                    "ipt [" << tgl_.get() << "] send #" << buffer_write_.size() << ": " << buffer_write_.front().size()
+                            << " bytes to " << socket_.remote_endpoint());
+#else
+                CYNG_LOG_TRACE(
+                    logger_,
+                    "ipt [" << tgl_.get() << "] send #" << buffer_write_.size() << ": " << buffer_write_.front().size()
                             << " bytes");
+#endif
 
 #ifdef __DEBUG_IPT
                 {
+                    //  scrambled data
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
                     hd(ss, buffer_write_.front().begin(), buffer_write_.front().end());

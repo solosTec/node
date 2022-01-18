@@ -42,6 +42,7 @@ namespace smf {
             } else if (
                 code.starts_with(cyng::make_buffer({0x81, 0x49, 0x63, 0x3C, 0x01}))    //	IP-T user name redundancy 1
                 || code.starts_with(cyng::make_buffer({0x81, 0x49, 0x63, 0x3C, 0x02})) //	IP-T user name redundancy 2
+                || code.starts_with(cyng::make_buffer({0x81, 0x81, 0xC7, 0x88, 0x02})) //	NTP server (81 81 c7 88 02 NN)
                 || cyng::compare_n(code, OBIS_BROKER_SERVER, 5)                        //	BROKER_SERVER
                 || cyng::compare_n(code, OBIS_BROKER_USER, 5)                          //	BROKER_USER
                 || cyng::compare_n(code, OBIS_BROKER_PWD, 5)                           //	BROKER_PWD
@@ -56,7 +57,7 @@ namespace smf {
                 code.starts_with(cyng::make_buffer({0x81, 0x81, 0xC7, 0x82, 0x0A})) || OBIS_ACCESS_USER_NAME == code ||
                 OBIS_ACCESS_PASSWORD == code || OBIS_NMS_USER == code || OBIS_NMS_PWD == code ||
                 OBIS_PEER_ADDRESS == code //	//	OBIS-T-Kennzahl der Ereignisquelle
-                || OBIS_DATA_PUSH_DETAILS == code) {
+                || OBIS_DATA_PUSH_DETAILS == code || OBIS_DEVICE_MODEL == code || OBIS_DEVICE_SERIAL == code) {
                 //	buffer to string
                 cyng::buffer_t const buffer = cyng::to_buffer(obj);
                 return cyng::make_object(cyng::make_string(buffer));
@@ -92,6 +93,7 @@ namespace smf {
         cyng::obis read_obis(cyng::object obj) {
 
             auto const tmp = cyng::to_buffer(obj);
+            BOOST_ASSERT(tmp.size() == 6);
             return cyng::make_obis(tmp);
         }
 
@@ -160,28 +162,24 @@ namespace smf {
             return customize_value(code, obj);
         }
 
-        // cyng::param_t read_param_tree(std::size_t depth, cyng::tuple_t::const_iterator, cyng::tuple_t::const_iterator) {
-        //    return cyng::param_t{};
-        //}
-
-        cyng::attr_t read_parameter(cyng::object obj) {
+        cyng::attr_t read_parameter(cyng::obis code, cyng::object obj) {
             auto const tpl = cyng::container_cast<cyng::tuple_t>(obj);
             if (tpl.size() == 2) {
                 const auto type = cyng::value_cast<std::uint8_t>(tpl.front(), 0);
                 switch (type) {
                 case PROC_PAR_VALUE:
-                    return cyng::attr_t(type, tpl.back());
+                    return {type, customize_value(code, tpl.back())};
                 case PROC_PAR_PERIODENTRY:
-                    return cyng::attr_t(type, tpl.back());
+                    return {type, customize_value(code, tpl.back())};
                 case PROC_PAR_TUPELENTRY:
-                    return cyng::attr_t(type, tpl.back());
+                    return {type, customize_value(code, tpl.back())};
                 case PROC_PAR_TIME:
-                    return cyng::attr_t(type, read_time(tpl.back()));
+                    return {type, read_time(tpl.back())};
                 default:
                     break;
                 }
             }
-            return cyng::attr_t(PROC_PAR_UNDEF, cyng::make_object());
+            return {PROC_PAR_UNDEF, obj};
         }
 
     } // namespace sml

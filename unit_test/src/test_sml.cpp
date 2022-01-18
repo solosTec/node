@@ -877,6 +877,225 @@ BOOST_AUTO_TEST_CASE(get_profile_list_response) {
     // BOOST_REQUIRE(p.get_parser().is_closed());
 }
 
+BOOST_AUTO_TEST_CASE(get_proc_param_response) {
+
+    //  contains a long octet: 06e55b633481f7bb072957eabcf110c972e86691c3cfedabe088024bffe42f23
+    // and a sequence of length "F104" == 20dec
+    //### Message ###
+    // 76                                                SML_Message(Sequence):
+    //  0A323639353535302D34                            transactionId: 2695550-4
+    //  6203                                            groupNo: 3
+    //  6200                                            abortOnError: 0
+    //  72                                              messageBody(Choice):
+    //    630501                                        messageBody: 1281 => SML_GetProcParameter_Res (0x00000501)
+    //    73                                            SML_GetProcParameter_Res(Sequence):
+    //      080500153B01EC46                            serverId: 05 00 15 3B 01 EC 46
+    //      71                                          parameterTreePath(SequenceOf):
+    //        0781818160FFFF                            path_Entry: ___`__
+    //      73                                          parameterTree(Sequence):
+    //        0781818160FFFF                            parameterName: ___`__
+    //        01                                        parameterValue: not set
+    //        77                                        child_List(SequenceOf):
+    //          73                                      tree_Entry(Sequence):
+    //            078181816001FF                        parameterName: 81 81 81 60 01 FF
+    //            01                                    parameterValue: not set
+    //            01                                    child_List: not set
+    //          73                                      tree_Entry(Sequence):
+    //            078181816002FF                        parameterName: 81 81 81 60 02 FF
+    //            01                                    parameterValue: not set
+    //            01                                    child_List: not set
+    //          73                                      tree_Entry(Sequence):
+    //            078181816003FF                        parameterName: 81 81 81 60 03 FF
+    //            01                                    parameterValue: not set
+    //            71                                    child_List(SequenceOf):
+    //              73                                  tree_Entry(Sequence):
+    //                07818181600301                    parameterName: 81 81 81 60 03 01
+    //                01                                parameterValue: not set
+    //                F104                              child_List(SequenceOf):
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818161FFFF                parameterName: ___a__
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      096F70657261746F72          smlValue: operator
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818162FFFF                parameterName: ___b__
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      840230366535356236333334383166376262303732393537656162636631313063393732653836363931633363666564616265303838303234626666653432663233smlValue:
+    //                      06e55b633481f7bb072957eabcf110c972e86691c3cfedabe088024bffe42f23
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818163FFFF                parameterName: ___c__
+    //                    01                            parameterValue: not set
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640111                parameterName: 81 81 81 64 01 11
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      0A01E61E571406213603        smlValue: 01 E6 1E 57 14 06 21 36 03
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640110                parameterName: 81 81 81 64 01 10
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      07005056C00008              smlValue: 00 50 56 C0 00 08
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818164010F                parameterName: 81 81 81 64 01 0F
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      0A01E61E29436587BF03        smlValue: 01 E6 1E 29 43 65 87 BF 03
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818164010E                parameterName: 81 81 81 64 01 0E
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      0A01E61E130900163C07        smlValue: 01 E6 1E 13 09 00 16 3C 07
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818164010D                parameterName: 81 81 81 64 01 0D
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      0A01A815743145040102        smlValue: 01 A8 15 74 31 45 04 01 02
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818164010C                parameterName: 81 81 81 64 01 0C
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      0A012423021590200786        smlValue: 01 24 23 02 15 90 20 07 86
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818164010B                parameterName: 81 81 81 64 01 0B
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      050AB00001                  smlValue: 0A B0 00 01
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    0781818164010A                parameterName: 81 81 81 64 01 0A
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      0A01FA306DD7FAE00102        smlValue: 01 FA 30 6D D7 FA E0 01 02
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640109                parameterName: 81 81 81 64 01 09
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      050AE00001                  smlValue: 0A E0 00 01
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640108                parameterName: 81 81 81 64 01 08
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      050AD00001                  smlValue: 0A D0 00 01
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640107                parameterName: 81 81 81 64 01 07
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      050AA00001                  smlValue: 0A A0 00 01
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640106                parameterName: 81 81 81 64 01 06
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      050A000004                  smlValue: 0A 00 00 04
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640105                parameterName: 81 81 81 64 01 05
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      050A000003                  smlValue: 0A 00 00 03
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640104                parameterName: 81 81 81 64 01 04
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      050A000002                  smlValue: 0A 00 00 02
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640103                parameterName: 81 81 81 64 01 03
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      050A000001                  smlValue: 0A 00 00 01
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640102                parameterName: 81 81 81 64 01 02
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      093034303435303537          smlValue: 04045057
+    //                    01                            child_List: not set
+    //                  73                              tree_Entry(Sequence):
+    //                    07818181640101                parameterName: 81 81 81 64 01 01
+    //                    72                            parameterValue(Choice):
+    //                      6201                        parameterValue: 1 => smlValue (0x01)
+    //                      080500153B01EC46            smlValue: 05 00 15 3B 01 EC 46
+    //                    01                            child_List: not set
+    //          73                                      tree_Entry(Sequence):
+    //            078181816004FF                        parameterName: 81 81 81 60 04 FF
+    //            01                                    parameterValue: not set
+    //            01                                    child_List: not set
+    //          73                                      tree_Entry(Sequence):
+    //            078181816005FF                        parameterName: 81 81 81 60 05 FF
+    //            01                                    parameterValue: not set
+    //            01                                    child_List: not set
+    //          73                                      tree_Entry(Sequence):
+    //            078181816006FF                        parameterName: 81 81 81 60 06 FF
+    //            01                                    parameterValue: not set
+    //            01                                    child_List: not set
+    //          73                                      tree_Entry(Sequence):
+    //            078181816008FF                        parameterName: 81 81 81 60 08 FF
+    //            01                                    parameterValue: not set
+    //            01                                    child_List: not set
+    //  63E8B8                                          crc16: 59576
+    //  00                                              endOfSmlMsg: 00
+
+    auto const inp = cyng::make_buffer(
+        {0x76, 0x0a, 0x32, 0x36, 0x39, 0x35, 0x35, 0x35, 0x30, 0x2d, 0x34, 0x62, 0x03, 0x62, 0x00, 0x72, 0x63, 0x05, 0x01, 0x73,
+         0x08, 0x05, 0x00, 0x15, 0x3b, 0x01, 0xec, 0x46, 0x71, 0x07, 0x81, 0x81, 0x81, 0x60, 0xff, 0xff, 0x73, 0x07, 0x81, 0x81,
+         0x81, 0x60, 0xff, 0xff, 0x01, 0x77, 0x73, 0x07, 0x81, 0x81, 0x81, 0x60, 0x01, 0xff, 0x01, 0x01, 0x73, 0x07, 0x81, 0x81,
+         0x81, 0x60, 0x02, 0xff, 0x01, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x60, 0x03, 0xff, 0x01, 0x71, 0x73, 0x07, 0x81, 0x81,
+         0x81, 0x60, 0x03, 0x01, 0x01, 0xf1, 0x04, 0x73, 0x07, 0x81, 0x81, 0x81, 0x61, 0xff, 0xff, 0x72, 0x62, 0x01, 0x09, 0x6f,
+         0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x62, 0xff, 0xff, 0x72, 0x62, 0x01, 0x84,
+         0x02, 0x30, 0x36, 0x65, 0x35, 0x35, 0x62, 0x36, 0x33, 0x33, 0x34, 0x38, 0x31, 0x66, 0x37, 0x62, 0x62, 0x30, 0x37, 0x32,
+         0x39, 0x35, 0x37, 0x65, 0x61, 0x62, 0x63, 0x66, 0x31, 0x31, 0x30, 0x63, 0x39, 0x37, 0x32, 0x65, 0x38, 0x36, 0x36, 0x39,
+         0x31, 0x63, 0x33, 0x63, 0x66, 0x65, 0x64, 0x61, 0x62, 0x65, 0x30, 0x38, 0x38, 0x30, 0x32, 0x34, 0x62, 0x66, 0x66, 0x65,
+         0x34, 0x32, 0x66, 0x32, 0x33, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x63, 0xff, 0xff, 0x01, 0x01, 0x73, 0x07, 0x81, 0x81,
+         0x81, 0x64, 0x01, 0x11, 0x72, 0x62, 0x01, 0x0a, 0x01, 0xe6, 0x1e, 0x57, 0x14, 0x06, 0x21, 0x36, 0x03, 0x01, 0x73, 0x07,
+         0x81, 0x81, 0x81, 0x64, 0x01, 0x10, 0x72, 0x62, 0x01, 0x07, 0x00, 0x50, 0x56, 0xc0, 0x00, 0x08, 0x01, 0x73, 0x07, 0x81,
+         0x81, 0x81, 0x64, 0x01, 0x0f, 0x72, 0x62, 0x01, 0x0a, 0x01, 0xe6, 0x1e, 0x29, 0x43, 0x65, 0x87, 0xbf, 0x03, 0x01, 0x73,
+         0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x0e, 0x72, 0x62, 0x01, 0x0a, 0x01, 0xe6, 0x1e, 0x13, 0x09, 0x00, 0x16, 0x3c, 0x07,
+         0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x0d, 0x72, 0x62, 0x01, 0x0a, 0x01, 0xa8, 0x15, 0x74, 0x31, 0x45, 0x04,
+         0x01, 0x02, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x0c, 0x72, 0x62, 0x01, 0x0a, 0x01, 0x24, 0x23, 0x02, 0x15,
+         0x90, 0x20, 0x07, 0x86, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x0b, 0x72, 0x62, 0x01, 0x05, 0x0a, 0xb0, 0x00,
+         0x01, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x0a, 0x72, 0x62, 0x01, 0x0a, 0x01, 0xfa, 0x30, 0x6d, 0xd7, 0xfa,
+         0xe0, 0x01, 0x02, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x09, 0x72, 0x62, 0x01, 0x05, 0x0a, 0xe0, 0x00, 0x01,
+         0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x08, 0x72, 0x62, 0x01, 0x05, 0x0a, 0xd0, 0x00, 0x01, 0x01, 0x73, 0x07,
+         0x81, 0x81, 0x81, 0x64, 0x01, 0x07, 0x72, 0x62, 0x01, 0x05, 0x0a, 0xa0, 0x00, 0x01, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81,
+         0x64, 0x01, 0x06, 0x72, 0x62, 0x01, 0x05, 0x0a, 0x00, 0x00, 0x04, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x05,
+         0x72, 0x62, 0x01, 0x05, 0x0a, 0x00, 0x00, 0x03, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x04, 0x72, 0x62, 0x01,
+         0x05, 0x0a, 0x00, 0x00, 0x02, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x03, 0x72, 0x62, 0x01, 0x05, 0x0a, 0x00,
+         0x00, 0x01, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x02, 0x72, 0x62, 0x01, 0x09, 0x30, 0x34, 0x30, 0x34, 0x35,
+         0x30, 0x35, 0x37, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x64, 0x01, 0x01, 0x72, 0x62, 0x01, 0x08, 0x05, 0x00, 0x15, 0x3b,
+         0x01, 0xec, 0x46, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x60, 0x04, 0xff, 0x01, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x60,
+         0x05, 0xff, 0x01, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x60, 0x06, 0xff, 0x01, 0x01, 0x73, 0x07, 0x81, 0x81, 0x81, 0x60,
+         0x08, 0xff, 0x01, 0x01, 0x63, 0xe8, 0xb8, 0x00
+
+        });
+
+    smf::sml::unpack p(
+        [](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+            std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
+            if (type == smf::sml::msg_type::GET_PROC_PARAMETER_RESPONSE) {
+                auto const r = smf::sml::read_get_proc_parameter_response(msg);
+                // for (auto const &ro : std::get<5>(r)) {
+                //     std::cout << ">> " << ro.first << ": " << ro.second << std::endl;
+                // }
+            }
+        });
+    p.read(std::begin(inp), std::end(inp));
+}
+
 BOOST_AUTO_TEST_CASE(serializer) {
 
     std::stringstream os;

@@ -140,7 +140,7 @@ namespace smf {
                 msg_type::OPEN_REQUEST,
                 cyng::make_tuple(
                     cyng::null{},       // code page
-                    cyng::null{},       // client id
+                    client_id,          // client id
                     generate_file_id(), // req file id
                     server_id,          // server id
                     name_,
