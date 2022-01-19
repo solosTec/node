@@ -45,7 +45,8 @@ namespace smf {
         CYNG_LOG_WARNING(logger_, "[gatekeeper] timeout");
         //  this will stop this task too
         if (iptsp_) {
-            cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "ipt gatekeeper timeout", iptsp_->get_remote_endpoint());
+            //
+            cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "ipt gatekeeper timeout");
             iptsp_->stop();
         }
     }

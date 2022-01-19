@@ -117,35 +117,69 @@ namespace smf {
                     // std::cerr << "device: " << dev << std::endl;
                     auto const [code, dev] = get_list(devs);
                     // std::cerr << "dev: " << dev << std::endl;
-                    //  device:
-                    //  {818111060101,(0:null),{{8181c78204ff,(1:0a000001),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:11+0100),{}}}}
-                    //  device:
-                    //  {818111060102,(0:null),{{8181c78204ff,(1:0a000002),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:13+0100),{}}}}
-                    //  device:
-                    //  {818111060103,(0:null),{{8181c78204ff,(1:0a000003),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:13+0100),{}}}}
-                    //  device:
-                    //  {818111060104,(0:null),{{8181c78204ff,(1:0a000004),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:14+0100),{}}}}
-                    //  device:
-                    //  {818111060105,(0:null),{{8181c78204ff,(1:0aa00001),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:15+0100),{}}}}
-                    //  device:
-                    //  {818111060106,(0:null),{{8181c78204ff,(1:0ab00001),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:16+0100),{}}}}
-                    //  device:
-                    //  {818111060107,(0:null),{{8181c78204ff,(1:0ad00001),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:17+0100),{}}}}
-                    //  device:
-                    //  {818111060108,(0:null),{{8181c78204ff,(1:0ae00001),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:18+0100),{}}}}
-                    //  device:
-                    //  {818111060109,(0:null),{{8181c78204ff,(1:01a815743145040102),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:59+0100),{}}}}
-                    //  device:
-                    //  {81811106010a,(0:null),{{8181c78204ff,(1:01e61e571406213603),{}},{8181c78202ff,(1:2d2d2d),{}},{010000090b00,(4:2022-01-18T20:39:17+0100),{}}}}
+                    // {{8181c78204ff,(1:0a000001),{}},{8181c78202ff,(1:---),{}},{010000090b00,(4:2022-01-19T17:24:11+0100),{}}}
+                    for (auto const &v : dev) {
+                        auto const [code2, attr] = get_attribute(v);
+                        // std::cerr << code2 << ": " << attr.second << std::endl;
+                        //  8181c78204ff: 0a000001
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:34:11+0100
+                        //  8181c78204ff: 0a000002
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:34:12+0100
+                        //  8181c78204ff: 0a000003
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:34:13+0100
+                        //  8181c78204ff: 0a000004
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:34:14+0100
+                        //  8181c78204ff: 0aa00001
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:34:16+0100
+                        //  8181c78204ff: 0ab00001
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:34:17+0100
+                        //  8181c78204ff: 0ad00001
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:34:18+0100
+                        //  8181c78204ff: 0ae00001
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:34:19+0100
+                        //  8181c78204ff: 01a815743145040102
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:38:29+0100
+                        //  8181c78204ff: 01e61e571406213603
+                        //  8181c78202ff: ---
+                        //  010000090b00: 2022-01-19T17:38:57+0100
+                    }
                 }
             }
         }
 
         std::tuple<cyng::obis, cyng::tuple_t> get_list(cyng::object const &obj) {
-            auto list = cyng::container_cast<cyng::tuple_t>(obj);
-            BOOST_ASSERT(list.size() == 3);
-            if (list.size() == 3) {
-                return {cyng::value_cast(list.front(), cyng::obis()), cyng::container_cast<cyng::tuple_t>(std::move(list.back()))};
+            auto const tpl = cyng::container_cast<cyng::tuple_t>(obj);
+            return get_list(tpl);
+        }
+
+        std::tuple<cyng::obis, cyng::tuple_t> get_list(cyng::tuple_t const &tpl) {
+            BOOST_ASSERT(tpl.size() == 3);
+            if (tpl.size() == 3 && tpl.front().rtti().tag() == cyng::TC_OBIS) {
+                return {cyng::value_cast(tpl.front(), cyng::obis()), cyng::container_cast<cyng::tuple_t>(std::move(tpl.back()))};
+            }
+            return {{}, {}};
+        }
+
+        std::tuple<cyng::obis, cyng::attr_t> get_attribute(cyng::object const &obj) {
+            auto const list = cyng::container_cast<cyng::tuple_t>(obj);
+            return get_attribute(list);
+        }
+
+        std::tuple<cyng::obis, cyng::attr_t> get_attribute(cyng::tuple_t const &tpl) {
+            BOOST_ASSERT(tpl.size() == 3);
+
+            if (tpl.size() == 3 && tpl.front().rtti().tag() == cyng::TC_OBIS) {
+                auto pos = std::next(tpl.begin()); //  second element
+                return {cyng::value_cast(tpl.front(), cyng::obis()), cyng::value_cast(*pos, cyng::attr_t())};
             }
             return {{}, {}};
         }

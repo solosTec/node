@@ -324,7 +324,7 @@ namespace smf {
                     //  get de-obfuscated data
                     //
                     auto const data = parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
-#ifdef _DEBUG_IPT
+#ifdef __DEBUG_IPT
                     {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;

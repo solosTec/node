@@ -37,6 +37,11 @@ namespace smf {
 
         void parser::next(sml_type type, std::size_t size, cyng::buffer_t data) {
 
+#ifdef _DEBUG_SML
+            std::cout << "data " << std::string(2 * stack_.size(), '.') << ": " << get_name(type) << "[" << data.size() << "]"
+                      << std::endl;
+#endif
+
             switch (type) {
 
             case sml_type::BINARY:
@@ -94,12 +99,14 @@ namespace smf {
                     } else {
                         auto const v = cyng::io::to_typed(obj);
                         std::cout << v << std::endl;
-                        if (boost::algorithm::equals(v, "818181600301:binary")) {
-                            std::cout << "start debugging" << std::endl;
-                        }
                     }
                 } else {
                     auto const v = cyng::io::to_typed(obj);
+                    if (obj.rtti().tag() == cyng::TC_UINT16 && stack_.size() == 2) {
+                        //  message type
+                        auto const mt = sml::to_msg_type(cyng::numeric_cast<std::uint16_t>(obj, 0));
+                        std::cout << "(" << sml::get_name(mt) << ") ";
+                    }
                     std::cout << v << std::endl;
                 }
 #endif

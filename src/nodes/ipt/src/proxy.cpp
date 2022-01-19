@@ -138,28 +138,27 @@ namespace smf {
             sml::messages_t messages;
             messages.emplace_back(req_gen.public_open(client_id_, id_));
             // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL));
-            // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM));
-
-            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT));
-            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM));
             // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE));
-            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES));
+
+            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT));   //  OK
+            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM));   //  OK
+            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES)); //  SML failure
             //
             //  access rights need to know the active devices, so this comes first
             //
-            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
-            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM));
-            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_NTP));
+            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
+            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM));
+            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_NTP));
 
             messages.emplace_back(req_gen.public_close());
             auto msg = sml::to_sml(messages);
-#ifdef _DEBUG
+#ifdef __DEBUG
             {
                 std::stringstream ss;
                 cyng::io::hex_dump<8> hd;
                 hd(ss, msg.begin(), msg.end());
                 auto const dmp = ss.str();
-                CYNG_LOG_TRACE(logger_, "[OBIS_ROOT_LAN_DSL] :\n" << dmp);
+                CYNG_LOG_TRACE(logger_, "[get_proc_parameter request] :\n" << dmp);
             }
 #endif
             // return iptsp_->serializer_.scramble(std::move(msg));

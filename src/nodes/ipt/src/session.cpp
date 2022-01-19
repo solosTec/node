@@ -101,7 +101,10 @@ namespace smf {
 
     void ipt_session::logout() { cluster_bus_.pty_logout(dev_, vm_.get_tag()); }
 
-    boost::asio::ip::tcp::endpoint ipt_session::get_remote_endpoint() const { return socket_.remote_endpoint(); }
+    boost::asio::ip::tcp::endpoint ipt_session::get_remote_endpoint() const {
+        boost::system::error_code ec;
+        return socket_.remote_endpoint(ec);
+    }
 
     void ipt_session::start(std::chrono::seconds timeout) {
         do_read();
@@ -123,7 +126,7 @@ namespace smf {
                         "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
                                      << socket_.remote_endpoint() << "]");
 
-#ifdef _DEBUG_IPT
+#ifdef __DEBUG_IPT
                     {
                         std::stringstream ss;
                         cyng::io::hex_dump<8> hd;
@@ -505,8 +508,7 @@ namespace smf {
             if (proxy_.is_on()) {
                 CYNG_LOG_TRACE(logger_, "routing " << data.size() << " bytes to proxy");
                 proxy_.read(std::move(data));
-            }
-            else {
+            } else {
                 CYNG_LOG_TRACE(logger_, "ipt stream " << data.size() << " byte");
                 cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), std::move(data));
             }

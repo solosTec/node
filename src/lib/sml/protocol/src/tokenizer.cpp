@@ -95,6 +95,7 @@ namespace smf {
                     std::cout << "{empty}" << std::endl;
 #endif
                     cb_(sml_type::LIST, 0, data_);
+                    return state::START;
                 } else if ((c & 0x80) == 0x80) {
 #ifdef _DEBUG_SML
                     std::cout << "list continues [" << length_ << "]" << std::endl;
@@ -125,11 +126,6 @@ namespace smf {
         tokenizer::state tokenizer::state_data(char c) {
             length_--;
             data_.push_back(c);
-#ifdef _DEBUG_SML
-            if (length_ == 1) {
-                std::cout << get_name(type_) << "[" << data_.size() << "]" << std::endl;
-            }
-#endif
             if (length_ == 1) {
                 cb_(type_, data_.size(), data_);
                 return state::START;
