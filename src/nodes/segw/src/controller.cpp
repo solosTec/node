@@ -501,9 +501,9 @@ namespace smf {
             "DB",
             cyng::make_tuple(
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-                cyng::make_param("file-name", "/usr/local/etc/smf/segw.database"),
+                cyng::make_param("file-name", "/usr/local/etc/smf/segw.sqlite"),
 #else
-                cyng::make_param("file-name", (cwd / "segw.database").string()),
+                cyng::make_param("file-name", (cwd / "segw.sqlite").string()),
 #endif
                 cyng::make_param("busy-timeout", 12),         //	seconds
                 cyng::make_param("watchdog", 30),             //	for database connection

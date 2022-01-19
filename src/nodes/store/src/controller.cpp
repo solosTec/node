@@ -71,7 +71,7 @@ namespace smf {
                 "SML:DB",
                 cyng::tuple_factory(
                     cyng::make_param("type", "SQLite"),
-                    cyng::make_param("file-name", (cwd / "store.database").string()),
+                    cyng::make_param("file-name", (cwd / "store.sqlite").string()),
                     cyng::make_param("busy-timeout", 12),            //	seconds
                     cyng::make_param("watchdog", 30),                //	for database connection
                     cyng::make_param("pool-size", 1),                //	no pooling for SQLite
@@ -82,7 +82,7 @@ namespace smf {
                 "IEC:DB",
                 cyng::tuple_factory(
                     cyng::make_param("type", "SQLite"),
-                    cyng::make_param("file-name", (cwd / "store.database").string()),
+                    cyng::make_param("file-name", (cwd / "store.sqlite").string()),
                     cyng::make_param("busy-timeout", 12), //	seconds
                     cyng::make_param("watchdog", 30),     //	for database connection
                     cyng::make_param("pool-size", 1),     //	no pooling for SQLite
