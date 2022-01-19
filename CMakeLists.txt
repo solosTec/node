@@ -126,6 +126,8 @@ if (CYNG_FOUND)
     message(STATUS "** cyng_log                 : ${cyng_log}")
     message(STATUS "** cyng_net                 : ${cyng_net}")
     message(STATUS "** cyng_obj                 : ${cyng_obj}")
+    message(STATUS "** cyng_parse               : ${cyng_parse}")
+    message(STATUS "** cyng_rnd                 : ${cyng_rnd}")
     message(STATUS "** cyng_store               : ${cyng_store}")
     message(STATUS "** cyng_sys                 : ${cyng_sys}")
     message(STATUS "** cyng_task                : ${cyng_task}")
@@ -624,6 +626,9 @@ target_compile_definitions(smf_sml
 
 target_link_libraries(smf_sml 
     PRIVATE 
+#       reference to cyng::crypto::make_rnd_num() required
+        "$<$<PLATFORM_ID:Linux>:${cyng_rnd}>" 
+#        "$<$<PLATFORM_ID:Linux>:smfsec::smfsec>" 
         Boost::boost 
 )
 
