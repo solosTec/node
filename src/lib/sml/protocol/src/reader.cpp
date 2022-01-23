@@ -539,7 +539,7 @@ namespace smf {
             return std::make_pair(
                 code,
                 cyng::param_map_factory("unit", unit)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
-                    "value", val) /*("signature", *pos)*/);
+                    "value", val));
         }
 
         std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t>
@@ -568,18 +568,17 @@ namespace smf {
             for (auto const &child : tpl) {
 
                 //
-                //  ToDo: build child list
+                //  build child list
                 //
-                auto const tree = cyng::container_cast<cyng::tuple_t>(child);
+                auto tree = cyng::container_cast<cyng::tuple_t>(child);
                 if (tree.size() == 3) {
 
-                    // auto child = read_param_tree(tree.begin(), tree.end());
+                    //  recursion
                     auto [c, p, l] = read_param_tree(tree.begin(), tree.end());
                     child_list.push_back(cyng::make_object(cyng::make_tuple(c, p, l)));
                 }
             }
 
-            // return std::make_pair(code, cyng::make_object());
             return {code, attr, child_list};
         }
 

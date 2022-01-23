@@ -20,7 +20,9 @@ namespace smf {
         //
         //  select device information from a get proc parameter response.
         //
-        void select_devices(cyng::tuple_t const &);
+        // void select_devices(cyng::tuple_t const &);
+
+        void select(cyng::tuple_t const &, cyng::obis root, std::function<void(cyng::prop_map_t const &, std::size_t)> cb);
 
         /**
          * Similiar to read_param_tree() but ignoring the attribute.
@@ -29,8 +31,8 @@ namespace smf {
          * - Extract the first element as OBIS code
          * - Extract the last element as a child list (tuple)
          */
-        std::tuple<cyng::obis, cyng::tuple_t> get_list(cyng::object const &obj);
-        std::tuple<cyng::obis, cyng::tuple_t> get_list(cyng::tuple_t const &tpl);
+        std::pair<cyng::obis, cyng::tuple_t> get_list(cyng::object const &obj);
+        std::pair<cyng::obis, cyng::tuple_t> get_list(cyng::tuple_t const &tpl);
 
         /**
          * Similiar to read_param_tree() but ignoring the child list
@@ -39,8 +41,8 @@ namespace smf {
          * - Extract the first element as OBIS code
          * - Extract the second element as an attribute (attr_t)
          */
-        std::tuple<cyng::obis, cyng::attr_t> get_attribute(cyng::object const &obj);
-        std::tuple<cyng::obis, cyng::attr_t> get_attribute(cyng::tuple_t const &tpl);
+        std::pair<cyng::obis, cyng::attr_t> get_attribute(cyng::object const &obj);
+        std::pair<cyng::obis, cyng::attr_t> get_attribute(cyng::tuple_t const &tpl);
     } // namespace sml
 } // namespace smf
 #endif

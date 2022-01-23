@@ -8,9 +8,11 @@
 #include <smf/sml/select.h>
 #include <smf/sml/serializer.h>
 
+#include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
+
 #ifdef _DEBUG
 #include <cyng/io/hex_dump.hpp>
 #endif
@@ -44,6 +46,8 @@ namespace smf {
             case sml::msg_type::GET_PROC_PARAMETER_RESPONSE:
                 CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
                 {
+                    // std::cout << cyng::io::to_pretty(msg) << std::endl;
+                    CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
                     //  cyng::obis, cyng::attr_t, cyng::tuple_t
                     auto const [p, code, a, l] = sml::read_get_proc_parameter_response(msg);
                     CYNG_LOG_DEBUG(logger_, "path: " << p);
@@ -245,7 +249,10 @@ namespace smf {
             //
             //  query device configuration
             //
-            sml::select_devices(tpl);
+            // sml::select_devices(tpl);
+            sml::select(tpl, code, [&, this](cyng::prop_map_t const &om, std::size_t idx) {
+                CYNG_LOG_TRACE(logger_, '#' << idx << " - " << om);
+            });
 
         } else {
             CYNG_LOG_WARNING(logger_, "unknown get proc parameter response :" << obis::get_name(code));

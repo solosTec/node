@@ -80,16 +80,18 @@ namespace smf {
                 static_cast<std::uint8_t>(PROC_PAR_TUPELENTRY),
                 cyng::make_tuple(
                     static_cast<std::uint32_t>(ut),
-                    static_cast<std::uint8_t>(0) //	local offset
-                    ,
+                    static_cast<std::uint8_t>(0),   //	local offset
                     static_cast<std::uint8_t>(0))); //	summertime offset
         }
+        cyng::tuple_t make_local_timestamp() { return make_local_timestamp(std::chrono::system_clock::now()); }
 
         cyng::tuple_t make_timestamp(std::chrono::system_clock::time_point tp) {
             //	1. UNIX timestamp - Y2K38 problem.
             std::time_t ut = std::chrono::system_clock::to_time_t(tp);
             return cyng::make_tuple(static_cast<std::uint8_t>(TIME_TIMESTAMP), static_cast<std::uint32_t>(ut));
         }
+        cyng::tuple_t make_timestamp() { return make_timestamp(std::chrono::system_clock::now()); }
+
         cyng::tuple_t make_sec_index(std::chrono::system_clock::time_point tp) {
             //	1. UNIX timestamp - Y2K38 problem.
             std::time_t ut = std::chrono::system_clock::to_time_t(tp);

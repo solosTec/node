@@ -140,11 +140,13 @@ namespace smf {
          * SML Time of type 3 is used but not defined in SML v1.03
          */
         cyng::tuple_t make_local_timestamp(std::chrono::system_clock::time_point);
+        cyng::tuple_t make_local_timestamp();
 
         /**
          * Make a timestamp as type TIME_TIMESTAMP (2)
          */
         cyng::tuple_t make_timestamp(std::chrono::system_clock::time_point);
+        cyng::tuple_t make_timestamp();
 
         /**
          * Make a timestamp as type TIME_SECINDEX (1)

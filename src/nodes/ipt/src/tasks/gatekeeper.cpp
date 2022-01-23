@@ -36,16 +36,16 @@ namespace smf {
     }
 
     gatekeeper::~gatekeeper() {
-#ifdef _DEBUG_IPT
-        std::cout << "gatekeeper(~)" << std::endl;
-#endif
+        //#ifdef _DEBUG_IPT
+        //        std::cout << "gatekeeper(~)" << std::endl;
+        //#endif
     }
 
     void gatekeeper::timeout() {
         CYNG_LOG_WARNING(logger_, "[gatekeeper] timeout");
         //  this will stop this task too
         if (iptsp_) {
-            //
+            //  socket may be closed already
             cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "ipt gatekeeper timeout");
             iptsp_->stop();
         }

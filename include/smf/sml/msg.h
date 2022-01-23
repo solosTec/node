@@ -74,6 +74,7 @@ namespace smf {
          * child list
          */
         cyng::tuple_t tree_param(cyng::obis code, cyng::tuple_t param);
+        cyng::tuple_t tree_param(cyng::obis code, cyng::attr_t attr);
 
         /**
          * Generate a tree with an child list entry and an empty

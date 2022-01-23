@@ -24,10 +24,6 @@ namespace smf {
         using sml_list_t = std::map<cyng::obis, cyng::param_map_t>;
 
         /**
-         * define a recursive child list
-         */
-
-        /**
          * @return codepage, client ID (05+MAC), reqFileId, server ID, username, password, SML version
          */
         [[nodiscard]] std::tuple<std::string, cyng::buffer_t, cyng::buffer_t, std::string, std::string, std::string, std::uint8_t>

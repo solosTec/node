@@ -4,16 +4,21 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <smf/obis/db.h>
+#include <smf/obis/defs.h>
 #include <smf/sml/generator.h>
 #include <smf/sml/msg.h>
 #include <smf/sml/parser.h>
 #include <smf/sml/reader.h>
+#include <smf/sml/select.h>
 #include <smf/sml/tokenizer.h>
 #include <smf/sml/unpack.h>
 #include <smf/sml/value.hpp>
 #include <smf/sml/writer.hpp>
 
 #include <cyng/io/ostream.h>
+#include <cyng/io/serialize.h>
+#include <cyng/obj/container_factory.hpp>
 #include <cyng/parse/buffer.h>
 #include <cyng/parse/string.h>
 
@@ -1086,6 +1091,8 @@ BOOST_AUTO_TEST_CASE(get_proc_param_response) {
     smf::sml::unpack p(
         [](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
             std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
+            cyng::io::serialize_pretty(std::cout, msg);
+            std::cout << std::endl;
             if (type == smf::sml::msg_type::GET_PROC_PARAMETER_RESPONSE) {
                 auto const r = smf::sml::read_get_proc_parameter_response(msg);
                 // for (auto const &ro : std::get<5>(r)) {
@@ -1151,4 +1158,42 @@ BOOST_AUTO_TEST_CASE(generator) {
 #endif
     }
 }
+
+BOOST_AUTO_TEST_CASE(select) {
+    //
+    //  simulate output from SML parser
+    //
+    auto const msg = cyng::make_tuple(smf::sml::tree_child_list(
+        cyng::make_obis(0x81, 0x81, 0x11, 0x06, 0x01, 0xFF),
+        cyng::make_tuple(
+            smf::sml::tree_child_list(
+                cyng::make_obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x01),
+                //  list of devices
+                //  1. device
+                cyng::make_tuple(
+                    smf::sml::tree_param(
+                        smf::OBIS_SERVER_ID,
+                        cyng::make_attr(1, cyng::make_buffer({0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02}))),
+                    smf::sml::tree_param(smf::OBIS_DEVICE_CLASS, cyng::make_attr(1, "---")),
+                    smf::sml::tree_param(smf::OBIS_CURRENT_UTC, cyng::make_attr(4, std::chrono::system_clock::now())))),
+            //  2. device
+            smf::sml::tree_child_list(
+                cyng::make_obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x02),
+                //  list of devices
+                cyng::make_tuple(
+                    smf::sml::tree_param(
+                        smf::OBIS_SERVER_ID,
+                        cyng::make_attr(1, cyng::make_buffer({0x01, 0xE6, 0x1E, 0x57, 0x14, 0x06, 0x21, 0x36, 0x03}))),
+                    smf::sml::tree_param(smf::OBIS_DEVICE_CLASS, cyng::make_attr(1, "+++")),
+                    smf::sml::tree_param(smf::OBIS_CURRENT_UTC, cyng::make_attr(4, std::chrono::system_clock::now())))))));
+
+    cyng::io::serialize_pretty(std::cout, msg);
+    std::cout << std::endl;
+    // std::cout << cyng::io::to_pretty(msg) << std::endl;
+    // smf::sml::select_devices(msg);
+    smf::sml::select(msg, smf::OBIS_ROOT_ACTIVE_DEVICES, [](cyng::prop_map_t const &om, std::size_t idx) {
+        std::cerr << '#' << idx << " - " << om << std::endl;
+    });
+}
+
 BOOST_AUTO_TEST_SUITE_END()

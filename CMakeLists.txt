@@ -621,7 +621,7 @@ cxx_alignas
 #
 target_compile_definitions(smf_sml 
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_SML>
+        $<$<CONFIG:Debug>:__DEBUG_SML>
 )
 
 target_link_libraries(smf_sml 

@@ -1,6 +1,7 @@
 #include <smf/sml/crc16.h>
 #include <smf/sml/msg.h>
 #include <smf/sml/serializer.h>
+//#include <smf/sml/value.hpp>
 
 #include <cyng/obj/util.hpp>
 #ifdef _DEBUG
@@ -134,6 +135,7 @@ namespace smf {
         cyng::tuple_t tree_empty(cyng::obis code) { return cyng::make_tuple(code, cyng::null{}, cyng::null{}); }
 
         cyng::tuple_t tree_param(cyng::obis code, cyng::tuple_t param) { return cyng::make_tuple(code, param, cyng::null{}); }
+        cyng::tuple_t tree_param(cyng::obis code, cyng::attr_t attr) { return cyng::make_tuple(code, attr, cyng::null{}); }
 
         cyng::tuple_t tree_child_list(cyng::obis code, cyng::tuple_t child_list) {
 #ifdef _DEBUG
