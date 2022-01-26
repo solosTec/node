@@ -421,6 +421,18 @@ namespace smf {
                 1);
         }
 
+        cyng::meta_store get_store_cfg_set() {
+            return cyng::meta_store(
+                "cfgSet",
+                {
+                    cyng::column("tag", cyng::TC_UUID),        //	key
+                    cyng::column("serverId", cyng::TC_STRING), //	(1) Server-ID (i.e. 0500153B02517E)
+                    cyng::column("path", cyng::TC_OBISPATH),   //	(2) SML related
+                    cyng::column("value", cyng::TC_NULL)       //	any data type allowed
+                },
+                2);
+        }
+
         cyng::meta_store get_store_sys_msg() {
             return cyng::meta_store(
                 "sysMsg",

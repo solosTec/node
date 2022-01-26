@@ -362,7 +362,7 @@ namespace smf {
                 // ToDo: extra handling of time points
                 // How to serialize time points in SML Lists?
                 //
-                if (obj.rtti().tag() != cyng::TC_TIME_POINT) {
+                if (obj.tag() != cyng::TC_TIME_POINT) {
                     sml_list.push_back(cyng::make_object(sml::list_entry(code, 0, mbus::to_u8(u), scaler, obj)));
                 }
             }

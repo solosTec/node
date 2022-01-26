@@ -1168,10 +1168,10 @@ namespace smf {
 
         stmt->push(cyng::make_object(key), 128); //	pk
         // stmt->push(cyng::make_object(1), 0);	//	gen
-        stmt->push(val, 256);                               //	val
-        stmt->push(val, 256);                               //	def
-        stmt->push(cyng::make_object(obj.rtti().tag()), 0); //	type
-        stmt->push(cyng::make_object(desc), 256);           //	desc
+        stmt->push(val, 256);                        //	val
+        stmt->push(val, 256);                        //	def
+        stmt->push(cyng::make_object(obj.tag()), 0); //	type
+        stmt->push(cyng::make_object(desc), 256);    //	desc
         if (stmt->execute()) {
             stmt->clear();
             return true;
@@ -1187,7 +1187,7 @@ namespace smf {
         stmt->push(key, 128);                                       //	pk
         stmt->push(val, 256);                                       //	val
         stmt->push(val, 256);                                       //	def
-        stmt->push(cyng::make_object(obj.rtti().tag()), 0);         //	type
+        stmt->push(cyng::make_object(obj.tag()), 0);                //	type
         stmt->push(cyng::make_object(obj.rtti().type_name()), 256); //	desc
         if (stmt->execute()) {
             stmt->clear();

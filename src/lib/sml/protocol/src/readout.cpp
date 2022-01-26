@@ -42,7 +42,7 @@ namespace smf {
             } else if (
                 code.starts_with(cyng::make_buffer({0x81, 0x49, 0x63, 0x3C, 0x01}))    //	IP-T user name redundancy 1
                 || code.starts_with(cyng::make_buffer({0x81, 0x49, 0x63, 0x3C, 0x02})) //	IP-T user name redundancy 2
-                || code.starts_with(cyng::make_buffer({0x81, 0x81, 0xC7, 0x88, 0x02})) //	NTP server (81 81 c7 88 02 NN)
+                || cyng::compare_n(code, OBIS_NTP_SERVER, 5)                           //	NTP server (81 81 c7 88 02 NN)
                 || cyng::compare_n(code, OBIS_BROKER_SERVER, 5)                        //	BROKER_SERVER
                 || cyng::compare_n(code, OBIS_BROKER_USER, 5)                          //	BROKER_USER
                 || cyng::compare_n(code, OBIS_BROKER_PWD, 5)                           //	BROKER_PWD
@@ -125,7 +125,7 @@ namespace smf {
         }
 
         std::string to_string(cyng::object obj) {
-            if (obj.rtti().tag() == cyng::TC_BUFFER) {
+            if (obj.tag() == cyng::TC_BUFFER) {
                 cyng::buffer_t const buffer = cyng::to_buffer(obj);
                 return cyng::make_string(buffer);
             }
@@ -136,7 +136,7 @@ namespace smf {
 
         cyng::object read_value(cyng::obis code, std::int8_t scaler, cyng::object obj) {
             if (scaler != 0) {
-                switch (obj.rtti().tag()) {
+                switch (obj.tag()) {
                 case cyng::TC_INT64: {
                     std::int64_t const value = cyng::value_cast<std::int64_t>(obj, 0);
                     auto const str = scale_value(value, scaler);
@@ -189,13 +189,13 @@ namespace smf {
 
     std::string ip_address_to_str(cyng::object obj) {
         std::stringstream ss;
-        if (obj.rtti().tag() == cyng::TC_UINT32) {
+        if (obj.tag() == cyng::TC_UINT32) {
 
             //
             //	convert an u32 to a IPv4 address in dotted format
             //
             ss << to_ip_address_v4(obj);
-        } else if (obj.rtti().tag() == cyng::TC_BUFFER) {
+        } else if (obj.tag() == cyng::TC_BUFFER) {
 
             //
             //	convert an octet to an string

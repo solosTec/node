@@ -43,7 +43,7 @@ namespace smf {
                 /**
                  *	generate new transaction id (reshuffling)
                  */
-                void regenerate(std::size_t = 7);
+                void reset(std::size_t = 7);
 
                 /**
                  * Increase internal transaction number.
@@ -113,6 +113,9 @@ namespace smf {
         class request_generator {
           public:
             request_generator(std::string const &name, std::string const &pwd);
+            request_generator(request_generator const &);
+
+            void reset(std::string const &name, std::string const &pwd, std::size_t length);
 
             /**
              * public open request
@@ -146,8 +149,8 @@ namespace smf {
              * buffer for current SML message
              */
             std::uint8_t group_no_;
-            std::string const name_;
-            std::string const pwd_;
+            std::string name_;
+            std::string pwd_;
         };
 
     } // namespace sml

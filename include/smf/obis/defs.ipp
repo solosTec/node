@@ -1,4 +1,4 @@
-	// generated at 2022-01-18 16:48:36
+	// generated at 2022-01-25 22:16:39
 	// 566 OBIS codes (3396 Bytes)
 
 	// #1
@@ -479,11 +479,11 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, 86, 22, ff, DATA_COLLECTOR_SIZE);	// max. table size
 	OBIS_CODE_DEFINITION(81, 81, c7, 87, 81, ff, DATA_REGISTER_PERIOD);	// u32 - register period in seconds (0 == event driven)
 	OBIS_CODE_DEFINITION(81, 81, c7, 88, 01, ff, ROOT_NTP);
-	OBIS_CODE_DEFINITION(81, 81, c7, 88, 02, ff, CODE_NTP_SERVER);	// List of NTP servers
-	OBIS_CODE_DEFINITION(81, 81, c7, 88, 03, ff, CODE_NTP_PORT);	// u16 - NTP port (123)
-	OBIS_CODE_DEFINITION(81, 81, c7, 88, 04, ff, CODE_NTP_TZ);	// u32 - timezone
+	OBIS_CODE_DEFINITION(81, 81, c7, 88, 02, ff, NTP_SERVER);	// List of NTP servers
+	OBIS_CODE_DEFINITION(81, 81, c7, 88, 03, ff, NTP_PORT);	// u16 - NTP port (123)
+	OBIS_CODE_DEFINITION(81, 81, c7, 88, 04, ff, NTP_TZ);	// u32 - timezone
 	OBIS_CODE_DEFINITION(81, 81, c7, 88, 05, ff, CODE_NTP_OFFSET);	// Offset to transmission of the signal for synchronization
-	OBIS_CODE_DEFINITION(81, 81, c7, 88, 06, ff, CODE_NTP_ACTIVE);	// NTP enabled/disables
+	OBIS_CODE_DEFINITION(81, 81, c7, 88, 06, ff, NTP_ACTIVE);	// NTP enabled/disables
 	OBIS_CODE_DEFINITION(81, 81, c7, 88, 10, ff, ROOT_DEVICE_TIME);	// device time
 	OBIS_CODE_DEFINITION(81, 81, c7, 89, e1, ff, CLASS_OP_LOG);
 	OBIS_CODE_DEFINITION(81, 81, c7, 89, e2, ff, CLASS_EVENT);	// u32 - event

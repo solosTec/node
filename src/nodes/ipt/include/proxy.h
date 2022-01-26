@@ -8,11 +8,11 @@
 #define SMF_IPT_PROXY_H
 
 #include <smf/cluster/bus.h>
-//#include <smf/sml/reader.h>
-//#include <smf/sml/generator.h>
+#include <smf/sml/generator.h>
 #include <smf/sml/unpack.h>
 
 #include <cyng/log/logger.h>
+#include <cyng/store/db.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/task_fwd.h>
 
@@ -27,7 +27,7 @@ namespace smf {
      */
     class proxy {
 
-        enum class state { OFF, ON, WAITING } state_;
+        enum class state { OFF, ON, ROOT_CFG, METER_CFG } state_;
 
       public:
         proxy(cyng::logger, ipt_session &, bus &cluster_bus, cyng::mac48 const &);
@@ -39,6 +39,8 @@ namespace smf {
 
       private:
         void get_proc_parameter_response(cyng::obis_path_t const &, cyng::obis, cyng::attr_t, cyng::tuple_t const &);
+        void close_response(std::string trx, cyng::tuple_t const msg);
+        void cfg_backup_meter();
 
       private:
         cyng::logger logger_;
@@ -47,6 +49,9 @@ namespace smf {
         cyng::mac48 const client_id_;
         cyng::buffer_t id_; //  gateway id
         sml::unpack parser_;
+        sml::request_generator req_gen_;
+        std::set<cyng::buffer_t> meters_;
+        cyng::store cache_;
     };
 
 } // namespace smf

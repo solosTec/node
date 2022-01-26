@@ -91,7 +91,7 @@ namespace smf {
 
 #ifdef _DEBUG_SML
                 std::cout << "push " << std::string(2 * stack_.size(), '.') << ": ";
-                if (obj.rtti().tag() == cyng::TC_BUFFER) {
+                if (obj.tag() == cyng::TC_BUFFER) {
                     auto const buf = cyng::value_cast(obj, cyng::buffer_t());
                     if (cyng::is_ascii(buf)) {
                         auto const v = std::string(buf.begin(), buf.end());
@@ -102,7 +102,7 @@ namespace smf {
                     }
                 } else {
                     auto const v = cyng::io::to_typed(obj);
-                    if (obj.rtti().tag() == cyng::TC_UINT16 && stack_.size() == 2) {
+                    if (obj.tag() == cyng::TC_UINT16 && stack_.size() == 2) {
                         //  message type
                         auto const mt = sml::to_msg_type(cyng::numeric_cast<std::uint16_t>(obj, 0));
                         std::cout << "(" << sml::get_name(mt) << ") ";

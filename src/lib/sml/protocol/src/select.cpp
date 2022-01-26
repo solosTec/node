@@ -6,6 +6,7 @@
 #include <cyng/obj/buffer_cast.hpp>
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/tuple_cast.hpp>
 
 #ifdef _DEBUG_SML
 #include <cyng/io/ostream.h>
@@ -172,7 +173,7 @@ namespace smf {
                 if (depth > 0) {
                     for (auto const &v : tpl) {
                         auto const [code, list] = get_list(v);
-                        idx += select(list, code, idx, cb);
+                        idx = select(list, code, idx, cb);
                     }
                 } else {
                     //  data level
@@ -193,6 +194,30 @@ namespace smf {
             select(tpl, root, 0, cb);
         }
 
+        void collect(cyng::tuple_t const &tpl, cyng::obis o, std::function<void(cyng::prop_map_t const &)> cb) {
+            cyng::prop_map_t om;
+            for (auto const &v : tpl) {
+                auto const [c, attr] = get_attribute(v);
+                om.emplace(c, attr.second);
+            }
+            // std::cerr << '#' << idx << " - " << om << std::endl;
+            cb(om);
+        }
+
+        void collect(
+            cyng::tuple_t const &tpl,
+            cyng::obis_path_t p,
+            std::function<void(cyng::obis_path_t const &, cyng::object const &)> cb) {
+            for (auto const &v : tpl) {
+                // std::cerr << "collect: " << p << " - " << v << std::endl;
+                auto const [o, a, l] = get_tree_values(v);
+                if (a.first != 0) {
+                    cb(cyng::append(p, o), a.second);
+                }
+                collect(l, cyng::append(p, o), cb);
+            }
+        }
+
         std::pair<cyng::obis, cyng::tuple_t> get_list(cyng::object const &obj) {
             auto const tpl = cyng::container_cast<cyng::tuple_t>(obj);
             return get_list(tpl);
@@ -200,8 +225,8 @@ namespace smf {
 
         std::pair<cyng::obis, cyng::tuple_t> get_list(cyng::tuple_t const &tpl) {
             BOOST_ASSERT(tpl.size() == 3);
-            if (tpl.size() == 3 && tpl.front().rtti().tag() == cyng::TC_OBIS) {
-                return {cyng::value_cast(tpl.front(), cyng::obis()), cyng::container_cast<cyng::tuple_t>(std::move(tpl.back()))};
+            if (tpl.size() == 3 && tpl.front().tag() == cyng::TC_OBIS) {
+                return {cyng::value_cast(tpl.front(), cyng::obis()), cyng::container_cast<cyng::tuple_t>(tpl.back())};
             }
             return {{}, {}};
         }
@@ -214,12 +239,23 @@ namespace smf {
         std::pair<cyng::obis, cyng::attr_t> get_attribute(cyng::tuple_t const &tpl) {
             BOOST_ASSERT(tpl.size() == 3);
 
-            if (tpl.size() == 3 && tpl.front().rtti().tag() == cyng::TC_OBIS) {
+            if (tpl.size() == 3 && tpl.front().tag() == cyng::TC_OBIS) {
                 auto pos = std::next(tpl.begin()); //  second element
                 return {cyng::value_cast(tpl.front(), cyng::obis()), cyng::value_cast(*pos, cyng::attr_t())};
             }
             return {{}, {}};
         }
+
+        std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t> get_tree_values(cyng::object const &obj) {
+            auto const list = cyng::container_cast<cyng::tuple_t>(obj);
+            return get_tree_values(list);
+        }
+
+        std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t> get_tree_values(cyng::tuple_t const &tpl) {
+            return cyng::tuple_cast<cyng::obis, cyng::attr_t, cyng::tuple_t>(tpl);
+        }
+
+        bool has_child_list(cyng::tuple_t const &tpl) { return tpl.back().tag() == cyng::TC_TUPLE; }
 
     } // namespace sml
 } // namespace smf

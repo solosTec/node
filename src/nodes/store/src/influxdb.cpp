@@ -280,7 +280,7 @@ namespace smf {
         }
 
         std::string to_line_protocol(cyng::object obj) {
-            switch (obj.rtti().tag()) {
+            switch (obj.tag()) {
             case cyng::TC_STRING:
                 return to_line_protocol(cyng::io::to_plain(obj));
             case cyng::TC_INT8:

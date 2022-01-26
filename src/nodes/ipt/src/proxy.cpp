@@ -1,9 +1,9 @@
 #include <proxy.h>
 #include <session.h>
 
+#include <smf/config/schemes.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
-#include <smf/sml/generator.h>
 #include <smf/sml/reader.h>
 #include <smf/sml/select.h>
 #include <smf/sml/serializer.h>
@@ -47,13 +47,13 @@ namespace smf {
                 CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
                 {
                     // std::cout << cyng::io::to_pretty(msg) << std::endl;
-                    CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
+                    // CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
                     //  cyng::obis, cyng::attr_t, cyng::tuple_t
                     auto const [p, code, a, l] = sml::read_get_proc_parameter_response(msg);
                     CYNG_LOG_DEBUG(logger_, "path: " << p);
                     CYNG_LOG_DEBUG(logger_, "code: " << code << " - " << obis::get_name(code));
                     CYNG_LOG_DEBUG(logger_, "attr: " << a);
-                    CYNG_LOG_DEBUG(logger_, "list: " << l);
+                    CYNG_LOG_DEBUG(logger_, "list: \n" << cyng::io::to_pretty(l));
                     get_proc_parameter_response(p, code, a, l);
                 }
                 break;
@@ -62,9 +62,8 @@ namespace smf {
                 // get_list_response(trx, group_no, msg);
                 break;
             case sml::msg_type::CLOSE_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] " << sml::get_name(type) << ": " << trx << ", " << msg);
-                // close_response(trx, msg);
-                state_ = state::OFF;
+                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << sml::get_name(type) << ": " << trx << ", " << msg);
+                close_response(trx, msg);
                 break;
             case sml::msg_type::ATTENTION_RESPONSE: {
                 auto const code = sml::read_attention_response(msg);
@@ -76,7 +75,15 @@ namespace smf {
                 break;
             }
         })
-        , id_() {}
+        , id_()
+        , req_gen_("operator", "operator")
+        , meters_()
+        , cache_() {
+
+        if (!cache_.create_table(config::get_store_cfg_set())) {
+            CYNG_LOG_FATAL(logger_, "[proxy] cannot create table cfgSet");
+        }
+    }
 
     proxy::~proxy() {
 #ifdef _DEBUG_IPT
@@ -90,7 +97,8 @@ namespace smf {
 
         CYNG_LOG_TRACE(logger_, "[proxy] config backup " << name << '@' << id);
         BOOST_ASSERT_MSG(state_ != state::ON, "proxy already active");
-        state_ = state::ON;
+        state_ = state::ROOT_CFG;
+        meters_.clear();
 
         //
         // * login to gateway
@@ -102,59 +110,27 @@ namespace smf {
         // * ready
         //
 
-        sml::request_generator req_gen(name, pwd);
-
-        //
-        //  This works!
-        //
-        // iptsp_->debug_get_profile_list();
-
-        //
-        //  This works too!
-        //
-        //        iptsp_->ipt_send([=, this]() -> cyng::buffer_t {
-        //            std::deque<cyng::buffer_t> deq;
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.public_open(client_id, id_))));
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT))));
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE))));
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM))));
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS))));
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES))));
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM))));
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_NTP))));
-        //            deq.push_back(sml::set_crc16(sml::serialize(req_gen_.public_close())));
-        //            auto msg = sml::boxing(ipt::merge(deq));
-        //
-        //#ifdef _DEBUG
-        //            {
-        //                std::stringstream ss;
-        //                cyng::io::hex_dump<8> hd;
-        //                hd(ss, msg.begin(), msg.end());
-        //                auto const dmp = ss.str();
-        //                CYNG_LOG_TRACE(logger_, "[OBIS_ROOT_LAN_DSL, OBIS_ROOT_IPT_PARAM] :\n" << dmp);
-        //            }
-        //#endif
-        //            // return iptsp_->serializer_.scramble(std::move(msg));
-        //            return iptsp_->serializer_.escape_data(std::move(msg));
-        //        });
+        req_gen_.reset(name, pwd, 11);
 
         session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
             sml::messages_t messages;
-            messages.emplace_back(req_gen.public_open(client_id_, id_));
+            messages.emplace_back(req_gen_.public_open(client_id_, id_));
             // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL));
             // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE));
 
             // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT));   //  OK
             // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM));   //  OK
-            messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES)); //  SML failure
+            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES)); //  OK
+
             //
             //  access rights need to know the active devices, so this comes first
             //
-            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
-            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM));
-            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_NTP));
+            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
+            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM));
+            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_NTP));
+            //  messages.emplace_back(req_gen_.get_proc_parameter(id_, ROOT_DEVICE_INFO));   //  empty result set
 
-            messages.emplace_back(req_gen.public_close());
+            messages.emplace_back(req_gen_.public_close());
             auto msg = sml::to_sml(messages);
 #ifdef __DEBUG
             {
@@ -165,62 +141,8 @@ namespace smf {
                 CYNG_LOG_TRACE(logger_, "[get_proc_parameter request] :\n" << dmp);
             }
 #endif
-            // return iptsp_->serializer_.scramble(std::move(msg));
             return session_.serializer_.escape_data(std::move(msg));
         });
-
-        //  login
-        /*
-        iptsp_->ipt_send([=, this]() -> cyng::buffer_t {
-            auto msg = sml::set_crc16(sml::serialize(req_gen_.public_open(client_id, id_)));
-
-#ifdef _DEBUG
-            {
-                std::stringstream ss;
-                cyng::io::hex_dump<8> hd;
-                hd(ss, msg.begin(), msg.end());
-                auto const dmp = ss.str();
-                CYNG_LOG_TRACE(logger_, "[public login] :\n" << dmp);
-            }
-#endif
-            //  only scrambling (no escaping)
-            return iptsp_->serializer_.escape_data(std::move(msg));
-        });
-
-        //  get_proc_parameter
-        iptsp_->ipt_send([=, this]() -> cyng::buffer_t {
-            auto msg = sml::set_crc16(sml::serialize(req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL)));
-
-#ifdef _DEBUG
-            {
-                std::stringstream ss;
-                cyng::io::hex_dump<8> hd;
-                hd(ss, msg.begin(), msg.end());
-                auto const dmp = ss.str();
-                CYNG_LOG_TRACE(logger_, "[get proc parameter] :\n" << dmp);
-            }
-#endif
-            //  only scrambling (no escaping)
-            return iptsp_->serializer_.escape_data(std::move(msg));
-        });
-
-        //  logout
-        iptsp_->ipt_send([=, this]() -> cyng::buffer_t {
-            auto msg = sml::set_crc16(sml::serialize(req_gen_.public_close()));
-
-#ifdef _DEBUG
-            {
-                std::stringstream ss;
-                cyng::io::hex_dump<8> hd;
-                hd(ss, msg.begin(), msg.end());
-                auto const dmp = ss.str();
-                CYNG_LOG_TRACE(logger_, "[public close] :\n" << dmp);
-            }
-#endif
-            //  only scrambling (no escaping)
-            return iptsp_->serializer_.escape_data(std::move(msg));
-        });
-        */
     }
 
     // void proxy::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[proxy] stop"); }
@@ -232,6 +154,9 @@ namespace smf {
             //
             //  send to configuration storage
             //
+            sml::collect(tpl, {}, [&, this](cyng::obis_path_t const &op, cyng::object const &obj) {
+                CYNG_LOG_TRACE(logger_, "OBIS_ROOT_NTP [" << op << "]: " << obj);
+            });
 
         } else if (code == OBIS_ROOT_DEVICE_IDENT) {
 
@@ -247,11 +172,48 @@ namespace smf {
 
         } else if (code == OBIS_ROOT_ACTIVE_DEVICES) {
             //
-            //  query device configuration
+            //  query device configuration (81 81 11 06 ff ff)
             //
-            // sml::select_devices(tpl);
+            //  SERVER_ID (81 81 C7 82 04 FF) contains the meter id
             sml::select(tpl, code, [&, this](cyng::prop_map_t const &om, std::size_t idx) {
-                CYNG_LOG_TRACE(logger_, '#' << idx << " - " << om);
+                CYNG_LOG_TRACE(logger_, "OBIS_ROOT_ACTIVE_DEVICES#" << idx << " - " << om);
+                auto const pos = om.find(OBIS_SERVER_ID);
+                if (pos != om.end()) {
+                    cyng::buffer_t tmp;
+                    meters_.insert(cyng::value_cast(pos->second, tmp));
+                }
+            });
+
+        } else if (code == OBIS_ROOT_SENSOR_PARAMS) {
+            sml::collect(tpl, code, [&, this](cyng::prop_map_t const &om) {
+                CYNG_LOG_TRACE(
+                    logger_,
+                    "OBIS_ROOT_SENSOR_PARAMS: "
+                        << " - " << om);
+                // auto const pos = om.find(code);
+                // if (pos != om.end()) {
+                //     cyng::buffer_t tmp;
+                //     meters_.insert(cyng::value_cast(pos->second, tmp));
+                // }
+            });
+        } else if (code == OBIS_ROOT_DATA_COLLECTOR) {
+            sml::select(tpl, code, [&, this](cyng::prop_map_t const &om, std::size_t idx) {
+                CYNG_LOG_TRACE(logger_, "OBIS_ROOT_DATA_COLLECTOR#" << idx << " - " << om);
+                // $(("8181c78621ff":true),("8181c78622ff":64),("8181c78781ff":0),("8181c78a23ff":null),("8181c78a83ff":8181c78611ff))
+            });
+        } else if (code == OBIS_ROOT_PUSH_OPERATIONS) {
+            //  {{ 8181c78a0101:obis, #0, null
+            //  . . { { 8181c78a02ff:obis, #1,f0, {}},    -  push intervall in seconds
+            //  . . . { 8181c78a03ff:obis, #1,0,  {}},    -  push delay in seconds
+            //  . . . { 8181c78a04ff:obis, #1,8181c78a42ff - push source (profile, install or sensor list)
+            //  . . . . { { 8181c78a81ff:obis, #1,01a815743145040102, {}},
+            //  . . . . . { 8181c78a83ff:obis, #1,8181c78611ff, {}},
+            //  . . . . . { 8181c78a82ff:obis, #0,null, {}}}},
+            //  . . . { 8147170700ff:obis, #1,power@solostec,{}},    -  push target name
+            //  . . . { 8149000010ff:obis, #1,8181c78a21ff, {}}
+            //}}}
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &op, cyng::object const &obj) {
+                CYNG_LOG_TRACE(logger_, "OBIS_ROOT_PUSH_OPERATIONS [" << op << "]: " << obj);
             });
 
         } else {
@@ -259,4 +221,39 @@ namespace smf {
         }
     }
 
+    void proxy::cfg_backup_meter() {
+        //  ROOT_SENSOR_PARAMS (81 81 c7 86 00 ff - Datenspiegel)
+        //  ROOT_DATA_COLLECTOR (81 81 C7 86 20 FF - Datensammler)
+        //  IF_1107 (81 81 C7 93 00 FF - serial interface)
+        CYNG_LOG_INFO(logger_, "[proxy] backup " << meters_.size() << " meters");
+        session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
+            sml::messages_t messages;
+            messages.emplace_back(req_gen_.public_open(client_id_, id_));
+            for (auto const &meter : meters_) {
+                CYNG_LOG_TRACE(logger_, "[proxy] meter backup " << meter);
+                messages.emplace_back(req_gen_.get_proc_parameter(meter, OBIS_ROOT_SENSOR_PARAMS));
+                messages.emplace_back(req_gen_.get_proc_parameter(meter, OBIS_ROOT_DATA_COLLECTOR));
+                messages.emplace_back(req_gen_.get_proc_parameter(meter, OBIS_ROOT_PUSH_OPERATIONS));
+            }
+            messages.emplace_back(req_gen_.public_close());
+            auto msg = sml::to_sml(messages);
+            return session_.serializer_.escape_data(std::move(msg));
+        });
+    }
+
+    void proxy::close_response(std::string trx, cyng::tuple_t const msg) {
+        switch (state_) {
+        case state::ROOT_CFG:
+            if (!meters_.empty()) {
+                state_ = state::METER_CFG;
+                cfg_backup_meter();
+            } else {
+                state_ = state::OFF;
+            }
+            break;
+        default:
+            state_ = state::OFF;
+            break;
+        }
+    }
 } // namespace smf

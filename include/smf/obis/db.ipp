@@ -468,11 +468,11 @@ case 0x8181c78621ff: return "DATA_COLLECTOR_ACTIVE";
 case 0x8181c78622ff: return "DATA_COLLECTOR_SIZE";	// max. table size
 case 0x8181c78781ff: return "DATA_REGISTER_PERIOD";	// register period in seconds (0 == event driven)
 case 0x8181c78801ff: return "ROOT_NTP";
-case 0x8181c78802ff: return "CODE_NTP_SERVER";	// List of NTP servers
-case 0x8181c78803ff: return "CODE_NTP_PORT";	// NTP port (123)
-case 0x8181c78804ff: return "CODE_NTP_TZ";	// timezone
+case 0x8181c78802ff: return "NTP_SERVER";	// List of NTP servers
+case 0x8181c78803ff: return "NTP_PORT";	// NTP port (123)
+case 0x8181c78804ff: return "NTP_TZ";	// timezone
 case 0x8181c78805ff: return "CODE_NTP_OFFSET";	// Offset to transmission of the signal for synchronization
-case 0x8181c78806ff: return "CODE_NTP_ACTIVE";	// NTP enabled/disables
+case 0x8181c78806ff: return "NTP_ACTIVE";	// NTP enabled/disables
 case 0x8181c78810ff: return "ROOT_DEVICE_TIME";	// device time
 case 0x8181c789e1ff: return "CLASS_OP_LOG";
 case 0x8181c789e2ff: return "CLASS_EVENT";	// event

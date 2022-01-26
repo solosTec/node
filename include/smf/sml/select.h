@@ -23,6 +23,15 @@ namespace smf {
         // void select_devices(cyng::tuple_t const &);
 
         void select(cyng::tuple_t const &, cyng::obis root, std::function<void(cyng::prop_map_t const &, std::size_t)> cb);
+        void collect(cyng::tuple_t const &tpl, cyng::obis o, std::function<void(cyng::prop_map_t const &)> cb);
+
+        /**
+         * Collect also nested data like in ROOT_PUSH_OPERATIONS (81 81 c7 8a 01 ff).
+         */
+        void collect(
+            cyng::tuple_t const &tpl,
+            cyng::obis_path_t,
+            std::function<void(cyng::obis_path_t const &, cyng::object const &)> cb);
 
         /**
          * Similiar to read_param_tree() but ignoring the attribute.
@@ -43,6 +52,19 @@ namespace smf {
          */
         std::pair<cyng::obis, cyng::attr_t> get_attribute(cyng::object const &obj);
         std::pair<cyng::obis, cyng::attr_t> get_attribute(cyng::tuple_t const &tpl);
+
+        /**
+         * dissecta a tree
+         */
+        std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t> get_tree_values(cyng::object const &obj);
+        std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t> get_tree_values(cyng::tuple_t const &tpl);
+
+        /**
+         * @return true if tpl contains three elements and the last one
+         * is a tuple itself.
+         */
+        bool has_child_list(cyng::tuple_t const &tpl);
+
     } // namespace sml
 } // namespace smf
 #endif

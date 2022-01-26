@@ -364,21 +364,19 @@ namespace smf {
     void db::update_table_meter_full() {
 
         cache_.access(
-            [&](cyng::table* tbl_full
-                , cyng::table const* tbl_device
-                , cyng::table const* tbl_meter
-                , cyng::table const* tbl_iec
-                , cyng::table const* tbl_wmbus
-                , cyng::table const* tbl_loc) {
-
+            [&](cyng::table *tbl_full,
+                cyng::table const *tbl_device,
+                cyng::table const *tbl_meter,
+                cyng::table const *tbl_iec,
+                cyng::table const *tbl_wmbus,
+                cyng::table const *tbl_loc) {
                 //
                 //  remove old data
                 //
                 tbl_full->clear(cfg_.get_tag());
 
-                tbl_iec->loop([&](cyng::record&& rec_iec, std::size_t) -> bool {
-
-                    auto const& key = rec_iec.key();
+                tbl_iec->loop([&](cyng::record &&rec_iec, std::size_t) -> bool {
+                    auto const &key = rec_iec.key();
                     auto const rec_meter = tbl_meter->lookup(key);
                     if (!rec_meter.empty()) {
 
@@ -387,24 +385,26 @@ namespace smf {
                         auto const address = rec_loc.empty() ? std::string("-") : rec_loc.value("address", "");
 
                         //  insert into "meterFull"
-                        tbl_full->insert(key, cyng::data_generator(
-                            rec_meter.at("meter"),  //  meter -> "Meter ID"
-                            rec_meter.at("code"),   //  code -> Meter_ID
-                            rec_meter.at("maker"),  //  maker-> Manufacturer
-                            rec_meter.at("protocol"),  //  protocol -> Protocol
-                            rec_iec.at("host"),     //  host -> GWY_IP
-                            rec_iec.at("port"),     //  port -> Ports
-                            "-",                     //  no AES key avaliable
-                            region,
-                            address
-                        ), 1u, cfg_.get_tag());
+                        tbl_full->insert(
+                            key,
+                            cyng::data_generator(
+                                rec_meter.at("meter"),    //  meter -> "Meter ID"
+                                rec_meter.at("code"),     //  code -> Meter_ID
+                                rec_meter.at("maker"),    //  maker-> Manufacturer
+                                rec_meter.at("protocol"), //  protocol -> Protocol
+                                rec_iec.at("host"),       //  host -> GWY_IP
+                                rec_iec.at("port"),       //  port -> Ports
+                                "-",                      //  no AES key avaliable
+                                region,
+                                address),
+                            1u,
+                            cfg_.get_tag());
                     }
 
                     return true;
-                    });
-                tbl_wmbus->loop([&](cyng::record&& rec_wmbus, std::size_t) -> bool {
-
-                    auto const& key = rec_wmbus.key();
+                });
+                tbl_wmbus->loop([&](cyng::record &&rec_wmbus, std::size_t) -> bool {
+                    auto const &key = rec_wmbus.key();
                     auto const rec_meter = tbl_meter->lookup(key);
                     if (!rec_meter.empty()) {
 
@@ -413,20 +413,23 @@ namespace smf {
                         auto const address = rec_loc.empty() ? std::string("-") : rec_loc.value("address", "");
 
                         //  insert into "meterFull"
-                        tbl_full->insert(key, cyng::data_generator(
-                            rec_meter.at("meter"),      //  meter -> "Meter ID"
-                            rec_meter.at("code"),       //  code -> Meter_ID
-                            rec_meter.at("maker"),      //  maker-> Manufacturer
-                            rec_meter.at("protocol"),   //  protocol -> Protocol
-                            rec_wmbus.at("address"),    //  address -> GWY_IP
-                            rec_wmbus.at("port"),       //  port -> Ports
-                            rec_wmbus.at("aes"),        //  aes -> Key
-                            region,
-                            address
-                        ), 1u, cfg_.get_tag());
+                        tbl_full->insert(
+                            key,
+                            cyng::data_generator(
+                                rec_meter.at("meter"),    //  meter -> "Meter ID"
+                                rec_meter.at("code"),     //  code -> Meter_ID
+                                rec_meter.at("maker"),    //  maker-> Manufacturer
+                                rec_meter.at("protocol"), //  protocol -> Protocol
+                                rec_wmbus.at("address"),  //  address -> GWY_IP
+                                rec_wmbus.at("port"),     //  port -> Ports
+                                rec_wmbus.at("aes"),      //  aes -> Key
+                                region,
+                                address),
+                            1u,
+                            cfg_.get_tag());
                     }
                     return true;
-                 });
+                });
             },
             cyng::access::write("meterFull"),
             cyng::access::read("device"),
@@ -435,7 +438,6 @@ namespace smf {
             cyng::access::read("meterwMBus"),
             cyng::access::read("location"));
     }
-
 
     db::rel::rel(std::string table, std::string channel, std::string counter)
         : table_(table)
@@ -486,8 +488,7 @@ namespace smf {
             config::get_store_uplink_iec(),
             config::get_store_gwIEC(),
             config::get_store_gwwMBus(),
-            config::get_store_meter_full()
-        };
+            config::get_store_meter_full()};
     }
 
     cyng::object convert_to_type(cyng::type_code tc, cyng::object &obj) {
@@ -542,12 +543,12 @@ namespace smf {
     }
 
     cyng::object convert_to_uuid(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_NULL)
+        if (obj.tag() == cyng::TC_NULL)
             return cyng::make_object(boost::uuids::nil_uuid());
-        if (obj.rtti().tag() == cyng::TC_UUID)
+        if (obj.tag() == cyng::TC_UUID)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
-        if (obj.rtti().tag() == cyng::TC_STRING) {
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
+        if (obj.tag() == cyng::TC_STRING) {
             auto const str = cyng::io::to_plain(obj);
             BOOST_ASSERT(str.size() == 36);
             return cyng::make_object(cyng::to_uuid(str));
@@ -556,9 +557,9 @@ namespace smf {
     }
 
     cyng::object convert_to_tp(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_TIME_POINT)
+        if (obj.tag() == cyng::TC_TIME_POINT)
             return obj;
-        if (obj.rtti().tag() == cyng::TC_STRING) {
+        if (obj.tag() == cyng::TC_STRING) {
             auto const str = cyng::io::to_plain(obj);
             return cyng::make_object(cyng::to_tp_iso8601(str));
         }
@@ -566,9 +567,9 @@ namespace smf {
     }
 
     cyng::object convert_to_ip_address(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_IP_ADDRESS)
+        if (obj.tag() == cyng::TC_IP_ADDRESS)
             return obj;
-        if (obj.rtti().tag() == cyng::TC_STRING) {
+        if (obj.tag() == cyng::TC_STRING) {
             auto const str = cyng::io::to_plain(obj);
             return cyng::make_object(cyng::to_ip_address(str));
         }
@@ -576,9 +577,9 @@ namespace smf {
     }
 
     cyng::object convert_to_aes128(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_AES128)
+        if (obj.tag() == cyng::TC_AES128)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_128_key::hex_size(), "aes128 key has wrong size");
         return (str.size() == cyng::crypto::aes_128_key::hex_size())
@@ -586,9 +587,9 @@ namespace smf {
                    : cyng::make_object(cyng::crypto::aes_128_key());
     }
     cyng::object convert_to_aes192(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_AES192)
+        if (obj.tag() == cyng::TC_AES192)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_192_key::hex_size(), "aes192 key has wrong size");
         return (str.size() == cyng::crypto::aes_192_key::hex_size())
@@ -596,9 +597,9 @@ namespace smf {
                    : cyng::make_object(cyng::crypto::aes_192_key());
     }
     cyng::object convert_to_aes256(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_AES256)
+        if (obj.tag() == cyng::TC_AES256)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         BOOST_ASSERT_MSG(str.size() == cyng::crypto::aes_256_key::hex_size(), "aes256 key has wrong size");
         return (str.size() == cyng::crypto::aes_256_key::hex_size())
@@ -607,49 +608,49 @@ namespace smf {
     }
 
     cyng::object convert_to_nanoseconds(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_NANO_SECOND)
+        if (obj.tag() == cyng::TC_NANO_SECOND)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         return obj;
     }
 
     cyng::object convert_to_microseconds(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_MICRO_SECOND)
+        if (obj.tag() == cyng::TC_MICRO_SECOND)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         return cyng::make_object(cyng::to_microseconds(str));
     }
 
     cyng::object convert_to_milliseconds(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_MILLI_SECOND)
+        if (obj.tag() == cyng::TC_MILLI_SECOND)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         return cyng::make_object(cyng::to_milliseconds(str));
     }
 
     cyng::object convert_to_seconds(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_SECOND)
+        if (obj.tag() == cyng::TC_SECOND)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         return cyng::make_object(cyng::to_seconds(str));
     }
 
     cyng::object convert_to_minutes(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_MINUTE)
+        if (obj.tag() == cyng::TC_MINUTE)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         return cyng::make_object(cyng::to_minutes(str));
     }
 
     cyng::object convert_to_hours(cyng::object &obj) {
-        if (obj.rtti().tag() == cyng::TC_HOUR)
+        if (obj.tag() == cyng::TC_HOUR)
             return obj;
-        BOOST_ASSERT(obj.rtti().tag() == cyng::TC_STRING);
+        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
         auto const str = cyng::io::to_plain(obj);
         return cyng::make_object(cyng::to_hours(str));
     }

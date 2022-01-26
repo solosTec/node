@@ -119,6 +119,11 @@ namespace smf {
          */
         cyng::meta_store get_store_gwwMBus();
 
+        /**
+         * device configuration
+         */
+        cyng::meta_store get_store_cfg_set();
+
         //
         //	uplinks
         //

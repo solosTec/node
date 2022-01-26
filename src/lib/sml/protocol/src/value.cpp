@@ -100,7 +100,7 @@ namespace smf {
         cyng::tuple_t make_value() { return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::null()); }
 
         cyng::tuple_t to_value(cyng::object obj) {
-            switch (obj.rtti().tag()) {
+            switch (obj.tag()) {
             case cyng::TC_BOOL:
             case cyng::TC_UINT8:
             case cyng::TC_UINT16:

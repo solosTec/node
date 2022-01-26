@@ -17,7 +17,7 @@ namespace smf {
                 : gen_(cyng::crypto::make_rnd_num())
                 , value_()
                 , num_(1) {
-                regenerate(7);
+                reset(7);
             }
 
             trx::trx(trx const &other)
@@ -25,9 +25,10 @@ namespace smf {
                 , value_(other.value_)
                 , num_(other.num_) {}
 
-            void trx::regenerate(std::size_t length) {
+            void trx::reset(std::size_t length) {
                 value_.resize(length);
                 std::generate(value_.begin(), value_.end(), [&]() { return gen_.next(); });
+                num_ = 1;
             }
 
             trx &trx::operator++() {
@@ -131,6 +132,19 @@ namespace smf {
             , name_(name)
             , pwd_(pwd) {}
 
+        request_generator::request_generator(request_generator const &rg)
+            : trx_(rg.trx_)
+            , group_no_(rg.group_no_)
+            , name_(rg.name_)
+            , pwd_(rg.pwd_) {}
+
+        void request_generator::reset(std::string const &name, std::string const &pwd, std::size_t length) {
+            trx_.reset(length);
+            group_no_ = 0;
+            name_ = name;
+            pwd_ = pwd;
+        }
+
         cyng::tuple_t request_generator::public_open(cyng::mac48 client_id, cyng::buffer_t const &server_id) {
 
             return make_message(
@@ -139,12 +153,12 @@ namespace smf {
                 0,           //  abort code
                 msg_type::OPEN_REQUEST,
                 cyng::make_tuple(
-                    cyng::null{},       // code page
-                    client_id,          // client id
-                    generate_file_id(), // req file id
-                    server_id,          // server id
-                    name_,
-                    pwd_,
+                    cyng::null{},                  // code page
+                    client_id,                     // client id
+                    generate_file_id(),            // req file id
+                    server_id,                     // server id
+                    get_name(),                    // prevent moving
+                    get_pwd(),                     // prevent moving
                     cyng::null{}),                 // sml-Version
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder
             );
@@ -170,8 +184,8 @@ namespace smf {
                 msg_type::SET_PROC_PARAMETER_REQUEST, //  0x600
                 cyng::make_tuple(
                     server_id,
-                    name_,
-                    pwd_,
+                    get_name(),
+                    get_pwd(),
                     cyng::make_tuple(OBIS_REBOOT), //  path entry
                     tree_empty(OBIS_REBOOT)),      //  params
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder
@@ -179,6 +193,7 @@ namespace smf {
         }
 
         cyng::tuple_t request_generator::get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis code) {
+            BOOST_ASSERT(!name_.empty());
             return make_message(
                 *++trx_,
                 group_no_++,                          //  group
@@ -193,8 +208,8 @@ namespace smf {
                 //	* attribute (not set = 01)
                 cyng::make_tuple(
                     server_id,
-                    name_,
-                    pwd_,
+                    get_name(),
+                    get_pwd(),
                     cyng::make_tuple(code),        //   parameter tree (OBIS)
                     cyng::null{}),                 //  attribute
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder
@@ -216,8 +231,8 @@ namespace smf {
                 //	* attribute (not set = 01)
                 cyng::make_tuple(
                     server_id,
-                    name_,
-                    pwd_,
+                    get_name(),
+                    get_pwd(),
                     cyng::make_tuple(path),        //   parameter tree (OBIS)
                     cyng::null{}),                 //  attribute
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder

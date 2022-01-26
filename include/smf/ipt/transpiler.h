@@ -79,12 +79,12 @@ namespace smf {
 
         } // namespace
 
-        template <typename... Args> auto read(cyng::buffer_t &&data) -> std::tuple<Args...> {
-            std::tuple<Args...> r;
+        template <typename... Args> auto read(cyng::buffer_t &&data) -> std::tuple<std::decay_t<Args>...> {
+            std::tuple<std::decay_t<Args>...> r;
 
             constexpr std::size_t upper_bound = sizeof...(Args) - 1;
 
-            auto const size = read_impl<upper_bound, Args...>::convert(data, r, 0);
+            auto const size = read_impl<upper_bound, std::decay_t<Args>...>::convert(data, r, 0);
             BOOST_ASSERT(size == data.size());
             return r;
         }
