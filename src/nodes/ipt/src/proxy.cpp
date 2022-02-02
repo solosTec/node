@@ -4,6 +4,7 @@
 #include <smf/config/schemes.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
+#include <smf/obis/list.h>
 #include <smf/sml/reader.h>
 #include <smf/sml/select.h>
 #include <smf/sml/serializer.h>
@@ -49,12 +50,13 @@ namespace smf {
                     // std::cout << cyng::io::to_pretty(msg) << std::endl;
                     // CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
                     //  cyng::obis, cyng::attr_t, cyng::tuple_t
-                    auto const [p, code, a, l] = sml::read_get_proc_parameter_response(msg);
-                    CYNG_LOG_DEBUG(logger_, "path: " << p);
-                    CYNG_LOG_DEBUG(logger_, "code: " << code << " - " << obis::get_name(code));
-                    CYNG_LOG_DEBUG(logger_, "attr: " << a);
-                    CYNG_LOG_DEBUG(logger_, "list: \n" << cyng::io::to_pretty(l));
-                    get_proc_parameter_response(p, code, a, l);
+                    auto const [s, p, code, a, l] = sml::read_get_proc_parameter_response(msg);
+                    CYNG_LOG_DEBUG(logger_, "server: " << s);
+                    CYNG_LOG_DEBUG(logger_, "path  : " << p);
+                    CYNG_LOG_DEBUG(logger_, "code  : " << code << " - " << obis::get_name(code));
+                    CYNG_LOG_DEBUG(logger_, "attr  : " << a);
+                    CYNG_LOG_DEBUG(logger_, "list  : \n" << sml::dump_child_list(l));
+                    get_proc_parameter_response(s, p, code, a, l);
                 }
                 break;
             case sml::msg_type::GET_LIST_RESPONSE:
@@ -62,7 +64,7 @@ namespace smf {
                 // get_list_response(trx, group_no, msg);
                 break;
             case sml::msg_type::CLOSE_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << sml::get_name(type) << ": " << trx << ", " << msg);
+                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
                 close_response(trx, msg);
                 break;
             case sml::msg_type::ATTENTION_RESPONSE: {
@@ -77,7 +79,7 @@ namespace smf {
         })
         , id_()
         , req_gen_("operator", "operator")
-        , meters_()
+        , cfg_()
         , cache_() {
 
         if (!cache_.create_table(config::get_store_cfg_set())) {
@@ -98,7 +100,8 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[proxy] config backup " << name << '@' << id);
         BOOST_ASSERT_MSG(state_ != state::ON, "proxy already active");
         state_ = state::ROOT_CFG;
-        meters_.clear();
+        cfg_.clear();
+        cfg_.emplace(id, sml::tree{});
 
         //
         // * login to gateway
@@ -115,19 +118,19 @@ namespace smf {
         session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
             sml::messages_t messages;
             messages.emplace_back(req_gen_.public_open(client_id_, id_));
-            // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL));
+            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL));
             // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE));
 
             // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT));   //  OK
-            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM));   //  OK
+            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM)); //  OK
             // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES)); //  OK
 
             //
             //  access rights need to know the active devices, so this comes first
             //
             // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
-            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM));
-            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_NTP));
+            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM)); //  cannot read
+            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_NTP));
             //  messages.emplace_back(req_gen_.get_proc_parameter(id_, ROOT_DEVICE_INFO));   //  empty result set
 
             messages.emplace_back(req_gen_.public_close());
@@ -148,58 +151,137 @@ namespace smf {
     // void proxy::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[proxy] stop"); }
     void proxy::read(cyng::buffer_t &&data) { parser_.read(std::begin(data), std::end(data)); }
 
-    void
-    proxy::get_proc_parameter_response(cyng::obis_path_t const &path, cyng::obis code, cyng::attr_t, cyng::tuple_t const &tpl) {
+    void proxy::get_proc_parameter_response(
+        cyng::buffer_t const &srv,
+        cyng::obis_path_t const &path,
+        cyng::obis code,
+        cyng::attr_t,
+        cyng::tuple_t const &tpl) {
         if (code == OBIS_ROOT_NTP) {
             //
             //  send to configuration storage
             //
-            sml::collect(tpl, {}, [&, this](cyng::obis_path_t const &op, cyng::object const &obj) {
-                CYNG_LOG_TRACE(logger_, "OBIS_ROOT_NTP [" << op << "]: " << obj);
+            sml::collect(tpl, {}, [&, this](cyng::obis_path_t const &op, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_NTP [" << op << "]: " << attr.second);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_NTP [" << srv << "]: "
+                                          << " has no entry");
+                }
             });
 
+        } else if (code == OBIS_ROOT_LAN_DSL) {
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_LAN_DSL [" << path << "]: " << attr);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_LAN_DSL [" << srv << "]: "
+                                              << " has no entry");
+                }
+            });
         } else if (code == OBIS_ROOT_DEVICE_IDENT) {
 
+        } else if (code == OBIS_ROOT_WAN_PARAM) {
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_WAN_PARAM [" << path << "]: " << attr);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_WAN_PARAM [" << srv << "]: "
+                                                << " has no entry");
+                }
+            });
         } else if (code == OBIS_ROOT_IPT_PARAM) {
             //
             //  send to configuration storage
             //
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_IPT_PARAM [" << path << "]: " << attr);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_IPT_PARAM [" << srv << "]: "
+                                                << " has no entry");
+                }
+            });
 
         } else if (code == OBIS_ROOT_ACCESS_RIGHTS) {
             //
             //  query configuration
             //
+            CYNG_LOG_TRACE(logger_, "OBIS_ROOT_ACCESS_RIGHTS \n" << sml::dump_child_list(tpl));
+            session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
+                CYNG_LOG_INFO(logger_, "[proxy] backup " << cfg_.size() << " access");
+                sml::messages_t messages;
+                messages.emplace_back(req_gen_.public_open(client_id_, id_));
+                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010a));
+                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010c));
+                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010d));
+                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010e));
+                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010f));
+                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0110));
+                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0111));
+                messages.emplace_back(req_gen_.public_close());
+                auto msg = sml::to_sml(messages);
+                return session_.serializer_.escape_data(std::move(msg));
+            });
 
         } else if (code == OBIS_ROOT_ACTIVE_DEVICES) {
             //
             //  query device configuration (81 81 11 06 ff ff)
+            //  Add all found meters to the cfg_ member.
             //
-            //  SERVER_ID (81 81 C7 82 04 FF) contains the meter id
+            //
             sml::select(tpl, code, [&, this](cyng::prop_map_t const &om, std::size_t idx) {
                 CYNG_LOG_TRACE(logger_, "OBIS_ROOT_ACTIVE_DEVICES#" << idx << " - " << om);
                 auto const pos = om.find(OBIS_SERVER_ID);
                 if (pos != om.end()) {
-                    cyng::buffer_t tmp;
-                    meters_.insert(cyng::value_cast(pos->second, tmp));
+                    cyng::buffer_t id;
+                    id = cyng::value_cast(pos->second, id);
+                    cfg_.emplace(id, sml::tree{});
                 }
             });
 
         } else if (code == OBIS_ROOT_SENSOR_PARAMS) {
-            sml::collect(tpl, code, [&, this](cyng::prop_map_t const &om) {
-                CYNG_LOG_TRACE(
-                    logger_,
-                    "OBIS_ROOT_SENSOR_PARAMS: "
-                        << " - " << om);
-                // auto const pos = om.find(code);
-                // if (pos != om.end()) {
-                //     cyng::buffer_t tmp;
-                //     meters_.insert(cyng::value_cast(pos->second, tmp));
-                // }
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_SENSOR_PARAMS [" << path << "]: " << attr);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_SENSOR_PARAMS [" << srv << "]: "
+                                                    << " has no entry");
+                }
             });
+
         } else if (code == OBIS_ROOT_DATA_COLLECTOR) {
-            sml::select(tpl, code, [&, this](cyng::prop_map_t const &om, std::size_t idx) {
-                CYNG_LOG_TRACE(logger_, "OBIS_ROOT_DATA_COLLECTOR#" << idx << " - " << om);
-                // $(("8181c78621ff":true),("8181c78622ff":64),("8181c78781ff":0),("8181c78a23ff":null),("8181c78a83ff":8181c78611ff))
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_DATA_COLLECTOR [" << path << "]: " << attr);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_DATA_COLLECTOR [" << srv << "]: "
+                                                     << " has no entry");
+                }
             });
         } else if (code == OBIS_ROOT_PUSH_OPERATIONS) {
             //  {{ 8181c78a0101:obis, #0, null
@@ -212,8 +294,17 @@ namespace smf {
             //  . . . { 8147170700ff:obis, #1,power@solostec,{}},    -  push target name
             //  . . . { 8149000010ff:obis, #1,8181c78a21ff, {}}
             //}}}
-            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &op, cyng::object const &obj) {
-                CYNG_LOG_TRACE(logger_, "OBIS_ROOT_PUSH_OPERATIONS [" << op << "]: " << obj);
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_PUSH_OPERATIONS [" << path << "]: " << attr);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_PUSH_OPERATIONS [" << srv << "]: "
+                                                      << " has no entry");
+                }
             });
 
         } else {
@@ -225,16 +316,28 @@ namespace smf {
         //  ROOT_SENSOR_PARAMS (81 81 c7 86 00 ff - Datenspiegel)
         //  ROOT_DATA_COLLECTOR (81 81 C7 86 20 FF - Datensammler)
         //  IF_1107 (81 81 C7 93 00 FF - serial interface)
-        CYNG_LOG_INFO(logger_, "[proxy] backup " << meters_.size() << " meters");
         session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
+            CYNG_LOG_INFO(logger_, "[proxy] backup " << cfg_.size() << " meters");
             sml::messages_t messages;
             messages.emplace_back(req_gen_.public_open(client_id_, id_));
-            for (auto const &meter : meters_) {
-                CYNG_LOG_TRACE(logger_, "[proxy] meter backup " << meter);
-                messages.emplace_back(req_gen_.get_proc_parameter(meter, OBIS_ROOT_SENSOR_PARAMS));
-                messages.emplace_back(req_gen_.get_proc_parameter(meter, OBIS_ROOT_DATA_COLLECTOR));
-                messages.emplace_back(req_gen_.get_proc_parameter(meter, OBIS_ROOT_PUSH_OPERATIONS));
+            for (auto const &cfg : cfg_) {
+                CYNG_LOG_TRACE(logger_, "[proxy] meter backup " << cfg.first);
+                messages.emplace_back(req_gen_.get_proc_parameter(cfg.first, OBIS_ROOT_SENSOR_PARAMS));
+                messages.emplace_back(req_gen_.get_proc_parameter(cfg.first, OBIS_ROOT_DATA_COLLECTOR));
+                messages.emplace_back(req_gen_.get_proc_parameter(cfg.first, OBIS_ROOT_PUSH_OPERATIONS));
             }
+            messages.emplace_back(req_gen_.public_close());
+            auto msg = sml::to_sml(messages);
+            return session_.serializer_.escape_data(std::move(msg));
+        });
+    }
+
+    void proxy::cfg_backup_access() {
+        session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
+            CYNG_LOG_INFO(logger_, "[proxy] backup " << cfg_.size() << " access");
+            sml::messages_t messages;
+            messages.emplace_back(req_gen_.public_open(client_id_, id_));
+            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
             messages.emplace_back(req_gen_.public_close());
             auto msg = sml::to_sml(messages);
             return session_.serializer_.escape_data(std::move(msg));
@@ -244,16 +347,31 @@ namespace smf {
     void proxy::close_response(std::string trx, cyng::tuple_t const msg) {
         switch (state_) {
         case state::ROOT_CFG:
-            if (!meters_.empty()) {
+            if (!cfg_.empty()) {
                 state_ = state::METER_CFG;
                 cfg_backup_meter();
             } else {
                 state_ = state::OFF;
+                complete();
             }
+            break;
+        case state::METER_CFG:
+            state_ = state::ACCESS_CFG;
+            cfg_backup_access();
             break;
         default:
             state_ = state::OFF;
+            complete();
             break;
         }
     }
+
+    void proxy::complete() {
+        CYNG_LOG_INFO(logger_, "readout of " << cfg_.size() << " server/clients complete")
+        for (auto const &cfg : cfg_) {
+            auto const cl = cfg.second.to_child_list();
+            CYNG_LOG_TRACE(logger_, "server " << cfg.first << " complete: \n" << sml::dump_child_list(cl));
+        }
+    }
+
 } // namespace smf

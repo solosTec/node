@@ -140,6 +140,12 @@ namespace smf {
 
             [[nodiscard]] cyng::tuple_t get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis_path_t);
 
+            [[nodiscard]] cyng::tuple_t get_proc_parameter_access(
+                cyng::buffer_t const &server_id,
+                std::uint8_t role,
+                std::uint8_t user,
+                std::uint16_t device_index);
+
             std::string const &get_name() const;
             std::string const &get_pwd() const;
 

@@ -239,6 +239,27 @@ namespace smf {
             );
         }
 
+        cyng::tuple_t request_generator::get_proc_parameter_access(
+            cyng::buffer_t const &server_id,
+            std::uint8_t role,
+            std::uint8_t user,
+            std::uint16_t device_index) {
+            //
+            //  build obis path
+            //  * OBIS_ROOT_ACCESS_RIGHTS
+            //  * 81818160[NN]FF - role
+            //  * 81818160[NN][MM] - user
+            //  * 81818164[NNMM] - device index (see response)
+            //
+
+            return get_proc_parameter(
+                server_id,
+                {OBIS_ROOT_ACCESS_RIGHTS, //  81 81 81 60 FF FF
+                 cyng::make_obis(0x81, 0x81, 0x81, 0x60, role, 0xff),
+                 cyng::make_obis(0x81, 0x81, 0x81, 0x60, role, user),
+                 cyng::make_obis(0x81, 0x81, 0x81, 0x64, device_index)});
+        }
+
         std::string const &request_generator::get_name() const { return name_; }
         std::string const &request_generator::get_pwd() const { return pwd_; }
 

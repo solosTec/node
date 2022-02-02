@@ -8,6 +8,7 @@
 #define SMF_IPT_PROXY_H
 
 #include <smf/cluster/bus.h>
+#include <smf/obis/tree.hpp>
 #include <smf/sml/generator.h>
 #include <smf/sml/unpack.h>
 
@@ -27,7 +28,7 @@ namespace smf {
      */
     class proxy {
 
-        enum class state { OFF, ON, ROOT_CFG, METER_CFG } state_;
+        enum class state { OFF, ON, ROOT_CFG, METER_CFG, ACCESS_CFG } state_;
 
       public:
         proxy(cyng::logger, ipt_session &, bus &cluster_bus, cyng::mac48 const &);
@@ -38,9 +39,17 @@ namespace smf {
         void read(cyng::buffer_t &&data);
 
       private:
-        void get_proc_parameter_response(cyng::obis_path_t const &, cyng::obis, cyng::attr_t, cyng::tuple_t const &);
+        void get_proc_parameter_response(
+            cyng::buffer_t const &,
+            cyng::obis_path_t const &,
+            cyng::obis,
+            cyng::attr_t,
+            cyng::tuple_t const &);
         void close_response(std::string trx, cyng::tuple_t const msg);
         void cfg_backup_meter();
+        void cfg_backup_access();
+
+        void complete();
 
       private:
         cyng::logger logger_;
@@ -50,7 +59,7 @@ namespace smf {
         cyng::buffer_t id_; //  gateway id
         sml::unpack parser_;
         sml::request_generator req_gen_;
-        std::set<cyng::buffer_t> meters_;
+        std::map<cyng::buffer_t, sml::tree> cfg_;
         cyng::store cache_;
     };
 

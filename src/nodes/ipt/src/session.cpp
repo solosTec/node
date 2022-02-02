@@ -23,7 +23,11 @@
 
 #ifdef _DEBUG_IPT
 #include <cyng/io/hex_dump.hpp>
+#include <cyng/io/serialize.h>
 #include <iostream>
+#include <smf/obis/db.h>
+#include <smf/obis/list.h>
+#include <smf/sml/reader.h>
 #include <sstream>
 #endif
 
@@ -57,8 +61,37 @@ namespace smf {
         , dev_(boost::uuids::nil_uuid())
         , oce_map_() //	store temporary data during connection establishment
         , gatekeeper_()
-        , proxy_(logger, *this, cluster_bus_, client_id) {
-
+        , proxy_(logger, *this, cluster_bus_, client_id)
+#ifdef _DEBUG_IPT
+        , sml_parser_([this](
+                          std::string trx,
+                          std::uint8_t group_no,
+                          std::uint8_t,
+                          sml::msg_type type,
+                          cyng::tuple_t msg,
+                          std::uint16_t crc) {
+            CYNG_LOG_DEBUG(logger_, "msg:" << trx << " - " << sml::get_name(type));
+            switch (type) {
+            case sml::msg_type::GET_PROC_PARAMETER_RESPONSE: {
+                auto const [s, p, code, a, l] = sml::read_get_proc_parameter_response(msg);
+                CYNG_LOG_DEBUG(logger_, "server: " << s);
+                CYNG_LOG_DEBUG(logger_, "path  : " << p);
+                CYNG_LOG_DEBUG(logger_, "code  : " << code << " - " << obis::get_name(code));
+                CYNG_LOG_DEBUG(logger_, "attr  : " << a);
+                CYNG_LOG_DEBUG(logger_, "list  : \n" << sml::dump_child_list(l));
+            } break;
+            case sml::msg_type::ATTENTION_RESPONSE: {
+                auto const code = sml::read_attention_response(msg);
+                CYNG_LOG_WARNING(
+                    logger_, "[sml] " << sml::get_name(type) << ": " << trx << ", " << msg << " - " << obis::get_name(code));
+            } break;
+            default:
+                CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
+                break;
+            }
+        })
+#endif
+    {
         vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
             cyng::make_description("pty.res.login", get_vm_func_pty_res_login(this)),
@@ -154,6 +187,11 @@ namespace smf {
                             logger_,
                             "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes (unscrambled) ip-t data:\n"
                                 << dmp);
+
+                        //
+                        //  debug sml data
+                        //
+                        // sml_parser_.read(std::begin(data), std::end(data));
                     }
 #endif
 
@@ -220,7 +258,6 @@ namespace smf {
     }
 
     void ipt_session::ipt_cmd(ipt::header const &h, cyng::buffer_t &&body) {
-
         CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_));
 
         switch (ipt::to_code(h.command_)) {
@@ -398,13 +435,11 @@ namespace smf {
     //#endif
 
     void ipt_session::register_target(std::string name, std::uint16_t paket_size, std::uint8_t window_size, ipt::sequence_t seq) {
-
         CYNG_LOG_INFO(logger_, "[ipt] register: " << name);
         cluster_bus_.pty_reg_target(name, paket_size, window_size, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
     }
 
     void ipt_session::deregister_target(std::string name, ipt::sequence_t seq) {
-
         CYNG_LOG_INFO(logger_, "[ipt] deregister: " << name);
         cluster_bus_.pty_dereg_target(name, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
     }
@@ -417,7 +452,6 @@ namespace smf {
         std::string id,
         std::uint16_t timeout,
         ipt::sequence_t seq) {
-
         CYNG_LOG_INFO(logger_, "[ipt] open push channel: " << name);
         cluster_bus_.pty_open_channel(
             name,
@@ -432,7 +466,6 @@ namespace smf {
     }
 
     void ipt_session::close_push_channel(std::uint32_t channel, ipt::sequence_t seq) {
-
         CYNG_LOG_INFO(logger_, "[ipt] close push channel: " << channel);
         cluster_bus_.pty_close_channel(channel, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
     }
@@ -444,7 +477,6 @@ namespace smf {
         std::uint8_t block,
         cyng::buffer_t data,
         ipt::sequence_t seq) {
-
         auto const size = data.size();
 
         CYNG_LOG_INFO(logger_, "[ipt] pushdata transfer " << channel << ':' << source << ", " << size << " bytes");
@@ -467,13 +499,11 @@ namespace smf {
     }
 
     void ipt_session::open_connection(std::string msisdn, ipt::sequence_t seq) {
-
         CYNG_LOG_INFO(logger_, "[ipt] open connection: " << msisdn);
         cluster_bus_.pty_open_connection(msisdn, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
     }
 
     void ipt_session::update_software_version(std::string str) {
-
         CYNG_LOG_INFO(logger_, "[ipt] software version: " << str);
 
         //
@@ -483,7 +513,6 @@ namespace smf {
         cluster_bus_.req_db_update("device", cyng::key_generator(dev_), data);
     }
     void ipt_session::update_device_identifier(std::string str) {
-
         CYNG_LOG_INFO(logger_, "[ipt] device id: " << str);
 
         //
@@ -500,7 +529,15 @@ namespace smf {
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
             auto const dmp = ss.str();
-            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] " << data.size() << " stream bytes:\n" << dmp);
+            CYNG_LOG_DEBUG(
+                logger_,
+                "received " << data.size() << " stream bytes from[" << socket_.remote_endpoint() << "]:\n"
+                            << dmp);
+            //
+            //   debug sml data
+            //
+            // CYNG_LOG_DEBUG(logger_, "received " << data.size() << " stream bytes from [" << socket_.remote_endpoint() << "]");
+            sml_parser_.read(std::begin(data), std::end(data));
         }
 #endif
         //  redirect data optionally to proxy
@@ -527,7 +564,6 @@ namespace smf {
     }
 
     void ipt_session::pty_res_login(bool success, boost::uuids::uuid dev) {
-
         //
         //	stop gatekeeper
         //
@@ -556,7 +592,6 @@ namespace smf {
     }
 
     void ipt_session::pty_res_register(bool success, std::uint32_t channel, cyng::param_map_t token) {
-
         auto const reader = cyng::make_reader(token);
         auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
 
@@ -586,7 +621,6 @@ namespace smf {
         std::uint8_t status,
         std::uint32_t count,
         cyng::param_map_t token) {
-
         auto const reader = cyng::make_reader(token);
         auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
 
@@ -627,7 +661,6 @@ namespace smf {
     }
 
     void ipt_session::pty_req_push_data(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data) {
-
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " push data " << data.size() << " bytes");
 #ifdef _DEBUG_IPT
         {
@@ -644,7 +677,6 @@ namespace smf {
     }
 
     void ipt_session::pty_res_push_data(bool success, std::uint32_t channel, std::uint32_t source, cyng::param_map_t token) {
-
         auto const reader = cyng::make_reader(token);
         auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
         auto const status = cyng::value_cast<std::uint8_t>(reader["status"].get(), 0);
@@ -685,7 +717,6 @@ namespace smf {
     }
 
     void ipt_session::pty_res_close_channel(bool success, std::uint32_t channel, std::size_t count, cyng::param_map_t token) {
-
         auto const reader = cyng::make_reader(token);
         auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
 
@@ -710,7 +741,6 @@ namespace smf {
     }
 
     void ipt_session::pty_res_open_connection(bool success, cyng::param_map_t token) {
-
         auto const reader = cyng::make_reader(token);
         auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
 
@@ -730,7 +760,6 @@ namespace smf {
     }
 
     void ipt_session::pty_res_close_connection(bool success, cyng::param_map_t token) {
-
         auto const reader = cyng::make_reader(token);
         auto const seq = cyng::value_cast<ipt::sequence_t>(reader["seq"].get(), 0);
 
@@ -746,7 +775,6 @@ namespace smf {
     }
 
     void ipt_session::pty_req_open_connection(std::string msisdn, bool local, cyng::param_map_t token) {
-
         ipt_send([=, this]() -> cyng::buffer_t {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " req open connection " << msisdn);
             auto r = serializer_.req_open_connection(msisdn);
@@ -799,7 +827,6 @@ namespace smf {
     }
 
     void ipt_session::query() {
-
         if (ipt::test_bit(query_, ipt::query::PROTOCOL_VERSION)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::PROTOCOL_VERSION)));
             ipt_send(std::bind(&ipt::serializer::req_protocol_version, &serializer_));
@@ -864,13 +891,11 @@ namespace smf {
 
     auto ipt_session::get_vm_func_pty_req_push_data(ipt_session *ptr)
         -> std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t)> {
-
         return std::bind(&ipt_session::pty_req_push_data, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     }
 
     auto ipt_session::get_vm_func_pty_res_push_data(ipt_session *ptr)
         -> std::function<void(bool, std::uint32_t, std::uint32_t, cyng::param_map_t)> {
-
         return std::bind(
             &ipt_session::pty_res_push_data,
             ptr,

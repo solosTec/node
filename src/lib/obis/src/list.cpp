@@ -1,0 +1,88 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2021 Sylko Olzscher
+ *
+ */
+
+#include <smf/obis/list.h>
+
+#include <cyng/io/ostream.h>
+#include <cyng/obj/container_cast.hpp>
+#include <cyng/obj/tuple_cast.hpp>
+#include <cyng/obj/value_cast.hpp>
+
+#include <boost/assert.hpp>
+#include <sstream>
+
+namespace smf {
+    namespace sml {
+
+        std::pair<cyng::obis, cyng::tuple_t> get_list(cyng::object const &obj) {
+            auto const tpl = cyng::container_cast<cyng::tuple_t>(obj);
+            return get_list(tpl);
+        }
+
+        std::pair<cyng::obis, cyng::tuple_t> get_list(cyng::tuple_t const &tpl) {
+            BOOST_ASSERT(tpl.size() == 3);
+            if (tpl.size() == 3 && tpl.front().tag() == cyng::TC_OBIS) {
+                return {cyng::value_cast(tpl.front(), cyng::obis()), cyng::container_cast<cyng::tuple_t>(tpl.back())};
+            }
+            return {{}, {}};
+        }
+
+        std::pair<cyng::obis, cyng::attr_t> get_attribute(cyng::object const &obj) {
+            auto const list = cyng::container_cast<cyng::tuple_t>(obj);
+            return get_attribute(list);
+        }
+
+        std::pair<cyng::obis, cyng::attr_t> get_attribute(cyng::tuple_t const &tpl) {
+            BOOST_ASSERT(tpl.size() == 3);
+
+            if (tpl.size() == 3 && tpl.front().tag() == cyng::TC_OBIS) {
+                auto pos = std::next(tpl.begin()); //  second element
+                return {cyng::value_cast(tpl.front(), cyng::obis()), cyng::value_cast(*pos, cyng::attr_t())};
+            }
+            return {{}, {}};
+        }
+
+        std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t> get_tree_values(cyng::object const &obj) {
+            auto const list = cyng::container_cast<cyng::tuple_t>(obj);
+            return get_tree_values(list);
+        }
+
+        std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t> get_tree_values(cyng::tuple_t const &tpl) {
+            return cyng::tuple_cast<cyng::obis, cyng::attr_t, cyng::tuple_t>(tpl);
+        }
+
+        bool has_child_list(cyng::tuple_t const &tpl) { return (tpl.size() == 3) && (tpl.back().tag() == cyng::TC_TUPLE); }
+
+        void dump(std::ostream &os, cyng::tuple_t const &tpl, std::size_t depth) {
+            if (tpl.size() == 3 && tpl.front().tag() == cyng::TC_OBIS) {
+                auto const [o, a, l] = get_tree_values(tpl);
+                os << std::string(depth * 2, ' ') << o << ": " << a.second << std::endl;
+                for (auto const &obj : l) {
+                    auto c = cyng::container_cast<cyng::tuple_t>(obj);
+                    dump(os, c, depth + 1);
+                }
+            } else {
+                for (auto const &obj : tpl) {
+                    auto c = cyng::container_cast<cyng::tuple_t>(obj);
+                    dump(os, c, depth + 1);
+                }
+            }
+        }
+
+        void dump(std::ostream &os, cyng::tuple_t const &tpl) {
+            //  start recursive call
+            dump(os, tpl, 0);
+        }
+
+        std::string dump_child_list(cyng::tuple_t const &tpl) {
+            std::stringstream ss;
+            dump(ss, tpl);
+            return ss.str();
+        }
+
+    } // namespace sml
+} // namespace smf

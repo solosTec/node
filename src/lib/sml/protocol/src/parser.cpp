@@ -38,8 +38,12 @@ namespace smf {
         void parser::next(sml_type type, std::size_t size, cyng::buffer_t data) {
 
 #ifdef _DEBUG_SML
-            std::cout << "data " << std::string(2 * stack_.size(), '.') << ": " << get_name(type) << "[" << data.size() << "]"
-                      << std::endl;
+            if (type == sml_type::LIST) {
+                std::cout << "list " << std::string(2 * stack_.size(), '.') << " [" << size << "]" << std::endl;
+            } else {
+                std::cout << "data " << std::string(2 * stack_.size(), '.') << ": " << get_name(type) << "[" << data.size() << "]"
+                          << std::endl;
+            }
 #endif
 
             switch (type) {
@@ -86,40 +90,46 @@ namespace smf {
         }
 
         void parser::push(cyng::object &&obj) {
+#ifdef _DEBUG_SML
+            if (stack_.empty()) {
+                std::cout << "***ERROR: empty stack!" << std::endl;
+            }
+            std::cout << "push " << std::string(2 * stack_.size(), '.') << ": ";
+            if (obj.tag() == cyng::TC_BUFFER) {
+                auto const buf = cyng::value_cast(obj, cyng::buffer_t());
+                if (cyng::is_ascii(buf)) {
+                    auto const v = std::string(buf.begin(), buf.end());
+                    std::cout << v << std::endl;
+                } else {
+                    auto const v = cyng::io::to_typed(obj);
+                    std::cout << v << std::endl;
+                }
+            } else {
+                // auto const v = cyng::io::to_typed(obj);
+                if (obj.tag() == cyng::TC_UINT16 && stack_.size() == 2) {
+                    //  message type
+                    auto const mt = sml::to_msg_type(cyng::numeric_cast<std::uint16_t>(obj, 0));
+                    std::cout << "(" << sml::get_name(mt) << ") " << std::endl;
+                } else if (obj.tag() == cyng::TC_TUPLE) {
+                    std::cout << "tuple(" << cyng::container_cast<cyng::tuple_t>(obj).size() << ")" << std::endl;
+                } else {
+                    cyng::io::serialize_pretty(std::cout, obj);
+                    std::cout << std::endl;
+                }
+            }
+#endif
             BOOST_ASSERT(!stack_.empty());
             if (!stack_.empty()) {
 
 #ifdef _DEBUG_SML
-                std::cout << "push " << std::string(2 * stack_.size(), '.') << ": ";
-                if (obj.tag() == cyng::TC_BUFFER) {
-                    auto const buf = cyng::value_cast(obj, cyng::buffer_t());
-                    if (cyng::is_ascii(buf)) {
-                        auto const v = std::string(buf.begin(), buf.end());
-                        std::cout << v << std::endl;
-                    } else {
-                        auto const v = cyng::io::to_typed(obj);
-                        std::cout << v << std::endl;
-                    }
-                } else {
-                    auto const v = cyng::io::to_typed(obj);
-                    if (obj.tag() == cyng::TC_UINT16 && stack_.size() == 2) {
-                        //  message type
-                        auto const mt = sml::to_msg_type(cyng::numeric_cast<std::uint16_t>(obj, 0));
-                        std::cout << "(" << sml::get_name(mt) << ") ";
-                    }
-                    std::cout << v << std::endl;
-                }
+                std::cout << "cmpl " << std::string(2 * stack_.size(), '.') << " [" << stack_.top().values_.size() + 1 << "/"
+                          << stack_.top().size_ << "] - " << stack_.size() << std::endl;
 #endif
-
                 if (stack_.top().push(obj)) {
                     //
                     //	SML list complete: reduce list
                     //
                     auto const tmp = stack_.top().values_;
-
-#ifdef _DEBUG_SML
-                    std::cout << "reduce [" << stack_.size() << "]: " << tmp << std::endl;
-#endif
 
                     stack_.pop();
                     push(cyng::make_object(tmp)); //	recursion (!)

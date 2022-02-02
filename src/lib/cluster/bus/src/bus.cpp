@@ -45,7 +45,7 @@ namespace smf {
         , parser_([this](cyng::object &&obj) {
             //  un-comment this line to debug problems with transferring data over
             //  the cluster bus.
-            CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
+            // CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
             vm_.load(std::move(obj));
         }) {
 

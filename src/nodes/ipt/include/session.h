@@ -11,6 +11,9 @@
 #include <smf/cluster/bus.h>
 #include <smf/ipt/parser.h>
 #include <smf/ipt/serializer.h>
+#ifdef _DEBUG_IPT
+#include <smf/sml/unpack.h>
+#endif
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/buffer.h>
@@ -187,8 +190,14 @@ namespace smf {
          */
         ipt::parser parser_;
 
+        /**
+         * serializer for ip-t data
+         */
         ipt::serializer serializer_;
 
+        /**
+         * process cluster commands
+         */
         cyng::vm_proxy vm_;
 
         /**
@@ -210,6 +219,10 @@ namespace smf {
          * proxy
          */
         proxy proxy_;
+
+#ifdef _DEBUG_IPT
+        sml::unpack sml_parser_;
+#endif
     };
 
 } // namespace smf

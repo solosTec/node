@@ -103,10 +103,7 @@ namespace smf {
                     //	more length data
                     return state::LIST;
                 }
-#ifdef _DEBUG_SML
-                std::cout << "list [" << length_ << "]" << std::endl;
-#endif
-                data_.push_back(c);
+                // data_.push_back(c);
                 cb_(sml_type::LIST, length_, data_);
                 break;
             case sml_type::OPTIONAL:
@@ -161,7 +158,8 @@ namespace smf {
 #endif
             if ((c & 0x80) != 0x80) {
                 cb_(sml_type::LIST, length_, data_);
-                return state::DATA;
+                // length_ = 0;
+                return state::START;
             }
             return state_;
         }

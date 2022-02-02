@@ -31,7 +31,9 @@
 namespace smf {
     namespace config {
 
-        controller_base::controller_base(startup const &config) : config_(config), uidgen_() {}
+        controller_base::controller_base(startup const &config)
+            : config_(config)
+            , uidgen_() {}
 
         bool controller_base::run_options(boost::program_options::variables_map &vars) {
 
@@ -204,14 +206,8 @@ namespace smf {
 
         cyng::object controller_base::read_config_section(std::string const &json_path, std::size_t config_index) {
 
-            auto const obj = cyng::json::parse_file(json_path);
-            if (obj) {
-                auto vec = cyng::container_cast<cyng::vector_t>(obj);
-                if (config_index < vec.size()) {
-                    return vec.at(config_index);
-                }
-            }
-            return obj;
+            auto vec = cyng::container_cast<cyng::vector_t>(cyng::json::parse_file(json_path));
+            return (config_index < vec.size()) ? vec.at(config_index) : cyng::make_object();
         }
 
         void controller_base::print_configuration(std::ostream &os) {

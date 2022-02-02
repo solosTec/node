@@ -43,7 +43,7 @@ namespace smf {
         /**
          * @return all entries below "81 49 0D 07 00 FF" as child list
          */
-        cyng::tuple_t get_params_as_child_list() const;
+        // cyng::tuple_t get_params_as_child_list() const;
 
         //
         //  temporary values

@@ -9,7 +9,7 @@
 #include <smf/ipt/scramble_key_format.h>
 #include <smf/obis/conv.h>
 #include <smf/obis/defs.h>
-#include <smf/obis/tree.h>
+//#include <smf/obis/tree.h>
 
 #include <cyng/parse/hex.h>
 
@@ -117,20 +117,20 @@ namespace smf {
         return cfg_.get_value(reconnect_timeout_path(), std::chrono::seconds(10));
     }
 
-    cyng::tuple_t cfg_ipt::get_params_as_child_list() const {
-        sml::tree t;
-        cfg_.loop(cyng::to_str(OBIS_ROOT_IPT_PARAM), [&](std::vector<std::string> &&vec, cyng::object obj) {
-            if (cyng::is_hex(vec.back())) {
-                // std::cout << vec.size() << obj << std::endl;
-                if (!vec.empty() && cyng::is_hex(vec.back()) && vec.back().size() == (cyng::obis::size() * 2) &&
-                    !boost::algorithm::equals(vec.back(), "8149633c0301") &&
-                    !boost::algorithm::equals(vec.back(), "8149633c0302")) {
-                    t.add(obis::to_obis_path(vec), obj);
-                }
-            }
-        });
-        return t.to_child_list();
-    }
+    // cyng::tuple_t cfg_ipt::get_params_as_child_list() const {
+    //     sml::tree t;
+    //     cfg_.loop(cyng::to_str(OBIS_ROOT_IPT_PARAM), [&](std::vector<std::string> &&vec, cyng::object obj) {
+    //         if (cyng::is_hex(vec.back())) {
+    //             // std::cout << vec.size() << obj << std::endl;
+    //             if (!vec.empty() && cyng::is_hex(vec.back()) && vec.back().size() == (cyng::obis::size() * 2) &&
+    //                 !boost::algorithm::equals(vec.back(), "8149633c0301") &&
+    //                 !boost::algorithm::equals(vec.back(), "8149633c0302")) {
+    //                 t.add(obis::to_obis_path(vec), obj);
+    //             }
+    //         }
+    //     });
+    //     return t.to_child_list();
+    // }
 
     bool cfg_ipt::set_local_enpdoint(boost::asio::ip::tcp::endpoint ep) const { return cfg_.set_value(local_ep_path(), ep); }
     bool cfg_ipt::set_remote_enpdoint(boost::asio::ip::tcp::endpoint ep) const { return cfg_.set_value(remote_ep_path(), ep); }

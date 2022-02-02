@@ -283,7 +283,8 @@ namespace smf {
             return std::make_tuple(cyng::buffer_t(), std::string(), std::string(), cyng::obis_path_t());
         }
 
-        std::tuple<cyng::obis_path_t, cyng::obis, cyng::attr_t, cyng::tuple_t> read_get_proc_parameter_response(cyng::tuple_t msg) {
+        std::tuple<cyng::buffer_t, cyng::obis_path_t, cyng::obis, cyng::attr_t, cyng::tuple_t>
+        read_get_proc_parameter_response(cyng::tuple_t msg) {
             BOOST_ASSERT(msg.size() == 3);
             if (msg.size() == 3) {
 
@@ -307,7 +308,7 @@ namespace smf {
                 //
                 auto const tpl = cyng::container_cast<cyng::tuple_t>(*pos++);
                 if (tpl.size() != 3) {
-                    return {path, {}, {}, {}};
+                    return {server, path, {}, {}, {}};
                 }
 
                 //
@@ -316,10 +317,10 @@ namespace smf {
                 //  * child_List
                 //
                 auto [c, p, l] = read_param_tree(tpl.begin(), tpl.end());
-                return {path, c, p, l};
+                return {server, path, c, p, l};
                 //  list of parameter trees (read_param_tree())
             }
-            return {{}, {}, {}, {}};
+            return {{}, {}, {}, {}, {}};
         }
 
         std::tuple<cyng::buffer_t, cyng::object, std::uint32_t, std::uint32_t, cyng::obis_path_t, sml_list_t>
