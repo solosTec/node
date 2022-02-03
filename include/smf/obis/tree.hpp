@@ -158,7 +158,7 @@ namespace smf {
         template <typename T> class obis_tree {
           public:
             using node_t = obis_node<T>;
-            using node_list_t = node_t::list_t;
+            using node_list_t = typename node_t::list_t;
 
           public:
             obis_tree()
@@ -216,7 +216,7 @@ namespace smf {
         template <> class obis_tree<cyng::attr_t> {
           public:
             using node_t = obis_node<cyng::attr_t>;
-            using node_list_t = node_t::list_t;
+            using node_list_t = typename node_t::list_t;
 
           public:
             obis_tree();
