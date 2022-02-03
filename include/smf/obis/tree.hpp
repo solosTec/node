@@ -128,7 +128,10 @@ namespace smf {
             cyng::tuple_t tpl;
 
             std::transform(
-                std::begin(nodes), std::end(nodes), std::back_inserter(tpl), [](obis_node<T>::list_t::value_type const &node) {
+                std::begin(nodes),
+                std::end(nodes),
+                std::back_inserter(tpl),
+                [](typename obis_node<T>::list_t::value_type const &node) {
                     return cyng::make_object(cyng::make_tuple(node.first, node.second.value_, to_tuple<T>(node.second.nodes_)));
                 });
             return tpl;
@@ -139,10 +142,7 @@ namespace smf {
             cyng::tuple_t tpl; //  result
 
             std::transform(
-                std::begin(nodes),
-                std::end(nodes),
-                std::back_inserter(tpl),
-                [=](obis_node<T>::list_t::value_type const &node) {
+                std::begin(nodes), std::end(nodes), std::back_inserter(tpl), [=](obis_node<T>::list_t::value_type const &node) {
                     return cyng::make_object(
                         cyng::make_tuple(node.first, f(node.second.value_), to_tuple<T, R>(node.second.nodes_, f)));
                 });

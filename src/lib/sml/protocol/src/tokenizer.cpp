@@ -138,13 +138,22 @@ namespace smf {
             //
             length_ *= 16;
             length_ |= (c & 0x0f);
-            //	length header
-            --length_;
+            //	remove length of header
+            //--length_;
 #ifdef _DEBUG_SML
             std::cout << "length: " << length_ << std::endl;
 #endif
             if ((c & 0x80) != 0x80) {
-                // cb_(sml_type::LIST, length_, data_);
+                BOOST_ASSERT(length_ > 0x0f);
+                //	remove length of header
+                --length_;
+                if (length_ > 0x0ff) {
+                    length_ -= 1;
+                } else if (length_ > 0x0fff) {
+                    length_ -= 2;
+                } else if (length_ > 0x0ffff) {
+                    length_ -= 3;
+                }
                 return state::DATA;
             }
             return state_;
@@ -152,13 +161,11 @@ namespace smf {
         tokenizer::state tokenizer::state_list(char c) {
             length_ *= 16;
             length_ |= (c & 0x0f);
-            //--length_;
 #ifdef _DEBUG_SML
             std::cout << "list: " << length_ << std::endl;
 #endif
             if ((c & 0x80) != 0x80) {
                 cb_(sml_type::LIST, length_, data_);
-                // length_ = 0;
                 return state::START;
             }
             return state_;
