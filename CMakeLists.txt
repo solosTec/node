@@ -234,7 +234,7 @@ target_include_directories(smf_config
 )
 
 target_compile_features(smf_config PRIVATE 
-cxx_alignas
+    cxx_alignas
     cxx_std_20
     cxx_auto_type
     cxx_constexpr

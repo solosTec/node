@@ -258,6 +258,7 @@ namespace smf {
                  cyng::make_obis(0x81, 0x81, 0x81, 0x60, role, 0xff),
                  cyng::make_obis(0x81, 0x81, 0x81, 0x60, role, user),
                  cyng::make_obis(0x81, 0x81, 0x81, 0x64, device_index)});
+            // cyng::make_obis(0x81, 0x81, 0x81, 0x64, 1, 1)});
         }
 
         std::string const &request_generator::get_name() const { return name_; }

@@ -70,7 +70,7 @@ namespace smf {
                           sml::msg_type type,
                           cyng::tuple_t msg,
                           std::uint16_t crc) {
-            CYNG_LOG_DEBUG(logger_, "msg:" << trx << " - " << sml::get_name(type));
+            CYNG_LOG_DEBUG(logger_, "msg: " << trx << " - " << sml::get_name(type));
             switch (type) {
             case sml::msg_type::GET_PROC_PARAMETER_RESPONSE: {
                 auto const [s, p, code, a, l] = sml::read_get_proc_parameter_response(msg);
@@ -86,7 +86,7 @@ namespace smf {
                     logger_, "[sml] " << sml::get_name(type) << ": " << trx << ", " << msg << " - " << obis::get_name(code));
             } break;
             default:
-                CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
+                CYNG_LOG_DEBUG(logger_, "\n" << cyng::io::to_pretty(msg));
                 break;
             }
         })

@@ -9,6 +9,7 @@
 
 #include <cyng/io/ostream.h>
 #include <cyng/obj/container_cast.hpp>
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/tuple_cast.hpp>
 #include <cyng/obj/value_cast.hpp>
 
@@ -52,7 +53,23 @@ namespace smf {
         }
 
         std::tuple<cyng::obis, cyng::attr_t, cyng::tuple_t> get_tree_values(cyng::tuple_t const &tpl) {
-            return cyng::tuple_cast<cyng::obis, cyng::attr_t, cyng::tuple_t>(tpl);
+            BOOST_ASSERT(tpl.size() == 3);
+            if ((tpl.size() == 3) && (tpl.front().tag() == cyng::TC_OBIS)) {
+                //
+                //  we handle both cases: the value is stored as attribute or a tuple with two elements.
+                //
+                auto pos = std::next(tpl.begin()); //  second element
+                if (pos->tag() == cyng::TC_ATTR) {
+                    return cyng::tuple_cast<cyng::obis, cyng::attr_t, cyng::tuple_t>(tpl);
+                } else if (pos->tag() == cyng::TC_TUPLE) {
+                    auto [o, v, l] = cyng::tuple_cast<cyng::obis, cyng::tuple_t, cyng::tuple_t>(tpl);
+                    if (v.size() == 2) {
+                        return {o, {cyng::numeric_cast<std::size_t>(v.front(), 0), v.back()}, l};
+                    }
+                    return {o, cyng::attr_t(1, cyng::make_object()), l};
+                }
+            }
+            return {{}, {}, {}};
         }
 
         bool has_child_list(cyng::tuple_t const &tpl) { return (tpl.size() == 3) && (tpl.back().tag() == cyng::TC_TUPLE); }

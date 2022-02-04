@@ -121,7 +121,7 @@ namespace smf {
             messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL));
             // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE));
 
-            // temporary removed: messages.emplace_back(req_gen.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT));   //  OK
+            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT)); //  OK
             // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM)); //  OK
             // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES)); //  OK
 
@@ -188,6 +188,18 @@ namespace smf {
                 }
             });
         } else if (code == OBIS_ROOT_DEVICE_IDENT) {
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_DEVICE_IDENT [" << path << "]: " << attr);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_DEVICE_IDENT [" << srv << "]: "
+                                                   << " has no entry");
+                }
+            });
 
         } else if (code == OBIS_ROOT_WAN_PARAM) {
             sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
@@ -224,21 +236,29 @@ namespace smf {
             //  query configuration
             //
             CYNG_LOG_TRACE(logger_, "OBIS_ROOT_ACCESS_RIGHTS \n" << sml::dump_child_list(tpl));
-            session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
-                CYNG_LOG_INFO(logger_, "[proxy] backup " << cfg_.size() << " access");
-                sml::messages_t messages;
-                messages.emplace_back(req_gen_.public_open(client_id_, id_));
-                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010a));
-                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010c));
-                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010d));
-                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010e));
-                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x010f));
-                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0110));
-                messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0111));
-                messages.emplace_back(req_gen_.public_close());
-                auto msg = sml::to_sml(messages);
-                return session_.serializer_.escape_data(std::move(msg));
+            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(srv);
+                if (pos != cfg_.end()) {
+                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_ACCESS_RIGHTS [" << path << "]: " << attr);
+                    pos->second.add(path, attr);
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "OBIS_ROOT_ACCESS_RIGHTS [" << srv << "]: "
+                                                    << " has no entry");
+                }
             });
+
+            // session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
+            //     CYNG_LOG_INFO(logger_, "[proxy] backup " << cfg_.size() << " access");
+            //     sml::messages_t messages;
+            //     messages.emplace_back(req_gen_.public_open(client_id_, id_));
+            //     messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0101));
+            //     // messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0102));
+            //     messages.emplace_back(req_gen_.public_close());
+            //     auto msg = sml::to_sml(messages);
+            //     return session_.serializer_.escape_data(std::move(msg));
+            // });
 
         } else if (code == OBIS_ROOT_ACTIVE_DEVICES) {
             //
@@ -338,6 +358,10 @@ namespace smf {
             sml::messages_t messages;
             messages.emplace_back(req_gen_.public_open(client_id_, id_));
             messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
+            messages.emplace_back(req_gen_.public_close());
+
+            messages.emplace_back(req_gen_.public_open(client_id_, id_));
+            messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0101));
             messages.emplace_back(req_gen_.public_close());
             auto msg = sml::to_sml(messages);
             return session_.serializer_.escape_data(std::move(msg));

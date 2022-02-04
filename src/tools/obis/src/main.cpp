@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
     static edis_map_t edis_map{
 
-        // Active energy registers :
+        // Active energy registers (german - Wirkarbeit):
         {cyng::edis(1, 8, 0), {"REG_POS_ACT_E", "Positive active energy(A+)", "kWh"}},
         {cyng::edis(1, 8, 1), {"REG_POS_ACT_E_T1", "Positive active energy(A+) in tariff T1", "kWh"}},
         {cyng::edis(1, 8, 2), {"REG_POS_ACT_E_T2", "Positive active energy(A+) in tariff T2", "kWh"}},
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
         // 16.8.2	Sum active energy without reverse blockade(A + -A - ) in tariff T2", "kWh" }},
         // 16.8.3	Sum active energy without reverse blockade(A + -A - ) in tariff T3", "kWh" }},
         // 16.8.4	Sum active energy without reverse blockade(A + -A - ) in tariff T4", "kWh" }},
-        // 2. Reactive energy registers
+        // 2. Reactive energy registers (german: Blindenergie)
         {cyng::edis(3, 8, 0), {"REG_PRE", "Positive reactive energy(Q+) total", "kvarh"}},
         // 3.8.1	Positive reactive energy(Q+) in tariff T1", "kvarh" }},
         // 3.8.2	Positive reactive energy(Q+) in tariff T2", "kvarh" }},
@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
         // 8.8.3	Exported capacitive reactive energy in 4 - th quadr. (Q4)in tariff T3", "kvarh" }},
         // 8.8.4	Exported capacitive reactive energy in 4 - th quadr. (Q4)in tariff T4", "kvarh" }},
 
-        // 3. Apparent energy registers
+        // 3. Apparent energy registers (german: Scheinarbeit)
         {cyng::edis(9, 8, 0), {"REG_AE", "Apparent energy(S+) total", "kVAh"}},
         // 9.8.1	Apparent energy(S+) in tariff T1", "kVAh" }},
         // 9.8.2	Apparent energy(S+) in tariff T2", "kVAh" }},

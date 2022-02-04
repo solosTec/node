@@ -21,7 +21,50 @@ namespace cyng {
         /**
          * @return length of type length field
          */
-        std::uint32_t get_shift_count(std::uint32_t length) { return length / 0x0F; }
+        std::uint8_t get_shift_count(std::uint32_t length) {
+            std::uint8_t counter = 0;
+            do {
+                length >>= 4;
+                ++counter;
+            } while (length != 0);
+            return counter;
+        }
+
+        /**
+         * Cleanroom implementation of the write_length_field() function
+         */
+        std::vector<std::uint8_t> write_data_length_field(std::uint32_t length, std::uint8_t type) {
+
+            std::vector<std::uint8_t> vec;
+
+            //
+            //  get resulting length
+            //
+            auto shift = get_shift_count(length + 1);
+            length += shift;
+            vec.reserve(shift);
+
+            //
+            //  write first element
+            //  X000 LLLL
+            //
+            while (shift > 1) {
+
+                --shift;
+                std::uint32_t const mask = 0x0FUL << (shift * 4);
+
+                //  set continue bit (0x80)
+                auto const v = static_cast<std::uint8_t>((length & mask) >> (shift * 4)) | (type | 0x80);
+                vec.push_back(v);
+            }
+
+            //
+            //  remove continuation flag
+            //
+            auto const v = (type & 0x7F) | (length & 0x0F);
+            vec.push_back(v);
+            return vec;
+        }
 
         void write_length_field(std::ostream &os, std::uint32_t length, std::uint8_t type) {
             // set the type
@@ -198,14 +241,8 @@ namespace cyng {
         }
 
         std::size_t serializer<std::string, SML>::write(std::ostream &os, std::string const &v) {
-            calc_size const cs(os);
-            //	length field
-            write_length_field(os, static_cast<std::uint32_t>(v.size()), 0x00);
-
-            //	data
-            os.write(v.data(), v.size());
-
-            return cs;
+            cyng::buffer_t buffer(v.begin(), v.end());
+            return serializer<cyng::buffer_t, SML>::write(os, buffer);
         }
 
         std::size_t

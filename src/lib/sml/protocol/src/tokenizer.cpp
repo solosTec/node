@@ -138,8 +138,6 @@ namespace smf {
             //
             length_ *= 16;
             length_ |= (c & 0x0f);
-            //	remove length of header
-            //--length_;
 #ifdef _DEBUG_SML
             std::cout << "length: " << length_ << std::endl;
 #endif
@@ -153,6 +151,8 @@ namespace smf {
                     length_ -= 2;
                 } else if (length_ > 0x0ffff) {
                     length_ -= 3;
+                } else if (length_ > 0x0fffff) {
+                    length_ -= 4;
                 }
                 return state::DATA;
             }

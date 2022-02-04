@@ -69,7 +69,9 @@ namespace cyng {
 
         template <> struct serializer<cyng::mac48, SML> { static std::size_t write(std::ostream &os, cyng::mac48 const &v); };
 
-#ifdef NODE_UNIT_TEST
+#ifdef _DEBUG_UNIT_TEST
+        std::uint8_t get_shift_count(std::uint32_t length);
+        std::vector<std::uint8_t> write_data_length_field(std::uint32_t length, std::uint8_t type);
         void write_length_field(std::ostream &os, std::uint32_t length, std::uint8_t type);
 #endif
 

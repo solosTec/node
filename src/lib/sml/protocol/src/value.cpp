@@ -106,7 +106,7 @@ namespace smf {
         cyng::attr_t make_timestamp_attr() { return make_timestamp_attr(std::chrono::system_clock::now()); }
 
         cyng::tuple_t make_value() { return cyng::make_tuple(static_cast<std::uint8_t>(PROC_PAR_VALUE), cyng::null()); }
-        cyng::attr_t make_attribute() { return cyng::make_attr(1, cyng::make_object()); }
+        cyng::attr_t make_attribute() { return cyng::attr_t(1, cyng::make_object()); }
 
         cyng::tuple_t to_value(cyng::object obj) { return to_value(to_attribute(obj)); }
 

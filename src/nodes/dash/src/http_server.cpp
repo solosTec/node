@@ -865,10 +865,9 @@ namespace smf {
         auto const pos = ws_map_.find(tag);
         if (pos != ws_map_.end()) {
             auto sp = pos->second.lock();
-            if (sp)
+            if (sp) {
                 sp->push_msg(json_update_record(channel, key, param));
-
-            else {
+            } else {
                 //	shouldn't be necessary
                 BOOST_ASSERT_MSG(false, "invalid ws map - notify_update");
                 ws_map_.erase(pos);
