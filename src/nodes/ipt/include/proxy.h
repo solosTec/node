@@ -50,6 +50,7 @@ namespace smf {
         void cfg_backup_access();
 
         void complete();
+        void update_connect_state(bool);
 
       private:
         cyng::logger logger_;
@@ -61,6 +62,7 @@ namespace smf {
         sml::request_generator req_gen_;
         std::map<cyng::buffer_t, sml::tree> cfg_;
         cyng::store cache_;
+        std::size_t throughput_;
     };
 
 } // namespace smf

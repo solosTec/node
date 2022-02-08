@@ -31,7 +31,7 @@ include (cmake/time_stamp.cmake)
 # set project name/properties
 #
 project(smf
-	VERSION 0.9.3.${_TWEAK_ID}
+	VERSION 0.9.4.${_TWEAK_ID}
 	LANGUAGES CXX C
 )
 

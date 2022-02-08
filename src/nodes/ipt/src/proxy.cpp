@@ -18,6 +18,7 @@
 #include <cyng/io/hex_dump.hpp>
 #endif
 
+#include <boost/uuid/nil_generator.hpp>
 #include <iostream>
 
 namespace smf {
@@ -80,7 +81,8 @@ namespace smf {
         , id_()
         , req_gen_("operator", "operator")
         , cfg_()
-        , cache_() {
+        , cache_()
+        , throughput_{} {
 
         if (!cache_.create_table(config::get_store_cfg_set())) {
             CYNG_LOG_FATAL(logger_, "[proxy] cannot create table cfgSet");
@@ -100,6 +102,12 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[proxy] config backup " << name << '@' << id);
         BOOST_ASSERT_MSG(state_ != state::ON, "proxy already active");
         state_ = state::ROOT_CFG;
+
+        //
+        //  update connection state
+        //
+        update_connect_state(true);
+
         cfg_.clear();
         cfg_.emplace(id, sml::tree{});
 
@@ -149,7 +157,20 @@ namespace smf {
     }
 
     // void proxy::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[proxy] stop"); }
-    void proxy::read(cyng::buffer_t &&data) { parser_.read(std::begin(data), std::end(data)); }
+    void proxy::read(cyng::buffer_t &&data) {
+
+        //
+        //  parse SML data
+        //
+        parser_.read(std::begin(data), std::end(data));
+
+        //
+        //  update throughput
+        //
+        throughput_ += data.size();
+        auto const key_conn = cyng::key_generator(cyng::merge(session_.dev_, session_.vm_.get_tag()));
+        session_.cluster_bus_.req_db_update("connection", key_conn, cyng::param_map_factory()("throughput", throughput_));
+    }
 
     void proxy::get_proc_parameter_response(
         cyng::buffer_t const &srv,
@@ -391,10 +412,50 @@ namespace smf {
     }
 
     void proxy::complete() {
+        //
+        //  update connection state
+        //
+        update_connect_state(false);
+
         CYNG_LOG_INFO(logger_, "readout of " << cfg_.size() << " server/clients complete")
         for (auto const &cfg : cfg_) {
             auto const cl = cfg.second.to_child_list();
             CYNG_LOG_TRACE(logger_, "server " << cfg.first << " complete: \n" << sml::dump_child_list(cl));
+        }
+    }
+
+    void proxy::update_connect_state(bool connected) {
+        //
+        //  update session state
+        //
+        // auto const b1 = tbl_session->modify(key_caller, cyng::make_param("cTag", dev), cfg_.get_tag());
+        if (connected) {
+            session_.cluster_bus_.req_db_update(
+                "session", cyng::key_generator(session_.dev_), cyng::param_map_factory()("cTag", session_.dev_));
+        } else {
+            session_.cluster_bus_.req_db_update(
+                "session", cyng::key_generator(session_.dev_), cyng::param_map_factory()("cTag", boost::uuids::nil_uuid()));
+        }
+
+        //
+        //  build key for "connection" table
+        //
+        auto const key_conn = cyng::key_generator(cyng::merge(session_.dev_, session_.vm_.get_tag()));
+        if (connected) {
+            session_.cluster_bus_.req_db_insert(
+                "connection",
+                key_conn,
+                cyng::data_generator(
+                    session_.name_ + "-proxy",
+                    session_.name_,
+                    std::chrono::system_clock::now(),
+                    true,  //  local
+                    "ipt", //  protocol layer
+                    "ipt",
+                    static_cast<std::uint64_t>(0)),
+                1);
+        } else {
+            session_.cluster_bus_.req_db_remove("connection", key_conn);
         }
     }
 

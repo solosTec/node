@@ -129,10 +129,6 @@ namespace smf {
 
         void open_connection(std::string msisdn, ipt::sequence_t seq);
 
-        //#ifdef _DEBUG
-        //        void debug_get_profile_list();
-        //#endif
-
         static auto get_vm_func_pty_res_login(ipt_session *p) -> std::function<void(bool success, boost::uuids::uuid)>;
 
         static auto get_vm_func_pty_res_register(ipt_session *p)
@@ -189,6 +185,7 @@ namespace smf {
          * parser for ip-t data
          */
         ipt::parser parser_;
+        std::string name_; //  login name
 
         /**
          * serializer for ip-t data

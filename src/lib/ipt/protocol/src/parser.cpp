@@ -45,8 +45,9 @@ namespace smf {
         }
 
         parser::state parser::state_stream(char c) {
-            if (c == ESCAPE_SIGN)
+            if (c == ESCAPE_SIGN) {
                 return state::ESC;
+            }
             buffer_.push_back(c);
             return state_;
         }

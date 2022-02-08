@@ -59,6 +59,7 @@ namespace smf {
                 //	update online state of
                 //	meter, meterwMBus, meterIEC
                 //
+                // db_.cache_.access();
                 update_meter_online_state(key, true);
                 update_gw_online_state(key, true);
                 update_meter_iec_online_state(key, true);
@@ -118,8 +119,8 @@ namespace smf {
                 update_gw_online_state(key, false);
                 update_meter_iec_online_state(key, false);
                 update_meter_wmbus_online_state(key, false);
-            //} else if (boost::algorithm::equals(r.table_, "connection")) {
-            //    update_gw_connect_state(key, false);
+                //} else if (boost::algorithm::equals(r.table_, "connection")) {
+                //    update_gw_connect_state(key, false);
             }
 
             {
@@ -213,16 +214,16 @@ namespace smf {
     void notifier::update_meter_iec_online_state(cyng::key_t const &key, bool online) {}
     void notifier::update_meter_wmbus_online_state(cyng::key_t const &key, bool online) {}
 
-    //void notifier::update_gw_connect_state(cyng::key_t const &key, bool connected) {
-    //    auto const range = db_.subscriptions_.equal_range("config.gateway");
-    //    auto const count = std::distance(range.first, range.second);
-    //    //	get column name
-    //    std::string const col_name = "online";
-    //    CYNG_LOG_INFO(
-    //        logger_,
-    //        "[channel] "
-    //            << "config.gateway"
-    //            << " update (#" << count << "): " << col_name << " => " << (connected ? "connect" : "disconnect"));
-    //}
+    // void notifier::update_gw_connect_state(cyng::key_t const &key, bool connected) {
+    //     auto const range = db_.subscriptions_.equal_range("config.gateway");
+    //     auto const count = std::distance(range.first, range.second);
+    //     //	get column name
+    //     std::string const col_name = "online";
+    //     CYNG_LOG_INFO(
+    //         logger_,
+    //         "[channel] "
+    //             << "config.gateway"
+    //             << " update (#" << count << "): " << col_name << " => " << (connected ? "connect" : "disconnect"));
+    // }
 
 } // namespace smf
