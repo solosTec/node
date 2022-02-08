@@ -1,16 +1,16 @@
 # FindSMFSEC.cmake
 #
-# Finds the SMFSEC library (formerly known as CRYPTO)
+# Finds the SMFSEC library
 #
 # This will define the following variables
 #
-#   SMFSEC_FOUND          - system has SMFSEC
-#   SMFSEC_INCLUDE_DIR    - the crypto include directories
-#   SMFSEC_LIBRARIES      - crypto libraries directories
+#   SMFSEC_FOUND          - system has smfsec
+#   SMFSEC_INCLUDE_DIRS    - the smfsec include directories
+#   SMFSEC_LIBRARIES      - smfsec libraries directories
 #
 # and the following imported targets
 #
-#     SMFSEC::SMFSEC
+#     smfsec::smfsec
 #
 
 #
@@ -19,143 +19,79 @@
 find_package(PkgConfig)
 pkg_check_modules(PC_SMFSEC QUIET SMFSEC)
 
-if(SMFSEC_PKG_FOUND)
-
+if(PC_SMFSEC_FOUND)
+    # the library was already found by pkgconfig
     set(SMFSEC_VERSION ${PC_SMFSEC_VERSION})
-    set(SMFSEC_INCLUDE_DIRS ${SMFSEC_PKG_INCLUDE_DIRS})
-    set(SMFSEC_LIBRARIES ${SMFSEC_PKG_LIBRARIES})
-       
-endif(SMFSEC_PKG_FOUND)
+    set(SMFSEC_INCLUDE_DIRS ${PC_SMFSEC_INCLUDE_DIRS})
+    set(SMFSEC_LIBRARIES ${PC_SMFSEC_LIBRARIES})
+     
+    if(NOT PC_SMFSEC_QUIETLY)
+        message(STATUS "** SMFSEC_PKG_FOUND: BEGIN")
+        message(STATUS "** SMFSEC_VERSION: ${SMFSEC_VERSION}")
+        message(STATUS "** SMFSEC_INCLUDE_DIRS: ${SMFSEC_INCLUDE_DIRS}")
+        message(STATUS "** SMFSEC_LIBRARIES: ${SMFSEC_LIBRARIES}")
+        message(STATUS "** SMFSEC_PKG_FOUND: END")
+    endif(NOT PC_SMFSEC_QUIETLY)
 
-set(SMFSEC_LIBS "smfsec")
-
-if(NOT SMFSEC_FOUND)
+else(PC_SMFSEC_FOUND)
 
 	#
-	#	Crypto header files
 	#
+	file(GLOB SMFSEC_SEARCH_PATH "${CMAKE_PREFIX_PATH}/crypto*" "${CMAKE_PREFIX_PATH}/smfsec*" "${CMAKE_PREFIX_PATH}/libsmfsec*" "${PROJECT_SOURCE_DIR}/../crypto*" "${PROJECT_SOURCE_DIR}/../smfsec*" "${PROJECT_SOURCE_DIR}/../libsmfsec*" "${PROJECT_SOURCE_DIR}/../../sysroot-target")
     find_path(SMFSEC_INCLUDE_DIR_SRC
         NAMES 
-			smfsec/crypto.h
-            smfsec/bio.h
+            smfsec/crypto.h
+			smfsec/bio.h
         PATH_SUFFIXES
-			smfsec
-			crypto
-        HINTS
-            "${PROJECT_SOURCE_DIR}/../crypto/include"
-			"${PROJECT_SOURCE_DIR}/crypto-*/include"
+            include
         PATHS
-            /usr/include/
-            /usr/local/include/
+            ${SMFSEC_SEARCH_PATH}
         DOC 
             "SMFSEC headers"
+		NO_CMAKE_FIND_ROOT_PATH
     )
     
-	message(STATUS "** SMFSEC_INCLUDE_DIR_SRC: ${SMFSEC_INCLUDE_DIR_SRC}")
-
+	
 	#
-	#	crypto generated header files
+	#	search smfsec libraries
 	#
-	find_path(SMFSEC_INCLUDE_DIR_BUILD
-	NAMES 
-		libsmfsec.so
-		cross.cmake
-	PATH_SUFFIXES
-		crypto
-		crypto-0.9
-		build
-		v5te
-		build/v5te
-	HINTS
-		"${PROJECT_SOURCE_DIR}/../crypto/build/include"
-		"${PROJECT_SOURCE_DIR}/../crypto/v5te/include"
-		"${PROJECT_SOURCE_DIR}/../crypto/build/x64/include"
-		"${PROJECT_SOURCE_DIR}/../crypto/build/v5te/include"
-		"${PROJECT_SOURCE_DIR}/../../crypto*/build/v5te/include"
-		"${PROJECT_SOURCE_DIR}/../crypto*/build/v5te/include"
-		"${PROJECT_SOURCE_DIR}/crypto*/build/v5te/include"
-	PATHS
-		/usr/include/
-		/usr/local/include/
-	DOC 
-		"Crypto headers"
-	)
+    set(REQUESTED_LIBS "smfsec")
 
-	message(STATUS "** SMFSEC_INCLUDE_DIR_BUILD: ${SMFSEC_INCLUDE_DIR_BUILD}")
-
-
-	if (WIN32)
-
-	#
-	#	search cyng libraries on windows
-	#
-	foreach(__SMFSEC_LIB ${SMFSEC_LIBS})
-
-		message(STATUS "** hint   : ${__SMFSEC_LIB}")
-
-		find_library("${__SMFSEC_LIB}" ${__SMFSEC_LIB}
-			NAMES
-				${__SMFSEC_BUILD}
-			HINTS
-				"${SMFSEC_INCLUDE_DIR_SRC}/../build/Debug"
-				"${SMFSEC_INCLUDE_DIR_SRC}/../build/Release"
-			PATHS
-				/usr/lib/
-				/usr/local/lib
+	foreach(__LIB ${REQUESTED_LIBS})
+		find_library("${__LIB}" ${__LIB}
+            PATHS
+                ${SMFSEC_SEARCH_PATH}
+            PATH_SUFFIXES
+				lib
+                usr/lib/
+				build/v5te
+				build/x64
+				build
+				v5te
 			DOC 
 				"SMFSEC libraries"
 		)
-		message(STATUS "** found : ${${__SMFSEC_LIB}}")
-		list(APPEND SMFSEC_LIBRARIES ${${__SMFSEC_LIB}})
-#		message(STATUS "** SMFSEC_LIBRARIES    : ${SMFSEC_LIBRARIES}")
 
+		# append the found library to the list of all libraries
+		list(APPEND SMFSEC_LIBRARIES ${${__LIB}})
+
+		# this creates a variable with the name of the searched library, so that it can be included more easily
+		unset(__LIB_UPPERCASE_NAME)
+		string(TOUPPER ${__LIB} __LIB_UPPERCASE_NAME)
+		set(${__LIB_UPPERCASE_NAME}_LIBRARY ${${__LIB}})
 	endforeach()
-
-	else(UNIX)
-
-	#
-	#	search smfsec libraries on linux
-	#
-	foreach(__SMFSEC_LIB ${SMFSEC_LIBS})
-
-		message(STATUS "** hint : lib${__SMFSEC_LIB}")
-		find_library("${__SMFSEC_LIB}" ${__SMFSEC_LIB}
-			NAMES
-				${__SMFSEC_BUILD}
-			HINTS
-				"${SMFSEC_INCLUDE_DIR_SRC}/../build"
-				"${SMFSEC_INCLUDE_DIR_SRC}/../v5te"
-				"${SMFSEC_INCLUDE_DIR_SRC}/../build/x64"
-				"${SMFSEC_INCLUDE_DIR_SRC}/../build/v5te"
-				"${SMFSEC_INCLUDE_DIR_BUILD}/"
-				"${SMFSEC_INCLUDE_DIR_BUILD}/.."
-			PATHS
-				/usr/lib/
-				/usr/local/lib
-			DOC 
-				"SMFSEC libraries"
-		)
-		message(STATUS "** found : ${${__SMFSEC_LIB}}")
-		list(APPEND SMFSEC_LIBRARIES ${${__SMFSEC_LIB}})
-#		message(STATUS "** SMFSEC_LIBRARIES    : ${SMFSEC_LIBRARIES}")
-
-	endforeach()
-
-	endif()
-
+endif(PC_SMFSEC_FOUND)
     
-	set(SMFSEC_INCLUDE_DIRS "${SMFSEC_INCLUDE_DIR_SRC}")
-	unset(SMFSEC_INCLUDE_DIR_SRC CACHE)
-    
-
-	if (SMFSEC_INCLUDE_DIRS AND SMFSEC_LIBRARIES)
-#		message(STATUS "** SMFSEC_LIBRARIES        : ${SMFSEC_LIBRARIES}")
-#		message(STATUS "** SMFSEC_INCLUDE_DIRS     : ${SMFSEC_INCLUDE_DIRS}")
-		set(SMFSEC_FOUND ON)
-	endif()
-    
-endif(NOT SMFSEC_FOUND)
-
+# check if both the header and the libraries have been found
+if (SMFSEC_INCLUDE_DIR_SRC AND SMFSEC_LIBRARIES)
+    set(SMFSEC_INCLUDE_DIRS "${SMFSEC_INCLUDE_DIR_SRC}")
+    set(SMFSEC_FOUND ON)
+    unset(SMFSEC_INCLUDE_DIR_SRC CACHE)
+	if(NOT SMFSEC_FIND_QUIETLY)
+		message(STATUS "** SMFSEC_LIBRARIES    : ${SMFSEC_LIBRARIES}")
+		message(STATUS "** SMFSEC_INCLUDE_DIRS : ${SMFSEC_INCLUDE_DIRS}")
+	endif(NOT SMFSEC_FIND_QUIETLY)
+endif(SMFSEC_INCLUDE_DIR_SRC AND SMFSEC_LIBRARIES)
 
 mark_as_advanced(SMFSEC_FOUND SMFSEC_INCLUDE_DIRS SMFSEC_LIBRARIES)
 
@@ -172,7 +108,6 @@ if(UNIX)
 	)
 endif(UNIX)
 
-# if(NOT TARGET smfsec::smfsec) evaluates to true if there is no target called smfsec::smfsec.
 if(SMFSEC_FOUND AND NOT TARGET smfsec::smfsec)
 
     add_library(smfsec::smfsec INTERFACE IMPORTED)
@@ -186,5 +121,4 @@ if(SMFSEC_FOUND AND NOT TARGET smfsec::smfsec)
 				"${SMFSEC_LIBRARIES}"
     )
 
-endif()
-
+endif(SMFSEC_FOUND AND NOT TARGET smfsec::smfsec)
