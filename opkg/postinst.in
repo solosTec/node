@@ -1625,5 +1625,8 @@ main()
 	return 0
 }
 
-main
+# only execute on the embedded device and not on the host build system
+if [ -z "$PTXDIST_WORKSPACE" ]; then
+	main
+fi
 
