@@ -98,5 +98,7 @@ main ()
     return 0
 }
 
-# This is the only function call, all workflow and logic is done from within main function
-main
+# only execute on the embedded device and not on the host build system
+if [ -z "$PTXDIST_WORKSPACE" ]; then
+    main
+fi    
