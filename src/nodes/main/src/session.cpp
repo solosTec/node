@@ -681,6 +681,7 @@ namespace smf {
         cyng::table const *tbl,
         cyng::key_t const &key,
         cyng::attr_t const &attr,
+        cyng::data_t const &data,
         std::uint64_t gen,
         boost::uuids::uuid source) {
         //
@@ -696,7 +697,8 @@ namespace smf {
         return true;
     }
 
-    bool session::slot::forward(cyng::table const *tbl, cyng::key_t const &key, boost::uuids::uuid source) {
+    bool
+    session::slot::forward(cyng::table const *tbl, cyng::key_t const &key, cyng::data_t const &data, boost::uuids::uuid source) {
         //
         //	send remove to subscriber
         //

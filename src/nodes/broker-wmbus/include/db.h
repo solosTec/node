@@ -43,14 +43,19 @@ namespace smf {
         /**
          * update
          */
-        virtual bool
-        forward(cyng::table const *tbl, cyng::key_t const &key, cyng::attr_t const &attr, std::uint64_t gen, boost::uuids::uuid tag)
-            override;
+        virtual bool forward(
+            cyng::table const *tbl,
+            cyng::key_t const &key,
+            cyng::attr_t const &attr,
+            cyng::data_t const &data,
+            std::uint64_t gen,
+            boost::uuids::uuid tag) override;
 
         /**
          * remove
          */
-        virtual bool forward(cyng::table const *tbl, cyng::key_t const &key, boost::uuids::uuid tag) override;
+        virtual bool
+        forward(cyng::table const *tbl, cyng::key_t const &key, cyng::data_t const &data, boost::uuids::uuid tag) override;
 
         /**
          * clear

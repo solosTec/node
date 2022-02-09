@@ -152,6 +152,7 @@ namespace smf {
                 CYNG_LOG_TRACE(logger_, "[get_proc_parameter request] :\n" << dmp);
             }
 #endif
+            throughput_ += msg.size();
             return session_.serializer_.escape_data(std::move(msg));
         });
     }
@@ -369,6 +370,7 @@ namespace smf {
             }
             messages.emplace_back(req_gen_.public_close());
             auto msg = sml::to_sml(messages);
+            throughput_ += msg.size();
             return session_.serializer_.escape_data(std::move(msg));
         });
     }
@@ -385,6 +387,7 @@ namespace smf {
             messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0101));
             messages.emplace_back(req_gen_.public_close());
             auto msg = sml::to_sml(messages);
+            throughput_ += msg.size();
             return session_.serializer_.escape_data(std::move(msg));
         });
     }

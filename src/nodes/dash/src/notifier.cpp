@@ -13,6 +13,7 @@
 #include <cyng/log/record.h>
 #include <cyng/obj/container_factory.hpp>
 
+#include <boost/uuid/nil_generator.hpp>
 #include <iostream>
 
 namespace smf {
@@ -59,13 +60,11 @@ namespace smf {
                 //	update online state of
                 //	meter, meterwMBus, meterIEC
                 //
-                // db_.cache_.access();
-                update_meter_online_state(key, true);
-                update_gw_online_state(key, true);
-                update_meter_iec_online_state(key, true);
-                update_meter_wmbus_online_state(key, true);
-                //} else if (boost::algorithm::equals(r.table_, "connection")) {
-                //    update_gw_connect_state(key, true);
+                cyng::record rec(tbl->meta(), key, data, gen);
+                update_meter_online_state(rec, event_type::INSERT);
+                update_gw_online_state(rec, event_type::INSERT);
+                update_meter_iec_online_state(rec, event_type::INSERT);
+                update_meter_wmbus_online_state(rec, event_type::INSERT);
             }
         }
 
@@ -76,6 +75,7 @@ namespace smf {
         cyng::table const *tbl,
         cyng::key_t const &key,
         cyng::attr_t const &attr,
+        cyng::data_t const &data,
         std::uint64_t gen,
         boost::uuids::uuid tag) {
 
@@ -96,11 +96,19 @@ namespace smf {
             for (auto pos = range.first; pos != range.second; ++pos) {
                 http_server_.notify_update(r.channel_, key, param, pos->second);
             }
+
+            if (boost::algorithm::equals(r.table_, "session")) {
+                cyng::record rec(tbl->meta(), key, data, gen);
+                update_meter_online_state(rec, event_type::UPDATE);
+                update_gw_online_state(rec, event_type::UPDATE);
+                update_meter_iec_online_state(rec, event_type::UPDATE);
+                update_meter_wmbus_online_state(rec, event_type::UPDATE);
+            }
         }
         return true;
     }
 
-    bool notifier::forward(cyng::table const *tbl, cyng::key_t const &key, boost::uuids::uuid tag) {
+    bool notifier::forward(cyng::table const *tbl, cyng::key_t const &key, cyng::data_t const &data, boost::uuids::uuid tag) {
         //	remove
 
         //
@@ -115,12 +123,11 @@ namespace smf {
                 //	update online state of
                 //	meter, meterwMBus, meterIEC
                 //
-                update_meter_online_state(key, false);
-                update_gw_online_state(key, false);
-                update_meter_iec_online_state(key, false);
-                update_meter_wmbus_online_state(key, false);
-                //} else if (boost::algorithm::equals(r.table_, "connection")) {
-                //    update_gw_connect_state(key, false);
+                cyng::record rec(tbl->meta(), key, data, 0);
+                update_meter_online_state(rec, event_type::REMOVE);
+                update_gw_online_state(rec, event_type::REMOVE);
+                update_meter_iec_online_state(rec, event_type::REMOVE);
+                update_meter_wmbus_online_state(rec, event_type::REMOVE);
             }
 
             {
@@ -179,7 +186,7 @@ namespace smf {
      */
     bool notifier::forward(cyng::table const *, bool) { return true; }
 
-    void notifier::update_meter_online_state(cyng::key_t const &key, bool online) {
+    void notifier::update_meter_online_state(cyng::record const &rec, event_type evt) {
 
         auto const range = db_.subscriptions_.equal_range("config.meter");
         auto const count = std::distance(range.first, range.second);
@@ -189,13 +196,15 @@ namespace smf {
             logger_,
             "[channel] "
                 << "config.meter"
-                << " update (#" << count << "): " << col_name << " => " << (online ? "on" : "off"));
-        auto const param = cyng::make_param(col_name, online ? 1 : 0);
+                << " update (#" << count << "): " << col_name << " => " << get_name(evt));
+
+        // auto const param = cyng::make_param(col_name, online ? 1 : 0);
+        auto const param = cyng::make_param(col_name, calc_connection_state(evt, rec));
         for (auto pos = range.first; pos != range.second; ++pos) {
-            http_server_.notify_update("config.meter", key, param, pos->second);
+            http_server_.notify_update("config.meter", rec.key(), param, pos->second);
         }
     }
-    void notifier::update_gw_online_state(cyng::key_t const &key, bool online) {
+    void notifier::update_gw_online_state(cyng::record const &rec, event_type evt) {
         auto const range = db_.subscriptions_.equal_range("config.gateway");
         auto const count = std::distance(range.first, range.second);
         //	get column name
@@ -204,26 +213,54 @@ namespace smf {
             logger_,
             "[channel] "
                 << "config.gateway"
-                << " update (#" << count << "): " << col_name << " => " << (online ? "on" : "off"));
-        auto const param = cyng::make_param(col_name, online ? 1 : 0);
+                << " update (#" << count << "): " << col_name << " => " << get_name(evt));
+        auto const param = cyng::make_param(col_name, calc_connection_state(evt, rec));
         for (auto pos = range.first; pos != range.second; ++pos) {
-            http_server_.notify_update("config.gateway", key, param, pos->second);
+            http_server_.notify_update("config.gateway", rec.key(), param, pos->second);
         }
     }
 
-    void notifier::update_meter_iec_online_state(cyng::key_t const &key, bool online) {}
-    void notifier::update_meter_wmbus_online_state(cyng::key_t const &key, bool online) {}
+    void notifier::update_meter_iec_online_state(cyng::record const &, event_type evt) {}
+    void notifier::update_meter_wmbus_online_state(cyng::record const &, event_type evt) {}
 
-    // void notifier::update_gw_connect_state(cyng::key_t const &key, bool connected) {
-    //     auto const range = db_.subscriptions_.equal_range("config.gateway");
-    //     auto const count = std::distance(range.first, range.second);
-    //     //	get column name
-    //     std::string const col_name = "online";
-    //     CYNG_LOG_INFO(
-    //         logger_,
-    //         "[channel] "
-    //             << "config.gateway"
-    //             << " update (#" << count << "): " << col_name << " => " << (connected ? "connect" : "disconnect"));
-    // }
+    // static
+    std::string notifier::get_name(event_type evt) {
+        switch (evt) {
+        case event_type::INSERT:
+            return "INSERT";
+        case event_type::UPDATE:
+            return "UPDATE";
+        case event_type::REMOVE:
+            return "REMOVE";
+        default:
+            break;
+        }
+        return "UNKNOWN";
+    }
+
+    // static
+    std::uint32_t notifier::calc_connection_state(event_type evt, cyng::record const &rec) {
+        switch (evt) {
+        case event_type::INSERT:
+            return 1;
+        case event_type::REMOVE:
+            return 0;
+        default:
+            break;
+        }
+
+        auto const tag = rec.value("tag", boost::uuids::nil_uuid());
+        auto const ctag = rec.value("cTag", boost::uuids::nil_uuid());
+
+        if (ctag == boost::uuids::nil_uuid()) {
+            //  not connected but online
+            return 1;
+        } else if (ctag == tag) {
+            //  internal connection
+            return 3;
+        }
+        //  somehow connected
+        return 2;
+    }
 
 } // namespace smf

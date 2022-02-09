@@ -116,6 +116,7 @@ namespace smf {
         cyng::table const *tbl,
         cyng::key_t const &key,
         cyng::attr_t const &attr,
+        cyng::data_t const &data,
         std::uint64_t gen,
         boost::uuids::uuid tag) {
 
@@ -126,7 +127,7 @@ namespace smf {
     /**
      * remove
      */
-    bool db::forward(cyng::table const *tbl, cyng::key_t const &key, boost::uuids::uuid tag) {
+    bool db::forward(cyng::table const *tbl, cyng::key_t const &key, cyng::data_t const &data, boost::uuids::uuid tag) {
 
         CYNG_LOG_TRACE(logger_, "[db] remove: " << tbl->meta().get_name());
         return true;

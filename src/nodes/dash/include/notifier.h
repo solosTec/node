@@ -10,11 +10,17 @@
 #include <cyng/log/logger.h>
 #include <cyng/store/slot_interface.h>
 
+namespace cyng {
+    class record;
+}
+
 namespace smf {
 
     class db;
     class http_server;
     class notifier : public cyng::slot_interface {
+
+        enum class event_type { INSERT, UPDATE, REMOVE };
 
       public:
         notifier(db &data, http_server &, cyng::logger);
@@ -29,14 +35,19 @@ namespace smf {
         /**
          * update
          */
-        virtual bool
-        forward(cyng::table const *tbl, cyng::key_t const &key, cyng::attr_t const &attr, std::uint64_t gen, boost::uuids::uuid tag)
-            override;
+        virtual bool forward(
+            cyng::table const *tbl,
+            cyng::key_t const &key,
+            cyng::attr_t const &attr,
+            cyng::data_t const &data,
+            std::uint64_t gen,
+            boost::uuids::uuid tag) override;
 
         /**
          * remove
          */
-        virtual bool forward(cyng::table const *tbl, cyng::key_t const &key, boost::uuids::uuid tag) override;
+        virtual bool
+        forward(cyng::table const *tbl, cyng::key_t const &key, cyng::data_t const &data, boost::uuids::uuid tag) override;
 
         /**
          * clear
@@ -49,11 +60,13 @@ namespace smf {
         virtual bool forward(cyng::table const *, bool) override;
 
       private:
-        void update_meter_online_state(cyng::key_t const &key, bool);
-        void update_gw_online_state(cyng::key_t const &key, bool);
-        void update_meter_iec_online_state(cyng::key_t const &key, bool);
-        void update_meter_wmbus_online_state(cyng::key_t const &key, bool);
-        // void update_gw_connect_state(cyng::key_t const &key, bool);
+        void update_meter_online_state(cyng::record const &, event_type);
+        void update_gw_online_state(cyng::record const &, event_type);
+        void update_meter_iec_online_state(cyng::record const &, event_type);
+        void update_meter_wmbus_online_state(cyng::record const &, event_type);
+
+        static std::string get_name(event_type);
+        static std::uint32_t calc_connection_state(event_type evt, cyng::record const &);
 
       private:
         db &db_;
