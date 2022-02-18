@@ -49,9 +49,10 @@ namespace smf {
 
         /**
          * print the content as SML tree
+         * @param resolved if true the OBIS code with be replaced by it's name (if available)
          */
-        void dump(std::ostream &, cyng::tuple_t const &tpl);
-        std::string dump_child_list(cyng::tuple_t const &tpl);
+        void dump(std::ostream &, cyng::tuple_t const &tpl, bool resolved);
+        std::string dump_child_list(cyng::tuple_t const &tpl, bool resolved);
 
     } // namespace sml
 

@@ -8,6 +8,7 @@
 #define SMF_CLUSTER_BUS_H
 
 #include <smf/cluster/config.h>
+#include <smf/cluster/features.h>
 
 #include <cyng/io/parser/parser.h>
 #include <cyng/log/logger.h>
@@ -19,16 +20,26 @@
 #include <chrono>
 
 namespace smf {
+
+    class cfg_interface {
+      public:
+        /** @brief configuration management:
+         *
+         * Backup/update a gw/meter configuration record
+         */
+        virtual void
+        cfg_merge(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value) = 0;
+    };
+
     /**
      * The bus interface defines the requirements of any kind of cluster
      * member that acts as a client.
      */
-    class bus_interface {
+    class bus_client_interface {
       public:
         virtual auto get_fabric() -> cyng::mesh * = 0;
 
         virtual void on_login(bool) = 0;
-        // virtual void on_ping(std::chrono::system_clock::time_point) = 0;
 
         /**
          * connection to cluster lost
@@ -46,6 +57,11 @@ namespace smf {
         virtual void db_res_remove(std::string, cyng::key_t key, boost::uuids::uuid tag) = 0;
 
         virtual void db_res_clear(std::string, boost::uuids::uuid tag) = 0;
+
+        /**
+         * To return a null pointer is allowed.
+         */
+        virtual cfg_interface *get_cfg_interface() = 0;
     };
 
     /**
@@ -82,7 +98,8 @@ namespace smf {
             toggle::server_vec_t &&cfg,
             std::string const &node_name,
             boost::uuids::uuid tag,
-            bus_interface *bip);
+            std::uint32_t features,
+            bus_client_interface *bip);
 
         void start();
         void stop();
@@ -175,10 +192,7 @@ namespace smf {
             cyng::param_map_t &&token);
 
         //	"pty.stop"
-        void pty_stop(std::string const&, cyng::key_t);
-
-        //	"cfg.backup"
-        void cfg_backup(std::string const &, cyng::key_t, std::chrono::system_clock::time_point);
+        void pty_stop(std::string const &, cyng::key_t);
 
         /**
          * push system message
@@ -196,6 +210,22 @@ namespace smf {
          * send an update request for "cluster" table to main node
          */
         void update_pty_counter(std::uint64_t);
+
+        //	"cfg.init.backup"
+        void cfg_init_backup(std::string const &, cyng::key_t, std::chrono::system_clock::time_point);
+
+        /** @brief configuration management
+         *
+         * @return true if configuration management is available
+         */
+        bool has_cfg_management() const;
+
+        /** @brief configuration management
+         *
+         * Backup/update a gw/meter configuration record
+         */
+        void
+        cfg_merge_backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
 
       private:
         void reset(state_ptr sp, state_value);
@@ -218,36 +248,13 @@ namespace smf {
         /**
          * insert external functions
          */
-        auto init_vm(bus_interface *) -> cyng::vm_proxy;
+        auto init_vm(bus_client_interface *) -> cyng::vm_proxy;
 
         void on_ping(std::chrono::system_clock::time_point);
 
-        //
-        //	generate VM channel functions
-        //
+        void on_test_msg(std::string);
 
-        static auto get_vm_func_on_login(bus_interface *) -> std::function<void(bool)>;
-        static auto get_vm_func_on_ping(bus *) -> std::function<void(std::chrono::system_clock::time_point)>;
-
-        static auto get_vm_func_on_disconnect(bus_interface *) -> std::function<void(std::string)>;
-
-        //	subscribe (1)
-        static auto get_vm_func_db_res_insert(bus_interface *)
-            -> std::function<void(std::string, cyng::key_t, cyng::data_t, std::uint64_t, boost::uuids::uuid)>;
-
-        //	trx (2)
-        static auto get_vm_func_db_res_trx(bus_interface *) -> std::function<void(std::string, bool)>;
-
-        //	update (3)
-        static auto get_vm_func_db_res_update(bus_interface *)
-            -> std::function<void(std::string, cyng::key_t, cyng::attr_t, std::uint64_t, boost::uuids::uuid)>;
-
-        //	remove (4)
-        static auto get_vm_func_db_res_remove(bus_interface *)
-            -> std::function<void(std::string, cyng::key_t key, boost::uuids::uuid)>;
-
-        //	clear (5)
-        static auto get_vm_func_db_res_clear(bus_interface *) -> std::function<void(std::string, boost::uuids::uuid)>;
+        // void cfg_merge_backup(boost::uuids::uuid);
 
       private:
         boost::asio::io_context &ctx_;
@@ -255,9 +262,9 @@ namespace smf {
         toggle const tgl_;
         std::string const node_name_;
         boost::uuids::uuid const tag_;
-        bus_interface *bip_;
+        std::uint32_t const features_;
+        bus_client_interface *bip_;
 
-        // boost::asio::ip::tcp::resolver::results_type endpoints_;
         boost::asio::ip::tcp::socket socket_;
         boost::asio::steady_timer timer_;
         std::deque<cyng::buffer_t> buffer_write_;

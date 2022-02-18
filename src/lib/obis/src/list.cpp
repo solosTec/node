@@ -5,6 +5,7 @@
  *
  */
 
+#include <smf/obis/db.h>
 #include <smf/obis/list.h>
 
 #include <cyng/io/ostream.h>
@@ -74,30 +75,35 @@ namespace smf {
 
         bool has_child_list(cyng::tuple_t const &tpl) { return (tpl.size() == 3) && (tpl.back().tag() == cyng::TC_TUPLE); }
 
-        void dump(std::ostream &os, cyng::tuple_t const &tpl, std::size_t depth) {
+        void dump(std::ostream &os, cyng::tuple_t const &tpl, bool resolved, std::size_t depth) {
             if (tpl.size() == 3 && tpl.front().tag() == cyng::TC_OBIS) {
                 auto const [o, a, l] = get_tree_values(tpl);
-                os << std::string(depth * 2, ' ') << o << ": " << a.second << std::endl;
+                //  show name if available
+                if (resolved) {
+                    os << std::string(depth * 2, ' ') << obis::get_name(o) << ": " << a.second << std::endl;
+                } else {
+                    os << std::string(depth * 2, ' ') << o << ": " << a.second << std::endl;
+                }
                 for (auto const &obj : l) {
                     auto c = cyng::container_cast<cyng::tuple_t>(obj);
-                    dump(os, c, depth + 1);
+                    dump(os, c, resolved, depth + 1);
                 }
             } else {
                 for (auto const &obj : tpl) {
                     auto c = cyng::container_cast<cyng::tuple_t>(obj);
-                    dump(os, c, depth + 1);
+                    dump(os, c, resolved, depth + 1);
                 }
             }
         }
 
-        void dump(std::ostream &os, cyng::tuple_t const &tpl) {
+        void dump(std::ostream &os, cyng::tuple_t const &tpl, bool resolved) {
             //  start recursive call
-            dump(os, tpl, 0);
+            dump(os, tpl, resolved, 0);
         }
 
-        std::string dump_child_list(cyng::tuple_t const &tpl) {
+        std::string dump_child_list(cyng::tuple_t const &tpl, bool resolved) {
             std::stringstream ss;
-            dump(ss, tpl);
+            dump(ss, tpl, resolved);
             return ss.str();
         }
 

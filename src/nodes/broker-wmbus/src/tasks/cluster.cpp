@@ -33,7 +33,7 @@ namespace smf {
 		, tag_(tag)
 		, logger_(logger)
 		, fabric_(ctl)
-		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
+		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, NO_FEATURES, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_))
 		, server_(ctl, logger, bus_, db_, client_timeout, client_out)
@@ -67,6 +67,8 @@ namespace smf {
     //	bus interface
     //
     cyng::mesh *cluster::get_fabric() { return &fabric_; }
+    cfg_interface *cluster::get_cfg_interface() { return nullptr; }
+
     void cluster::on_login(bool success) {
         if (success) {
             CYNG_LOG_INFO(logger_, "[cluster] join complete");

@@ -29,13 +29,15 @@ namespace smf {
         toggle::server_vec_t &&tgl,
         std::string const &node_name,
         boost::uuids::uuid tag,
-        bus_interface *bip)
+        std::uint32_t features,
+        bus_client_interface *bip)
         : state_holder_()
         , ctx_(ctx)
         , logger_(logger)
         , tgl_(std::move(tgl))
         , node_name_(node_name)
         , tag_(tag)
+        , features_(features)
         , bip_(bip)
         , socket_(ctx_)
         , timer_(ctx_)
@@ -49,23 +51,81 @@ namespace smf {
             vm_.load(std::move(obj));
         }) {
 
+        BOOST_ASSERT(bip != nullptr);
+
         //
         //  create and initialize VM with named functions
         //
         vm_ = init_vm(bip);
     }
 
-    cyng::vm_proxy bus::init_vm(bus_interface *bip) {
+    cyng::vm_proxy bus::init_vm(bus_client_interface *bip) {
 
         return bip->get_fabric()->make_proxy(
-            cyng::make_description("cluster.res.login", get_vm_func_on_login(bip)),       //	"cluster.res.login"
-            cyng::make_description("cluster.req.ping", get_vm_func_on_ping(this)),        //	"cluster.req.ping"
-            cyng::make_description("cluster.disconnect", get_vm_func_on_disconnect(bip)), //	"cluster.disconnect"
-            cyng::make_description("db.res.insert", get_vm_func_db_res_insert(bip)),      //	"db.res.insert"
-            cyng::make_description("db.res.trx", get_vm_func_db_res_trx(bip)),            //	"db.res.trx"
-            cyng::make_description("db.res.update", get_vm_func_db_res_update(bip)),      //	"db.res.update"
-            cyng::make_description("db.res.remove", get_vm_func_db_res_remove(bip)),      //	"db.res.remove"
-            cyng::make_description("db.res.clear", get_vm_func_db_res_clear(bip))         //	"db.res.clear"
+
+            //	"cluster.res.login"
+            cyng::make_description(
+                "cluster.res.login", cyng::vm_adaptor<bus_client_interface, void, bool>(bip, &bus_client_interface::on_login)),
+
+            //	"cluster.req.ping"
+            cyng::make_description(
+                "cluster.req.ping", cyng::vm_adaptor<bus, void, std::chrono::system_clock::time_point>(this, &bus::on_ping)),
+
+            //	"cluster.test.msg"
+            cyng::make_description("cluster.test.msg", cyng::vm_adaptor<bus, void, std::string>(this, &bus::on_test_msg)),
+
+            //	"cluster.disconnect"
+            cyng::make_description(
+                "cluster.disconnect",
+                cyng::vm_adaptor<bus_client_interface, void, std::string>(bip, &bus_client_interface::on_disconnect)),
+
+            //	"db.res.insert"
+            cyng::make_description(
+                "db.res.insert",
+                cyng::vm_adaptor<
+                    bus_client_interface,
+                    void,
+                    std::string,
+                    cyng::key_t,
+                    cyng::data_t,
+                    std::uint64_t,
+                    boost::uuids::uuid>(bip, &bus_client_interface::db_res_insert)),
+
+            //	"db.res.trx"
+            cyng::make_description(
+                "db.res.trx",
+                cyng::vm_adaptor<bus_client_interface, void, std::string, bool>(bip, &bus_client_interface::db_res_trx)),
+
+            //	"db.res.update"
+            cyng::make_description(
+                "db.res.update",
+                cyng::vm_adaptor<
+                    bus_client_interface,
+                    void,
+                    std::string,
+                    cyng::key_t,
+                    cyng::attr_t,
+                    std::uint64_t,
+                    boost::uuids::uuid>(bip, &bus_client_interface::db_res_update)),
+
+            //	"db.res.remove"
+            cyng::make_description(
+                "db.res.remove",
+                cyng::vm_adaptor<bus_client_interface, void, std::string, cyng::key_t, boost::uuids::uuid>(
+                    bip, &bus_client_interface::db_res_remove)),
+
+            //	"db.res.clear"
+            cyng::make_description(
+                "db.res.clear",
+                cyng::vm_adaptor<bus_client_interface, void, std::string, boost::uuids::uuid>(
+                    bip, &bus_client_interface::db_res_clear)),
+
+            // "cfg.merge.backup"
+            cyng::make_description(
+                "cfg.merge.backup",
+                cyng::vm_adaptor<bus, void, boost::uuids::uuid, cyng::buffer_t, cyng::buffer_t, cyng::obis_path_t, cyng::object>(
+                    this, &bus::cfg_merge_backup))
+
         );
     }
 
@@ -232,6 +292,7 @@ namespace smf {
                         cyng::sys::get_process_id(),
                         node_name_,
                         tag_,
+                        features_,
                         cyng::version(SMF_VERSION_MAJOR, SMF_VERSION_MINOR)));
 
                 // Start the input actor.
@@ -451,7 +512,7 @@ namespace smf {
         add_msg(state_holder_, cyng::serialize_invoke("pty.close.channel", tag, dev, channel, token));
     }
 
-    //	"pty.push.data.req"
+    //	"pty.req.push.data"
     void bus::pty_push_data(
         std::uint32_t channel,
         std::uint32_t source,
@@ -460,17 +521,12 @@ namespace smf {
         boost::uuids::uuid tag,
         cyng::param_map_t &&token) {
 
-        add_msg(state_holder_, cyng::serialize_invoke("pty.push.data.req", tag, dev, channel, source, data, token));
+        add_msg(state_holder_, cyng::serialize_invoke("pty.req.push.data", tag, dev, channel, source, data, token));
     }
 
     void bus::pty_stop(std::string const &table_name, cyng::key_t key) {
 
         add_msg(state_holder_, cyng::serialize_invoke("pty.stop", table_name, key));
-    }
-
-    void bus::cfg_backup(std::string const &table_name, cyng::key_t key, std::chrono::system_clock::time_point tp) {
-
-        add_msg(state_holder_, cyng::serialize_invoke("cfg.backup", table_name, key, tp));
     }
 
     void bus::push_sys_msg(std::string msg, cyng::severity level) {
@@ -493,6 +549,27 @@ namespace smf {
         req_db_update("cluster", cyng::key_generator(tag_), cyng::param_map_factory("clients", count));
     }
 
+    void bus::cfg_init_backup(std::string const &table_name, cyng::key_t key, std::chrono::system_clock::time_point tp) {
+
+        add_msg(state_holder_, cyng::serialize_invoke("cfg.init.backup", table_name, key, tp));
+    }
+
+    bool bus::has_cfg_management() const { return bip_->get_cfg_interface() != nullptr; }
+
+    void bus::cfg_merge_backup(
+        boost::uuids::uuid tag,
+        cyng::buffer_t gw,
+        cyng::buffer_t meter,
+        cyng::obis_path_t path,
+        cyng::object value) {
+
+        if (has_cfg_management()) {
+            bip_->get_cfg_interface()->cfg_merge(tag, gw, meter, path, value);
+        } else {
+            CYNG_LOG_WARNING(logger_, "[cluster.cfg] merge: " << path << ": " << value);
+        }
+    }
+
     void bus::on_ping(std::chrono::system_clock::time_point tp) {
         CYNG_LOG_TRACE(logger_, "ping: " << tp);
         //
@@ -502,53 +579,7 @@ namespace smf {
         add_msg(state_holder_, cyng::serialize_invoke("cluster.res.ping", tp));
     }
 
-    std::function<void(bool)> bus::get_vm_func_on_login(bus_interface *bip) {
-        return std::bind(&bus_interface::on_login, bip, std::placeholders::_1);
-    }
-
-    std::function<void(std::chrono::system_clock::time_point)> bus::get_vm_func_on_ping(bus *bp) {
-        return std::bind(&bus::on_ping, bp, std::placeholders::_1);
-    }
-
-    std::function<void(std::string)> bus::get_vm_func_on_disconnect(bus_interface *bip) {
-        return std::bind(&bus_interface::on_disconnect, bip, std::placeholders::_1);
-    }
-
-    std::function<void(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag)>
-    bus::get_vm_func_db_res_insert(bus_interface *bip) {
-        return std::bind(
-            &bus_interface::db_res_insert,
-            bip,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4,
-            std::placeholders::_5);
-    }
-
-    std::function<void(std::string, bool)> bus::get_vm_func_db_res_trx(bus_interface *bip) {
-        return std::bind(&bus_interface::db_res_trx, bip, std::placeholders::_1, std::placeholders::_2);
-    }
-
-    std::function<void(std::string, cyng::key_t key, cyng::attr_t attr_t, std::uint64_t gen, boost::uuids::uuid tag)>
-    bus::get_vm_func_db_res_update(bus_interface *bip) {
-        return std::bind(
-            &bus_interface::db_res_update,
-            bip,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4,
-            std::placeholders::_5);
-    }
-
-    std::function<void(std::string, cyng::key_t key, boost::uuids::uuid tag)> bus::get_vm_func_db_res_remove(bus_interface *bip) {
-        return std::bind(&bus_interface::db_res_remove, bip, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    }
-
-    std::function<void(std::string, boost::uuids::uuid tag)> bus::get_vm_func_db_res_clear(bus_interface *bip) {
-        return std::bind(&bus_interface::db_res_clear, bip, std::placeholders::_1, std::placeholders::_2);
-    }
+    void bus::on_test_msg(std::string msg) { CYNG_LOG_INFO(logger_, "[cluster] test msg: \"" << msg << "\""); }
 
     bus::state::state(boost::asio::ip::tcp::resolver::results_type &&res)
         : value_(state_value::START)

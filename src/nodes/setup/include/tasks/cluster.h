@@ -24,7 +24,7 @@
 
 namespace smf {
 
-    class cluster : private bus_interface {
+    class cluster : private bus_client_interface, private cfg_interface {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
@@ -53,6 +53,7 @@ namespace smf {
         //	bus interface
         //
         virtual cyng::mesh *get_fabric() override;
+        virtual cfg_interface *get_cfg_interface() override;
         virtual void on_login(bool) override;
         virtual void on_disconnect(std::string msg) override;
         virtual void
@@ -64,6 +65,12 @@ namespace smf {
         virtual void db_res_remove(std::string, cyng::key_t key, boost::uuids::uuid tag) override;
 
         virtual void db_res_clear(std::string, boost::uuids::uuid tag) override;
+
+        //
+        //  cfg interface
+        //
+        virtual void
+        cfg_merge(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value) override;
 
         /**
          * Upload table cache to main node

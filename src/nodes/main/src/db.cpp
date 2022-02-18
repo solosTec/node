@@ -88,32 +88,37 @@ namespace smf {
         //
         insert_cluster_member(
             cfg_.get_tag(),
+            boost::uuids::nil_uuid(), //  no VM
             "main",
             cyng::version(SMF_VERSION_MAJOR, SMF_VERSION_MINOR),
             boost::asio::ip::tcp::endpoint(),
-            cyng::sys::get_process_id());
+            cyng::sys::get_process_id(),
+            false);
     }
 
     bool db::insert_cluster_member(
         boost::uuids::uuid tag,
+        boost::uuids::uuid peer,
         std::string class_name,
         cyng::version v,
         boost::asio::ip::tcp::endpoint ep,
-        cyng::pid pid) {
+        cyng::pid pid,
+        bool cfg_mgr) {
 
         return cache_.insert(
             "cluster",
             cyng::key_generator(tag),
             cyng::data_generator(
+                peer,
                 class_name,
                 std::chrono::system_clock::now(),
                 v,
                 static_cast<std::uint64_t>(0),
                 std::chrono::microseconds(0),
                 ep,
-                pid),
-            1u //	only needed for insert operations
-            ,
+                pid,
+                cfg_mgr),
+            1u, //	only needed for insert operations
             cfg_.get_tag());
     }
 

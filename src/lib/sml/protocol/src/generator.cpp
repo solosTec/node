@@ -4,6 +4,7 @@
 #include <smf/sml/msg.h>
 
 #include <cyng/obj/util.hpp>
+#include <cyng/parse/string.h>
 
 #include <algorithm>
 
@@ -11,40 +12,64 @@
 
 namespace smf {
     namespace sml {
-        namespace detail {
 
-            trx::trx()
-                : gen_(cyng::crypto::make_rnd_num())
-                , value_()
-                , num_(1) {
-                reset(7);
+        trx::trx()
+            : gen_(cyng::crypto::make_rnd_num())
+            , prefix_()
+            , num_(1) {
+            reset(7);
+        }
+
+        trx::trx(trx const &other)
+            : gen_(cyng::crypto::make_rnd_num())
+            , prefix_(other.prefix_)
+            , num_(other.num_) {}
+
+        void trx::reset(std::size_t length) {
+            prefix_.resize(length);
+            reset();
+        }
+
+        void trx::reset() {
+            std::generate(prefix_.begin(), prefix_.end(), [&]() { return gen_.next(); });
+            num_ = 1;
+        }
+
+        trx &trx::operator++() {
+            ++num_;
+            return *this;
+        }
+
+        trx trx::operator++(int) {
+            trx tmp(*this);
+            ++num_;
+            return tmp;
+        }
+
+        std::string trx::operator*() const { return prefix_ + "-" + std::to_string(num_); }
+
+        std::string const &trx::get_prefix() const { return prefix_; }
+
+        std::size_t trx::store_pefix() {
+            open_trx_.insert(get_prefix());
+            return open_trx_.size();
+        }
+
+        std::pair<std::size_t, bool> trx::ack_trx(std::string const &trx) {
+            //
+            //  strip number
+            //
+            auto const parts = cyng::split(trx, "-");
+            if (parts.size() == 2) {
+
+                //
+                //  search and remove
+                //
+                auto const b = open_trx_.erase(parts.at(0)) != 0;
+                return {open_trx_.size(), b};
             }
-
-            trx::trx(trx const &other)
-                : gen_(cyng::crypto::make_rnd_num())
-                , value_(other.value_)
-                , num_(other.num_) {}
-
-            void trx::reset(std::size_t length) {
-                value_.resize(length);
-                std::generate(value_.begin(), value_.end(), [&]() { return gen_.next(); });
-                num_ = 1;
-            }
-
-            trx &trx::operator++() {
-                ++num_;
-                return *this;
-            }
-
-            trx trx::operator++(int) {
-                trx tmp(*this);
-                ++num_;
-                return tmp;
-            }
-
-            std::string trx::operator*() const { return value_ + "-" + std::to_string(num_); }
-
-        } // namespace detail
+            return {open_trx_.size(), false};
+        }
 
         std::string generate_file_id() {
 
@@ -56,8 +81,7 @@ namespace smf {
             return id;
         }
 
-        response_generator::response_generator()
-            : trx_() {}
+        response_generator::response_generator() {}
 
         cyng::tuple_t
         response_generator::public_open(std::string trx, cyng::buffer_t file_id, cyng::buffer_t client, std::string server) {
@@ -109,8 +133,9 @@ namespace smf {
 
         cyng::tuple_t response_generator::get_list(cyng::buffer_t const &server, cyng::tuple_t val_list) {
 
+            trx trx_mgr;
             return make_message(
-                *trx_,
+                *trx_mgr,
                 1, //  group
                 0, //  abort code
                 msg_type::GET_LIST_RESPONSE,
@@ -147,6 +172,7 @@ namespace smf {
 
         cyng::tuple_t request_generator::public_open(cyng::mac48 client_id, cyng::buffer_t const &server_id) {
 
+            trx_.reset();
             return make_message(
                 *trx_,
                 group_no_++, //  group
@@ -193,6 +219,10 @@ namespace smf {
         }
 
         cyng::tuple_t request_generator::get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis code) {
+            return get_proc_parameter(server_id, cyng::obis_path_t{code});
+        }
+
+        cyng::tuple_t request_generator::get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis_path_t path) {
             BOOST_ASSERT(!name_.empty());
             return make_message(
                 *++trx_,
@@ -210,30 +240,7 @@ namespace smf {
                     server_id,
                     get_name(),
                     get_pwd(),
-                    cyng::make_tuple(code),        //   parameter tree (OBIS)
-                    cyng::null{}),                 //  attribute
-                static_cast<std::uint16_t>(0xFFFF) // crc placeholder
-            );
-        }
-
-        cyng::tuple_t request_generator::get_proc_parameter(cyng::buffer_t const &server_id, cyng::obis_path_t path) {
-            return make_message(
-                *++trx_,
-                group_no_++,                          //  group
-                0,                                    //  abort code
-                msg_type::GET_PROC_PARAMETER_REQUEST, //  0x600
-                // get process parameter request has 5 elements:
-                //
-                //	* server ID
-                //	* username
-                //	* password
-                //	* parameter tree (OBIS)
-                //	* attribute (not set = 01)
-                cyng::make_tuple(
-                    server_id,
-                    get_name(),
-                    get_pwd(),
-                    cyng::make_tuple(path),        //   parameter tree (OBIS)
+                    path,                          //   parameter tree (OBIS)
                     cyng::null{}),                 //  attribute
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder
             );
@@ -263,6 +270,7 @@ namespace smf {
 
         std::string const &request_generator::get_name() const { return name_; }
         std::string const &request_generator::get_pwd() const { return pwd_; }
+        trx &request_generator::get_trx_mgr() { return trx_; }
 
     } // namespace sml
 } // namespace smf

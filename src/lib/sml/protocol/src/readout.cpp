@@ -19,7 +19,7 @@ namespace smf {
     namespace sml {
 
         cyng::object customize_value(cyng::obis code, cyng::object obj) {
-            if (code.starts_with(cyng::make_buffer({0x81, 0x49, 0x17, 0x07, 0x00})) ||
+            if (code.starts_with({0x81, 0x49, 0x17, 0x07, 0x00}) ||
                 cyng::compare_n(code, OBIS_CUSTOM_IF_IP_CURRENT_1, 5) //	CUSTOM_IF_IP_ADDRESS...
                 || OBIS_CUSTOM_IF_IP_MASK_1 == code || OBIS_CUSTOM_IF_IP_MASK_2 == code || OBIS_CUSTOM_IF_IP_ADDRESS_1 == code ||
                 OBIS_CUSTOM_IF_IP_ADDRESS_2 == code || OBIS_CUSTOM_IF_DHCP_LOCAL_IP_MASK == code ||
@@ -40,22 +40,21 @@ namespace smf {
                 auto const state = cyng::numeric_cast<std::uint32_t>(obj, 0);
                 return cyng::make_object(state);
             } else if (
-                code.starts_with(cyng::make_buffer({0x81, 0x49, 0x63, 0x3C, 0x01}))    //	IP-T user name redundancy 1
-                || code.starts_with(cyng::make_buffer({0x81, 0x49, 0x63, 0x3C, 0x02})) //	IP-T user name redundancy 2
-                || cyng::compare_n(code, OBIS_NTP_SERVER, 5)                           //	NTP server (81 81 c7 88 02 NN)
-                || cyng::compare_n(code, OBIS_BROKER_SERVER, 5)                        //	BROKER_SERVER
-                || cyng::compare_n(code, OBIS_BROKER_USER, 5)                          //	BROKER_USER
-                || cyng::compare_n(code, OBIS_BROKER_PWD, 5)                           //	BROKER_PWD
-                || cyng::compare_n(code, OBIS_SERIAL_NAME, 5)                          //	SERIAL_NAME
-                || cyng::compare_n(code, OBIS_SERIAL_PARITY, 5)                        //	SERIAL_PARITY
-                || cyng::compare_n(code, OBIS_SERIAL_FLOW_CONTROL, 5)                  //	SERIAL_FLOW_CONTROL
-                || cyng::compare_n(code, OBIS_SERIAL_STOPBITS, 5)                      //	SERIAL_STOPBITS
+                code.starts_with({0x81, 0x49, 0x63, 0x3C, 0x01})      //	IP-T user name redundancy 1
+                || code.starts_with({0x81, 0x49, 0x63, 0x3C, 0x02})   //	IP-T user name redundancy 2
+                || cyng::compare_n(code, OBIS_NTP_SERVER, 5)          //	NTP server (81 81 c7 88 02 NN)
+                || cyng::compare_n(code, OBIS_BROKER_SERVER, 5)       //	BROKER_SERVER
+                || cyng::compare_n(code, OBIS_BROKER_USER, 5)         //	BROKER_USER
+                || cyng::compare_n(code, OBIS_BROKER_PWD, 5)          //	BROKER_PWD
+                || cyng::compare_n(code, OBIS_SERIAL_NAME, 5)         //	SERIAL_NAME
+                || cyng::compare_n(code, OBIS_SERIAL_PARITY, 5)       //	SERIAL_PARITY
+                || cyng::compare_n(code, OBIS_SERIAL_FLOW_CONTROL, 5) //	SERIAL_FLOW_CONTROL
+                || cyng::compare_n(code, OBIS_SERIAL_STOPBITS, 5)     //	SERIAL_STOPBITS
                 || OBIS_W_MBUS_ADAPTER_MANUFACTURER == code || OBIS_W_MBUS_FIRMWARE == code || OBIS_W_MBUS_HARDWARE == code ||
                 OBIS_DATA_MANUFACTURER == code || OBIS_DEVICE_KERNEL == code || OBIS_VERSION == code || OBIS_FILE_NAME == code ||
                 OBIS_IF_1107_METER_ID == code || OBIS_IF_1107_ADDRESS == code || OBIS_IF_1107_P1 == code ||
-                OBIS_IF_1107_W5 == code || OBIS_PUSH_TARGET == code ||
-                code.starts_with(cyng::make_buffer({0x81, 0x81, 0xC7, 0x82, 0x0A})) || OBIS_ACCESS_USER_NAME == code ||
-                OBIS_ACCESS_PASSWORD == code || OBIS_NMS_USER == code || OBIS_NMS_PWD == code ||
+                OBIS_IF_1107_W5 == code || OBIS_PUSH_TARGET == code || code.starts_with({0x81, 0x81, 0xC7, 0x82, 0x0A}) ||
+                OBIS_ACCESS_USER_NAME == code || OBIS_ACCESS_PASSWORD == code || OBIS_NMS_USER == code || OBIS_NMS_PWD == code ||
                 OBIS_PEER_ADDRESS == code //	//	OBIS-T-Kennzahl der Ereignisquelle
                 || OBIS_DATA_PUSH_DETAILS == code || OBIS_DEVICE_MODEL == code || OBIS_DEVICE_SERIAL == code ||
                 OBIS_DEVICE_CLASS == code) {

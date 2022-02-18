@@ -129,8 +129,6 @@ namespace smf {
         //
         //	start sync task
         //
-        // auto channel = ctl_.create_named_channel_with_ref<sync>(m.get_name(), ctl_, cluster_bus_, store_, logger_);
-        // channel->dispatch("start", cyng::make_tuple(m.get_name()));
         cluster_bus_.req_subscribe(m.get_name());
     }
 
@@ -288,6 +286,17 @@ namespace smf {
                 } else {
                     std::cout << "create: " << m.get_name() << " - " << sql << std::endl;
                 }
+            }
+
+            //
+            //  TCfgSet has no tabular in-memory table
+            //
+            auto m = config::get_store_cfg_set();
+            auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
+            if (!db.execute(sql)) {
+                std::cerr << "**error: " << sql << std::endl;
+            } else {
+                std::cout << "create: " << m.get_name() << " - " << sql << std::endl;
             }
 
             return true;

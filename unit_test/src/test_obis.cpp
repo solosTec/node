@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(tree) {
     auto const cl1 = t.to_child_list();
     // std::cout << cyng::io::to_typed(cl1) << std::endl;
     std::cout << cyng::io::to_pretty(cl1) << std::endl;
-    std::cout << smf::sml::dump_child_list(cl1);
+    std::cout << smf::sml::dump_child_list(cl1, false);
 
     cyng::obis_path_t psub1{smf::OBIS_METER_ADDRESS};
     auto const cl2 = t.get_subtree(psub1).to_child_list();

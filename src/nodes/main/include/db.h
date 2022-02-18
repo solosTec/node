@@ -58,8 +58,14 @@ namespace smf {
         /**
          * Add a new cluster node into table "cluster"
          */
-        bool
-        insert_cluster_member(boost::uuids::uuid, std::string class_name, cyng::version, boost::asio::ip::tcp::endpoint, cyng::pid);
+        bool insert_cluster_member(
+            boost::uuids::uuid tag,
+            boost::uuids::uuid peer,
+            std::string class_name,
+            cyng::version,
+            boost::asio::ip::tcp::endpoint,
+            cyng::pid,
+            bool);
 
         bool remove_cluster_member(boost::uuids::uuid);
 
@@ -200,6 +206,9 @@ namespace smf {
          */
         void update_connection_throughput(boost::uuids::uuid rtag, boost::uuids::uuid dev, std::uint64_t size);
 
+        /**
+         * Set "cfg" flag in "cluster" table
+         */
         void update_ping_result(boost::uuids::uuid peer, std::chrono::microseconds delta);
 
       private:

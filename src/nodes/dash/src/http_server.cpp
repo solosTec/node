@@ -414,7 +414,7 @@ namespace smf {
             CYNG_LOG_TRACE(logger_, "[HTTP] config \"" << channel << "\" request for " << rel.table_ << ": " << id);
             if (boost::algorithm::equals(channel, "backup")) {
                 //  ignore sections (backup contains all data)
-                cluster_bus_.cfg_backup(rel.table_, key, std::chrono::system_clock::now());
+                cluster_bus_.cfg_init_backup(rel.table_, key, std::chrono::system_clock::now());
             }
 
         } else {

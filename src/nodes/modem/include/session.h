@@ -53,28 +53,16 @@ namespace smf {
         //	bus interface
         //
         void pty_res_login(bool success, boost::uuids::uuid dev);
-        static auto get_vm_func_pty_res_login(modem_session *p) -> std::function<void(bool success, boost::uuids::uuid)>;
 
         void pty_res_open_connection(bool success, cyng::param_map_t token);
-        static auto get_vm_func_pty_res_open_connection(modem_session *ptr) -> std::function<void(bool success, cyng::param_map_t)>;
 
         void pty_transfer_data(cyng::buffer_t data);
-        static auto get_vm_func_pty_transfer_data(modem_session *p) -> std::function<void(cyng::buffer_t)>;
 
         void pty_res_close_connection(bool success, cyng::param_map_t token);
-        static auto get_vm_func_pty_res_close_connection(modem_session *p) -> std::function<void(bool success, cyng::param_map_t)>;
 
         void pty_req_open_connection(std::string msisdn, bool local, cyng::param_map_t token);
-        static auto get_vm_func_pty_req_open_connection(modem_session *p)
-            -> std::function<void(std::string, bool, cyng::param_map_t)>;
 
         void pty_req_close_connection();
-        static auto get_vm_func_pty_req_close_connection(modem_session *p) -> std::function<void()>;
-
-        static auto get_vm_func_pty_stop(modem_session *p) -> std::function<void()>;
-
-        static auto get_vm_func_cfg_backup(modem_session *p)
-            -> std::function<void(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp)>;
 
       private:
         cyng::controller &ctl_;

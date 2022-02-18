@@ -95,7 +95,7 @@ namespace smf {
 
         void pty_stop();
 
-        void cfg_backup(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp);
+        void cfg_req_backup(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp);
 
         /**
          * query some device data
@@ -128,39 +128,6 @@ namespace smf {
             ipt::sequence_t seq);
 
         void open_connection(std::string msisdn, ipt::sequence_t seq);
-
-        static auto get_vm_func_pty_res_login(ipt_session *p) -> std::function<void(bool success, boost::uuids::uuid)>;
-
-        static auto get_vm_func_pty_res_register(ipt_session *p)
-            -> std::function<void(bool success, std::uint32_t, cyng::param_map_t)>;
-
-        static auto get_vm_func_pty_res_open_channel(ipt_session *p) -> std::function<
-            void(bool, std::uint32_t, std::uint32_t, std::uint16_t, std::uint8_t, std::uint8_t, std::uint32_t, cyng::param_map_t)>;
-
-        static auto get_vm_func_pty_req_push_data(ipt_session *p)
-            -> std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t)>;
-
-        static auto get_vm_func_pty_res_push_data(ipt_session *p)
-            -> std::function<void(bool, std::uint32_t, std::uint32_t, cyng::param_map_t)>;
-
-        static auto get_vm_func_pty_res_close_channel(ipt_session *p)
-            -> std::function<void(bool success, std::uint32_t channel, std::size_t count, cyng::param_map_t)>;
-
-        static auto get_vm_func_pty_res_open_connection(ipt_session *p) -> std::function<void(bool success, cyng::param_map_t)>;
-
-        static auto get_vm_func_pty_transfer_data(ipt_session *p) -> std::function<void(cyng::buffer_t)>;
-
-        static auto get_vm_func_pty_res_close_connection(ipt_session *p) -> std::function<void(bool success, cyng::param_map_t)>;
-
-        static auto get_vm_func_pty_req_open_connection(ipt_session *p)
-            -> std::function<void(std::string, bool, cyng::param_map_t)>;
-
-        static auto get_vm_func_pty_req_close_connection(ipt_session *p) -> std::function<void()>;
-
-        static auto get_vm_func_pty_stop(ipt_session *p) -> std::function<void()>;
-
-        static auto get_vm_func_cfg_backup(ipt_session *p)
-            -> std::function<void(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp)>;
 
       private:
         cyng::controller &ctl_;

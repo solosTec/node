@@ -46,7 +46,6 @@ namespace smf {
         , logger_(logger)
         , cluster_bus_(cluster_bus)
         , query_(query)
-        //, client_id_(client_id)
         , buffer_()
         , rx_{0}
         , sx_{0}
@@ -79,7 +78,7 @@ namespace smf {
                 CYNG_LOG_DEBUG(logger_, "path  : " << p);
                 CYNG_LOG_DEBUG(logger_, "code  : " << code << " - " << obis::get_name(code));
                 CYNG_LOG_DEBUG(logger_, "attr  : " << a);
-                CYNG_LOG_DEBUG(logger_, "list  : \n" << sml::dump_child_list(l));
+                CYNG_LOG_DEBUG(logger_, "list  : \n" << sml::dump_child_list(l, false));
             } break;
             case sml::msg_type::ATTENTION_RESPONSE: {
                 auto const code = sml::read_attention_response(msg);
@@ -95,19 +94,68 @@ namespace smf {
     {
         vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
-            cyng::make_description("pty.res.login", get_vm_func_pty_res_login(this)),
-            cyng::make_description("pty.res.register", get_vm_func_pty_res_register(this)),
-            cyng::make_description("pty.res.open.channel", get_vm_func_pty_res_open_channel(this)),
-            cyng::make_description("pty.push.data.req", get_vm_func_pty_req_push_data(this)),
-            cyng::make_description("pty.push.data.res", get_vm_func_pty_res_push_data(this)),
-            cyng::make_description("pty.res.close.channel", get_vm_func_pty_res_close_channel(this)),
-            cyng::make_description("pty.res.open.connection", get_vm_func_pty_res_open_connection(this)),
-            cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
-            cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
-            cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
-            cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)),
-            cyng::make_description("pty.req.stop", get_vm_func_pty_stop(this)),
-            cyng::make_description("cfg.req.backup", get_vm_func_cfg_backup(this)));
+            cyng::make_description(
+                "pty.res.login", cyng::vm_adaptor<ipt_session, void, bool, boost::uuids::uuid>(this, &ipt_session::pty_res_login)),
+
+            cyng::make_description(
+                "pty.res.register",
+                cyng::vm_adaptor<ipt_session, void, bool, std::uint32_t, cyng::param_map_t>(this, &ipt_session::pty_res_register)),
+
+            cyng::make_description(
+                "pty.res.open.channel",
+                cyng::vm_adaptor<
+                    ipt_session,
+                    void,
+                    bool,
+                    std::uint32_t,
+                    std::uint32_t,
+                    std::uint16_t,
+                    std::uint8_t,
+                    std::uint8_t,
+                    std::uint32_t,
+                    cyng::param_map_t>(this, &ipt_session::pty_res_open_channel)),
+
+            cyng::make_description(
+                "pty.req.push.data",
+                cyng::vm_adaptor<ipt_session, void, std::uint32_t, std::uint32_t, cyng::buffer_t>(
+                    this, &ipt_session::pty_req_push_data)),
+
+            cyng::make_description(
+                "pty.push.data.res",
+                cyng::vm_adaptor<ipt_session, void, bool, std::uint32_t, std::uint32_t, cyng::param_map_t>(
+                    this, &ipt_session::pty_res_push_data)),
+
+            cyng::make_description(
+                "pty.res.close.channel",
+                cyng::vm_adaptor<ipt_session, void, bool, std::uint32_t, std::size_t, cyng::param_map_t>(
+                    this, &ipt_session::pty_res_close_channel)),
+
+            cyng::make_description(
+                "pty.res.open.connection",
+                cyng::vm_adaptor<ipt_session, void, bool, cyng::param_map_t>(this, &ipt_session::pty_res_open_connection)),
+
+            cyng::make_description(
+                "pty.transfer.data", cyng::vm_adaptor<ipt_session, void, cyng::buffer_t>(this, &ipt_session::pty_transfer_data)),
+
+            cyng::make_description(
+                "pty.res.close.connection",
+                cyng::vm_adaptor<ipt_session, void, bool, cyng::param_map_t>(this, &ipt_session::pty_res_close_connection)),
+
+            cyng::make_description(
+                "pty.req.open.connection",
+                cyng::vm_adaptor<ipt_session, void, std::string, bool, cyng::param_map_t>(
+                    this, &ipt_session::pty_req_open_connection)),
+
+            cyng::make_description(
+                "pty.req.close.connection", cyng::vm_adaptor<ipt_session, void>(this, &ipt_session::pty_req_close_connection)),
+
+            cyng::make_description("pty.req.stop", cyng::vm_adaptor<ipt_session, void>(this, &ipt_session::pty_stop)),
+
+            cyng::make_description(
+                "cfg.req.backup",
+                cyng::
+                    vm_adaptor<ipt_session, void, std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point>(
+                        this, &ipt_session::cfg_req_backup)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }
@@ -125,10 +173,6 @@ namespace smf {
         boost::system::error_code ec;
         socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
         socket_.close(ec);
-
-        // if (proxy_ && proxy_->is_open()) {
-        //     proxy_->stop();
-        // }
 
         vm_.stop();
     }
@@ -793,14 +837,12 @@ namespace smf {
         stop();
     }
 
-    void ipt_session::cfg_backup(std::string name, std::string pwd, cyng::buffer_t id, std::chrono::system_clock::time_point tp) {
+    void
+    ipt_session::cfg_req_backup(std::string name, std::string pwd, cyng::buffer_t id, std::chrono::system_clock::time_point tp) {
         //
         //  start SML proxy
         //
-#ifdef _DEBUG
-        //  not production ready
         proxy_.cfg_backup(name, pwd, id);
-#endif
     }
 
     void ipt_session::query() {
@@ -833,103 +875,6 @@ namespace smf {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_TIME)));
             ipt_send(std::bind(&ipt::serializer::req_device_time, &serializer_));
         }
-    }
-
-    auto ipt_session::get_vm_func_pty_res_login(ipt_session *ptr) -> std::function<void(bool success, boost::uuids::uuid)> {
-        return std::bind(&ipt_session::pty_res_login, ptr, std::placeholders::_1, std::placeholders::_2);
-    }
-
-    auto ipt_session::get_vm_func_pty_res_register(ipt_session *ptr)
-        -> std::function<void(bool success, std::uint32_t, cyng::param_map_t)> {
-        return std::bind(&ipt_session::pty_res_register, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    }
-
-    auto ipt_session::get_vm_func_pty_res_open_channel(ipt_session *ptr) -> std::function<void(
-        bool success,
-        std::uint32_t,
-        std::uint32_t,
-        std::uint16_t,
-        std::uint8_t,
-        std::uint8_t,
-        std::uint32_t,
-        cyng::param_map_t)> {
-        return std::bind(
-            &ipt_session::pty_res_open_channel,
-            ptr,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4,
-            std::placeholders::_5,
-            std::placeholders::_6,
-            std::placeholders::_7,
-            std::placeholders::_8);
-    }
-
-    auto ipt_session::get_vm_func_pty_req_push_data(ipt_session *ptr)
-        -> std::function<void(std::uint32_t, std::uint32_t, cyng::buffer_t)> {
-        return std::bind(&ipt_session::pty_req_push_data, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    }
-
-    auto ipt_session::get_vm_func_pty_res_push_data(ipt_session *ptr)
-        -> std::function<void(bool, std::uint32_t, std::uint32_t, cyng::param_map_t)> {
-        return std::bind(
-            &ipt_session::pty_res_push_data,
-            ptr,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4);
-    }
-
-    auto ipt_session::get_vm_func_pty_res_close_channel(ipt_session *ptr)
-        -> std::function<void(bool success, std::uint32_t channel, std::size_t count, cyng::param_map_t)> {
-        return std::bind(
-            &ipt_session::pty_res_close_channel,
-            ptr,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4);
-    }
-
-    auto ipt_session::get_vm_func_pty_res_open_connection(ipt_session *ptr)
-        -> std::function<void(bool success, cyng::param_map_t)> {
-        return std::bind(&ipt_session::pty_res_open_connection, ptr, std::placeholders::_1, std::placeholders::_2);
-    }
-
-    auto ipt_session::get_vm_func_pty_transfer_data(ipt_session *ptr) -> std::function<void(cyng::buffer_t)> {
-        return std::bind(&ipt_session::pty_transfer_data, ptr, std::placeholders::_1);
-    }
-
-    auto ipt_session::get_vm_func_pty_res_close_connection(ipt_session *ptr)
-        -> std::function<void(bool success, cyng::param_map_t)> {
-        return std::bind(&ipt_session::pty_res_close_connection, ptr, std::placeholders::_1, std::placeholders::_2);
-    }
-
-    auto ipt_session::get_vm_func_pty_req_open_connection(ipt_session *ptr)
-        -> std::function<void(std::string, bool, cyng::param_map_t)> {
-        return std::bind(
-            &ipt_session::pty_req_open_connection, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    }
-
-    auto ipt_session::get_vm_func_pty_req_close_connection(ipt_session *ptr) -> std::function<void()> {
-        return std::bind(&ipt_session::pty_req_close_connection, ptr);
-    }
-
-    auto ipt_session::get_vm_func_pty_stop(ipt_session *ptr) -> std::function<void()> {
-        return std::bind(&ipt_session::pty_stop, ptr);
-    }
-
-    auto ipt_session::get_vm_func_cfg_backup(ipt_session *ptr)
-        -> std::function<void(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp)> {
-        return std::bind(
-            &ipt_session::cfg_backup,
-            ptr,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4);
     }
 
 } // namespace smf

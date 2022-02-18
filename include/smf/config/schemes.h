@@ -122,7 +122,7 @@ namespace smf {
         /**
          * device configuration
          */
-        cyng::meta_store get_store_cfg_set();
+        cyng::meta_sql get_store_cfg_set();
 
         //
         //	uplinks

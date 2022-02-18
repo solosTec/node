@@ -59,11 +59,10 @@ namespace smf {
 
       public:
         session(boost::asio::ip::tcp::socket socket, db &, cyng::mesh &, cyng::logger);
-        ~session();
+        ~session() = default;
 
         void start();
         void stop();
-        void unsubscribe();
 
         /**
          * @return tag of remote session
@@ -77,19 +76,22 @@ namespace smf {
         void do_write();
         void handle_write(const boost::system::error_code &ec);
 
-        void cluster_login(std::string, std::string, cyng::pid, std::string node, boost::uuids::uuid tag, cyng::version v);
+        void cluster_login(
+            std::string,
+            std::string,
+            cyng::pid,
+            std::string node,
+            boost::uuids::uuid tag,
+            std::uint32_t,
+            cyng::version v);
         void cluster_ping(std::chrono::system_clock::time_point);
 
         void db_req_subscribe(std::string, boost::uuids::uuid tag);
 
-        void db_req_insert(
-            std::string const &table_name,
-            cyng::key_t key,
-            cyng::data_t data,
-            std::uint64_t generation,
-            boost::uuids::uuid);
+        void
+        db_req_insert(std::string table_name, cyng::key_t key, cyng::data_t data, std::uint64_t generation, boost::uuids::uuid);
 
-        void db_req_insert_auto(std::string const &table_name, cyng::data_t data, boost::uuids::uuid);
+        void db_req_insert_auto(std::string table_name, cyng::data_t data, boost::uuids::uuid);
 
         /**
          * table "gwIEC" is depended from table "meterIEC"
@@ -99,7 +101,7 @@ namespace smf {
         /**
          * table merge()
          */
-        void db_req_update(std::string const &table_name, cyng::key_t key, cyng::param_map_t, boost::uuids::uuid);
+        void db_req_update(std::string table_name, cyng::key_t key, cyng::param_map_t, boost::uuids::uuid);
         void db_req_update_gw_iec(cyng::key_t key, cyng::param_map_t const &, boost::uuids::uuid);
         void db_req_update_meter_iec_host_or_port(cyng::key_t const &key, cyng::param_t const &, boost::uuids::uuid);
         void update_iec_interval(std::chrono::seconds, boost::uuids::uuid);
@@ -112,7 +114,7 @@ namespace smf {
         /**
          * table erase()
          */
-        void db_req_remove(std::string const &table_name, cyng::key_t key, boost::uuids::uuid source);
+        void db_req_remove(std::string table_name, cyng::key_t key, boost::uuids::uuid source);
 
         /**
          * remove "gwIEC" record if no gateway has no longer any meters
@@ -122,7 +124,7 @@ namespace smf {
         /**
          * table clear()
          */
-        void db_req_clear(std::string const &table_name, boost::uuids::uuid source);
+        void db_req_clear(std::string table_name, boost::uuids::uuid source);
 
         /**
          * pty login
@@ -138,12 +140,6 @@ namespace smf {
          * pty.open.connection
          */
         void pty_open_connection(boost::uuids::uuid tag, boost::uuids::uuid dev, std::string msisdn, cyng::param_map_t token);
-
-        /** @brief node internal command
-         *
-         * pty.forward.open.connection
-         */
-        void pty_forward_open_connection(boost::uuids::uuid dev, std::string msisdn, bool local, cyng::param_map_t token);
 
         /** @brief "pty.forward.open.connection"
          *
@@ -165,21 +161,10 @@ namespace smf {
          */
         void pty_transfer_data(boost::uuids::uuid tag, boost::uuids::uuid dev, cyng::buffer_t);
 
-        /** @brief "pty.forward.transfer.data"
-         *
-         */
-        void pty_forward_transfer_data(boost::uuids::uuid tag, cyng::buffer_t);
-
         /**
          * pty.close.connection
          */
         void pty_close_connection(boost::uuids::uuid tag, boost::uuids::uuid dev, cyng::param_map_t);
-
-        /**
-         * forward to other VM
-         */
-        void pty_forward_close_connection(boost::uuids::uuid tag, cyng::param_map_t);
-        void pty_forward_req_close_connection(boost::uuids::uuid tag);
 
         void pty_register_target(
             boost::uuids::uuid tag,
@@ -228,131 +213,34 @@ namespace smf {
          * pty.stop session
          */
         void pty_stop(std::string, cyng::key_t);
-        void pty_forward_stop(boost::uuids::uuid);
 
-        /**
-         * cfg.backup session
+        /** @brief cfg.init.backup session
+         *
+         * initialize a backup process
          */
-        void cfg_backup(std::string, cyng::key_t, std::chrono::system_clock::time_point);
+        void cfg_init_backup(std::string, cyng::key_t, std::chrono::system_clock::time_point);
+
         void
-            cfg_forward_backup(boost::uuids::uuid, std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point);
+        cfg_merge_backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
 
         /**
          * send data to cluster node
          */
-        void send_cluster_msg(std::deque<cyng::buffer_t> &&);
+        void cluster_send_msg(std::deque<cyng::buffer_t>);
 
         /**
          * update node status
          */
         void send_ping_request();
 
-        //
-        //	generate VM channel functions
-        //
+        /**
+         * emit a test message
+         */
+        void cluster_test_msg(std::string);
 
-        //	"cluster.req.login"
-        [[nodiscard]] static std::function<
-            void(std::string, std::string, cyng::pid, std::string, boost::uuids::uuid, cyng::version)>
-        make_vm_func_cluster_req_login(session *);
-
-        //	"cluster.res.ping"
-        [[nodiscard]] static std::function<void(std::chrono::system_clock::time_point)> make_vm_func_cluster_res_ping(session *);
-
-        //	"db.req.subscribe"
-        [[nodiscard]] static std::function<void(std::string, boost::uuids::uuid tag)> make_vm_func_db_req_subscribe(session *);
-
-        //	"db.req.insert"
-        [[nodiscard]] static std::function<void(std::string, cyng::key_t, cyng::data_t, std::uint64_t, boost::uuids::uuid)>
-        make_vm_func_db_req_insert(session *);
-
-        //	"db.req.insert.auto"
-        [[nodiscard]] static std::function<void(std::string, cyng::data_t, boost::uuids::uuid)>
-        make_vm_func_db_req_insert_auto(session *);
-
-        //	"db.req.update" aka merge()
-        [[nodiscard]] static std::function<void(std::string, cyng::key_t, cyng::param_map_t, boost::uuids::uuid)>
-        make_vm_func_db_req_update(session *);
-
-        //	"db.req.remove"
-        [[nodiscard]] static std::function<void(std::string, cyng::key_t, boost::uuids::uuid)>
-        make_vm_func_db_req_remove(session *);
-
-        //	"db.req.clear"
-        [[nodiscard]] static std::function<void(std::string, boost::uuids::uuid)> make_vm_func_db_req_clear(session *);
-
-        //	"cluster.req.login"
-        [[nodiscard]] static std::function<
-            void(boost::uuids::uuid, std::string, std::string, boost::asio::ip::tcp::endpoint, std::string)>
-        make_vm_func_pty_login(session *);
-
-        //	"cluster.req.logout"
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid)> make_vm_func_pty_logout(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::string, cyng::param_map_t)>
-        make_vm_func_pty_open_connection(session *);
-
-        //  internal usage only
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, std::string, bool, cyng::param_map_t)>
-        make_vm_func_pty_forward_open_connection(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, bool, cyng::param_map_t)>
-        make_vm_func_pty_forward_res_open_connection(session *);
-
-        [[nodiscard]] static std::function<void(bool, boost::uuids::uuid, boost::uuids::uuid, cyng::param_map_t)>
-        make_vm_func_pty_return_open_connection(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, cyng::buffer_t)>
-        make_vm_func_pty_transfer_data(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, cyng::buffer_t)>
-        make_vm_func_pty_forward_transfer_data(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, cyng::param_map_t)>
-        make_vm_func_pty_close_connection(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, cyng::param_map_t)>
-        make_vm_func_pty_forward_close_connection(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid)> make_vm_func_pty_forward_req_close_connection(session *);
-
-        [[nodiscard]] static std::function<
-            void(boost::uuids::uuid, boost::uuids::uuid, std::string, std::uint16_t, std::uint8_t, cyng::param_map_t)>
-        make_vm_func_pty_register_target(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, std::string)> make_vm_func_pty_deregister(session *);
-
-        [[nodiscard]] static std::function<void(
-            boost::uuids::uuid,
-            boost::uuids::uuid,
-            std::string,
-            std::string,
-            std::string,
-            std::string,
-            std::string,
-            std::chrono::seconds,
-            cyng::param_map_t)>
-        make_vm_func_pty_open_channel(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, cyng::param_map_t)>
-        make_vm_func_pty_close_channel(session *);
-
-        [[nodiscard]] static std::function<
-            void(boost::uuids::uuid, boost::uuids::uuid, std::uint32_t, std::uint32_t, cyng::buffer_t, cyng::param_map_t)>
-        make_vm_func_pty_push_data_req(session *);
-
-        [[nodiscard]] static std::function<void(std::string, cyng::key_t)> make_vm_func_pty_stop(session *);
-
-        [[nodiscard]] static std::function<void(boost::uuids::uuid)> make_vm_func_pty_forward_stop(session *);
-
-        [[nodiscard]] static std::function<void(std::string, cyng::key_t, std::chrono::system_clock::time_point)>
-        make_vm_func_cfg_backup(session *);
-
-        [[nodiscard]] static std::function<
-            void(boost::uuids::uuid, std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point)>
-        make_vm_func_cfg_forward_backup(session *);
-
-        [[nodiscard]] static std::function<bool(std::string msg, cyng::severity)> make_vm_func_sys_msg(db *);
+#ifdef _DEBUG
+        void send_test_msg_to_setup(std::string);
+#endif
 
       private:
         boost::asio::ip::tcp::socket socket_;

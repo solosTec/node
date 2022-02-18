@@ -16,65 +16,80 @@
 namespace smf {
     namespace sml {
 
-        namespace detail {
+        /**
+         * Generate SML transaction is with the following format:
+         * @code
+         * [7 random numbers] [1 number in ascending order].
+         * nnnnnnnnnnnnnnnnn-m
+         * @endcode
+         *
+         * The numbers as the ASCII codes from 48 up to 57.
+         *
+         * In a former version the following format was used:
+         * @code
+         * [17 random numbers] ['-'] [1 number in ascending order].
+         * nnnnnnnnnnnnnnnnn-m
+         * @endcode
+         *
+         * This is to generate a series of continuous transaction IDs
+         * and after reshuffling to start a new series.
+         */
+        class trx {
+          public:
+            trx();
+            trx(trx const &);
+
             /**
-             * Generate SML transaction is with the following format:
-             * @code
-             * [7 random numbers] [1 number in ascending order].
-             * nnnnnnnnnnnnnnnnn-m
-             * @endcode
-             *
-             * The numbers as the ASCII codes from 48 up to 57.
-             *
-             * In a former version the following format was used:
-             * @code
-             * [17 random numbers] ['-'] [1 number in ascending order].
-             * nnnnnnnnnnnnnnnnn-m
-             * @endcode
-             *
-             * This is to generate a series of continuous transaction IDs
-             * and after reshuffling to start a new series.
+             *	generate new transaction id (reshuffling)
              */
-            class trx {
-              public:
-                trx();
-                trx(trx const &);
+            void reset(std::size_t);
+            void reset();
 
-                /**
-                 *	generate new transaction id (reshuffling)
-                 */
-                void reset(std::size_t = 7);
+            /**
+             * Increase internal transaction number.
+             */
+            trx &operator++();
+            trx operator++(int);
 
-                /**
-                 * Increase internal transaction number.
-                 */
-                trx &operator++();
-                trx operator++(int);
+            /**
+             *	@return value of last generated (shuffled) transaction id
+             *	as string.
+             */
+            std::string operator*() const;
 
-                /**
-                 *	@return value of last generated (shuffled) transaction id
-                 *	as string.
-                 */
-                std::string operator*() const;
+            /**
+             *	@return current prefix
+             */
+            std::string const &get_prefix() const;
 
-              private:
-                /**
-                 * Generate a random string
-                 */
-                cyng::crypto::rnd gen_;
+            /**
+             * store current prefix
+             */
+            std::size_t store_pefix();
+            std::pair<std::size_t, bool> ack_trx(std::string const &);
 
-                /**
-                 * The fixed part of a series
-                 */
-                std::string value_;
+          private:
+            /**
+             * Generate a random string
+             */
+            cyng::crypto::rnd gen_;
 
-                /**
-                 * Ascending number
-                 */
-                std::uint16_t num_;
-            };
+            /**
+             * The fixed part of a series
+             */
+            std::string prefix_;
 
-        } // namespace detail
+            /**
+             * Ascending number
+             */
+            std::uint16_t num_;
+
+            /**
+             * set of all pending transaction prefixes
+             */
+            std::set<std::string> open_trx_;
+        };
+
         /**
          * @return a file id of length 12
          */
@@ -103,8 +118,6 @@ namespace smf {
              */
             [[nodiscard]] cyng::tuple_t get_list(cyng::buffer_t const &server, cyng::tuple_t val_list);
 
-          private:
-            detail::trx trx_;
         };
 
         /**
@@ -149,8 +162,13 @@ namespace smf {
             std::string const &get_name() const;
             std::string const &get_pwd() const;
 
+            /**
+             *	@return transaction manager
+             */
+            trx &get_trx_mgr();
+
           private:
-            detail::trx trx_;
+            trx trx_;
             /**
              * buffer for current SML message
              */

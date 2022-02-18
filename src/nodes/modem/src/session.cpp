@@ -101,19 +101,45 @@ namespace smf {
         , gatekeeper_() {
         vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
-            cyng::make_description("pty.res.login", get_vm_func_pty_res_login(this)),
+            cyng::make_description(
+                "pty.res.login",
+                cyng::vm_adaptor<modem_session, void, bool, boost::uuids::uuid>(this, &modem_session::pty_res_login)),
             // cyng::make_description("pty.res.register", get_vm_func_pty_res_register(this)),
             // cyng::make_description("pty.res.open.channel", get_vm_func_pty_res_open_channel(this)),
-            // cyng::make_description("pty.push.data.req", get_vm_func_pty_req_push_data(this)),
+            // cyng::make_description("pty.req.push.data", get_vm_func_pty_req_push_data(this)),
             // cyng::make_description("pty.push.data.res", get_vm_func_pty_res_push_data(this)),
             // cyng::make_description("pty.res.close.channel", get_vm_func_pty_res_close_channel(this)),
-            cyng::make_description("pty.res.open.connection", get_vm_func_pty_res_open_connection(this)),
-            cyng::make_description("pty.transfer.data", get_vm_func_pty_transfer_data(this)),
-            cyng::make_description("pty.res.close.connection", get_vm_func_pty_res_close_connection(this)),
-            cyng::make_description("pty.req.open.connection", get_vm_func_pty_req_open_connection(this)),
-            cyng::make_description("pty.req.close.connection", get_vm_func_pty_req_close_connection(this)),
-            cyng::make_description("pty.req.stop", get_vm_func_pty_stop(this)),
-            cyng::make_description("cfg.req.backup", get_vm_func_cfg_backup(this)));
+            cyng::make_description(
+                "pty.res.open.connection",
+                cyng::vm_adaptor<modem_session, void, bool, cyng::param_map_t>(this, &modem_session::pty_res_open_connection)),
+
+            cyng::make_description(
+                "pty.transfer.data",
+                cyng::vm_adaptor<modem_session, void, cyng::buffer_t>(this, &modem_session::pty_transfer_data)),
+
+            cyng::make_description(
+                "pty.res.close.connection",
+                cyng::vm_adaptor<modem_session, void, bool, cyng::param_map_t>(this, &modem_session::pty_res_close_connection)),
+
+            cyng::make_description(
+                "pty.req.open.connection",
+                cyng::vm_adaptor<modem_session, void, std::string, bool, cyng::param_map_t>(
+                    this, &modem_session::pty_req_open_connection)),
+
+            cyng::make_description(
+                "pty.req.close.connection", cyng::vm_adaptor<modem_session, void>(this, &modem_session::pty_req_close_connection)),
+
+            cyng::make_description("pty.req.stop", cyng::vm_adaptor<modem_session, void>(this, &modem_session::pty_stop)),
+
+            cyng::make_description(
+                "cfg.req.backup",
+                cyng::vm_adaptor<
+                    modem_session,
+                    void,
+                    std::string,
+                    std::string,
+                    cyng::buffer_t,
+                    std::chrono::system_clock::time_point>(this, &modem_session::cfg_backup)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }
@@ -359,49 +385,6 @@ namespace smf {
 
     void modem_session::cfg_backup(std::string name, std::string pwd, cyng::buffer_t id, std::chrono::system_clock::time_point tp) {
         CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " backup: " << name << ':' << pwd << '@' << id);
-    }
-
-    auto modem_session::get_vm_func_pty_res_login(modem_session *ptr) -> std::function<void(bool success, boost::uuids::uuid)> {
-        return std::bind(&modem_session::pty_res_login, ptr, std::placeholders::_1, std::placeholders::_2);
-    }
-
-    auto modem_session::get_vm_func_pty_res_open_connection(modem_session *ptr)
-        -> std::function<void(bool success, cyng::param_map_t)> {
-        return std::bind(&modem_session::pty_res_open_connection, ptr, std::placeholders::_1, std::placeholders::_2);
-    }
-
-    auto modem_session::get_vm_func_pty_transfer_data(modem_session *ptr) -> std::function<void(cyng::buffer_t)> {
-        return std::bind(&modem_session::pty_transfer_data, ptr, std::placeholders::_1);
-    }
-
-    auto modem_session::get_vm_func_pty_res_close_connection(modem_session *ptr)
-        -> std::function<void(bool success, cyng::param_map_t)> {
-        return std::bind(&modem_session::pty_res_close_connection, ptr, std::placeholders::_1, std::placeholders::_2);
-    }
-
-    auto modem_session::get_vm_func_pty_req_open_connection(modem_session *ptr)
-        -> std::function<void(std::string, bool, cyng::param_map_t)> {
-        return std::bind(
-            &modem_session::pty_req_open_connection, ptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    }
-
-    auto modem_session::get_vm_func_pty_req_close_connection(modem_session *ptr) -> std::function<void()> {
-        return std::bind(&modem_session::pty_req_close_connection, ptr);
-    }
-
-    auto modem_session::get_vm_func_pty_stop(modem_session *ptr) -> std::function<void()> {
-        return std::bind(&modem_session::pty_stop, ptr);
-    }
-
-    auto modem_session::get_vm_func_cfg_backup(modem_session *ptr)
-        -> std::function<void(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp)> {
-        return std::bind(
-            &modem_session::cfg_backup,
-            ptr,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4);
     }
 
 } // namespace smf

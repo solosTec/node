@@ -19,13 +19,15 @@ namespace smf {
                 "cluster",
                 {
                     cyng::column("tag", cyng::TC_UUID),
+                    cyng::column("peer", cyng::TC_UUID),
                     cyng::column("class", cyng::TC_STRING),
                     cyng::column("loginTime", cyng::TC_TIME_POINT), //	last login time
                     cyng::column("version", cyng::TC_VERSION),      //	>= 0.9
                     cyng::column("clients", cyng::TC_UINT64),       //	clients
                     cyng::column("ping", cyng::TC_MICRO_SECOND),    //	ping time
                     cyng::column("ep", cyng::TC_IP_TCP_ENDPOINT),   //	seen from main node
-                    cyng::column("pid", cyng::TC_PID)               //	local process ID
+                    cyng::column("pid", cyng::TC_PID),              //	local process ID
+                    cyng::column("cfg", cyng::TC_BOOL)              //	config manager
                 },
                 1);
         }
@@ -421,16 +423,18 @@ namespace smf {
                 1);
         }
 
-        cyng::meta_store get_store_cfg_set() {
-            return cyng::meta_store(
-                "cfgSet",
+        cyng::meta_sql get_store_cfg_set() {
+            return cyng::meta_sql(
+                "TCfgSet",
                 {
-                    cyng::column("tag", cyng::TC_UUID),        //	key
-                    cyng::column("serverId", cyng::TC_STRING), //	(1) Server-ID (i.e. 0500153B02517E)
-                    cyng::column("path", cyng::TC_OBISPATH),   //	(2) SML related
-                    cyng::column("value", cyng::TC_NULL)       //	any data type allowed
+                    cyng::column_sql("tag", cyng::TC_UUID, 36),      //	key
+                    cyng::column_sql("gw", cyng::TC_STRING, 14),     //	(1) Server-ID (i.e. 0500153B02517E)
+                    cyng::column_sql("meter", cyng::TC_STRING, 18),  //	(2) meter-ID (i.e. 01e61e571406213603)
+                    cyng::column_sql("path", cyng::TC_OBISPATH, 60), //	(3) SML related
+                    cyng::column_sql("type", cyng::TC_UINT16, 0),    //	data type code (default)
+                    cyng::column_sql("desc", cyng::TC_STRING, 256)   //	optional description
                 },
-                2);
+                4);
         }
 
         cyng::meta_store get_store_sys_msg() {

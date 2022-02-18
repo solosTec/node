@@ -180,22 +180,28 @@ namespace smf {
     void controller::generate_access_rights(cyng::object &&cfg, std::string const &user) {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
-        if (s.is_alive())
+        if (s.is_alive()) {
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::generate_access_rights(s, user); //	see task/storage_db.h
+        }
     }
     void controller::init_storage(cyng::object &&cfg) {
 
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
-        if (s.is_alive())
+        if (s.is_alive()) {
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::init_storage(s); //	see task/storage_db.h
+        }
     }
     void controller::generate_random_devs(cyng::object &&cfg, std::uint32_t count) {
 
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
-        if (s.is_alive())
+        if (s.is_alive()) {
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::generate_random_devs(s, count); //	see task/storage_db.h
+        }
     }
 
 } // namespace smf

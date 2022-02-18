@@ -32,7 +32,7 @@ namespace smf {
         , tag_(tag)
         , logger_(logger)
         , fabric_(ctl)
-        , bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, this)
+        , bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, CONFIG_MANAGER, this)
         , store_()
         , storage_(start_data_store(ctl, logger, bus_, store_, storage_type, std::move(cfg_db))) {
         auto sp = channel_.lock();
@@ -59,7 +59,7 @@ namespace smf {
         //	connect to database and
         //	load data into cache
         //
-        storage_->dispatch("open", cyng::make_tuple());
+        storage_->dispatch("open");
 
         //
         //	join cluster
@@ -71,6 +71,7 @@ namespace smf {
     //	bus interface
     //
     cyng::mesh *cluster::get_fabric() { return &fabric_; }
+
     void cluster::on_login(bool success) {
         if (success) {
             CYNG_LOG_INFO(logger_, "cluster join complete");
@@ -78,11 +79,14 @@ namespace smf {
             //
             //	load data from database and synchronize data with main node
             //
-            storage_->dispatch("load", cyng::make_tuple());
+            storage_->dispatch("load");
+
         } else {
             CYNG_LOG_ERROR(logger_, "joining cluster failed");
         }
     }
+
+    cfg_interface *cluster::get_cfg_interface() { return this; }
 
     void cluster::on_disconnect(std::string msg) { CYNG_LOG_WARNING(logger_, "[cluster] disconnect: " << msg); }
 
@@ -167,6 +171,15 @@ namespace smf {
                 tbl->clear(tag_);
             },
             cyng::access::write(table_name));
+    }
+
+    void cluster::cfg_merge(
+        boost::uuids::uuid tag,
+        cyng::buffer_t gw,
+        cyng::buffer_t meter,
+        cyng::obis_path_t path,
+        cyng::object value) {
+        CYNG_LOG_TRACE(logger_, "[cluster.cfg] merge: " << path << ": " << value);
     }
 
     cyng::channel_ptr start_data_store(

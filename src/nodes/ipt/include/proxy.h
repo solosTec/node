@@ -18,6 +18,7 @@
 #include <cyng/task/task_fwd.h>
 
 #include <boost/uuid/uuid.hpp>
+#include <queue>
 
 namespace smf {
 
@@ -28,7 +29,7 @@ namespace smf {
      */
     class proxy {
 
-        enum class state { OFF, ON, ROOT_CFG, METER_CFG, ACCESS_CFG } state_;
+        enum class state { OFF, QRY_BASIC, QRY_METER, QRY_ACCESS, QRY_USER } state_;
 
       public:
         proxy(cyng::logger, ipt_session &, bus &cluster_bus, cyng::mac48 const &);
@@ -48,9 +49,17 @@ namespace smf {
         void close_response(std::string trx, cyng::tuple_t const msg);
         void cfg_backup_meter();
         void cfg_backup_access();
+        void cfg_backup_user();
 
         void complete();
         void update_connect_state(bool);
+
+        std::string get_state() const;
+
+        /**
+         * send to configuration manager
+         */
+        void backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::tuple_t cl);
 
       private:
         cyng::logger logger_;
@@ -60,6 +69,8 @@ namespace smf {
         cyng::buffer_t id_; //  gateway id
         sml::unpack parser_;
         sml::request_generator req_gen_;
+        std::queue<cyng::buffer_t> meters_;    //!< temporary data
+        std::queue<cyng::obis_path_t> access_; //!< temporary data
         std::map<cyng::buffer_t, sml::tree> cfg_;
         cyng::store cache_;
         std::size_t throughput_;

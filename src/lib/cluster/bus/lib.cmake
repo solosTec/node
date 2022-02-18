@@ -11,6 +11,7 @@ set (cluster_bus_cpp
 set (cluster_bus_h
     include/smf/cluster/config.h
     include/smf/cluster/bus.h
+    include/smf/cluster/features.h
 )
 
 
