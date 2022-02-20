@@ -170,14 +170,14 @@ namespace smf {
     void ipt_session::stop() {
         //	https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/reference/basic_stream_socket/close/overload2.html
         CYNG_LOG_WARNING(logger_, "[session] " << vm_.get_tag() << " stopped");
+        //    no more write
+        //  buffer_write_.clear();
+        BOOST_ASSERT_MSG(buffer_write_.empty(), "pending write op");
+        oce_map_.clear();
+
         boost::system::error_code ec;
         socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
         socket_.close(ec);
-
-        //  no more write
-        buffer_write_.clear();
-        oce_map_.clear();
-
         vm_.stop();
     }
 
@@ -589,12 +589,13 @@ namespace smf {
     }
 
     void ipt_session::pty_res_login(bool success, boost::uuids::uuid dev) {
-        //
-        //	stop gatekeeper
-        //
-        gatekeeper_->stop();
 
         if (success) {
+
+            //
+            //	stop gatekeeper
+            //
+            gatekeeper_->stop();
 
             //
             //	update device tag
@@ -612,7 +613,11 @@ namespace smf {
             ipt_send(std::bind(
                 &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
 
-            stop();
+            //
+            // Don't call stop here. This would disrupt the async write op.
+            // The gatekeeper will stop this session.
+            // stop();
+            //
         }
     }
 
