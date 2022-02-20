@@ -174,6 +174,10 @@ namespace smf {
         socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
         socket_.close(ec);
 
+        //  no more write
+        buffer_write_.clear();
+        oce_map_.clear();
+
         vm_.stop();
     }
 
@@ -261,7 +265,7 @@ namespace smf {
     }
 
     void ipt_session::do_write() {
-        // if (is_stopped())	return;
+        BOOST_ASSERT_MSG(!buffer_write_.empty(), "write buffer empty");
 
 #ifdef _DEBUG
         CYNG_LOG_DEBUG(
@@ -278,7 +282,6 @@ namespace smf {
     }
 
     void ipt_session::handle_write(const boost::system::error_code &ec) {
-        // if (is_stopped())	return;
 
         if (!ec) {
 
@@ -579,8 +582,9 @@ namespace smf {
         cyng::exec(vm_, [this, f]() {
             bool const b = buffer_write_.empty();
             buffer_write_.push_back(f());
-            if (b)
+            if (b) {
                 do_write();
+            }
         });
     }
 
