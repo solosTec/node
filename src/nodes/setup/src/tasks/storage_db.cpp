@@ -306,6 +306,53 @@ namespace smf {
         return false;
     }
 
+    bool alter_table(cyng::db::session &db, std::string name) {
+        BOOST_ASSERT(db.is_alive());
+
+        try {
+            //
+            //	start transaction
+            //
+            cyng::db::transaction trx(db);
+
+            //
+            //	search specified table
+            //
+            auto const vec = get_sql_meta_data();
+            auto const pos = std::find_if(std::begin(vec), std::end(vec), [&](cyng::meta_sql const &m) {
+                return boost::algorithm::equals(m.get_name(), name);
+            });
+            if (pos != vec.end()) {
+                //
+                //  drop table
+                //
+                auto const sql_drop = cyng::sql::drop(db.get_dialect(), *pos).to_str();
+                if (!db.execute(sql_drop)) {
+                    std::cerr << "**error: " << sql_drop << std::endl;
+                } else {
+                    std::cout << pos->get_name() << " - " << sql_drop << std::endl;
+
+                    //
+                    //  create table
+                    //
+                    auto const sql_create = cyng::sql::create(db.get_dialect(), *pos).to_str();
+                    if (!db.execute(sql_create)) {
+                        std::cerr << "**error: " << sql_create << std::endl;
+                    } else {
+                        std::cout << pos->get_name() << " - " << sql_create << std::endl;
+                        return true;
+                    }
+                }
+            } else {
+                std::cerr << "**error: " << name << " not found" << std::endl;
+            }
+
+        } catch (std::exception const &ex) {
+            boost::ignore_unused(ex);
+        }
+        return false;
+    }
+
     std::vector<cyng::meta_sql> get_sql_meta_data() {
 
         return {

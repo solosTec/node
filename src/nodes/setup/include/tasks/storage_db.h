@@ -73,6 +73,7 @@ namespace smf {
     };
 
     bool init_storage(cyng::db::session &db);
+    bool alter_table(cyng::db::session &db, std::string);
     std::vector<cyng::meta_sql> get_sql_meta_data();
     void generate_access_rights(cyng::db::session &db, std::string const &user);
     void generate_random_devs(cyng::db::session &db, std::uint32_t count);

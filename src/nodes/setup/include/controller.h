@@ -38,6 +38,7 @@ namespace smf {
             cyng::param_map_t &&);
 
         void init_storage(cyng::object &&);
+        void alter_table(cyng::object &&cfg, std::string table);
         void generate_access_rights(cyng::object &&cfg, std::string const &user);
         void generate_random_devs(cyng::object &&cfg, std::uint32_t count);
 
