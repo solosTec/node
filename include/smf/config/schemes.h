@@ -69,6 +69,12 @@ namespace smf {
         cyng::meta_store get_store_location();
         cyng::meta_sql get_table_location();
 
+        /**
+         * device configuration
+         */
+        cyng::meta_store get_store_cfg_set_meta();
+        cyng::meta_sql get_table_cfg_set_meta();
+
         //
         //	store only schemes
         // -----------------------------------------------------------------+
@@ -122,7 +128,7 @@ namespace smf {
         /**
          * device configuration
          */
-        cyng::meta_sql get_store_cfg_set();
+        cyng::meta_sql get_table_cfg_set();
 
         //
         //	uplinks

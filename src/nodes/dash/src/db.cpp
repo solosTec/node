@@ -464,7 +464,8 @@ namespace smf {
         db::rel{"wMBusUplink", "monitor.wMBus", "table.wMBusUplink.count"},
         db::rel{"iecUplink", "monitor.IEC", "table.IECUplink.count"},
         db::rel{"gwIEC", "status.IECgw", "table.gwIEC.count"},
-        db::rel{"gwwMBus", "status.wMBusgw", "table.gwwMBus.count"}
+        db::rel{"gwwMBus", "status.wMBusgw", "table.gwwMBus.count"},
+        db::rel{"cfgSetMeta", "status.cfgSetMeta", "table.cfgSetMeta.count"}
         //  don't add table "meterFull" - no syncing
     };
 
@@ -488,7 +489,8 @@ namespace smf {
             config::get_store_uplink_iec(),
             config::get_store_gwIEC(),
             config::get_store_gwwMBus(),
-            config::get_store_meter_full()};
+            config::get_store_meter_full(),
+            config::get_store_cfg_set_meta()};
     }
 
     cyng::object convert_to_type(cyng::type_code tc, cyng::object &obj) {
@@ -537,6 +539,7 @@ namespace smf {
             return convert_to_hours(obj);
 
         default:
+            BOOST_ASSERT_MSG(obj.tag() == cyng::TC_STRING, "data type not supported");
             break;
         }
         return obj;

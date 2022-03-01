@@ -72,6 +72,8 @@ namespace smf {
         virtual void
         cfg_merge(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value) override;
 
+        virtual void cfg_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point) override;
+
         /**
          * Upload table cache to main node
          */

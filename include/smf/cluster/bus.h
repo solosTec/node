@@ -29,6 +29,13 @@ namespace smf {
          */
         virtual void
         cfg_merge(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value) = 0;
+
+        /** @brief configuration management:
+         *
+         * Backup congig data is complete. Write meta data
+         */
+        virtual void
+        cfg_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point) = 0;
     };
 
     /**
@@ -226,6 +233,12 @@ namespace smf {
          */
         void
         cfg_merge_backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
+
+        /** @brief configuration management
+         *
+         *  Finish a set of configuration data
+         */
+        void cfg_finish_backup(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point now);
 
       private:
         void reset(state_ptr sp, state_value);

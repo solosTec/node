@@ -333,6 +333,30 @@ namespace smf {
                 });
         }
 
+        cyng::meta_store get_store_cfg_set_meta() {
+            return cyng::meta_store(
+                "cfgSetMeta",
+                {
+                    cyng::column("tag", cyng::TC_UUID),      //	key
+                    cyng::column("gw", cyng::TC_STRING), //	(1) Server-ID (i.e. 0500153B02517E)
+                    cyng::column("meter", cyng::TC_TIME_POINT),
+                    cyng::column("desc", cyng::TC_STRING) //	optional description
+                },
+                1);
+        }
+
+        cyng::meta_sql get_table_cfg_set_meta() {
+            return cyng::to_sql(
+                get_store_cfg_set_meta(),
+                {
+                    36,   //	key
+                    14, //	(1) Server-ID (i.e. 0500153B02517E)
+                    0,  //	time point
+                    256//	optional description
+                });
+   
+        }
+
         cyng::meta_store get_store_session() {
 
             return cyng::meta_store(
@@ -423,18 +447,18 @@ namespace smf {
                 1);
         }
 
-        cyng::meta_sql get_store_cfg_set() {
+        cyng::meta_sql get_table_cfg_set() {
             return cyng::meta_sql(
                 "TCfgSet",
                 {
                     cyng::column_sql("tag", cyng::TC_UUID, 36),      //	key
-                    cyng::column_sql("gw", cyng::TC_STRING, 14),     //	(1) Server-ID (i.e. 0500153B02517E)
+                    //cyng::column_sql("gw", cyng::TC_STRING, 14),     //	(1) Server-ID (i.e. 0500153B02517E)
                     cyng::column_sql("meter", cyng::TC_STRING, 18),  //	(2) meter-ID (i.e. 01e61e571406213603)
                     cyng::column_sql("path", cyng::TC_OBISPATH, 60), //	(3) SML related
                     cyng::column_sql("type", cyng::TC_UINT16, 0),    //	data type code (default)
                     cyng::column_sql("desc", cyng::TC_STRING, 256)   //	optional description
                 },
-                4);
+                3);
         }
 
         cyng::meta_store get_store_sys_msg() {
@@ -520,7 +544,7 @@ namespace smf {
                    boost::algorithm::equals(name, "session") || boost::algorithm::equals(name, "connection") ||
                    boost::algorithm::equals(name, "target") || boost::algorithm::equals(name, "config") ||
                    boost::algorithm::equals(name, "loRaUplink") || boost::algorithm::equals(name, "iecUplink") ||
-                   boost::algorithm::equals(name, "wMBusUplink");
+                   boost::algorithm::equals(name, "wMBusUplink") || boost::algorithm::equals(name, "cfgSetMeta");
         }
 
     } // namespace config

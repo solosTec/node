@@ -182,6 +182,10 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[cluster.cfg] merge: " << path << ": " << value);
     }
 
+    void cluster::cfg_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point now) {
+        CYNG_LOG_TRACE(logger_, "[cluster.cfg] finish " << tag << " at " << now);
+    }
+
     cyng::channel_ptr start_data_store(
         cyng::controller &ctl,
         cyng::logger logger,

@@ -2027,8 +2027,8 @@ namespace smf {
             config::get_store_connection(),
             config::get_store_channel(), //	only in main node
             config::get_store_gwIEC(),
-            config::get_store_gwwMBus()
-            //	temporary upload data
+            config::get_store_gwwMBus(),
+            config::get_store_cfg_set_meta()
         };
     }
 

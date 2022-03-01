@@ -472,6 +472,7 @@ namespace smf {
 
         boost::uuids::random_generator_mt19937 uidgen;
         auto const tag = uidgen();
+        std::size_t counter{0};
 
         CYNG_LOG_INFO(logger_, "readout of " << cfg_.size() << " server/clients complete - tag: " << tag)
         for (auto const &cfg : cfg_) {
@@ -481,16 +482,22 @@ namespace smf {
             //
             //  send child list to configuration manager
             //
-            backup(tag, cfg.first, cl);
+            counter += backup(tag, cfg.first, cl);
         }
+        CYNG_LOG_INFO(logger_, counter << " config records backuped - write meta data");
+        cluster_bus_.cfg_finish_backup(tag, id_, std::chrono::system_clock::now());
+
     }
 
-    void proxy::backup(boost::uuids::uuid tag, cyng::buffer_t meter, cyng::tuple_t tpl) {
+    std::size_t proxy::backup(boost::uuids::uuid tag, cyng::buffer_t meter, cyng::tuple_t tpl) {
+        std::size_t counter{0};
         // cfg_backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
         sml::collect(tpl, {}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
             CYNG_LOG_DEBUG(logger_, "send to config manager: " << tag << ", " << meter << ", " << path << ", " << attr);
             cluster_bus_.cfg_merge_backup(tag, id_, meter, path, attr.second);
+            ++counter;
         });
+        return counter;
     }
 
     void proxy::update_connect_state(bool connected) {

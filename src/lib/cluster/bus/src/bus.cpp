@@ -570,6 +570,16 @@ namespace smf {
         }
     }
 
+ void bus::cfg_finish_backup(
+        boost::uuids::uuid tag, cyng::buffer_t gw,
+        std::chrono::system_clock::time_point now) {
+
+        if (has_cfg_management()) {
+            bip_->get_cfg_interface()->cfg_finish(tag, gw, now);
+        } else {
+            CYNG_LOG_WARNING(logger_, "[cluster.cfg] finish  " << tag << " at " << now);
+        }
+    }
     void bus::on_ping(std::chrono::system_clock::time_point tp) {
         CYNG_LOG_TRACE(logger_, "ping: " << tp);
         //

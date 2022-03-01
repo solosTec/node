@@ -291,7 +291,7 @@ namespace smf {
             //
             //  TCfgSet has no tabular in-memory table
             //
-            auto m = config::get_store_cfg_set();
+            auto const m = config::get_table_cfg_set();
             auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
             if (!db.execute(sql)) {
                 std::cerr << "**error: " << sql << std::endl;
@@ -323,32 +323,44 @@ namespace smf {
                 return boost::algorithm::equals(m.get_name(), name);
             });
             if (pos != vec.end()) {
-                //
-                //  drop table
-                //
-                auto const sql_drop = cyng::sql::drop(db.get_dialect(), *pos).to_str();
-                if (!db.execute(sql_drop)) {
-                    std::cerr << "**error: " << sql_drop << std::endl;
-                } else {
-                    std::cout << pos->get_name() << " - " << sql_drop << std::endl;
-
-                    //
-                    //  create table
-                    //
-                    auto const sql_create = cyng::sql::create(db.get_dialect(), *pos).to_str();
-                    if (!db.execute(sql_create)) {
-                        std::cerr << "**error: " << sql_create << std::endl;
-                    } else {
-                        std::cout << pos->get_name() << " - " << sql_create << std::endl;
-                        return true;
-                    }
-                }
+                recreate_table(db, * pos);
             } else {
+                //
+                //  take credit of non-cached tables
+                //
+                auto const m = config::get_table_cfg_set();
+                if (boost::algorithm::equals(m.get_name(), name)) {
+                    return recreate_table(db, m);
+                } 
                 std::cerr << "**error: " << name << " not found" << std::endl;
             }
 
         } catch (std::exception const &ex) {
             boost::ignore_unused(ex);
+        }
+        return false;
+    }
+
+    bool recreate_table(cyng::db::session &db, cyng::meta_sql const &m) {
+        //
+        //  drop table
+        //
+        auto const sql_drop = cyng::sql::drop(db.get_dialect(), m).to_str();
+        if (!db.execute(sql_drop)) {
+            std::cerr << "**error: " << sql_drop << std::endl;
+        } else {
+            std::cout << m.get_name() << " - " << sql_drop << std::endl;
+
+            //
+            //  create table
+            //
+            auto const sql_create = cyng::sql::create(db.get_dialect(), m).to_str();
+            if (!db.execute(sql_create)) {
+                std::cerr << "**error: " << sql_create << std::endl;
+            } else {
+                std::cout << m.get_name() << " - " << sql_create << std::endl;
+                return true;
+            }
         }
         return false;
     }
@@ -363,7 +375,8 @@ namespace smf {
             config::get_table_gateway(),
             config::get_table_lora(),
             config::get_table_gui_user(),
-            config::get_table_location()};
+            config::get_table_location(),
+            config::get_table_cfg_set_meta()};
     }
 
     void generate_access_rights(cyng::db::session &db, std::string const &user) {

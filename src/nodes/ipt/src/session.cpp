@@ -170,15 +170,18 @@ namespace smf {
     void ipt_session::stop() {
         //	https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/reference/basic_stream_socket/close/overload2.html
         CYNG_LOG_WARNING(logger_, "[session] " << vm_.get_tag() << " stopped");
-        //    no more write
-        //  buffer_write_.clear();
-        BOOST_ASSERT_MSG(buffer_write_.empty(), "pending write op");
-        oce_map_.clear();
+        if (vm_.stop()) {
 
-        boost::system::error_code ec;
-        socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
-        socket_.close(ec);
-        vm_.stop();
+            //    no more write
+            //  buffer_write_.clear();
+            BOOST_ASSERT_MSG(buffer_write_.empty(), "pending write op");
+            oce_map_.clear();
+
+            //  this can cause to call the stop() function again
+            boost::system::error_code ec;
+            socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
+            socket_.close(ec);
+        }
     }
 
     void ipt_session::logout() { cluster_bus_.pty_logout(dev_, vm_.get_tag()); }

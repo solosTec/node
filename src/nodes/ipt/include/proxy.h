@@ -59,7 +59,7 @@ namespace smf {
         /**
          * send to configuration manager
          */
-        void backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::tuple_t cl);
+        std::size_t backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::tuple_t cl);
 
       private:
         cyng::logger logger_;
