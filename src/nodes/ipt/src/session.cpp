@@ -12,10 +12,15 @@
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_format.h>
 #include <smf/ipt/transpiler.h>
+#include <smf/obis/conv.h>
+#include <smf/sml.h>
 
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/util.hpp>
+#include <cyng/obj/vector_cast.hpp>
+#include <cyng/parse/buffer.h>
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
 
@@ -153,9 +158,31 @@ namespace smf {
 
             cyng::make_description(
                 "cfg.req.backup",
-                cyng::
-                    vm_adaptor<ipt_session, void, std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point>(
-                        this, &ipt_session::cfg_req_backup)));
+                cyng::vm_adaptor<
+                    ipt_session,
+                    void,
+                    std::string,
+                    std::string,
+                    boost::uuids::uuid, //  key in table "gateway"
+                    cyng::buffer_t,     //  server id
+                    std::string,        //  firware version
+                    std::chrono::system_clock::time_point>(this, &ipt_session::cfg_req_backup)),
+
+            cyng::make_description(
+                "cfg.sml.channel",
+                cyng::vm_adaptor<
+                    ipt_session,
+                    void,
+                    std::string,        //  operator_name,
+                    std::string,        //  operator_pwd,
+                    boost::uuids::uuid, //  dev_tag,
+                    cyng::buffer_t,     //  id,
+                    std::string,        // channel,
+                    std::string,        // section,
+                    cyng::param_map_t,  // params,
+                    boost::uuids::uuid, // source,
+                    boost::uuids::uuid  // tag
+                    >(this, &ipt_session::cfg_sml_channel)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
     }
@@ -569,7 +596,7 @@ namespace smf {
 #endif
         //  redirect data optionally to proxy
         if (cluster_bus_.is_connected()) {
-            if (proxy_.is_on()) {
+            if (proxy_.is_online()) {
                 CYNG_LOG_TRACE(logger_, "routing " << data.size() << " bytes to proxy");
                 proxy_.read(std::move(data));
             } else {
@@ -849,12 +876,72 @@ namespace smf {
         stop();
     }
 
-    void
-    ipt_session::cfg_req_backup(std::string name, std::string pwd, cyng::buffer_t id, std::chrono::system_clock::time_point tp) {
+    void ipt_session::cfg_req_backup(
+        std::string name,
+        std::string pwd,
+        boost::uuids::uuid tag,
+        cyng::buffer_t id,
+        std::string fw, //  firware version
+        std::chrono::system_clock::time_point tp) {
         //
         //  start SML proxy
         //
-        proxy_.cfg_backup(name, pwd, id);
+        proxy_.cfg_backup(name, pwd, tag, id, fw, tp);
+    }
+
+    void ipt_session::cfg_sml_channel(
+        std::string name,
+        std::string pwd,
+        boost::uuids::uuid tag,
+        cyng::buffer_t id,
+        std::string channel,
+        std::string section,
+        cyng::param_map_t params,
+        boost::uuids::uuid source,
+        boost::uuids::uuid tag_cluster) {
+
+        CYNG_LOG_INFO(logger_, "[cfg] channel: " << channel << ", section: " << section);
+        //  convert section to OBIS
+        auto const code = cyng::make_obis(cyng::hex_to_buffer(section));
+
+        //  get a path
+        auto const reader = cyng::make_reader(params);
+        auto const vec = cyng::vector_cast<std::string>(reader["path"].get(), section);
+
+        auto const type = sml::msg_type_by_name(channel);
+
+        switch (type) {
+        case sml::msg_type::GET_PROC_PARAMETER_REQUEST:
+            //
+            //  GET_PROC_PARAMETER_REQUEST
+            //
+            proxy_.get_proc_param_req(
+                name, pwd, tag, id, code, source, vec.empty() ? cyng::obis_path_t({code}) : obis::to_obis_path(vec), tag_cluster);
+            break;
+        case sml::msg_type::SET_PROC_PARAMETER_REQUEST:
+            //
+            //  SET_PROC_PARAMETER_REQUEST
+            //
+            proxy_.set_proc_param_req(
+                name,
+                pwd,
+                tag,
+                id,
+                code,
+                params,
+                source,
+                vec.empty() ? cyng::obis_path_t({code}) : obis::to_obis_path(vec),
+                tag_cluster);
+            break;
+        case sml::msg_type::GET_LIST_REQUEST:
+            //
+            //  GET_LIST_REQUEST
+            //
+            proxy_.get_profile_list_req(name, pwd, tag, id, code, params, source, tag_cluster);
+        default:
+            CYNG_LOG_WARNING(logger_, "[cfg] unknown channel: " << channel << ", section: " << section);
+            break;
+        }
     }
 
     void ipt_session::query() {
@@ -886,6 +973,29 @@ namespace smf {
         if (ipt::test_bit(query_, ipt::query::DEVICE_TIME)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_TIME)));
             ipt_send(std::bind(&ipt::serializer::req_device_time, &serializer_));
+        }
+    }
+
+    void ipt_session::update_connect_state(bool connected) {
+        //
+        //  build key for "connection" table
+        //
+        auto const key_conn = cyng::key_generator(cyng::merge(dev_, vm_.get_tag()));
+        if (connected) {
+            cluster_bus_.req_db_insert(
+                "connection",
+                key_conn,
+                cyng::data_generator(
+                    name_ + "-proxy",
+                    name_,
+                    std::chrono::system_clock::now(),
+                    true,  //  local
+                    "ipt", //  protocol layer
+                    "ipt",
+                    static_cast<std::uint64_t>(0)),
+                1);
+        } else {
+            cluster_bus_.req_db_remove("connection", key_conn);
         }
     }
 

@@ -465,7 +465,7 @@ namespace smf {
         db::rel{"iecUplink", "monitor.IEC", "table.IECUplink.count"},
         db::rel{"gwIEC", "status.IECgw", "table.gwIEC.count"},
         db::rel{"gwwMBus", "status.wMBusgw", "table.gwwMBus.count"},
-        db::rel{"cfgSetMeta", "status.cfgSetMeta", "table.cfgSetMeta.count"}
+        db::rel{"cfgSetMeta", "config.cfgSetMeta", "table.cfgSetMeta.count"}
         //  don't add table "meterFull" - no syncing
     };
 
@@ -539,22 +539,24 @@ namespace smf {
             return convert_to_hours(obj);
 
         default:
-            BOOST_ASSERT_MSG(obj.tag() == cyng::TC_STRING, "data type not supported");
+            // all other data types pass through
             break;
         }
         return obj;
     }
 
     cyng::object convert_to_uuid(cyng::object &obj) {
-        if (obj.tag() == cyng::TC_NULL)
-            return cyng::make_object(boost::uuids::nil_uuid());
-        if (obj.tag() == cyng::TC_UUID)
-            return obj;
-        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
-        if (obj.tag() == cyng::TC_STRING) {
+        switch (obj.tag()) {
+        case cyng::TC_STRING: {
             auto const str = cyng::io::to_plain(obj);
             BOOST_ASSERT(str.size() == 36);
             return cyng::make_object(cyng::to_uuid(str));
+        }
+        case cyng::TC_UUID:
+            return obj;
+        default:
+            BOOST_ASSERT(obj.tag() == cyng::TC_NULL);
+            break;
         }
         return cyng::make_object(boost::uuids::nil_uuid());
     }

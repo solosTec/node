@@ -9,6 +9,7 @@
 #include <tasks/storage_json.h>
 #include <tasks/storage_xml.h>
 
+#include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
@@ -86,7 +87,8 @@ namespace smf {
         }
     }
 
-    cfg_interface *cluster::get_cfg_interface() { return this; }
+    cfg_sink_interface *cluster::get_cfg_sink_interface() { return this; }
+    cfg_data_interface *cluster::get_cfg_data_interface() { return nullptr; }
 
     void cluster::on_disconnect(std::string msg) { CYNG_LOG_WARNING(logger_, "[cluster] disconnect: " << msg); }
 
@@ -182,9 +184,12 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[cluster.cfg] merge: " << path << ": " << value);
     }
 
-    void cluster::cfg_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point now) {
-        CYNG_LOG_TRACE(logger_, "[cluster.cfg] finish " << tag << " at " << now);
-    }
+    // void cluster::cfg_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point ts) {
+    //     CYNG_LOG_TRACE(logger_, "[cluster.cfg] finish " << tag << " at " << ts);
+    //     db_res_insert(
+    //         "cfgSetMeta", cyng::key_generator(tag), cyng::data_generator(gw, ts, cyng::to_string(ts)), 1,
+    //         boost::uuids::nil_uuid());
+    // }
 
     cyng::channel_ptr start_data_store(
         cyng::controller &ctl,

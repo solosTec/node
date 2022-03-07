@@ -19,6 +19,7 @@
 #include <smfsec/hash/base64.h>
 
 #include <boost/predef.h>
+#include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 namespace smf {
@@ -260,14 +261,14 @@ namespace smf {
 
                 } else if (boost::algorithm::equals(cmd, "query")) {
                     auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
-                    CYNG_LOG_WARNING(logger_, "[HTTP] query request from channel " << channel);
+                    CYNG_LOG_TRACE(logger_, "[HTTP] query request from channel " << channel);
                     auto wsp = pos->second.lock();
                     if (wsp) {
                         query_request(channel, cyng::container_cast<cyng::vector_t>(reader["rec"]["key"].get()), wsp);
                     }
                 } else if (boost::algorithm::equals(cmd, "config")) {
                     auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
-                    CYNG_LOG_WARNING(logger_, "[HTTP] config request from channel " << channel);
+                    CYNG_LOG_TRACE(logger_, "[HTTP] config request from channel " << channel);
                     //  ws (3a368bd6-a125-4a30-a377-1134c2aecdaf) received
                     //  {"cmd":"config","channel":"backup","key":["28c4b783-f35d-49f1-9027-a75dbae9f5e2"],"type":"gateway","sections":["81818160FFFF","81811106FFFF","81811006FFFF"]}
                     config_request(
@@ -276,8 +277,22 @@ namespace smf {
                         reader["meta"].get("type", ""),
                         reader["meta"].get("id", ""),
                         cyng::vector_cast<std::string>(reader.get("sections"), ""));
+                } else if (boost::algorithm::equals(cmd, "install")) {
+                    auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+                    install_request(channel, cyng::container_cast<cyng::vector_t>(reader["key"].get()));
+                } else if (boost::algorithm::equals(cmd, "channel:sml")) {
+                    auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+                    CYNG_LOG_TRACE(logger_, "[HTTP] query:sml request from channel " << channel);
+                    // {"cmd":"query:sml","channel":"GetProcParameterRequest","section":"810060050000","gw":["28c4b783-f35d-49f1-9027-a75dbae9f5e2"],"params":{"params":null}}
+                    sml_channel(
+                        cyng::container_cast<cyng::vector_t>(reader["gw"].get()),
+                        reader.get("channel", ""),
+                        reader.get("section", ""),
+                        cyng::container_cast<cyng::param_map_t>(reader["params"].get()),
+                        tag);
                 } else {
-                    CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command " << cmd);
+                    // received
+                    CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command \"" << cmd << "\"");
                 }
             } else {
 
@@ -400,11 +415,11 @@ namespace smf {
         std::string const &channel,
         cyng::vector_t &&key,
         std::string table,
-        std::string id,
+        std::string id, //  unused
         std::vector<std::string> &&sections) {
         BOOST_ASSERT_MSG(!key.empty(), "no modify key");
         auto const rel = db_.by_table(table);
-        if (!rel.empty()) {
+        if (!rel.empty() && !key.empty()) {
             BOOST_ASSERT(boost::algorithm::equals(table, rel.table_));
             //
             //	convert key data type(s)
@@ -414,12 +429,49 @@ namespace smf {
             CYNG_LOG_TRACE(logger_, "[HTTP] config \"" << channel << "\" request for " << rel.table_ << ": " << id);
             if (boost::algorithm::equals(channel, "backup")) {
                 //  ignore sections (backup contains all data)
-                cluster_bus_.cfg_init_backup(rel.table_, key, std::chrono::system_clock::now());
+                cluster_bus_.cfg_backup_init(rel.table_, key, std::chrono::system_clock::now());
             }
 
         } else {
             CYNG_LOG_WARNING(logger_, "[HTTP] config: undefined device type " << table);
         }
+    }
+
+    void http_server::install_request(std::string const &channel, cyng::vector_t &&key) {
+        BOOST_ASSERT_MSG(!key.empty(), "no install key");
+        auto const rel = db_.by_channel(channel);
+        if (!rel.empty() && !key.empty()) {
+
+            BOOST_ASSERT(boost::algorithm::equals(channel, rel.channel_));
+            //
+            //	convert data types
+            //
+            db_.convert(rel.table_, key);
+
+            CYNG_LOG_TRACE(logger_, "[HTTP] install request for table " << rel.table_ << ": " << key);
+            // cluster_bus_.cfg_install(rel.table_, key, data);
+
+        } else {
+            CYNG_LOG_WARNING(logger_, "[HTTP] install: undefined channel or empty key: " << channel);
+        }
+    }
+
+    void http_server::sml_channel(
+        cyng::vector_t key,        //  gateway
+        std::string channel,       //  SML message type
+        std::string section,       //  OBIS root
+        cyng::param_map_t params,  //  optional parameters (OBIS path)
+        boost::uuids::uuid source) //   HTTP session
+    {
+        BOOST_ASSERT_MSG(!key.empty(), "no query key");
+        CYNG_LOG_TRACE(logger_, "[HTTP] query request " << channel << ": " << key);
+
+        //
+        //	convert key data type(s)
+        //
+        db_.convert("gateway", key);
+
+        cluster_bus_.cfg_sml_channel_out(key, channel, section, params, source);
     }
 
     void http_server::modify_request(std::string const &channel, cyng::vector_t &&key, cyng::param_map_t &&data) {
@@ -501,6 +553,8 @@ namespace smf {
             response_subscribe_channel_gateway(wsp, name, table_name);
         } else if (boost::algorithm::equals(table_name, "meter")) {
             response_subscribe_channel_meter(wsp, name, table_name);
+        } else if (boost::algorithm::equals(table_name, "cfgSetMeta")) {
+            response_subscribe_channel_cfg_set_meta(wsp, name, table_name);
         } else {
             //
             //	Send initial data set
@@ -544,6 +598,8 @@ namespace smf {
     }
 
     void http_server::response_subscribe_channel_meterwMBus(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        BOOST_ASSERT(boost::algorithm::equals(table_name, "meterwMBus"));
+
         //
         //	Send initial data set
         //
@@ -592,6 +648,8 @@ namespace smf {
     }
 
     void http_server::response_subscribe_channel_meterIEC(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        BOOST_ASSERT(boost::algorithm::equals(table_name, "meterIEC"));
+
         //
         //	Send initial data set
         //
@@ -640,6 +698,8 @@ namespace smf {
     }
 
     void http_server::response_subscribe_channel_gwIEC(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        BOOST_ASSERT(boost::algorithm::equals(table_name, "gwIEC"));
+
         //
         //	Send initial data set
         //
@@ -703,6 +763,8 @@ namespace smf {
     }
 
     void http_server::response_subscribe_channel_gateway(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        BOOST_ASSERT(boost::algorithm::equals(table_name, "gateway"));
+
         //
         //	Send initial data set
         //
@@ -759,6 +821,8 @@ namespace smf {
     }
 
     void http_server::response_subscribe_channel_meter(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        BOOST_ASSERT(boost::algorithm::equals(table_name, "meter"));
+
         //
         //	Send initial data set
         //
@@ -799,6 +863,55 @@ namespace smf {
             },
             cyng::access::read(table_name),
             cyng::access::read("session"));
+    }
+
+    void http_server::response_subscribe_channel_cfg_set_meta(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        BOOST_ASSERT(boost::algorithm::equals(table_name, "cfgSetMeta"));
+
+        //
+        //	Send initial data set
+        //
+        db_.cache_.access(
+            [&](cyng::table const *tbl, cyng::table const *tbl_gw) -> void {
+                //
+                //	get total record size
+                //
+                auto total_size{tbl->size()};
+                std::size_t percent{0}, idx{0};
+
+                tbl->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
+                    auto const gw_key = cyng::key_generator(rec.value("gw", boost::uuids::nil_uuid()));
+                    auto const gw_rec = tbl_gw->lookup(gw_key);
+                    if (!gw_rec.empty()) {
+
+                        //
+                        //  append server id
+                        //
+                        auto id = gw_rec.value("serverId", "");
+                        auto tpl = rec.to_tuple(cyng::param_map_factory("serverId", id));
+                        auto const str = json_insert_record(name, std::move(tpl));
+                        CYNG_LOG_DEBUG(logger_, str);
+                        wsp->push_msg(str);
+
+                    } else {
+                        CYNG_LOG_WARNING(logger_, "cfgSetMeta " << rec.key() << " has no gateway");
+                    }
+
+                    //
+                    //	update current index and percentage calculation
+                    //
+                    ++idx;
+                    const auto prev_percent = percent;
+                    percent = (100u * idx) / total_size;
+                    if (prev_percent != percent) {
+                        wsp->push_msg(json_load_level(name, percent));
+                    }
+
+                    return true;
+                });
+            },
+            cyng::access::read(table_name),
+            cyng::access::read("gateway"));
     }
 
     void http_server::response_update_channel(ws_sptr wsp, std::string const &name) {
@@ -887,6 +1000,28 @@ namespace smf {
         }
     }
 
+    void http_server::cfg_data(
+        boost::uuids::uuid tag,  // HTTP session
+        cyng::key_t gw,          //  key gateway table
+        std::string channel,     //  SML message type
+        std::string section,     // OBIS root
+        cyng::param_map_t params //   data / results
+    ) {
+        //  [cluster#cfg.data.sml]: GET_PROC_PARAMETER_REQUEST, section: 810060050000
+        //  data: %(("word": % (("AUTHORIZED_IPT":false), ("EXT_IF_AVAILABLE":false), ("FATAL_ERROR":false),
+        //  ("NO_TIMEBASE":false), ("OUT_OF_MEMORY":false), ("PLC_AVAILABLE":false), ("SERVICE_IF_AVAILABLE":false),
+        //  ("WIRED_MBUS_IF_AVAILABLE":false), ("WIRELESS_BUS_IF_AVAILABLE":false))))
+        CYNG_LOG_TRACE(logger_, "[cluster] cfg.data: " << channel << ", section: " << section << ", data: " << params);
+
+        auto const pos = ws_map_.find(tag);
+        if (pos != ws_map_.end()) {
+            auto sp = pos->second.lock();
+            if (sp) {
+                auto const str = json_cfg_data(channel, gw, section, params);
+                sp->push_msg(str);
+            }
+        }
+    }
     std::string json_insert_record(std::string channel, cyng::tuple_t &&tpl) {
 
         return cyng::io::to_json(cyng::make_tuple(
@@ -930,6 +1065,15 @@ namespace smf {
     std::string json_clear_table(std::string channel) {
 
         return cyng::io::to_json(cyng::make_tuple(cyng::make_param("cmd", "clear"), cyng::make_param("channel", channel)));
+    }
+
+    std::string json_cfg_data(std::string channel, cyng::key_t const &key, std::string section, cyng::param_map_t const &params) {
+        return cyng::io::to_json(cyng::make_tuple(
+            cyng::make_param("cmd", "update"),
+            cyng::make_param("channel", channel),
+            cyng::make_param("section", section),
+            cyng::make_param("pk", key),
+            cyng::make_param("values", params)));
     }
 
     void tidy(cyng::param_map_t &pm) {

@@ -84,11 +84,6 @@ namespace smf {
 
     boost::asio::ip::address cfg_nms::get_nic_ipv4() const { return cfg_.get_value(nic_v4_path(), get_ipv4_address(get_nic())); }
 
-    // boost::asio::ip::address cfg_nms::get_nic_ipv6() const {
-    //    auto const r = get_ipv6_linklocal(get_nic());
-    //    return cfg_.get_value(nic_linklocal_path(), r.first);
-    //}
-
     std::uint32_t cfg_nms::get_nic_index() const {
         auto const r = get_ipv6_linklocal(get_nic());
         return cfg_.get_value(nic_index_path(), r.second);

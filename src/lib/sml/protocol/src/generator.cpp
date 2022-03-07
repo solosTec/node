@@ -33,6 +33,7 @@ namespace smf {
         void trx::reset() {
             std::generate(prefix_.begin(), prefix_.end(), [&]() { return gen_.next(); });
             num_ = 1;
+            open_trx_.clear();
         }
 
         trx &trx::operator++() {

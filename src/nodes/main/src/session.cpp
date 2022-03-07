@@ -258,23 +258,41 @@ namespace smf {
             cyng::make_description("pty.stop", cyng::vm_adaptor<session, void, std::string, cyng::key_t>(this, &session::pty_stop)),
 
             cyng::make_description(
-                "cfg.init.backup",
+                "cfg.backup.init",
                 cyng::vm_adaptor<session, void, std::string, cyng::key_t, std::chrono::system_clock::time_point>(
-                    this, &session::cfg_init_backup)),
+                    this, &session::cfg_backup_init)),
 
             cyng::make_description(
-                "cfg.merge.backup",
+                "cfg.backup.merge",
                 cyng::
                     vm_adaptor<session, void, boost::uuids::uuid, cyng::buffer_t, cyng::buffer_t, cyng::obis_path_t, cyng::object>(
-                        this, &session::cfg_merge_backup)),
+                        this, &session::cfg_backup_merge)),
+
+            cyng::make_description(
+                "cfg.backup.finish",
+                cyng::vm_adaptor<session, void, boost::uuids::uuid, cyng::buffer_t, std::chrono::system_clock::time_point>(
+                    this, &session::cfg_backup_finish)),
 
             cyng::make_description("sys.msg", cyng::vm_adaptor<db, bool, std::string, cyng::severity>(&cache_, &db::push_sys_msg)),
 
             cyng::make_description(
                 "cluster.send.msg",
                 cyng::vm_adaptor<session, void, std::deque<cyng::buffer_t>>(
-                    this, &session::cluster_send_msg)) // cluster_send_msg() - internal function
-        );
+                    this, &session::cluster_send_msg)), // cluster_send_msg() - internal function
+
+            //"cfg.sml.channel"
+            cyng::make_description(
+                "cfg.sml.channel",
+                cyng::vm_adaptor<
+                    session,
+                    void,
+                    bool,
+                    cyng::vector_t,
+                    std::string,
+                    std::string,
+                    cyng::param_map_t,
+                    boost::uuids::uuid,
+                    boost::uuids::uuid>(this, &session::cfg_sml_channel)));
     }
 
     void session::do_write() {
@@ -374,7 +392,9 @@ namespace smf {
 
         if (b) {
             try {
-                CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.insert " << table_name << " - " << data);
+                CYNG_LOG_INFO(
+                    logger_,
+                    "session [" << socket_.remote_endpoint() << "] req.insert " << table_name << " - " << key << " - " << data);
             } catch (std::exception const &ex) {
                 CYNG_LOG_WARNING(logger_, "session " << tag << " is offline: " << ex.what());
             }
@@ -384,8 +404,6 @@ namespace smf {
                 //  insert/update "gwIEC" too
                 //
                 db_req_insert_gw_iec(key, tag);
-            } else {
-                CYNG_LOG_WARNING(logger_, "[session] req.insert " << table_name << " - " << data << " failed");
             }
         }
     }
@@ -766,6 +784,7 @@ namespace smf {
     void session::cluster_send_msg(std::deque<cyng::buffer_t> msg) {
         cyng::exec(vm_, [=, this]() {
             bool const b = buffer_write_.empty();
+            CYNG_LOG_DEBUG(logger_, "send " << msg.size() << " bytes cluster message to peer " << vm_.get_tag());
             cyng::add(buffer_write_, msg);
             if (b) {
                 do_write();
@@ -1350,9 +1369,10 @@ namespace smf {
         }
     }
 
-    void session::cfg_init_backup(std::string table_name, cyng::key_t key, std::chrono::system_clock::time_point tp) {
+    void session::cfg_backup_init(std::string table_name, cyng::key_t key, std::chrono::system_clock::time_point tp) {
         CYNG_LOG_INFO(logger_, "init backup \"" << table_name << "\": " << key);
 
+        BOOST_ASSERT(!key.empty());
         BOOST_ASSERT(config::is_known_store_name(table_name));
         BOOST_ASSERT(boost::algorithm::equals(table_name, "gateway"));
 
@@ -1362,66 +1382,32 @@ namespace smf {
         // * forward backup request to (ipt) node
         //
         if (boost::algorithm::equals(table_name, "gateway")) {
-            cache_.get_store().access(
-                [&](cyng::table const *tbl_session, cyng::table const *tbl_gw, cyng::table const *tbl_dev) {
-                    auto const rec = tbl_session->lookup(key);
-                    if (!rec.empty()) {
-                        auto const rtag = rec.value("rTag", boost::uuids::nil_uuid());
-                        auto const peer = rec.value("peer", boost::uuids::nil_uuid());
-                        auto const name = rec.value("name", "");
+            cache_.locate_gateway(
+                key,
+                [&, this](
+                    boost::uuids::uuid rtag,
+                    boost::uuids::uuid peer,
+                    std::string operator_name,
+                    std::string operator_pwd,
+                    boost::uuids::uuid tag,
+                    cyng::buffer_t id,
+                    std::string fw,
+                    std::string name,
+                    std::string msisdn) -> void {
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "session [" << socket_.remote_endpoint() << "] will backup gateway: " << name << '@' << msisdn
+                                    << " on peer " << peer);
 
-                        //
-                        //  ToDo: check connection state
-                        //  and set connection state (to block incoming calls)
-                        //
-
-                        auto const rec_gw = tbl_gw->lookup(key);
-                        if (!rec_gw.empty()) {
-                            //  convert server ID to cyng::buffer_t
-                            auto const id = cyng::hex_to_buffer(rec_gw.value("serverId", ""));
-                            auto const operator_name = rec_gw.value("userName", "");
-                            auto const operator_pwd = rec_gw.value("userPwd", "");
-                            auto const rec_dev = tbl_dev->lookup(key);
-
-                            if (!rec_dev.empty()) {
-                                auto const account = rec_dev.value("name", "");
-                                auto const pwd = rec_dev.value("pwd", "");
-                                auto const msisdn = rec_dev.value("msisdn", "");
-                                BOOST_ASSERT(boost::algorithm::equals(account, name));
-
-                                CYNG_LOG_INFO(
-                                    logger_,
-                                    "session [" << socket_.remote_endpoint() << "] will backup " << table_name << ": " << name
-                                                << '@' << msisdn << " on peer " << peer);
-
-                                // vm_.load(cyng::generate_forward(
-                                //     "cfg.forward.init.backup", peer, rtag, operator_name, operator_pwd, id, tp));
-
-                                // cluster_send_msg(cyng::serialize_forward("cfg.req.backup", rtag, name, pwd, id, tp));
-                                vm_.load(cyng::generate_forward(
-                                    "cluster.send.msg",
-                                    peer,
-                                    cyng::serialize_forward("cfg.req.backup", rtag, operator_name, operator_pwd, id, tp)));
-                                vm_.run();
-                            }
-                        }
-                    } else {
-                        CYNG_LOG_ERROR(
-                            logger_, "session [" << socket_.remote_endpoint() << "] cannot backup " << table_name << ": " << key);
-                        tbl_session->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                            CYNG_LOG_DEBUG(logger_, rec.to_string());
-                            return true;
-                        });
-                    }
-                },
-                cyng::access::read("session"),
-                cyng::access::read(table_name),
-                cyng::access::read("device"));
-
-            //
-            //  execute loaded program
-            //
-            vm_.run();
+                    vm_.load(cyng::generate_forward(
+                        "cluster.send.msg",
+                        peer,
+                        cyng::serialize_forward("cfg.req.backup", rtag, operator_name, operator_pwd, tag, id, fw, tp)));
+                    //
+                    //  execute loaded program
+                    //
+                    vm_.run();
+                });
 
         } else {
             CYNG_LOG_ERROR(
@@ -1429,7 +1415,7 @@ namespace smf {
         }
     }
 
-    void session::cfg_merge_backup(
+    void session::cfg_backup_merge(
         boost::uuids::uuid tag,
         cyng::buffer_t gw,
         cyng::buffer_t meter,
@@ -1450,10 +1436,8 @@ namespace smf {
                             "merge backup " << rec.value("class", "") << ": " << tag << ", " << gw << ", " << meter << ", " << path
                                             << ", " << value);
 
-                        // vm_.load(cyng::generate_forward("cfg.forward.merge.backup", peer, tag, gw, meter, path, value));
-
                         vm_.load(cyng::generate_forward(
-                            "cluster.send.msg", peer, cyng::serialize_invoke("cfg.merge.backup", tag, gw, meter, path, value)));
+                            "cluster.send.msg", peer, cyng::serialize_invoke("cfg.backup.merge", tag, gw, meter, path, value)));
 
                         vm_.run();
                     }
@@ -1461,6 +1445,123 @@ namespace smf {
                 });
             },
             cyng::access::read("cluster"));
+    }
+
+    void session::cfg_backup_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point tp) {
+        CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] cfg.backup.finish: " << gw);
+        //
+        //  distribute to configuration manager
+        //
+        cache_.get_store().access(
+            [&, this](cyng::table const *tbl) {
+                tbl->loop([&, this](cyng::record &&rec, std::size_t) {
+                    if (rec.value("cfg", false)) {
+                        // cfg_mgr.emplace(rec.key());
+                        auto const peer = rec.value("peer", boost::uuids::nil_uuid());
+                        BOOST_ASSERT(peer != boost::uuids::nil_uuid());
+                        CYNG_LOG_TRACE(logger_, "backup meta data " << rec.value("class", "") << ": " << tag << ", " << gw);
+
+                        vm_.load(cyng::generate_forward(
+                            "cluster.send.msg", peer, cyng::serialize_invoke("cfg.backup.finish", tag, gw, tp)));
+
+                        vm_.run();
+                    }
+                    return true;
+                });
+            },
+            cyng::access::read("cluster"));
+    }
+
+    void session::cfg_sml_channel(
+        bool direction,                 //  true == out, false == back
+        cyng::vector_t key,             //  gateway
+        std::string channel,            //  SML message type
+        std::string section,            //  OBIS root
+        cyng::param_map_t params,       //  optional parameters (OBIS path) or results
+        boost::uuids::uuid source,      //  HTTP session
+        boost::uuids::uuid tag_cluster) // source node tag (mostly dash)
+    {
+        CYNG_LOG_INFO(
+            logger_,
+            "cfg.sml.channel( " << (direction ? "\"outward\"" : "\"backwards\"") << " " << channel << ", " << section << " )");
+
+        if (direction) {
+            // CYNG_LOG_DEBUG(logger_, "cfg_sml_channel_out( source " << source << ", tag_cluster " << tag_cluster);
+            //   routing to gateway
+            cache_.locate_gateway(
+                key,
+                [=, this](
+                    boost::uuids::uuid rtag,
+                    boost::uuids::uuid peer,
+                    std::string operator_name,
+                    std::string operator_pwd,
+                    boost::uuids::uuid tag,
+                    cyng::buffer_t id,
+                    std::string fw,
+                    std::string name,
+                    std::string msisdn) -> void {
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "session [" << socket_.remote_endpoint() << "] sml channel: " << channel << ", " << section
+                                    << ", source: " << source << ", cluster tag: " << tag_cluster);
+
+                    //
+                    //  check data consistency
+                    //
+                    BOOST_ASSERT_MSG(cyng::value_cast(key.front(), peer) == tag, "inconsistent data");
+
+                    vm_.load(cyng::generate_forward(
+                        "cluster.send.msg",
+                        peer,
+                        cyng::serialize_forward(
+                            "cfg.sml.channel",
+                            rtag,
+                            operator_name,
+                            operator_pwd,
+                            tag, //  same as key
+                            id,
+                            channel,
+                            section,
+                            params,
+                            source,
+                            vm_.get_tag() //  peer
+                            // tag_cluster
+                            )));
+                    //
+                    //   execute loaded program
+                    //
+                    vm_.run();
+                });
+        } else {
+
+#ifdef _DEBUG
+            cache_.get_store().access(
+                [&, this](cyng::table const *tbl) {
+                    tbl->loop([&, this](cyng::record &&rec, std::size_t) {
+                        CYNG_LOG_DEBUG(
+                            logger_, "cfg.data.sml " << source << ", r-peer " << tag_cluster << " - " << rec.to_string());
+                        return true;
+                    });
+                },
+                cyng::access::read("cluster"));
+#endif
+
+            //  routing to source
+            vm_.load(cyng::generate_forward(
+                "cluster.send.msg",
+                tag_cluster, //  peer
+                cyng::serialize_invoke(
+                    "cfg.data.sml",
+                    source,  // HTTP session
+                    key,     // table key (gateway)
+                    channel, // SML message type
+                    section, // OBIS root
+                    params   // results
+                    )));
+
+            // execute loaded program
+            vm_.run();
+        }
     }
 
     std::chrono::seconds smooth(std::chrono::seconds interval) {

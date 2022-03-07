@@ -21,7 +21,7 @@
 
 namespace smf {
 
-    class cfg_interface {
+    class cfg_sink_interface {
       public:
         /** @brief configuration management:
          *
@@ -29,13 +29,21 @@ namespace smf {
          */
         virtual void
         cfg_merge(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value) = 0;
+    };
 
+    class cfg_data_interface {
+      public:
         /** @brief configuration management:
          *
-         * Backup congig data is complete. Write meta data
+         * receive SML/data responses
          */
-        virtual void
-        cfg_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point) = 0;
+        virtual void cfg_data(
+            boost::uuids::uuid tag,  // HTTP session
+            cyng::key_t gw,          //  key gateway table
+            std::string channel,     //  SML message type
+            std::string section,     // OBIS root
+            cyng::param_map_t params //   data / results
+            ) = 0;
     };
 
     /**
@@ -68,7 +76,12 @@ namespace smf {
         /**
          * To return a null pointer is allowed.
          */
-        virtual cfg_interface *get_cfg_interface() = 0;
+        virtual cfg_sink_interface *get_cfg_sink_interface() = 0;
+
+        /**
+         * To return a null pointer is allowed.
+         */
+        virtual cfg_data_interface *get_cfg_data_interface() = 0;
     };
 
     /**
@@ -218,27 +231,62 @@ namespace smf {
          */
         void update_pty_counter(std::uint64_t);
 
-        //	"cfg.init.backup"
-        void cfg_init_backup(std::string const &, cyng::key_t, std::chrono::system_clock::time_point);
-
         /** @brief configuration management
          *
          * @return true if configuration management is available
          */
-        bool has_cfg_management() const;
+        bool has_cfg_sink_interface() const;
+        bool has_cfg_data_interface() const;
+
+        //	"cfg.backup.init"
+        void cfg_backup_init(std::string const &, cyng::key_t, std::chrono::system_clock::time_point);
 
         /** @brief configuration management
          *
          * Backup/update a gw/meter configuration record
          */
         void
-        cfg_merge_backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
+        cfg_backup_merge(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
 
-        /** @brief configuration management
-         *
-         *  Finish a set of configuration data
+        /**
+         * @param key gateway table
+         * @param channel SML message type
+         * @param section OBIS root
+         * @param params optional parameters (OBIS path)
+         * @param source HTTP session
          */
-        void cfg_finish_backup(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point now);
+        void cfg_sml_channel_out(
+            cyng::vector_t key,
+            std::string channel,
+            std::string section,
+            cyng::param_map_t params,
+            boost::uuids::uuid source);
+
+        /**
+         * Send reply to "cfg.sml.channel.out"
+         *
+         * @param key gateway table
+         * @param channel SML message type
+         * @param section OBIS root
+         * @param params results
+         * @param source HTTP session
+         * @param tag cluster node tag (mostly dash)
+         */
+        void cfg_sml_channel_back(
+            cyng::vector_t key,
+            std::string channel,
+            std::string section,
+            cyng::param_map_t params,
+            boost::uuids::uuid source,
+            boost::uuids::uuid tag);
+
+        void cfg_data_sml(
+            boost::uuids::uuid tag,  // HTTP session
+            cyng::vector_t key,      // table key (gateway)
+            std::string channel,     // SML message type
+            std::string section,     // OBIS root
+            cyng::param_map_t params // results
+        );
 
       private:
         void reset(state_ptr sp, state_value);
@@ -266,8 +314,6 @@ namespace smf {
         void on_ping(std::chrono::system_clock::time_point);
 
         void on_test_msg(std::string);
-
-        // void cfg_merge_backup(boost::uuids::uuid);
 
       private:
         boost::asio::io_context &ctx_;

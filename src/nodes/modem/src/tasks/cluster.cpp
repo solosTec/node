@@ -61,7 +61,8 @@ namespace smf {
     //	bus interface
     //
     cyng::mesh *cluster::get_fabric() { return &fabric_; }
-    cfg_interface *cluster::get_cfg_interface() { return nullptr; }
+    cfg_sink_interface *cluster::get_cfg_sink_interface() { return nullptr; }
+    cfg_data_interface *cluster::get_cfg_data_interface() { return nullptr; }
 
     void cluster::on_login(bool success) {
         if (success) {

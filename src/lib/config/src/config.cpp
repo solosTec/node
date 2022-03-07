@@ -303,9 +303,22 @@ namespace smf {
             auto const nics = cyng::sys::get_nic_names();
             if (!nics.empty()) {
                 std::cout << nics.size() << " network device(s)" << std::endl;
+                //
+                //  sorted by MAC
+                //
+                std::multimap<cyng::mac48, std::string> collection;
                 for (auto const &nic : nics) {
+                    collection.emplace(cyng::sys::get_mac48_adress(nic), nic);
+                }
+                BOOST_ASSERT(!collection.empty());
+                cyng::mac48 current = cyng::broadcast_address();
+                for (auto const &e : collection) {
                     using cyng::operator<<;
-                    std::cout << "\"" << nic << "\" - " << cyng::sys::get_mac48_adress(nic) << std::endl;
+                    if (current != e.first) {
+                        std::cout << e.first << ":" << std::endl;
+                        current = e.first;
+                    }
+                    std::cout << "\t\"" << e.second << "\"" << std::endl;
                 }
             }
             std::cout << std::endl;

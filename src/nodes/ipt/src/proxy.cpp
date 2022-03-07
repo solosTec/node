@@ -8,6 +8,7 @@
 #include <smf/sml/reader.h>
 #include <smf/sml/select.h>
 #include <smf/sml/serializer.h>
+#include <smf/sml/status.h>
 
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
@@ -25,7 +26,7 @@
 namespace smf {
 
     proxy::proxy(cyng::logger logger, ipt_session &session, bus &cluster_bus, cyng::mac48 const &client_id)
-        : state_(state::OFF)
+        : state_(initial_s{})
         , logger_(logger)
         , session_(session)
         , cluster_bus_(cluster_bus)
@@ -52,14 +53,16 @@ namespace smf {
                     // std::cout << cyng::io::to_pretty(msg) << std::endl;
                     // CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
                     //  cyng::obis, cyng::attr_t, cyng::tuple_t
-                    CYNG_LOG_DEBUG(logger_, "state : " << get_state());
+                    // CYNG_LOG_DEBUG(logger_, "state : " << get_state());
                     auto const [s, p, code, a, l] = sml::read_get_proc_parameter_response(msg);
                     CYNG_LOG_DEBUG(logger_, "server: " << s);
                     CYNG_LOG_DEBUG(logger_, "path  : " << p);
                     CYNG_LOG_DEBUG(logger_, "code  : " << code << " - " << obis::get_name(code));
                     CYNG_LOG_DEBUG(logger_, "attr  : " << a);
+                    CYNG_LOG_DEBUG(logger_, "index : " << state_.index());
                     CYNG_LOG_DEBUG(logger_, "list  : \n" << sml::dump_child_list(l, false));
-                    get_proc_parameter_response(s, p, code, a, l);
+
+                    on(evt_get_proc_parameter_response{s, p, code, a, l});
                 }
                 break;
             case sml::msg_type::GET_LIST_RESPONSE:
@@ -68,7 +71,7 @@ namespace smf {
                 break;
             case sml::msg_type::CLOSE_RESPONSE:
                 CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << ", " << sml::get_name(type) << ": " << trx << ", " << msg);
-                close_response(trx, msg);
+                on(evt_close_response{trx, msg});
                 break;
             case sml::msg_type::ATTENTION_RESPONSE: {
                 auto const code = sml::read_attention_response(msg);
@@ -80,38 +83,72 @@ namespace smf {
                 break;
             }
         })
-        , id_()
         , req_gen_("operator", "operator")
-        , meters_()
-        , access_()
-        , cfg_()
-        , cache_()
         , throughput_{} {}
 
-    proxy::~proxy() {
-#ifdef _DEBUG_IPT
-        std::cout << "proxy(~)" << std::endl;
-#endif
+    bool proxy::is_online() const {
+        return std::visit([](auto const &s) { return s.get_online_state(); }, state_);
     }
 
-    bool proxy::is_on() const { return state_ != state::OFF; }
+    void proxy::get_proc_param_req(
+        std::string name,
+        std::string pwd,
+        boost::uuids::uuid tag,
+        cyng::buffer_t id,
+        cyng::obis section,
+        boost::uuids::uuid source,
+        cyng::obis_path_t path,
+        boost::uuids::uuid rpeer) {
+        CYNG_LOG_TRACE(logger_, "[proxy] GetProcParameterRequest " << name << '@' << id);
 
-    void proxy::cfg_backup(std::string name, std::string pwd, cyng::buffer_t id) {
+        req_gen_.reset(name, pwd, 18);
+        state_ = get_proc_param_req_s{tag, id, section, source, rpeer, true};
+        on(evt_init{});
+    }
+    void proxy::set_proc_param_req(
+        std::string name,
+        std::string pwd,
+        boost::uuids::uuid tag,
+        cyng::buffer_t id,
+        cyng::obis section,
+        cyng::param_map_t params,
+        boost::uuids::uuid source,
+        cyng::obis_path_t path,
+        boost::uuids::uuid tag_cluster) {
+        CYNG_LOG_TRACE(logger_, "[proxy] SetProcParameterRequest " << name << '@' << id);
+
+        req_gen_.reset(name, pwd, 18);
+        state_ = set_proc_param_req_s{tag, id, section, params, source, tag_cluster};
+        on(evt_init{});
+    }
+
+    void proxy::get_profile_list_req(
+        std::string name,
+        std::string pwd,
+        boost::uuids::uuid tag,
+        cyng::buffer_t id,
+        cyng::obis section,
+        cyng::param_map_t params,
+        boost::uuids::uuid source,
+        boost::uuids::uuid tag_cluster) {
+
+        req_gen_.reset(name, pwd, 18);
+        state_ = set_profile_list_req_s{tag, id, section, params, source, tag_cluster};
+        on(evt_init{});
+    }
+
+    void proxy::cfg_backup(
+        std::string name,
+        std::string pwd,
+        boost::uuids::uuid tag,
+        cyng::buffer_t id,
+        std::string fw, //  firware version
+        std::chrono::system_clock::time_point tp) {
 
         CYNG_LOG_TRACE(logger_, "[proxy] config backup " << name << '@' << id);
-        BOOST_ASSERT_MSG(state_ == state::OFF, "proxy already active");
+        // BOOST_ASSERT_MSG(state_ == state::OFF, "proxy already active");
+        BOOST_ASSERT_MSG(!tag.is_nil(), "no key");
         BOOST_ASSERT_MSG(!id.empty(), "no gateway id");
-        // state_ = state::ROOT_CFG;
-
-        //
-        //  update connection state - QRY_BASIC
-        //
-        update_connect_state(true);
-
-        meters_ = {}; //  clear
-        access_ = {}; //  clear
-        cfg_.clear();
-        cfg_.emplace(id, sml::tree{});
 
         //
         // * login to gateway
@@ -124,48 +161,10 @@ namespace smf {
         //
 
         req_gen_.reset(name, pwd, 22);
-        id_.assign(id.begin(), id.end());
-
-        //
-        //  query some basic configurations and all active devices
-        //
-        session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
-            sml::messages_t messages;
-            messages.emplace_back(req_gen_.public_open(client_id_, id_));
-            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL));
-            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM)); //  OK
-            // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE)); this is not configuration data
-            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_NTP));
-
-            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT));   //  OK
-            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES)); //  OK
-
-            //
-            //  access rights need to know the active devices, so this comes first
-            //
-            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
-            // temporary removed: messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_WAN_PARAM)); //  cannot read
-            //  messages.emplace_back(req_gen_.get_proc_parameter(id_, ROOT_DEVICE_INFO));   //  empty result set
-
-            messages.emplace_back(req_gen_.public_close());
-            auto msg = sml::to_sml(messages);
-#ifdef __DEBUG
-            {
-                std::stringstream ss;
-                cyng::io::hex_dump<8> hd;
-                hd(ss, msg.begin(), msg.end());
-                auto const dmp = ss.str();
-                CYNG_LOG_TRACE(logger_, "[get_proc_parameter request] :\n" << dmp);
-            }
-#endif
-            throughput_ += msg.size();
-            auto const open_res = req_gen_.get_trx_mgr().store_pefix();
-            CYNG_LOG_TRACE(logger_, "prefix #" << open_res << ": " << req_gen_.get_trx_mgr().get_prefix());
-            return session_.serializer_.escape_data(std::move(msg));
-        });
+        state_ = backup_s{backup_s::query_state::OFF, tag, id, fw, tp, {}, {}};
+        on(evt_init{});
     }
 
-    // void proxy::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[proxy] stop"); }
     void proxy::read(cyng::buffer_t &&data) {
 
         //
@@ -181,96 +180,150 @@ namespace smf {
         session_.cluster_bus_.req_db_update("connection", key_conn, cyng::param_map_factory()("throughput", throughput_));
     }
 
-    void proxy::get_proc_parameter_response(
-        cyng::buffer_t const &srv,
-        cyng::obis_path_t const &path,
-        cyng::obis code,
-        cyng::attr_t attr,
-        cyng::tuple_t const &tpl) {
+    std::string proxy::backup_s::get_state() const {
+        switch (state_) {
+        case query_state::OFF:
+            return "OFF";
+        case query_state::QRY_BASIC:
+            return "BASIC";
+        case query_state::QRY_METER:
+            return "METER";
+        case query_state::QRY_ACCESS:
+            return "ACCESS";
+        case query_state::QRY_USER:
+            return "USER";
+        default:
+            break;
+        }
+        return "invalid state";
+    }
 
-        if (code == OBIS_ROOT_NTP) {
+    void proxy::backup_s::on(proxy &prx, evt_init) {
+
+        //
+        //  update connection state - QRY_BASIC
+        //
+        update_connect_state(prx.session_, true);
+
+        cfg_.emplace(id_, sml::tree{});
+
+        //
+        //  query some basic configurations and all active devices
+        //
+        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+            sml::messages_t messages;
+            messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
+            messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL));
+            messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_PARAM)); //  OK
+            // messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE)); this is not configuration data
+            messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_NTP));
+
+            messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_DEVICE_IDENT));   //  OK
+            messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES)); //  OK
+
+            messages.emplace_back(prx.req_gen_.public_close());
+            auto msg = sml::to_sml(messages);
+#ifdef __DEBUG
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, msg.begin(), msg.end());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(logger_, "[get_proc_parameter request] :\n" << dmp);
+            }
+#endif
+            prx.throughput_ += msg.size();
+            auto const open_res = prx.req_gen_.get_trx_mgr().store_pefix();
+            CYNG_LOG_TRACE(prx.session_.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
+            return prx.session_.serializer_.escape_data(std::move(msg));
+        });
+    }
+
+    void proxy::backup_s::on(proxy &prx, evt_get_proc_parameter_response &&evt) {
+
+        if (evt.code_ == OBIS_ROOT_NTP) {
             //
             //  send to configuration storage
             //
-            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &op, cyng::attr_t const &attr) {
-                auto pos = cfg_.find(srv);
+            sml::collect(evt.tpl_, {evt.code_}, [&, this](cyng::obis_path_t const &op, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(evt.srv_);
                 if (pos != cfg_.end()) {
-                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_NTP [" << op << "]: " << attr.second);
-                    pos->second.add(path, attr);
+                    CYNG_LOG_TRACE(prx.logger_, "OBIS_ROOT_NTP [" << op << "]: " << attr.second);
+                    pos->second.add(evt.path_, attr);
                 } else {
                     CYNG_LOG_WARNING(
-                        logger_,
-                        "OBIS_ROOT_NTP [" << srv << "]: "
+                        prx.logger_,
+                        "OBIS_ROOT_NTP [" << evt.srv_ << "]: "
                                           << " has no entry");
                 }
             });
 
         } else if (
-            code == OBIS_ROOT_LAN_DSL || code == OBIS_ROOT_DEVICE_IDENT || code == OBIS_ROOT_WAN_PARAM ||
-            code == OBIS_ROOT_IPT_PARAM || code == OBIS_ROOT_DATA_COLLECTOR || code == OBIS_ROOT_PUSH_OPERATIONS ||
-            code == OBIS_ROOT_SENSOR_PARAMS) {
-            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
-                auto pos = cfg_.find(srv);
+            evt.code_ == OBIS_ROOT_LAN_DSL || evt.code_ == OBIS_ROOT_DEVICE_IDENT || evt.code_ == OBIS_ROOT_WAN_PARAM ||
+            evt.code_ == OBIS_ROOT_IPT_PARAM || evt.code_ == OBIS_ROOT_DATA_COLLECTOR || evt.code_ == OBIS_ROOT_PUSH_OPERATIONS ||
+            evt.code_ == OBIS_ROOT_SENSOR_PARAMS) {
+            sml::collect(evt.tpl_, {evt.code_}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(evt.srv_);
                 if (pos != cfg_.end()) {
-                    CYNG_LOG_TRACE(logger_, obis::get_name(code) << " [" << path << "]: " << attr);
+                    CYNG_LOG_TRACE(prx.logger_, obis::get_name(evt.code_) << " [" << path << "]: " << attr);
                     pos->second.add(path, attr);
                 } else {
                     CYNG_LOG_WARNING(
-                        logger_,
-                        obis::get_name(code) << " [" << srv << "]: "
-                                             << " has no entry");
+                        prx.logger_,
+                        obis::get_name(evt.code_) << " [" << evt.srv_ << "]: "
+                                                  << " has no entry");
                 }
             });
-        } else if (code.starts_with({0x81, 0x81, 0x81, 0x64}) && !access_.empty()) {
+        } else if (evt.code_.starts_with({0x81, 0x81, 0x81, 0x64}) && !access_.empty()) {
             auto const path = access_.front();
             access_.pop();
 
             //  attr contains the affected device
-            auto const id = cyng::value_cast(attr.second, srv);
-            CYNG_LOG_TRACE(logger_, "user access rights for: " << id << " - " << path);
-            sml::collect(tpl, path, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+            auto const id = cyng::value_cast(evt.attr_.second, evt.srv_);
+            CYNG_LOG_TRACE(prx.logger_, "user access rights for: " << id << " - " << path);
+            sml::collect(evt.tpl_, path, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
                 auto pos = cfg_.find(id);
                 if (pos != cfg_.end()) {
-                    CYNG_LOG_TRACE(logger_, obis::get_name(code) << " [" << path << "]: " << attr);
+                    CYNG_LOG_TRACE(prx.logger_, obis::get_name(evt.code_) << " [" << path << "]: " << attr);
                     pos->second.add(path, attr);
                 } else {
                     CYNG_LOG_WARNING(
-                        logger_,
-                        code << " [" << srv << "]: "
-                             << " has no entry");
+                        prx.logger_,
+                        evt.code_ << " [" << evt.srv_ << "]: "
+                                  << " has no entry");
                 }
             });
 
-        } else if (code == OBIS_ROOT_ACCESS_RIGHTS) {
+        } else if (evt.code_ == OBIS_ROOT_ACCESS_RIGHTS) {
             //
             //  query configuration
             //
-            CYNG_LOG_TRACE(logger_, "OBIS_ROOT_ACCESS_RIGHTS \n" << sml::dump_child_list(tpl, false));
-            sml::collect(tpl, {code}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
-                auto pos = cfg_.find(srv);
+            CYNG_LOG_TRACE(prx.logger_, "OBIS_ROOT_ACCESS_RIGHTS \n" << sml::dump_child_list(evt.tpl_, false));
+            sml::collect(evt.tpl_, {evt.code_}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
+                auto pos = cfg_.find(evt.srv_);
                 if (pos != cfg_.end()) {
-                    CYNG_LOG_TRACE(logger_, "OBIS_ROOT_ACCESS_RIGHTS [" << path << "]: " << attr);
+                    CYNG_LOG_TRACE(prx.logger_, "OBIS_ROOT_ACCESS_RIGHTS [" << path << "]: " << attr);
                     pos->second.add(path, attr);
                     if (!path.empty() && path.back().starts_with({0x81, 0x81, 0x81, 0x64})) {
                         access_.push(path);
-                        CYNG_LOG_DEBUG(logger_, "store path [" << path << "] #" << access_.size());
+                        CYNG_LOG_DEBUG(prx.logger_, "store path [" << path << "] #" << access_.size());
                     }
                 } else {
                     CYNG_LOG_WARNING(
-                        logger_,
-                        "OBIS_ROOT_ACCESS_RIGHTS [" << srv << "]: "
+                        prx.logger_,
+                        "OBIS_ROOT_ACCESS_RIGHTS [" << evt.srv_ << "]: "
                                                     << " has no entry");
                 }
             });
 
-        } else if (code == OBIS_ROOT_ACTIVE_DEVICES) {
+        } else if (evt.code_ == OBIS_ROOT_ACTIVE_DEVICES) {
             //
             //  query device configuration (81 81 11 06 ff ff)
             //  Add all found meters to the cfg_ member.
             //
             //
-            sml::select(tpl, code, [&, this](cyng::prop_map_t const &om, std::size_t idx) {
-                CYNG_LOG_TRACE(logger_, "OBIS_ROOT_ACTIVE_DEVICES#" << idx << " - " << om);
+            sml::select(evt.tpl_, evt.code_, [&, this](cyng::prop_map_t const &om, std::size_t idx) {
+                CYNG_LOG_TRACE(prx.logger_, "OBIS_ROOT_ACTIVE_DEVICES#" << idx << " - " << om);
                 auto const pos = om.find(OBIS_SERVER_ID);
                 if (pos != om.end()) {
                     cyng::buffer_t id;
@@ -283,11 +336,57 @@ namespace smf {
                 }
             });
         } else {
-            CYNG_LOG_WARNING(logger_, "unknown get proc parameter response: " << obis::get_name(code));
+            CYNG_LOG_WARNING(prx.logger_, "unknown get proc parameter response: " << obis::get_name(evt.code_));
+        }
+    }
+    void proxy::backup_s::on(proxy &prx, evt_close_response &&evt) {
+        auto const [pending, success] = prx.req_gen_.get_trx_mgr().ack_trx(evt.trx_);
+        if (success) {
+            CYNG_LOG_TRACE(prx.logger_, pending << " transactions are open - " << evt.trx_ << ", proxy state: " << get_state());
+        } else {
+            CYNG_LOG_WARNING(prx.logger_, pending << " transactions are open - " << evt.trx_ << ", proxy state: " << get_state());
+        }
+
+        switch (state_) {
+        case query_state::QRY_BASIC:
+            if (!cfg_.empty()) {
+                cfg_backup_meter(prx);
+            } else {
+                state_ = query_state::OFF;
+                complete(prx);
+            }
+            break;
+        case query_state::QRY_METER:
+            if (meters_.empty()) {
+                cfg_backup_access(prx);
+            } else {
+                cfg_backup_meter(prx);
+            }
+            break;
+        case query_state::QRY_ACCESS:
+            if (access_.empty()) {
+                complete(prx);
+            } else {
+                //
+                //  update state
+                //
+                state_ = query_state::QRY_USER;
+                cfg_backup_user(prx);
+            }
+            break;
+        case query_state::QRY_USER:
+            if (access_.empty()) {
+                complete(prx);
+            } else {
+                cfg_backup_user(prx);
+            }
+            break;
+        default:
+            break;
         }
     }
 
-    void proxy::cfg_backup_meter() {
+    void proxy::backup_s::cfg_backup_meter(proxy &prx) {
         //  ROOT_SENSOR_PARAMS (81 81 c7 86 00 ff - Datenspiegel)
         //  ROOT_DATA_COLLECTOR (81 81 C7 86 20 FF - Datensammler)
         //  IF_1107 (81 81 C7 93 00 FF - serial interface)
@@ -297,55 +396,55 @@ namespace smf {
         //
         //  update state
         //
-        state_ = state::QRY_METER;
+        state_ = query_state::QRY_METER;
 
         if (!meters_.empty()) {
 
-            session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
+            prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
                 sml::messages_t messages;
-                messages.emplace_back(req_gen_.public_open(client_id_, id_));
+                messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
                 auto const id = meters_.front();
                 meters_.pop();
                 CYNG_LOG_INFO(
-                    logger_,
+                    prx.logger_,
                     "[proxy] backup " << get_state() << " " << id << " - " << (cfg_.size() - meters_.size()) << "/" << cfg_.size());
-                messages.emplace_back(req_gen_.get_proc_parameter(id, OBIS_ROOT_SENSOR_PARAMS));
-                messages.emplace_back(req_gen_.get_proc_parameter(id, OBIS_ROOT_DATA_COLLECTOR));
-                messages.emplace_back(req_gen_.get_proc_parameter(id, OBIS_ROOT_PUSH_OPERATIONS));
-                messages.emplace_back(req_gen_.public_close());
+                messages.emplace_back(prx.req_gen_.get_proc_parameter(id, OBIS_ROOT_SENSOR_PARAMS));
+                messages.emplace_back(prx.req_gen_.get_proc_parameter(id, OBIS_ROOT_DATA_COLLECTOR));
+                messages.emplace_back(prx.req_gen_.get_proc_parameter(id, OBIS_ROOT_PUSH_OPERATIONS));
+                messages.emplace_back(prx.req_gen_.public_close());
                 auto msg = sml::to_sml(messages);
-                throughput_ += msg.size();
-                auto const open_res = req_gen_.get_trx_mgr().store_pefix();
-                CYNG_LOG_TRACE(logger_, "prefix #" << open_res << ": " << req_gen_.get_trx_mgr().get_prefix());
-                return session_.serializer_.escape_data(std::move(msg));
+                prx.throughput_ += msg.size();
+                auto const open_res = prx.req_gen_.get_trx_mgr().store_pefix();
+                CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
+                return prx.session_.serializer_.escape_data(std::move(msg));
             });
         }
     }
 
-    void proxy::cfg_backup_access() {
+    void proxy::backup_s::cfg_backup_access(proxy &prx) {
         BOOST_ASSERT_MSG(!id_.empty(), "no gateway id");
-        BOOST_ASSERT(state_ == state::QRY_METER);
+        BOOST_ASSERT(state_ == query_state::QRY_METER);
 
         //
         //  update state
         //
-        state_ = state::QRY_ACCESS;
+        state_ = query_state::QRY_ACCESS;
 
-        session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
-            CYNG_LOG_INFO(logger_, "[proxy] backup " << get_state());
+        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+            CYNG_LOG_INFO(prx.logger_, "[proxy] backup " << get_state());
             sml::messages_t messages;
-            messages.emplace_back(req_gen_.public_open(client_id_, id_));
-            messages.emplace_back(req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
-            messages.emplace_back(req_gen_.public_close());
+            messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
+            messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACCESS_RIGHTS));
+            messages.emplace_back(prx.req_gen_.public_close());
             auto msg = sml::to_sml(messages);
-            throughput_ += msg.size();
-            auto const open_res = req_gen_.get_trx_mgr().store_pefix();
-            CYNG_LOG_TRACE(logger_, "prefix #" << open_res << ": " << req_gen_.get_trx_mgr().get_prefix());
-            return session_.serializer_.escape_data(std::move(msg));
+            prx.throughput_ += msg.size();
+            auto const open_res = prx.req_gen_.get_trx_mgr().store_pefix();
+            CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
+            return prx.session_.serializer_.escape_data(std::move(msg));
         });
     }
 
-    void proxy::cfg_backup_user() {
+    void proxy::backup_s::cfg_backup_user(proxy &prx) {
 
         //  1b 1b 1b 1b 01 01 01 01  76 81 06 32 32 30 32 31
         //  30 31 36 35 33 34 33 39  37 36 39 34 38 2d 31 62
@@ -387,18 +486,18 @@ namespace smf {
 
         if (!access_.empty()) {
 
-            session_.ipt_send([=, this]() mutable -> cyng::buffer_t {
+            prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
                 // CYNG_LOG_INFO(logger_, "[proxy] backup " << get_state());
                 BOOST_ASSERT(!id_.empty());
                 sml::messages_t messages;
                 auto const &path = access_.front();
-                CYNG_LOG_INFO(logger_, "[proxy] backup " << get_state() << " " << path << " - " << access_.size());
+                CYNG_LOG_INFO(prx.logger_, "[proxy] backup " << get_state() << " " << path << " - " << access_.size());
 
-                messages.emplace_back(req_gen_.public_open(client_id_, id_));
-                messages.emplace_back(req_gen_.get_proc_parameter(id_, path));
+                messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
+                messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, path));
                 // messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0101));
                 //  messages.emplace_back(req_gen_.get_proc_parameter_access(id_, 0x03, 0x01, 0x0102));
-                messages.emplace_back(req_gen_.public_close());
+                messages.emplace_back(prx.req_gen_.public_close());
                 auto msg = sml::to_sml(messages);
 #ifdef __DEBUG
                 {
@@ -409,151 +508,131 @@ namespace smf {
                     CYNG_LOG_TRACE(logger_, "[query user access right] :\n" << dmp);
                 }
 #endif
-                throughput_ += msg.size();
-                auto const open_res = req_gen_.get_trx_mgr().store_pefix();
-                CYNG_LOG_TRACE(logger_, "prefix #" << open_res << ": " << req_gen_.get_trx_mgr().get_prefix());
-                return session_.serializer_.escape_data(std::move(msg));
+                prx.throughput_ += msg.size();
+                auto const open_res = prx.req_gen_.get_trx_mgr().store_pefix();
+                CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
+                return prx.session_.serializer_.escape_data(std::move(msg));
             });
         }
     }
-
-    void proxy::close_response(std::string trx, cyng::tuple_t const msg) {
-        auto const [pending, success] = req_gen_.get_trx_mgr().ack_trx(trx);
-        if (success) {
-            CYNG_LOG_TRACE(logger_, pending << " transactions are open - " << trx << ", proxy state: " << get_state());
-        } else {
-            CYNG_LOG_WARNING(logger_, pending << " transactions are open - " << trx << ", proxy state: " << get_state());
-        }
-
-        switch (state_) {
-        case state::QRY_BASIC:
-            if (!cfg_.empty()) {
-                cfg_backup_meter();
-            } else {
-                state_ = state::OFF;
-                complete();
-            }
-            break;
-        case state::QRY_METER:
-            if (meters_.empty()) {
-                cfg_backup_access();
-            } else {
-                cfg_backup_meter();
-            }
-            break;
-        case state::QRY_ACCESS:
-            if (access_.empty()) {
-                complete();
-            } else {
-                //
-                //  update state
-                //
-                state_ = state::QRY_USER;
-                cfg_backup_user();
-            }
-            break;
-        case state::QRY_USER:
-            if (access_.empty()) {
-                complete();
-            } else {
-                cfg_backup_user();
-            }
-            break;
-        default:
-            break;
-        }
-    }
-
-    void proxy::complete() {
+    void proxy::backup_s::complete(proxy &prx) {
         //
         //  update connection state
         //
-        update_connect_state(false);
+        update_connect_state(prx.session_, false);
 
         boost::uuids::random_generator_mt19937 uidgen;
         auto const tag = uidgen();
         std::size_t counter{0};
 
-        CYNG_LOG_INFO(logger_, "readout of " << cfg_.size() << " server/clients complete - tag: " << tag)
+        CYNG_LOG_INFO(prx.logger_, "readout of " << cfg_.size() << " server/clients complete - tag: " << tag)
         for (auto const &cfg : cfg_) {
             auto const cl = cfg.second.to_child_list();
-            CYNG_LOG_TRACE(logger_, "server " << cfg.first << " complete: \n" << sml::dump_child_list(cl, true));
+            CYNG_LOG_TRACE(prx.logger_, "server " << cfg.first << " complete: \n" << sml::dump_child_list(cl, true));
 
             //
             //  send child list to configuration manager
             //
-            counter += backup(tag, cfg.first, cl);
+            counter += backup(prx, tag, cfg.first, cl);
         }
-        CYNG_LOG_INFO(logger_, counter << " config records backuped - write meta data");
-        cluster_bus_.cfg_finish_backup(tag, id_, std::chrono::system_clock::now());
-
+        CYNG_LOG_INFO(prx.logger_, counter << " config records backuped - write meta data");
+        std::stringstream ss;
+        ss << cyng::to_string(id_) << " has " << counter << " entries";
+        prx.cluster_bus_.req_db_insert(
+            "cfgSetMeta", cyng::key_generator(tag), cyng::data_generator(tag_, fw_, start_time_, ss.str()), 0);
     }
 
-    std::size_t proxy::backup(boost::uuids::uuid tag, cyng::buffer_t meter, cyng::tuple_t tpl) {
+    void proxy::backup_s::update_connect_state(ipt_session &ipts, bool connected) {
+        //
+        //  update session state
+        //
+        if (connected) {
+            state_ = query_state::QRY_BASIC;
+            ipts.cluster_bus_.req_db_update(
+                "session", cyng::key_generator(ipts.dev_), cyng::param_map_factory()("cTag", ipts.dev_));
+        } else {
+            state_ = query_state::OFF;
+            ipts.cluster_bus_.req_db_update(
+                "session", cyng::key_generator(ipts.dev_), cyng::param_map_factory()("cTag", boost::uuids::nil_uuid()));
+        }
+
+        //
+        //  communicate to main node
+        //
+        ipts.update_connect_state(connected);
+    }
+
+    std::size_t proxy::backup_s::backup(proxy &prx, boost::uuids::uuid tag, cyng::buffer_t meter, cyng::tuple_t tpl) {
         std::size_t counter{0};
-        // cfg_backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
         sml::collect(tpl, {}, [&, this](cyng::obis_path_t const &path, cyng::attr_t const &attr) {
-            CYNG_LOG_DEBUG(logger_, "send to config manager: " << tag << ", " << meter << ", " << path << ", " << attr);
-            cluster_bus_.cfg_merge_backup(tag, id_, meter, path, attr.second);
+            CYNG_LOG_DEBUG(prx.logger_, "send to config manager: " << tag << ", " << meter << ", " << path << ", " << attr);
+            prx.cluster_bus_.cfg_backup_merge(tag, id_, meter, path, attr.second);
             ++counter;
         });
         return counter;
     }
 
-    void proxy::update_connect_state(bool connected) {
-        //
-        //  update session state
-        //
-        // auto const b1 = tbl_session->modify(key_caller, cyng::make_param("cTag", dev), cfg_.get_tag());
-        if (connected) {
-            state_ = state::QRY_BASIC;
-            session_.cluster_bus_.req_db_update(
-                "session", cyng::key_generator(session_.dev_), cyng::param_map_factory()("cTag", session_.dev_));
-        } else {
-            state_ = state::OFF;
-            session_.cluster_bus_.req_db_update(
-                "session", cyng::key_generator(session_.dev_), cyng::param_map_factory()("cTag", boost::uuids::nil_uuid()));
-        }
+    bool proxy::backup_s::get_online_state() const { return state_ != query_state::OFF; }
+
+    void proxy::get_proc_param_req_s::get_proc_param_req_s::on(proxy &prx, evt_init) {
 
         //
-        //  build key for "connection" table
+        //  update connection state
         //
-        auto const key_conn = cyng::key_generator(cyng::merge(session_.dev_, session_.vm_.get_tag()));
-        if (connected) {
-            session_.cluster_bus_.req_db_insert(
-                "connection",
-                key_conn,
-                cyng::data_generator(
-                    session_.name_ + "-proxy",
-                    session_.name_,
-                    std::chrono::system_clock::now(),
-                    true,  //  local
-                    "ipt", //  protocol layer
-                    "ipt",
-                    static_cast<std::uint64_t>(0)),
-                1);
-        } else {
-            session_.cluster_bus_.req_db_remove("connection", key_conn);
-        }
+        prx.session_.update_connect_state(true);
+
+        //
+        //  query proc parameter
+        //
+        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+            sml::messages_t messages;
+            messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
+            messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, root_));
+            auto msg = sml::to_sml(messages);
+#ifdef __DEBUG
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, msg.begin(), msg.end());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(logger_, "[get_proc_parameter request] :\n" << dmp);
+            }
+#endif
+            prx.throughput_ += msg.size();
+            auto const open_res = prx.req_gen_.get_trx_mgr().store_pefix();
+            CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
+            return prx.session_.serializer_.escape_data(std::move(msg));
+        });
     }
 
-    // state{ OFF, QRY_BASIC, QRY_METER, QRY_ACCESS, QRY_USER } state_;
-    std::string proxy::get_state() const {
-        switch (state_) {
-        case state::OFF:
-            return "OFF";
-        case state::QRY_BASIC:
-            return "BASIC";
-        case state::QRY_METER:
-            return "METER";
-        case state::QRY_ACCESS:
-            return "ACCESS";
-        case state::QRY_USER:
-            return "USER";
-        default:
-            break;
+    void proxy::get_proc_param_req_s::on(proxy &prx, evt_get_proc_parameter_response &&evt) {
+        if (evt.code_ == OBIS_CLASS_OP_LOG_STATUS_WORD) {
+            //  example response:
+            //  [2022-03-07T10:52:25+0100] DEBUG 2a36b3de -- msg: 222178441860016453-2 - GET_PROC_PARAMETER_RESPONSE
+            //  [2022-03-07T10:52:25+0100] DEBUG 2a36b3de -- server: 0500153b01ec46
+            //  [2022-03-07T10:52:25+0100] DEBUG 2a36b3de -- path  : 810060050000
+            //  [2022-03-07T10:52:25+0100] DEBUG 2a36b3de -- code  : 810060050000 - CLASS_OP_LOG_STATUS_WORD
+            //  [2022-03-07T10:52:25+0100] DEBUG 2a36b3de -- attr  : (1:00070202)
+            //  [2022-03-07T10:52:25+0100] DEBUG 2a36b3de -- list  :
+            auto const word = cyng::value_cast<sml::status_word_t>(evt.attr_.second, 0);
+            CYNG_LOG_INFO(prx.logger_, "status word: " << word);
+            prx.session_.cluster_bus_.cfg_sml_channel_back(
+                cyng::key_generator(cyng::to_string(id_)),                  //  key
+                sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE),  //  channel
+                cyng::to_str(root_),                                        //  section
+                cyng::param_map_factory()("word", sml::to_param_map(word)), //  params
+                source_,
+                rpeer_);
+        } else {
+            CYNG_LOG_WARNING(prx.logger_, "unknown get proc parameter response: " << obis::get_name(evt.code_));
         }
-        return "invalid state";
+    }
+    void proxy::get_proc_param_req_s::on(proxy &prx, evt_close_response &&) {
+        //
+        //  close local connection
+        //
+        prx.session_.update_connect_state(false);
+        online_ = false;
     }
 
 } // namespace smf

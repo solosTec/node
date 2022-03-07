@@ -47,7 +47,13 @@ namespace smf {
 
         void pty_stop();
 
-        void cfg_backup(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp);
+        void cfg_backup(
+            std::string,
+            std::string,
+            boost::uuids::uuid,
+            cyng::buffer_t,
+            std::string,
+            std::chrono::system_clock::time_point tp);
 
         //
         //	bus interface

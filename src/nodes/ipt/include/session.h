@@ -95,7 +95,25 @@ namespace smf {
 
         void pty_stop();
 
-        void cfg_req_backup(std::string, std::string, cyng::buffer_t, std::chrono::system_clock::time_point tp);
+        void cfg_req_backup(
+            std::string,
+            std::string,
+            boost::uuids::uuid,
+            cyng::buffer_t,
+            std::string fw,
+            std::chrono::system_clock::time_point tp);
+
+        void cfg_sml_channel(
+            std::string,        //  operator_name,
+            std::string,        //  operator_pwd,
+            boost::uuids::uuid, //  tag (device/session/gateway)
+            cyng::buffer_t,     //  id
+            std::string,        // channel
+            std::string,        // section
+            cyng::param_map_t,  // params
+            boost::uuids::uuid, // source
+            boost::uuids::uuid  // cluster tag
+        );
 
         /**
          * query some device data
@@ -128,6 +146,8 @@ namespace smf {
             ipt::sequence_t seq);
 
         void open_connection(std::string msisdn, ipt::sequence_t seq);
+
+        void update_connect_state(bool connected);
 
       private:
         cyng::controller &ctl_;

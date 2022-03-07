@@ -56,7 +56,8 @@ namespace smf {
         //	bus interface
         //
         virtual cyng::mesh *get_fabric() override;
-        virtual cfg_interface *get_cfg_interface() override;
+        virtual cfg_sink_interface *get_cfg_sink_interface() override;
+        virtual cfg_data_interface *get_cfg_data_interface() override;
         virtual void on_login(bool) override;
         virtual void on_disconnect(std::string msg) override;
         virtual void

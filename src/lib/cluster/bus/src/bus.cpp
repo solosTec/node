@@ -120,13 +120,17 @@ namespace smf {
                 cyng::vm_adaptor<bus_client_interface, void, std::string, boost::uuids::uuid>(
                     bip, &bus_client_interface::db_res_clear)),
 
-            // "cfg.merge.backup"
+            // "cfg.backup.merge"
             cyng::make_description(
-                "cfg.merge.backup",
+                "cfg.backup.merge",
                 cyng::vm_adaptor<bus, void, boost::uuids::uuid, cyng::buffer_t, cyng::buffer_t, cyng::obis_path_t, cyng::object>(
-                    this, &bus::cfg_merge_backup))
+                    this, &bus::cfg_backup_merge)),
 
-        );
+            //  "cfg.data.sml"
+            cyng::make_description(
+                "cfg.data.sml",
+                cyng::vm_adaptor<bus, void, boost::uuids::uuid, cyng::vector_t, std::string, std::string, cyng::param_map_t>(
+                    this, &bus::cfg_data_sml)));
     }
 
     void bus::start() {
@@ -337,7 +341,7 @@ namespace smf {
         if (!sp->is_stopped()) {
 
             if (!ec) {
-                CYNG_LOG_DEBUG(logger_, "[cluster] " << tgl_.get() << " received " << bytes_transferred << " bytes");
+                // CYNG_LOG_DEBUG(logger_, "[cluster] " << tgl_.get() << " received " << bytes_transferred << " bytes");
 
                 //
                 //	let parse it
@@ -549,37 +553,70 @@ namespace smf {
         req_db_update("cluster", cyng::key_generator(tag_), cyng::param_map_factory("clients", count));
     }
 
-    void bus::cfg_init_backup(std::string const &table_name, cyng::key_t key, std::chrono::system_clock::time_point tp) {
+    void bus::cfg_backup_init(std::string const &table_name, cyng::key_t key, std::chrono::system_clock::time_point tp) {
 
-        add_msg(state_holder_, cyng::serialize_invoke("cfg.init.backup", table_name, key, tp));
+        add_msg(state_holder_, cyng::serialize_invoke("cfg.backup.init", table_name, key, tp));
     }
 
-    bool bus::has_cfg_management() const { return bip_->get_cfg_interface() != nullptr; }
+    void bus::cfg_sml_channel_out(
+        cyng::vector_t key,        //  gateway
+        std::string channel,       //  SML message type
+        std::string section,       //  OBIS root
+        cyng::param_map_t params,  //  optional parameters (OBIS path)
+        boost::uuids::uuid source) //  HTTP session
+    {
+        //  address.out = key
+        //  address.back = source, tag_
+        //  message = channel, section, params
+        add_msg(state_holder_, cyng::serialize_invoke("cfg.sml.channel", true, key, channel, section, params, source, tag_));
+    }
 
-    void bus::cfg_merge_backup(
+    void bus::cfg_sml_channel_back(
+        cyng::vector_t key,        //  gateway
+        std::string channel,       //  SML message type
+        std::string section,       //  OBIS root
+        cyng::param_map_t params,  //  optional parameters (OBIS path)
+        boost::uuids::uuid source, //  HTTP session
+        boost::uuids::uuid tag)    //  cluster node tag (mostly dash)
+    {
+        //  address.out = source, tag
+        //  message = key, channel, section, params
+        add_msg(state_holder_, cyng::serialize_invoke("cfg.sml.channel", false, key, channel, section, params, source, tag));
+    }
+
+    bool bus::has_cfg_sink_interface() const { return bip_->get_cfg_sink_interface() != nullptr; }
+    bool bus::has_cfg_data_interface() const { return bip_->get_cfg_data_interface() != nullptr; }
+
+    void bus::cfg_backup_merge(
         boost::uuids::uuid tag,
         cyng::buffer_t gw,
         cyng::buffer_t meter,
         cyng::obis_path_t path,
         cyng::object value) {
 
-        if (has_cfg_management()) {
-            bip_->get_cfg_interface()->cfg_merge(tag, gw, meter, path, value);
+        if (has_cfg_sink_interface()) {
+            bip_->get_cfg_sink_interface()->cfg_merge(tag, gw, meter, path, value);
         } else {
-            CYNG_LOG_WARNING(logger_, "[cluster.cfg] merge: " << path << ": " << value);
+            CYNG_LOG_TRACE(logger_, "[cluster#cfg.backup.merge]: " << path << ": " << value);
+            add_msg(state_holder_, cyng::serialize_invoke("cfg.backup.merge", tag, gw, meter, path, value));
         }
     }
 
- void bus::cfg_finish_backup(
-        boost::uuids::uuid tag, cyng::buffer_t gw,
-        std::chrono::system_clock::time_point now) {
-
-        if (has_cfg_management()) {
-            bip_->get_cfg_interface()->cfg_finish(tag, gw, now);
+    void bus::cfg_data_sml(
+        boost::uuids::uuid tag,  // HTTP session
+        cyng::vector_t key,      // table key (gateway)
+        std::string channel,     // SML message type
+        std::string section,     // OBIS root
+        cyng::param_map_t params // results
+    ) {
+        if (has_cfg_data_interface()) {
+            CYNG_LOG_TRACE(logger_, "[cluster#cfg.data.sml]: " << channel << ", section: " << section);
+            bip_->get_cfg_data_interface()->cfg_data(tag, key, channel, section, params);
         } else {
-            CYNG_LOG_WARNING(logger_, "[cluster.cfg] finish  " << tag << " at " << now);
+            CYNG_LOG_WARNING(logger_, "[cluster#cfg.data.sml]: not implemented");
         }
     }
+
     void bus::on_ping(std::chrono::system_clock::time_point tp) {
         CYNG_LOG_TRACE(logger_, "ping: " << tp);
         //

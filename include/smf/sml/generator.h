@@ -39,6 +39,8 @@ namespace smf {
             trx();
             trx(trx const &);
 
+            //~trx();
+
             /**
              *	generate new transaction id (reshuffling)
              */
@@ -117,7 +119,6 @@ namespace smf {
              * SML_GetList.Res
              */
             [[nodiscard]] cyng::tuple_t get_list(cyng::buffer_t const &server, cyng::tuple_t val_list);
-
         };
 
         /**

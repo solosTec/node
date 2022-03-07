@@ -39,7 +39,7 @@ namespace smf {
     using ws_sptr = std::shared_ptr<http::ws>;
     using ws_wptr = std::weak_ptr<http::ws>;
 
-    class http_server {
+    class http_server : public cfg_data_interface {
       public:
         using blocklist_type = std::vector<boost::asio::ip::address>;
 
@@ -112,6 +112,7 @@ namespace smf {
         void response_subscribe_channel_gwIEC(ws_sptr wsp, std::string const &name, std::string const &table_name);
         void response_subscribe_channel_gateway(ws_sptr, std::string const &, std::string const &);
         void response_subscribe_channel_meter(ws_sptr, std::string const &, std::string const &);
+        void response_subscribe_channel_cfg_set_meta(ws_sptr, std::string const &, std::string const &);
 
         void modify_request(std::string const &channel, cyng::vector_t &&key, cyng::param_map_t &&data);
 
@@ -129,6 +130,26 @@ namespace smf {
             std::string table,
             std::string id,
             std::vector<std::string> &&sections);
+
+        void install_request(std::string const &channel, cyng::vector_t &&key);
+
+        void sml_channel(
+            cyng::vector_t pk,
+            std::string channel,
+            std::string section,
+            cyng::param_map_t params,
+            boost::uuids::uuid source);
+
+        /**
+         * cluster bus interface
+         */
+        virtual void cfg_data(
+            boost::uuids::uuid tag,  // HTTP session
+            cyng::key_t gw,          //  key gateway table
+            std::string channel,     //  SML message type
+            std::string section,     // OBIS root
+            cyng::param_map_t params //   data / results
+            ) override;
 
       private:
         bus &cluster_bus_;
@@ -183,6 +204,7 @@ namespace smf {
     std::string json_load_level(std::string channel, std::size_t);
     std::string json_delete_record(std::string channel, cyng::key_t const &);
     std::string json_clear_table(std::string channel);
+    std::string json_cfg_data(std::string channel, cyng::key_t const &key, std::string section, cyng::param_map_t const &param);
 
     /**
      * remove all empty records and records that starts with an underline '_' or carry

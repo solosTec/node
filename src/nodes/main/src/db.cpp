@@ -2002,6 +2002,69 @@ namespace smf {
             cyng::access::write("cluster"));
     }
 
+    void db::locate_gateway(
+        cyng::key_t key,
+        std::function<void(
+            boost::uuids::uuid,
+            boost::uuids::uuid,
+            std::string,
+            std::string,
+            boost::uuids::uuid,
+            cyng::buffer_t,
+            std::string,
+            std::string,
+            std::string)> cb) {
+
+        cache_.access(
+            [=](cyng::table const *tbl_session, cyng::table const *tbl_gw, cyng::table const *tbl_dev) {
+                auto const rec = tbl_session->lookup(key);
+                if (!rec.empty()) {
+                    auto const tag = rec.value("tag", boost::uuids::nil_uuid()); //  same as key
+                    auto const rtag = rec.value("rTag", boost::uuids::nil_uuid());
+                    auto const peer = rec.value("peer", boost::uuids::nil_uuid());
+                    auto const name = rec.value("name", "");
+
+                    //
+                    //  ToDo: check connection state
+                    //  and set connection state (to block incoming calls)
+                    //
+
+                    auto const rec_gw = tbl_gw->lookup(key);
+                    if (!rec_gw.empty()) {
+                        //  convert server ID to cyng::buffer_t
+                        auto const id = cyng::hex_to_buffer(rec_gw.value("serverId", ""));
+                        auto const operator_name = rec_gw.value("userName", "");
+                        auto const operator_pwd = rec_gw.value("userPwd", "");
+                        auto const rec_dev = tbl_dev->lookup(key);
+
+                        if (!rec_dev.empty()) {
+                            auto const account = rec_dev.value("name", name);
+                            auto const pwd = rec_dev.value("pwd", "");
+                            auto const msisdn = rec_dev.value("msisdn", "");
+                            BOOST_ASSERT(boost::algorithm::equals(account, name));
+                            auto const fw = rec_dev.value("vFirmware", "");
+
+                            //
+                            //  note that some tables are locked
+                            //
+                            cb(rtag, peer, operator_name, operator_pwd, tag, id, fw, name, msisdn);
+                        }
+                    }
+                } else {
+                    CYNG_LOG_ERROR(logger_, "cannot find session/gateway: " << key);
+                    std::size_t counter{0};
+                    tbl_session->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                        ++counter;
+                        CYNG_LOG_DEBUG(logger_, "#" << counter << " - " << rec.to_string());
+                        return true;
+                    });
+                }
+            },
+            cyng::access::read("session"),
+            cyng::access::read("gateway"),
+            cyng::access::read("device"));
+    }
+
     push_target::push_target()
         : pty_(boost::uuids::nil_uuid(), boost::uuids::nil_uuid())
         , channel_(0) {}
@@ -2028,8 +2091,7 @@ namespace smf {
             config::get_store_channel(), //	only in main node
             config::get_store_gwIEC(),
             config::get_store_gwwMBus(),
-            config::get_store_cfg_set_meta()
-        };
+            config::get_store_cfg_set_meta()};
     }
 
 } // namespace smf

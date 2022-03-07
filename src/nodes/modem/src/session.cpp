@@ -138,7 +138,9 @@ namespace smf {
                     void,
                     std::string,
                     std::string,
+                    boost::uuids::uuid,
                     cyng::buffer_t,
+                    std::string, //  firware version
                     std::chrono::system_clock::time_point>(this, &modem_session::cfg_backup)));
 
         CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
@@ -383,7 +385,13 @@ namespace smf {
 
     void modem_session::pty_stop() { stop(); }
 
-    void modem_session::cfg_backup(std::string name, std::string pwd, cyng::buffer_t id, std::chrono::system_clock::time_point tp) {
+    void modem_session::cfg_backup(
+        std::string name,
+        std::string pwd,
+        boost::uuids::uuid,
+        cyng::buffer_t id,
+        std::string, //  firware version
+        std::chrono::system_clock::time_point tp) {
         CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " backup: " << name << ':' << pwd << '@' << id);
     }
 

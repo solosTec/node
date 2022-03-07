@@ -218,10 +218,15 @@ namespace smf {
          *
          * initialize a backup process
          */
-        void cfg_init_backup(std::string, cyng::key_t, std::chrono::system_clock::time_point);
+        void cfg_backup_init(std::string, cyng::key_t, std::chrono::system_clock::time_point);
 
         void
-        cfg_merge_backup(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
+        cfg_backup_merge(boost::uuids::uuid tag, cyng::buffer_t gw, cyng::buffer_t meter, cyng::obis_path_t, cyng::object value);
+
+        void cfg_backup_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point);
+
+        void
+        cfg_sml_channel(bool, cyng::vector_t, std::string, std::string, cyng::param_map_t, boost::uuids::uuid, boost::uuids::uuid);
 
         /**
          * send data to cluster node

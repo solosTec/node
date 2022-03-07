@@ -1115,16 +1115,19 @@ namespace smf {
             auto const address = cyng::value_cast<boost::asio::ip::address>(obj, linklocal.first);
             BOOST_ASSERT_MSG(address.is_v6(), "not an IPv6 address");
 
-            auto const index = cyng::numeric_cast<std::uint32_t>(
-                store.cfg_read(cyng::make_object("nms/nic-index"), cyng::make_object<std::uint32_t>(0)), 0u);
-
             //
             //  build a link-local address
             //
-            auto const link_local_addr = cyng::sys::make_link_local_address(address, index);
+            auto const link_local_addr = cyng::sys::make_link_local_address(address, linklocal.second);
 #ifdef _DEBUG
             std::cout << "nms/address = " << link_local_addr << std::endl;
 #endif
+
+            //
+            //  set "nms/nic-index" to new index
+            //
+            store.cfg_update(cyng::make_object("nms/nic-index"), cyng::make_object(linklocal.second));
+
             //
             //  set "nms/address" to link local address
             //

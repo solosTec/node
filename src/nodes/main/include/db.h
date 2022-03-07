@@ -211,6 +211,22 @@ namespace smf {
          */
         void update_ping_result(boost::uuids::uuid peer, std::chrono::microseconds delta);
 
+        /**
+         * callback rtag, peer, operator_name, operator_pwd, tag, id, fw, name, msisdn
+         */
+        void locate_gateway(
+            cyng::key_t key,
+            std::function<void(
+                boost::uuids::uuid,
+                boost::uuids::uuid,
+                std::string,
+                std::string,
+                boost::uuids::uuid,
+                cyng::buffer_t,
+                std::string,
+                std::string,
+                std::string)>);
+
       private:
         void set_start_values(cyng::param_map_t const &session_cfg, std::string const &country_code, std::string const &lang_code);
         void init_sys_msg();
