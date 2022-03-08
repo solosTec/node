@@ -62,7 +62,8 @@ namespace smf {
                 cyng::buffer_t const buffer = cyng::to_buffer(obj);
                 return (cyng::is_ascii(buffer)) ? cyng::make_object(cyng::make_string(buffer)) : cyng::make_object(buffer);
 
-            } else if (OBIS_TARGET_IP_ADDRESS == code) {
+            } else if (OBIS_TARGET_IP_ADDRESS == code || code.starts_with({0x81, 0x49, 0x17, 0x07, 0x0})) {
+                // 81 49 17 07 00 NN    //  primary and secondary IP-T server
                 return cyng::make_object(to_ip_address_v4(obj));
             } else if (OBIS_DEVICE_CLASS == code || OBIS_DATA_AES_KEY == code) {
 

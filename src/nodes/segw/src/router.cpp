@@ -65,15 +65,15 @@ namespace smf {
                 break;
             case sml::msg_type::CLOSE_REQUEST:
                 generate_close_response(trx, sml::read_public_close_request(msg));
-                //
-                //  send response
-                //
-                reply();
                 break;
             default:
                 CYNG_LOG_WARNING(logger_, "message type " << smf::sml::get_name(type) << " is not supported yet");
                 break;
             }
+            //
+            //  send response
+            //
+            reply();
         })
         , messages_()
         , res_gen_()

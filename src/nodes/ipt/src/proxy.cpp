@@ -588,6 +588,15 @@ namespace smf {
             sml::messages_t messages;
             messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
             messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, root_));
+            if (root_ == OBIS_ROOT_IPT_PARAM) {
+                //  ipt parameters will be complemented by an ipt state
+                messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_IPT_STATE));
+            }
+            if (root_ == OBIS_ROOT_VISIBLE_DEVICES) {
+                //  visible devices will be complemented by active devices
+                messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES));
+            }
+            messages.emplace_back(prx.req_gen_.public_close());
             auto msg = sml::to_sml(messages);
 #ifdef __DEBUG
             {
@@ -623,6 +632,40 @@ namespace smf {
                 cyng::param_map_factory()("word", sml::to_param_map(word)), //  params
                 source_,
                 rpeer_);
+        } else if (
+            evt.code_ == OBIS_ROOT_IPT_PARAM || evt.code_ == OBIS_ROOT_IPT_STATE || evt.code_ == OBIS_ROOT_DEVICE_IDENT ||
+            evt.code_ == OBIS_ROOT_VISIBLE_DEVICES || evt.code_ == OBIS_ROOT_ACTIVE_DEVICES ||
+            evt.code_ == OBIS_ROOT_MEMORY_USAGE) {
+            //    81490d070001: null
+            //      814917070001: 192.168.1.82
+            //      81491a070001: 68ee
+            //      814919070001: 0000
+            //      8149633c0101: LSMTest2
+            //      8149633c0201: LSMTest2
+            //    81490d070002: null
+            //      814917070002: 192.168.1.82
+            //      81491a070002: 68ef
+            //      814919070002: 0000
+            //      8149633c0102: LSMTest2
+            //      8149633c0202: qqq
+            //    814827320601: 1
+            //    814831320201: 78
+            //    0080800003ff: false
+            //    0080800004ff: null
+            auto const pm = smf::sml::compress(evt.tpl_);
+            CYNG_LOG_INFO(prx.logger_, "uncompressed response: " << evt.tpl_);
+            CYNG_LOG_INFO(prx.logger_, "compressed response: " << pm);
+            prx.session_.cluster_bus_.cfg_sml_channel_back(
+                cyng::key_generator(cyng::to_string(id_)),                 //  key
+                sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE), //  channel
+                cyng::to_str(evt.code_),                                   //  section
+                cyng::to_param_map(pm),                                    //  props
+                source_,
+                rpeer_);
+            //} else if (evt.code_ == OBIS_ROOT_IPT_STATE) {
+            //    // 814917070000: 192.168.1.82
+            //    // 81491a070000: 68ee
+            //    // 814919070000: 12d4
         } else {
             CYNG_LOG_WARNING(prx.logger_, "unknown get proc parameter response: " << obis::get_name(evt.code_));
         }

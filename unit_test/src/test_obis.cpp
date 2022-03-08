@@ -79,33 +79,37 @@ BOOST_AUTO_TEST_CASE(tree) {
 }
 
 BOOST_AUTO_TEST_CASE(otree) {
-    smf::sml::obis_tree<std::string> it{};
+    smf::sml::obis_tree<std::string> ot{};
     cyng::obis_path_t const p1{smf::OBIS_METER_ADDRESS, smf::OBIS_ACCESS_USER_NAME, smf::OBIS_NMS_PORT};
-    it.add(p1, "METER_ADDRESS / ACCESS_USER_NAME / NMS_PORT");
+    ot.add(p1, "METER_ADDRESS / ACCESS_USER_NAME / NMS_PORT");
 
     cyng::obis_path_t const p2{smf::OBIS_METER_ADDRESS, smf::OBIS_ACCESS_USER_NAME, smf::OBIS_NMS_ADDRESS};
-    it.add(p2, "METER_ADDRESS / ACCESS_USER_NAME / NMS_ADDRESS");
+    ot.add(p2, "METER_ADDRESS / ACCESS_USER_NAME / NMS_ADDRESS");
 
     cyng::obis_path_t const p3{smf::OBIS_METER_ADDRESS, smf::OBIS_ACCESS_USER_NAME, smf::OBIS_COMPUTER_NAME};
-    it.add(p3, "METER_ADDRESS / ACCESS_USER_NAME / COMPUTER_NAME");
+    ot.add(p3, "METER_ADDRESS / ACCESS_USER_NAME / COMPUTER_NAME");
 
     cyng::obis_path_t const p4{smf::OBIS_METER_ADDRESS, smf::OBIS_ACCESS_USER_NAME};
-    it.add(p4, "METER_ADDRESS / ACCESS_USER_NAME");
+    ot.add(p4, "METER_ADDRESS / ACCESS_USER_NAME");
 
-    auto const v1 = it.find(p1);
+    auto const v1 = ot.find(p1);
     std::cout << v1 << std::endl;
     BOOST_CHECK_EQUAL(v1, "METER_ADDRESS / ACCESS_USER_NAME / NMS_PORT");
 
     cyng::obis_path_t psub2{smf::OBIS_METER_ADDRESS, smf::OBIS_ACCESS_USER_NAME};
-    auto const s1 = it.size(psub2);
+    auto const s1 = ot.size(psub2);
     std::cout << "size: " << s1 << std::endl;
     BOOST_REQUIRE_EQUAL(s1, 3);
 
-    auto const tpl1 = it.to_tuple();
+    auto const tpl1 = ot.to_tuple();
     std::cout << cyng::io::to_pretty(tpl1) << std::endl;
 
-    auto const tpl2 = it.to_tuple<cyng::tuple_t>([](std::string s) -> cyng::tuple_t { return cyng::make_tuple(s + " <==> " + s); });
+    auto const tpl2 = ot.to_tuple<cyng::tuple_t>([](std::string s) -> cyng::tuple_t { return cyng::make_tuple(s + " <==> " + s); });
     std::cout << cyng::io::to_pretty(tpl2) << std::endl;
+
+    //  convert to cyng::prop_map_t
+    auto const prop1 = ot.to_prop_map();
+    std::cout << prop1 << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

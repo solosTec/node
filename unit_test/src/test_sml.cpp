@@ -1095,9 +1095,41 @@ BOOST_AUTO_TEST_CASE(get_proc_param_response) {
             cyng::io::serialize_pretty(std::cout, msg);
             std::cout << std::endl;
             if (type == smf::sml::msg_type::GET_PROC_PARAMETER_RESPONSE) {
-                auto const r = smf::sml::read_get_proc_parameter_response(msg);
-                // for (auto const &ro : std::get<5>(r)) {
-                //     std::cout << ">> " << ro.first << ": " << ro.second << std::endl;
+                //  server, path, code, attribute, child list
+                auto const [s, p, code, a, l] = smf::sml::read_get_proc_parameter_response(msg);
+                auto const pm = smf::sml::compress(l);
+                // cyng::io::serialize_json_pretty(std::cout, cyng::make_object(pm));
+                // std::cout << std::endl;
+                //   {
+                //   "8181816001ff": null,
+                //   "8181816002ff": null,
+                //   "8181816003ff": { "818181600301": {
+                //       "81818161ffff": "operator",
+                //       "81818162ffff": "06e55b633481f7bb072957eabcf110c972e86691c3cfedabe088024bffe42f23",
+                //       "81818163ffff": null,
+                //       "818181640101": "0500153b01ec46",
+                //       "818181640102": "3034303435303537",
+                //       "818181640103": "0a000001",
+                //       "818181640104": "0a000002",
+                //       "818181640105": "0a000003",
+                //       "818181640106": "0a000004",
+                //       "818181640107": "0aa00001",
+                //       "818181640108": "0ad00001",
+                //       "818181640109": "0ae00001",
+                //       "81818164010a": "01fa306dd7fae00102",
+                //       "81818164010b": "0ab00001",
+                //       "81818164010c": "012423021590200786",
+                //       "81818164010d": "01a815743145040102",
+                //       "81818164010e": "01e61e130900163c07",
+                //       "81818164010f": "01e61e29436587bf03",
+                //       "818181640110": "005056c00008",
+                //       "818181640111": "01e61e571406213603"
+                //     }
+                //   },
+                //   "8181816004ff": null,
+                //   "8181816005ff": null,
+                //   "8181816006ff": null,
+                //   "8181816008ff": null
                 // }
             }
         });

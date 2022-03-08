@@ -137,6 +137,19 @@ namespace smf {
             return tpl;
         }
 
+        template <typename T> cyng::prop_map_t to_prop_map(typename obis_node<T>::list_t const &nodes) {
+            cyng::prop_map_t pm;
+            std::transform(
+                std::begin(nodes),
+                std::end(nodes),
+                std::inserter(pm, pm.end()),
+                [](typename obis_node<T>::list_t::value_type const &node) -> cyng::prop_map_t::value_type {
+                    // ToDo: use real values
+                    return {node.first, cyng::make_object()};
+                });
+            return pm;
+        }
+
         template <typename T, typename R>
         cyng::tuple_t to_tuple(typename obis_node<T>::list_t const &nodes, std::function<R(T)> f) {
             cyng::tuple_t tpl; //  result
@@ -201,6 +214,11 @@ namespace smf {
             cyng::tuple_t to_tuple() const { return sml::to_tuple<T>(nodes_); }
 
             template <typename R> cyng::tuple_t to_tuple(std::function<R(T)> f) const { return sml::to_tuple<T, R>(nodes_, f); }
+
+            /**
+             * convert to cyng::prop_map_t
+             */
+            cyng::prop_map_t to_prop_map() const { return sml::to_prop_map<T>(nodes_); }
 
           private:
             obis_tree(node_list_t &&nodes)

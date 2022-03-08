@@ -400,20 +400,21 @@ namespace smf {
 
         // auto const cl1 = cfg.get_params_as_child_list();
         // CYNG_LOG_TRACE(logger_, "child list (1) - size" << cl1.size() << ": " << cyng::io::to_typed(cl1));
+        // cfg.
 
-        auto const cl2 = sml::tree_child_list(
+        auto const cl = sml::tree_child_list(
             path.at(0), //  81 49 0D 07 00 FF
             {sml::tree_child_list(
                  cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x01),
-                 {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x01), sml::make_value(402696384)),
-                  sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x01), sml::make_value(26862))}),
+                 {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x01), sml::make_value(402696384u)),
+                  sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x01), sml::make_value(26862u))}),
              sml::tree_child_list(
                  cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x02),
-                 {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x02), sml::make_value(3390522783)),
-                  sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x02), sml::make_value(26863))})});
-        CYNG_LOG_TRACE(logger_, "child list (2) - size" << cl2.size() << ": " << cyng::io::to_typed(cl2));
+                 {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x02), sml::make_value(3390522783u)),
+                  sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x02), sml::make_value(26863u))})});
+        CYNG_LOG_TRACE(logger_, "child list (2) - size" << cl.size() << ": " << cyng::io::to_typed(cl));
 
-        return res_gen_.get_proc_parameter(trx, server, path, cl2);
+        return res_gen_.get_proc_parameter(trx, server, path, cl);
         //        return res_gen_.get_proc_parameter(trx, server, path, cl1);
 
         // return res_gen_.get_proc_parameter(
@@ -509,12 +510,10 @@ namespace smf {
             path,
             sml::tree_child_list(
                 path.at(0),
-                {sml::tree_child_list(
-                    path.at(0),
-                    {
-                        sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x11, 0xFF), sml::make_value(10u)), //  mirror
-                        sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x12, 0xFF), sml::make_value(12u))  //  tmp
-                    })}));
+                {
+                    sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x11, 0xFF), sml::make_value(10u)), //  mirror
+                    sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x12, 0xFF), sml::make_value(12u))  //  tmp
+                }));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_visisble_devices(
