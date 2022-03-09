@@ -9,8 +9,10 @@
 #include <smf/ipt/scramble_key_format.h>
 #include <smf/obis/conv.h>
 #include <smf/obis/defs.h>
-//#include <smf/obis/tree.h>
+#include <smf/obis/tree.hpp>
+#include <smf/sml/value.hpp>
 
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/parse/hex.h>
 
 #ifdef _DEBUG_SEGW
@@ -117,20 +119,29 @@ namespace smf {
         return cfg_.get_value(reconnect_timeout_path(), std::chrono::seconds(10));
     }
 
-    // cyng::tuple_t cfg_ipt::get_params_as_child_list() const {
-    //     sml::tree t;
-    //     cfg_.loop(cyng::to_str(OBIS_ROOT_IPT_PARAM), [&](std::vector<std::string> &&vec, cyng::object obj) {
-    //         if (cyng::is_hex(vec.back())) {
-    //             // std::cout << vec.size() << obj << std::endl;
-    //             if (!vec.empty() && cyng::is_hex(vec.back()) && vec.back().size() == (cyng::obis::size() * 2) &&
-    //                 !boost::algorithm::equals(vec.back(), "8149633c0301") &&
-    //                 !boost::algorithm::equals(vec.back(), "8149633c0302")) {
-    //                 t.add(obis::to_obis_path(vec), obj);
-    //             }
-    //         }
-    //     });
-    //     return t.to_child_list();
-    // }
+    cyng::tuple_t cfg_ipt::get_params_as_child_list() const {
+        sml::obj_tree_t tree;
+        // tree.add(
+        //     {{0x81, 0x49, 0x0d, 0x07, 0x00, 0x01}, {0x81, 0x49, 0x17, 0x07, 0x00, 0x01}},
+        // sml::make_attribute("METER_ADDRESS/ACCESS_USER_NAME/NMS_PORT"));
+        cfg_.loop(cyng::to_str(OBIS_ROOT_IPT_PARAM), [&](std::vector<std::string> &&vec, cyng::object obj) {
+            if (cyng::is_hex(vec.back())) {
+                // std::cout << vec.size() << obj << std::endl;
+                tree.add(obis::to_obis_path(vec), obj);
+            }
+        });
+        return tree.to_tuple<cyng::object>([](cyng::obis code, cyng::object obj) -> cyng::object {
+            std::cerr << code << ": " << obj << std::endl;
+            if (code.starts_with({0x81, 0x49, 0x1A, 0x07, 0x00})) {
+                //  convert to u32
+                if (obj.tag() == cyng::TC_STRING) {
+                    auto const port = cyng::string_to_numeric<std::uint32_t>(obj, 26862u);
+                    return cyng::make_object(port);
+                }
+            }
+            return cyng::make_object(sml::to_value(obj));
+        });
+    }
 
     bool cfg_ipt::set_local_enpdoint(boost::asio::ip::tcp::endpoint ep) const { return cfg_.set_value(local_ep_path(), ep); }
     bool cfg_ipt::set_remote_enpdoint(boost::asio::ip::tcp::endpoint ep) const { return cfg_.set_value(remote_ep_path(), ep); }

@@ -18,7 +18,7 @@
 BOOST_AUTO_TEST_SUITE(obis_suite)
 
 BOOST_AUTO_TEST_CASE(tree) {
-    smf::sml::tree t;
+    smf::sml::tree_t t;
     cyng::obis_path_t const p1{smf::OBIS_METER_ADDRESS, smf::OBIS_ACCESS_USER_NAME, smf::OBIS_NMS_PORT};
     t.add(p1, smf::sml::make_attribute("METER_ADDRESS/ACCESS_USER_NAME/NMS_PORT"));
 
@@ -76,6 +76,12 @@ BOOST_AUTO_TEST_CASE(tree) {
     auto const s1 = t.size(psub2);
     // std::cout << "size: " << s1 << std::endl;
     BOOST_REQUIRE_EQUAL(s1, 4);
+
+    //  convert to cyng::prop_map_t
+    auto const prop1 = t.to_prop_map();
+    std::cout << cyng::io::to_pretty(cyng::make_object(prop1)) << std::endl;
+    auto const prop2 = t.to_prop_map_obj();
+    std::cout << cyng::io::to_pretty(cyng::make_object(prop2)) << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(otree) {
@@ -104,12 +110,14 @@ BOOST_AUTO_TEST_CASE(otree) {
     auto const tpl1 = ot.to_tuple();
     std::cout << cyng::io::to_pretty(tpl1) << std::endl;
 
-    auto const tpl2 = ot.to_tuple<cyng::tuple_t>([](std::string s) -> cyng::tuple_t { return cyng::make_tuple(s + " <==> " + s); });
+    auto const tpl2 =
+        ot.to_tuple<cyng::tuple_t>([](cyng::obis, std::string s) -> cyng::tuple_t { return cyng::make_tuple(s + " <==> " + s); });
     std::cout << cyng::io::to_pretty(tpl2) << std::endl;
 
     //  convert to cyng::prop_map_t
     auto const prop1 = ot.to_prop_map();
     std::cout << prop1 << std::endl;
+    std::cout << cyng::io::to_pretty(cyng::make_object(prop1)) << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

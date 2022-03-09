@@ -269,6 +269,42 @@ namespace smf {
             // cyng::make_obis(0x81, 0x81, 0x81, 0x64, 1, 1)});
         }
 
+        cyng::tuple_t request_generator::get_profile_list(
+            cyng::buffer_t const &server_id,
+            cyng::obis code,
+            std::chrono::system_clock::time_point start,
+            std::chrono::system_clock::time_point end) {
+            return make_message(
+                *++trx_,
+                group_no_++,                        //  group
+                0,                                  //  abort code
+                msg_type::GET_PROFILE_LIST_REQUEST, //  0x400
+                // get profile list request has 9 elements:
+                //
+                //	* server ID
+                //	* username
+                //	* password
+                //  * withRawData (boolean)
+                //  * begin time
+                //  * end time
+                //	* parameter tree (OBIS)
+                //  * object_List (optional)
+                //	* dasDetails
+                //
+                cyng::make_tuple(
+                    server_id,
+                    get_name(),
+                    get_pwd(),
+                    cyng::null{},                  // withRawData (boolean) - false
+                    start,                         // start time (2/timestamp)
+                    end,                           // end time (2/timestamp)
+                    cyng::obis_path_t{code},       // parameter tree
+                    cyng::null{},                  //  object_List
+                    cyng::null{}),                 //  dasDetails
+                static_cast<std::uint16_t>(0xFFFF) // crc placeholder
+            );
+        }
+
         std::string const &request_generator::get_name() const { return name_; }
         std::string const &request_generator::get_pwd() const { return pwd_; }
         trx &request_generator::get_trx_mgr() { return trx_; }

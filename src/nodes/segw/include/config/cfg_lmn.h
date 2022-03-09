@@ -16,7 +16,7 @@
 namespace smf {
 
     enum class lmn_type : std::uint8_t {
-        WIRELESS = 0, //	IF_wMBUS (GPIO 50)
+        WIRELESS = 0, //	ROOT_W_MBUS_PARAM (GPIO 50)
         WIRED = 1,    //	rs485 (GPIO 53)
         ETHERNET,
         MOBILE,

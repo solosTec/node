@@ -519,7 +519,7 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(81, 06, 00, 03, 74, ff), {"W_MBUS_LAST_RECEPTION", cyng::TC_NULL, "Time since last radio telegram reception"}},
         {DEFINE_OBIS(81, 06, 0f, 06, 00, ff),
          {"ROOT_W_MBUS_STATUS", cyng::TC_NULL, "see: 7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status "}},
-        {DEFINE_OBIS(81, 06, 19, 07, 00, ff), {"IF_wMBUS", cyng::TC_NULL, "Wireless M-BUS"}},
+        {DEFINE_OBIS(81, 06, 19, 07, 00, ff), {"ROOT_W_MBUS_PARAM", cyng::TC_NULL, "Wireless M-BUS"}},
         {DEFINE_OBIS(81, 06, 19, 07, 01, ff), {"W_MBUS_PROTOCOL", cyng::TC_NULL, ""}},
         {DEFINE_OBIS(81, 06, 19, 07, 02, ff), {"W_MBUS_MODE_S", cyng::TC_NULL, ""}},
         {DEFINE_OBIS(81, 06, 19, 07, 03, ff), {"W_MBUS_MODE_T", cyng::TC_NULL, ""}},

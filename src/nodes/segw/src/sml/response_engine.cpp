@@ -96,7 +96,7 @@ namespace smf {
             case CODE_ROOT_W_MBUS_STATUS: //	0x81060F0600FF
                 msgs.push_back(get_proc_parameter_wmbus_state(trx, server, path));
                 break;
-            case CODE_IF_wMBUS: //	0x8106190700FF
+            case CODE_ROOT_W_MBUS_PARAM: //	0x8106190700FF
                 msgs.push_back(get_proc_parameter_wmbus_param(trx, server, path));
                 break;
             case CODE_ROOT_LAN_DSL: //	0x81480D0600FF
@@ -381,11 +381,9 @@ namespace smf {
             path,
             sml::tree_child_list(
                 path.at(0),
-                {sml::tree_child_list(
-                    path.at(0),
-                    {sml::tree_param(OBIS_TARGET_IP_ADDRESS, sml::make_value(ip_address)),
-                     sml::tree_param(OBIS_TARGET_PORT, sml::make_value(target_port)),
-                     sml::tree_param(OBIS_SOURCE_PORT, sml::make_value(source_port))})}));
+                {sml::tree_param(OBIS_TARGET_IP_ADDRESS, sml::make_value(ip_address)),
+                 sml::tree_param(OBIS_TARGET_PORT, sml::make_value(target_port)),
+                 sml::tree_param(OBIS_SOURCE_PORT, sml::make_value(source_port))}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_ipt_param(
@@ -398,39 +396,24 @@ namespace smf {
 
         cfg_ipt const cfg(cfg_);
 
-        // auto const cl1 = cfg.get_params_as_child_list();
-        // CYNG_LOG_TRACE(logger_, "child list (1) - size" << cl1.size() << ": " << cyng::io::to_typed(cl1));
-        // cfg.
+        auto const cl = cfg.get_params_as_child_list();
+        CYNG_LOG_DEBUG(logger_, cfg.get_params_as_child_list());
+        CYNG_LOG_TRACE(logger_, "child list - size " << cl.size() << ": " << cyng::io::to_typed(cl));
 
-        auto const cl = sml::tree_child_list(
-            path.at(0), //  81 49 0D 07 00 FF
-            {sml::tree_child_list(
-                 cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x01),
-                 {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x01), sml::make_value(402696384u)),
-                  sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x01), sml::make_value(26862u))}),
-             sml::tree_child_list(
-                 cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x02),
-                 {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x02), sml::make_value(3390522783u)),
-                  sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x02), sml::make_value(26863u))})});
-        CYNG_LOG_TRACE(logger_, "child list (2) - size" << cl.size() << ": " << cyng::io::to_typed(cl));
+        // auto const cl_cmp = sml::tree_child_list(
+        //     path.at(0), //  81 49 0D 07 00 FF
+        //     {sml::tree_child_list(
+        //          cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x01),
+        //          {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x01), sml::make_value(402696384u)),
+        //           sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x01), sml::make_value(26862u))}),
+        //      sml::tree_child_list(
+        //          cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x02),
+        //          {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x02), sml::make_value(3390522783u)),
+        //           sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x02), sml::make_value(26863u))})});
+        // CYNG_LOG_TRACE(logger_, "cl_cmp list - size " << cl_cmp.size() << ": " << cyng::io::to_typed(cl_cmp));
 
         return res_gen_.get_proc_parameter(trx, server, path, cl);
         //        return res_gen_.get_proc_parameter(trx, server, path, cl1);
-
-        // return res_gen_.get_proc_parameter(
-        //    trx,
-        //    server,
-        //    path,
-        //    sml::tree_child_list(
-        //        path.at(0), //  81 49 0D 07 00 FF
-        //        {sml::tree_child_list(
-        //             cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x01),
-        //             {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x01), sml::make_value(402696384)),
-        //              sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x01), sml::make_value(26862))}),
-        //         sml::tree_child_list(
-        //             cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x02),
-        //             {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x02), sml::make_value(3390522783)),
-        //              sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x02), sml::make_value(26863))})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_wmbus_state(
@@ -450,15 +433,12 @@ namespace smf {
             path,
             sml::tree_child_list(
                 path.at(0),
-                {sml::tree_child_list(
-                    path.at(0),
-                    {
-                        sml::tree_param(
-                            OBIS_W_MBUS_ADAPTER_MANUFACTURER, sml::make_value(hw.get_adapter_manufacturer())),     //  string
-                        sml::tree_param(OBIS_W_MBUS_ADAPTER_ID, sml::make_value(hw.get_adapter_id())),             //  buffer
-                        sml::tree_param(OBIS_W_MBUS_FIRMWARE, sml::make_value(hw.get_adapter_firmware_version())), //  string
-                        sml::tree_param(OBIS_W_MBUS_HARDWARE, sml::make_value(hw.get_adapter_hardware_version()))  //  string
-                    })}));
+                {
+                    sml::tree_param(OBIS_W_MBUS_ADAPTER_MANUFACTURER, sml::make_value(hw.get_adapter_manufacturer())), //  string
+                    sml::tree_param(OBIS_W_MBUS_ADAPTER_ID, sml::make_value(hw.get_adapter_id())),                     //  buffer
+                    sml::tree_param(OBIS_W_MBUS_FIRMWARE, sml::make_value(hw.get_adapter_firmware_version())),         //  string
+                    sml::tree_param(OBIS_W_MBUS_HARDWARE, sml::make_value(hw.get_adapter_hardware_version()))          //  string
+                }));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_wmbus_param(
@@ -467,10 +447,26 @@ namespace smf {
         cyng::obis_path_t const &path) {
 
         //  81 06 19 07 00 FF
+        //   8106190701ff: 0
+        //      8106190702ff: 1e (S2 mode)
+        //      8106190703ff: 14 (T2 mode)
+        //      810627320301: 00015180 (reboot)
+        //      8106190704ff: 0 (power:  0 = default, 1 = low, 2 = medium, 3 = high)
         BOOST_ASSERT(!path.empty());
-        BOOST_ASSERT(path.at(0) == OBIS_IF_wMBUS);
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_W_MBUS_PARAM);
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                path.at(0),
+                {
+                    sml::tree_param(OBIS_W_MBUS_PROTOCOL, sml::make_value(0x02)),  //  protocol 0 = T, 1 = S, 2 = A, 3 = P
+                    sml::tree_param(OBIS_W_MBUS_MODE_S, sml::make_value(0x1e)),    //  S2 mode
+                    sml::tree_param(OBIS_W_MBUS_MODE_T, sml::make_value(0x14)),    //  T2 mode
+                    sml::tree_param(OBIS_W_MBUS_REBOOT, sml::make_value(0x15180)), //  reboot
+                    sml::tree_param(OBIS_W_MBUS_POWER, sml::make_value(1u)) //  power:  0 = default, 1 = low, 2 = medium, 3 = high
+                }));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_lan_dsl_state(

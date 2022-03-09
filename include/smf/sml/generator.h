@@ -13,6 +13,8 @@
 #include <cyng/obj/intrinsics/obis.h>
 #include <cyng/rnd/rnd.hpp>
 
+#include <chrono>
+
 namespace smf {
     namespace sml {
 
@@ -159,6 +161,12 @@ namespace smf {
                 std::uint8_t role,
                 std::uint8_t user,
                 std::uint16_t device_index);
+
+            [[nodiscard]] cyng::tuple_t get_profile_list(
+                cyng::buffer_t const &server_id,
+                cyng::obis,
+                std::chrono::system_clock::time_point start,
+                std::chrono::system_clock::time_point end);
 
             std::string const &get_name() const;
             std::string const &get_pwd() const;

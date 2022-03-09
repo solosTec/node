@@ -7,6 +7,7 @@
 #ifndef SMF_OBIS_TREE_HPP
 #define SMF_OBIS_TREE_HPP
 
+#include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/intrinsics/obis.h>
@@ -137,21 +138,8 @@ namespace smf {
             return tpl;
         }
 
-        template <typename T> cyng::prop_map_t to_prop_map(typename obis_node<T>::list_t const &nodes) {
-            cyng::prop_map_t pm;
-            std::transform(
-                std::begin(nodes),
-                std::end(nodes),
-                std::inserter(pm, pm.end()),
-                [](typename obis_node<T>::list_t::value_type const &node) -> cyng::prop_map_t::value_type {
-                    // ToDo: use real values
-                    return {node.first, cyng::make_object()};
-                });
-            return pm;
-        }
-
         template <typename T, typename R>
-        cyng::tuple_t to_tuple(typename obis_node<T>::list_t const &nodes, std::function<R(T)> f) {
+        cyng::tuple_t to_tuple(typename obis_node<T>::list_t const &nodes, std::function<R(cyng::obis, T)> f) {
             cyng::tuple_t tpl; //  result
 
             std::transform(
@@ -160,9 +148,34 @@ namespace smf {
                 std::back_inserter(tpl),
                 [=](typename obis_node<T>::list_t::value_type const &node) {
                     return cyng::make_object(
-                        cyng::make_tuple(node.first, f(node.second.value_), to_tuple<T, R>(node.second.nodes_, f)));
+                        cyng::make_tuple(node.first, f(node.first, node.second.value_), to_tuple<T, R>(node.second.nodes_, f)));
                 });
             return tpl;
+        }
+
+        template <typename T> cyng::prop_map_t to_prop_map(typename obis_node<T>::list_t const &nodes) {
+
+            return to_prop_map<T, cyng::object>(nodes, [](T const &v) { return cyng::make_object(v); });
+        }
+
+        template <typename T, typename R>
+        cyng::prop_map_t to_prop_map(typename obis_node<T>::list_t const &nodes, std::function<R(T)> f) {
+            cyng::prop_map_t pm;
+            std::transform(
+                std::begin(nodes),
+                std::end(nodes),
+                std::inserter(pm, pm.end()),
+                [f](typename obis_node<T>::list_t::value_type const &node) -> cyng::prop_map_t::value_type // will be inserted
+                {
+                    //
+                    // Attribute values and child lists are exclusive. If there's a child list
+                    // the attribute will be ignored.
+                    //
+                    return (node.second.nodes_.empty()) //  ignore value if there's a child list
+                               ? cyng::prop_map_t::value_type{node.first, f(node.second.value_)}
+                               : cyng::prop_map_t::value_type{node.first, cyng::make_object(to_prop_map<T>(node.second.nodes_, f))};
+                });
+            return pm;
         }
 
         /**
@@ -211,14 +224,27 @@ namespace smf {
              * convert an obis tree into a child list:
              * child_list : code, value, child_list
              */
-            cyng::tuple_t to_tuple() const { return sml::to_tuple<T>(nodes_); }
+            cyng::tuple_t to_tuple() const {
+                //
+                //  remove nested tuple
+                //
+                auto tpl = sml::to_tuple<T>(nodes_);
+                return (tpl.size() == 1) ? cyng::container_cast<cyng::tuple_t>(tpl.front()) : tpl;
+            }
 
-            template <typename R> cyng::tuple_t to_tuple(std::function<R(T)> f) const { return sml::to_tuple<T, R>(nodes_, f); }
+            template <typename R> cyng::tuple_t to_tuple(std::function<R(cyng::obis, T)> f) const {
+                auto tpl = sml::to_tuple<T, R>(nodes_, f);
+                return (tpl.size() == 1) ? cyng::container_cast<cyng::tuple_t>(tpl.front()) : tpl;
+            }
 
             /**
-             * convert to cyng::prop_map_t
+             * Convert to cyng::prop_map_t.
+             * This transformation ignores values if there's a child list.
              */
             cyng::prop_map_t to_prop_map() const { return sml::to_prop_map<T>(nodes_); }
+            template <typename R> cyng::tuple_t to_prop_map(std::function<R(T)> f) const {
+                return sml::to_prop_map<T, R>(nodes_, f);
+            }
 
           private:
             obis_tree(node_list_t &&nodes)
@@ -273,6 +299,27 @@ namespace smf {
              */
             cyng::tuple_t to_child_list() const;
 
+            /**
+             * Convert to cyng::prop_map_t.
+             * Attribute values and child lists are exclusive. If there's a child list
+             * the attribute will be ignored.
+             */
+            cyng::prop_map_t to_prop_map() const;
+
+            /**
+             * Conversion of attribute to object can be specified by a lambda.
+             * Attribute values and child lists are exclusive. If there's a child list
+             * the attribute will be ignored.
+             */
+            cyng::prop_map_t to_prop_map(std::function<cyng::object(cyng::attr_t const &)>) const;
+
+            /**
+             * Takes only the values of the attribute
+             * Attribute values and child lists are exclusive. If there's a child list
+             * the attribute will be ignored.
+             */
+            cyng::prop_map_t to_prop_map_obj() const;
+
           private:
             obis_tree(node_list_t &&nodes);
 
@@ -280,7 +327,8 @@ namespace smf {
             node_list_t nodes_;
         };
 
-        using tree = obis_tree<cyng::attr_t>;
+        using tree_t = obis_tree<cyng::attr_t>;
+        using obj_tree_t = obis_tree<cyng::object>;
 
     } // namespace sml
 

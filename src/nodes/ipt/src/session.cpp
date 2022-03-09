@@ -933,11 +933,18 @@ namespace smf {
                 vec.empty() ? cyng::obis_path_t({code}) : obis::to_obis_path(vec),
                 tag_cluster);
             break;
-        case sml::msg_type::GET_LIST_REQUEST:
+        case sml::msg_type::GET_PROFILE_LIST_REQUEST:
             //
             //  GET_LIST_REQUEST
             //
             proxy_.get_profile_list_req(name, pwd, tag, id, code, params, source, tag_cluster);
+            break;
+        // case sml::msg_type::GET_LIST_REQUEST:
+        //     //
+        //     //  GET_LIST_REQUEST
+        //     //
+        //     proxy_.get_list_req(name, pwd, tag, id, code, params, source, tag_cluster);
+        //     break;
         default:
             CYNG_LOG_WARNING(logger_, "[cfg] unknown channel: " << channel << ", section: " << section);
             break;

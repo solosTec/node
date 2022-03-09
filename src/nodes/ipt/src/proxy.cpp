@@ -133,7 +133,7 @@ namespace smf {
         boost::uuids::uuid tag_cluster) {
 
         req_gen_.reset(name, pwd, 18);
-        state_ = set_profile_list_req_s{tag, id, section, params, source, tag_cluster};
+        state_ = get_profile_list_req_s{tag, id, section, params, source, tag_cluster};
         on(evt_init{});
     }
 
@@ -205,7 +205,7 @@ namespace smf {
         //
         update_connect_state(prx.session_, true);
 
-        cfg_.emplace(id_, sml::tree{});
+        cfg_.emplace(id_, sml::tree_t{});
 
         //
         //  query some basic configurations and all active devices
@@ -332,7 +332,7 @@ namespace smf {
                         //  meters only
                         meters_.push(id);
                     }
-                    cfg_.emplace(id, sml::tree{});
+                    cfg_.emplace(id, sml::tree_t{});
                 }
             });
         } else {
@@ -580,6 +580,7 @@ namespace smf {
         //  update connection state
         //
         prx.session_.update_connect_state(true);
+        online_ = true;
 
         //
         //  query proc parameter
@@ -595,6 +596,10 @@ namespace smf {
             if (root_ == OBIS_ROOT_VISIBLE_DEVICES) {
                 //  visible devices will be complemented by active devices
                 messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_ACTIVE_DEVICES));
+            }
+            if (root_ == OBIS_ROOT_W_MBUS_PARAM) {
+                //  get wireless M-Bus status too
+                messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_W_MBUS_STATUS));
             }
             messages.emplace_back(prx.req_gen_.public_close());
             auto msg = sml::to_sml(messages);
@@ -635,23 +640,9 @@ namespace smf {
         } else if (
             evt.code_ == OBIS_ROOT_IPT_PARAM || evt.code_ == OBIS_ROOT_IPT_STATE || evt.code_ == OBIS_ROOT_DEVICE_IDENT ||
             evt.code_ == OBIS_ROOT_VISIBLE_DEVICES || evt.code_ == OBIS_ROOT_ACTIVE_DEVICES ||
-            evt.code_ == OBIS_ROOT_MEMORY_USAGE) {
-            //    81490d070001: null
-            //      814917070001: 192.168.1.82
-            //      81491a070001: 68ee
-            //      814919070001: 0000
-            //      8149633c0101: LSMTest2
-            //      8149633c0201: LSMTest2
-            //    81490d070002: null
-            //      814917070002: 192.168.1.82
-            //      81491a070002: 68ef
-            //      814919070002: 0000
-            //      8149633c0102: LSMTest2
-            //      8149633c0202: qqq
-            //    814827320601: 1
-            //    814831320201: 78
-            //    0080800003ff: false
-            //    0080800004ff: null
+            evt.code_ == OBIS_ROOT_MEMORY_USAGE || evt.code_ == OBIS_ROOT_W_MBUS_PARAM || evt.code_ == OBIS_ROOT_W_MBUS_STATUS ||
+            evt.code_ == OBIS_IF_1107 || evt.code_ == OBIS_CLASS_OP_LOG) {
+
             auto const pm = smf::sml::compress(evt.tpl_);
             CYNG_LOG_INFO(prx.logger_, "uncompressed response: " << evt.tpl_);
             CYNG_LOG_INFO(prx.logger_, "compressed response: " << pm);
@@ -678,4 +669,39 @@ namespace smf {
         online_ = false;
     }
 
+    void proxy::get_profile_list_req_s::on(proxy &prx, evt_init) {
+        online_ = true;
+        //
+        //  query profile
+        //
+        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+            sml::messages_t messages;
+            auto const now = std::chrono::system_clock::now();
+
+            messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
+            messages.emplace_back(prx.req_gen_.get_profile_list(id_, root_, now - std::chrono::hours(12), now));
+            messages.emplace_back(prx.req_gen_.public_close());
+            auto msg = sml::to_sml(messages);
+#ifdef _DEBUG
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, msg.begin(), msg.end());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(prx.logger_, "[get_profile_list request] :\n" << dmp);
+            }
+#endif
+            prx.throughput_ += msg.size();
+            auto const open_res = prx.req_gen_.get_trx_mgr().store_pefix();
+            CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
+            return prx.session_.serializer_.escape_data(std::move(msg));
+        });
+    }
+    void proxy::get_profile_list_req_s::on(proxy &prx, evt_close_response &&) {
+        //
+        //  close local connection
+        //
+        prx.session_.update_connect_state(false);
+        online_ = false;
+    }
 } // namespace smf

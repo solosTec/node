@@ -60,7 +60,7 @@ namespace smf {
             std::chrono::system_clock::time_point start_time_;
             std::queue<cyng::buffer_t> meters_;    //!< temporary data
             std::queue<cyng::obis_path_t> access_; //!< temporary data
-            std::map<cyng::buffer_t, sml::tree> cfg_;
+            std::map<cyng::buffer_t, sml::tree_t> cfg_;
             std::string get_state() const;
             void on(proxy &, evt_init);
             void on(proxy &, evt_get_proc_parameter_response &&);
@@ -103,19 +103,20 @@ namespace smf {
             inline void on(proxy &, evt_close_response &&) {}
             inline bool get_online_state() const { return online_; }
         };
-        struct set_profile_list_req_s {
+        struct get_profile_list_req_s {
             boost::uuids::uuid tag_;
             cyng::buffer_t id_; // gateway id
             cyng::obis root_;
             cyng::param_map_t params_;
             boost::uuids::uuid source_;
             boost::uuids::uuid rpeer_;
-            inline void on(proxy &, evt_init) {}
+            bool online_;
+            void on(proxy &, evt_init);
             inline void on(proxy &, evt_get_proc_parameter_response &&) {}
-            inline void on(proxy &, evt_close_response &&) {}
-            inline bool get_online_state() const { return false; }
+            void on(proxy &, evt_close_response &&);
+            inline bool get_online_state() const { return online_; }
         };
-        using state = std::variant<initial_s, backup_s, get_proc_param_req_s, set_proc_param_req_s, set_profile_list_req_s>;
+        using state = std::variant<initial_s, backup_s, get_proc_param_req_s, set_proc_param_req_s, get_profile_list_req_s>;
 
       public:
         proxy(cyng::logger, ipt_session &, bus &cluster_bus, cyng::mac48 const &);
