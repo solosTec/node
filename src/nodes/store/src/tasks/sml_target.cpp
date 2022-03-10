@@ -124,9 +124,10 @@ namespace smf {
         auto const r = smf::sml::read_public_close_response(msg);
     }
     void sml_target::get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
-        auto const r = smf::sml::read_get_profile_list_response(msg);
-        for (auto const &ro : std::get<5>(r)) {
-            CYNG_LOG_TRACE(logger_, ro.first << ": " << ro.second);
+        auto const [srv, path, act, reg, val, stat, list] = sml::read_get_profile_list_response(msg);
+        // auto const r = smf::sml::read_get_profile_list_response(msg);
+        for (auto const &ro : list) {
+            CYNG_LOG_DEBUG(logger_, ro.first << ": " << ro.second);
         }
 
         //
@@ -135,7 +136,7 @@ namespace smf {
         // to
         // std::map<std::string, cyng::object> == cyng::param_map_t
         //
-        auto const pmap = convert_to_param_map(std::get<5>(r));
+        auto const pmap = convert_to_param_map(list);
 
         //
         //  send to writers
@@ -146,12 +147,12 @@ namespace smf {
                 sp->dispatch(
                     "get.profile.list.response",
                     trx,
-                    std::get<0>(r), //  [buffer_t] server id
-                    std::get<1>(r), //  [cyng::object] actTime
+                    srv, //  [buffer_t] server id
+                    act, //  [cyng::object] actTime
                     // std::get<2>(r), //  [u32] regPeriod
-                    std::get<3>(r), //  [u32] status
-                    std::get<4>(r), //  [obis_path_t] path
-                    pmap            //  [std::map<cyng::obis, cyng::param_map_t>] values
+                    stat, //  [u32] status
+                    path, //  [obis_path_t] path
+                    pmap  //  [std::map<cyng::obis, cyng::param_map_t>] values
                 );
         }
     }
