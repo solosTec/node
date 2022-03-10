@@ -10,6 +10,7 @@
 #include <smf/cluster/bus.h>
 #include <smf/obis/tree.hpp>
 #include <smf/sml/generator.h>
+#include <smf/sml/reader.h>
 #include <smf/sml/unpack.h>
 
 #include <cyng/log/logger.h>
@@ -41,6 +42,15 @@ namespace smf {
             cyng::attr_t attr_;
             cyng::tuple_t tpl_;
         };
+        struct evt_get_profile_list_response {
+            cyng::buffer_t srv_;
+            cyng::obis_path_t path_;
+            cyng::object act_time_;
+            std::chrono::seconds reg_time_;
+            cyng::object val_time_;
+            std::uint32_t mbus_state_;
+            sml::sml_list_t list_;
+        };
         struct evt_close_response {
             std::string trx_;
             cyng::tuple_t msg_;
@@ -50,6 +60,7 @@ namespace smf {
             inline void on(proxy &, evt_init) {}
             inline void on(proxy &, evt_get_proc_parameter_response &&) {}
             inline void on(proxy &, evt_close_response &&) {}
+            inline void on(proxy &, evt_get_profile_list_response &&) {}
             inline bool get_online_state() const { return false; }
         };
         struct backup_s {
@@ -65,6 +76,7 @@ namespace smf {
             void on(proxy &, evt_init);
             void on(proxy &, evt_get_proc_parameter_response &&);
             void on(proxy &, evt_close_response &&);
+            inline void on(proxy &, evt_get_profile_list_response &&) {}
             bool get_online_state() const;
 
             void cfg_backup_meter(proxy &prx);
@@ -88,6 +100,7 @@ namespace smf {
             void on(proxy &, evt_init);
             void on(proxy &, evt_get_proc_parameter_response &&);
             void on(proxy &, evt_close_response &&);
+            inline void on(proxy &, evt_get_profile_list_response &&) {}
             inline bool get_online_state() const { return online_; }
         };
         struct set_proc_param_req_s {
@@ -101,6 +114,7 @@ namespace smf {
             inline void on(proxy &, evt_init) {}
             inline void on(proxy &, evt_get_proc_parameter_response &&) {}
             inline void on(proxy &, evt_close_response &&) {}
+            inline void on(proxy &, evt_get_profile_list_response &&) {}
             inline bool get_online_state() const { return online_; }
         };
         struct get_profile_list_req_s {
@@ -114,6 +128,7 @@ namespace smf {
             void on(proxy &, evt_init);
             inline void on(proxy &, evt_get_proc_parameter_response &&) {}
             void on(proxy &, evt_close_response &&);
+            void on(proxy &, evt_get_profile_list_response &&);
             inline bool get_online_state() const { return online_; }
         };
         using state = std::variant<initial_s, backup_s, get_proc_param_req_s, set_proc_param_req_s, get_profile_list_req_s>;

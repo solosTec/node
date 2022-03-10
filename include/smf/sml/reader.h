@@ -7,15 +7,21 @@
 #ifndef SMF_SML_READER_H
 #define SMF_SML_READER_H
 
+#include <smf/mbus/units.h>
+
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/intrinsics/obis.h>
 #include <cyng/obj/object.h>
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <vector>
 
 namespace smf {
+
+    std::string get_unit_name(cyng::obis, mbus::unit);
+
     namespace sml {
 
         /**
@@ -76,9 +82,11 @@ namespace smf {
         read_get_proc_parameter_response(cyng::tuple_t msg);
 
         /** @brief message_e::GET_PROFILE_LIST_RESPONSE (1025)
+         *  @return server id, tree path, act time, register period, val time, M-Bus state, period list
          */
-        [[nodiscard]] std::tuple<cyng::buffer_t, cyng::object, std::uint32_t, std::uint32_t, cyng::obis_path_t, sml_list_t>
-        read_get_profile_list_response(cyng::tuple_t msg);
+        [[nodiscard]] std::
+            tuple<cyng::buffer_t, cyng::obis_path_t, cyng::object, std::chrono::seconds, cyng::object, std::uint32_t, sml_list_t>
+            read_get_profile_list_response(cyng::tuple_t msg);
 
         /**
          * @return attention code

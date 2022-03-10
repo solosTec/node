@@ -101,23 +101,35 @@ namespace smf {
 
         cyng::object read_time(cyng::object obj) {
 
-            auto const choice = cyng::container_cast<cyng::tuple_t>(obj);
-            if (choice.empty())
-                return cyng::make_object(std::chrono::system_clock::from_time_t(0u));
+            //
+            //  encoded as simple unix time stamp
+            //
+            if (obj.tag() == cyng::TC_UINT32) {
+                return cyng::make_object(std::chrono::system_clock::from_time_t(cyng::value_cast<std::uint32_t>(obj, 0u)));
+            }
 
-            BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
-            if (choice.size() == 2) {
-                auto code = cyng::value_cast<std::uint8_t>(choice.front(), 0);
-                switch (code) {
-                case TIME_TIMESTAMP: {
-                    //	unix time
-                    std::time_t const tt = cyng::value_cast<std::uint32_t>(choice.back(), 0);
-                    return cyng::make_object(std::chrono::system_clock::from_time_t(tt));
-                } break;
-                case TIME_SECINDEX:
-                    return choice.back();
-                default:
-                    break;
+            //
+            //  could be unix time stamp or second index
+            //
+            else if (obj.tag() == cyng::TC_TUPLE) {
+                auto const choice = cyng::container_cast<cyng::tuple_t>(obj);
+                BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
+                if (choice.size() == 2) {
+
+                    if (choice.size() == 2) {
+                        auto code = cyng::value_cast<std::uint8_t>(choice.front(), 0);
+                        switch (code) {
+                        case TIME_TIMESTAMP: {
+                            //	unix time
+                            std::time_t const tt = cyng::value_cast<std::uint32_t>(choice.back(), 0);
+                            return cyng::make_object(std::chrono::system_clock::from_time_t(tt));
+                        } break;
+                        case TIME_SECINDEX:
+                            return choice.back();
+                        default:
+                            break;
+                        }
+                    }
                 }
             }
             return cyng::make_object(std::chrono::system_clock::time_point().time_since_epoch());

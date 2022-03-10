@@ -1,4 +1,4 @@
-#include <smf/mbus/units.h>
+#include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/sml/reader.h>
 #include <smf/sml/readout.h>
@@ -323,7 +323,7 @@ namespace smf {
             return {{}, {}, {}, {}, {}};
         }
 
-        std::tuple<cyng::buffer_t, cyng::object, std::uint32_t, std::uint32_t, cyng::obis_path_t, sml_list_t>
+        std::tuple<cyng::buffer_t, cyng::obis_path_t, cyng::object, std::chrono::seconds, cyng::object, std::uint32_t, sml_list_t>
         read_get_profile_list_response(cyng::tuple_t msg) {
             BOOST_ASSERT(msg.size() == 9);
             if (msg.size() == 9) {
@@ -375,10 +375,16 @@ namespace smf {
                 //	periodSignature
                 auto const signature = *pos;
 
-                return std::make_tuple(server, sensor_tp, reg_period, status, path, r);
+                return std::make_tuple(server, path, sensor_tp, std::chrono::seconds(reg_period), val_tp, status, r);
             }
             return std::make_tuple(
-                cyng::buffer_t(), cyng::make_object(), std::uint32_t{}, std::uint32_t{}, cyng::obis_path_t(), sml_list_t{});
+                cyng::buffer_t(),
+                cyng::obis_path_t(),
+                cyng::make_object(),
+                std::chrono::seconds{},
+                cyng::make_object(),
+                std::uint32_t{},
+                sml_list_t{});
         }
 
         cyng::obis read_attention_response(cyng::tuple_t msg) {
@@ -515,8 +521,9 @@ namespace smf {
             //
             //	unit (see sml_unit_enum)
             //
-            auto const unit = read_numeric<std::uint8_t>(*pos++);
-            auto const unit_name = smf::mbus::get_unit_name(smf::mbus::to_unit(unit));
+            auto const u = read_numeric<std::uint8_t>(*pos++);
+            auto const unit_e = smf::mbus::to_unit(u);
+            auto const unit_name = get_unit_name(code, unit_e);
 
             //
             //	scaler
@@ -539,7 +546,7 @@ namespace smf {
             //
             return std::make_pair(
                 code,
-                cyng::param_map_factory("unit", unit)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
+                cyng::param_map_factory("unit", u)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
                     "value", val));
         }
 
@@ -584,4 +591,17 @@ namespace smf {
         }
 
     } // namespace sml
+
+    std::string get_unit_name(cyng::obis code, mbus::unit u) {
+        switch (u) {
+        case mbus::unit::UNDEFINED_:
+        case mbus::unit::OTHER_UNIT:
+        case mbus::unit::COUNT:
+            return obis::get_name(code);
+        default:
+            break;
+        }
+        return mbus::get_unit_name(u);
+    }
+
 } // namespace smf

@@ -5,7 +5,6 @@
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/list.h>
-#include <smf/sml/reader.h>
 #include <smf/sml/select.h>
 #include <smf/sml/serializer.h>
 #include <smf/sml/status.h>
@@ -45,7 +44,24 @@ namespace smf {
                 break;
             case sml::msg_type::GET_PROFILE_LIST_RESPONSE:
                 CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
-                // get_profile_list_response(trx, group_no, msg);
+                {
+                    auto const [s, p, act, reg, val, stat, l] = sml::read_get_profile_list_response(msg);
+                    // get_profile_list_response(trx, group_no, msg);
+                    CYNG_LOG_DEBUG(logger_, "server   : " << s);
+                    CYNG_LOG_DEBUG(logger_, "path     : " << p);
+                    CYNG_LOG_DEBUG(logger_, "actTime  : " << act);
+                    CYNG_LOG_DEBUG(logger_, "regPeriod: " << reg.count() << " seconds");
+                    CYNG_LOG_DEBUG(logger_, "valTime  : " << val);
+                    CYNG_LOG_DEBUG(logger_, "status   : " << stat);
+                    CYNG_LOG_DEBUG(logger_, "index    : " << state_.index());
+                    CYNG_LOG_DEBUG(logger_, "list size: " << l.size());
+                    for (auto const &entry : l) {
+                        CYNG_LOG_DEBUG(logger_, entry.first << ": " << entry.second);
+                    }
+                    // CYNG_LOG_DEBUG(logger_, "list     : \n" << sml::dump_sml_list(l, false));
+
+                    on(evt_get_profile_list_response{s, p, act, reg, val, stat, l});
+                }
                 break;
             case sml::msg_type::GET_PROC_PARAMETER_RESPONSE:
                 CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
@@ -653,10 +669,6 @@ namespace smf {
                 cyng::to_param_map(pm),                                    //  props
                 source_,
                 rpeer_);
-            //} else if (evt.code_ == OBIS_ROOT_IPT_STATE) {
-            //    // 814917070000: 192.168.1.82
-            //    // 81491a070000: 68ee
-            //    // 814919070000: 12d4
         } else {
             CYNG_LOG_WARNING(prx.logger_, "unknown get proc parameter response: " << obis::get_name(evt.code_));
         }
@@ -696,6 +708,26 @@ namespace smf {
             CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
             return prx.session_.serializer_.escape_data(std::move(msg));
         });
+    }
+    void proxy::get_profile_list_req_s::on(proxy &prx, evt_get_profile_list_response &&evt) {
+
+        BOOST_ASSERT(!evt.path_.empty());
+
+        cyng::param_map_t pm;
+        std::transform(evt.list_.begin(), evt.list_.end(), std::inserter(pm, pm.end()), [](sml::sml_list_t::value_type const &v) {
+            auto const pos = v.second.find("value");
+            return (pos != v.second.end()) ? cyng::make_param(cyng::to_str(v.first), pos->second)
+                                           : cyng::make_param(cyng::to_str(v.first), "-");
+        });
+        pm.emplace("status", cyng::make_object(evt.mbus_state_));
+
+        prx.session_.cluster_bus_.cfg_sml_channel_back(
+            cyng::key_generator(cyng::to_string(id_)),               //  key
+            sml::get_name(sml::msg_type::GET_PROFILE_LIST_RESPONSE), //  channel
+            cyng::to_str(evt.path_.front()),                         //  section
+            pm,                                                      //  props
+            source_,
+            rpeer_);
     }
     void proxy::get_profile_list_req_s::on(proxy &prx, evt_close_response &&) {
         //

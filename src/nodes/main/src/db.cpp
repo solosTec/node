@@ -2016,7 +2016,7 @@ namespace smf {
             std::string)> cb) {
 
         cache_.access(
-            [=](cyng::table const *tbl_session, cyng::table const *tbl_gw, cyng::table const *tbl_dev) {
+            [=, this](cyng::table const *tbl_session, cyng::table const *tbl_gw, cyng::table const *tbl_dev) {
                 auto const rec = tbl_session->lookup(key);
                 if (!rec.empty()) {
                     auto const tag = rec.value("tag", boost::uuids::nil_uuid()); //  same as key
