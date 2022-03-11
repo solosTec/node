@@ -47,14 +47,15 @@ namespace smf {
         }
 
         cyng::param_map_t to_param_map(status_word_t word) {
-            return cyng::param_map_factory("AUTHORIZED_IPT", is_set(word, status_bit::NOT_AUTHORIZED_IPT)) //
-                ("FATAL_ERROR", is_set(word, status_bit::FATAL_ERROR))                                     //
-                ("OUT_OF_MEMORY", is_set(word, status_bit::OUT_OF_MEMORY))                                 //
-                ("SERVICE_IF_AVAILABLE", is_set(word, status_bit::SERVICE_IF_AVAILABLE))                   //
-                ("EXT_IF_AVAILABLE", is_set(word, status_bit::EXT_IF_AVAILABLE))                           //
-                ("WIRELESS_BUS_IF_AVAILABLE", is_set(word, status_bit::WIRELESS_MBUS_IF_AVAILABLE))        //	wireless
-                ("WIRED_MBUS_IF_AVAILABLE", is_set(word, status_bit::WIRED_MBUS_IF_AVAILABLE))             //	wired
-                ("PLC_AVAILABLE", is_set(word, status_bit::PLC_AVAILABLE))                                 //
+            //  convert NOT_AUTHORIZED_IPT to AUTHORIZED_IPT
+            return cyng::param_map_factory("AUTHORIZED_IPT", !is_set(word, status_bit::NOT_AUTHORIZED_IPT)) //
+                ("FATAL_ERROR", is_set(word, status_bit::FATAL_ERROR))                                      //
+                ("OUT_OF_MEMORY", is_set(word, status_bit::OUT_OF_MEMORY))                                  //
+                ("SERVICE_IF_AVAILABLE", is_set(word, status_bit::SERVICE_IF_AVAILABLE))                    //
+                ("EXT_IF_AVAILABLE", is_set(word, status_bit::EXT_IF_AVAILABLE))                            //
+                ("WIRELESS_MBUS_IF_AVAILABLE", is_set(word, status_bit::WIRELESS_MBUS_IF_AVAILABLE))        //	wireless
+                ("WIRED_MBUS_IF_AVAILABLE", is_set(word, status_bit::WIRED_MBUS_IF_AVAILABLE))              //	wired
+                ("PLC_AVAILABLE", is_set(word, status_bit::PLC_AVAILABLE))                                  //
                 ("NO_TIMEBASE", is_set(word, status_bit::NO_TIMEBASE));
         }
     } // namespace sml

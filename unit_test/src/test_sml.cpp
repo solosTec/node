@@ -12,6 +12,7 @@
 #include <smf/sml/parser.h>
 #include <smf/sml/reader.h>
 #include <smf/sml/select.h>
+#include <smf/sml/status.h>
 #include <smf/sml/tokenizer.h>
 #include <smf/sml/unpack.h>
 #include <smf/sml/value.hpp>
@@ -20,6 +21,7 @@
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/value_cast.hpp>
 #include <cyng/parse/buffer.h>
 #include <cyng/parse/string.h>
 
@@ -873,8 +875,9 @@ BOOST_AUTO_TEST_CASE(get_profile_list_response) {
         [](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
             std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
             if (type == smf::sml::msg_type::GET_PROFILE_LIST_RESPONSE) {
-                auto const r = smf::sml::read_get_profile_list_response(msg);
-                for (auto const &ro : std::get<5>(r)) {
+                auto const [s, p, act, reg, val, stat, list] = smf::sml::read_get_profile_list_response(msg);
+                // auto const r = smf::sml::read_get_profile_list_response(msg);
+                for (auto const &ro : list) {
                     std::cout << ">> " << ro.first << ": " << ro.second << std::endl;
                 }
             }
@@ -1432,6 +1435,71 @@ BOOST_AUTO_TEST_CASE(select) {
     smf::sml::select(msg, smf::OBIS_ROOT_ACTIVE_DEVICES, [](cyng::prop_map_t const &om, std::size_t idx) {
         std::cerr << '#' << idx << " - " << om << std::endl;
     });
+}
+
+BOOST_AUTO_TEST_CASE(status) {
+
+    //  01110010001000000010 - offline
+    //  01110000001000000010 - online
+    //
+    //  SERVICE_IF_AVAILABLE = true
+    //  EXT_IF_AVAILABLE = true
+    //  WIRELESS_MBUS_IF_AVAILABLE = true
+    //  NO_TIMEBASE = false
+    //
+    smf::sml::status_word_t word = 0x70202;
+    auto const pm = smf::sml::to_param_map(word);
+    BOOST_REQUIRE_EQUAL(pm.size(), 9);
+
+    auto pos = pm.find(smf::sml::get_name(smf::sml::status_bit::FATAL_ERROR));
+    BOOST_REQUIRE(pos != pm.end());
+    if (pos != pm.end()) {
+        BOOST_REQUIRE(!cyng::value_cast(pos->second, true));
+    }
+
+    pos = pm.find("AUTHORIZED_IPT");
+    BOOST_REQUIRE(pos != pm.end());
+    if (pos != pm.end()) {
+        BOOST_REQUIRE(cyng::value_cast(pos->second, false));
+    }
+
+    pos = pm.find(smf::sml::get_name(smf::sml::status_bit::SERVICE_IF_AVAILABLE));
+    BOOST_REQUIRE(pos != pm.end());
+    if (pos != pm.end()) {
+        BOOST_REQUIRE(cyng::value_cast(pos->second, false));
+    }
+
+    pos = pm.find(smf::sml::get_name(smf::sml::status_bit::EXT_IF_AVAILABLE));
+    BOOST_REQUIRE(pos != pm.end());
+    if (pos != pm.end()) {
+        BOOST_REQUIRE(cyng::value_cast(pos->second, false));
+    }
+
+    pos = pm.find(smf::sml::get_name(smf::sml::status_bit::WIRELESS_MBUS_IF_AVAILABLE));
+    BOOST_REQUIRE(pos != pm.end());
+    if (pos != pm.end()) {
+        BOOST_REQUIRE(cyng::value_cast(pos->second, false));
+    }
+
+    pos = pm.find(smf::sml::get_name(smf::sml::status_bit::PLC_AVAILABLE));
+    BOOST_REQUIRE(pos != pm.end());
+    if (pos != pm.end()) {
+        BOOST_REQUIRE(!cyng::value_cast(pos->second, true));
+    }
+
+    // std::cerr << pm << std::endl;
+
+    //  %(
+    //      ("AUTHORIZED_IPT":true),
+    //      ("EXT_IF_AVAILABLE":true),
+    //      ("FATAL_ERROR":false),
+    //      ("NO_TIMEBASE":false),
+    //      ("OUT_OF_MEMORY":false),
+    //      ("PLC_AVAILABLE":false),
+    //      ("SERVICE_IF_AVAILABLE":true),
+    //      ("WIRED_MBUS_IF_AVAILABLE":false),
+    //      ("WIRELESS_BUS_IF_AVAILABLE":true)
+    //  )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
