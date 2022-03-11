@@ -268,6 +268,14 @@ namespace cyng {
             return cs;
         }
 
+        std::size_t serializer<cyng::attr_t, SML>::write(std::ostream &os, cyng::attr_t const &v) {
+
+            //  serialize as a tuple with two elements, the index (u8) and the value itself.
+
+            auto const tpl = cyng::make_tuple(static_cast<std::uint8_t>(v.first), v.second);
+            return serializer<cyng::tuple_t, SML>::write(os, tpl);
+        }
+
         std::size_t serializer<cyng::obis, SML>::write(std::ostream &os, cyng::obis const &v) {
 
             //	write as buffer

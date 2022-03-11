@@ -168,6 +168,8 @@ namespace smf {
                 std::chrono::system_clock::time_point start,
                 std::chrono::system_clock::time_point end);
 
+            [[nodiscard]] cyng::tuple_t set_proc_parameter(cyng::buffer_t const &server_id, cyng::obis_path_t, cyng::attr_t attr);
+
             std::string const &get_name() const;
             std::string const &get_pwd() const;
 

@@ -17,7 +17,7 @@ namespace smf {
 
     gatekeeper::gatekeeper(cyng::channel_weak wp
 		, cyng::logger logger
-		, std::shared_ptr<ipt_session> iptsp, bus &cluster_bus)
+		, std::shared_ptr<ipt_session> iptsp, bus &cluster_bus, boost::asio::ip::tcp::endpoint ep)
 	: sigs_{ 
 		std::bind(&gatekeeper::timeout, this),
 		std::bind(&gatekeeper::stop, this, std::placeholders::_1),
@@ -26,19 +26,14 @@ namespace smf {
 	, logger_(logger)
 	, iptsp_(iptsp)
     , cluster_bus_(cluster_bus)
+    , ep_(ep)
 	{
         BOOST_ASSERT(iptsp_);
         auto sp = wp.lock();
         if (sp) {
             sp->set_channel_names({"timeout"});
-            CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
+            CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << " / " << ep << "] created");
         }
-    }
-
-    gatekeeper::~gatekeeper() {
-        //#ifdef _DEBUG_IPT
-        //        std::cout << "gatekeeper(~)" << std::endl;
-        //#endif
     }
 
     void gatekeeper::timeout() {
@@ -46,7 +41,10 @@ namespace smf {
         //  this will stop this task too
         if (iptsp_) {
             //  socket may be closed already
-            cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, "ipt gatekeeper timeout");
+            std::stringstream ss;
+            ss << "ipt gatekeeper timeout [" << ep_ << "]";
+            auto const msg = ss.str();
+            cluster_bus_.sys_msg(cyng::severity::LEVEL_WARNING, msg);
             iptsp_->stop();
         }
     }

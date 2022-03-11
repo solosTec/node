@@ -229,7 +229,7 @@ namespace smf {
                 *++trx_,
                 group_no_++,                          //  group
                 0,                                    //  abort code
-                msg_type::GET_PROC_PARAMETER_REQUEST, //  0x600
+                msg_type::GET_PROC_PARAMETER_REQUEST, //  0x500
                 // get process parameter request has 5 elements:
                 //
                 //	* server ID
@@ -244,6 +244,31 @@ namespace smf {
                     path,                          //   parameter tree (OBIS)
                     cyng::null{}),                 //  attribute
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder
+            );
+        }
+
+        cyng::tuple_t
+        request_generator::set_proc_parameter(cyng::buffer_t const &server_id, cyng::obis_path_t path, cyng::attr_t attr) {
+            BOOST_ASSERT(!path.empty());
+            return make_message(
+                *++trx_,
+                group_no_++,                          //  group
+                0,                                    //  abort code
+                msg_type::SET_PROC_PARAMETER_REQUEST, //  0x600
+                // get process parameter request has 5 elements:
+                //
+                //	* server ID
+                //	* username
+                //	* password
+                //	* parameter tree path (OBIS)
+                //	* parameter tree
+                cyng::make_tuple(
+                    server_id,
+                    get_name(),
+                    get_pwd(),
+                    path,                           //  parameter tree path (OBIS)
+                    tree_param(path.back(), attr)), //  parameter tree
+                static_cast<std::uint16_t>(0xFFFF)  //  crc placeholder
             );
         }
 

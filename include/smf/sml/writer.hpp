@@ -61,6 +61,11 @@ namespace cyng {
 
         template <> struct serializer<cyng::tuple_t, SML> { static std::size_t write(std::ostream &os, cyng::tuple_t const &v); };
 
+        /**
+         * serialize as a tuple with two elements, the index (u8) and the value itself.
+         */
+        template <> struct serializer<cyng::attr_t, SML> { static std::size_t write(std::ostream &os, cyng::attr_t const &v); };
+
         template <> struct serializer<cyng::obis, SML> { static std::size_t write(std::ostream &os, cyng::obis const &v); };
 
         template <> struct serializer<cyng::obis_path_t, SML> {

@@ -111,9 +111,9 @@ namespace smf {
             boost::uuids::uuid source_;
             boost::uuids::uuid rpeer_;
             bool online_;
-            inline void on(proxy &, evt_init) {}
+            void on(proxy &, evt_init);
             inline void on(proxy &, evt_get_proc_parameter_response &&) {}
-            inline void on(proxy &, evt_close_response &&) {}
+            void on(proxy &, evt_close_response &&);
             inline void on(proxy &, evt_get_profile_list_response &&) {}
             inline bool get_online_state() const { return online_; }
         };

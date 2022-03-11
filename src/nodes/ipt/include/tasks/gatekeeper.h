@@ -24,8 +24,12 @@ namespace smf {
         using signatures_t = std::tuple<std::function<void()>, std::function<void(cyng::eod)>>;
 
       public:
-        gatekeeper(cyng::channel_weak wp, cyng::logger, std::shared_ptr<ipt_session>, bus &cluster_bus);
-        ~gatekeeper();
+        gatekeeper(
+            cyng::channel_weak wp,
+            cyng::logger,
+            std::shared_ptr<ipt_session>,
+            bus &cluster_bus,
+            boost::asio::ip::tcp::endpoint);
 
         void stop(cyng::eod);
 
@@ -38,6 +42,7 @@ namespace smf {
         cyng::logger logger_;
         std::shared_ptr<ipt_session> iptsp_;
         bus &cluster_bus_;
+        boost::asio::ip::tcp::endpoint const ep_;
     };
 
 } // namespace smf

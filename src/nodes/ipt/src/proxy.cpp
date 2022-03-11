@@ -2,16 +2,20 @@
 #include <session.h>
 
 #include <smf/config/schemes.h>
+#include <smf/obis/conv.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/list.h>
 #include <smf/sml/select.h>
 #include <smf/sml/serializer.h>
 #include <smf/sml/status.h>
+#include <smf/sml/value.hpp>
 
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/util.hpp>
+#include <cyng/obj/vector_cast.hpp>
 #include <cyng/task/channel.h>
 
 #ifdef _DEBUG
@@ -37,56 +41,48 @@ namespace smf {
                       sml::msg_type type,
                       cyng::tuple_t msg,
                       std::uint16_t crc) {
+            CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
             switch (type) {
             case sml::msg_type::OPEN_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
                 // open_response(trx, msg);
                 break;
-            case sml::msg_type::GET_PROFILE_LIST_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
-                {
-                    auto const [s, p, act, reg, val, stat, l] = sml::read_get_profile_list_response(msg);
-                    // get_profile_list_response(trx, group_no, msg);
-                    CYNG_LOG_DEBUG(logger_, "server   : " << s);
-                    CYNG_LOG_DEBUG(logger_, "path     : " << p);
-                    CYNG_LOG_DEBUG(logger_, "actTime  : " << act);
-                    CYNG_LOG_DEBUG(logger_, "regPeriod: " << reg.count() << " seconds");
-                    CYNG_LOG_DEBUG(logger_, "valTime  : " << val);
-                    CYNG_LOG_DEBUG(logger_, "status   : " << stat);
-                    CYNG_LOG_DEBUG(logger_, "index    : " << state_.index());
-                    CYNG_LOG_DEBUG(logger_, "list size: " << l.size());
-                    for (auto const &entry : l) {
-                        CYNG_LOG_DEBUG(logger_, entry.first << ": " << entry.second);
-                    }
-                    // CYNG_LOG_DEBUG(logger_, "list     : \n" << sml::dump_sml_list(l, false));
+            case sml::msg_type::GET_PROFILE_LIST_RESPONSE: {
+                auto const [s, p, act, reg, val, stat, l] = sml::read_get_profile_list_response(msg);
+                CYNG_LOG_DEBUG(logger_, "server   : " << s);
+                CYNG_LOG_DEBUG(logger_, "path     : " << p);
+                CYNG_LOG_DEBUG(logger_, "actTime  : " << act);
+                CYNG_LOG_DEBUG(logger_, "regPeriod: " << reg.count() << " seconds");
+                CYNG_LOG_DEBUG(logger_, "valTime  : " << val);
+                CYNG_LOG_DEBUG(logger_, "status   : " << stat);
+                CYNG_LOG_DEBUG(logger_, "index    : " << state_.index());
+                CYNG_LOG_DEBUG(logger_, "list size: " << l.size());
+                // for (auto const &entry : l) {
+                //     CYNG_LOG_DEBUG(logger_, entry.first << ": " << entry.second);
+                // }
+                on(evt_get_profile_list_response{s, p, act, reg, val, stat, l});
+            } break;
+            case sml::msg_type::GET_PROC_PARAMETER_RESPONSE: {
+                // std::cout << cyng::io::to_pretty(msg) << std::endl;
+                // CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
+                //  cyng::obis, cyng::attr_t, cyng::tuple_t
+                // CYNG_LOG_DEBUG(logger_, "state : " << get_state());
+                auto const [s, p, code, a, l] = sml::read_get_proc_parameter_response(msg);
+                CYNG_LOG_DEBUG(logger_, "server: " << s);
+                CYNG_LOG_DEBUG(logger_, "path  : " << p);
+                CYNG_LOG_DEBUG(logger_, "code  : " << code << " - " << obis::get_name(code));
+                CYNG_LOG_DEBUG(logger_, "attr  : " << a);
+                CYNG_LOG_DEBUG(logger_, "index : " << state_.index());
+                CYNG_LOG_DEBUG(logger_, "list  : \n" << sml::dump_child_list(l, false));
 
-                    on(evt_get_profile_list_response{s, p, act, reg, val, stat, l});
-                }
-                break;
-            case sml::msg_type::GET_PROC_PARAMETER_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
-                {
-                    // std::cout << cyng::io::to_pretty(msg) << std::endl;
-                    // CYNG_LOG_DEBUG(logger_, cyng::io::to_pretty(msg));
-                    //  cyng::obis, cyng::attr_t, cyng::tuple_t
-                    // CYNG_LOG_DEBUG(logger_, "state : " << get_state());
-                    auto const [s, p, code, a, l] = sml::read_get_proc_parameter_response(msg);
-                    CYNG_LOG_DEBUG(logger_, "server: " << s);
-                    CYNG_LOG_DEBUG(logger_, "path  : " << p);
-                    CYNG_LOG_DEBUG(logger_, "code  : " << code << " - " << obis::get_name(code));
-                    CYNG_LOG_DEBUG(logger_, "attr  : " << a);
-                    CYNG_LOG_DEBUG(logger_, "index : " << state_.index());
-                    CYNG_LOG_DEBUG(logger_, "list  : \n" << sml::dump_child_list(l, false));
-
-                    on(evt_get_proc_parameter_response{s, p, code, a, l});
-                }
-                break;
+                on(evt_get_proc_parameter_response{s, p, code, a, l});
+            } break;
+            case sml::msg_type::SET_PROC_PARAMETER_RESPONSE: {
+                // auto const [s, p, code, a, l] = sml::read_set_proc_parameter_response(msg);
+            } break;
             case sml::msg_type::GET_LIST_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << " " << sml::get_name(type) << ": " << trx << ", " << msg);
                 // get_list_response(trx, group_no, msg);
                 break;
             case sml::msg_type::CLOSE_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << ", " << sml::get_name(type) << ": " << trx << ", " << msg);
                 on(evt_close_response{trx, msg});
                 break;
             case sml::msg_type::ATTENTION_RESPONSE: {
@@ -131,7 +127,7 @@ namespace smf {
         boost::uuids::uuid source,
         cyng::obis_path_t path,
         boost::uuids::uuid tag_cluster) {
-        CYNG_LOG_TRACE(logger_, "[proxy] SetProcParameterRequest " << name << '@' << id);
+        CYNG_LOG_TRACE(logger_, "[proxy] SetProcParameterRequest " << path << " -> " << params);
 
         req_gen_.reset(name, pwd, 18);
         state_ = set_proc_param_req_s{tag, id, section, params, source, tag_cluster};
@@ -674,6 +670,70 @@ namespace smf {
         }
     }
     void proxy::get_proc_param_req_s::on(proxy &prx, evt_close_response &&) {
+        //
+        //  close local connection
+        //
+        prx.session_.update_connect_state(false);
+        online_ = false;
+    }
+
+    void proxy::set_proc_param_req_s::on(proxy &prx, evt_init) {
+
+        //
+        //  update connection state
+        //
+        prx.session_.update_connect_state(true);
+        online_ = true;
+
+        //
+        //  set proc parameter
+        //
+        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+            sml::messages_t messages;
+            messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
+
+            //  param
+            //  81490d070002:8149633c0102 -> %(("path":[81490d070002,8149633c0102]),("value":LSMTest2))
+            auto const reader = cyng::make_reader(params_);
+
+            auto const vec = cyng::vector_cast<std::string>(reader.get("path"), "000000000000");
+            BOOST_ASSERT_MSG(!vec.empty(), "SetProcParameterRequest without OBIS path");
+            auto const ptree = obis::to_obis_path(vec);
+
+            //  full path
+            cyng::obis_path_t path{root_};
+            path.insert(path.end(), ptree.begin(), ptree.end());
+
+            auto attr = sml::to_attribute(reader.get("value"));
+
+            messages.emplace_back(prx.req_gen_.set_proc_parameter(id_, path, attr));
+
+#ifdef _DEBUG
+            //  example to set IP-T user name
+            // messages.emplace_back(prx.req_gen_.set_proc_parameter(
+            //     id_,
+            //     {root_, cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x02), cyng::make_obis(0x81, 0x49, 0x63, 0x3c, 0x01,
+            //     0x02)}, sml::make_attribute("hippo")));
+#endif
+            messages.emplace_back(prx.req_gen_.public_close());
+            auto msg = sml::to_sml(messages);
+#ifdef _DEBUG
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, msg.begin(), msg.end());
+                auto const dmp = ss.str();
+                CYNG_LOG_TRACE(prx.logger_, "[set_proc_parameter request] :\n" << dmp);
+            }
+#endif
+            prx.throughput_ += msg.size();
+            auto const open_res = prx.req_gen_.get_trx_mgr().store_pefix();
+            CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
+            return prx.session_.serializer_.escape_data(std::move(msg));
+        });
+    }
+
+    void proxy::set_proc_param_req_s::on(proxy &prx, evt_close_response &&) {
         //
         //  close local connection
         //
