@@ -27,6 +27,21 @@ namespace smf {
             return vec;
         }
 
+        std::string to_str(cyng::obis_path_t const &path, bool translate, char sep) {
+            auto const vec = to_str_vector(path, translate);
+            std::stringstream ss;
+            bool init = false;
+            for (auto const &s : vec) {
+                if (!init) {
+                    init = true;
+                } else {
+                    ss << sep;
+                }
+                ss << s;
+            }
+            return ss.str();
+        }
+
         cyng::obis_path_t to_obis_path(std::vector<std::string> const &vec) {
             cyng::obis_path_t path;
             path.reserve(vec.size());

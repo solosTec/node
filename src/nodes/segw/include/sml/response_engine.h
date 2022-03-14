@@ -40,7 +40,10 @@ namespace smf {
             cyng::buffer_t,
             std::string,
             std::string,
-            cyng::obis_path_t);
+            cyng::obis_path_t,
+            cyng::obis,
+            cyng::attr_t,
+            cyng::tuple_t);
 
       private:
         [[nodiscard]] cyng::tuple_t
@@ -78,6 +81,12 @@ namespace smf {
 
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_ipt_param(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
+
+        [[nodiscard]] cyng::tuple_t set_proc_parameter_ipt_param(
+            std::string const &trx,
+            cyng::buffer_t const &server,
+            cyng::obis_path_t const &path,
+            cyng::attr_t const &attr);
 
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_wmbus_state(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);

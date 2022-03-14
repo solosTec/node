@@ -45,6 +45,11 @@ namespace smf {
          */
         cyng::tuple_t get_params_as_child_list() const;
 
+        /**
+         * set a configuration value specified by the OBIS path
+         */
+        bool set_proc_parameter(cyng::obis_path_t path, cyng::object);
+
         //
         //  temporary values
         //

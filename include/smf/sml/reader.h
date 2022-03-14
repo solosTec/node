@@ -71,8 +71,9 @@ namespace smf {
         /** @brief SET_PROC_PARAMETER_REQUEST (1536)
          *  each setProcParamReq has to send an attension message as response
          */
-        [[nodiscard]] std::tuple<cyng::buffer_t, std::string, std::string, cyng::obis_path_t>
-        read_set_proc_parameter_request(cyng::tuple_t msg);
+        [[nodiscard]] std::
+            tuple<cyng::buffer_t, std::string, std::string, cyng::obis_path_t, cyng::obis, cyng::attr_t, cyng::tuple_t>
+            read_set_proc_parameter_request(cyng::tuple_t msg);
 
         /** @brief GET_PROC_PARAMETER_RESPONSE (1281)
          *

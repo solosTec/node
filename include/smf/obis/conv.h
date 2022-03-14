@@ -14,6 +14,7 @@ namespace smf {
     namespace obis {
 
         std::vector<std::string> to_str_vector(cyng::obis_path_t const &path, bool translate);
+        std::string to_str(cyng::obis_path_t const &path, bool translate, char sep);
 
         cyng::obis_path_t to_obis_path(std::vector<std::string> const &vec);
 

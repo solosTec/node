@@ -152,6 +152,21 @@ namespace smf {
             );
         }
 
+        cyng::tuple_t response_generator::get_attention(
+            std::string const &trx,
+            cyng::buffer_t const &server,
+            attention_type type,
+            std::string txt) {
+            return make_message(
+                trx,
+                1,
+                0,
+                msg_type::ATTENTION_RESPONSE,
+                cyng::make_tuple(server, get_code(type), txt, cyng::null{}), // message: server id, code, type, message, details
+                static_cast<std::uint16_t>(0xFFFF)                           // crc placeholder
+            );
+        }
+
         request_generator::request_generator(std::string const &name, std::string const &pwd)
             : trx_()
             , group_no_(0)

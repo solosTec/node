@@ -104,8 +104,8 @@ namespace smf {
             inline bool get_online_state() const { return online_; }
         };
         struct set_proc_param_req_s {
-            boost::uuids::uuid tag_;
-            cyng::buffer_t id_; // gateway id
+            boost::uuids::uuid tag_; // "gateway" table key
+            cyng::buffer_t id_;      // gateway id
             cyng::obis root_;
             cyng::param_map_t params_;
             boost::uuids::uuid source_;

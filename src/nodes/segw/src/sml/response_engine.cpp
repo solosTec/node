@@ -164,18 +164,34 @@ namespace smf {
     }
 
     void response_engine::generate_set_proc_parameter_response(
-        sml::messages_t &,
+        sml::messages_t &msgs,
         std::string trx,
         cyng::buffer_t server,
         std::string user,
         std::string pwd,
-        cyng::obis_path_t path) {
+        cyng::obis_path_t path,
+        cyng::obis code,
+        cyng::attr_t attr,
+        cyng::tuple_t child_list) {
         if (!path.empty()) {
+            BOOST_ASSERT(path.back() == code);
             CYNG_LOG_INFO(
                 logger_,
                 "SML_SetProcParameter.Req - trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
                                                    << ", pwd: " << pwd << ", path: " << path << " ("
                                                    << obis::get_name(path.front()));
+
+            //
+            //  SML_SetProcParameter requests are generating an attention code as response
+            //
+            switch (path.front().to_uint64()) {
+            case CODE_ROOT_IPT_PARAM: //	0x81490D0700FF
+                msgs.push_back(set_proc_parameter_ipt_param(trx, server, path, attr));
+                break;
+            default:
+                CYNG_LOG_WARNING(logger_, "SML_SetProcParameter.Req unknown OBIS code: " << cyng::io::to_hex(server));
+                break;
+            }
         } else {
             CYNG_LOG_WARNING(
                 logger_,
@@ -397,23 +413,20 @@ namespace smf {
         cfg_ipt const cfg(cfg_);
 
         auto const cl = cfg.get_params_as_child_list();
-        CYNG_LOG_DEBUG(logger_, cfg.get_params_as_child_list());
+        CYNG_LOG_DEBUG(logger_, cl);
         CYNG_LOG_TRACE(logger_, "child list - size " << cl.size() << ": " << cyng::io::to_typed(cl));
-
-        // auto const cl_cmp = sml::tree_child_list(
-        //     path.at(0), //  81 49 0D 07 00 FF
-        //     {sml::tree_child_list(
-        //          cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x01),
-        //          {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x01), sml::make_value(402696384u)),
-        //           sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x01), sml::make_value(26862u))}),
-        //      sml::tree_child_list(
-        //          cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x02),
-        //          {sml::tree_param(cyng::make_obis(0x81, 0x49, 0x17, 0x07, 0x00, 0x02), sml::make_value(3390522783u)),
-        //           sml::tree_param(cyng::make_obis(0x81, 0x49, 0x1A, 0x07, 0x00, 0x02), sml::make_value(26863u))})});
-        // CYNG_LOG_TRACE(logger_, "cl_cmp list - size " << cl_cmp.size() << ": " << cyng::io::to_typed(cl_cmp));
-
         return res_gen_.get_proc_parameter(trx, server, path, cl);
-        //        return res_gen_.get_proc_parameter(trx, server, path, cl1);
+    }
+
+    cyng::tuple_t response_engine::set_proc_parameter_ipt_param(
+        std::string const &trx,
+        cyng::buffer_t const &server,
+        cyng::obis_path_t const &path,
+        cyng::attr_t const &attr) {
+        cfg_ipt cfg(cfg_);
+        return (cfg.set_proc_parameter(path, attr.second))
+                   ? res_gen_.get_attention(trx, server, sml::attention_type::OK, "ok")
+                   : res_gen_.get_attention(trx, server, sml::attention_type::UNKNOWN_OBIS_CODE, "ip-t");
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_wmbus_state(

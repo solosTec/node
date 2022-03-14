@@ -656,8 +656,8 @@ namespace smf {
             evt.code_ == OBIS_IF_1107 || evt.code_ == OBIS_CLASS_OP_LOG) {
 
             auto const pm = smf::sml::compress(evt.tpl_);
-            CYNG_LOG_INFO(prx.logger_, "uncompressed response: " << evt.tpl_);
-            CYNG_LOG_INFO(prx.logger_, "compressed response: " << pm);
+            // CYNG_LOG_INFO(prx.logger_, "uncompressed response: " << evt.tpl_);
+            // CYNG_LOG_INFO(prx.logger_, "compressed response: " << pm);
             prx.session_.cluster_bus_.cfg_sml_channel_back(
                 cyng::key_generator(cyng::to_string(id_)),                 //  key
                 sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE), //  channel
@@ -685,36 +685,29 @@ namespace smf {
         prx.session_.update_connect_state(true);
         online_ = true;
 
+        //  param
+        //  81490d070002:8149633c0102 -> %(("path":[81490d070002,8149633c0102]),("value":LSMTest2))
+        auto const reader = cyng::make_reader(params_);
+
+        auto const vec = cyng::vector_cast<std::string>(reader.get("path"), "000000000000");
+        BOOST_ASSERT_MSG(!vec.empty(), "SetProcParameter.Req without OBIS path");
+        auto const ptree = obis::to_obis_path(vec);
+
+        //  full path
+        cyng::obis_path_t path{root_};
+        path.insert(path.end(), ptree.begin(), ptree.end());
+
+        auto attr = sml::to_attribute(reader.get("value"));
+
         //
         //  set proc parameter
         //
-        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+        prx.session_.ipt_send([&, this, path, attr]() mutable -> cyng::buffer_t {
             sml::messages_t messages;
             messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
 
-            //  param
-            //  81490d070002:8149633c0102 -> %(("path":[81490d070002,8149633c0102]),("value":LSMTest2))
-            auto const reader = cyng::make_reader(params_);
-
-            auto const vec = cyng::vector_cast<std::string>(reader.get("path"), "000000000000");
-            BOOST_ASSERT_MSG(!vec.empty(), "SetProcParameterRequest without OBIS path");
-            auto const ptree = obis::to_obis_path(vec);
-
-            //  full path
-            cyng::obis_path_t path{root_};
-            path.insert(path.end(), ptree.begin(), ptree.end());
-
-            auto attr = sml::to_attribute(reader.get("value"));
-
             messages.emplace_back(prx.req_gen_.set_proc_parameter(id_, path, attr));
 
-#ifdef _DEBUG
-            //  example to set IP-T user name
-            // messages.emplace_back(prx.req_gen_.set_proc_parameter(
-            //     id_,
-            //     {root_, cyng::make_obis(0x81, 0x49, 0x0d, 0x07, 0x00, 0x02), cyng::make_obis(0x81, 0x49, 0x63, 0x3c, 0x01,
-            //     0x02)}, sml::make_attribute("hippo")));
-#endif
             messages.emplace_back(prx.req_gen_.public_close());
             auto msg = sml::to_sml(messages);
 #ifdef _DEBUG
@@ -731,6 +724,23 @@ namespace smf {
             CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
             return prx.session_.serializer_.escape_data(std::move(msg));
         });
+
+        //
+        // Update name/password in device table.
+        // Use only the primary redundancy since one device cannot have more than one set of credentials.
+        //
+        if (path ==
+            cyng::obis_path_t({OBIS_ROOT_IPT_PARAM, {0x81, 0x49, 0x0d, 0x07, 0x00, 0x01}, {0x81, 0x49, 0x63, 0x3c, 0x01, 0x01}})) {
+
+            prx.session_.cluster_bus_.req_db_update(
+                "device", cyng::key_generator(tag_), cyng::param_map_factory()("name", attr.second));
+        } else if (
+            path ==
+            cyng::obis_path_t({OBIS_ROOT_IPT_PARAM, {0x81, 0x49, 0x0d, 0x07, 0x00, 0x01}, {0x81, 0x49, 0x63, 0x3c, 0x02, 0x01}})) {
+
+            prx.session_.cluster_bus_.req_db_update(
+                "device", cyng::key_generator(tag_), cyng::param_map_factory()("pwd", attr.second));
+        }
     }
 
     void proxy::set_proc_param_req_s::on(proxy &prx, evt_close_response &&) {

@@ -7,6 +7,7 @@
 #ifndef SMF_SML_GENERATOR_H
 #define SMF_SML_GENERATOR_H
 
+#include <smf/sml/attention.h>
 #include <smf/sml/msg.h>
 
 #include <cyng/obj/intrinsics/mac.h>
@@ -121,6 +122,12 @@ namespace smf {
              * SML_GetList.Res
              */
             [[nodiscard]] cyng::tuple_t get_list(cyng::buffer_t const &server, cyng::tuple_t val_list);
+
+            /**
+             * Attention
+             */
+            [[nodiscard]] cyng::tuple_t
+            get_attention(std::string const &trx, cyng::buffer_t const &server, attention_type, std::string txt);
         };
 
         /**

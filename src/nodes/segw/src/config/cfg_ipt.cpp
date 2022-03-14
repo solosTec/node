@@ -143,6 +143,16 @@ namespace smf {
         });
     }
 
+    bool cfg_ipt::set_proc_parameter(cyng::obis_path_t path, cyng::object obj) {
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.front() == OBIS_ROOT_IPT_PARAM);
+        if (!path.empty() && path.front() == OBIS_ROOT_IPT_PARAM) {
+            auto const key = obis::to_str(path, false, cfg::sep);
+            return cfg_.set_value(key, obj);
+        }
+        return false;
+    }
+
     bool cfg_ipt::set_local_enpdoint(boost::asio::ip::tcp::endpoint ep) const { return cfg_.set_value(local_ep_path(), ep); }
     bool cfg_ipt::set_remote_enpdoint(boost::asio::ip::tcp::endpoint ep) const { return cfg_.set_value(remote_ep_path(), ep); }
 

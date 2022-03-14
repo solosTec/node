@@ -235,7 +235,8 @@ namespace smf {
             return std::make_tuple(cyng::buffer_t(), std::string(), std::string(), cyng::obis_path_t(), cyng::make_object());
         }
 
-        std::tuple<cyng::buffer_t, std::string, std::string, cyng::obis_path_t> read_set_proc_parameter_request(cyng::tuple_t msg) {
+        std::tuple<cyng::buffer_t, std::string, std::string, cyng::obis_path_t, cyng::obis, cyng::attr_t, cyng::tuple_t>
+        read_set_proc_parameter_request(cyng::tuple_t msg) {
             BOOST_ASSERT(msg.size() == 5);
             if (msg.size() == 5) {
 
@@ -275,12 +276,12 @@ namespace smf {
                 auto const tpl = cyng::container_cast<cyng::tuple_t>(*pos++);
                 BOOST_ASSERT(tpl.size() == 3);
 
-                // auto const r = (tpl.size() == 3) ? read_param_tree(tpl.begin(), tpl.end()) : std::pair<cyng::obis,
-                // cyng::object>{};
+                auto [code, attr, list] = read_param_tree(tpl.begin(), tpl.end());
 
-                return std::make_tuple(server, user, pwd, path);
+                return std::make_tuple(server, user, pwd, path, code, attr, list);
             }
-            return std::make_tuple(cyng::buffer_t(), std::string(), std::string(), cyng::obis_path_t());
+            return std::make_tuple(
+                cyng::buffer_t{}, std::string{}, std::string{}, cyng::obis_path_t{}, cyng::obis{}, cyng::attr_t{}, cyng::tuple_t{});
         }
 
         std::tuple<cyng::buffer_t, cyng::obis_path_t, cyng::obis, cyng::attr_t, cyng::tuple_t>

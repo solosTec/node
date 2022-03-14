@@ -4,8 +4,8 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#ifndef SMF_SEGW_EVENTH
-#define SMF_SEGW_EVENTH
+#ifndef SMF_SML_EVENT
+#define SMF_SML_EVENT
 
 /** @file event.h
  *
@@ -115,7 +115,7 @@ namespace smf {
             LOG_CODE_PW = 0x00010001, //	Phasenwechsel - 81 81 C7 89 E2 FF
             LOG_CODE_SA = 0x0001000F, //	system clock "async"
             LOG_CODE_01 = 0x00100001, //	Spannungsausfall, Das Ereignis wird nach Wiederkehr der	Versorgungsspannung als
-                                      //erster Eintrag in das Betriebslogbuch eingetragen
+                                      // erster Eintrag in das Betriebslogbuch eingetragen
             LOG_CODE_02 = 0x00100002, //	Spannungsausfall, Letzter Reset aufgrund eines Spannungsausfalls
             LOG_CODE_03 = 0x00100003, //	Firmware - Aktivierung
             LOG_CODE_04 = 0x00100004, //	Fehlerhafte Firmware

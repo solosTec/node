@@ -11,6 +11,7 @@ set (sml_cpp
     src/lib/sml/protocol/src/crc16.cpp
     src/lib/sml/protocol/src/status.cpp
     src/lib/sml/protocol/src/event.cpp
+    src/lib/sml/protocol/src/attention.cpp
 )
     
 set (sml_h
@@ -21,6 +22,7 @@ set (sml_h
     include/smf/sml/crc16.h
     include/smf/sml/status.h
     include/smf/sml/event.h
+    include/smf/sml/attention.h
 )
 
 set (sml_producer
