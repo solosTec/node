@@ -630,7 +630,7 @@ BOOST_AUTO_TEST_CASE(date) {
     BOOST_REQUIRE_EQUAL(ss.str(), "2008-05-31T23:50:00+0100");
 
     //	2013-08-18T00:00:00+0100
-    std::chrono::system_clock::time_point tp2 = smf::mbus::convert_to_tp(0xb2, 0x18);
+    std::chrono::system_clock::time_point tp2 = smf::mbus::convert_to_tp(static_cast<char>(0xb2), static_cast<char>(0x18));
     // std::cout << tp2 << std::endl;
     ss.str("");
     ss << tp2;

@@ -686,7 +686,7 @@ namespace smf {
             BOOST_ASSERT(key.size() == 1);
 
             auto const n = cyng::value_cast<std::uint64_t>(key.at(0), 0);
-            if (tbl->size() > max_msg) {
+            if (tbl->size() > static_cast<std::size_t>(max_msg)) {
 
                 //
                 //	reduce table size
@@ -710,7 +710,7 @@ namespace smf {
             BOOST_ASSERT(key.size() == 1);
 
             auto const n = cyng::value_cast<std::uint64_t>(key.at(0), 0);
-            if (tbl->size() > max_msg) {
+            if (tbl->size() > static_cast<std::size_t>(max_msg)) {
 
                 //
                 //	reduce table size
@@ -734,7 +734,7 @@ namespace smf {
             BOOST_ASSERT(key.size() == 1);
 
             auto const n = cyng::value_cast<std::uint64_t>(key.at(0), 0);
-            if (tbl->size() > max_msg) {
+            if (tbl->size() > static_cast<std::size_t>(max_msg)) {
 
                 //
                 //	reduce table size

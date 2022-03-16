@@ -151,4 +151,32 @@ namespace smf {
         return srv_id;
     }
 
+    srv_type detect_server_type(cyng::buffer_t const &buffer) {
+        if (buffer.size() == 8 && (buffer.at(6) >= 0x00) && (buffer.at(6) <= 0x0F))
+            // tt-mmmm-nnnnnnnn-vv-uu
+            return srv_type::W_MBUS;
+        else if ((buffer.size() == 9) && (buffer.at(0) == 2))
+            return srv_type::MBUS_WIRED;
+        else if ((buffer.size() == 9) && (buffer.at(0) == 1))
+            return srv_type::MBUS_RADIO;
+        else if ((buffer.size() == 7) && (buffer.at(0) == 5))
+            return srv_type::GW;
+        else if (buffer.size() == 10 && buffer.at(1) == '3')
+            return srv_type::BCD;
+        else if (buffer.size() == 8 && buffer.at(2) == '4')
+            return srv_type::EON;
+        else if ((buffer.size() == 10) && (buffer.at(0) == '0') && (buffer.at(1) == '6'))
+            return srv_type::DKE_1;
+        else if ((buffer.size() == 10) && (buffer.at(0) == '0') && (buffer.at(1) == '9'))
+            return srv_type::DKE_2;
+        else if ((buffer.size() == 4) && (buffer.at(0) == 10))
+            return srv_type::SWITCH;
+        else if (std::all_of(buffer.begin(), buffer.end(), [](char c) {
+                     return ((c >= '0') && (c <= '9')) || ((c >= 'A') && (c <= 'Z'));
+                 })) {
+            return srv_type::SERIAL;
+        }
+
+        return srv_type::OTHER;
+    }
 } // namespace smf

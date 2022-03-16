@@ -475,7 +475,7 @@ namespace smf {
                 //
                 //  start LMN GPIO statistics
                 //
-                channel->suspend(std::chrono::seconds(1), "update-statistics", cyng::make_tuple());
+                channel->suspend(std::chrono::seconds(1), "update-statistics");
 
                 //
                 //	open serial port

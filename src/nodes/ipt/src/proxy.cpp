@@ -2,6 +2,7 @@
 #include <session.h>
 
 #include <smf/config/schemes.h>
+#include <smf/mbus/server_id.h>
 #include <smf/obis/conv.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
@@ -615,15 +616,6 @@ namespace smf {
             }
             messages.emplace_back(prx.req_gen_.public_close());
             auto msg = sml::to_sml(messages);
-#ifdef __DEBUG
-            {
-                std::stringstream ss;
-                cyng::io::hex_dump<8> hd;
-                hd(ss, msg.begin(), msg.end());
-                auto const dmp = ss.str();
-                CYNG_LOG_TRACE(logger_, "[get_proc_parameter request] :\n" << dmp);
-            }
-#endif
             prx.throughput_ += msg.size();
             auto const open_res = prx.req_gen_.get_trx_mgr().store_pefix();
             CYNG_LOG_TRACE(prx.logger_, "prefix #" << open_res << ": " << prx.req_gen_.get_trx_mgr().get_prefix());
@@ -651,13 +643,11 @@ namespace smf {
                 rpeer_);
         } else if (
             evt.code_ == OBIS_ROOT_IPT_PARAM || evt.code_ == OBIS_ROOT_IPT_STATE || evt.code_ == OBIS_ROOT_DEVICE_IDENT ||
-            evt.code_ == OBIS_ROOT_VISIBLE_DEVICES || evt.code_ == OBIS_ROOT_ACTIVE_DEVICES ||
             evt.code_ == OBIS_ROOT_MEMORY_USAGE || evt.code_ == OBIS_ROOT_W_MBUS_PARAM || evt.code_ == OBIS_ROOT_W_MBUS_STATUS ||
             evt.code_ == OBIS_IF_1107 || evt.code_ == OBIS_CLASS_OP_LOG) {
 
+            //  //  replace attribute by it's object
             auto const pm = smf::sml::compress(evt.tpl_);
-            // CYNG_LOG_INFO(prx.logger_, "uncompressed response: " << evt.tpl_);
-            // CYNG_LOG_INFO(prx.logger_, "compressed response: " << pm);
             prx.session_.cluster_bus_.cfg_sml_channel_back(
                 cyng::key_generator(cyng::to_string(id_)),                 //  key
                 sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE), //  channel
@@ -665,6 +655,48 @@ namespace smf {
                 cyng::to_param_map(pm),                                    //  props
                 source_,
                 rpeer_);
+        } else if (evt.code_ == OBIS_ROOT_VISIBLE_DEVICES || evt.code_ == OBIS_ROOT_ACTIVE_DEVICES) {
+            // CYNG_LOG_DEBUG(prx.logger_, "device response: " << evt.tpl_);
+            BOOST_ASSERT(!evt.srv_.empty());
+            std::size_t index = 0u;
+            sml::select(evt.tpl_, evt.code_, [&, this](cyng::prop_map_t const &props, std::size_t depth) {
+                auto pm = cyng::to_param_map(props); //  props
+                pm.emplace("nr", cyng::make_object(index));
+                pm.erase("8181c78202ff"); //  "---"
+                auto const pos = pm.find("8181c78204ff");
+                if (pos != pm.end()) {
+                    //  meter id
+                    auto const id = cyng::to_buffer(pos->second);
+
+#ifdef _DEBUG
+                    pm.emplace("tag", cyng::make_object("tag")); //  ToDo: dash
+#endif
+                    auto const type = detect_server_type(id);
+                    pm.emplace("type", cyng::make_object(static_cast<std::uint32_t>(type)));
+                    if (type == srv_type::MBUS_WIRED || type == srv_type::MBUS_RADIO) {
+                        pm.emplace("serial", cyng::make_object("serial"));
+                        pm.emplace("maker", cyng::make_object("MAKER")); //  ToDo:
+                    } else {
+                        pm.emplace("serial", cyng::make_object("meter"));
+                        pm.emplace("maker", cyng::make_object("maker")); //  ToDo:
+                    }
+                    pm.emplace("visible", cyng::make_object(evt.code_ == OBIS_ROOT_VISIBLE_DEVICES));
+                    pm.emplace("active", cyng::make_object(evt.code_ == OBIS_ROOT_ACTIVE_DEVICES));
+                    pm.emplace("serverId", cyng::make_object(cyng::clone(evt.srv_)));
+                    CYNG_LOG_TRACE(prx.logger_, "device " << pm);
+                    prx.session_.cluster_bus_.cfg_sml_channel_back(
+                        cyng::key_generator(cyng::to_string(id_)),                 //  key
+                        sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE), //  channel
+                        cyng::to_str(evt.code_),                                   //  section
+                        pm,
+                        source_,
+                        rpeer_);
+                    ++index;
+                } else {
+                    CYNG_LOG_WARNING(prx.logger_, "no meter id: " << pm);
+                }
+            });
+
         } else {
             CYNG_LOG_WARNING(prx.logger_, "unknown get proc parameter response: " << obis::get_name(evt.code_));
         }

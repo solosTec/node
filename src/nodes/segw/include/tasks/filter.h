@@ -26,11 +26,10 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(cyng::eod)>,
             std::function<void(cyng::buffer_t)>,
             std::function<void(std::string)>, //	reset_target_channels
-            std::function<void(void)>         //	update_statistics
-            >;
+            std::function<void(void)>,        //	update_statistics
+            std::function<void(cyng::eod)>>;
 
         struct access_data {
             access_data();
@@ -58,6 +57,9 @@ namespace smf {
         void update_statistics();
         void flash_led(std::chrono::milliseconds, std::size_t);
 
+        /**
+         * Apply filter and forward all valid data.
+         */
         void check(mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &data);
         bool check_frequency(std::string const &id);
 

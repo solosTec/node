@@ -27,11 +27,11 @@ namespace smf {
 		, cfg& config
 		, lmn_type type)
 	: sigs_{
-			std::bind(&filter::stop, this, std::placeholders::_1),		//	0
-			std::bind(&filter::receive, this, std::placeholders::_1),	//	1
-			std::bind(&filter::reset_target_channels, this, std::placeholders::_1),	//	2
-			std::bind(&filter::update_statistics, this),	//	3
-	}
+			std::bind(&filter::receive, this, std::placeholders::_1),	//	0
+			std::bind(&filter::reset_target_channels, this, std::placeholders::_1),	//	1
+			std::bind(&filter::update_statistics, this),	//	2
+            std::bind(&filter::stop, this, std::placeholders::_1)		//	3
+    }
 		, channel_(wp)
 		, ctl_(ctl)
 		, logger_(logger)
@@ -39,7 +39,12 @@ namespace smf {
 		, cfg_gpio_(config)
 		, parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
 			auto const flag_id = get_manufacturer_code(h.get_server_id());
-			CYNG_LOG_TRACE(logger_, "[filter] apply " << cfg_blocklist_.get_mode() << " filter to meter: " << get_id(h.get_server_id()) << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+			CYNG_LOG_TRACE(logger_, "[filter] apply " 
+                << cfg_blocklist_.get_mode() 
+                << " filter to meter: " 
+                << get_id(h.get_server_id()) 
+                << " (" << mbus::decode(flag_id.first, flag_id.second) 
+                << ")");
 #ifdef _DEBUG_SEGW
 			{
 				std::stringstream ss;
@@ -49,20 +54,19 @@ namespace smf {
                 CYNG_LOG_DEBUG(logger_, "[" << get_dev_id(h.get_server_id()) << "] " << data.size() << " bytes:\n" << dmp);
             }
 #endif
-                        this->check(h, t, data);
+            //
+            //  apply filter and forward all valid data.
+            //
+            this->check(h, t, data);
 		})
 		, targets_()
 		, access_times_()
 		, accumulated_bytes_{ 0 }
 	{
 
-        // channel_.lock()->get_name()
         auto sp = channel_.lock();
         if (sp) {
-            //  starts with 1!
-            sp->set_channel_name("receive", 1);
-            sp->set_channel_name("reset-data-sinks", 2);
-            sp->set_channel_name("update-statistics", 3);
+            sp->set_channel_names({"receive", "reset-data-sinks", "update-statistics"});
 
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
             CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "]  ready");
@@ -141,6 +145,9 @@ namespace smf {
                         "[" << cfg_blocklist_.get_task_name() << "] send " << accumulated_bytes_ << " bytes to " << targets_.size()
                             << " target(s) in " << cfg_blocklist_.get_mode() << " mode");
 
+                    //
+                    //  distribute valid data
+                    //
                     for (auto target : targets_) {
                         target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, t, payload)));
                     }
@@ -248,7 +255,7 @@ namespace smf {
         }
         auto sp = channel_.lock();
         if (sp) {
-            sp->suspend(std::chrono::seconds(1), 3, cyng::make_tuple());
+            sp->suspend(std::chrono::seconds(1), "update-statistics");
         }
     }
 

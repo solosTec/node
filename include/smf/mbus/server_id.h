@@ -73,6 +73,26 @@ namespace smf {
      */
     srv_id_t to_srv_id(cyng::buffer_t const &);
 
+    enum class srv_type : std::uint32_t {
+        MBUS_WIRED, //	M-Bus (long)
+        MBUS_RADIO, //	M-Bus (long)
+        W_MBUS,     //	wireless M-Bus (short)
+        SERIAL,
+        GW,
+        BCD,    //	Rhein-Energie
+        EON,    //	e-on
+        DKE_1,  //	E DIN 43863-5:2010-02
+        IMEI,   //	IMEI
+        RWE,    //	RWE
+        DKE_2,  //	E DIN 43863-5:2010-07
+        SWITCH, //	outdated
+        OTHER
+    };
+    /**
+     * heuristical approach
+     */
+    srv_type detect_server_type(cyng::buffer_t const &);
+
 } // namespace smf
 
 #endif
