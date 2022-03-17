@@ -2,6 +2,7 @@
 #include <session.h>
 
 #include <smf/config/schemes.h>
+#include <smf/mbus/flag_id.h>
 #include <smf/mbus/server_id.h>
 #include <smf/obis/conv.h>
 #include <smf/obis/db.h>
@@ -663,6 +664,7 @@ namespace smf {
                 auto pm = cyng::to_param_map(props); //  props
                 pm.emplace("nr", cyng::make_object(index));
                 pm.erase("8181c78202ff"); //  "---"
+                //  get meter id
                 auto const pos = pm.find("8181c78204ff");
                 if (pos != pm.end()) {
                     //  meter id
@@ -674,11 +676,13 @@ namespace smf {
                     auto const type = detect_server_type(id);
                     pm.emplace("type", cyng::make_object(static_cast<std::uint32_t>(type)));
                     if (type == srv_type::MBUS_WIRED || type == srv_type::MBUS_RADIO) {
-                        pm.emplace("serial", cyng::make_object("serial"));
-                        pm.emplace("maker", cyng::make_object("MAKER")); //  ToDo:
+                        auto srv_id = to_srv_id(id);
+                        pm.emplace("serial", cyng::make_object(get_id(srv_id)));
+                        auto const [c1, c2] = get_manufacturer_code(srv_id);
+                        pm.emplace("maker", cyng::make_object(mbus::decode(c1, c2)));
                     } else {
-                        pm.emplace("serial", cyng::make_object("meter"));
-                        pm.emplace("maker", cyng::make_object("maker")); //  ToDo:
+                        pm.emplace("serial", cyng::make_object(id));
+                        pm.emplace("maker", cyng::make_object("")); //  ToDo: dash
                     }
                     pm.emplace("visible", cyng::make_object(evt.code_ == OBIS_ROOT_VISIBLE_DEVICES));
                     pm.emplace("active", cyng::make_object(evt.code_ == OBIS_ROOT_ACTIVE_DEVICES));
