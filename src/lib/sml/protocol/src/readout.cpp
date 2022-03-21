@@ -116,23 +116,21 @@ namespace smf {
                 BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
                 if (choice.size() == 2) {
 
-                    if (choice.size() == 2) {
-                        auto code = cyng::value_cast<std::uint8_t>(choice.front(), 0);
-                        switch (code) {
-                        case TIME_TIMESTAMP: {
-                            //	unix time
-                            std::time_t const tt = cyng::value_cast<std::uint32_t>(choice.back(), 0);
-                            return cyng::make_object(std::chrono::system_clock::from_time_t(tt));
-                        } break;
-                        case TIME_SECINDEX:
-                            return choice.back();
-                        default:
-                            break;
-                        }
+                    auto code = cyng::value_cast<std::uint8_t>(choice.front(), 0);
+                    switch (code) {
+                    case TIME_TIMESTAMP: {
+                        //	unix time
+                        std::time_t const tt = cyng::value_cast<std::uint32_t>(choice.back(), 0);
+                        return cyng::make_object(std::chrono::system_clock::from_time_t(tt));
+                    } break;
+                    case TIME_SECINDEX:
+                        return choice.back();
+                    default:
+                        break;
                     }
                 }
             }
-            return cyng::make_object(std::chrono::system_clock::time_point().time_since_epoch());
+            return cyng::make_object(std::chrono::system_clock::from_time_t(0u));
             // return cyng::make_object(std::chrono::system_clock::now());
         }
 
