@@ -113,7 +113,8 @@ namespace smf {
         boost::uuids::uuid source,
         cyng::obis_path_t path,
         boost::uuids::uuid rpeer) {
-        CYNG_LOG_TRACE(logger_, "[proxy] GetProcParameterRequest " << name << '@' << id);
+        CYNG_LOG_TRACE(
+            logger_, "[proxy] GetProcParameterRequest " << name << '@' << id << ", section: " << obis::get_name(section));
 
         req_gen_.reset(name, pwd, 18);
         state_ = get_proc_param_req_s{tag, id, section, source, rpeer, true};
@@ -645,7 +646,7 @@ namespace smf {
         } else if (
             evt.code_ == OBIS_ROOT_IPT_PARAM || evt.code_ == OBIS_ROOT_IPT_STATE || evt.code_ == OBIS_ROOT_DEVICE_IDENT ||
             evt.code_ == OBIS_ROOT_MEMORY_USAGE || evt.code_ == OBIS_ROOT_W_MBUS_PARAM || evt.code_ == OBIS_ROOT_W_MBUS_STATUS ||
-            evt.code_ == OBIS_IF_1107 || evt.code_ == OBIS_CLASS_OP_LOG) {
+            evt.code_ == OBIS_IF_1107 || evt.code_ == OBIS_CLASS_OP_LOG || evt.code_ == OBIS_ROOT_NTP) {
 
             //  //  replace attribute by it's object
             auto const pm = smf::sml::compress(evt.tpl_);

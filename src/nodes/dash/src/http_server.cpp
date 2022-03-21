@@ -336,9 +336,11 @@ namespace smf {
             //	"policy":"append"
             auto const reader = cyng::make_reader(data);
             auto const name = cyng::value_cast(reader["fileName"].get(), "no-file");
+            auto const size = cyng::numeric_cast<std::size_t>(reader["fileSize"].get(), 0);
             auto const policy = cyng::value_cast(reader["policy"].get(), "merge");
             auto const content = cyng::crypto::base64_decode(cyng::value_cast(reader["fileContent"].get(), ""));
             CYNG_LOG_INFO(logger_, "[HTTP] upload (" << policy << ") [" << name << "] " << content.size() << " bytes");
+            BOOST_ASSERT(size == content.size());
             upload_.config_bridge(name, to_upload_policy(policy), content, ',');
         } else {
             CYNG_LOG_WARNING(logger_, "[HTTP] insert: undefined channel " << channel);
