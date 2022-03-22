@@ -318,12 +318,10 @@ namespace smf {
             path,
             sml::tree_child_list(
                 path.at(0),
-                {sml::tree_child_list(
-                    path.at(0),
-                    {sml::tree_param(OBIS_NTP_PORT, sml::make_value(ntp_port)),
-                     sml::tree_param(OBIS_NTP_ACTIVE, sml::make_value(ntp_active)), //  second index
-                     sml::tree_param(OBIS_NTP_TZ, sml::make_value(ntp_tz)),         //  timezone
-                     sml::tree_child_list(OBIS_ROOT_NTP, generate_tree_ntp(ntp_servers))})}));
+                {sml::tree_param(OBIS_NTP_PORT, sml::make_value(ntp_port)),
+                 sml::tree_param(OBIS_NTP_ACTIVE, sml::make_value(ntp_active)), //  second index
+                 sml::tree_param(OBIS_NTP_TZ, sml::make_value(ntp_tz)),         //  timezone
+                 sml::tree_child_list(OBIS_NTP_SERVER, generate_tree_ntp(ntp_servers))}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_access_rights(
