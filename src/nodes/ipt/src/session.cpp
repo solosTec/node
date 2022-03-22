@@ -178,7 +178,7 @@ namespace smf {
                     boost::uuids::uuid, //  dev_tag,
                     cyng::buffer_t,     //  id,
                     std::string,        // channel,
-                    std::string,        // section,
+                    cyng::obis,         // section,
                     cyng::param_map_t,  // params,
                     boost::uuids::uuid, // source,
                     boost::uuids::uuid  // tag
@@ -896,18 +896,18 @@ namespace smf {
         boost::uuids::uuid tag,
         cyng::buffer_t id,
         std::string channel,
-        std::string section,
+        cyng::obis section,
         cyng::param_map_t params,
         boost::uuids::uuid source,
         boost::uuids::uuid tag_cluster) {
 
         CYNG_LOG_INFO(logger_, "[cfg] channel: " << channel << ", section: " << section);
         //  convert section to OBIS
-        auto const code = cyng::make_obis(cyng::hex_to_buffer(section));
+        // auto const code = cyng::make_obis(cyng::hex_to_buffer(section));
 
         //  get a path
         auto const reader = cyng::make_reader(params);
-        auto const vec = cyng::vector_cast<std::string>(reader["path"].get(), section);
+        auto const vec = cyng::vector_cast<std::string>(reader["path"].get(), "");
 
         auto const type = sml::msg_type_by_name(channel);
 
@@ -917,7 +917,14 @@ namespace smf {
             //  GET_PROC_PARAMETER_REQUEST
             //
             proxy_.get_proc_param_req(
-                name, pwd, tag, id, code, source, vec.empty() ? cyng::obis_path_t({code}) : obis::to_obis_path(vec), tag_cluster);
+                name,
+                pwd,
+                tag,
+                id,
+                section,
+                source,
+                vec.empty() ? cyng::obis_path_t({section}) : obis::to_obis_path(vec),
+                tag_cluster);
             break;
         case sml::msg_type::SET_PROC_PARAMETER_REQUEST:
             //
@@ -928,17 +935,17 @@ namespace smf {
                 pwd,
                 tag,
                 id,
-                code,
+                section,
                 params,
                 source,
-                vec.empty() ? cyng::obis_path_t({code}) : obis::to_obis_path(vec),
+                vec.empty() ? cyng::obis_path_t({section}) : obis::to_obis_path(vec),
                 tag_cluster);
             break;
         case sml::msg_type::GET_PROFILE_LIST_REQUEST:
             //
             //  GET_LIST_REQUEST
             //
-            proxy_.get_profile_list_req(name, pwd, tag, id, code, params, source, tag_cluster);
+            proxy_.get_profile_list_req(name, pwd, tag, id, section, params, source, tag_cluster);
             break;
         // case sml::msg_type::GET_LIST_REQUEST:
         //     //

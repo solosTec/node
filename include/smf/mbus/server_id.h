@@ -47,6 +47,7 @@ namespace smf {
      * @return meter id as string
      */
     std::string get_id(srv_id_t);
+    cyng::buffer_t get_id_as_buffer(srv_id_t);
 
     /**
      * @return meter id as integer

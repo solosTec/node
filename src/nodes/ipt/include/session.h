@@ -109,7 +109,7 @@ namespace smf {
             boost::uuids::uuid, //  tag (device/session/gateway)
             cyng::buffer_t,     //  id
             std::string,        // channel
-            std::string,        // section
+            cyng::obis,         // section
             cyng::param_map_t,  // params
             boost::uuids::uuid, // source
             boost::uuids::uuid  // cluster tag

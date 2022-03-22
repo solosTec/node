@@ -129,7 +129,7 @@ namespace smf {
             //  "cfg.data.sml"
             cyng::make_description(
                 "cfg.data.sml",
-                cyng::vm_adaptor<bus, void, boost::uuids::uuid, cyng::vector_t, std::string, std::string, cyng::param_map_t>(
+                cyng::vm_adaptor<bus, void, boost::uuids::uuid, cyng::vector_t, std::string, cyng::obis, cyng::param_map_t>(
                     this, &bus::cfg_data_sml)));
     }
 
@@ -561,7 +561,7 @@ namespace smf {
     void bus::cfg_sml_channel_out(
         cyng::vector_t key,        //  gateway
         std::string channel,       //  SML message type
-        std::string section,       //  OBIS root
+        cyng::obis section,        //  OBIS root
         cyng::param_map_t params,  //  optional parameters (OBIS path)
         boost::uuids::uuid source) //  HTTP session
     {
@@ -574,7 +574,7 @@ namespace smf {
     void bus::cfg_sml_channel_back(
         cyng::vector_t key,        //  gateway
         std::string channel,       //  SML message type
-        std::string section,       //  OBIS root
+        cyng::obis section,        //  OBIS root
         cyng::param_map_t params,  //  optional parameters (OBIS path)
         boost::uuids::uuid source, //  HTTP session
         boost::uuids::uuid tag)    //  cluster node tag (mostly dash)
@@ -606,7 +606,7 @@ namespace smf {
         boost::uuids::uuid tag,  // HTTP session
         cyng::vector_t key,      // table key (gateway)
         std::string channel,     // SML message type
-        std::string section,     // OBIS root
+        cyng::obis section,      // OBIS root
         cyng::param_map_t params // results
     ) {
         if (has_cfg_data_interface()) {

@@ -2,7 +2,10 @@
 
 #include <smf/http/session.h>
 #include <smf/http/ws.h>
+#include <smf/obis/defs.h>
+#include <smf/sml.h>
 
+#include <cyng/io/io_buffer.h>
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
@@ -11,6 +14,7 @@
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/vector_cast.hpp>
 #include <cyng/parse/json/json_parser.h>
+#include <cyng/parse/string.h>
 #include <cyng/rnd/rnd.hpp>
 #include <cyng/sys/cpu.h>
 #include <cyng/sys/memory.h>
@@ -122,8 +126,8 @@ namespace smf {
                 CYNG_LOG_TRACE(logger_, obj);
                 //	example: %(("fmt":JSON),("type":dev),("version":v50))
                 auto const reader = cyng::make_reader(obj);
-                auto const type = cyng::value_cast(reader.get("type"), "");
-                auto const fmt = cyng::value_cast(reader.get("fmt"), "");
+                auto const type = reader.get("type", "");
+                auto const fmt = reader.get("fmt", "");
                 if (boost::algorithm::equals(type, "dev")) {
                     //	/download.devices
                     BOOST_ASSERT(boost::algorithm::equals(target, "/download.devices"));
@@ -282,12 +286,13 @@ namespace smf {
                     install_request(channel, cyng::container_cast<cyng::vector_t>(reader["key"].get()));
                 } else if (boost::algorithm::equals(cmd, "channel:sml")) {
                     auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
-                    CYNG_LOG_TRACE(logger_, "[HTTP] query:sml request from channel " << channel);
+                    auto const code = cyng::to_obis(reader.get("section", ""));
+                    CYNG_LOG_TRACE(logger_, "[HTTP] query:sml request from channel " << channel << "/" << code);
                     // {"cmd":"query:sml","channel":"GetProcParameterRequest","section":"810060050000","gw":["28c4b783-f35d-49f1-9027-a75dbae9f5e2"],"params":{"params":null}}
                     sml_channel(
                         cyng::container_cast<cyng::vector_t>(reader["gw"].get()),
                         reader.get("channel", ""),
-                        reader.get("section", ""),
+                        code,
                         cyng::container_cast<cyng::param_map_t>(reader["params"].get()),
                         tag);
                 } else {
@@ -461,9 +466,9 @@ namespace smf {
     void http_server::sml_channel(
         cyng::vector_t key,        //  gateway
         std::string channel,       //  SML message type
-        std::string section,       //  OBIS root
+        cyng::obis section,        //  OBIS root
         cyng::param_map_t params,  //  optional parameters (OBIS path)
-        boost::uuids::uuid source) //   HTTP session
+        boost::uuids::uuid source) //  HTTP session
     {
         BOOST_ASSERT_MSG(!key.empty(), "no query key");
         CYNG_LOG_TRACE(logger_, "[HTTP] query request " << channel << ": " << key);
@@ -1004,26 +1009,76 @@ namespace smf {
 
     void http_server::cfg_data(
         boost::uuids::uuid tag,  // HTTP session
-        cyng::key_t gw,          //  key gateway table
-        std::string channel,     //  SML message type
-        std::string section,     // OBIS root
-        cyng::param_map_t params //   data / results
+        cyng::key_t gw,          // key gateway table
+        std::string channel,     // SML message type
+        cyng::obis section,      // OBIS root
+        cyng::param_map_t params // data / results
     ) {
         //  [cluster#cfg.data.sml]: GET_PROC_PARAMETER_REQUEST, section: 810060050000
-        //  data: %(("word": % (("AUTHORIZED_IPT":false), ("EXT_IF_AVAILABLE":false), ("FATAL_ERROR":false),
-        //  ("NO_TIMEBASE":false), ("OUT_OF_MEMORY":false), ("PLC_AVAILABLE":false), ("SERVICE_IF_AVAILABLE":false),
-        //  ("WIRED_MBUS_IF_AVAILABLE":false), ("WIRELESS_BUS_IF_AVAILABLE":false))))
-        CYNG_LOG_TRACE(logger_, "[cluster] cfg.data: " << channel << ", section: " << section << ", data: " << params);
+        //      data: %(("word": % (("AUTHORIZED_IPT":false), ("EXT_IF_AVAILABLE":false), ("FATAL_ERROR":false),
+        //      ("NO_TIMEBASE":false), ("OUT_OF_MEMORY":false), ("PLC_AVAILABLE":false), ("SERVICE_IF_AVAILABLE":false),
+        //      ("WIRED_MBUS_IF_AVAILABLE":false), ("WIRELESS_BUS_IF_AVAILABLE":false))))
+        CYNG_LOG_TRACE(logger_, "[http] cfg.data: " << channel << ", section: " << section << ", data: " << params);
+
+        // [cluster] cfg.data: GET_PROC_PARAMETER_RESPONSE, section: 81811106ffff,
+        //      data: %(
+        //          ("010000090b00":2022-03-22T15:50:44+0100),
+        //          ("8181c78204ff":01e61e571406213603),
+        //          ("active":true),
+        //          ("maker":GWF),
+        //          ("nr":0000000000000009),
+        //          ("serial":21061457),
+        //          ("serverId":0500153b01ec46),
+        //          ("tag":tag),
+        //          ("type":00000001),
+        //          ("visible":false))
 
         auto const pos = ws_map_.find(tag);
         if (pos != ws_map_.end()) {
             auto sp = pos->second.lock();
             if (sp) {
+                if (boost::algorithm::equals(channel, sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE))) {
+                    if (section == OBIS_ROOT_ACTIVE_DEVICES) {
+                        auto const reader = cyng::make_reader(params);
+                        // auto const srv = reader.get(cyng::to_str(OBIS_SERVER_ID), cyng::make_buffer({}));
+                        // auto const id = cyng::io::to_hex(srv);
+                        auto const serial = reader.get("serial", cyng::make_buffer({}));
+                        auto const meter = cyng::io::to_hex(serial);
+                        BOOST_ASSERT(reader.get("active", false));
+                        //  substitute "tag" with primary key from "meter" table
+                        //  add "mc" for metering code from "meter" table
+                        bool found = false;
+                        db_.cache_.access(
+                            [&](cyng::table const *tbl) {
+                                //  search for meter with specified "id"
+                                tbl->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
+                                    auto const tmp = rec.value("meter", "");
+                                    // auto const tmp = rec.value("ident", "");
+                                    // CYNG_LOG_DEBUG(logger_, "compare " << meter << " / " << tmp);
+                                    if (boost::algorithm::equals(tmp, meter)) {
+                                        //  found
+                                        found = true;
+                                        CYNG_LOG_DEBUG(
+                                            logger_, "[http] meter " << meter << " has metering code " << rec.at("code"));
+
+                                        params.emplace("tag", rec.at("tag"));
+                                        params.emplace("mc", rec.at("code"));
+                                        return false;
+                                    }
+                                    return true;
+                                });
+                            },
+                            cyng::access::read("meter"));
+
+                        params.emplace("stored", cyng::make_object(found));
+                    }
+                }
                 auto const str = json_cfg_data(channel, gw, section, params);
                 sp->push_msg(str);
             }
         }
     }
+
     std::string json_insert_record(std::string channel, cyng::tuple_t &&tpl) {
 
         return cyng::io::to_json(cyng::make_tuple(
@@ -1069,7 +1124,7 @@ namespace smf {
         return cyng::io::to_json(cyng::make_tuple(cyng::make_param("cmd", "clear"), cyng::make_param("channel", channel)));
     }
 
-    std::string json_cfg_data(std::string channel, cyng::key_t const &key, std::string section, cyng::param_map_t const &params) {
+    std::string json_cfg_data(std::string channel, cyng::key_t const &key, cyng::obis section, cyng::param_map_t const &params) {
         return cyng::io::to_json(cyng::make_tuple(
             cyng::make_param("cmd", "update"),
             cyng::make_param("channel", channel),

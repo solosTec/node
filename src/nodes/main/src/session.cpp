@@ -289,7 +289,7 @@ namespace smf {
                     bool,
                     cyng::vector_t,
                     std::string,
-                    std::string,
+                    cyng::obis,
                     cyng::param_map_t,
                     boost::uuids::uuid,
                     boost::uuids::uuid>(this, &session::cfg_sml_channel)));
@@ -1476,7 +1476,7 @@ namespace smf {
         bool direction,                 //  true == out, false == back
         cyng::vector_t key,             //  gateway
         std::string channel,            //  SML message type
-        std::string section,            //  OBIS root
+        cyng::obis section,             //  OBIS root
         cyng::param_map_t params,       //  optional parameters (OBIS path) or results
         boost::uuids::uuid source,      //  HTTP session
         boost::uuids::uuid tag_cluster) // source node tag (mostly dash)

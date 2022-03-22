@@ -639,7 +639,7 @@ namespace smf {
             prx.session_.cluster_bus_.cfg_sml_channel_back(
                 cyng::key_generator(cyng::to_string(id_)),                  //  key
                 sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE),  //  channel
-                cyng::to_str(root_),                                        //  section
+                root_,                                                      //  section
                 cyng::param_map_factory()("word", sml::to_param_map(word)), //  params
                 source_,
                 rpeer_);
@@ -653,7 +653,7 @@ namespace smf {
             prx.session_.cluster_bus_.cfg_sml_channel_back(
                 cyng::key_generator(cyng::to_string(id_)),                 //  key
                 sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE), //  channel
-                cyng::to_str(evt.code_),                                   //  section
+                evt.code_,                                                 //  section
                 cyng::to_param_map(pm),                                    //  props
                 source_,
                 rpeer_);
@@ -670,15 +670,11 @@ namespace smf {
                 if (pos != pm.end()) {
                     //  meter id
                     auto const id = cyng::to_buffer(pos->second);
-
-#ifdef _DEBUG
-                    pm.emplace("tag", cyng::make_object("tag")); //  ToDo: dash
-#endif
                     auto const type = detect_server_type(id);
                     pm.emplace("type", cyng::make_object(static_cast<std::uint32_t>(type)));
                     if (type == srv_type::MBUS_WIRED || type == srv_type::MBUS_RADIO) {
                         auto srv_id = to_srv_id(id);
-                        pm.emplace("serial", cyng::make_object(get_id(srv_id)));
+                        pm.emplace("serial", cyng::make_object(get_id_as_buffer(srv_id)));
                         auto const [c1, c2] = get_manufacturer_code(srv_id);
                         pm.emplace("maker", cyng::make_object(mbus::decode(c1, c2)));
                     } else {
@@ -692,7 +688,7 @@ namespace smf {
                     prx.session_.cluster_bus_.cfg_sml_channel_back(
                         cyng::key_generator(cyng::to_string(id_)),                 //  key
                         sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE), //  channel
-                        cyng::to_str(evt.code_),                                   //  section
+                        evt.code_,                                                 //  section
                         pm,
                         source_,
                         rpeer_);
@@ -831,7 +827,7 @@ namespace smf {
         prx.session_.cluster_bus_.cfg_sml_channel_back(
             cyng::key_generator(cyng::to_string(id_)),               //  key
             sml::get_name(sml::msg_type::GET_PROFILE_LIST_RESPONSE), //  channel
-            cyng::to_str(evt.path_.front()),                         //  section
+            evt.path_.front(),                                       //  section
             pm,                                                      //  props
             source_,
             rpeer_);

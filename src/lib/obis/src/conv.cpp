@@ -10,6 +10,7 @@
 
 #include <cyng/obj/util.hpp>
 #include <cyng/parse/buffer.h>
+#include <cyng/parse/string.h>
 
 #include <algorithm>
 #include <iterator>
@@ -46,7 +47,7 @@ namespace smf {
             cyng::obis_path_t path;
             path.reserve(vec.size());
             std::transform(std::begin(vec), std::end(vec), std::back_inserter(path), [](std::string const &str) {
-                return cyng::make_obis(cyng::hex_to_buffer(str));
+                return cyng::to_obis(str);
             });
 
             return path;

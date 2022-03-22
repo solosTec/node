@@ -41,7 +41,7 @@ namespace smf {
             boost::uuids::uuid tag,  // HTTP session
             cyng::key_t gw,          //  key gateway table
             std::string channel,     //  SML message type
-            std::string section,     // OBIS root
+            cyng::obis section,      // OBIS root
             cyng::param_map_t params //   data / results
             ) = 0;
     };
@@ -258,7 +258,7 @@ namespace smf {
         void cfg_sml_channel_out(
             cyng::vector_t key,
             std::string channel,
-            std::string section,
+            cyng::obis section,
             cyng::param_map_t params,
             boost::uuids::uuid source);
 
@@ -275,7 +275,7 @@ namespace smf {
         void cfg_sml_channel_back(
             cyng::vector_t key,
             std::string channel,
-            std::string section,
+            cyng::obis section,
             cyng::param_map_t params,
             boost::uuids::uuid source,
             boost::uuids::uuid tag);
@@ -284,7 +284,7 @@ namespace smf {
             boost::uuids::uuid tag,  // HTTP session
             cyng::vector_t key,      // table key (gateway)
             std::string channel,     // SML message type
-            std::string section,     // OBIS root
+            cyng::obis section,      // OBIS root
             cyng::param_map_t params // results
         );
 

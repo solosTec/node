@@ -136,7 +136,7 @@ namespace smf {
         void sml_channel(
             cyng::vector_t pk,
             std::string channel,
-            std::string section,
+            cyng::obis section,
             cyng::param_map_t params,
             boost::uuids::uuid source);
 
@@ -147,7 +147,7 @@ namespace smf {
             boost::uuids::uuid tag,  // HTTP session
             cyng::key_t gw,          //  key gateway table
             std::string channel,     //  SML message type
-            std::string section,     // OBIS root
+            cyng::obis section,      // OBIS root
             cyng::param_map_t params //   data / results
             ) override;
 
@@ -204,7 +204,7 @@ namespace smf {
     std::string json_load_level(std::string channel, std::size_t);
     std::string json_delete_record(std::string channel, cyng::key_t const &);
     std::string json_clear_table(std::string channel);
-    std::string json_cfg_data(std::string channel, cyng::key_t const &key, std::string section, cyng::param_map_t const &param);
+    std::string json_cfg_data(std::string channel, cyng::key_t const &key, cyng::obis section, cyng::param_map_t const &param);
 
     /**
      * remove all empty records and records that starts with an underline '_' or carry

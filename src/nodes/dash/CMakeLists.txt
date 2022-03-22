@@ -39,6 +39,7 @@ target_link_libraries(dash
         smf_cluster_bus
         smf_http
         smf_mbus
+        smf_sml
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
