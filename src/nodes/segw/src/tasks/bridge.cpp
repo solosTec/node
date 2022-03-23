@@ -64,76 +64,6 @@ namespace smf {
         CYNG_LOG_INFO(logger_, "segw ready");
     }
 
-    void bridge::stop(cyng::eod) {
-
-        CYNG_LOG_WARNING(logger_, "--- segw gracefull shutdown ---");
-
-        //
-        //	RDR - redirector
-        //	stop listening
-        //
-        CYNG_LOG_INFO(logger_, "stop redirectors");
-        stop_redirectors();
-
-        //
-        //	stop LMN tasks
-        stop_lmn_ports();
-
-        //
-        //	filter (wireless M-Bus)
-        //
-        CYNG_LOG_INFO(logger_, "stop: filter");
-        stop_filter();
-
-        //
-        //	broker clients
-        //
-        CYNG_LOG_INFO(logger_, "stop: broker clients");
-        stop_broker_clients();
-
-        //
-        //	IP-T client
-        //	connect to IP-T server
-        //
-        CYNG_LOG_INFO(logger_, "stop: SML router");
-        stop_ipt_bus();
-
-        //
-        //	virtual meter
-        //
-        CYNG_LOG_INFO(logger_, "stop: virtual meter");
-        // stop_virtual_meter();
-
-        //
-        //	NMS server
-        //
-        CYNG_LOG_INFO(logger_, "stop: NMS server");
-        stop_nms_server();
-
-        //
-        //	SML server
-        //
-        CYNG_LOG_INFO(logger_, "stop: SML server");
-        sml_.stop();
-
-        //
-        //	GPIO
-        //
-        CYNG_LOG_INFO(logger_, "stop: GPIO");
-        stop_gpio();
-
-        //
-        //	connect database to data cache
-        //
-        CYNG_LOG_INFO(logger_, "stop: persistent data");
-        stop_cache_persistence();
-
-        //
-        //  release all remaining references
-        //
-        stash_.clear();
-    }
-
     void bridge::start() {
         CYNG_LOG_INFO(logger_, "segw start");
 
@@ -211,6 +141,76 @@ namespace smf {
         //
         CYNG_LOG_INFO(logger_, "initialize: redirectors");
         init_redirectors();
+    }
+
+    void bridge::stop(cyng::eod) {
+
+        CYNG_LOG_WARNING(logger_, "--- segw gracefull shutdown ---");
+
+        //
+        //	RDR - redirector
+        //	stop listening
+        //
+        CYNG_LOG_INFO(logger_, "stop redirectors");
+        stop_redirectors();
+
+        //
+        //	stop LMN tasks
+        stop_lmn_ports();
+
+        //
+        //	filter (wireless M-Bus)
+        //
+        CYNG_LOG_INFO(logger_, "stop: filter");
+        stop_filter();
+
+        //
+        //	broker clients
+        //
+        CYNG_LOG_INFO(logger_, "stop: broker clients");
+        stop_broker_clients();
+
+        //
+        //	IP-T client
+        //	connect to IP-T server
+        //
+        CYNG_LOG_INFO(logger_, "stop: SML router");
+        stop_ipt_bus();
+
+        //
+        //	virtual meter
+        //
+        CYNG_LOG_INFO(logger_, "stop: virtual meter");
+        // stop_virtual_meter();
+
+        //
+        //	NMS server
+        //
+        CYNG_LOG_INFO(logger_, "stop: NMS server");
+        stop_nms_server();
+
+        //
+        //	SML server
+        //
+        CYNG_LOG_INFO(logger_, "stop: SML server");
+        sml_.stop();
+
+        //
+        //	GPIO
+        //
+        CYNG_LOG_INFO(logger_, "stop: GPIO");
+        stop_gpio();
+
+        //
+        //	connect database to data cache
+        //
+        CYNG_LOG_INFO(logger_, "stop: persistent data");
+        stop_cache_persistence();
+
+        //
+        //  release all remaining references
+        //
+        stash_.clear();
     }
 
     void bridge::init_data_cache() {
@@ -401,9 +401,36 @@ namespace smf {
                     //
                     //  ToDo: fill "meter" table
                     //
+                    CYNG_LOG_INFO(logger_, "load meter " << rec.value("meter", ""));
                     return true;
                 });
+#ifdef _DEBUG
+                //
+                //  add some demo meter devices
+                //
+                {
+                    //  02-e61e-04123675-3c-07
+                    auto const name = cyng::make_buffer({0x02, 0xe6, 0x1e, 0x04, 0x12, 0x36, 0x75, 0x3c, 0x07});
+                    auto const tag = cfg_.get_name(name);
+                    tbl->insert(
+                        cyng::key_generator(tag),
+                        cyng::data_generator(name, "wM-Bus", std::chrono::system_clock::now(), true, "02-e61e-04123675-3c-07"),
+                        0,
+                        cfg_.get_tag());
+                }
+                {
+                    //  02-e61e-83245629-3c-07
+                    auto const name = cyng::make_buffer({0x02, 0xe6, 0x1e, 0x83, 0x24, 0x56, 0x29, 0x3c, 0x07});
+                    auto const tag = cfg_.get_name(name);
+                    tbl->insert(
+                        cyng::key_generator(tag),
+                        cyng::data_generator(name, "wM-Bus", std::chrono::system_clock::now(), true, "02-e61e-83245629-3c-07"),
+                        0,
+                        cfg_.get_tag());
+                }
+#endif
             },
+
             cyng::access::write("meter"));
     }
 

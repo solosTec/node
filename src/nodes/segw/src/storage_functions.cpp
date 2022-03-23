@@ -92,14 +92,14 @@ namespace smf {
         return cyng::meta_store(
             "meter",
             {
-                cyng::column("id", cyng::TC_UINT64),           //	hash of "meter"
-                cyng::column("meter", cyng::TC_STRING),        //	02-e61e-03197715-3c-07, or 03197715
+                cyng::column("tag", cyng::TC_UUID),            //	SAH1 hash of "meter"
+                cyng::column("meter", cyng::TC_BUFFER),        //	02-e61e-03197715-3c-07, or 03197715
                 cyng::column("type", cyng::TC_STRING),         //	IEC, M-Bus, wM-Bus
                 cyng::column("activity", cyng::TC_TIME_POINT), //	last activity
-                cyng::column("enabled", cyng::TC_BOOL),        //	active
+                cyng::column("active", cyng::TC_BOOL),         //	active
                 cyng::column("desc", cyng::TC_STRING)          //	optional description
             },
-            0);
+            1);
     }
 
     cyng::meta_sql get_table_oplog() { return cyng::to_sql(get_store_oplog(), {0, 0, 0, 0, 0, 0, 0, 13, 0, 23, 64, 0, 128}); }

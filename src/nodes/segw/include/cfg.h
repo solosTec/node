@@ -14,6 +14,7 @@
 #include <cyng/obj/value_cast.hpp>
 #include <cyng/store/db.h>
 
+#include <boost/uuid/name_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 
 namespace smf {
@@ -34,6 +35,12 @@ namespace smf {
          * @return itentity/source tag
          */
         boost::uuids::uuid get_tag() const;
+
+        /**
+         * @return generate an UUID using the SHA1 hashing algorithm
+         */
+        boost::uuids::uuid get_name(std::string const &) const;
+        boost::uuids::uuid get_name(cyng::buffer_t const &) const;
 
         /**
          * get configured server ID (OBIS_SERVER_ID:)
@@ -115,6 +122,8 @@ namespace smf {
          * OBIS log status
          */
         sml::status_word_t status_word_;
+
+        boost::uuids::name_generator_sha1 name_gen_;
     };
 } // namespace smf
 

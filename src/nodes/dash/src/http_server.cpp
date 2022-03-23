@@ -1038,15 +1038,18 @@ namespace smf {
             auto sp = pos->second.lock();
             if (sp) {
                 if (boost::algorithm::equals(channel, sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE))) {
-                    if (section == OBIS_ROOT_ACTIVE_DEVICES) {
+                    if (section == OBIS_ROOT_ACTIVE_DEVICES || section == OBIS_ROOT_VISIBLE_DEVICES) {
                         auto const reader = cyng::make_reader(params);
-                        // auto const srv = reader.get(cyng::to_str(OBIS_SERVER_ID), cyng::make_buffer({}));
-                        // auto const id = cyng::io::to_hex(srv);
+                        //
+                        //  get meter id (short)
+                        //
                         auto const serial = reader.get("serial", cyng::make_buffer({}));
                         auto const meter = cyng::io::to_hex(serial);
-                        BOOST_ASSERT(reader.get("active", false));
-                        //  substitute "tag" with primary key from "meter" table
-                        //  add "mc" for metering code from "meter" table
+
+                        //
+                        //  * substitute "tag" with primary key from "meter" table
+                        //  * add "mc" for metering code from "meter" table
+                        //
                         bool found = false;
                         db_.cache_.access(
                             [&](cyng::table const *tbl) {

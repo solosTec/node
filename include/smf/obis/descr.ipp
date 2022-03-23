@@ -396,10 +396,12 @@ case 0x818110000004: return "";
 case 0x81811000000c: return "";
 case 0x818110000014: return "";
 case 0x8181100601ff: return "1. Liste der sichtbaren Sensoren";	// 1. Liste der sichtbaren Sensoren
+case 0x8181100602ff: return "2. Liste der sichtbaren Sensoren";	// 2. Liste der sichtbaren Sensoren
 case 0x81811006ffff: return "visible devices (Liste der sichtbaren Sensoren)";	// visible devices (Liste der sichtbaren Sensoren)
 case 0x81811016ffff: return "new active devices";	// new active devices
 case 0x81811026ffff: return "not longer visible devices";	// not longer visible devices
 case 0x8181110601ff: return "1. Liste der aktiven Sensoren)";	// 1. Liste der aktiven Sensoren)
+case 0x8181110602ff: return "2. Liste der aktiven Sensoren)";	// 2. Liste der aktiven Sensoren)
 case 0x81811106fbff: return "activate meter/sensor";	// activate meter/sensor
 case 0x81811106fcff: return "deactivate meter/sensor";	// deactivate meter/sensor
 case 0x81811106fdff: return "delete meter/sensor";	// delete meter/sensor

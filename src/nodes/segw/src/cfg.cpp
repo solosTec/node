@@ -6,6 +6,7 @@
  */
 
 #include <cfg.h>
+#include <smf/config/schemes.h>
 
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/parse/string.h>
@@ -22,9 +23,14 @@ namespace smf {
         , cache_(cache)
         , tag_(boost::uuids::nil_uuid())
         , id_({0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-        , status_word_(sml::get_initial_value()) {}
+        , status_word_(sml::get_initial_value())
+        //  d5884bce-9c2b-40bf-9fc0-5c0e77f708c3
+        , name_gen_(config::device_name) {}
 
     boost::uuids::uuid cfg::get_tag() const { return tag_; }
+
+    boost::uuids::uuid cfg::get_name(std::string const &name) const { return name_gen_(name); }
+    boost::uuids::uuid cfg::get_name(cyng::buffer_t const &name) const { return name_gen_(name.data(), name.size()); }
 
     cyng::buffer_t cfg::get_srv_id() const { return id_; }
 

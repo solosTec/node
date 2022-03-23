@@ -323,7 +323,7 @@ case 0x8106000203ff: return "W_MBUS_HARDWARE";
 case 0x8106000204ff: return "W_MBUS_FIELD_STRENGTH";	// dbm
 case 0x8106000374ff: return "W_MBUS_LAST_RECEPTION";	// Time since last radio telegram reception
 case 0x81060f0600ff: return "ROOT_W_MBUS_STATUS";	// see: 7.3.1.23 Datenstruktur zum Lesen des W-MBUS-Status 
-case 0x8106190700ff: return "IF_wMBUS";	// Wireless M-BUS
+case 0x8106190700ff: return "ROOT_W_MBUS_PARAM";	// Wireless M-BUS
 case 0x8106190701ff: return "W_MBUS_PROTOCOL";
 case 0x8106190702ff: return "W_MBUS_MODE_S";
 case 0x8106190703ff: return "W_MBUS_MODE_T";
@@ -396,10 +396,12 @@ case 0x818110000004: return "LOG_SOURCE_SMLC";
 case 0x81811000000c: return "LOG_SOURCE_LEDIO";
 case 0x818110000014: return "LOG_SOURCE_WANPLC";
 case 0x8181100601ff: return "CODE_LIST_1_VISIBLE_DEVICES";	// 1. Liste der sichtbaren Sensoren
+case 0x8181100602ff: return "CODE_LIST_2_VISIBLE_DEVICES";	// 2. Liste der sichtbaren Sensoren
 case 0x81811006ffff: return "ROOT_VISIBLE_DEVICES";	// visible devices (Liste der sichtbaren Sensoren)
 case 0x81811016ffff: return "ROOT_NEW_DEVICES";	// new active devices
 case 0x81811026ffff: return "ROOT_INVISIBLE_DEVICES";	// not longer visible devices
 case 0x8181110601ff: return "CODE_LIST_1_ACTIVE_DEVICES";	// 1. Liste der aktiven Sensoren)
+case 0x8181110602ff: return "CODE_LIST_2_ACTIVE_DEVICES";	// 2. Liste der aktiven Sensoren)
 case 0x81811106fbff: return "ACTIVATE_DEVICE";	// activate meter/sensor
 case 0x81811106fcff: return "DEACTIVATE_DEVICE";	// deactivate meter/sensor
 case 0x81811106fdff: return "DELETE_DEVICE";	// delete meter/sensor

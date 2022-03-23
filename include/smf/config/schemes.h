@@ -171,6 +171,12 @@ namespace smf {
          */
         bool is_known_store_name(std::string);
 
+        /**
+         * UUID namespace to derive a tag from a meter name
+         */
+        static constexpr boost::uuids::uuid device_name{
+            {0xd5, 0x88, 0x4b, 0xce, 0x9c, 0x2b, 0x40, 0xbf, 0x9f, 0xc0, 0x5c, 0x0e, 0x77, 0xf7, 0x08, 0xc3}};
+
     } // namespace config
 } // namespace smf
 

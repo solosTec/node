@@ -8,6 +8,7 @@
 #include <smf.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
+#include <smf/obis/tree.hpp>
 #include <smf/sml/generator.h>
 #include <smf/sml/value.hpp>
 #include <sml/response_engine.h>
@@ -535,8 +536,53 @@ namespace smf {
         //  * device class
         //  * timestamp (last seen)
         //
-        return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+        //
+        //  read data from table "meter"
+        //
+        sml::tree_t res;
+
+        cfg_.get_cache().access(
+            [&](cyng::table const *tbl) {
+                //
+                //  convert data into tree child list
+                //
+                std::uint8_t c1 = 1, c2 = 1;
+                tbl->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                    //
+                    //  use all metering devices
+                    //
+                    res.add(
+                        {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
+                         cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
+                         OBIS_SERVER_ID},
+                        sml::to_attribute(rec.at("meter")));
+                    res.add(
+                        {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
+                         cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
+                         OBIS_DEVICE_CLASS},
+                        sml::make_attribute("+++"));
+                    res.add(
+                        {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
+                         cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
+                         OBIS_CURRENT_UTC},
+                        sml::to_attribute(rec.at("activity")));
+
+                    //
+                    //  update counter
+                    //
+                    if (c2 == 0xFF) {
+                        c2 = 1;
+                        c1++;
+                    } else {
+                        c2++;
+                    }
+
+                    return true;
+                });
+            },
+            cyng::access::read("meter"));
+
+        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), res.to_child_list()));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_active_devices(
@@ -544,10 +590,74 @@ namespace smf {
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
         //  81 81 11 06 FF FF
+
+        // server: 0500153b01ec46
+        // path  : 81811106ffff
+        // code  : 81811106ffff - ROOT_ACTIVE_DEVICES
+        // attr  : (0:null)
+        // index : 2
+        // list  : 8181110601ff: null
+        //           818111060101: null
+        //             8181c78204ff: 0a000001
+        //             8181c78202ff: ---
+        //             010000090b00: 2022-03-23T11:49:31+0100
+        //           818111060102: null
+        //             8181c78204ff: 0a000002
+        //             8181c78202ff: ---
+        //            010000090b00: 2022-03-23T11:49:32+0100
+
         BOOST_ASSERT(!path.empty());
-        BOOST_ASSERT(path.at(0) == OBIS_ROOT_ACTIVE_DEVICES);
-        return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_ACTIVE_DEVICES); //  81 81 11 06 ff ff
+
+        //
+        //  read data from table "meter"
+        //
+        sml::tree_t res;
+
+        cfg_.get_cache().access(
+            [&](cyng::table const *tbl) {
+                //
+                //  convert data into tree child list
+                //
+                std::uint8_t c1 = 1, c2 = 1;
+                tbl->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                    //
+                    //  use only activated metering devices
+                    //
+                    if (rec.value("active", false)) {
+                        res.add(
+                            {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
+                             cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
+                             OBIS_SERVER_ID},
+                            sml::to_attribute(rec.at("meter")));
+                        res.add(
+                            {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
+                             cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
+                             OBIS_DEVICE_CLASS},
+                            sml::make_attribute("+++"));
+                        res.add(
+                            {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
+                             cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
+                             OBIS_CURRENT_UTC},
+                            sml::to_attribute(rec.at("activity")));
+
+                        //
+                        //  update counter
+                        //
+                        if (c2 == 0xFF) {
+                            c2 = 1;
+                            c1++;
+                        } else {
+                            c2++;
+                        }
+                    }
+
+                    return true;
+                });
+            },
+            cyng::access::read("meter"));
+
+        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), res.to_child_list()));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_device_info(

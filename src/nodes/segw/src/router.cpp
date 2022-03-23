@@ -159,7 +159,11 @@ namespace smf {
         }
     }
 
-    void router::register_targets() {}
+    void router::register_targets() {
+        //
+        //  check for targets to register
+        //
+    }
 
     void router::reply() {
 
