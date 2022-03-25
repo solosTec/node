@@ -32,11 +32,10 @@ namespace smf {
             std::string const &node_name,
             std::string const &model,
             ipt::toggle::server_vec_t &&,
-            std::vector<std::string> const &config_types,
             std::set<std::string> const &sml_targets,
             std::set<std::string> const &iec_targets,
             std::set<std::string> const &dlms_targets,
-            std::vector<std::string> const &writer);
+            std::set<std::string> const &writer);
 
         ~network() = default;
 
@@ -65,8 +64,7 @@ namespace smf {
         std::set<std::string> const sml_targets_;
         std::set<std::string> const iec_targets_;
         std::set<std::string> const dlms_targets_;
-        //  ToDo: std::set<>
-        std::vector<std::string> const writer_;
+        std::set<std::string> const writer_;
 
         ipt::bus bus_;
 

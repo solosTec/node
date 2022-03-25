@@ -27,11 +27,10 @@ namespace smf {
         std::string const &node_name,
         std::string const &model,
         ipt::toggle::server_vec_t &&tgl,
-        std::vector<std::string> const &config_types,
         std::set<std::string> const &sml_targets,
         std::set<std::string> const &iec_targets,
         std::set<std::string> const &dlms_targets,
-        std::vector<std::string> const &writer)
+        std::set<std::string> const &writer)
         : sigs_{std::bind(&network::connect, this), std::bind(&network::stop, this, std::placeholders::_1)}
         , channel_(wp)
         , ctl_(ctl)

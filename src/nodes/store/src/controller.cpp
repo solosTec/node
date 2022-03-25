@@ -32,6 +32,7 @@
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/object.h>
+#include <cyng/obj/set_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/vector_cast.hpp>
 #include <cyng/sys/locale.h>
@@ -216,7 +217,6 @@ namespace smf {
 
         auto const reader = cyng::make_reader(cfg);
         auto const tag = read_tag(reader["tag"].get());
-        auto const config_types = cyng::vector_cast<std::string>(reader["output"].get(), "ALL:BIN");
         auto const model = cyng::value_cast(reader["model"].get(), "smf.store");
 
         auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
@@ -226,9 +226,10 @@ namespace smf {
         }
 
         //
-        //  start writer tasks
+        // Start writer tasks.
+        // No duplicates possible by using a set
         //
-        auto const writer = cyng::vector_cast<std::string>(reader["writer"].get(), "ALL:BIN");
+        auto const writer = cyng::set_cast<std::string>(reader["writer"].get(), "ALL:BIN");
         if (!writer.empty()) {
             auto const tmp = std::filesystem::temp_directory_path();
             for (auto const &name : writer) {
@@ -345,9 +346,10 @@ namespace smf {
             CYNG_LOG_FATAL(logger, "no writer tasks configured");
         }
 
-        auto const target_sml = cyng::vector_cast<std::string>(reader["targets"]["SML"].get(), "sml@store");
-        auto const target_iec = cyng::vector_cast<std::string>(reader["targets"]["IEC"].get(), "iec@store");
-        auto const target_dlms = cyng::vector_cast<std::string>(reader["targets"]["DLMS"].get(), "dlms@store");
+        //  No duplicates possible by using a set
+        auto const target_sml = cyng::set_cast<std::string>(reader["targets"]["SML"].get(), "sml@store");
+        auto const target_iec = cyng::set_cast<std::string>(reader["targets"]["IEC"].get(), "iec@store");
+        auto const target_dlms = cyng::set_cast<std::string>(reader["targets"]["DLMS"].get(), "dlms@store");
 
         if (target_sml.empty()) {
             CYNG_LOG_WARNING(logger, "no SML targets configured");
@@ -383,10 +385,9 @@ namespace smf {
             model,
             std::move(tgl),
             std::chrono::seconds(delay),
-            config_types,
-            {target_sml.begin(), target_sml.end()},
-            {target_iec.begin(), target_iec.end()},
-            {target_dlms.begin(), target_dlms.end()},
+            target_sml,
+            target_iec,
+            target_dlms,
             writer);
     }
 
@@ -407,11 +408,10 @@ namespace smf {
         std::string const &model,
         ipt::toggle::server_vec_t &&tgl,
         std::chrono::seconds delay,
-        std::vector<std::string> const &config_types,
         std::set<std::string> const &sml_targets,
         std::set<std::string> const &iec_targets,
         std::set<std::string> const &dlms_targets,
-        std::vector<std::string> const &writer) {
+        std::set<std::string> const &writer) {
 
         auto channel = ctl.create_named_channel_with_ref<network>(
             "network",
@@ -421,7 +421,7 @@ namespace smf {
             node_name,
             model,
             std::move(tgl),
-            config_types,
+            // config_types,
             sml_targets,
             iec_targets,
             dlms_targets,

@@ -37,11 +37,10 @@ namespace smf {
             std::string const &model,
             ipt::toggle::server_vec_t &&,
             std::chrono::seconds delay,
-            std::vector<std::string> const &,
             std::set<std::string> const &,
             std::set<std::string> const &,
             std::set<std::string> const &,
-            std::vector<std::string> const &writer);
+            std::set<std::string> const &writer);
 
         void start_sml_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
         void start_sml_xml(
