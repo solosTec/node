@@ -22,8 +22,7 @@ namespace smf {
     /**
      * make configuration changes persistent
      */
-    class persistence //: public cyng::slot_interface
-    {
+    class persistence {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<

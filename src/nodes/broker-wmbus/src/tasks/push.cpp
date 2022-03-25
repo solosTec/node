@@ -60,8 +60,7 @@ namespace smf {
     , channels_()
     , sml_generator_()
     {
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "send.sml", "send.mbus", "send.dlms", "channel.open"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -196,8 +195,7 @@ namespace smf {
             //
             //  reconnect in 1 minute
             //
-            auto sp = channel_.lock();
-            if (sp) {
+            if (auto sp = channel_.lock(); sp) {
                 CYNG_LOG_INFO(logger_, "[push] reconnect in one minute");
                 sp->suspend(std::chrono::minutes(1), "connect");
             } else {

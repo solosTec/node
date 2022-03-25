@@ -27,7 +27,8 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(cyng::buffer_t)>,
-            std::function<void(std::string)>, //	reset_target_channels
+            std::function<void(void)>,        //	reset_target_channels
+            std::function<void(std::string)>, //	add_target_channel
             std::function<void(void)>,        //	update_statistics
             std::function<void(cyng::eod)>>;
 
@@ -50,11 +51,28 @@ namespace smf {
         void stop(cyng::eod);
 
         /**
-         * incoming raw data from serial interface
+         * incoming raw wireless M-Bus data from serial interface
+         * "receive"
          */
         void receive(cyng::buffer_t);
-        void reset_target_channels(std::string);
+
+        /** @"reset-data-sinks"
+         *
+         * Remove all data sinks
+         */
+        void reset_target_channels();
+
+        /** @"add-data-sink"
+         *
+         * Add a new listener task
+         */
+        void add_target_channel(std::string);
+
+        /**
+         * "update-statistics"
+         */
         void update_statistics();
+
         void flash_led(std::chrono::milliseconds, std::size_t);
 
         /**
@@ -78,6 +96,10 @@ namespace smf {
          * blocklist with IP addresses
          */
         cfg_blocklist cfg_blocklist_;
+
+        /**
+         * GPIO configuration
+         */
         cfg_gpio cfg_gpio_;
 
         /**
@@ -88,9 +110,16 @@ namespace smf {
         /**
          * broker list
          */
-        std::vector<cyng::channel_ptr> targets_;
+        std::set<std::string> targets_;
 
+        /**
+         * simple statistics calculation
+         */
         std::map<std::string, access_data> access_times_;
+
+        /**
+         * accumulated bytes since last statics update
+         */
         std::size_t accumulated_bytes_;
     };
 } // namespace smf

@@ -32,8 +32,7 @@ namespace smf {
 		, logger_(logger)
         , client_(wp_client)
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             std::size_t slot{0};
             sp->set_channel_name("run", slot++);
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");

@@ -34,8 +34,8 @@ namespace smf {
         , protocol_(protocol)
         , cert_(cert)
         , db_(db) {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

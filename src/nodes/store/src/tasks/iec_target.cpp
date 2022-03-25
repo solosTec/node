@@ -27,17 +27,11 @@ namespace smf {
         , bus_(bus)
         , writers_()
         , channel_list_() {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"register", "receive", "add"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
-    }
-
-    iec_target::~iec_target() {
-#ifdef _DEBUG_STORE
-        std::cout << "iec_target(~)" << std::endl;
-#endif
     }
 
     void iec_target::stop(cyng::eod) {}
@@ -64,26 +58,18 @@ namespace smf {
             //  create consumer (parser)
             //
             auto const r = channel_list_.emplace(
-                std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(logger_, writers_));
+                std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(ctl_, logger_, writers_));
             if (r.second) {
                 r.first->second.parser_.read(data.begin(), data.end());
             }
         }
     }
 
-    void iec_target::add_writer(std::string name) {
-        auto channels = ctl_.get_registry().lookup(name);
-        if (channels.empty()) {
-            CYNG_LOG_WARNING(logger_, "[iec] writer " << name << " not found");
-        } else {
-            writers_.insert(writers_.end(), channels.begin(), channels.end());
-            BOOST_ASSERT(channel_.lock());
-            CYNG_LOG_INFO(logger_, "[iec] \"" << channel_.lock()->get_name() << "\" + writer " << name << " #" << writers_.size());
-        }
-    }
+    void iec_target::add_writer(std::string name) { writers_.insert(name); }
 
-    consumer::consumer(cyng::logger logger, std::vector<cyng::channel_weak> writers)
-        : logger_(logger)
+    consumer::consumer(cyng::controller &ctl, cyng::logger logger, std::set<std::string> const &writers)
+        : ctl_(ctl)
+        , logger_(logger)
         , writers_(writers)
         , parser_(
               [this](cyng::obis code, std::string value, std::string unit) {
@@ -105,14 +91,17 @@ namespace smf {
                   //    send to writer(s)
                   //
                   for (auto writer : writers_) {
-                      auto sp = writer.lock();
-                      if (sp) {
-                          sp->dispatch("open", std::string(id_));
-                          for (auto const &readout : data_) {
-                              sp->dispatch("store", readout.first, readout.second.first, readout.second.second);
-                          }
-                          sp->dispatch("commit");
+                      ctl_.get_registry().dispatch(writer, "open", std::string(id_));
+                      for (auto const &readout : data_) {
+                          ctl_.get_registry().dispatch(
+                              writer,
+                              "store",
+                              readout.first,        // obis code
+                              readout.second.first, //  key
+                              readout.second.second //  value
+                          );
                       }
+                      ctl_.get_registry().dispatch(writer, "commit");
                   }
 
                   //

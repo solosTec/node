@@ -53,8 +53,7 @@ namespace smf {
               std::move(blocklist),
               std::move(redirects_intrinsic),
               auths) {
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "listen"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }

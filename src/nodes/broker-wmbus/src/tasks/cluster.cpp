@@ -38,8 +38,7 @@ namespace smf {
 		, db_(std::make_shared<db>(store_, logger_, tag_))
 		, server_(ctl, logger, bus_, db_, client_timeout, client_out)
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "listen"}); //	wmbus_server
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }

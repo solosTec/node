@@ -57,8 +57,7 @@ namespace smf {
         , id_(0u, 0u)
         , buffer_write_()
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "open", "close", "push", "channel.open", "channel.close"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -138,8 +137,7 @@ namespace smf {
         //
         //  send update status to client
         //
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             registry_.dispatch(client_task_, "channel.open", success, sp->get_name(), channel, source);
         }
     }

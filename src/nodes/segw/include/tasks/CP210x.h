@@ -19,8 +19,11 @@ namespace smf {
     class CP210x {
         template <typename T> friend class cyng::task;
 
-        using signatures_t =
-            std::tuple<std::function<void(cyng::eod)>, std::function<void(cyng::buffer_t)>, std::function<void(std::string)>>;
+        using signatures_t = std::tuple<
+            std::function<void(cyng::buffer_t)>, // "receive"
+            std::function<void(void)>,           //	reset_target_channels
+            std::function<void(std::string)>,    //	add_target_channel
+            std::function<void(cyng::eod)>>;
 
       public:
         CP210x(cyng::channel_weak, cyng::controller &ctl, cyng::logger);
@@ -38,10 +41,17 @@ namespace smf {
          */
         void receive(cyng::buffer_t);
 
-        /**
-         * reset target channels
+        /** @"reset-data-sinks"
+         *
+         * Remove all data sinks
          */
-        void reset_target_channels(std::string);
+        void reset_target_channels();
+
+        /** @"add-data-sink"
+         *
+         * Add a new listener task
+         */
+        void add_target_channel(std::string);
 
       private:
         signatures_t sigs_;
@@ -55,7 +65,10 @@ namespace smf {
 
         hci::parser parser_;
 
-        std::vector<cyng::channel_ptr> targets_;
+        /**
+         * listener tasks
+         */
+        std::set<std::string> targets_;
     };
 
 } // namespace smf

@@ -43,8 +43,8 @@ namespace smf {
         , store_(cache)
         , store_map_()
         , sql_map_() {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"open", "load", "update", "insert", "remove", "clear"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
@@ -323,7 +323,7 @@ namespace smf {
                 return boost::algorithm::equals(m.get_name(), name);
             });
             if (pos != vec.end()) {
-                recreate_table(db, * pos);
+                recreate_table(db, *pos);
             } else {
                 //
                 //  take credit of non-cached tables
@@ -331,7 +331,7 @@ namespace smf {
                 auto const m = config::get_table_cfg_set();
                 if (boost::algorithm::equals(m.get_name(), name)) {
                     return recreate_table(db, m);
-                } 
+                }
                 std::cerr << "**error: " << name << " not found" << std::endl;
             }
 

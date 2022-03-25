@@ -384,9 +384,9 @@ namespace smf {
             std::move(tgl),
             std::chrono::seconds(delay),
             config_types,
-            target_sml,
-            target_iec,
-            target_dlms,
+            {target_sml.begin(), target_sml.end()},
+            {target_iec.begin(), target_iec.end()},
+            {target_dlms.begin(), target_dlms.end()},
             writer);
     }
 
@@ -408,9 +408,9 @@ namespace smf {
         ipt::toggle::server_vec_t &&tgl,
         std::chrono::seconds delay,
         std::vector<std::string> const &config_types,
-        std::vector<std::string> const &sml_targets,
-        std::vector<std::string> const &iec_targets,
-        std::vector<std::string> const &dlms_targets,
+        std::set<std::string> const &sml_targets,
+        std::set<std::string> const &iec_targets,
+        std::set<std::string> const &dlms_targets,
         std::vector<std::string> const &writer) {
 
         auto channel = ctl.create_named_channel_with_ref<network>(

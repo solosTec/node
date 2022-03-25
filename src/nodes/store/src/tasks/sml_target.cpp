@@ -6,6 +6,7 @@
  */
 #include <smf/mbus/server_id.h>
 #include <smf/obis/db.h>
+
 #include <tasks/sml_target.h>
 
 #include <cyng/io/hex_dump.hpp>
@@ -60,8 +61,8 @@ namespace smf {
                 break;
             }
         }) {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"register", "receive", "add"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -77,16 +78,7 @@ namespace smf {
 
     void sml_target::register_target(std::string name) { bus_.register_target(name, channel_); }
 
-    void sml_target::add_writer(std::string name) {
-        auto channels = ctl_.get_registry().lookup(name);
-        if (channels.empty()) {
-            CYNG_LOG_WARNING(logger_, "[sml] writer " << name << " not found");
-        } else {
-            writers_.insert(writers_.end(), channels.begin(), channels.end());
-            BOOST_ASSERT(channel_.lock());
-            CYNG_LOG_INFO(logger_, "[sml] \"" << channel_.lock()->get_name() << "\" + writer " << name << " #" << writers_.size());
-        }
-    }
+    void sml_target::add_writer(std::string name) { writers_.insert(name); }
 
     void sml_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data, std::string target) {
 
@@ -114,10 +106,8 @@ namespace smf {
 
         CYNG_LOG_TRACE(logger_, "[sml] open response " << srv_id_to_str(std::get<1>(tpl)) << "*" << std::get<3>(tpl));
         for (auto writer : writers_) {
-            auto sp = writer.lock();
-            //  send cliend and server ID
-            if (sp)
-                sp->dispatch("open.response", std::get<1>(tpl), std::get<3>(tpl));
+            //  send client and server ID
+            ctl_.get_registry().dispatch(writer, "open.response", std::get<1>(tpl), std::get<3>(tpl));
         }
     }
     void sml_target::close_response(std::string const &trx, cyng::tuple_t const &msg) {
@@ -149,18 +139,29 @@ namespace smf {
         //  send to writers
         //
         for (auto writer : writers_) {
-            auto sp = writer.lock();
-            if (sp)
-                sp->dispatch(
-                    "get.profile.list.response",
-                    trx,
-                    srv, //  [buffer_t] server id
-                    act, //  [cyng::object] actTime
-                    // std::get<2>(r), //  [u32] regPeriod
-                    stat, //  [u32] status
-                    path, //  [obis_path_t] path
-                    pmap  //  [std::map<cyng::obis, cyng::param_map_t>] values
-                );
+            ctl_.get_registry().dispatch(
+                writer,
+                "get.profile.list.response",
+                trx,
+                srv, //  [buffer_t] server id
+                act, //  [cyng::object] actTime
+                // std::get<2>(r), //  [u32] regPeriod
+                stat, //  [u32] status
+                path, //  [obis_path_t] path
+                pmap  //  [std::map<cyng::obis, cyng::param_map_t>] values
+            );
+            // auto sp = writer.lock();
+            // if (sp)
+            //     sp->dispatch(
+            //         "get.profile.list.response",
+            //         trx,
+            //         srv, //  [buffer_t] server id
+            //         act, //  [cyng::object] actTime
+            //         // std::get<2>(r), //  [u32] regPeriod
+            //         stat, //  [u32] status
+            //         path, //  [obis_path_t] path
+            //         pmap  //  [std::map<cyng::obis, cyng::param_map_t>] values
+            //     );
         }
     }
 
@@ -170,9 +171,6 @@ namespace smf {
         //  ToDo: send to writers
         //
         for (auto writer : writers_) {
-            auto sp = writer.lock();
-            // if (sp)
-            //    sp->dispatch("get.proc.parameter.response");
         }
     }
 
@@ -202,17 +200,15 @@ namespace smf {
         //  send to writers
         //
         for (auto writer : writers_) {
-            auto sp = writer.lock();
-            if (sp)
-                sp->dispatch(
-                    "get.profile.list.response",
-                    trx,
-                    std::get<1>(r),                      //  [buffer_t] server id
-                    std::chrono::system_clock::now(),    //  [cyng::object] actTime
-                    std::uint32_t(0),                    //  [u32] status
-                    cyng::obis_path_t({std::get<2>(r)}), //  [obis_path_t] path
-                    pmap                                 //  [std::map<cyng::obis, cyng::param_map_t>] values
-                );
+            ctl_.get_registry().dispatch(
+                writer,
+                "get.profile.list.response",
+                trx,
+                std::get<1>(r),                      //  [buffer_t] server id
+                std::chrono::system_clock::now(),    //  [cyng::object] actTime
+                std::uint32_t(0),                    //  [u32] status
+                cyng::obis_path_t({std::get<2>(r)}), //  [obis_path_t] path
+                pmap);
         }
     }
 

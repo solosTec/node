@@ -94,8 +94,8 @@ namespace smf {
             }),
           reconnect_(ctl_.create_channel_with_ref<reconnect>(logger_, channel_)),
           retry_counter_{3} {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names(
                 {"init", "start", "connect", "add.meter", "remove.meter", "shutdown", "channel.open", "channel.close"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
@@ -162,11 +162,8 @@ namespace smf {
         //  stop push task(s)
         //
         mgr_.loop([&, this](meter_state const &state) {
-            auto cps = ctl_.get_registry().lookup(state.id_);
-            for (auto cp : cps) {
-                CYNG_LOG_WARNING(logger_, task_name << " stops " << cp->get_name() << " #" << cp->get_id());
-                cp->stop();
-            }
+            ctl_.get_registry().stop(state.id_);
+            CYNG_LOG_WARNING(logger_, task_name << " stops task " << state.id_);
         });
     }
 
@@ -224,8 +221,7 @@ namespace smf {
     }
 
     void client::add_meter(std::string name, cyng::key_t key) {
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             mgr_.add(name, key);
             CYNG_LOG_INFO(logger_, "[" << sp->get_name() << "] add meter #" << mgr_.size() << ": " << name);
         }
@@ -237,8 +233,7 @@ namespace smf {
         //  push task will be stopped by cluster task
         //
 
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             mgr_.remove(name);
             CYNG_LOG_INFO(logger_, "[" << sp->get_name() << "] remove meter #" << mgr_.size() << ": " << name);
         }
@@ -248,8 +243,7 @@ namespace smf {
         interval_ = interval;
     }
     void client::start() {
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
 
             //
             //  calculate next readout time

@@ -221,11 +221,12 @@ namespace smf {
 
         void stop_tasks(cyng::logger logger, cyng::registry &reg, std::string name) {
 
-            auto const channels = reg.lookup(name);
-            CYNG_LOG_INFO(logger, "stop " << channels.size() << " task(s) [" << name << "]");
-            for (auto channel : channels) {
-                channel->stop();
-            }
+            reg.lookup(name, [=](std::vector<cyng::channel_ptr> channels) mutable {
+                CYNG_LOG_INFO(logger, "stop " << channels.size() << " task(s) [" << name << "]");
+                for (auto channel : channels) {
+                    channel->stop();
+                }
+            });
         }
 
     } // namespace config

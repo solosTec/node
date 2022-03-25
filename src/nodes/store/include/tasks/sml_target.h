@@ -54,7 +54,7 @@ namespace smf {
         /**
          * vector of SML writers
          */
-        std::vector<cyng::channel_weak> writers_;
+        std::set<std::string> writers_;
         sml::unpack parser_;
     };
 

@@ -27,8 +27,7 @@ namespace smf {
 		, logger_(logger)
 		, path_(p / "value")
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             //  starts with 1!
             std::size_t slot{1};
             sp->set_channel_name("turn", slot++);
@@ -64,8 +63,8 @@ namespace smf {
 
         turn((counter % 2) == 0);
 
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
+            //  repeat
             sp->suspend(ms, 2, cyng::make_tuple(ms, counter - 1));
         }
     }
@@ -73,8 +72,7 @@ namespace smf {
     void gpio::blinking(std::chrono::milliseconds ms) {
 
         flip_gpio(path_);
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->suspend(ms, 3, cyng::make_tuple(ms));
         }
     }
@@ -83,9 +81,9 @@ namespace smf {
         //
         //	stop active timer
         //
-        auto sp = channel_.lock();
-        if (sp)
+        if (auto sp = channel_.lock(); sp) {
             sp->cancel_timer();
+        }
 
         // CYNG_LOG_TRACE(logger_, "turn GPIO [" << path_ << "] " << (on ? "on" : "off"));
 

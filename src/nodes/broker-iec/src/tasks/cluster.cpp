@@ -47,8 +47,7 @@ namespace smf {
         , dep_key_()
         , stash_(ctl.get_ctx())
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
@@ -324,11 +323,7 @@ namespace smf {
                         //  stop push task
                         //
                         CYNG_LOG_WARNING(logger_, "[cluster] stop push task " << name);
-                        auto const cpv = ctl_.get_registry().lookup(name);
-                        for (auto cp : cpv) {
-                            stash_.unlock(cp->get_id());
-                            cp->stop();
-                        }
+                        stash_.stop(name); //  unlock and stop
                     }
                 }
             },
@@ -468,17 +463,11 @@ namespace smf {
                         //
                         auto const task_name = make_task_name(host, port);
 
-                        auto cps = ctl_.get_registry().lookup(task_name);
-                        CYNG_LOG_WARNING(logger_, "[cluster] stop task: " << task_name << " #" << cps.size());
-                        for (auto cp : cps) {
-                            cp->dispatch("shutdown");
-                        }
+                        ctl_.get_registry().dispatch(task_name, "shutdown");
 #ifdef _DEBUG
                         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 #endif
-                        for (auto cp : cps) {
-                            cp->stop();
-                        }
+                        ctl_.get_registry().stop(task_name);
                     }
                 },
                 cyng::access::write("gwIEC"));

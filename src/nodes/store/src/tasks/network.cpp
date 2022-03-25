@@ -28,9 +28,9 @@ namespace smf {
         std::string const &model,
         ipt::toggle::server_vec_t &&tgl,
         std::vector<std::string> const &config_types,
-        std::vector<std::string> const &sml_targets,
-        std::vector<std::string> const &iec_targets,
-        std::vector<std::string> const &dlms_targets,
+        std::set<std::string> const &sml_targets,
+        std::set<std::string> const &iec_targets,
+        std::set<std::string> const &dlms_targets,
         std::vector<std::string> const &writer)
         : sigs_{std::bind(&network::connect, this), std::bind(&network::stop, this, std::placeholders::_1)}
         , channel_(wp)
@@ -51,17 +51,11 @@ namespace smf {
               std::bind(&network::ipt_stream, this, std::placeholders::_1),
               std::bind(&network::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
         , stash_(ctl_.get_ctx()) {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
-    }
-
-    network::~network() {
-#ifdef _DEBUG_STORE
-        std::cout << "network(~)" << std::endl;
-#endif
     }
 
     void network::stop(cyng::eod) {

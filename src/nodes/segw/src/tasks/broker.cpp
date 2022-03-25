@@ -41,8 +41,8 @@ namespace smf {
         , dispatcher_(ctl.get_ctx())
         , read_buffer_()
         , write_buffer_() {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"start", "receive", "check-status"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -178,8 +178,8 @@ namespace smf {
                 break;
             }
 
-            auto sp = channel_.lock();
-            if (sp) {
+            if (auto sp = channel_.lock(); sp) {
+                //  repeat
                 sp->suspend(
                     timeout,
                     "check-status",
@@ -349,8 +349,8 @@ namespace smf {
         , dispatcher_(ctl.get_ctx())
         , read_buffer_()
         , write_buffer_() {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             std::size_t slot{0};
             sp->set_channel_name("receive", slot++);
             sp->set_channel_name("close.socket", slot++);

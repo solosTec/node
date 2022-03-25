@@ -46,8 +46,7 @@ namespace smf {
         , rnd_dist_(-100.0, 500.0)
 #endif
     {
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"open.response", "close.response", "get.profile.list.response", "get.proc.parameter.response"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }

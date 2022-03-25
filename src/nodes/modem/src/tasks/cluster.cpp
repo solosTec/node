@@ -36,8 +36,7 @@ namespace smf {
 		, bus_(ctl.get_ctx(), logger, std::move(tgl), node_name, tag, NO_FEATURES, this)
 		, server_(ctl.get_ctx(), logger, auto_answer, guard, timeout, bus_, fabric_)
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "listen"});
         }
 

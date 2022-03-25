@@ -23,8 +23,8 @@ namespace smf {
         , cfg_(config)
         , storage_(s)
         , distributor_(logger, ctl, config) {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"db.insert", "db.modify", "db.remove", "db.clear", "db.trx", "power-return"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -61,6 +61,8 @@ namespace smf {
             if (!storage_.cfg_insert(key.at(0), data.at(0))) {
                 CYNG_LOG_WARNING(logger_, "[persistence] insert " << tbl->meta().get_name() << " <" << key.at(0) << "> failed");
             }
+        } else if (boost::algorithm::equals(tbl->meta().get_name(), "meter")) {
+            //  convert data
         } else {
             // use default mechanism
         }

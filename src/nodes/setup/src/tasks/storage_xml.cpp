@@ -36,8 +36,7 @@ namespace smf {
 		, logger_(logger)
 		, store_(cache)
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"open", "update", "insert", "remove", "clear"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }

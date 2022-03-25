@@ -26,8 +26,8 @@ namespace smf {
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger) {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"open", "store", "commit"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }

@@ -30,8 +30,7 @@ namespace smf {
 		, logger_(logger)
 		, cb_(cb)
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "disconnect", "receive"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -44,9 +43,7 @@ namespace smf {
         //
         //  Add listener to LMN
         //
-        auto sp = channel_.lock();
-        BOOST_ASSERT(sp);
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             //
             //	register as listener on LMN port 1
             //
@@ -60,9 +57,7 @@ namespace smf {
         //
         //  remove as listener from LMN
         //
-        auto sp = channel_.lock();
-        BOOST_ASSERT(sp);
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             //
             //	remove as listener from LMN
             //

@@ -8,6 +8,7 @@
 #include <tasks/CP210x.h>
 #include <tasks/bridge.h>
 #include <tasks/broker.h>
+#include <tasks/en13757.h>
 #include <tasks/filter.h>
 #include <tasks/gpio.h>
 #include <tasks/lmn.h>
@@ -55,8 +56,8 @@ namespace smf {
         , router_(ctl, cfg_, logger)
         , sml_(ctl, cfg_, logger)
         , stash_(ctl.get_ctx()) {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"start"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -125,7 +126,7 @@ namespace smf {
         //
         //	filter (wireless M-Bus)
         //
-        CYNG_LOG_INFO(logger_, "initialize: filter");
+        CYNG_LOG_INFO(logger_, "initialize: filter (wireless M-Bus)");
         init_filter();
 
         //
@@ -325,15 +326,7 @@ namespace smf {
             cyng::access::write("cfg"));
     }
 
-    void bridge::stop_cache_persistence() {
-
-        auto scp = ctl_.get_registry().lookup("persistence");
-        for (auto sp : scp) {
-            CYNG_LOG_INFO(logger_, "[persistence] stop #" << sp->get_id());
-            stash_.unlock(sp->get_id());
-            sp->stop();
-        }
-    }
+    void bridge::stop_cache_persistence() { stash_.stop("persistence"); }
 
     void bridge::load_configuration() {
 
@@ -452,6 +445,9 @@ namespace smf {
             BOOST_ASSERT(channel->is_open());
             stash_.lock(channel);
 
+            CYNG_LOG_TRACE(logger_, "reset-data-sinks -> [" << port << "]");
+            channel->dispatch("reset-data-sinks");
+
             cfg_blocklist blocklist(cfg_, type);
 
             if (boost::algorithm::equals(cfg.get_hci(), "CP210x")) {
@@ -466,9 +462,8 @@ namespace smf {
                 stash_.lock(hci);
 
                 //
-                //	init CP210x
+                //	init LMN
                 //
-                channel->dispatch("reset-data-sinks");
                 channel->dispatch("add-data-sink", hci->get_id()); //  this is the only dataa sink
                 channel->dispatch("open");
                 channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
@@ -476,7 +471,7 @@ namespace smf {
                 //
                 //	CP210x will forward incoming data to filter
                 //
-                hci->dispatch("reset-data-sinks", cyng::make_tuple(blocklist.get_task_name()));
+                hci->dispatch("add-data-sink", blocklist.get_task_name());
 
             } else {
 
@@ -484,20 +479,19 @@ namespace smf {
                 //	prepare broker to distribute data received
                 //  from this serial port
                 //
-                CYNG_LOG_TRACE(logger_, "reset-data-sinks -> [" << port << "]");
-                channel->dispatch("reset-data-sinks");
 
                 //
                 //  get a list of filter tasks
                 //
                 auto const task_name = blocklist.get_task_name();
-                auto const targets = ctl_.get_registry().lookup(task_name);
-                for (auto sp : targets) {
-                    if (sp) {
-                        CYNG_LOG_TRACE(logger_, "add-data-sink -> [" << port << "] " << sp->get_name() << "#" << sp->get_id());
-                        channel->dispatch("add-data-sink", sp->get_id());
+                ctl_.get_registry().lookup(task_name, [this, channel, port](std::vector<cyng::channel_ptr> targets) {
+                    for (auto sp : targets) {
+                        if (sp) {
+                            CYNG_LOG_TRACE(logger_, "add-data-sink -> [" << port << "] " << sp->get_name() << "#" << sp->get_id());
+                            channel->dispatch("add-data-sink", sp->get_id());
+                        }
                     }
-                }
+                });
 
                 //
                 //  start LMN GPIO statistics
@@ -527,12 +521,7 @@ namespace smf {
 
         if (cfg.is_enabled()) {
 
-            auto scp = ctl_.get_registry().lookup(port);
-            for (auto sp : scp) {
-                CYNG_LOG_INFO(logger_, "stop LMN [" << port << "] #" << sp->get_id());
-                stash_.unlock(sp->get_id());
-                sp->stop();
-            }
+            stash_.stop(port); //  unlock and stop
 
             cfg_blocklist blocklist(cfg_, type);
 
@@ -543,12 +532,7 @@ namespace smf {
                 //
                 //	stop CP210x parser
                 //
-                auto scp = ctl_.get_registry().lookup("CP210x");
-                for (auto sp : scp) {
-                    CYNG_LOG_INFO(logger_, "[CP210x] stop #" << sp->get_id());
-                    stash_.unlock(sp->get_id());
-                    sp->stop();
-                }
+                stash_.stop("CP210x"); //  unlock and stop
             }
         } else {
             CYNG_LOG_TRACE(logger_, "LMN [" << port << "] is not enabled");
@@ -626,13 +610,7 @@ namespace smf {
 
             //	All broker for this port have the same name.
             auto const name = cfg.get_task_name();
-            auto scp = ctl_.get_registry().lookup(name);
-            for (auto sp : scp) {
-                auto const id = sp->get_id();
-                CYNG_LOG_INFO(logger_, "[broker " << name << "] stop #" << id);
-                stash_.unlock(id);
-                sp->stop();
-            }
+            stash_.stop(name); //  unlock and stop
 
         } else {
             CYNG_LOG_TRACE(logger_, "[broker] " << port << " not running");
@@ -654,20 +632,41 @@ namespace smf {
         auto const task_name = cfg.get_task_name();
         CYNG_LOG_INFO(logger_, "create filter [" << task_name << "]");
 
-        auto channel = ctl_.create_named_channel_with_ref<filter>(task_name, ctl_, logger_, cfg_, type);
-        BOOST_ASSERT(channel->is_open());
-        stash_.lock(channel);
+        if (type == lmn_type::WIRELESS) {
+            //
+            //  start wireless M-Bus processor
+            //
+            auto channel_proc = ctl_.create_named_channel_with_ref<en13757>("EN-13757", ctl_, logger_, cfg_);
+            stash_.lock(channel_proc);
 
-        //
-        //	update statistics every second
-        //
-        channel->suspend(std::chrono::seconds(1), "update-statistics");
+            //
+            //  start filter for wireless M-Bus data (EN-13757)
+            //
+            auto channel_filter = ctl_.create_named_channel_with_ref<filter>(task_name, ctl_, logger_, cfg_, type);
+            BOOST_ASSERT(channel_filter->is_open());
+            stash_.lock(channel_filter);
 
-        //
-        //	broker tasks are target channels
-        //
-        cfg_broker broker_cfg(cfg_, type);
-        channel->dispatch("reset-data-sinks", cyng::make_tuple(broker_cfg.get_task_name()));
+            //
+            //	update statistics every second
+            //
+            channel_filter->suspend(std::chrono::seconds(1), "update-statistics");
+
+            //
+            //	broker tasks are target channels
+            //  examples:
+            //  broker@COM3
+            //  broker@/dev/ttyAPP0
+            //
+            //  Task "EN-13757" will be added automatically
+            //
+            cfg_broker broker_cfg(cfg_, type);
+            channel_filter->dispatch("reset-data-sinks"); //  clear listeners
+            channel_filter->dispatch("add-data-sink", broker_cfg.get_task_name());
+            channel_filter->dispatch("add-data-sink", "EN-13757");
+
+        } else {
+            CYNG_LOG_ERROR(logger_, "[filter] LMN type " << get_name(type) << " doesn't support filters");
+        }
     }
 
     void bridge::stop_filter() {
@@ -681,14 +680,7 @@ namespace smf {
 
         cfg_blocklist cfg(cfg_, type);
 
-        auto scp = ctl_.get_registry().lookup(cfg.get_task_name());
-        for (auto sp : scp) {
-            if (sp) {
-                CYNG_LOG_INFO(logger_, "[filter " << cfg.get_task_name() << "] stop #" << sp->get_id());
-                stash_.unlock(sp->get_id());
-                sp->stop();
-            }
-        }
+        stash_.stop(cfg.get_task_name()); //  unlock and stop
     }
 
     void bridge::init_gpio() {
@@ -736,14 +728,7 @@ namespace smf {
             auto const pins = cfg.get_pins();
             for (auto const pin : pins) {
                 auto const name = cfg_gpio::get_name(pin);
-                auto scp = ctl_.get_registry().lookup(name);
-                for (auto sp : scp) {
-                    if (sp) {
-                        CYNG_LOG_INFO(logger_, "[gpio " << name << "] stop #" << sp->get_id());
-                        stash_.unlock(sp->get_id());
-                        sp->stop();
-                    }
-                }
+                stash_.stop(name); //  unlock and stop
             }
         } else {
             CYNG_LOG_TRACE(logger_, "[gpio] not running");
@@ -813,14 +798,7 @@ namespace smf {
     void bridge::stop_nms_server() {
         cfg_nms cfg(cfg_);
         if (cfg.is_enabled()) {
-            auto scp = ctl_.get_registry().lookup("nms");
-            for (auto sp : scp) {
-                if (sp) {
-                    CYNG_LOG_INFO(logger_, "[NMS] stop #" << sp->get_id());
-                    stash_.unlock(sp->get_id());
-                    sp->stop();
-                }
-            }
+            stash_.stop("nms"); //  unlock and stop
         } else {
             CYNG_LOG_TRACE(logger_, "[NMS] not running");
         }
@@ -934,12 +912,7 @@ namespace smf {
             CYNG_LOG_INFO(logger_, "stop listener for port [" << cfg.get_port_name() << "] " << cfg);
 
             auto const name = cfg.get_task_name();
-            auto scp = ctl_.get_registry().lookup(name);
-            for (auto sp : scp) {
-                CYNG_LOG_INFO(logger_, "[" << name << "] stop #" << sp->get_id());
-                stash_.unlock(sp->get_id());
-                sp->stop();
-            }
+            stash_.stop(name); //  unlock and stop
 
         } else {
             CYNG_LOG_TRACE(logger_, "[redirector] not running");

@@ -5,8 +5,9 @@
  *
  */
 
-#include <smf/mbus/flag_id.h>
 #include <tasks/filter.h>
+
+#include <smf/mbus/flag_id.h>
 
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
@@ -28,9 +29,10 @@ namespace smf {
 		, lmn_type type)
 	: sigs_{
 			std::bind(&filter::receive, this, std::placeholders::_1),	//	0
-			std::bind(&filter::reset_target_channels, this, std::placeholders::_1),	//	1
-			std::bind(&filter::update_statistics, this),	//	2
-            std::bind(&filter::stop, this, std::placeholders::_1)		//	3
+			std::bind(&filter::reset_target_channels, this),	//	1 - "reset-data-sinks"
+            std::bind(&filter::add_target_channel, this, std::placeholders::_1),	//	2 - "add-data-sink"
+            std::bind(&filter::update_statistics, this),	//	3
+            std::bind(&filter::stop, this, std::placeholders::_1)		//	4
     }
 		, channel_(wp)
 		, ctl_(ctl)
@@ -64,9 +66,8 @@ namespace smf {
 		, accumulated_bytes_{ 0 }
 	{
 
-        auto sp = channel_.lock();
-        if (sp) {
-            sp->set_channel_names({"receive", "reset-data-sinks", "update-statistics"});
+        if (auto sp = channel_.lock(); sp) {
+            sp->set_channel_names({"receive", "reset-data-sinks", "add-data-sink", "update-statistics"});
 
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
             CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "]  ready");
@@ -113,20 +114,19 @@ namespace smf {
             accumulated_bytes_ += data.size();
 
             //
-            //	send data to broker
+            //	send data to broker / listener
             //
             for (auto target : targets_) {
-                CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] pass through " << target->get_name());
-                cyng::buffer_t tmp = data; //	copy
-                target->dispatch("receive", cyng::make_tuple(std::move(tmp)));
+                CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] pass through " << target);
+                //  we have to make a copy of "data"
+                ctl_.get_registry().dispatch(target, "receive", cyng::clone(data));
             }
         }
     }
 
-    void filter::reset_target_channels(std::string name) {
-        targets_ = ctl_.get_registry().lookup(name);
-        CYNG_LOG_INFO(logger_, "[" << cfg_blocklist_.get_task_name() << "] has " << targets_.size() << " x target(s): " << name);
-    }
+    void filter::reset_target_channels() { targets_.clear(); }
+
+    void filter::add_target_channel(std::string name) { targets_.insert(name); }
 
     void filter::check(mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &payload) {
 
@@ -149,7 +149,7 @@ namespace smf {
                     //  distribute valid data
                     //
                     for (auto target : targets_) {
-                        target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, t, payload)));
+                        ctl_.get_registry().dispatch(target, "receive", mbus::radio::restore_data(h, t, payload));
                     }
                 }
             } else {
@@ -170,7 +170,7 @@ namespace smf {
                         "[" << cfg_blocklist_.get_task_name() << "] send " << accumulated_bytes_ << " bytes to " << targets_.size()
                             << " target(s) in " << cfg_blocklist_.get_mode() << " mode");
                     for (auto target : targets_) {
-                        target->dispatch("receive", cyng::make_tuple(mbus::radio::restore_data(h, t, payload)));
+                        ctl_.get_registry().dispatch(target, "receive", mbus::radio::restore_data(h, t, payload));
                     }
                 }
             } else {
@@ -253,8 +253,9 @@ namespace smf {
             }
             accumulated_bytes_ = 0;
         }
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
+            //  repeat
             sp->suspend(std::chrono::seconds(1), "update-statistics");
         }
     }

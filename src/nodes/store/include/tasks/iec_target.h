@@ -20,12 +20,13 @@ namespace smf {
 
     class consumer {
       public:
-        consumer(cyng::logger logger, std::vector<cyng::channel_weak> writers);
+        consumer(cyng::controller &, cyng::logger logger, std::set<std::string> const &writers);
         consumer(consumer const &) = delete;
 
       public:
+        cyng::controller &ctl_;
         cyng::logger logger_;
-        std::vector<cyng::channel_weak> writers_;
+        std::set<std::string> const writers_;
         iec::parser parser_;
         std::map<cyng::obis, std::pair<std::string, std::string>> data_;
         std::string id_; //!< meter id (8 characters)
@@ -45,7 +46,7 @@ namespace smf {
       public:
         iec_target(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger, ipt::bus &);
         iec_target(iec_target const &) = delete;
-        ~iec_target();
+        ~iec_target() = default;
 
         void stop(cyng::eod);
 
@@ -60,7 +61,7 @@ namespace smf {
         cyng::controller &ctl_;
         cyng::logger logger_;
         ipt::bus &bus_;
-        std::vector<cyng::channel_weak> writers_;
+        std::set<std::string> writers_;
         channel_list channel_list_;
     };
 

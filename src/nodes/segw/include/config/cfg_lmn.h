@@ -38,12 +38,10 @@ namespace smf {
             return "MOBILE";
         case lmn_type::LORA:
             return "LORA";
-        case lmn_type::OTHER:
-            return "OTHER";
         default:
             break;
         }
-        return "";
+        return "OTHER";
     }
 
     /**

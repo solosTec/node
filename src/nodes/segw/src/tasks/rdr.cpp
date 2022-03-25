@@ -30,8 +30,8 @@ namespace smf {
             , registry_(ctl.get_registry())
             , acceptor_(ctl.get_ctx())
             , session_counter_{0} {
-            auto sp = channel_.lock();
-            if (sp) {
+
+            if (auto sp = channel_.lock(); sp) {
                 sp->set_channel_names({"start", "halt", "restart"});
                 CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
             }
@@ -126,18 +126,17 @@ namespace smf {
                             //
                             //  stop/start other server of the same type
                             //
-                            auto sp = channel_.lock();
-                            if (sp && session_counter_ == 0) {
+                            if (auto sp = channel_.lock(); sp && session_counter_ == 0) {
                                 cfg_listener cfg(cfg_, type_);
                                 auto const delay = cfg.get_delay();
                                 CYNG_LOG_INFO(logger_, "[RDR] #" << cp->get_id() << " restart other listener");
-                                auto const count = ctl_.get_registry().dispatch_exclude(sp, "start", cyng::make_tuple(delay));
-                                if (count == 0) {
-                                    CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " no other listener available");
-                                } else {
-                                    CYNG_LOG_TRACE(
-                                        logger_, "[RDR] #" << cp->get_id() << " " << count << " other listener(s) restarted");
-                                }
+                                ctl_.get_registry().dispatch_exclude(sp, "start", cyng::make_tuple(delay));
+                                // if (count == 0) {
+                                //     CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " no other listener available");
+                                // } else {
+                                //     CYNG_LOG_TRACE(
+                                //         logger_, "[RDR] #" << cp->get_id() << " " << count << " other listener(s) restarted");
+                                // }
                             }
                         });
 
@@ -159,12 +158,13 @@ namespace smf {
                         auto cp = channel_.lock();
                         if (cp && session_counter_ == 1) {
                             CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " halt other listener(s)");
-                            auto const count = ctl_.get_registry().dispatch_exclude(cp, "halt", cyng::make_tuple());
-                            if (count == 0) {
-                                CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " no other listeners available");
-                            } else {
-                                CYNG_LOG_TRACE(logger_, "[RDR] #" << cp->get_id() << " " << count << " other listener(s) halted");
-                            }
+                            ctl_.get_registry().dispatch_exclude(cp, "halt", cyng::make_tuple());
+                            // if (count == 0) {
+                            //     CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " no other listeners available");
+                            // } else {
+                            //     CYNG_LOG_TRACE(logger_, "[RDR] #" << cp->get_id() << " " << count << " other listener(s)
+                            //     halted");
+                            // }
                         }
                     }
 

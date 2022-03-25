@@ -26,9 +26,9 @@ namespace smf {
         , logger_(logger)
         , wmbussp_(wmbussp)
         , timeout_(timeout) {
+
         BOOST_ASSERT(wmbussp_);
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"timeout", "defer"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }

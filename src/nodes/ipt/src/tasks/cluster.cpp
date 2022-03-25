@@ -38,8 +38,7 @@ namespace smf {
 		, bus_(ctl.get_ctx(), logger, std::move(tgl), node_name, tag, CONFIG_PROVIDER, this)
 		, server_(ctl.get_ctx(), logger, bus_, fabric_, sk, watchdog, timeout, query, client_id)
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "listen"});
         }
 

@@ -36,8 +36,8 @@ namespace smf {
         , bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, CONFIG_MANAGER, this)
         , store_()
         , storage_(start_data_store(ctl, logger, bus_, store_, storage_type, std::move(cfg_db))) {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }

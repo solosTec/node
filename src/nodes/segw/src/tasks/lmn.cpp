@@ -45,8 +45,7 @@ namespace smf {
 		, data_sinks_()
 		, accumulated_bytes_{0}
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names(
                 {"open",
                  "write",
@@ -157,9 +156,12 @@ namespace smf {
             }
             accumulated_bytes_ = 0;
         }
-        auto sp = channel_.lock();
-        if (sp)
-            sp->suspend(std::chrono::seconds(1), "update-statistics", cyng::make_tuple());
+
+        //  C++17 if
+        if (auto sp = channel_.lock(); sp) {
+            //  repeat each second
+            sp->suspend(std::chrono::seconds(1), "update-statistics");
+        }
     }
 
     void lmn::flash_led(std::chrono::milliseconds ms, std::size_t count) {

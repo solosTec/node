@@ -18,8 +18,7 @@ namespace smf {
         , logger_(logger)
         , cache_(cache)
         , trigger_(trigger) {
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"update"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -28,10 +27,10 @@ namespace smf {
     ping::~ping() {}
 
     void ping::update() {
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
 
             trigger_();
+            //  repeat
             sp->suspend(std::chrono::minutes(1), "update");
         }
     }

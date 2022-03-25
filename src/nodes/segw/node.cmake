@@ -45,6 +45,7 @@ set (segw_tasks
     include/tasks/forwarder.h
     include/tasks/nms.h
     include/tasks/rdr.h
+    include/tasks/en13757.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
@@ -55,6 +56,7 @@ set (segw_tasks
     src/tasks/forwarder.cpp
     src/tasks/nms.cpp
     src/tasks/rdr.cpp
+    src/tasks/en13757.cpp
 )
 
 set (segw_config

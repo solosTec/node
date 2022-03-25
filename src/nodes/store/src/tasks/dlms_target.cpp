@@ -23,8 +23,8 @@ namespace smf {
         , logger_(logger)
         , bus_(bus)
         , writer_() {
-        auto sp = channel_.lock();
-        if (sp) {
+
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"register", "receive", "add"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -47,13 +47,18 @@ namespace smf {
     }
 
     void dlms_target::add_writer(std::string name) {
-        auto channels = ctl_.get_registry().lookup(name);
-        if (channels.empty()) {
-            CYNG_LOG_WARNING(logger_, "[dlms] writer " << name << " not found");
-        } else {
-            writer_.insert(writer_.end(), channels.begin(), channels.end());
-            CYNG_LOG_INFO(logger_, "[dlms] add writer " << name << " #" << writer_.size());
-        }
+        //
+        //  ToDo: this is not thread safe and should be replaced by the dispatch() methods
+        //  of the task registry.
+        //
+        ctl_.get_registry().lookup(name, [=, this](std::vector<cyng::channel_ptr> channels) {
+            if (channels.empty()) {
+                CYNG_LOG_WARNING(logger_, "[dlms] writer " << name << " not found");
+            } else {
+                writer_.insert(writer_.end(), channels.begin(), channels.end());
+                CYNG_LOG_INFO(logger_, "[dlms] add writer " << name << " #" << writer_.size());
+            }
+        });
     }
 
 } // namespace smf

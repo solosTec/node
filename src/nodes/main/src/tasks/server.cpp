@@ -43,8 +43,7 @@ namespace smf {
 		, store_()
 		, cache_(store_, logger, tag)
 	{
-        auto sp = channel_.lock();
-        if (sp) {
+        if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"start"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -83,9 +82,9 @@ namespace smf {
             //
             //  retry
             //
-            auto sp = channel_.lock();
-            if (sp)
+            if (auto sp = channel_.lock(); sp) {
                 sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple(ep));
+            }
         }
     }
 

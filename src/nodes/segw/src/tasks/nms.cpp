@@ -24,8 +24,8 @@ namespace smf {
               logger_(logger),
               acceptor_(ctl.get_ctx()),
               session_counter_{0} {
-            auto sp = channel_.lock();
-            if (sp) {
+
+            if (auto sp = channel_.lock(); sp) {
                 sp->set_channel_names({"start"});
                 CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
             }
@@ -62,9 +62,10 @@ namespace smf {
                 //
                 //  retry
                 //
-                auto sp = channel_.lock();
-                if (sp)
+                if (auto sp = channel_.lock(); sp) {
+                    //  repeat
                     sp->suspend(std::chrono::seconds(12), "start", cyng::make_tuple(ep));
+                }
             }
         }
 
