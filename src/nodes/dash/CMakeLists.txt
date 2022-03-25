@@ -40,6 +40,7 @@ target_link_libraries(dash
         smf_http
         smf_mbus
         smf_sml
+        smf_obis
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
