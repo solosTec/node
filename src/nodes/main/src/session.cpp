@@ -522,42 +522,90 @@ namespace smf {
             }
         }
 
-        auto const b = cache_.get_store().modify(table_name, key, data, source);
+        if (cache_.get_store().modify(table_name, key, data, source)) {
 
-        if (b && boost::algorithm::equals(table_name, "meterIEC")) {
-            //
-            //  update "gwIEC" too
-            //
-            db_req_update_gw_iec(key, data, source);
-        } else if (b && boost::algorithm::equals(table_name, "gwIEC")) {
-            //
-            //  update "meterIEC" too
-            //
-            for (auto const &pm : data) {
-                if (boost::algorithm::equals(pm.first, "interval")) {
-                    db_req_update_meter_iec(key, data, source);
+            if (boost::algorithm::equals(table_name, "meterIEC")) {
+                //
+                //  update "gwIEC" too
+                //
+                db_req_update_gw_iec(key, data, source);
+            } else if (boost::algorithm::equals(table_name, "gwIEC")) {
+                //
+                //  update "meterIEC" too
+                //
+                for (auto const &pm : data) {
+                    if (boost::algorithm::equals(pm.first, "interval")) {
+                        db_req_update_meter_iec(key, data, source);
+                    }
+                }
+
+                db_req_update_meter_iec(key, data, source);
+
+            } else if (boost::algorithm::equals(table_name, "config")) {
+                //
+                //  propagate some special values into other tables
+                //
+                auto const pos = data.find("value");
+                if (pos != data.end()) {
+                    auto const name = cyng::value_cast<std::string>(key.at(0), "");
+                    if (boost::algorithm::equals(name, "def-IEC-interval")) {
+                        BOOST_ASSERT_MSG(pos->second.tag() == cyng::TC_MINUTE, "data type TC_MINUTE expected");
+                        if (pos->second.tag() == cyng::TC_MINUTE) {
+                            auto const interval = cyng::value_cast(pos->second, std::chrono::minutes(20));
+                            CYNG_LOG_INFO(
+                                logger_,
+                                "[session] " << protocol_layer_ << " overwrite IEC readout interval to " << interval.count()
+                                             << " minutes");
+                            update_iec_interval(std::chrono::duration_cast<std::chrono::seconds>(interval), source);
+                        }
+                    }
+                }
+            } else if (boost::algorithm::equals(table_name, "device")) {
+                auto const pos = data.find("id");
+                if (pos != data.end()) {
+                    //
+                    //  Insert as gateway if string starts with "swf-gw:"
+                    //
+                    auto const id = cyng::value_cast(pos->second, "");
+                    if (id.starts_with("swf-gw:") || id.starts_with("EMH-")) {
+                        //
+                        //  check if gateway already present
+                        //
+                        auto_insert_gateway(key, id, source);
+                    }
                 }
             }
-
-            db_req_update_meter_iec(key, data, source);
-
-        } else if (b && boost::algorithm::equals(table_name, "config")) {
-            //
-            //  propagate some special values into other tables
-            //
-            auto const pos = data.find("value");
-            if (!key.empty() && pos != data.end()) {
-                auto const name = cyng::value_cast<std::string>(key.at(0), "");
-                if (boost::algorithm::equals(name, "def-IEC-interval")) {
-                    auto const interval = std::chrono::seconds(cyng::numeric_cast<std::uint32_t>(pos->second, 20) * 60);
-                    CYNG_LOG_INFO(
-                        logger_,
-                        "[session] " << protocol_layer_ << " overwrite IEC readout interval to " << (interval.count() / 60)
-                                     << " minutes");
-                    update_iec_interval(interval, source);
-                }
-            }
+        } else {
+            CYNG_LOG_ERROR(logger_, "[session] " << protocol_layer_ << " update on table " << table_name << " failed");
         }
+    }
+
+    void session::auto_insert_gateway(cyng::key_t key, std::string id, boost::uuids::uuid source) {
+
+        //  28c4b783-f35d-49f1-9027-a75dbae9f5e2|1|0500153B02517E|EMH|2459307.01790509|06441734|00:00:00:00:00:00|00:00:00:00:00:00|pw|root|A815408943050131|operator|operator
+        cache_.get_store().access(
+            [&](cyng::table *tbl_gw) {
+                if (!tbl_gw->exist(key)) {
+                    tbl_gw->insert(
+                        key,
+                        cyng::data_generator(
+                            "05000000000000",                 // server id
+                            "---",                            // manufacturer
+                            std::chrono::system_clock::now(), // TOM
+                            "0",                              // fabrik nummer
+                            cyng::mac48(),                    // MAC of service interface
+                            cyng::mac48(),                    // MAC of service interface
+                            "pw",                             // Default PW
+                            "root",                           // root PW
+                            "",                               // W-Mbus ID
+                            "operator",                       // userName
+                            "operator"                        // userPwd
+                            ),
+                        1,
+                        source);
+                }
+            },
+            cyng::access::write("gateway"));
     }
 
     void session::update_iec_interval(std::chrono::seconds interval, boost::uuids::uuid source) {

@@ -111,6 +111,18 @@ namespace smf {
         cyng::meta_store get_config();
 
         /**
+         * similar to "config" table but with additional
+         * type info to reconstruct the original data type.
+         */
+        cyng::meta_sql get_table_config();
+
+        /**
+         * Same as get_table_config() but allows to specify
+         * a table name other than "TConfig".
+         */
+        cyng::meta_sql get_table_config(std::string name);
+
+        /**
          * system messages
          */
         cyng::meta_store get_store_sys_msg();

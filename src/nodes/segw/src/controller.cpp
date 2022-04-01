@@ -770,18 +770,15 @@ namespace smf {
 
         if (std::find(std::begin(nics), std::end(nics), "br0") != nics.end()) {
             return "smf-gw:plc";
-        }
-        if (std::find(std::begin(nics), std::end(nics), "eth0") != nics.end()) {
+        } else if (std::find(std::begin(nics), std::end(nics), "eth0") != nics.end()) {
             return "smf-gw:eth";
-        }
-        if (std::find(std::begin(nics), std::end(nics), "ens33") != nics.end()) {
+        } else if (std::find(std::begin(nics), std::end(nics), "ens33") != nics.end()) {
             return "smf-gw:virt"; //  linux on VMware
-        }
-        if (std::find(std::begin(nics), std::end(nics), "Ethernet") != nics.end()) {
+        } else if (std::find(std::begin(nics), std::end(nics), "Ethernet") != nics.end()) {
             return "smf-gw:win"; //  Windows
         }
 
-        return "virtual.gateway";
+        return "smf-gw:virtual";
     }
 
 } // namespace smf

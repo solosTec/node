@@ -106,6 +106,8 @@ namespace smf {
         void db_req_update_meter_iec_host_or_port(cyng::key_t const &key, cyng::param_t const &, boost::uuids::uuid);
         void update_iec_interval(std::chrono::seconds, boost::uuids::uuid);
 
+        void auto_insert_gateway(cyng::key_t key, std::string id, boost::uuids::uuid);
+
         /**
          * Changes in table "gwIEC" must be applied to table "meterIEC" too
          */

@@ -43,9 +43,6 @@ namespace smf {
             {
                 cyng::column("path", cyng::TC_STRING), //	path, '/' separated values
                 cyng::column("val", cyng::TC_NULL)     //	value (data type may vary)
-                                                       // cyng::column("def", cyng::TC_STRING),	//	default value
-                // cyng::column("type", cyng::TC_UINT16),	//	data type code (default)
-                // cyng::column("desc", cyng::TC_STRING)	//	optional description
             },
             1);
     }

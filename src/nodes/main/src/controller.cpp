@@ -65,13 +65,15 @@ namespace smf {
             "server", cyng::make_tuple(cyng::make_param("address", "0.0.0.0"), cyng::make_param("service", "7701")));
     }
     cyng::param_t controller::create_session_spec(std::filesystem::path const &tmp) {
+        //  this will passed to table "config"
         return cyng::make_param(
             "session",
             cyng::make_tuple(
                 cyng::make_param("auto-login", false),
                 cyng::make_param("auto-enabled", true),
                 cyng::make_param("superseede", true),
-                cyng::make_param("gw-cache", true),
+                cyng::make_param("gw-cache", true),       //  no longer used
+                cyng::make_param("auto-insert-gw", true), //  not active used yet
                 cyng::make_param("generate-time-series", false),
                 cyng::make_param("catch-meters", false),
                 cyng::make_param("catch-lora", true),
@@ -112,7 +114,7 @@ namespace smf {
         auto const salt = cyng::value_cast(reader["cluster"]["salt"].get(), "");
         auto const monitor = cyng::numeric_cast<std::uint32_t>(reader["cluster"]["monitor"].get(), 58); //	seconds
 
-        auto const session_cfg = cyng::container_cast<cyng::param_map_t>(reader["session"].get());
+        auto const session_cfg = customize_session_config(cyng::container_cast<cyng::param_map_t>(reader["session"].get()));
 
         cluster_ = ctl.create_named_channel_with_ref<server>(
             "main", ctl, tag, country_code, lang_code, logger, account, pwd, salt, std::chrono::seconds(monitor), session_cfg);
@@ -129,6 +131,24 @@ namespace smf {
         //	stop all running tasks
         //
         reg.shutdown();
+    }
+
+    cyng::param_map_t customize_session_config(cyng::param_map_t &&cfg) {
+        for (auto &param : cfg) {
+            if (boost::algorithm::equals(param.first, "max-messages") || boost::algorithm::equals(param.first, "max-events") ||
+                boost::algorithm::equals(param.first, "max-LoRa-records") ||
+                boost::algorithm::equals(param.first, "max-wMBus-records") ||
+                boost::algorithm::equals(param.first, "max-IEC-records") || boost::algorithm::equals(param.first, "max-bridges")) {
+                //  convert to std::uint64_t
+                param.second = cyng::make_object(cyng::numeric_cast<std::uint64_t>(param.second, 1000));
+            } else if (boost::algorithm::equals(param.first, "def-IEC-interval")) {
+                //  convert to std::chrono::minutes
+                param.second = cyng::make_object(std::chrono::minutes(cyng::numeric_cast<std::uint64_t>(param.second, 20)));
+            } else {
+                ; //  unchanged (mostly boolean)
+            }
+        }
+        return cfg;
     }
 
 } // namespace smf

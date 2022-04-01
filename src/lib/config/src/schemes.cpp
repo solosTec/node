@@ -338,7 +338,7 @@ namespace smf {
                 "cfgSetMeta",
                 {
                     cyng::column("tag", cyng::TC_UUID), //	key
-                    cyng::column("gw", cyng::TC_UUID),  //   key to "gateway" table
+                    cyng::column("gw", cyng::TC_UUID),  //  key to "gateway" table
                     cyng::column("vFirmware", cyng::TC_STRING),
                     cyng::column("ts", cyng::TC_TIME_POINT),
                     cyng::column("desc", cyng::TC_STRING) //	optional description
@@ -447,6 +447,23 @@ namespace smf {
                 },
                 1);
         }
+
+        cyng::meta_sql get_table_config(std::string name) {
+
+            return cyng::meta_sql(
+                name,
+                {
+                    cyng::column_sql("path", cyng::TC_STRING, 128), //	path, '/' separated values
+                    //	generation
+                    cyng::column_sql("val", cyng::TC_STRING, 256), //	value
+                    cyng::column_sql("def", cyng::TC_STRING, 256), //	default value
+                    cyng::column_sql("type", cyng::TC_UINT16, 0),  //	data type code (default)
+                    cyng::column_sql("desc", cyng::TC_STRING, 256) //	optional description
+                },
+                1);
+        }
+
+        cyng::meta_sql get_table_config() { return get_table_config("TConfig"); }
 
         cyng::meta_sql get_table_cfg_set() {
             return cyng::meta_sql(

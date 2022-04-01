@@ -61,6 +61,10 @@ namespace smf {
 
       private:
         cyng::store &cache_;
+
+        /**
+         * source tag
+         */
         boost::uuids::uuid const tag_;
     };
 } // namespace smf

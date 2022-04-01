@@ -452,7 +452,7 @@ namespace smf {
         db::rel{"guiUser", "config.user", "table.user.count"},
         db::rel{"target", "status.target", "table.target.count"},
         db::rel{"cluster", "status.cluster", "table.cluster.count"},
-        db::rel{"config", "config.system", ""},
+        db::rel{"config", "config.system", ""}, // key-value store
         db::rel{"gateway", "config.gateway", "table.gateway.count"},
         db::rel{"meter", "config.meter", "table.meter.count"},
         db::rel{"meterIEC", "config.iec", "table.iec.count"},

@@ -572,6 +572,7 @@ namespace smf {
 
         //
         //	update "device" table
+        //  "main" node will this device insert as gateway if string starts with "swf-gw:"
         //
         cyng::param_map_t const data = cyng::param_map_factory()("id", str);
         cluster_bus_.req_db_update("device", cyng::key_generator(dev_), data);

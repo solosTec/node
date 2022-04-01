@@ -40,7 +40,7 @@ namespace smf {
 
       public:
         storage_db(cyng::channel_weak, cyng::controller &, bus &, cyng::store &cache, cyng::logger logger, cyng::param_map_t &&cfg);
-        ~storage_db();
+        ~storage_db() = default;
 
         void stop(cyng::eod);
 
@@ -50,6 +50,8 @@ namespace smf {
         void init_store(cyng::meta_store);
         void load_stores();
         void load_store(cyng::meta_sql const &);
+
+        void load_config();
 
         void update(std::string table_name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag);
 

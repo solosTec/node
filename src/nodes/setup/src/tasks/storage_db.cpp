@@ -50,12 +50,6 @@ namespace smf {
         }
     }
 
-    storage_db::~storage_db() {
-#ifdef _DEBUG_SETUP
-        std::cout << "storage_db(~)" << std::endl;
-#endif
-    }
-
     void storage_db::open() {
         if (!db_.is_alive()) {
             CYNG_LOG_ERROR(logger_, "cannot open database");
@@ -91,8 +85,9 @@ namespace smf {
     }
 
     void storage_db::load_stores() {
+
         //
-        //	load data from database
+        //	load data from database and subscribe it
         //
         auto const tbl_vec = get_sql_meta_data();
         for (auto const &ms : tbl_vec) {
@@ -100,9 +95,35 @@ namespace smf {
         }
 
         //
+        //  load and subscribe special tables
+        //
+        load_config();
+
+        //
         //  "main" node ready to start post processing
         //
         CYNG_LOG_INFO(logger_, "[storage] " << tbl_vec.size() << " tables read into the cache");
+    }
+
+    void storage_db::load_config() {
+
+        auto const ms = config::get_table_config();
+        store_.access(
+            [&](cyng::table *tbl) {
+                cyng::db::storage s(db_);
+                s.loop(ms, [&](cyng::record const &rec) -> bool {
+                    CYNG_LOG_TRACE(logger_, "[storage] load config " << rec.to_string());
+
+                    //
+                    //  ToDo: convert and transfer into "config" table
+                    //
+
+                    return true;
+                });
+            },
+            cyng::access::write("config"));
+
+        // cluster_bus_.req_subscribe("config");
     }
 
     void storage_db::load_store(cyng::meta_sql const &ms) {
@@ -124,10 +145,10 @@ namespace smf {
             },
             cyng::access::write(m.get_name()));
 
-        CYNG_LOG_INFO(logger_, "table [" << m.get_name() << "] holds " << store_.size(m.get_name()) << " entries");
+        CYNG_LOG_INFO(logger_, "subscribe table [" << m.get_name() << "] with " << store_.size(m.get_name()) << " entrie(s)");
 
         //
-        //	start sync task
+        //	start sync data by subscribing to this table
         //
         cluster_bus_.req_subscribe(m.get_name());
     }
@@ -263,6 +284,8 @@ namespace smf {
         auto const pos = sql_map_.find(table_name);
         if (pos != sql_map_.end()) {
             auto const &ms = pos->second;
+            //  ToDo: clear table
+            CYNG_LOG_ERROR(logger_, "[db] clear table is not implemented yet");
 
         } else {
             CYNG_LOG_WARNING(logger_, "[db] clear - unknown table: " << table_name);
@@ -289,14 +312,29 @@ namespace smf {
             }
 
             //
-            //  TCfgSet has no tabular in-memory table
+            //  "TCfgSet" has no tabular in-memory table
             //
-            auto const m = config::get_table_cfg_set();
-            auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
-            if (!db.execute(sql)) {
-                std::cerr << "**error: " << sql << std::endl;
-            } else {
-                std::cout << "create: " << m.get_name() << " - " << sql << std::endl;
+            {
+                auto const m = config::get_table_cfg_set();
+                auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
+                if (!db.execute(sql)) {
+                    std::cerr << "**error: " << sql << std::endl;
+                } else {
+                    std::cout << "create: " << m.get_name() << " - " << sql << std::endl;
+                }
+            }
+
+            //
+            //  "TConfig" is also a special table with no in-memory counter-part
+            //
+            {
+                auto const m = config::get_table_config();
+                auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
+                if (!db.execute(sql)) {
+                    std::cerr << "**error: " << sql << std::endl;
+                } else {
+                    std::cout << "create: " << m.get_name() << " - " << sql << std::endl;
+                }
             }
 
             return true;
@@ -376,7 +414,12 @@ namespace smf {
             config::get_table_lora(),
             config::get_table_gui_user(),
             config::get_table_location(),
-            config::get_table_cfg_set_meta()};
+            config::get_table_cfg_set_meta(),
+            //  "TCfgSet" is handled separately since this table has
+            //  a different scheme then the in-memory table.
+            //  See init_storage()
+            //  Same true for "TConfig".
+        };
     }
 
     void generate_access_rights(cyng::db::session &db, std::string const &user) {

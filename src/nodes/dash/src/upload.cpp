@@ -36,6 +36,12 @@ namespace smf {
 
         CYNG_LOG_DEBUG(logger_, "[upload] content: " << content);
 
+        //
+        //  collect some default values
+        //  * "def-IEC-interval"
+        //
+        // db_.cfg_.get_value<>("def-IEC-interval");
+
         // std::size_t counter{0};
         cyng::csv::parser_named p(
             [&, this](std::map<std::string, std::string> const &data, std::size_t line_number) {
@@ -145,14 +151,10 @@ namespace smf {
                             //	remove
                             //	insert again
                             CYNG_LOG_DEBUG(logger_, "[upload] #" << line_number << ": overwrite " << meter_id);
-                            cluster_bus_.req_db_remove("device", key);
-                            cluster_bus_.req_db_remove("meter", key);
                             if (boost::algorithm::equals(protocol, "IEC 62056")) {
-                                cluster_bus_.req_db_remove("meterIEC", key);
-                                insert_iec(mc, server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
+                                update_iec(key, mc, server_id, meter_id, address, port, meter_type, area, name, manufacturer_code);
                             } else {
-                                cluster_bus_.req_db_remove("meterwMBus", key);
-                                insert_wmbus(mc, server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
+                                update_wmbus(key, mc, server_id, meter_id, meter_type, aes, area, name, manufacturer_code);
                             }
                         } else {
                             CYNG_LOG_WARNING(logger_, "[upload] overwrite " << meter_id << " not found");
@@ -225,6 +227,9 @@ namespace smf {
                 ("item", meter_type)("factoryNr", boost::uuids::to_string(tag))),
             0);
 
+        //
+        //  ToDo: use default interval
+        //
         cluster_bus_.req_db_insert(
             "meterIEC",
             key,
