@@ -21,7 +21,8 @@ namespace smf {
 		, bus& cluster_bus
 		, cyng::store& cache
 		, cyng::logger logger
-		, cyng::param_map_t&& cfg)
+		, cyng::param_map_t&& cfg
+		, std::set<std::string>&&)
 	: sigs_{
 			std::bind(&storage_xml::open, this),
 			std::bind(&storage_xml::update, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5),

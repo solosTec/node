@@ -41,7 +41,8 @@ namespace smf {
             bus &cluster_bus,
             cyng::store &cache,
             cyng::logger logger,
-            cyng::param_map_t &&cfg);
+            cyng::param_map_t &&cfg,
+            std::set<std::string> &&);
         ~storage_xml();
 
         void stop(cyng::eod);

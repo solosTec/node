@@ -192,14 +192,22 @@ namespace smf {
         std::string const &storage_type,
         cyng::param_map_t &&cfg) {
 
+        //
+        //  create a set with config key that are not permanent
+        //
+        std::set<std::string> blocked_config_keys{"startup", "ssl-version", "smf-version", "compiler-version", "boost-version"};
+
         if (boost::algorithm::equals(storage_type, "DB")) {
-            return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, cluster_bus, cache, logger, std::move(cfg));
+            return ctl.create_named_channel_with_ref<storage_db>(
+                "storage", ctl, cluster_bus, cache, logger, std::move(cfg), std::move(blocked_config_keys));
         } else if (boost::algorithm::equals(storage_type, "XML")) {
             CYNG_LOG_ERROR(logger, "XML data storage not available");
-            return ctl.create_named_channel_with_ref<storage_xml>("storage", ctl, cluster_bus, cache, logger, std::move(cfg));
+            return ctl.create_named_channel_with_ref<storage_xml>(
+                "storage", ctl, cluster_bus, cache, logger, std::move(cfg), std::move(blocked_config_keys));
         } else if (boost::algorithm::equals(storage_type, "JSON")) {
             CYNG_LOG_ERROR(logger, "JSON data storage not available");
-            return ctl.create_named_channel_with_ref<storage_json>("storage", ctl, cluster_bus, cache, logger, std::move(cfg));
+            return ctl.create_named_channel_with_ref<storage_json>(
+                "storage", ctl, cluster_bus, cache, logger, std::move(cfg), std::move(blocked_config_keys));
         }
 
         CYNG_LOG_FATAL(logger, "no data storage configured");

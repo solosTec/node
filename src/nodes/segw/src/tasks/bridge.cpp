@@ -262,8 +262,8 @@ namespace smf {
                     cfg->insert(
                         key,
                         cyng::data_generator(nic),
-                        1u,         //	only needed for insert operations
-                        cfg_.tag_); //	tag mybe not available yet
+                        1u,              //	only needed for insert operations
+                        cfg_.get_tag()); //	tag mybe not available yet
                 }
                 {
                     auto const r = get_ipv6_linklocal(nic);
@@ -273,8 +273,8 @@ namespace smf {
                         cfg->insert(
                             key_index,
                             cyng::data_generator(r.second),
-                            1u,         //	only needed for insert operations
-                            cfg_.tag_); //	tag mybe not available yet
+                            1u,              //	only needed for insert operations
+                            cfg_.get_tag()); //	tag mybe not available yet
                     }
                     auto const key_linklocal = cyng::key_generator("nms/nic-linklocal");
                     if (!cfg->exist(key_linklocal)) {
@@ -282,8 +282,8 @@ namespace smf {
                         cfg->insert(
                             key_linklocal,
                             cyng::data_generator(r.first),
-                            1u,         //	only needed for insert operations
-                            cfg_.tag_); //	tag mybe not available yet
+                            1u,              //	only needed for insert operations
+                            cfg_.get_tag()); //	tag mybe not available yet
                     }
                 }
                 {
@@ -294,8 +294,8 @@ namespace smf {
                         cfg->insert(
                             key,
                             cyng::data_generator(ipv4),
-                            1u,         //	only needed for insert operations
-                            cfg_.tag_); //	tag mybe not available yet
+                            1u,              //	only needed for insert operations
+                            cfg_.get_tag()); //	tag mybe not available yet
                     }
                 }
                 {
@@ -306,8 +306,8 @@ namespace smf {
                         cfg->insert(
                             key,
                             cyng::data_generator(delay),
-                            1u,         //	only needed for insert operations
-                            cfg_.tag_); //	tag mybe not available yet
+                            1u,              //	only needed for insert operations
+                            cfg_.get_tag()); //	tag mybe not available yet
                     }
                 }
                 {
@@ -318,8 +318,8 @@ namespace smf {
                         cfg->insert(
                             key,
                             cyng::data_generator(mode),
-                            1u,         //	only needed for insert operations
-                            cfg_.tag_); //	tag mybe not available yet
+                            1u,              //	only needed for insert operations
+                            cfg_.get_tag()); //	tag mybe not available yet
                     }
                 }
             },
@@ -340,7 +340,7 @@ namespace smf {
 #endif
                     auto const path = rec.value("path", "");
                     auto const type = rec.value<std::uint16_t>("type", 15u);
-                    auto const val = rec.value("val", "");
+                    auto const val = rec.value("value", "");
 
                     try {
 
@@ -354,7 +354,7 @@ namespace smf {
 #endif
                         if (boost::algorithm::equals(path, "tag")) {
                             //	set system tag
-                            cfg_.tag_ = cyng::value_cast(obj, boost::uuids::nil_uuid());
+                            cfg_.get_tag() = cyng::value_cast(obj, boost::uuids::nil_uuid());
                         } else if (boost::algorithm::equals(path, cyng::to_str(OBIS_SERVER_ID))) {
                             //	init server ID in cache
                             cfg_.id_ = cyng::hex_to_buffer(val);
@@ -364,18 +364,21 @@ namespace smf {
                             cfg->merge(
                                 rec.key(),
                                 cyng::data_generator(index),
-                                1u,         //	only needed for insert operations
-                                cfg_.tag_); //	tag mybe not available yet
+                                1u,              //	only needed for insert operations
+                                cfg_.get_tag()); //	tag mybe not available yet
                         } else {
 
                             //
                             //	insert value
                             //
-                            cfg->merge(
-                                rec.key(),
-                                cyng::data_generator(obj),
-                                1u,         //	only needed for insert operations
-                                cfg_.tag_); //	tag mybe not available yet
+                            if (!cfg->merge(
+                                    rec.key(),
+                                    cyng::data_generator(obj),
+                                    1u,                //	only needed for insert operations
+                                    cfg_.get_tag())) { //	tag mybe not available yet
+
+                                CYNG_LOG_ERROR(logger_, "cannot insert config key " << path << ": " << val << '#' << type);
+                            }
                         }
                     } catch (std::exception const &ex) {
                         CYNG_LOG_ERROR(logger_, "cannot load " << path << ": " << ex.what());

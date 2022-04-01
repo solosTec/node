@@ -47,7 +47,7 @@ namespace smf {
         //
         auto const m = get_table_cfg();
         // auto const sql = cyng::sql::update(db_.get_dialect(), m).set_placeholder(m)();
-        auto const sql = "UPDATE TCfg SET val = ? WHERE path = ?";
+        auto const sql = "UPDATE TCfg SET value = ? WHERE path = ?";
 
         auto stmt = db_.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);

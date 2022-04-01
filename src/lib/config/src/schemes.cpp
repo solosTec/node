@@ -455,10 +455,10 @@ namespace smf {
                 {
                     cyng::column_sql("path", cyng::TC_STRING, 128), //	path, '/' separated values
                     //	generation
-                    cyng::column_sql("val", cyng::TC_STRING, 256), //	value
-                    cyng::column_sql("def", cyng::TC_STRING, 256), //	default value
-                    cyng::column_sql("type", cyng::TC_UINT16, 0),  //	data type code (default)
-                    cyng::column_sql("desc", cyng::TC_STRING, 256) //	optional description
+                    cyng::column_sql("value", cyng::TC_STRING, 256), //	value
+                    cyng::column_sql("def", cyng::TC_STRING, 256),   //	default value
+                    cyng::column_sql("type", cyng::TC_UINT16, 0),    //	data type code (default)
+                    cyng::column_sql("desc", cyng::TC_STRING, 256)   //	optional description
                 },
                 1);
         }

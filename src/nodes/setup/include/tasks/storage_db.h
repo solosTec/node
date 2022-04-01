@@ -39,7 +39,7 @@ namespace smf {
             std::function<void(cyng::eod)>>;
 
       public:
-        storage_db(cyng::channel_weak, cyng::controller &, bus &, cyng::store &cache, cyng::logger logger, cyng::param_map_t &&cfg);
+        storage_db(cyng::channel_weak, cyng::controller &, bus &, cyng::store &cache, cyng::logger logger, cyng::param_map_t &&cfg, std::set<std::string>&&);
         ~storage_db() = default;
 
         void stop(cyng::eod);
@@ -69,6 +69,7 @@ namespace smf {
         cyng::logger logger_;
         cyng::db::session db_;
         cyng::store &store_;
+        std::set<std::string> const blocked_config_keys_;
 
         config::store_map store_map_;
         config::sql_map sql_map_;

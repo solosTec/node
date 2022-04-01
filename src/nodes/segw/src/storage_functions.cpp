@@ -42,7 +42,7 @@ namespace smf {
             "cfg",
             {
                 cyng::column("path", cyng::TC_STRING), //	path, '/' separated values
-                cyng::column("val", cyng::TC_NULL)     //	value (data type may vary)
+                cyng::column("value", cyng::TC_NULL)   //	value (data type may vary)
             },
             1);
     }
@@ -53,11 +53,11 @@ namespace smf {
             "TCfg",
             {
                 cyng::column_sql("path", cyng::TC_STRING, 128), //	path, '/' separated values
-                //	generation
-                cyng::column_sql("val", cyng::TC_STRING, 256), //	value
-                cyng::column_sql("def", cyng::TC_STRING, 256), //	default value
-                cyng::column_sql("type", cyng::TC_UINT16, 0),  //	data type code (default)
-                cyng::column_sql("desc", cyng::TC_STRING, 256) //	optional description
+                //	no generation column
+                cyng::column_sql("value", cyng::TC_STRING, 256), //	value - note: This is hard coded in storage::cfg_update()
+                cyng::column_sql("def", cyng::TC_STRING, 256),   //	default value
+                cyng::column_sql("type", cyng::TC_UINT16, 0),    //	data type code (default)
+                cyng::column_sql("desc", cyng::TC_STRING, 256)   //	optional description
             },
             1);
     }
@@ -940,13 +940,6 @@ namespace smf {
         auto stmt = db.create_statement();
         stmt->prepare(sql);
 
-        // cyng::column_sql("path", cyng::TC_STRING, 128),	//	path, '/' separated values
-        ////	generation
-        // cyng::column_sql("val", cyng::TC_STRING, 256),	//	value
-        // cyng::column_sql("def", cyng::TC_STRING, 256),	//	default value
-        // cyng::column_sql("type", cyng::TC_UINT16, 0),	//	data type code (default)
-        // cyng::column_sql("desc", cyng::TC_STRING, 256)	//	optional description
-
         //
         //	read all results
         //
@@ -956,7 +949,7 @@ namespace smf {
             auto const rec = cyng::to_record(ms, res);
             // std::cout << rec.to_tuple() << std::endl;
             auto const path = rec.value("path", "");
-            auto const val = rec.value("val", "");
+            auto const val = rec.value("value", "");
             auto const def = rec.value("def", "");
             auto const type = rec.value("type", static_cast<std::uint16_t>(0));
             auto const desc = rec.value("desc", "");
@@ -1223,7 +1216,7 @@ namespace smf {
         if (res) {
             auto const ms = get_table_cfg();
             auto const rec = cyng::to_record(ms, res);
-            auto const val = rec.value("val", "");
+            auto const val = rec.value("value", "");
             auto const type = rec.value("type", static_cast<std::uint16_t>(0));
             return cyng::restore(val, type);
         }

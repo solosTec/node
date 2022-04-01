@@ -24,6 +24,7 @@
 #include <cyng/vm/vm.h>
 
 #include <iostream>
+//#include <version>  // __cpp_lib_starts_ends_with
 
 namespace smf {
 
@@ -567,7 +568,8 @@ namespace smf {
                     //  Insert as gateway if string starts with "swf-gw:"
                     //
                     auto const id = cyng::value_cast(pos->second, "");
-                    if (id.starts_with("swf-gw:") || id.starts_with("EMH-")) {
+
+                    if (boost::algorithm::starts_with(id, "swf-gw:") || boost::algorithm::starts_with(id, "EMH-")) {
                         //
                         //  check if gateway already present
                         //

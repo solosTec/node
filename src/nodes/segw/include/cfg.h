@@ -7,6 +7,7 @@
 #ifndef SMF_SEGW_CFG_H
 #define SMF_SEGW_CFG_H
 
+#include <smf/config/kv_store.h>
 #include <smf/sml/status.h>
 
 #include <cyng/log/logger.h>
@@ -23,7 +24,7 @@ namespace smf {
      * manage configuration data
      */
     class bridge;
-    class cfg {
+    class cfg : public kv_store {
         friend class bridge;
 
       public:
@@ -34,7 +35,7 @@ namespace smf {
         /**
          * @return itentity/source tag
          */
-        boost::uuids::uuid get_tag() const;
+        // boost::uuids::uuid get_tag() const;
 
         /**
          * @return generate an UUID using the SHA1 hashing algorithm
@@ -47,42 +48,6 @@ namespace smf {
          * 05 + MAC
          */
         cyng::buffer_t get_srv_id() const;
-
-        /**
-         * read a configuration object from table "cfg"
-         */
-        cyng::object get_obj(std::string name);
-
-        /**
-         * read a configuration value from table "_Cfg"
-         */
-        template <typename T> T get_value(std::string name, T def) {
-            if constexpr (std::is_arithmetic_v<T>) {
-                return cyng::numeric_cast<T>(get_obj(name), std::forward<T>(def));
-            }
-            return cyng::value_cast(get_obj(name), def);
-        }
-
-        /**
-         * The non-template function wins.
-         */
-        std::string get_value(std::string name, const char *def) { return cyng::value_cast(get_obj(name), std::string(def)); }
-
-        /**
-         * set/insert a configuration value
-         */
-        bool set_obj(std::string name, cyng::object &&obj);
-        bool set_value(std::string name, cyng::object obj);
-
-        /**
-         * remove the value with the specified key/path
-         */
-        bool remove_value(std::string name);
-
-        template <typename T> bool set_value(std::string name, T value) {
-            return set_obj(name, cyng::make_object(std::move(value)));
-        }
-
         /**
          * @return SML status word
          */
@@ -106,11 +71,6 @@ namespace smf {
       private:
         cyng::logger logger_;
         cyng::store &cache_;
-
-        /**
-         * source tag - initialized by bridge
-         */
-        boost::uuids::uuid tag_;
 
         /**
          * server id

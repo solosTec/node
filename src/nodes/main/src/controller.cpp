@@ -135,18 +135,7 @@ namespace smf {
 
     cyng::param_map_t customize_session_config(cyng::param_map_t &&cfg) {
         for (auto &param : cfg) {
-            if (boost::algorithm::equals(param.first, "max-messages") || boost::algorithm::equals(param.first, "max-events") ||
-                boost::algorithm::equals(param.first, "max-LoRa-records") ||
-                boost::algorithm::equals(param.first, "max-wMBus-records") ||
-                boost::algorithm::equals(param.first, "max-IEC-records") || boost::algorithm::equals(param.first, "max-bridges")) {
-                //  convert to std::uint64_t
-                param.second = cyng::make_object(cyng::numeric_cast<std::uint64_t>(param.second, 1000));
-            } else if (boost::algorithm::equals(param.first, "def-IEC-interval")) {
-                //  convert to std::chrono::minutes
-                param.second = cyng::make_object(std::chrono::minutes(cyng::numeric_cast<std::uint64_t>(param.second, 20)));
-            } else {
-                ; //  unchanged (mostly boolean)
-            }
+            param.second = tidy_config(param.first, param.second);
         }
         return cfg;
     }

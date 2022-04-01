@@ -180,6 +180,30 @@ namespace smf {
     cyng::object convert_to_minutes(cyng::object &);
     cyng::object convert_to_hours(cyng::object &);
 
+    template <typename T> cyng::object convert_number_to_timespan(cyng::object &obj) {
+        switch (obj.tag()) {
+        case cyng::TC_UINT8:
+            return cyng::make_object(T(cyng::numeric_cast<std::uint8_t>(obj, 0)));
+        case cyng::TC_UINT16:
+            return cyng::make_object(T(cyng::numeric_cast<std::uint16_t>(obj, 0)));
+        case cyng::TC_UINT32:
+            return cyng::make_object(T(cyng::numeric_cast<std::uint32_t>(obj, 0)));
+        case cyng::TC_UINT64:
+            return cyng::make_object(T(cyng::numeric_cast<std::uint64_t>(obj, 0)));
+        case cyng::TC_INT8:
+            return cyng::make_object(T(cyng::numeric_cast<std::int8_t>(obj, 0)));
+        case cyng::TC_INT16:
+            return cyng::make_object(T(cyng::numeric_cast<std::int16_t>(obj, 0)));
+        case cyng::TC_INT32:
+            return cyng::make_object(T(cyng::numeric_cast<std::int32_t>(obj, 0)));
+        case cyng::TC_INT64:
+            return cyng::make_object(T(cyng::numeric_cast<std::int64_t>(obj, 0)));
+        default:
+            break;
+        }
+        return obj;
+    }
+
 } // namespace smf
 
 #endif

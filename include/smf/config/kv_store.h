@@ -22,6 +22,11 @@ namespace smf {
      */
     class kv_store {
       public:
+        kv_store(cyng::store &, std::string table_name, boost::uuids::uuid tag);
+
+        /**
+         * use table name "config"
+         */
         kv_store(cyng::store &, boost::uuids::uuid tag);
 
         /**
@@ -42,7 +47,7 @@ namespace smf {
         /**
          * The non-template function wins.
          */
-        std::string get_value(std::string name, const char *def) { return cyng::value_cast(get_obj(name), std::string(def)); }
+        std::string get_value(std::string name, const char *def);
 
         /**
          * set/insert a configuration value
@@ -55,6 +60,11 @@ namespace smf {
         }
 
         /**
+         * remove the value with the specified key/path
+         */
+        bool remove_value(std::string name);
+
+        /**
          * @return identity/source tag
          */
         boost::uuids::uuid get_tag() const;
@@ -63,10 +73,21 @@ namespace smf {
         cyng::store &cache_;
 
         /**
+         * name of referenced table.
+         */
+        std::string const table_name_;
+
+        /**
          * source tag
          */
         boost::uuids::uuid const tag_;
     };
+
+    /**
+     * Line up config data types
+     */
+    cyng::object tidy_config(std::string key, cyng::object &value);
+
 } // namespace smf
 
 #endif

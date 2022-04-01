@@ -89,6 +89,7 @@ else(PC_CYNG_FOUND)
                 usr/lib/
 				build/v5te
 				build/x64
+				build/src/net
 				build
 				v5te
 				src/net

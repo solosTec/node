@@ -101,13 +101,7 @@ namespace smf {
                     CYNG_LOG_INFO(logger_, "[cluster] remove duplicate: " << table_name << " <" << key << ">");
                     tbl->erase(key, tag);
                 } else {
-
                     CYNG_LOG_INFO(logger_, "[cluster] make persistent: " << table_name << " " << key);
-
-                    //
-                    //	insert into database (persistence layer)
-                    //
-                    // storage_->dispatch("insert", cyng::make_tuple(table_name, key, data, gen, tag));
                 }
             },
             cyng::access::write(table_name));

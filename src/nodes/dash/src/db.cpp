@@ -175,44 +175,59 @@ namespace smf {
 
     void db::convert(std::string const &table_name, cyng::vector_t &key, cyng::param_map_t &data) {
 
-        auto const pos = store_map_.find(table_name);
-        if (pos != store_map_.end()) {
-
+        if (boost::algorithm::equals(table_name, "config")) {
             //
-            //	table meta data
+            //  same code as in cyng::param_map_t customize_session_config(cyng::param_map_t &&cfg)
             //
-            auto const &meta = pos->second;
-
-            std::size_t index{0};
-            for (auto &k : key) {
-                auto const col = meta.get_column(index);
-                k = convert_to_type(col.type_, k);
+            BOOST_ASSERT_MSG(!key.empty(), "no config key");
+            auto pos = data.find("value");
+            if (!key.empty() && pos != data.end()) {
+                auto const k = cyng::io::to_plain(key.at(0));
+                pos->second = tidy_config(k, pos->second);
             }
 
-            for (auto pos = data.begin(); pos != data.end();) {
-
-                auto const idx = meta.get_index_by_name(pos->first);
-                if (idx != std::numeric_limits<std::size_t>::max()) {
-
-                    auto const col = meta.get_column(idx);
-                    BOOST_ASSERT(boost::algorithm::equals(col.name_, pos->first));
-
-                    pos->second = convert_to_type(col.type_, pos->second);
-                    ++pos;
-                } else if (boost::algorithm::equals(table_name, "meterwMBus") && boost::algorithm::equals(pos->first, "meter")) {
-
-                    //
-                    //	second update required if "meter" has changed
-                    //
-                    pos = data.erase(pos);
-                    CYNG_LOG_DEBUG(logger_, "[db] convert: column [" << pos->first << "] in table " << table_name << " removed");
-                } else {
-                    CYNG_LOG_ERROR(logger_, "[db] convert: unknown column [" << pos->first << "] in table " << table_name);
-                    ++pos;
-                }
-            }
         } else {
-            CYNG_LOG_ERROR(logger_, "[db] convert: unknown table " << table_name);
+            auto const pos = store_map_.find(table_name);
+            if (pos != store_map_.end()) {
+
+                //
+                //	table meta data
+                //
+                auto const &meta = pos->second;
+
+                std::size_t index{0};
+                for (auto &k : key) {
+                    auto const col = meta.get_column(index);
+                    k = convert_to_type(col.type_, k);
+                }
+
+                for (auto pos = data.begin(); pos != data.end();) {
+
+                    auto const idx = meta.get_index_by_name(pos->first);
+                    if (idx != std::numeric_limits<std::size_t>::max()) {
+
+                        auto const col = meta.get_column(idx);
+                        BOOST_ASSERT(boost::algorithm::equals(col.name_, pos->first));
+
+                        pos->second = convert_to_type(col.type_, pos->second);
+                        ++pos;
+                    } else if (
+                        boost::algorithm::equals(table_name, "meterwMBus") && boost::algorithm::equals(pos->first, "meter")) {
+
+                        //
+                        //	second update required if "meter" has changed
+                        //
+                        pos = data.erase(pos);
+                        CYNG_LOG_DEBUG(
+                            logger_, "[db] convert: column [" << pos->first << "] in table " << table_name << " removed");
+                    } else {
+                        CYNG_LOG_ERROR(logger_, "[db] convert: unknown column [" << pos->first << "] in table " << table_name);
+                        ++pos;
+                    }
+                }
+            } else {
+                CYNG_LOG_ERROR(logger_, "[db] convert: unknown table " << table_name);
+            }
         }
     }
 
@@ -613,43 +628,102 @@ namespace smf {
     }
 
     cyng::object convert_to_nanoseconds(cyng::object &obj) {
-        if (obj.tag() == cyng::TC_NANO_SECOND)
-            return obj;
-        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
-        auto const str = cyng::io::to_plain(obj);
+
+        switch (obj.tag()) {
+        case cyng::TC_STRING:
+            //  ToDo:
+            break;
+        case cyng::TC_UINT8:
+        case cyng::TC_UINT16:
+        case cyng::TC_UINT32:
+        case cyng::TC_UINT64:
+        case cyng::TC_INT8:
+        case cyng::TC_INT16:
+        case cyng::TC_INT32:
+        case cyng::TC_INT64:
+            return convert_number_to_timespan<std::chrono::nanoseconds>(obj);
+        default:
+            break;
+        }
         return obj;
     }
 
     cyng::object convert_to_microseconds(cyng::object &obj) {
-        if (obj.tag() == cyng::TC_MICRO_SECOND)
-            return obj;
-        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
-        auto const str = cyng::io::to_plain(obj);
-        return cyng::make_object(cyng::to_microseconds(str));
+
+        switch (obj.tag()) {
+        case cyng::TC_STRING:
+            return cyng::make_object(cyng::to_microseconds(cyng::io::to_plain(obj)));
+        case cyng::TC_UINT8:
+        case cyng::TC_UINT16:
+        case cyng::TC_UINT32:
+        case cyng::TC_UINT64:
+        case cyng::TC_INT8:
+        case cyng::TC_INT16:
+        case cyng::TC_INT32:
+        case cyng::TC_INT64:
+            return convert_number_to_timespan<std::chrono::microseconds>(obj);
+        default:
+            break;
+        }
+        return obj;
     }
 
     cyng::object convert_to_milliseconds(cyng::object &obj) {
-        if (obj.tag() == cyng::TC_MILLI_SECOND)
-            return obj;
-        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
-        auto const str = cyng::io::to_plain(obj);
-        return cyng::make_object(cyng::to_milliseconds(str));
+
+        switch (obj.tag()) {
+        case cyng::TC_STRING:
+            return cyng::make_object(cyng::to_milliseconds(cyng::io::to_plain(obj)));
+        case cyng::TC_UINT8:
+        case cyng::TC_UINT16:
+        case cyng::TC_UINT32:
+        case cyng::TC_UINT64:
+        case cyng::TC_INT8:
+        case cyng::TC_INT16:
+        case cyng::TC_INT32:
+        case cyng::TC_INT64:
+            return convert_number_to_timespan<std::chrono::milliseconds>(obj);
+        default:
+            break;
+        }
+        return obj;
     }
 
     cyng::object convert_to_seconds(cyng::object &obj) {
-        if (obj.tag() == cyng::TC_SECOND)
-            return obj;
-        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
-        auto const str = cyng::io::to_plain(obj);
-        return cyng::make_object(cyng::to_seconds(str));
+        switch (obj.tag()) {
+        case cyng::TC_STRING:
+            return cyng::make_object(cyng::to_seconds(cyng::io::to_plain(obj)));
+        case cyng::TC_UINT8:
+        case cyng::TC_UINT16:
+        case cyng::TC_UINT32:
+        case cyng::TC_UINT64:
+        case cyng::TC_INT8:
+        case cyng::TC_INT16:
+        case cyng::TC_INT32:
+        case cyng::TC_INT64:
+            return convert_number_to_timespan<std::chrono::seconds>(obj);
+        default:
+            break;
+        }
+        return obj;
     }
 
     cyng::object convert_to_minutes(cyng::object &obj) {
-        if (obj.tag() == cyng::TC_MINUTE)
-            return obj;
-        BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
-        auto const str = cyng::io::to_plain(obj);
-        return cyng::make_object(cyng::to_minutes(str));
+        switch (obj.tag()) {
+        case cyng::TC_STRING:
+            return cyng::make_object(cyng::to_minutes(cyng::io::to_plain(obj)));
+        case cyng::TC_UINT8:
+        case cyng::TC_UINT16:
+        case cyng::TC_UINT32:
+        case cyng::TC_UINT64:
+        case cyng::TC_INT8:
+        case cyng::TC_INT16:
+        case cyng::TC_INT32:
+        case cyng::TC_INT64:
+            return convert_number_to_timespan<std::chrono::minutes>(obj);
+        default:
+            break;
+        }
+        return obj;
     }
 
     cyng::object convert_to_hours(cyng::object &obj) {
