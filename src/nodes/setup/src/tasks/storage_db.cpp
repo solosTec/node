@@ -182,7 +182,8 @@ namespace smf {
             //
             if (!key.empty()) {
                 auto const k = cyng::io::to_plain(key.at(0));
-                if (blocked_config_keys_.contains(k)) {
+                //  set<T>::contains is only available from C++20
+                if (blocked_config_keys_.count(k) != 0) {
                     //  don't update blocked keys
                     return;
                 }
@@ -258,7 +259,7 @@ namespace smf {
 
                 //  select blocked keys
                 auto const k = cyng::io::to_plain(key.at(0));
-                if (blocked_config_keys_.contains(k)) {
+                if (blocked_config_keys_.count(k) != 0) {
                     //  don't store blocked keys
                     return;
                 }
