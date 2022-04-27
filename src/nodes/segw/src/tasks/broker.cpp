@@ -96,8 +96,19 @@ namespace smf {
         auto const address = cfg_.get_address(index_);
         auto const port = cfg_.get_port(index_);
 
-        CYNG_LOG_INFO(
-            logger_, "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port);
+        if (port == 0) {
+            //
+            //  ignore this request
+            //
+            CYNG_LOG_WARNING(
+                logger_,
+                "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port
+                                     << " - invalid");
+            return;
+        } else {
+            CYNG_LOG_INFO(
+                logger_, "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port);
+        }
 
         try {
             boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
@@ -368,8 +379,19 @@ namespace smf {
         auto const address = cfg_.get_address(index_);
         auto const port = cfg_.get_port(index_);
 
-        CYNG_LOG_INFO(
-            logger_, "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port);
+        if (port == 0) {
+            //
+            //  ignore this request
+            //
+            CYNG_LOG_WARNING(
+                logger_,
+                "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port
+                                     << " - invalid");
+            return;
+        } else {
+            CYNG_LOG_INFO(
+                logger_, "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port);
+        }
         state_holder_.reset();
 
         try {

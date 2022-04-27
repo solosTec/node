@@ -99,7 +99,13 @@ namespace smf {
         target_vec r;
 
         for (std::size_t idx = 0; idx < get_count(); ++idx) {
-            r.push_back(get_target(idx));
+            auto target = get_target(idx);
+            //
+            //  use only targets with a valid IP port and an existing host address
+            //
+            if (target.get_port() != 0 || !target.get_address().empty()) {
+                r.push_back(target);
+            }
         }
         return r;
     }

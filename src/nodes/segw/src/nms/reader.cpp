@@ -324,13 +324,14 @@ namespace smf {
             for (auto const &obj : vec) {
                 auto const pmap = cyng::container_cast<cyng::param_map_t>(obj);
                 for (auto const &broker : pmap) {
-                    if (boost::algorithm::equals(broker.first, "address")) {
-                        auto const address = cyng::value_cast(broker.second, "");
-                        cfg.set_address(idx, address);
-                    } else if (boost::algorithm::equals(broker.first, "port")) {
+
+                    if (boost::algorithm::equals(broker.first, "port")) {
                         auto const port = cyng::numeric_cast<std::uint16_t>(broker.second, 12000u);
                         cfg.set_port(idx, port);
-                        if (port < 1024) {
+                        if (port == 0) {
+                            CYNG_LOG_WARNING(logger_, "[NMS] broker target with port number 0 - ignore this record");
+                            continue;
+                        } else if (port < 1024) {
                             cyng::merge(
                                 pm,
                                 {"serial-port", serial_port, "broker", broker.first},
@@ -339,6 +340,9 @@ namespace smf {
                         } else {
                             cyng::merge(pm, {"serial-port", serial_port, "broker", broker.first}, cyng::make_object("ok"));
                         }
+                    } else if (boost::algorithm::equals(broker.first, "address")) {
+                        auto const address = cyng::value_cast(broker.second, "");
+                        cfg.set_address(idx, address);
                     } else if (boost::algorithm::equals(broker.first, "account")) {
                         auto const account = cyng::value_cast(broker.second, "");
                         cfg.set_account(idx, account);
@@ -655,13 +659,13 @@ namespace smf {
             case 210:
                 return "CANNOT-READ-INPUT-FILE"; //   one of the input files could not be read
             case 211:
-                return "SIGNATURE-VERIFICATION-FAILED"; //   Signature verification ERROR (an error occurred creating the CMS file
-                                                        //   or when reading the MIME message)
+                return "SIGNATURE-VERIFICATION-FAILED"; //   Signature verification ERROR (an error occurred creating the CMS
+                                                        //   file or when reading the MIME message)
             case 212:
                 return "CANNOT-DECRYPT-MESSAGE"; //   an error occurred decrypting or verifying the message
             case 213:
-                return "CANNOT-WRITE-OUT-SIGNERS-CERTIFICATE"; //   the message was verified correctly but an error occurred writing
-                                                               //   out the signers certificates
+                return "CANNOT-WRITE-OUT-SIGNERS-CERTIFICATE"; //   the message was verified correctly but an error occurred
+                                                               //   writing out the signers certificates
             case 214:
                 return "UNKNOWN-ERROR"; //   unknown error
 
