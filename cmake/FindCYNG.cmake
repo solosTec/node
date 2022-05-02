@@ -5,7 +5,7 @@
 # This will define the following variables
 #
 #   CYNG_FOUND          - system has cyng
-#   CYNG_INCLUDE_DIRS    - the cyng include directories
+#   CYNG_INCLUDE_DIRS   - the cyng include directories
 #   CYNG_LIBRARIES      - cyng libraries directories
 #
 # and the following imported targets
@@ -72,7 +72,9 @@ else(PC_CYNG_FOUND)
     )
 
 	#
-	#	search cyng libraries
+	#	Search cyng libraries.
+    #   In a multiplatform environment the OECP(1) builds are located in the "v5te" directory
+    #   and this directory is preferred.
 	#
     set(REQUESTED_LIBS "cyng_db;cyng_io;cyng_log;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm;cyng_net;cyng_sqlite3")
     
@@ -89,6 +91,7 @@ else(PC_CYNG_FOUND)
                 usr/lib/
 				build/v5te
 				build/x64
+                v5te/src/net
 				build/src/net
 				build
 				v5te
