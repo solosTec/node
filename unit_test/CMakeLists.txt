@@ -53,12 +53,12 @@ target_link_directories(unit_test
 
 target_link_libraries(unit_test 
     PRIVATE
-        smf_config
-        smf_sml
-        smf_iec
-        smf_ipt
-        smf_mbus
-        smf_obis
+        smf::config
+        smf::sml
+        smf::iec
+        smf::ipt
+        smf::mbus
+        smf::obis
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}

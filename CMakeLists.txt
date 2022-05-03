@@ -913,6 +913,7 @@ endif()
 if(${CAPITAL_NAME}_UNIT_TEST)
 
     add_subdirectory(unit_test)
+    add_subdirectory(tests)
 
 endif()
 

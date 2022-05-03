@@ -92,23 +92,21 @@ namespace smf {
             , config_file_()
             , json_path_()
             , config_index_{0}
-            , pool_size_ {
-            2
-        }
+            , pool_size_{2}
 #if defined(BOOST_OS_LINUX_AVAILABLE)
-        , log_syslog_(cyng::has_sys_log())
+            , log_syslog_(cyng::has_sys_log())
 #endif
 #ifdef _DEBUG
-              ,
-            log_level_str_(cyng::to_string(cyng::severity::LEVEL_TRACE))
+            , log_level_str_(cyng::to_string(cyng::severity::LEVEL_TRACE))
 #else
-        , log_level_str_(cyng::to_string(cyng::severity::LEVEL_INFO))
+            , log_level_str_(cyng::to_string(cyng::severity::LEVEL_INFO))
 #endif
-                ,
-            log_console_(false), log_file_(false), log_file_path_(), log_file_size_(32UL * 1024UL * 1024UL)
+            , log_console_(false)
+            , log_file_(false)
+            , log_file_path_()
+            , log_file_size_(32UL * 1024UL * 1024UL)
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
-                                                                         ,
-            log_eventlog_(cyng::has_event_log())
+            , log_eventlog_(cyng::has_event_log())
 #endif
         {
             BOOST_ASSERT(!node.empty());
@@ -123,8 +121,9 @@ namespace smf {
             boost::program_options::options_description generic("Generic options");
             generic.add_options()
 
-                ("help,h", "print usage message")("version,v", "print version string") //  print version string
-                ("build,b", "last built timestamp and platform")                       //  print build time
+                ("help,h", "print usage message")                //  help menu
+                ("version,v", "print version string")            //  print version string
+                ("build,b", "last built timestamp and platform") //  print build time
                 ("net,N",
                  boost::program_options::bool_switch()->default_value(false),
                  "show local network configuration") //  print some network configuration data
