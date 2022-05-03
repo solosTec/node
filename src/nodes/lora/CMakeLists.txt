@@ -35,8 +35,8 @@ target_link_directories(lora
 
 target_link_libraries(lora 
     PRIVATE
-        ${CYNG_LIBRARIES} 
-        smf_config
+        cyng::cyng 
+        smf::config
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

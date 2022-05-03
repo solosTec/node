@@ -54,6 +54,7 @@ else(PC_SMFSEC_FOUND)
 	
 	#
 	#	search smfsec libraries
+	#	On Windows the Debug build is preferred.
 	#
     set(REQUESTED_LIBS "smfsec")
 
@@ -62,12 +63,14 @@ else(PC_SMFSEC_FOUND)
             PATHS
                 ${SMFSEC_SEARCH_PATH}
             PATH_SUFFIXES
-				lib
-                usr/lib/
-				build/v5te
-				build/x64
-				build
-				v5te
+				"lib"
+                "usr/lib/"
+				"build/v5te"
+				"build/x64"
+				"build"
+				"v5te"
+				"build/Debug"
+				"build/Release"
 			DOC 
 				"SMFSEC libraries"
 		)

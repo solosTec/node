@@ -36,9 +36,9 @@ target_link_directories(imega
 target_link_libraries(imega 
     PRIVATE
         ${CYNG_LIBRARIES}
-        smf_config
-        smf_cluster
-        smf_cluster_bus
+        smf::config
+        smf::cluster
+        smf::cluster_bus
 		"$<$<PLATFORM_ID:Windows>:odbc32>"
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${Boost_LOCALE_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>

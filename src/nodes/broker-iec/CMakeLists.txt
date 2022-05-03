@@ -35,12 +35,12 @@ target_link_directories(broker-iec
 
 target_link_libraries(broker-iec 
     PRIVATE
-        ${CYNG_LIBRARIES} 
-        smf_config
-        smf_cluster_bus
-        smf_iec
-        smf_ipt_bus
-        smf_ipt
+        smf::config
+        smf::cluster_bus
+        smf::iec
+        smf::ipt_bus
+        smf::ipt
+        cyng::cyng 
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

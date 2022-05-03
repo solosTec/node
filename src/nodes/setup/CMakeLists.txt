@@ -39,10 +39,10 @@ target_link_directories(setup
 target_link_libraries(setup 
     PRIVATE
 #        Boost::program_options
-        smf_config
-        smf_cluster
-        smf_cluster_bus
-        ${CYNG_LIBRARIES} 
+        smf::config
+        smf::cluster
+        smf::cluster_bus
+        cyng::cyng 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        

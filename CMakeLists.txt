@@ -222,6 +222,7 @@ include(FetchContent)
 #
 include (src/lib/config/lib.cmake)
 add_library(smf_config ${GLOBAL_LIBRARY_TYPE} ${config_lib})
+add_library(smf::config ALIAS "smf_config")
 
 target_include_directories(smf_config
     PUBLIC 
@@ -266,6 +267,7 @@ target_link_libraries(smf_config
 #
 include (src/lib/cluster/protocol/lib.cmake)
 add_library(smf_cluster ${GLOBAL_LIBRARY_TYPE} ${cluster_lib})
+add_library(smf::cluster ALIAS "smf_cluster")
 
 target_include_directories(smf_cluster
     PUBLIC 
@@ -309,6 +311,7 @@ target_link_libraries(smf_cluster
 #
 include (src/lib/cluster/bus/lib.cmake)
 add_library(smf_cluster_bus ${GLOBAL_LIBRARY_TYPE} ${cluster_bus})
+add_library(smf::cluster_bus ALIAS "smf_cluster_bus")
 
 target_include_directories(smf_cluster_bus
     PUBLIC 
@@ -360,6 +363,7 @@ target_link_libraries(smf_cluster_bus
 #
 include (src/lib/http/lib.cmake)
 add_library(smf_http ${GLOBAL_LIBRARY_TYPE} ${http_lib})
+add_library(smf::http ALIAS "smf_http")
 
 target_include_directories(smf_http
     PUBLIC 
@@ -412,6 +416,7 @@ target_link_libraries(smf_http
 #
 include (src/lib/obis/lib.cmake)
 add_library(smf_obis ${GLOBAL_LIBRARY_TYPE} ${obis_lib})
+add_library(smf::obis ALIAS "smf_obis")
 
 target_include_directories(smf_obis
     PUBLIC 
@@ -455,6 +460,7 @@ target_link_libraries(smf_obis
 #
 include (src/lib/mbus/protocol/lib.cmake)
 add_library(smf_mbus ${GLOBAL_LIBRARY_TYPE} ${mbus_lib})
+add_library(smf::mbus ALIAS "smf_mbus")
 
 target_include_directories(smf_mbus
     PUBLIC 
@@ -501,6 +507,8 @@ target_link_libraries(smf_mbus
 #
 include (src/lib/iec/protocol/lib.cmake)
 add_library(smf_iec ${GLOBAL_LIBRARY_TYPE} ${iec_lib})
+add_library(smf::iec ALIAS "smf_iec")
+
 
 target_include_directories(smf_iec
     PUBLIC 
@@ -546,6 +554,7 @@ target_link_libraries(smf_iec
 #
 include (src/lib/hci/protocol/lib.cmake)
 add_library(smf_hci ${GLOBAL_LIBRARY_TYPE} ${hci_lib})
+add_library(smf::hci ALIAS "smf_hci")
 
 target_include_directories(smf_hci
     PUBLIC 
@@ -591,6 +600,7 @@ target_link_libraries(smf_hci
 #
 include (src/lib/sml/protocol/lib.cmake)
 add_library(smf_sml ${GLOBAL_LIBRARY_TYPE} ${sml_lib})
+add_library(smf::sml ALIAS "smf_sml")
 
 target_include_directories(smf_sml
     PUBLIC 
@@ -637,6 +647,7 @@ target_link_libraries(smf_sml
 #
 include (src/lib/ipt/protocol/lib.cmake)
 add_library(smf_ipt ${GLOBAL_LIBRARY_TYPE} ${ipt_lib})
+add_library(smf::ipt ALIAS "smf_ipt")
 
 target_include_directories(smf_ipt
     PUBLIC 
@@ -680,6 +691,7 @@ target_link_libraries(smf_ipt
 #
 include (src/lib/ipt/bus/lib.cmake)
 add_library(smf_ipt_bus ${GLOBAL_LIBRARY_TYPE} ${ipt_bus})
+add_library(smf::ipt_bus ALIAS "smf_ipt_bus")
 
 target_include_directories(smf_ipt_bus
     PUBLIC 
@@ -731,6 +743,7 @@ target_link_libraries(smf_ipt_bus
 #
 include (src/lib/modem/protocol/lib.cmake)
 add_library(smf_modem ${GLOBAL_LIBRARY_TYPE} ${modem_lib})
+add_library(smf::modem ALIAS "smf_modem")
 
 target_include_directories(smf_modem
     PUBLIC 
@@ -774,6 +787,7 @@ target_link_libraries(smf_modem
 #
 include (src/lib/serial/bus/lib.cmake)
 add_library(smf_serial_bus ${GLOBAL_LIBRARY_TYPE} ${serial_bus})
+add_library(smf::serial_bus ALIAS "smf_serial_bus")
 
 target_include_directories(smf_serial_bus
     PUBLIC 
@@ -817,6 +831,7 @@ target_link_libraries(smf_serial_bus
 #
 include (src/lib/modbus/protocol/lib.cmake)
 add_library(smf_modbus ${GLOBAL_LIBRARY_TYPE} ${modbus_lib})
+add_library(smf::modbus ALIAS "smf_modbus")
 
 target_include_directories(smf_modbus
     PUBLIC 

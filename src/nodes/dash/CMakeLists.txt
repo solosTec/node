@@ -35,13 +35,13 @@ target_link_directories(dash
 
 target_link_libraries(dash 
     PRIVATE
-        smf_config
-        smf_cluster_bus
-        smf_http
-        smf_mbus
-        smf_sml
-        smf_obis
-        ${CYNG_LIBRARIES} 
+        smf::config
+        smf::cluster_bus
+        smf::http
+        smf::mbus
+        smf::sml
+        smf::obis
+        cyng::cyng 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"

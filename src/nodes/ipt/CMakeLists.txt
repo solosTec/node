@@ -35,15 +35,15 @@ target_link_directories(ipt
 
 target_link_libraries(ipt 
     PRIVATE
-        ${CYNG_LIBRARIES} 
-        smf_config
-        smf_cluster
-        smf_cluster_bus
-        smf_ipt
-        smf_ipt_bus
-        smf_sml
-        smf_mbus
-        smf_obis
+        cyng::cyng 
+        smf::config
+        smf::cluster
+        smf::cluster_bus
+        smf::ipt
+        smf::ipt_bus
+        smf::sml
+        smf::mbus
+        smf::obis
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

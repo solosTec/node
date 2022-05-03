@@ -35,14 +35,14 @@ target_link_directories(store
 
 target_link_libraries(store 
     PRIVATE
-        smf_config
-        smf_ipt
-        smf_ipt_bus
-        smf_sml
-        smf_iec
-        smf_mbus
-        smf_obis
-        ${CYNG_LIBRARIES} 
+        smf::config
+        smf::ipt
+        smf::ipt_bus
+        smf::sml
+        smf::iec
+        smf::mbus
+        smf::obis
+        cyng::cyng 
         "$<$<PLATFORM_ID:Linux>:${OPENSSL_LIBRARIES}>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>

@@ -35,14 +35,14 @@ target_link_directories(broker-wmbus
 
 target_link_libraries(broker-wmbus 
     PRIVATE
-        smf_config
-        smf_cluster_bus
-        smf_mbus
-        smf_sml
-        smf_ipt_bus
-        smf_ipt
-        smf_obis
-        ${CYNG_LIBRARIES} 
+        smf::config
+        smf::cluster_bus
+        smf::mbus
+        smf::sml
+        smf::ipt_bus
+        smf::ipt
+        smf::obis
+        cyng::cyng 
         ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;smfsec::smfsec;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>

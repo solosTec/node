@@ -75,6 +75,7 @@ else(PC_CYNG_FOUND)
 	#	Search cyng libraries.
     #   In a multiplatform environment the OECP(1) builds are located in the "v5te" directory
     #   and this directory is preferred.
+	#	On Windows the Debug build is preferred.
 	#
     set(REQUESTED_LIBS "cyng_db;cyng_io;cyng_log;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm;cyng_net;cyng_sqlite3")
     
@@ -87,17 +88,19 @@ else(PC_CYNG_FOUND)
             PATHS
                 ${CYNG_SEARCH_PATH}
             PATH_SUFFIXES
-				lib
-                usr/lib/
-				build/v5te
-				build/x64
-                v5te/src/net
-				build/src/net
-				build
-				v5te
-				src/net
-				src/net/Debug
-				src/net/Release
+				"lib"
+                "usr/lib/"
+				"build/v5te"
+				"build/x64"
+                "v5te/src/net"
+				"build/src/net"
+				"build"
+				"build/Debug"
+				"build/Release"
+				"v5te"
+				"src/net"
+				"build/src/net/Debug"
+				"build/src/net/Release"
 			DOC 
 				"CYNG libraries"
 		)

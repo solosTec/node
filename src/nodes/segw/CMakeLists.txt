@@ -36,15 +36,15 @@ target_link_directories(segw
 
 target_link_libraries(segw 
     PRIVATE
-        ${CYNG_LIBRARIES} 
-        smf_config
-        smf_ipt
-        smf_ipt_bus
-        smf_serial_bus
-        smf_hci
-        smf_mbus
-        smf_sml
-        smf_obis
+        cyng::cyng 
+        smf::config
+        smf::ipt
+        smf::ipt_bus
+        smf::serial_bus
+        smf::hci
+        smf::mbus
+        smf::sml
+        smf::obis
 		"$<$<PLATFORM_ID:Windows>:odbc32>"
         "$<$<PLATFORM_ID:Linux>:${OPENSSL_LIBRARIES}>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
