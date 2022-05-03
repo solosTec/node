@@ -44,6 +44,9 @@ install: build
 #	crypto lib
 	install -m 755 @smfsec@ $(INSTALLDIR)/usr/local/lib
 
+#	pugixml lib
+	install -m 755 @CYNG_PUGI_XML_LIB@ $(INSTALLDIR)/usr/local/lib
+
 	# maybe another path is required to build in a docker environment
 	install -m 755 @Boost_LIBRARY_DIRS@/libboost_filesystem.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/local/lib/libboost_filesystem.so.${Boost_VERSION_NUMERIC}
 	install -m 755 @Boost_LIBRARY_DIRS@/libboost_program_options.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/local/lib/libboost_program_options.so.${Boost_VERSION_NUMERIC}
