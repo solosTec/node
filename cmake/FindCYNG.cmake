@@ -10,7 +10,20 @@
 #
 # and the following imported targets
 #
-#     cyng::cyng
+#   cyng::cyng
+#	cyng::db
+#	cyng::io
+#	cyng::log
+#	cyng::obj
+#	cyng::parse
+#	cyng::rnd
+#	cyng::sql
+#	cyng::store
+#	cyng::sys
+#	cyng::task
+#	cyng::vm
+#	cyng::net
+#	cyng::sqlite3
 #
 
 #
@@ -70,6 +83,29 @@ else(PC_CYNG_FOUND)
             "CYNG headers"
 		NO_CMAKE_FIND_ROOT_PATH
     )
+
+	if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.24") 
+		cmake_path(GET CYNG_INCLUDE_DIR_BUILD PARENT_PATH CYNG_BUILD_DIR)
+	else()
+		get_filename_component(CYNG_BUILD_DIR ${CYNG_INCLUDE_DIR_BUILD} DIRECTORY)
+	endif()
+	message(STATUS "** CYNG_BUILD_DIR           : ${CYNG_BUILD_DIR}")
+
+    find_file(CYNG_PUGI_XML_LIB
+        NAMES 
+            pugixml.lib
+			libpugixml.so
+        PATH_SUFFIXES
+			"_deps/pugixml-build"
+			"_deps/pugixml-build/Debug"
+			"_deps/pugixml-build/Release"
+        PATHS
+			${CYNG_BUILD_DIR}
+        DOC 
+            "PugiXML"
+		NO_CMAKE_FIND_ROOT_PATH
+    )
+	message(STATUS "** CYNG_PUGI_XML_LIB        : ${CYNG_PUGI_XML_LIB}")
 
 	#
 	#	Search cyng libraries.
