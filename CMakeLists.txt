@@ -1,6 +1,6 @@
 #
 #
-cmake_minimum_required (VERSION 3.13)
+cmake_minimum_required (VERSION 3.16)
 cmake_policy(SET CMP0074 NEW)
                                                      
 #	                                     
@@ -136,6 +136,7 @@ if (CYNG_FOUND)
 	if(WIN32)
         message(STATUS "** cyng::scm                : ${CYNG_SCM}")
     endif(WIN32)
+    message(STATUS "** CYNG_PUGI_XML_LIB        : ${CYNG_PUGI_XML_LIB}")
 else()
     message(FATAL_ERROR "** CYNG library not found")
 endif()
@@ -940,7 +941,7 @@ if(${CMAKE_CROSSCOMPILING})
 
  # same as ${cmake_project_name_tolower}
 	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
-    message(STATUS "** cross compile project       : ${OECP_NAME}")
+    message(STATUS "** cross compile project        : ${OECP_NAME}")
 
 	configure_file (
           "opkg/control.in"
