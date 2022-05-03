@@ -77,14 +77,17 @@ else(PC_CYNG_FOUND)
     #   and this directory is preferred.
 	#	On Windows the Debug build is preferred.
 	#
-    set(REQUESTED_LIBS "cyng_db;cyng_io;cyng_log;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm;cyng_net;cyng_sqlite3")
+    set(REQUESTED_LIBS "db;io;log;obj;parse;rnd;sql;store;sys;task;vm;net;sqlite3")
     
 	if(WIN32)
-        list(APPEND REQUESTED_LIBS "cyng_scm")
+        list(APPEND REQUESTED_LIBS "scm")
     endif(WIN32)
 
 	foreach(__LIB ${REQUESTED_LIBS})
-		find_library("${__LIB}" ${__LIB}
+
+		find_library("__CYNG_${__LIB}" 
+			NAME
+				"cyng_${__LIB}"
             PATHS
                 ${CYNG_SEARCH_PATH}
             PATH_SUFFIXES
@@ -105,13 +108,24 @@ else(PC_CYNG_FOUND)
 				"CYNG libraries"
 		)
 
+#		message(STATUS "** add library cyng::${__LIB}: ${__CYNG_${__LIB}}")
+		add_library("cyng::${__LIB}" INTERFACE IMPORTED)
+		set_target_properties("cyng::${__LIB}" 
+				PROPERTIES
+					INTERFACE_INCLUDE_DIRECTORIES 
+						"${CYNG_INCLUDE_DIRS}"
+					INTERFACE_LINK_LIBRARIES 
+						"${__CYNG_${__LIB}}"
+			)
+
 		# append the found library to the list of all libraries
-		list(APPEND CYNG_LIBRARIES ${${__LIB}})
+		list(APPEND CYNG_LIBRARIES ${__CYNG_${__LIB}})
 
 		# this creates a variable with the name of the searched library, so that it can be included more easily
-		unset(__LIB_UPPERCASE_NAME)
-		string(TOUPPER ${__LIB} __LIB_UPPERCASE_NAME)
-		set(${__LIB_UPPERCASE_NAME}_LIBRARY ${${__LIB}})
+		#unset(__LIB_UPPERCASE_NAME)
+		string(TOUPPER "cyng_${__LIB}" __LIB_UPPERCASE_NAME)
+#		message(STATUS "** lib name  : ${__LIB_UPPERCASE_NAME}: ${__CYNG_${__LIB}}")
+		set(${__LIB_UPPERCASE_NAME} ${__CYNG_${__LIB}})
 	endforeach()
 endif(PC_CYNG_FOUND)
     
