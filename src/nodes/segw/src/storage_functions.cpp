@@ -1085,6 +1085,60 @@ namespace smf {
         return store.cfg_remove(obj);
     }
 
+    bool alter_table(cyng::db::session &db, std::string const &name) {
+        storage store(db);
+        try {
+            //
+            //	start transaction
+            //
+            cyng::db::transaction trx(db);
+
+            //
+            //	search specified table
+            //
+            auto const vec = get_sql_meta_data();
+            auto const pos = std::find_if(std::begin(vec), std::end(vec), [&](cyng::meta_sql const &m) {
+                return boost::algorithm::equals(m.get_name(), name);
+            });
+            if (pos != vec.end()) {
+                recreate_table(db, *pos);
+            } else {
+                //
+                //  ToDo: take credit of non-cached tables
+                //
+                std::cerr << "**error: " << name << " not found" << std::endl;
+            }
+
+        } catch (std::exception const &ex) {
+            boost::ignore_unused(ex);
+        }
+        return false;
+    }
+
+    bool recreate_table(cyng::db::session &db, cyng::meta_sql const &m) {
+        //
+        //  drop table
+        //
+        auto const sql_drop = cyng::sql::drop(db.get_dialect(), m).to_str();
+        if (!db.execute(sql_drop)) {
+            std::cerr << "**error: " << sql_drop << std::endl;
+        } else {
+            std::cout << m.get_name() << " - " << sql_drop << std::endl;
+
+            //
+            //  create table
+            //
+            auto const sql_create = cyng::sql::create(db.get_dialect(), m).to_str();
+            if (!db.execute(sql_create)) {
+                std::cerr << "**error: " << sql_create << std::endl;
+            } else {
+                std::cout << m.get_name() << " - " << sql_create << std::endl;
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool set_nms_mode(cyng::db::session &db, std::string const &mode) {
         storage store(db);
 

@@ -60,6 +60,9 @@ namespace smf {
     bool del_config_value(cyng::db::session &, std::string const &path);
     bool set_nms_mode(cyng::db::session &db, std::string const &mode);
 
+    bool alter_table(cyng::db::session &db, std::string const &table);
+    bool recreate_table(cyng::db::session &db, cyng::meta_sql const &m);
+
     /**
      * split string by "/" and return the first section
      * by default
