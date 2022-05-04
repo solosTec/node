@@ -84,7 +84,9 @@ update_libs()
 	#ln -s /usr/local/lib/libboost_timer.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_timer.so 
 
     #   XML library
+	rm -f /usr/local/lib/libpugixml.so.1
 	ln -s /usr/local/lib/libpugixml.so.1.11 /usr/local/lib/libpugixml.so.1
+	rm -f /usr/local/lib/libpugixml.so
 	ln -s /usr/local/lib/libpugixml.so.1 /usr/local/lib/libpugixml.so
 
 	echo "[POST-INSTALL] ... create lib links in /usr/lib/ /usr/local/lib/ ... "
@@ -574,7 +576,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_BROKER:90000000000$interface_num:900000000401"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "broker/$((interface_num - 1))/0/account"
 					;;
 				*)
@@ -587,7 +589,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_BROKER:90000000000$interface_num:900000000201"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "broker/$((interface_num - 1))/0/address"
 					;;
 				*)
@@ -600,7 +602,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_BROKER:90000000000$interface_num:enabled"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/broker-enabled"
 					;;
 				*)
@@ -613,7 +615,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_BROKER:90000000000$interface_num:BROKER_LOGIN"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/broker-login"
 					;;
 				*)
@@ -626,7 +628,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_BROKER:90000000000$interface_num:900000000301"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "broker/$((interface_num - 1))/0/port"
 					;;
 				*)
@@ -639,7 +641,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_BROKER:90000000000$interface_num:900000000501"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "broker/$((interface_num - 1))/0/pwd"
 					;;
 				*)
@@ -655,7 +657,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_SERIAL:91000000000$interface_num:91000000060$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/speed"
 					;;
 				*)
@@ -668,7 +670,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_SERIAL:91000000000$interface_num:91000000020$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/databits"
 					;;
 				*)
@@ -681,7 +683,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_SERIAL:91000000000$interface_num:91000000040$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/flow-control"
 					;;
 				*)
@@ -694,7 +696,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_SERIAL:91000000000$interface_num:SERIAL_NAME"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/port"
 					;;
 				*)
@@ -707,7 +709,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_SERIAL:91000000000$interface_num:91000000030$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/parity"
 					;;
 				*)
@@ -720,7 +722,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_SERIAL:91000000000$interface_num:91000000050$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/stopbits"
 					;;
 				*)
@@ -739,7 +741,7 @@ get_key_string_by_key_id()
 						echo "SKIP"
 					fi
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/$((interface_num - 1))/type"
 					;;
 				*)
@@ -755,7 +757,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000040$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "listener/$((interface_num - 1))/account"
 					;;
 				*)
@@ -768,7 +770,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000020$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "listener/$((interface_num - 1))/address"
 					;;
 				*)
@@ -781,7 +783,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_REDIRECTOR:93000000000$interface_num:enabled"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "listener/$((interface_num - 1))/enabled"
 					;;
 				*)
@@ -794,7 +796,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_REDIRECTOR:93000000000$interface_num:REDIRECTOR_LOGIN"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "listener/$((interface_num - 1))/login"
 					;;
 				*)
@@ -807,7 +809,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000030$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "listener/$((interface_num - 1))/port"
 					;;
 				*)
@@ -820,7 +822,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_REDIRECTOR:93000000000$interface_num:93000000050$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "listener/$((interface_num - 1))/pwd"
 					;;
 				*)
@@ -836,7 +838,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "IF_wMBUS:blocklist:enabled"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "blocklist/$((interface_num - 1))/enabled"
 					;;
 				*)
@@ -849,7 +851,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "IF_wMBUS:blocklist:mode"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "blocklist/$((interface_num - 1))/mode"
 					;;
 				*)
@@ -862,7 +864,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "IF_wMBUS:blocklist:period"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "blocklist/$((interface_num - 1))/period"
 					;;
 				*)
@@ -875,7 +877,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "SKIP"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "blocklist/$((interface_num - 1))/size"
 					;;
 				*)
@@ -892,7 +894,7 @@ get_key_string_by_key_id()
 						echo "SKIP"
 					fi
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "blocklist/$((interface_num - 1))/meter/0"
 					;;
 				*)
@@ -908,7 +910,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_NMS:NMS_ADDRESS"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "nms/address"
 					;;
 				*)
@@ -922,7 +924,7 @@ get_key_string_by_key_id()
 					# SKIP copying this parameter, since it was not present in this version 
 					echo "SKIP"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "nms/debug"
 					;;
 				*)
@@ -935,7 +937,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_NMS:NMS_ENABLED"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "nms/enabled"
 					;;
 				*)
@@ -948,7 +950,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_NMS:NMS_PORT"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "nms/port"
 					;;
 				*)
@@ -961,7 +963,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_NMS:NMS_PWD"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "nms/pwd"
 					;;
 				*)
@@ -974,7 +976,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_NMS:script-path"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "nms/script-path"
 					;;
 				*)
@@ -1004,7 +1006,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "rs485:enabled"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/1/enabled"
 					;;
 				*)
@@ -1017,7 +1019,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "rs485:protocol"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/1/protocol"
 					;;
 				*)
@@ -1030,7 +1032,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "IF_wMBUS:enabled"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/0/enabled"
 					;;
 				*)
@@ -1043,7 +1045,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "IF_wMBUS:HCI"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "lmn/0/HCI"
 					;;
 				*)
@@ -1059,7 +1061,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "gpio:enabled"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "gpio/enabled"
 					;;
 				*)
@@ -1072,7 +1074,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "gpio:path"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "gpio/path"
 					;;
 				*)
@@ -1085,7 +1087,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "gpio:pin:1"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "gpio/pin/1"
 					;;
 				*)
@@ -1098,7 +1100,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "gpio:pin:2"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "gpio/pin/2"
 					;;
 				*)
@@ -1111,7 +1113,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "gpio:pin:3"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "gpio/pin/3"
 					;;
 				*)
@@ -1124,7 +1126,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "gpio:pin:4"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "gpio/pin/4"
 					;;
 				*)
@@ -1140,7 +1142,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491707000$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/81490d07000$interface_num/81491707000$interface_num"
 					;;
 				*)
@@ -1153,7 +1155,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491907000$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/81490d07000$interface_num/81491907000$interface_num"
 					;;
 				*)
@@ -1166,7 +1168,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:81490D07000$interface_num:81491A07000$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/81490d07000$interface_num/81491a07000$interface_num"
 					;;
 				*)
@@ -1179,7 +1181,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C010$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/81490d07000$interface_num/8149633c010$interface_num"
 					;;
 				*)
@@ -1192,7 +1194,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C020$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/81490d07000$interface_num/8149633c020$interface_num"
 					;;
 				*)
@@ -1205,7 +1207,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:81490D07000$interface_num:8149633C030$interface_num"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/81490d07000$interface_num/8149633c030$interface_num"
 					;;
 				*)
@@ -1218,7 +1220,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:81490D07000$interface_num:sk"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/81490d07000$interface_num/sk"
 					;;
 				*)
@@ -1231,7 +1233,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:HAS_SSL_CONFIG"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/81490d0700ff"
 					;;
 				*)
@@ -1244,7 +1246,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:TCP_WAIT_TO_RECONNECT"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/814827320601"
 					;;
 				*)
@@ -1257,7 +1259,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "ROOT_IPT_PARAM:TCP_CONNECT_RETRIES"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "81490d0700ff/814831320201"
 					;;
 				*)
@@ -1273,7 +1275,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "accept-all-ids"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "sml/accept-all-ids"
 					;;
 				*)
@@ -1286,7 +1288,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "sml:account"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "sml/account"
 					;;
 				*)
@@ -1299,7 +1301,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "sml:address"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "sml/address"
 					;;
 				*)
@@ -1312,7 +1314,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "sml:discover"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "sml/discover"
 					;;
 				*)
@@ -1325,7 +1327,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "sml:enabled"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "sml/enabled"
 					;;
 				*)
@@ -1338,7 +1340,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "sml:pwd"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "sml/pwd"
 					;;
 				*)
@@ -1351,7 +1353,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "sml:service"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "sml/service"
 					;;
 				*)
@@ -1367,7 +1369,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "SERVER_ID"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "net/mac"
 					;;
 				*)
@@ -1380,7 +1382,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "DEVICE_CLASS"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "hw/class"
 					;;
 				*)
@@ -1393,7 +1395,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "DATA_MANUFACTURER"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "hw/manufacturer"
 					;;
 				*)
@@ -1406,7 +1408,7 @@ get_key_string_by_key_id()
 				*0.8*)
 					echo "SERIAL_NR"
 					;;
-				*0.9*)
+				*0.9*|*0.10*)
 					echo "hw/serial"
 					;;
 				*)
@@ -1570,10 +1572,15 @@ perform_update_actions()
 		echo "[POST-INSTALL] ... Update actions 0.8 -> $NEW_VERSION_SHORT selected ..."
 		sync_backed_up_values "0.8" "$backup_dir/database_dump.txt"
 		;;
-	*0.9.0*|*0.9.1*|*0.9.2*|*0.9.3*)
-		# atm there are no known update procedures required for 0.9 to a newer version
+	*0.9*)
+		# perform updates, since with 0.9.4 the database changed
 		echo "[POST-INSTALL] ... Update actions 0.9 -> $NEW_VERSION_SHORT selected ..."
-		sync_backed_up_values "0.9" "$backup_dir/database_dump.txt"		;;
+		sync_backed_up_values "0.9" "$backup_dir/database_dump.txt"		
+		;;
+	*0.10*)
+		#echo "[POST-INSTALL] ... Update actions 0.10 -> $NEW_VERSION_SHORT selected ..."
+		echo "[POST-INSTALL] ... Update actions for this version ($previous_version_short) have not been defined yet."
+		;;
 	*)
 		# add new cases for future versions here
 		echo "[POST-INSTALL] ... Update actions for this version ($previous_version_short) have not been defined yet."
