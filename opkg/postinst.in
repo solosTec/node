@@ -1570,11 +1570,10 @@ perform_update_actions()
 		echo "[POST-INSTALL] ... Update actions 0.8 -> $NEW_VERSION_SHORT selected ..."
 		sync_backed_up_values "0.8" "$backup_dir/database_dump.txt"
 		;;
-	*0.9*)
+	*0.9.0*|*0.9.1*|*0.9.2*|*0.9.3*)
 		# atm there are no known update procedures required for 0.9 to a newer version
 		echo "[POST-INSTALL] ... Update actions 0.9 -> $NEW_VERSION_SHORT selected ..."
-		echo "[POST-INSTALL]    ... currently not actions required ..."
-		;;
+		sync_backed_up_values "0.9" "$backup_dir/database_dump.txt"		;;
 	*)
 		# add new cases for future versions here
 		echo "[POST-INSTALL] ... Update actions for this version ($previous_version_short) have not been defined yet."
