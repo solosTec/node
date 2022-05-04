@@ -63,6 +63,7 @@ namespace smf {
         void del_config_value(cyng::object &&, std::string const &path);
         void set_nms_mode(cyng::object &&cfg, std::string mode);
         void switch_gpio(cyng::object &&cfg, std::string const &number, std::string const &state);
+        // void alter_table(cyng::object &&cfg, std::string table);
 
       private:
         cyng::channel_ptr bridge_;

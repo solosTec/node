@@ -115,6 +115,13 @@ namespace smf {
             set_nms_mode(read_config_section(config_.json_path_, config_.config_index_), mode.empty() ? "production" : mode);
             return true;
         }
+        auto const table = vars["alter"].as<std::string>();
+        if (!table.empty()) {
+            //	drop and re-create table
+            // alter_table(read_config_section(config_.json_path_, config_.config_index_), table);
+            return true;
+        }
+
         //
         //	call base classe
         //
@@ -670,6 +677,15 @@ namespace smf {
             }
         }
     }
+
+    // void controller::alter_table(cyng::object &&cfg, std::string table) {
+    //     auto const reader = cyng::make_reader(std::move(cfg));
+    //     auto s = cyng::db::create_db_session(reader.get("DB"));
+    //     if (s.is_alive()) {
+    //         std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+    //         // smf::alter_table(s, table); //	see task/storage_db.h
+    //     }
+    // }
 
     void controller::set_nms_mode(cyng::object &&cfg, std::string mode) {
         auto const reader = cyng::make_reader(std::move(cfg));

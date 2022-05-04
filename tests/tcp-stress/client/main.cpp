@@ -15,18 +15,32 @@
 #include <cstring>
 #include <iostream>
 
+#include <cyng/rnd/rnd.hpp>
+
 using boost::asio::ip::tcp;
 
 enum { max_length = 1024 };
 
+void send_receive(tcp::socket &s, cyng::crypto::rnd &rnd) {
+    // std::cout << "Enter message: ";
+    char request[max_length];
+    // std::cin.getline(request, max_length);
+    auto const str = rnd(max_length);
+    std::copy(str.begin(), str.end(), std::begin(request));
+    // size_t request_length = std::strlen(request);
+    boost::asio::write(s, boost::asio::buffer(request, max_length));
+
+    char reply[max_length];
+    size_t reply_length = boost::asio::read(s, boost::asio::buffer(reply, max_length));
+    std::cout << "Reply is: ";
+    std::cout.write(reply, reply_length);
+    std::cout << "\n";
+}
+
 int main(int argc, char *argv[]) {
     try {
-        // if (argc != 3) {
-        //     std::cerr << "Usage: tcp-client <host> <port>\n";
-        //     return 1;
-        // }
 
-        std::string host = "localhost";
+        std::string host = "192.168.0.200";
         std::uint16_t port = 14001;
         std::string mode = "medium";
         std::uint32_t packet_size = 1024;
@@ -57,22 +71,15 @@ int main(int argc, char *argv[]) {
         }
 
         boost::asio::io_context io_context;
-
         tcp::socket s(io_context);
         tcp::resolver resolver(io_context);
         boost::asio::connect(s, resolver.resolve(host, std::to_string(port)));
 
-        std::cout << "Enter message: ";
-        char request[max_length];
-        std::cin.getline(request, max_length);
-        size_t request_length = std::strlen(request);
-        boost::asio::write(s, boost::asio::buffer(request, request_length));
+        auto rnd = cyng::crypto::make_rnd_alnum();
+        for (;;) {
+            send_receive(s, rnd);
+        }
 
-        char reply[max_length];
-        size_t reply_length = boost::asio::read(s, boost::asio::buffer(reply, request_length));
-        std::cout << "Reply is: ";
-        std::cout.write(reply, reply_length);
-        std::cout << "\n";
     } catch (std::exception &e) {
         std::cerr << "Exception: " << e.what() << "\n";
     }

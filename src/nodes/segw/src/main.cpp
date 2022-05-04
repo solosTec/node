@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
 
     //	will contain the path to an optional configuration file (.cfg)
     smf::config::startup config("segw");
+    std::string table_name; //  empty
 
     //
     //	generic options
@@ -46,6 +47,9 @@ int main(int argc, char **argv) {
         ("nms-mode",
          boost::program_options::value<std::string>(),
          "set NMS mode [production|test|local]") //  --nms-mode=[production|test|local]
+        ("alter,A",
+         boost::program_options::value<std::string>()->default_value(table_name),
+         "drop and re-create table") //	alter DB
         ;
 
     //
