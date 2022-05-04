@@ -216,7 +216,7 @@ endif()
 #
 #   get platform
 #
-include (cmake/time_stamp.cmake)
+include (cmake/platform.cmake)
 
 # FetchContent added in CMake 3.11, downloads during the configure step
 include(FetchContent)
