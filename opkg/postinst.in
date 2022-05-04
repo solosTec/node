@@ -83,6 +83,10 @@ update_libs()
 	#rm -f /usr/local/lib/libboost_timer.so
 	#ln -s /usr/local/lib/libboost_timer.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_timer.so 
 
+    #   XML library
+	ln -s /usr/local/lib/libpugixml.so.1.11 /usr/local/lib/libpugixml.so.1
+	ln -s /usr/local/lib/libpugixml.so.1 /usr/local/lib/libpugixml.so
+
 	echo "[POST-INSTALL] ... create lib links in /usr/lib/ /usr/local/lib/ ... "
 
 	# change to the backup directory or fail trying to do so
