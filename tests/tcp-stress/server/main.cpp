@@ -13,13 +13,17 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <chrono>
 
 using boost::asio::ip::tcp;
 
 class session : public std::enable_shared_from_this<session> {
   public:
     session(tcp::socket socket)
-        : socket_(std::move(socket)) {}
+        : socket_(std::move(socket))
+        , counter_{0} 
+        , total_{0} 
+    {}
 
     void start() { do_read(); }
 
@@ -29,6 +33,9 @@ class session : public std::enable_shared_from_this<session> {
         socket_.async_read_some(
             boost::asio::buffer(data_, max_length), [this, self](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
+                    total_ += length;
+                    std::cout << "#" << counter_ << " - " << length << "/" << total_ << " bytes received" <<  std::endl;
+                    ++counter_;
                     do_write(length);
                 }
             });
@@ -47,6 +54,8 @@ class session : public std::enable_shared_from_this<session> {
     tcp::socket socket_;
     enum { max_length = 1024 };
     char data_[max_length];
+    std::size_t counter_;
+    std::size_t total_;
 };
 
 class server {

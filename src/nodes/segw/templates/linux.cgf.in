@@ -4,5 +4,5 @@
 #	platform: @CMAKE_SYSTEM@
 #
 [setup]
-json = /etc/opt/smf/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+json = ${CLS_PATH_ETC}/smf/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
 pool-size = ${${PROJECT_NAME}_POOL_SIZE}

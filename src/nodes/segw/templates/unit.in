@@ -9,7 +9,7 @@ After=oecp.service
 
 [Service]
 Type=simple
-ExecStart=/opt/smf/segw -C/opt/smf/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg --setup.pool-size=4
+ExecStart=${CLS_PATH_SCRIPT}/segw -C ${CLS_PATH_ETC}/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg --setup.pool-size=4
 Restart=on-failure
 RestartSec=12
 
