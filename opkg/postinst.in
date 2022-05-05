@@ -184,7 +184,6 @@ generate_configurations()
 		# there are not configurations yet, so we need to create them anyways
 		# or the major versions are too different, so we need to recreate them as well
 		echo "[POST-INSTALL] ... Did not find $SMF_DIR/$DATABASE_FILE or $SMF_DIR/segw_v$NEW_VERSION_SHORT.json, need to create configurations ..."
-		echo "[POST-INSTALL] ... Database and configurations need to be created ..."
 
 		current_path=$(pwd)
 
@@ -205,13 +204,31 @@ generate_configurations()
 			#rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
 
 			echo "[POST-INSTALL] ... Creating default configuations"
-			/usr/local/sbin/segw -D >/dev/null 2>&1
+			/usr/local/sbin/segw -D >/tmp/segw_config_creation.log 2>&1
+			if [ $? -ne 0 ]; then 
+				echo "[POST-INSTALL] ERROR: Could not create default configuration! Abort!"
+				# display the collected logs and the abort
+				cat /tmp/segw_config_creation.log
+				exit 1
+			fi
 
 			echo "[POST-INSTALL] ... Initialize database"
-			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -I >/dev/null 2>&1
+			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -I >/tmp/segw_db_creation.log 2>&1
+			if [ $? -ne 0 ]; then 
+				echo "[POST-INSTALL] ERROR: Could not create initialize database! Abort!"
+				# display the collected logs and the abort
+				cat /tmp/segw_db_creation.log
+				exit 1
+			fi
 
 			echo "[POST-INSTALL] ... Load default configuration into the database"
-			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -T >/dev/null 2>&1
+			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -T >/tmp/segw_db_population.log 2>&1
+			if [ $? -ne 0 ]; then 
+				echo "[POST-INSTALL] ERROR: Could not create populate database from default configuration! Abort!"
+				# display the collected logs and the abort
+				cat /tmp/segw_db_population.log
+				exit 1
+			fi
 
 			# change back to the previous dir, this should never fail!
 			cd "$current_path" >/dev/null 2>&1 || echo "[POST-INSTALL] ... Can not change back to previous folder. Why not?"
