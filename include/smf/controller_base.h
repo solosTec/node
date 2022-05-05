@@ -38,7 +38,9 @@ namespace smf {
 
           protected:
             virtual cyng::vector_t create_default_config(
-                std::chrono::system_clock::time_point &&, std::filesystem::path &&tmp, std::filesystem::path &&cwd) = 0;
+                std::chrono::system_clock::time_point &&,
+                std::filesystem::path &&tmp,
+                std::filesystem::path &&cwd) = 0;
             virtual void print_configuration(std::ostream &);
 
             virtual void
@@ -46,6 +48,7 @@ namespace smf {
             virtual void shutdown(cyng::registry &, cyng::stash &, cyng::logger) = 0;
 
             void write_config(cyng::vector_t &&);
+            void print_locale(std::ostream &os);
 
             /**
              * generate a random UUID without requiring system entropy

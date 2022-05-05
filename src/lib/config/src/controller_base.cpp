@@ -17,6 +17,7 @@
 #include <cyng/obj/util.hpp>
 #include <cyng/parse/json.h>
 #include <cyng/parse/string.h>
+#include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/stash.h>
 
@@ -46,6 +47,11 @@ namespace smf {
             if (vars["show"].as<bool>()) {
                 //	show configuration
                 print_configuration(std::cout);
+                return true;
+            }
+            if (vars["locale"].as<bool>()) {
+                //	print system locale
+                print_locale(std::cout);
                 return true;
             }
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
@@ -217,6 +223,19 @@ namespace smf {
             BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
 
             cyng::io::serialize_json_pretty(os, cfg);
+        }
+
+        void controller_base::print_locale(std::ostream &os) {
+            try {
+                auto const loc = cyng::sys::get_system_locale();
+                os << "name    : " << loc.at(cyng::sys::info::NAME) << std::endl;
+                os << "country : " << loc.at(cyng::sys::info::COUNTRY) << std::endl;
+                os << "language: " << loc.at(cyng::sys::info::LANGUAGE) << std::endl;
+                os << "encoding: " << loc.at(cyng::sys::info::ENCODING) << std::endl;
+
+            } catch (std::exception const &ex) {
+                os << "***error: " << ex.what() << std::endl;
+            }
         }
 
         void stop_tasks(cyng::logger logger, cyng::registry &reg, std::string name) {
