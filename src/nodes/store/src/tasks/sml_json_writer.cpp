@@ -6,10 +6,15 @@
  */
 #include <tasks/sml_json_writer.h>
 
+#include <smf/mbus/flag_id.h>
+#include <smf/mbus/server_id.h>
+#include <smf/mbus/units.h>
+
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
 
+#include <fstream>
 #include <iostream>
 
 #include <boost/algorithm/string.hpp>
@@ -26,7 +31,10 @@ namespace smf {
         : sigs_{std::bind(&sml_json_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), std::bind(&sml_json_writer::close_response, this), std::bind(&sml_json_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6), std::bind(&sml_json_writer::get_proc_parameter_response, this), std::bind(&sml_json_writer::stop, this, std::placeholders::_1)}
         , channel_(wp)
         , ctl_(ctl)
-        , logger_(logger) {
+        , logger_(logger)
+        , root_dir_(out)
+        , prefix_(prefix)
+        , suffix_(suffix) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"open.response", "close.response", "get.profile.list.response", "get.proc.parameter.response"});
@@ -44,14 +52,40 @@ namespace smf {
     void sml_json_writer::open_response(cyng::buffer_t, cyng::buffer_t) {}
     void sml_json_writer::close_response() {}
     void sml_json_writer::get_profile_list_response(
-        std::string,
-        cyng::buffer_t,
-        cyng::object,
-        std::uint32_t,
-        cyng::obis_path_t,
+        std::string trx,
+        cyng::buffer_t server_id,
+        cyng::object act_time,
+        std::uint32_t status,
+        cyng::obis_path_t path,
         cyng::param_map_t values) {
-        CYNG_LOG_TRACE(logger_, "[sml.json] get_profile_list_response #" << values.size());
+        // CYNG_LOG_TRACE(logger_, "[sml.json.writer] get_profile_list_response #" << values.size());
+        auto const file_name = get_json_filename(prefix_, suffix_, srv_id_to_str(server_id), std::chrono::system_clock::now());
+        auto const file_path = root_dir_ / file_name;
+
+        std::ofstream of(file_path.string(), std::ios::app);
+
+        if (of.is_open()) {
+
+            CYNG_LOG_TRACE(logger_, "[sml.json.writer] get_profile_list_response #" << values.size() << ": " << file_path);
+        } else {
+            CYNG_LOG_ERROR(logger_, "[sml.json.writer] cannot open " << file_path);
+        }
     }
     void sml_json_writer::get_proc_parameter_response() {}
 
+    std::filesystem::path
+    get_json_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now) {
+
+        auto tt = std::chrono::system_clock::to_time_t(now);
+#ifdef _MSC_VER
+        struct tm tm;
+        _gmtime64_s(&tm, &tt);
+#else
+        auto tm = *std::gmtime(&tt);
+#endif
+
+        std::stringstream ss;
+        ss << prefix << server_id << '_' << std::put_time(&tm, "%Y%m%dT%H%M%S") << '.' << suffix;
+        return ss.str();
+    }
 } // namespace smf

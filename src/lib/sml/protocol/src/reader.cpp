@@ -435,8 +435,12 @@ namespace smf {
                 BOOST_ASSERT_MSG(tpl.size() == 7, "List Entry");
                 if (tpl.size() == 7) {
                     auto const [code, pm] = read_list_entry(tpl.begin(), tpl.end());
-                    BOOST_ASSERT(r.find(code) == r.end()); //	no duplicates allowed
-                    r.emplace(code, pm);
+                    if (r.find(code) == r.end()) {
+                        r.emplace(code, pm);
+                    }
+                    // else {
+                    //    BOOST_ASSERT_MSG(false, "no duplicates allowed"); //	no duplicates allowed
+                    //}
                 }
             }
 

@@ -97,7 +97,7 @@ namespace smf {
         for (auto const &name : sml_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register sml target " << name);
             auto channel = ctl_.create_named_channel_with_ref<sml_target>(name, ctl_, logger_, bus_);
-            channel->dispatch("register", cyng::make_tuple(name));
+            channel->dispatch("register", name);
 
             //
             //  stash this channel
@@ -109,7 +109,7 @@ namespace smf {
             //
             for (auto const &task_name : writer_) {
                 if (boost::algorithm::starts_with(task_name, "SML:")) {
-                    channel->dispatch("add", cyng::make_tuple(task_name));
+                    channel->dispatch("add", task_name);
                 }
             }
         }
@@ -120,7 +120,7 @@ namespace smf {
         for (auto const &name : iec_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register iec target " << name);
             auto channel = ctl_.create_named_channel_with_ref<iec_target>(name, ctl_, logger_, bus_);
-            channel->dispatch("register", cyng::make_tuple(name));
+            channel->dispatch("register", name);
 
             //
             //  stash this channel
@@ -132,7 +132,7 @@ namespace smf {
             //
             for (auto const &task_name : writer_) {
                 if (boost::algorithm::starts_with(task_name, "IEC:")) {
-                    channel->dispatch("add", cyng::make_tuple(task_name));
+                    channel->dispatch("add", task_name);
                 }
             }
         }
@@ -143,7 +143,7 @@ namespace smf {
         for (auto const &name : dlms_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register dlms target " << name);
             auto channel = ctl_.create_named_channel_with_ref<dlms_target>(name, ctl_, logger_, bus_);
-            channel->dispatch("register", cyng::make_tuple(name));
+            channel->dispatch("register", name);
 
             //
             //  stash this channel
@@ -155,7 +155,7 @@ namespace smf {
             //
             for (auto const &task_name : writer_) {
                 if (boost::algorithm::starts_with(task_name, "DLMS:")) {
-                    channel->dispatch("add", cyng::make_tuple(task_name));
+                    channel->dispatch("add", task_name);
                 }
             }
         }

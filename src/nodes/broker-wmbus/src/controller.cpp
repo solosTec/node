@@ -193,7 +193,7 @@ namespace smf {
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
         channel->dispatch("connect");
-        channel->suspend(std::chrono::seconds(20), "listen", cyng::make_tuple(ep));
+        channel->suspend(std::chrono::seconds(20), "listen", ep);
         channels.lock(channel);
     }
 
@@ -207,20 +207,29 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param(
                     "SML",
-                    cyng::param_map_factory("target", "sml@store")("account", "account")("number", "number")("version", "version")(
-                        "timeout", 30)
+                    cyng::param_map_factory("target", "sml@store") // ipt target
+                    ("account", "")                                // unused
+                    ("number", "")                                 // unused
+                    ("version", "")                                // unused
+                    ("timeout", 30)
                         .
                         operator cyng::param_map_t()),
                 cyng::make_param(
                     "IEC",
-                    cyng::param_map_factory("target", "iec@store")("account", "account")("number", "number")("version", "version")(
-                        "timeout", 30)
+                    cyng::param_map_factory("target", "iec@store") // ipt target
+                    ("account", "")                                // unused
+                    ("number", "")                                 // unused
+                    ("version", "")                                // unused
+                    ("timeout", 30)                                // unused
                         .
                         operator cyng::param_map_t()),
                 cyng::make_param(
                     "DLMS",
-                    cyng::param_map_factory("target", "dlms@store")("account", "account")("number", "number")("version", "version")(
-                        "timeout", 30)
+                    cyng::param_map_factory("target", "dlms@store") // ipt target
+                    ("account", "")                                 // unused
+                    ("number", "")                                  // unused
+                    ("version", "")                                 // unused
+                    ("timeout", 30)
                         .
                         operator cyng::param_map_t())));
     }

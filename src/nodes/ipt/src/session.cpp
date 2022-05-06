@@ -766,15 +766,10 @@ namespace smf {
                 block));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " push data " << channel << " failed: " << token);
-            ipt_send(std::bind(
-                &ipt::serializer::res_transfer_push_data,
-                &serializer_,
-                seq,
-                ipt::tp_res_pushdata_transfer_policy::UNREACHABLE,
-                channel,
-                source,
-                status,
-                block));
+            ipt_send([=, this]() {
+                return serializer_.res_transfer_push_data(
+                    seq, ipt::tp_res_pushdata_transfer_policy::UNREACHABLE, channel, source, status, block);
+            });
         }
     }
 

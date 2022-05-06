@@ -1,5 +1,5 @@
-	// generated at 2022-03-23 15:48:08
-	// 568 OBIS codes (3408 Bytes)
+	// generated at 2022-05-06 16:59:35
+	// 569 OBIS codes (3414 Bytes)
 
 	// #1
 	// Abstract objects
@@ -341,6 +341,7 @@
 	OBIS_CODE_DEFINITION(81, 06, 19, 07, 04, ff, W_MBUS_POWER);	// u8 - 0 = default, 1 = low, 2 = medium, 3 = high
 	OBIS_CODE_DEFINITION(81, 06, 19, 07, 11, ff, W_MBUS_INSTALL_MODE);
 	OBIS_CODE_DEFINITION(81, 06, 27, 32, 03, 01, W_MBUS_REBOOT);	// u32
+	OBIS_CODE_DEFINITION(81, 06, 2b, 07, 00, 00, W_MBUS_FIELD_STRENGTH_2);	// u8 - Receive field strength
 	OBIS_CODE_DEFINITION(81, 06, 64, 3c, 01, 01, W_MBUS_MAX_MSG_TIMEOUT);	// u8
 	OBIS_CODE_DEFINITION(81, 06, 64, 3c, 01, 04, W_MBUS_MAX_SML_TIMEOUT_IN);	// u16 - max timeout between SML close request and SML open response from device to gateway
 	OBIS_CODE_DEFINITION(81, 06, 64, 3c, 01, 05, W_MBUS_MAX_SML_TIMEOUT_OUT);	// u16 - max timeout between SML close request and SML open response from gateway to device
@@ -546,7 +547,7 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 12, ATTENTION_END_LIMIT_BEFORE_START);	// attention: end limit before start
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	// attention: range is empty - not the profile
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 14, ATTENTION_MISSING_CLOSE_MSG);	// attention: missing close message
-	// #538
+	// #539
 	// next group
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 00, ff, ROOT_BROKER);	// 90 00 00 00 00 NN - broker list
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 01, ff, BROKER_LOGIN);
@@ -556,7 +557,7 @@
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 05, ff, BROKER_PWD);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 06, ff, BROKER_TIMEOUT);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, a0, ff, BROKER_BLOCKLIST);
-	// #546
+	// #547
 	// next group
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 00, ff, ROOT_SERIAL);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 01, ff, SERIAL_NAME);	// example: /dev/ttyAPP0
@@ -566,7 +567,7 @@
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 05, ff, SERIAL_STOPBITS);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 06, ff, SERIAL_SPEED);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 07, ff, SERIAL_TASK);	// LMN port task
-	// #554
+	// #555
 	// next group
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 00, ff, ROOT_NMS);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 01, ff, NMS_ADDRESS);
@@ -574,7 +575,7 @@
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 03, ff, NMS_USER);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 04, ff, NMS_PWD);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 05, ff, NMS_ENABLED);
-	// #560
+	// #561
 	// next group
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 00, ff, ROOT_REDIRECTOR);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 01, ff, REDIRECTOR_LOGIN);
@@ -582,7 +583,7 @@
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 03, ff, REDIRECTOR_SERVICE);	// u16 - port
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 04, ff, REDIRECTOR_USER);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 05, ff, REDIRECTOR_PWD);
-	// #566
+	// #567
 	// next group
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	// current data set
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 04, LIST_SERVICES);

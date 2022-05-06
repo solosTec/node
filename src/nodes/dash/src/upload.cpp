@@ -325,7 +325,7 @@ namespace smf {
             ("meter", meter_id)                         //
             ("code", mc)                                //
             ("maker", maker)                            //
-            ("protocol", "IEC:62056")                   //
+            ("protocol", "IEC-62056")                   //
             ("item", meter_type)                        // i.e "Elster AS 220"
         );
 

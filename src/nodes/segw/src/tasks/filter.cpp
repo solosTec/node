@@ -117,7 +117,7 @@ namespace smf {
             //	send data to broker / listener
             //
             for (auto target : targets_) {
-                CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] pass through " << target);
+                CYNG_LOG_TRACE(logger_, "[" << cfg_blocklist_.get_task_name() << "] passing to " << target);
                 //  we have to make a copy of "data"
                 ctl_.get_registry().dispatch(target, "receive", cyng::clone(data));
             }

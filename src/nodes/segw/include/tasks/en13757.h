@@ -22,7 +22,13 @@ namespace smf {
     class en13757 {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<
+            std::function<void(cyng::buffer_t)>,
+            std::function<void(void)>,        //	reset_target_channels
+            std::function<void(std::string)>, //	add_target_channel
+            std::function<void(void)>,        //	update_statistics
+            std::function<void(cyng::eod)>    //  stop()
+            >;
 
       public:
         en13757(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cfg &);
@@ -35,6 +41,23 @@ namespace smf {
          * "receive"
          */
         void receive(cyng::buffer_t);
+
+        /** @"reset-data-sinks"
+         *
+         * Remove all data sinks
+         */
+        void reset_target_channels();
+
+        /** @"add-data-sink"
+         *
+         * Add a new listener task
+         */
+        void add_target_channel(std::string);
+
+        /**
+         * "update-statistics"
+         */
+        void update_statistics();
 
       private:
         signatures_t sigs_;

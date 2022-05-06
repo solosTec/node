@@ -526,6 +526,7 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(81, 06, 19, 07, 04, ff), {"W_MBUS_POWER", cyng::TC_UINT8, "0 = default, 1 = low, 2 = medium, 3 = high"}},
         {DEFINE_OBIS(81, 06, 19, 07, 11, ff), {"W_MBUS_INSTALL_MODE", cyng::TC_NULL, ""}},
         {DEFINE_OBIS(81, 06, 27, 32, 03, 01), {"W_MBUS_REBOOT", cyng::TC_UINT32, ""}},
+        {DEFINE_OBIS(81, 06, 2b, 07, 00, 00), {"W_MBUS_FIELD_STRENGTH_2", cyng::TC_UINT8, "Receive field strength"}},
         {DEFINE_OBIS(81, 06, 64, 3c, 01, 01), {"W_MBUS_MAX_MSG_TIMEOUT", cyng::TC_UINT8, ""}},
         {DEFINE_OBIS(81, 06, 64, 3c, 01, 04),
          {"W_MBUS_MAX_SML_TIMEOUT_IN",

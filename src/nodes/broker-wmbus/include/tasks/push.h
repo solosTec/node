@@ -40,7 +40,7 @@ namespace smf {
             ipt::push_channel &&pcc_sml,
             ipt::push_channel &&pcc_iec,
             ipt::push_channel &&pcc_dlms);
-        ~push();
+        ~push() = default;
 
       private:
         void stop(cyng::eod);

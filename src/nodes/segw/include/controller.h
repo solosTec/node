@@ -8,9 +8,10 @@
 #ifndef SMF_SEGW_CONTROLLER_H
 #define SMF_SEGW_CONTROLLER_H
 
+#include <smf/controller_base.h>
+
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
-#include <smf/controller_base.h>
 
 namespace cyng {
     class controller;

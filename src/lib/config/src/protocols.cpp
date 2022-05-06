@@ -24,15 +24,16 @@ namespace smf {
             case protocol::IPT:
                 return "IP-TDIN-E43863-4";
             case protocol::IEC:
-                return "IEC:62056";
+                return "IEC-62056";
             case protocol::WIRED_MBUS:
                 return "M-Bus";
             case protocol::WIRELESS_MBUS:
-                return "wM-Bus:EN13757-4";
+                return "wM-Bus-EN13757-4";
             case protocol::HDLC:
                 return "HDLC";
             case protocol::SML:
-                return "SML";
+                // https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Publikationen/TechnischeRichtlinien/TR03109/TR-03109-1_Anlage_Feinspezifikation_Drahtgebundene_LMN-Schnittstelle_Teilb.pdf?__blob=publicationFile
+                return "SMLv1.04";
             case protocol::COSEM:
                 return "COSEM";
             default:

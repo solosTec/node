@@ -21,14 +21,7 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void(cyng::buffer_t, cyng::buffer_t)>,
             std::function<void()>,
-            std::function<void(
-                std::string,
-                cyng::buffer_t,
-                cyng::object,
-                std::uint32_t,
-                // std::uint32_t,
-                cyng::obis_path_t,
-                cyng::param_map_t)>,
+            std::function<void(std::string, cyng::buffer_t, cyng::object, std::uint32_t, cyng::obis_path_t, cyng::param_map_t)>,
             std::function<void()>,
             std::function<void(cyng::eod)>>;
 
@@ -39,8 +32,10 @@ namespace smf {
             cyng::logger logger,
             std::filesystem::path out,
             std::string prefix,
-            std::string suffix);
-        ~sml_abl_writer();
+            std::string suffix,
+            bool eol_dos);
+
+        ~sml_abl_writer() = default;
 
       private:
         void stop(cyng::eod);
@@ -60,7 +55,25 @@ namespace smf {
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
+        std::filesystem::path const root_dir_;
+        std::string const prefix_;
+        std::string const suffix_;
+        std::string const eol_;
     };
+
+    std::filesystem::path get_abl_filename(
+        std::string prefix,
+        std::string suffix,
+        // std::string gw,
+        std::string server_id,
+        std::chrono::system_clock::time_point now);
+
+    std::chrono::system_clock::time_point get_act_time(cyng::object);
+
+    void
+    emit_abl_header(std::ofstream &os, cyng::buffer_t const &srv_id, std::chrono::system_clock::time_point act, std::string eol);
+
+    void emit_abl_value(std::ofstream &os, cyng::obis const &, cyng::object const &, std::string unit, std::string);
 
 } // namespace smf
 

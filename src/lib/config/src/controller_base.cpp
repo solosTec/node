@@ -155,7 +155,7 @@ namespace smf {
                         //	enable console logging
                         logger.start_console_logger();
                     }
-                    if (config_.log_file_) {
+                    if (config_.log_file_ && !config_.log_file_path_.empty()) {
                         logger.start_file_logger(config_.log_file_path_, config_.log_file_size_);
                     }
 

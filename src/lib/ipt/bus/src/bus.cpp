@@ -380,7 +380,7 @@ namespace smf {
 
                 if (!ec) {
 
-                    CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] write #" << buffer_write_.size());
+                    CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] write buffer #" << buffer_write_.size());
                     if (buffer_write_.empty()) {
                         CYNG_LOG_FATAL(logger_, "ipt write empty buffer");
                     }

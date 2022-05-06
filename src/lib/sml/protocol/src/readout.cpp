@@ -95,8 +95,8 @@ namespace smf {
         cyng::obis read_obis(cyng::object obj) {
 
             auto const tmp = cyng::to_buffer(obj);
-            BOOST_ASSERT(tmp.size() == 6);
-            return cyng::make_obis(tmp);
+            // BOOST_ASSERT(tmp.size() == 6);
+            return (tmp.size() == 6) ? cyng::make_obis(tmp) : cyng::obis();
         }
 
         cyng::object read_time(cyng::object obj) {

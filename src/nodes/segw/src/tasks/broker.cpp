@@ -102,13 +102,13 @@ namespace smf {
             //
             CYNG_LOG_WARNING(
                 logger_,
-                "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port
-                                     << " - invalid");
-            return;
-        } else {
-            CYNG_LOG_INFO(
-                logger_, "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port);
+                "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port
+                                    << " - invalid");
+            return; //  stop here
         }
+
+        CYNG_LOG_INFO(
+            logger_, "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port);
 
         try {
             boost::asio::ip::tcp::resolver r(ctl_.get_ctx());
@@ -122,8 +122,8 @@ namespace smf {
         } catch (std::exception const &ex) {
             CYNG_LOG_WARNING(
                 logger_,
-                "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] cannot resolve address " << address << ": "
-                                     << ex.what());
+                "[broker-on-start/" << +cfg_.get_index() << "/" << index_ << "] cannot resolve address " << address << ": "
+                                    << ex.what());
         }
     }
 
@@ -612,7 +612,13 @@ namespace smf {
                 // There are no more endpoints to try.
                 // Reset buffer and go offline
                 //
-                CYNG_LOG_WARNING(logger_, "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] connect failed");
+                auto const address = cfg_.get_address(index_);
+                auto const port = cfg_.get_port(index_);
+
+                CYNG_LOG_WARNING(
+                    logger_,
+                    "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] connect to " << address << ':' << port
+                                         << " failed");
                 reset(sp, state::value::OFFLINE);
             }
         }

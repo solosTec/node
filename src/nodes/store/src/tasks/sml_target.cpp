@@ -116,7 +116,6 @@ namespace smf {
     void sml_target::get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
         // CYNG_LOG_DEBUG(logger_, "get_profile_list_response: " << msg);
         auto const [srv, path, act, reg, val, stat, list] = sml::read_get_profile_list_response(msg);
-        // auto const r = smf::sml::read_get_profile_list_response(msg);
         for (auto const &ro : list) {
             //  there is a problem with OBIS code "01 00 00 09 0b 00" which contains an invalid data type of
             //  std::chrono::duration< ... ratio<1,10000000> >
@@ -133,7 +132,10 @@ namespace smf {
         // to
         // std::map<std::string, cyng::object> == cyng::param_map_t
         //
+        //  pmap contains an "key" entry that contains the original
+        //  obis code.
         auto const pmap = convert_to_param_map(list);
+        BOOST_ASSERT(!pmap.empty());
 
         //
         //  send to writers
@@ -143,25 +145,12 @@ namespace smf {
                 writer,
                 "get.profile.list.response",
                 trx,
-                srv, //  [buffer_t] server id
-                act, //  [cyng::object] actTime
-                // std::get<2>(r), //  [u32] regPeriod
+                srv,  //  [buffer_t] server id
+                act,  //  [cyng::object] actTime
                 stat, //  [u32] status
                 path, //  [obis_path_t] path
                 pmap  //  [std::map<cyng::obis, cyng::param_map_t>] values
             );
-            // auto sp = writer.lock();
-            // if (sp)
-            //     sp->dispatch(
-            //         "get.profile.list.response",
-            //         trx,
-            //         srv, //  [buffer_t] server id
-            //         act, //  [cyng::object] actTime
-            //         // std::get<2>(r), //  [u32] regPeriod
-            //         stat, //  [u32] status
-            //         path, //  [obis_path_t] path
-            //         pmap  //  [std::map<cyng::obis, cyng::param_map_t>] values
-            //     );
         }
     }
 
@@ -219,6 +208,8 @@ namespace smf {
             std::end(inp),
             std::inserter(r, r.end()),
             [](sml::sml_list_t::value_type value) -> cyng::param_map_t::value_type {
+                //  Add the original key as value. This saves a reconversion from string type
+                value.second.emplace("key", cyng::make_object(value.first));
                 value.second.emplace("code", cyng::make_object(obis::get_name(value.first)));
                 value.second.emplace("descr", cyng::make_object(obis::get_description(value.first)));
 

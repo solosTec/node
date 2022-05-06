@@ -63,8 +63,8 @@ namespace smf {
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
-            cyng::make_param("model", "smf.store"),
-            cyng::make_param("network-delay", 6), //  seconds to wait before starting ip-t client
+            cyng::make_param("model", "smf.store"), //  ip-t ident
+            cyng::make_param("network-delay", 6),   //  seconds to wait before starting ip-t client
 
             cyng::make_param("writer", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
@@ -96,18 +96,14 @@ namespace smf {
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "xml").string()),
                     cyng::make_param("root-name", "SML"),
-                    cyng::make_param("endcoding", "UTF-8"),
-                    cyng::make_param("interval", 18) //	seconds
-                    )),
+                    cyng::make_param("endcoding", "UTF-8"))),
             cyng::make_param(
                 "SML:JSON",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "json").string()),
                     cyng::make_param("prefix", "smf"),
                     cyng::make_param("suffix", "json"),
-                    cyng::make_param("version", SMF_VERSION_NAME),
-                    cyng::make_param("interval", 21) //	seconds
-                    )),
+                    cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "SML:ABL",
                 cyng::tuple_factory(
@@ -115,8 +111,7 @@ namespace smf {
                     cyng::make_param("prefix", "smf"),
                     cyng::make_param("suffix", "abl"),
                     cyng::make_param("version", SMF_VERSION_NAME),
-                    cyng::make_param("interval", 33),      //	seconds
-                    cyng::make_param("line-ending", "DOS") //	DOS/UNIX
+                    cyng::make_param("line-ending", "DOS") //	DOS/UNIX, DOS = "\r\n", UNIX = "\n", native = std::endl
                     )),
             cyng::make_param(
                 "ALL:BIN",
@@ -254,6 +249,13 @@ namespace smf {
                         cyng::value_cast(reader[name]["prefix"].get(), "sml"),
                         cyng::value_cast(reader[name]["suffix"].get(), "csv"));
                 } else if (boost::algorithm::equals(name, "SML:ABL")) {
+
+#ifdef _MSC_VER
+                    auto const line_ending = cyng::value_cast(reader[name]["line-ending"].get(), "DOS");
+#else
+                    auto const line_ending = cyng::value_cast(reader[name]["line-ending"].get(), "UNIX");
+#endif
+
                     start_sml_abl(
                         ctl,
                         channels,
@@ -261,7 +263,9 @@ namespace smf {
                         name,
                         cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
                         cyng::value_cast(reader[name]["prefix"].get(), "sml"),
-                        cyng::value_cast(reader[name]["suffix"].get(), "csv"));
+                        cyng::value_cast(reader[name]["suffix"].get(), "csv"),
+                        boost::algorithm::equals(line_ending, "DOS"));
+
                 } else if (boost::algorithm::equals(name, "SML:LOG")) {
                     start_sml_log(
                         ctl,
@@ -546,6 +550,17 @@ namespace smf {
         std::string out,
         std::string prefix,
         std::string suffix) {
+
+        if (!std::filesystem::exists(out)) {
+            std::error_code ec;
+            std::filesystem::create_directories(out, ec);
+            if (ec) {
+                CYNG_LOG_ERROR(logger, "[sml.xml.writer] " << ec.message());
+                return; //  give up
+            }
+        } else {
+            CYNG_LOG_INFO(logger, "[sml.xml.writer] start -> " << out);
+        }
         if (!out.empty()) {
             CYNG_LOG_INFO(logger, "start sml xml writer");
             auto channel = ctl.create_named_channel_with_ref<sml_xml_writer>(name, ctl, logger, out, prefix, suffix);
@@ -561,7 +576,18 @@ namespace smf {
         std::string out,
         std::string prefix,
         std::string suffix) {
-        CYNG_LOG_INFO(logger, "start sml json writer -> " << out);
+
+        if (!std::filesystem::exists(out)) {
+            std::error_code ec;
+            std::filesystem::create_directories(out, ec);
+            if (ec) {
+                CYNG_LOG_ERROR(logger, "[sml.json.writer] " << ec.message());
+                return; //  give up
+            }
+        } else {
+            CYNG_LOG_INFO(logger, "[sml.json.writer] start -> " << out);
+        }
+
         if (!out.empty()) {
             auto channel = ctl.create_named_channel_with_ref<sml_json_writer>(name, ctl, logger, out, prefix, suffix);
             BOOST_ASSERT(channel->is_open());
@@ -575,12 +601,25 @@ namespace smf {
         std::string const &name,
         std::string out,
         std::string prefix,
-        std::string suffix) {
-        CYNG_LOG_INFO(logger, "start sml abl writer -> " << out);
+        std::string suffix,
+        bool eol_dos) {
+
+        if (!std::filesystem::exists(out)) {
+            std::error_code ec;
+            std::filesystem::create_directories(out, ec);
+            if (ec) {
+                CYNG_LOG_ERROR(logger, "[sml.abl.writer] " << ec.message());
+                return; //  give up
+            }
+        } else {
+            CYNG_LOG_INFO(logger, "[sml.abl.writer] start -> " << out);
+        }
         if (!out.empty()) {
-            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>(name, ctl, logger, out, prefix, suffix);
+            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>(name, ctl, logger, out, prefix, suffix, eol_dos);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
+        } else {
+            CYNG_LOG_ERROR(logger, "[sml.abl.writer] missing output path");
         }
     }
     void controller::start_sml_log(
@@ -608,12 +647,25 @@ namespace smf {
         std::string prefix,
         std::string suffix,
         bool header) {
-        CYNG_LOG_INFO(logger, "start sml csv writer -> " << out);
+
+        if (!std::filesystem::exists(out)) {
+            std::error_code ec;
+            std::filesystem::create_directories(out, ec);
+            if (ec) {
+                CYNG_LOG_ERROR(logger, "[sml.csv.writer] " << ec.message());
+                return; //  give up
+            }
+        } else {
+            CYNG_LOG_INFO(logger, "[sml.csv.writer] start -> " << out);
+        }
+
         if (!out.empty()) {
 
             auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>(name, ctl, logger, out, prefix, suffix, header);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
+        } else {
+            CYNG_LOG_ERROR(logger, "[sml.csv.writer] missing output path");
         }
     }
     void controller::start_sml_influx(

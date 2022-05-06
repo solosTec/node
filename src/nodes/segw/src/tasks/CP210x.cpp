@@ -29,13 +29,13 @@ namespace smf {
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
 
-        CYNG_LOG_INFO(logger_, "CP210x ready");
+        CYNG_LOG_INFO(logger_, "[CP210x] ready");
     }
 
     void CP210x::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "CP210x stopped"); }
 
     void CP210x::put(hci::msg const &msg) {
-        CYNG_LOG_DEBUG(logger_, "CP210x received " << msg);
+        CYNG_LOG_DEBUG(logger_, "[CP210x] hci message: " << msg);
         for (auto target : targets_) {
             ctl_.get_registry().dispatch(target, "receive", msg.get_payload());
         }

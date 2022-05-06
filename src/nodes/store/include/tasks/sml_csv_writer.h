@@ -34,7 +34,7 @@ namespace smf {
             std::string prefix,
             std::string suffix,
             bool header);
-        ~sml_csv_writer();
+        ~sml_csv_writer() = default;
 
       private:
         void stop(cyng::eod);
@@ -55,7 +55,16 @@ namespace smf {
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
+        std::filesystem::path const root_dir_;
+        std::string const prefix_;
+        std::string const suffix_;
     };
+
+    std::filesystem::path get_csv_filename(
+        std::string prefix,
+        std::string suffix,
+        std::string server_id,
+        std::chrono::system_clock::time_point now);
 
 } // namespace smf
 

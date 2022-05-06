@@ -5,11 +5,11 @@
  *
  */
 
-#include <config/cfg_nms.h>
 #include <controller.h>
 #include <smf.h>
 #include <storage_functions.h>
 
+#include <config/cfg_nms.h>
 #include <tasks/bridge.h>
 #include <tasks/gpio.h>
 

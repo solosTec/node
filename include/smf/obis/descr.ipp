@@ -330,6 +330,7 @@ case 0x8106190703ff: return "";
 case 0x8106190704ff: return "0 = default, 1 = low, 2 = medium, 3 = high";	// 0 = default, 1 = low, 2 = medium, 3 = high
 case 0x8106190711ff: return "";
 case 0x810627320301: return "";
+case 0x81062b070000: return "Receive field strength";	// Receive field strength
 case 0x8106643c0101: return "";
 case 0x8106643c0104: return "max timeout between SML close request and SML open response from device to gateway";	// max timeout between SML close request and SML open response from device to gateway
 case 0x8106643c0105: return "max timeout between SML close request and SML open response from gateway to device";	// max timeout between SML close request and SML open response from gateway to device

@@ -66,7 +66,8 @@ namespace smf {
             std::string const &,
             std::string,
             std::string,
-            std::string);
+            std::string,
+            bool eol_dos);
         void start_sml_log(
             cyng::controller &,
             cyng::stash &channels,

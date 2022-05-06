@@ -330,6 +330,7 @@ case 0x8106190703ff: return "W_MBUS_MODE_T";
 case 0x8106190704ff: return "W_MBUS_POWER";	// 0 = default, 1 = low, 2 = medium, 3 = high
 case 0x8106190711ff: return "W_MBUS_INSTALL_MODE";
 case 0x810627320301: return "W_MBUS_REBOOT";
+case 0x81062b070000: return "W_MBUS_FIELD_STRENGTH_2";	// Receive field strength
 case 0x8106643c0101: return "W_MBUS_MAX_MSG_TIMEOUT";
 case 0x8106643c0104: return "W_MBUS_MAX_SML_TIMEOUT_IN";	// max timeout between SML close request and SML open response from device to gateway
 case 0x8106643c0105: return "W_MBUS_MAX_SML_TIMEOUT_OUT";	// max timeout between SML close request and SML open response from gateway to device

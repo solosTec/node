@@ -6,6 +6,9 @@
  */
 #include <tasks/push.h>
 
+#include <smf/ipt/codes.h>
+#include <smf/ipt/response.hpp>
+#include <smf/ipt/transpiler.h>
 #include <smf/mbus/server_id.h>
 #include <smf/sml/crc16.h>
 #include <smf/sml/serializer.h>
@@ -64,12 +67,6 @@ namespace smf {
             sp->set_channel_names({"connect", "send.sml", "send.mbus", "send.dlms", "channel.open"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
-    }
-
-    push::~push() {
-#ifdef _DEBUG_BROKER_WMBUS
-        std::cout << "push(~)" << std::endl;
-#endif
     }
 
     void push::stop(cyng::eod) {
@@ -177,7 +174,29 @@ namespace smf {
     void push::ipt_cmd(ipt::header const &h, cyng::buffer_t &&body) {
 
         CYNG_LOG_TRACE(logger_, "[push] cmd " << ipt::command_name(h.command_));
+        switch (ipt::to_code(h.command_)) {
+        case ipt::code::TP_RES_PUSHDATA_TRANSFER: {
+            auto [res, channel, source, status, block] = ipt::tp_res_pushdata_transfer(std::move(body));
+            if (ipt::tp_res_pushdata_transfer_policy::is_success(res)) {
+                CYNG_LOG_TRACE(
+                    logger_,
+                    "[push] transfer [" << channel << "," << source
+                                        << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
+
+            } else {
+                CYNG_LOG_WARNING(
+                    logger_,
+                    "[push] transfer [" << channel << "," << source
+                                        << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
+                //  ToDo: close/reopen channel
+            }
+        } break;
+
+        default:
+            break;
+        }
     }
+
     void push::ipt_stream(cyng::buffer_t &&data) { CYNG_LOG_TRACE(logger_, "[ipt] stream " << data.size() << " byte"); }
 
     void push::auth_state(bool auth, boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep) {
