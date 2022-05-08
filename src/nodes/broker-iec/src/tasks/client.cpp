@@ -97,7 +97,7 @@ namespace smf {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names(
-                {"init", "start", "connect", "add.meter", "remove.meter", "shutdown", "channel.open", "channel.close"});
+                {"init", "start", "connect", "add.meter", "remove.meter", "shutdown", "on.channel.open", "on.channel.close"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
 
@@ -587,7 +587,7 @@ namespace smf {
             next_meter();
         }
     }
-    void client::on_channel_close(std::string, std::uint32_t) {}
+    void client::on_channel_close(bool success, std::uint32_t) {}
 
     void client::next_meter() {
 

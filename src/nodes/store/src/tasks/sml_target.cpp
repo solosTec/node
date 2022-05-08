@@ -56,14 +56,12 @@ namespace smf {
                 CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
                 close_response(trx, msg);
                 break;
-            default:
-                CYNG_LOG_WARNING(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                break;
+            default: CYNG_LOG_WARNING(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg); break;
             }
         }) {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"register", "receive", "add"});
+            sp->set_channel_names({"register", "pushdata.transfer", "add"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

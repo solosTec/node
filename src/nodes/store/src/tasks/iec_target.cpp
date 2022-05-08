@@ -29,7 +29,7 @@ namespace smf {
         , channel_list_() {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"register", "receive", "add"});
+            sp->set_channel_names({"register", "pushdata.transfer", "add"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

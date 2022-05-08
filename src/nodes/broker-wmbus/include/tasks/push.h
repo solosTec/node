@@ -7,6 +7,7 @@
 #ifndef SMF_BROKER_WMBUS_TASK_PUSH_H
 #define SMF_BROKER_WMBUS_TASK_PUSH_H
 
+#include <smf/config/protocols.h>
 #include <smf/ipt/bus.h>
 #include <smf/sml/generator.h>
 
@@ -27,9 +28,12 @@ namespace smf {
             std::function<void(cyng::buffer_t srv, cyng::tuple_t)>,                              //  send_mbus
             std::function<void(void)>,                                                           //  send_dlms
             std::function<void(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
-            std::function<void(cyng::eod)>>;
+            std::function<void(bool, std::uint32_t)>,                                            //  on_channel_close
+            std::function<void(void)>,                                                           //  open_push_channels
+            std::function<void(cyng::eod)>                                                       //  stop()
+            >;
 
-        enum class protocol_type { SML, IEC, DLMS };
+        // enum class protocol_type { SML, IEC, DLMS };
 
       public:
         push(
@@ -58,6 +62,7 @@ namespace smf {
         void open_push_channels();
 
         void on_channel_open(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string);
+        void on_channel_close(bool, std::uint32_t);
 
       private:
         signatures_t sigs_;
@@ -71,7 +76,7 @@ namespace smf {
         /**
          * maintain a list of open channels
          */
-        std::map<protocol_type, std::pair<std::uint32_t, std::uint32_t>> channels_;
+        std::map<config::protocol, std::pair<std::uint32_t, std::uint32_t>> channels_;
 
         sml::response_generator sml_generator_;
     };

@@ -36,10 +36,10 @@ namespace smf {
         ipt::push_channel &&pcc_iec,
         ipt::push_channel &&pcc_dlms)
     : sigs_ {
-        std::bind(&push::connect, this), 
-        std::bind(&push::send_sml, this, std::placeholders::_1, std::placeholders::_2),
-        std::bind(&push::send_mbus, this, std::placeholders::_1, std::placeholders::_2), 
-        std::bind(&push::send_dlms, this),
+        std::bind(&push::connect, this), // "connect"
+        std::bind(&push::send_sml, this, std::placeholders::_1, std::placeholders::_2), // "send.sml"
+        std::bind(&push::send_mbus, this, std::placeholders::_1, std::placeholders::_2), // "send.mbus"
+        std::bind(&push::send_dlms, this), // "send.dlms"
         std::bind(
             &push::on_channel_open,
             this,
@@ -47,8 +47,13 @@ namespace smf {
             std::placeholders::_2,
             std::placeholders::_3,
             std::placeholders::_4,
-            std::placeholders::_5),
-
+            std::placeholders::_5), // "on.channel.open"
+        std::bind(
+            &push::on_channel_close,
+            this,
+            std::placeholders::_1,
+            std::placeholders::_2), // "on.channel.close"
+        std::bind(&push::open_push_channels, this), // "open.channels"
         std::bind(&push::stop, this, std::placeholders::_1),
     }
     , channel_(wp), logger_(logger), pcc_sml_(pcc_sml), pcc_iec_(pcc_iec), pcc_dlms_(pcc_dlms)
@@ -64,7 +69,8 @@ namespace smf {
     , sml_generator_()
     {
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"connect", "send.sml", "send.mbus", "send.dlms", "channel.open"});
+            sp->set_channel_names(
+                {"connect", "send.sml", "send.mbus", "send.dlms", "on.channel.open", "on.channel.close", "open.channels"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }
@@ -92,15 +98,15 @@ namespace smf {
         //  send payload
         // protocol_type { SML, IEC, DLMS };
         //
-        auto pos = channels_.find(protocol_type::SML);
+        auto pos = channels_.find(config::protocol::SML);
         if (pos != channels_.end()) {
             CYNG_LOG_INFO(
                 logger_,
-                "[push] sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv) << " to " << pos->second.first
-                              << ':' << pos->second.second);
+                "[wmbus.push] sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv) << " to " << pos->second.first
+                                    << ':' << pos->second.second);
             bus_.transmit(pos->second, payload);
         } else {
-            CYNG_LOG_WARNING(logger_, "[push] no SML channel open");
+            CYNG_LOG_WARNING(logger_, "[wmbus.push] no SML channel open");
         }
 
         //
@@ -108,14 +114,14 @@ namespace smf {
         //
     }
     void push::send_mbus(cyng::buffer_t srv, cyng::tuple_t sml_list) {
-        CYNG_LOG_INFO(logger_, "[push] mbus data");
+        CYNG_LOG_INFO(logger_, "[wmbus.push] mbus data");
 
         //
         //  generate SML open response message
         //
 
         //
-        //  generate SML  message
+        //  generate SML message
         //
         auto const tpl = sml_generator_.get_list(srv, sml_list);
         auto msg = sml::set_crc16(sml::serialize(tpl));
@@ -139,20 +145,20 @@ namespace smf {
         //  send payload
         //
 
-        auto pos = channels_.find(protocol_type::SML);
+        auto pos = channels_.find(config::protocol::SML);
         if (pos != channels_.end()) {
             CYNG_LOG_INFO(
                 logger_,
-                "[push] mbus/sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv) << " to " << pos->second.first
-                                   << ':' << pos->second.second);
+                "[wmbus.push] mbus/sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv) << " to "
+                                         << pos->second.first << ':' << pos->second.second);
             bus_.transmit(pos->second, payload);
         } else {
-            CYNG_LOG_WARNING(logger_, "[push] no SML channel open");
+            CYNG_LOG_WARNING(logger_, "[wmbus.push] no SML channel open");
         }
     }
 
     void push::send_dlms() {
-        CYNG_LOG_INFO(logger_, "[push] dlms data");
+        CYNG_LOG_INFO(logger_, "[wmbus.push] dlms data");
 
         //
         //  generate SML open response message
@@ -173,31 +179,56 @@ namespace smf {
 
     void push::ipt_cmd(ipt::header const &h, cyng::buffer_t &&body) {
 
-        CYNG_LOG_TRACE(logger_, "[push] cmd " << ipt::command_name(h.command_));
         switch (ipt::to_code(h.command_)) {
         case ipt::code::TP_RES_PUSHDATA_TRANSFER: {
             auto [res, channel, source, status, block] = ipt::tp_res_pushdata_transfer(std::move(body));
             if (ipt::tp_res_pushdata_transfer_policy::is_success(res)) {
                 CYNG_LOG_TRACE(
                     logger_,
-                    "[push] transfer [" << channel << "," << source
-                                        << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
+                    "[wmbus.push] transfer [" << channel << "," << source
+                                              << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
 
             } else {
                 CYNG_LOG_WARNING(
                     logger_,
-                    "[push] transfer [" << channel << "," << source
-                                        << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
-                //  ToDo: close/reopen channel
+                    "[wmbus.push] transfer [" << channel << "," << source
+                                              << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
+                //  close/reopen channel
+                for (auto const &data : channels_) {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "close channel " << config::get_name(data.first) << " [" << data.second.first << ',' << data.second.second
+                                         << "]");
+                    //
+                    //  Since the channel is broken, closing the channel will probably not work.
+                    //
+                    bus_.close_channel(data.second.first, channel_);
+                }
+
+                //
+                //  clear channel table
+                //
+                channels_.clear();
+
+                if (auto sp = channel_.lock(); sp) {
+                    CYNG_LOG_INFO(logger_, "[wmbus.push] reopen channels in one minute");
+                    sp->suspend(std::chrono::minutes(1), "open.channels");
+                } else {
+                    CYNG_LOG_ERROR(logger_, "[wmbus.push] channel invalid - cannot reopen channels");
+                }
             }
         } break;
 
-        default:
-            break;
+        default: CYNG_LOG_TRACE(logger_, "[wmbus.push] cmd " << ipt::command_name(h.command_)); break;
         }
     }
 
-    void push::ipt_stream(cyng::buffer_t &&data) { CYNG_LOG_TRACE(logger_, "[ipt] stream " << data.size() << " byte"); }
+    void push::ipt_stream(cyng::buffer_t &&data) {
+        //
+        //  There should _not_ be an ipt data stream
+        //
+        CYNG_LOG_WARNING(logger_, "[ipt] stream " << data.size() << " byte");
+    }
 
     void push::auth_state(bool auth, boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep) {
         if (auth) {
@@ -208,53 +239,62 @@ namespace smf {
             //
             open_push_channels();
         } else {
-            CYNG_LOG_WARNING(logger_, "[push] authorization lost");
+            CYNG_LOG_WARNING(logger_, "[wmbus.push] authorization lost");
             channels_.clear();
 
             //
             //  reconnect in 1 minute
             //
             if (auto sp = channel_.lock(); sp) {
-                CYNG_LOG_INFO(logger_, "[push] reconnect in one minute");
+                CYNG_LOG_INFO(logger_, "[wmbus.push] reconnect in one minute");
                 sp->suspend(std::chrono::minutes(1), "connect");
             } else {
-                CYNG_LOG_ERROR(logger_, "[push] channel invalid - cannot reconnect");
+                CYNG_LOG_ERROR(logger_, "[wmbus.push] channel invalid - cannot reconnect");
             }
         }
     }
 
     void push::open_push_channels() {
-        CYNG_LOG_INFO(logger_, "[push] open SML channel " << pcc_sml_);
+        CYNG_LOG_INFO(logger_, "[wmbus.push] open SML channel " << pcc_sml_);
         bus_.open_channel(pcc_sml_, channel_);
 
         // std::this_thread::sleep_for(std::chrono::seconds(1));
-        CYNG_LOG_INFO(logger_, "[push] open IEC channel " << pcc_iec_);
+        CYNG_LOG_INFO(logger_, "[wmbus.push] open IEC channel " << pcc_iec_);
         bus_.open_channel(pcc_iec_, channel_);
 
         // std::this_thread::sleep_for(std::chrono::seconds(1));
-        CYNG_LOG_INFO(logger_, "[push] open DLMS channel " << pcc_dlms_);
+        CYNG_LOG_INFO(logger_, "[wmbus.push] open DLMS channel " << pcc_dlms_);
         bus_.open_channel(pcc_dlms_, channel_);
     }
 
     void push::on_channel_open(bool success, std::uint32_t channel, std::uint32_t source, std::uint32_t count, std::string target) {
         if (success) {
-            CYNG_LOG_INFO(logger_, "[push] channel " << target << " is open #" << channel << ':' << source);
+            CYNG_LOG_INFO(logger_, "[wmbus.push] channel " << target << " is open #" << channel << ':' << source);
 
             //
             //  update channel list
             // protocol_type { SML, IEC, DLMS };
             //
             if (boost::algorithm::equals(target, pcc_sml_.target_)) {
-                channels_.emplace(protocol_type::SML, std::make_pair(channel, source));
+                channels_.emplace(config::protocol::SML, std::make_pair(channel, source));
             } else if (boost::algorithm::equals(target, pcc_iec_.target_)) {
-                channels_.emplace(protocol_type::IEC, std::make_pair(channel, source));
+                channels_.emplace(config::protocol::IEC, std::make_pair(channel, source));
             } else if (boost::algorithm::equals(target, pcc_dlms_.target_)) {
-                channels_.emplace(protocol_type::DLMS, std::make_pair(channel, source));
+                channels_.emplace(config::protocol::DLMS, std::make_pair(channel, source));
             } else {
-                CYNG_LOG_WARNING(logger_, "[push] unknown push channel: " << target);
+                CYNG_LOG_WARNING(logger_, "[wmbus.push] unknown push channel: " << target);
             }
         } else {
-            CYNG_LOG_WARNING(logger_, "[push] open push channel failed");
+            CYNG_LOG_WARNING(logger_, "[wmbus.push] open push channel failed");
+        }
+    }
+
+    void push::on_channel_close(bool success, std::uint32_t channel) {
+        if (success) {
+            CYNG_LOG_TRACE(logger_, "[wmbus.push] channel " << channel << " closed");
+        } else {
+            //  This is expected: see remark in push::ipt_cmd()
+            CYNG_LOG_INFO(logger_, "[wmbus.push] channel " << channel << " could not be closed (this is expected)");
         }
     }
 

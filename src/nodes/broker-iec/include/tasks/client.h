@@ -30,7 +30,7 @@ namespace smf {
             std::function<void(std::string)>,                                     //  remove meter
             std::function<void()>,                                                //  shutdown
             std::function<void(bool, std::string, std::uint32_t, std::uint32_t)>, //  on_channel_open
-            std::function<void(std::string, std::uint32_t)>,                      //  on_channel_close
+            std::function<void(bool, std::uint32_t)>,                             //  on_channel_close
             std::function<void(cyng::eod)>>;
 
         enum class state_value : std::uint16_t {
@@ -166,7 +166,7 @@ namespace smf {
         void state_bbc();
 
         void on_channel_open(bool, std::string, std::uint32_t, std::uint32_t);
-        void on_channel_close(std::string, std::uint32_t);
+        void on_channel_close(bool, std::uint32_t);
 
         /**
          * check if there are more meters

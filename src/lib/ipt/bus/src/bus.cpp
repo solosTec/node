@@ -364,9 +364,7 @@ namespace smf {
                         //  closes from peer
                         set_reconnect_timer(boost::asio::chrono::seconds(10));
                         break;
-                    default:
-                        set_reconnect_timer(boost::asio::chrono::seconds(20));
-                        break;
+                    default: set_reconnect_timer(boost::asio::chrono::seconds(20)); break;
                     }
                 }
             }
@@ -422,16 +420,12 @@ namespace smf {
             CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] cmd " << command_name(h.command_));
 
             switch (to_code(h.command_)) {
-            case code::TP_RES_OPEN_PUSH_CHANNEL:
-                res_open_push_channel(h, std::move(body));
-                break;
+            case code::TP_RES_OPEN_PUSH_CHANNEL: res_open_push_channel(h, std::move(body)); break;
             case code::TP_RES_CLOSE_PUSH_CHANNEL:
                 res_close_push_channel(h, std::move(body));
                 // cb_cmd_(h, std::move(body));
                 break;
-            case code::TP_REQ_PUSHDATA_TRANSFER:
-                pushdata_transfer(h, std::move(body));
-                break;
+            case code::TP_REQ_PUSHDATA_TRANSFER: pushdata_transfer(h, std::move(body)); break;
             case code::TP_RES_PUSHDATA_TRANSFER:
                 //
                 // ToDo: dispatch to channel owner
@@ -440,18 +434,10 @@ namespace smf {
                 // tp_req_pushdata_transfer(cyng::buffer_t &&data);
                 cb_cmd_(h, std::move(body));
                 break;
-            case code::TP_REQ_OPEN_CONNECTION:
-                open_connection(tp_req_open_connection(std::move(body)), h.sequence_);
-                break;
-            case code::TP_RES_OPEN_CONNECTION:
-                cb_cmd_(h, std::move(body));
-                break;
-            case code::TP_REQ_CLOSE_CONNECTION:
-                close_connection(h.sequence_);
-                break;
-            case code::TP_RES_CLOSE_CONNECTION:
-                cb_cmd_(h, std::move(body));
-                break;
+            case code::TP_REQ_OPEN_CONNECTION: open_connection(tp_req_open_connection(std::move(body)), h.sequence_); break;
+            case code::TP_RES_OPEN_CONNECTION: cb_cmd_(h, std::move(body)); break;
+            case code::TP_REQ_CLOSE_CONNECTION: close_connection(h.sequence_); break;
+            case code::TP_RES_CLOSE_CONNECTION: cb_cmd_(h, std::move(body)); break;
             case code::APP_REQ_PROTOCOL_VERSION:
                 send(state_holder_, std::bind(&serializer::res_protocol_version, &serializer_, h.sequence_, 1));
                 break;
@@ -477,9 +463,7 @@ namespace smf {
             case code::APP_REQ_DEVICE_TIME:
                 send(state_holder_, std::bind(&serializer::res_device_time, &serializer_, h.sequence_));
                 break;
-            case code::CTRL_RES_LOGIN_PUBLIC:
-                res_login(std::move(body));
-                break;
+            case code::CTRL_RES_LOGIN_PUBLIC: res_login(std::move(body)); break;
             case code::CTRL_RES_LOGIN_SCRAMBLED:
                 res_login(std::move(body));
                 break;
@@ -492,23 +476,15 @@ namespace smf {
             case code::CTRL_REQ_REGISTER_TARGET:
                 send(state_holder_, std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
                 break;
-            case code::CTRL_RES_REGISTER_TARGET:
-                res_register_target(h, std::move(body));
-                break;
+            case code::CTRL_RES_REGISTER_TARGET: res_register_target(h, std::move(body)); break;
             case code::CTRL_REQ_DEREGISTER_TARGET:
                 send(state_holder_, std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
                 break;
-            case code::CTRL_RES_DEREGISTER_TARGET:
-                cb_cmd_(h, std::move(body));
-                break;
-            case code::CTRL_REQ_WATCHDOG:
-                req_watchdog(h, std::move(body));
-                break;
+            case code::CTRL_RES_DEREGISTER_TARGET: cb_cmd_(h, std::move(body)); break;
+            case code::CTRL_REQ_WATCHDOG: req_watchdog(h, std::move(body)); break;
 
             case code::UNKNOWN:
-            default:
-                send(state_holder_, std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
-                break;
+            default: send(state_holder_, std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_)); break;
             }
         }
 
@@ -673,7 +649,7 @@ namespace smf {
                         channels_.emplace(channel, std::move(pos->second));
 
                         sp->dispatch(
-                            "channel.open",
+                            "on.channel.open",
                             tp_res_open_push_channel_policy::is_success(res),
                             channel,
                             source,
@@ -725,7 +701,7 @@ namespace smf {
                         //
                         // dispatch
                         //
-                        sp->dispatch("channel.close", tp_res_close_push_channel_policy::is_success(res), channel);
+                        sp->dispatch("on.channel.close", tp_res_close_push_channel_policy::is_success(res), channel);
                     }
 
                     //
@@ -835,7 +811,7 @@ namespace smf {
                         }
                         // BOOST_ASSERT_MSG(!pos->second.first.empty(), "no target name");
                         std::string const target = pos->second.first;
-                        sp->dispatch("receive", cyng::make_tuple(channel, source, data, target));
+                        sp->dispatch("pushdata.transfer", cyng::make_tuple(channel, source, data, target));
                     } else {
                         CYNG_LOG_WARNING(logger_, "[ipt] remove target " << channel << ':' << source);
                         //

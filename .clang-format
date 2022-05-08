@@ -4,9 +4,9 @@ AlignAfterOpenBracket: AlwaysBreak
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortCaseLabelsOnASingleLine: true
 BinPackArguments: false
 BinPackParameters: false
-BreakConstructorInitializersBeforeComma: true
 BreakConstructorInitializers: BeforeComma
 BreakStringLiterals: false
 ColumnLimit: 132

@@ -6,6 +6,9 @@
  */
 #include <tasks/push.h>
 
+#include <smf/ipt/response.hpp>
+#include <smf/ipt/transpiler.h>
+
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
@@ -23,10 +26,10 @@ namespace smf {
 		, ipt::push_channel const& pcc
         , std::string const &client)
 	: sigs_{ 
-		std::bind(&push::connect, this),  
-        std::bind(&push::open, this),
-        std::bind(&push::close, this),
-        std::bind(&push::forward, this, std::placeholders::_1),
+        std::bind(&push::connect, this),  // "connect"
+        std::bind(&push::open, this), // "open"
+        std::bind(&push::close, this), // "close"
+        std::bind(&push::forward, this, std::placeholders::_1), // "push"
         std::bind(
             &push::on_channel_open,
             this,
@@ -34,13 +37,13 @@ namespace smf {
             std::placeholders::_2,
             std::placeholders::_3,
             std::placeholders::_4,
-            std::placeholders::_5),
+            std::placeholders::_5), // "on.channel.open"
         std::bind(
             &push::on_channel_close,
             this,
             std::placeholders::_1,
-            std::placeholders::_2),
-		std::bind(&push::stop, this, std::placeholders::_1),
+            std::placeholders::_2), // "on.channel.close"
+		std::bind(&push::stop, this, std::placeholders::_1), // stop
 	}
 		, channel_(wp)
         , registry_(ctl.get_registry())
@@ -58,15 +61,9 @@ namespace smf {
         , buffer_write_()
 	{
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"connect", "open", "close", "push", "channel.open", "channel.close"});
+            sp->set_channel_names({"connect", "open", "close", "push", "on.channel.open", "on.channel.close"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
-    }
-
-    push::~push() {
-#ifdef _DEBUG_BROKER_WMBUS
-        std::cout << "push(~)" << std::endl;
-#endif
     }
 
     void push::stop(cyng::eod) {
@@ -79,10 +76,10 @@ namespace smf {
         BOOST_ASSERT(bus_.is_authorized());
         if (sp) {
             if (bus_.is_authorized()) {
-                CYNG_LOG_WARNING(logger_, "[ipt] " << sp->get_name() << " opens push channel \"" << pcc_.target_ << "\"");
+                CYNG_LOG_WARNING(logger_, "[iec.push] " << sp->get_name() << " opens push channel \"" << pcc_.target_ << "\"");
                 bus_.open_channel(pcc_, channel_);
             } else {
-                CYNG_LOG_WARNING(logger_, "[ipt] " << sp->get_name() << " not authorized");
+                CYNG_LOG_WARNING(logger_, "[iec.push] " << sp->get_name() << " not authorized");
             }
         }
     }
@@ -91,7 +88,7 @@ namespace smf {
         //
         //	start IP-T bus
         //
-        CYNG_LOG_INFO(logger_, "[ipt] initialize");
+        CYNG_LOG_INFO(logger_, "[iec.push] initialize");
         bus_.start();
     }
 
@@ -99,16 +96,45 @@ namespace smf {
 
     void push::ipt_cmd(ipt::header const &h, cyng::buffer_t &&body) {
 
-        CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_));
+        switch (ipt::to_code(h.command_)) {
+        case ipt::code::TP_RES_PUSHDATA_TRANSFER: {
+            auto [res, channel, source, status, block] = ipt::tp_res_pushdata_transfer(std::move(body));
+            if (ipt::tp_res_pushdata_transfer_policy::is_success(res)) {
+                CYNG_LOG_TRACE(
+                    logger_,
+                    "[iec.push] transfer [" << channel << "," << source
+                                            << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
+
+            } else {
+                CYNG_LOG_WARNING(
+                    logger_,
+                    "[iec.push] transfer [" << channel << "," << source
+                                            << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
+                //  close/reopen channel
+
+                // if (auto sp = channel_.lock(); sp) {
+                //     CYNG_LOG_INFO(logger_, "[push] reopen channels in one minute");
+                //     sp->suspend(std::chrono::minutes(1), "open.channels");
+                // }
+                // else {
+                //     CYNG_LOG_ERROR(logger_, "[push] channel invalid - cannot reopen channels");
+                // }
+            }
+        } break;
+
+        default: CYNG_LOG_TRACE(logger_, "[iec.push] cmd " << ipt::command_name(h.command_)); break;
+        }
+
+        // CYNG_LOG_TRACE(logger_, "[iec.push] cmd " << ipt::command_name(h.command_));
     }
-    void push::ipt_stream(cyng::buffer_t &&data) { CYNG_LOG_TRACE(logger_, "[ipt] stream " << data.size() << " byte"); }
+    void push::ipt_stream(cyng::buffer_t &&data) { CYNG_LOG_TRACE(logger_, "[iec.push] stream " << data.size() << " byte"); }
 
     void push::auth_state(bool auth, boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep) {
         if (auth) {
-            CYNG_LOG_INFO(logger_, "[ipt] authorized at " << rep);
+            CYNG_LOG_INFO(logger_, "[iec.push] authorized at " << rep);
             // BOOST_ASSERT(bus_.is_authorized());
         } else {
-            CYNG_LOG_WARNING(logger_, "[ipt] authorization lost");
+            CYNG_LOG_WARNING(logger_, "[iec.push] authorization lost");
 
             //
             //  bus automatically reconnects

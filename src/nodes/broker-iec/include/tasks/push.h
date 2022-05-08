@@ -38,7 +38,7 @@ namespace smf {
             ipt::toggle::server_vec_t &&,
             ipt::push_channel const &pcc,
             std::string const &client);
-        ~push();
+        ~push() = default;
 
       private:
         void stop(cyng::eod);

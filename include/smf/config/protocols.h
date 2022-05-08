@@ -11,7 +11,7 @@
 
 namespace smf {
     namespace config {
-        enum class protocol { ANY, RAW, TCP, IPT, IEC, WIRED_MBUS, WIRELESS_MBUS, HDLC, SML, COSEM };
+        enum class protocol { ANY, RAW, TCP, IPT, IEC, WIRED_MBUS, WIRELESS_MBUS, HDLC, SML, DLMS, COSEM };
 
 		/*
          * @return the protocol name
