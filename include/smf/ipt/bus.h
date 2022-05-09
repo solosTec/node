@@ -82,7 +82,7 @@ namespace smf {
                 parser::data_cb,
                 auth_cb);
 
-            ~bus();
+            ~bus() = default;
 
             void start();
             void stop();

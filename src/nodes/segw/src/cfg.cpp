@@ -18,16 +18,13 @@
 #include <boost/uuid/nil_generator.hpp>
 
 namespace smf {
-    cfg::cfg(cyng::logger logger, cyng::store &cache)
-        : kv_store(cache, "cfg", boost::uuids::nil_uuid())
+    cfg::cfg(cyng::logger logger, cyng::store &cache, std::tuple<boost::uuids::uuid, cyng::buffer_t> initial_values)
+        : kv_store(cache, "cfg", std::get<0>(initial_values))
         , logger_(logger)
         , cache_(cache)
-        , id_({0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+        , id_(std::get<1>(initial_values))
         , status_word_(sml::get_initial_value())
-        //  d5884bce-9c2b-40bf-9fc0-5c0e77f708c3
         , name_gen_(config::device_name) {}
-
-    // boost::uuids::uuid cfg::get_tag() const { return tag_; }
 
     boost::uuids::uuid cfg::get_name(std::string const &name) const { return name_gen_(name); }
     boost::uuids::uuid cfg::get_name(cyng::buffer_t const &name) const { return name_gen_(name.data(), name.size()); }

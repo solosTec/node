@@ -28,14 +28,9 @@ namespace smf {
         friend class bridge;
 
       public:
-        cfg(cyng::logger, cyng::store &);
+        cfg(cyng::logger, cyng::store &, std::tuple<boost::uuids::uuid, cyng::buffer_t>);
 
         inline cyng::store &get_cache() { return cache_; }
-
-        /**
-         * @return itentity/source tag
-         */
-        // boost::uuids::uuid get_tag() const;
 
         /**
          * @return generate an UUID using the SHA1 hashing algorithm
@@ -48,6 +43,7 @@ namespace smf {
          * 05 + MAC
          */
         cyng::buffer_t get_srv_id() const;
+
         /**
          * @return SML status word
          */
@@ -75,8 +71,9 @@ namespace smf {
         /**
          * server id
          * 05 + MAC
+         * initialized in bridge::load_configuration()
          */
-        cyng::buffer_t id_;
+        cyng::buffer_t const id_;
 
         /**
          * OBIS log status

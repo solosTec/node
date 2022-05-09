@@ -5,10 +5,11 @@
  *
  */
 
+#include <storage_functions.h>
+
 #include <cfg.h>
 #include <config/cfg_nms.h>
 #include <storage.h>
-#include <storage_functions.h>
 
 #include <smf/ipt/config.h>
 #include <smf/ipt/scramble_key_format.h>

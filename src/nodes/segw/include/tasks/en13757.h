@@ -17,17 +17,21 @@
 
 namespace smf {
     /**
-     * processor for wireless M-Bus data (EN 13757-4)
+     * Processor for wireless M-Bus data (EN 13757-4).
+     *
+     * - decode data - if AES key available
+     * - build up load profile
+     * - update "meter" table
      */
     class en13757 {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
             std::function<void(cyng::buffer_t)>,
-            std::function<void(void)>,        //	reset_target_channels
+            std::function<void(void)>,        //    reset_target_channels
             std::function<void(std::string)>, //	add_target_channel
             std::function<void(void)>,        //	update_statistics
-            std::function<void(cyng::eod)>    //  stop()
+            std::function<void(cyng::eod)>    //    stop()
             >;
 
       public:

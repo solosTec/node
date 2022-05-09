@@ -36,19 +36,18 @@ namespace smf {
         using signatures_t = std::tuple<std::function<void()>, std::function<void(cyng::eod)>>;
 
       public:
-        bridge(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cyng::db::session);
+        bridge(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cyng::db::session, std::vector<cyng::meta_store> const &);
 
       private:
         void stop(cyng::eod);
         void start();
 
-        void init_data_cache();
+        // void init_data_cache();
         void load_config_data();
 
         void init_cache_persistence();
         void stop_cache_persistence();
 
-        void load_configuration();
         void load_meter();
 
         void init_gpio();
@@ -92,8 +91,6 @@ namespace smf {
         void stop_redirectors();
         void stop_redirector(lmn_type);
 
-        std::uint32_t validate_nic_index(std::uint32_t);
-
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
@@ -108,6 +105,9 @@ namespace smf {
         sml::server sml_;
         cyng::stash stash_;
     };
+
+    std::tuple<boost::uuids::uuid, cyng::buffer_t> load_configuration(cyng::logger, cyng::db::session, cyng::store &);
+    std::uint32_t validate_nic_index(std::uint32_t);
 
 } // namespace smf
 

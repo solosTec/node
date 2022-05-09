@@ -30,6 +30,7 @@
 #include <cyng/log/record.h>
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/parse/buffer.h>
+#include <cyng/parse/string.h>
 #include <cyng/sys/net.h>
 #include <cyng/task/channel.h>
 
@@ -41,7 +42,7 @@
 
 namespace smf {
 
-    bridge::bridge(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cyng::db::session db)
+    bridge::bridge(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cyng::db::session db, std::vector<cyng::meta_store> const& md)
         : sigs_{
             std::bind(&bridge::start, this), // start bridge
             std::bind(&bridge::stop, this, std::placeholders::_1)}
@@ -50,8 +51,8 @@ namespace smf {
         , logger_(logger)
         , db_(db)
         , storage_(db_)
-        , cache_()
-        , cfg_(logger, cache_)
+        , cache_(std::begin(md), std::end(md))  // initialize data cache
+        , cfg_(logger, cache_, load_configuration(logger, db_, cache_)) //  get tag and server id
         , fabric_(ctl)
         , router_(ctl, cfg_, logger)
         , sml_(ctl, cfg_, logger)
@@ -71,8 +72,8 @@ namespace smf {
         //
         //	initialize data cache
         //
-        CYNG_LOG_INFO(logger_, "initialize: data cache");
-        init_data_cache();
+        // CYNG_LOG_INFO(logger_, "check: data cache");
+        // init_data_cache();
 
         //
         //	load configuration data from data base
@@ -214,15 +215,15 @@ namespace smf {
         stash_.clear();
     }
 
-    void bridge::init_data_cache() {
+    // void bridge::init_data_cache() {
 
-        auto const data = get_store_meta_data();
-        for (auto const &m : data) {
+    //    auto const data = get_store_meta_data();
+    //    for (auto const &m : data) {
 
-            CYNG_LOG_TRACE(logger_, "create table: " << m.get_name());
-            cache_.create_table(m);
-        }
-    }
+    //        CYNG_LOG_TRACE(logger_, "create table: " << m.get_name());
+    //        cache_.create_table(m);
+    //    }
+    //}
 
     void bridge::load_config_data() {
 
@@ -231,7 +232,7 @@ namespace smf {
         //	Preload must be done before we connect to the cache. Otherwise
         //	we would receive our own changes.
         //
-        load_configuration();
+        // load_configuration();
         // auto tpl = cfg_.get_obj("language-code");
         load_meter(); //  "TMeter"
         // load_data_collectors();
@@ -328,15 +329,19 @@ namespace smf {
 
     void bridge::stop_cache_persistence() { stash_.stop("persistence"); }
 
-    void bridge::load_configuration() {
+    std::tuple<boost::uuids::uuid, cyng::buffer_t>
+    load_configuration(cyng::logger logger, cyng::db::session db, cyng::store &cache) {
 
-        cache_.access(
+        boost::uuids::uuid tag = boost::uuids::nil_uuid();
+        cyng::buffer_t id = cyng::make_buffer({0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+        cache.access(
             [&](cyng::table *cfg) {
-                cyng::db::storage s(db_);
+                cyng::db::storage s(db);
                 s.loop(get_table_cfg(), [&](cyng::record const &rec) -> bool {
 
 #ifdef _DEBUG_SEGW
-            // CYNG_LOG_DEBUG(logger_, rec.to_tuple());
+                    CYNG_LOG_DEBUG(logger, rec.to_tuple());
 #endif
                     auto const path = rec.value("path", "");
                     auto const type = rec.value<std::uint16_t>("type", 15u);
@@ -350,22 +355,27 @@ namespace smf {
                         auto obj = cyng::restore(val, type);
 
 #ifdef _DEBUG_SEGW
-                        CYNG_LOG_DEBUG(logger_, "load - " << path << " = " << obj);
+                    // CYNG_LOG_DEBUG(logger_, "load - " << path << " = " << obj);
 #endif
                         if (boost::algorithm::equals(path, "tag")) {
                             //	set system tag
-                            cfg_.get_tag() = cyng::value_cast(obj, boost::uuids::nil_uuid());
+                            auto const stag = cyng::value_cast(obj, "");
+                            BOOST_ASSERT_MSG(stag.size() == 36, "invalid tag string");
+                            tag = cyng::to_uuid(stag, boost::uuids::nil_uuid());
+                            CYNG_LOG_INFO(logger, "source tag: " << tag);
+                            BOOST_ASSERT_MSG(!tag.is_nil(), "invalid tag value");
                         } else if (boost::algorithm::equals(path, cyng::to_str(OBIS_SERVER_ID))) {
                             //	init server ID in cache
-                            cfg_.id_ = cyng::hex_to_buffer(val);
+                            id = cyng::hex_to_buffer(val);
+                            CYNG_LOG_INFO(logger, "server id: " << cyng::to_string(id));
                         } else if (boost::algorithm::equals(path, "nms/nic-index")) {
                             //  enforce u32
                             auto const index = validate_nic_index(cyng::numeric_cast<std::uint32_t>(obj, 0u));
                             cfg->merge(
                                 rec.key(),
                                 cyng::data_generator(index),
-                                1u,              //	only needed for insert operations
-                                cfg_.get_tag()); //	tag mybe not available yet
+                                1u,   //	only needed for insert operations
+                                tag); //	tag maybe not initialized yet
                         } else {
 
                             //
@@ -374,21 +384,24 @@ namespace smf {
                             if (!cfg->merge(
                                     rec.key(),
                                     cyng::data_generator(obj),
-                                    1u,                //	only needed for insert operations
-                                    cfg_.get_tag())) { //	tag mybe not available yet
+                                    1u,     //	only needed for insert operations
+                                    tag)) { //	tag maybe not initialized yet
 
-                                CYNG_LOG_ERROR(logger_, "cannot insert config key " << path << ": " << val << '#' << type);
+                                CYNG_LOG_ERROR(logger, "cannot insert config key " << path << ": " << val << '#' << type);
                             }
                         }
                     } catch (std::exception const &ex) {
-                        CYNG_LOG_ERROR(logger_, "cannot load " << path << ": " << ex.what());
+                        CYNG_LOG_ERROR(logger, "cannot load " << path << ": " << ex.what());
                     }
 
                     return true;
                 });
             },
             cyng::access::write("cfg"));
+
+        return std::make_tuple(tag, id);
     }
+
     void bridge::load_meter() {
         cache_.access(
             [&](cyng::table *tbl) {
@@ -922,14 +935,14 @@ namespace smf {
         }
     }
 
-    std::uint32_t bridge::validate_nic_index(std::uint32_t index) {
+    std::uint32_t validate_nic_index(std::uint32_t index) {
         auto const cfg_v6 = cyng::sys::get_ipv6_configuration();
         auto const pos = std::find_if(
             std::begin(cfg_v6), std::end(cfg_v6), [index](cyng::sys::ipv_cfg const &cfg) { return cfg.index_ == index; });
         if (pos == cfg_v6.end()) {
             auto const nic = get_nic();
             auto const r = get_ipv6_linklocal(nic);
-            CYNG_LOG_ERROR(logger_, "[" << index << "] is an invalid nic index - use [" << r.second << "]");
+            // CYNG_LOG_ERROR(logger_, "[" << index << "] is an invalid nic index - use [" << r.second << "]");
 
             //
             //  return an existing index

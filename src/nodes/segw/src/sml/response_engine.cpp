@@ -56,12 +56,8 @@ namespace smf {
             //  each login is followed by y query of CODE_CLASS_OP_LOG_STATUS_WORD and CODE_ROOT_DEVICE_IDENT
             //
             switch (path.front().to_uint64()) {
-            case CODE_CLASS_OP_LOG_STATUS_WORD:
-                msgs.push_back(get_proc_parameter_status_word(trx, server, path));
-                break;
-            case CODE_ROOT_DEVICE_IDENT:
-                msgs.push_back(get_proc_parameter_device_ident(trx, server, path));
-                break;
+            case CODE_CLASS_OP_LOG_STATUS_WORD: msgs.push_back(get_proc_parameter_status_word(trx, server, path)); break;
+            case CODE_ROOT_DEVICE_IDENT: msgs.push_back(get_proc_parameter_device_ident(trx, server, path)); break;
             case CODE_ROOT_DEVICE_TIME: //	0x8181C78810FF
                 msgs.push_back(get_proc_parameter_device_time(trx, server, path));
                 break;
@@ -152,9 +148,7 @@ namespace smf {
             //    break;
             // case CODE_ROOT_SERIAL:
             //    break;
-            default:
-                CYNG_LOG_WARNING(logger_, "SML_GetProcParameter.Req unknown OBIS code: " << cyng::io::to_hex(server));
-                break;
+            default: CYNG_LOG_WARNING(logger_, "SML_GetProcParameter.Req unknown OBIS code: " << cyng::io::to_hex(server)); break;
             }
         } else {
             CYNG_LOG_WARNING(
@@ -189,9 +183,7 @@ namespace smf {
             case CODE_ROOT_IPT_PARAM: //	0x81490D0700FF
                 msgs.push_back(set_proc_parameter_ipt_param(trx, server, path, attr));
                 break;
-            default:
-                CYNG_LOG_WARNING(logger_, "SML_SetProcParameter.Req unknown OBIS code: " << cyng::io::to_hex(server));
-                break;
+            default: CYNG_LOG_WARNING(logger_, "SML_SetProcParameter.Req unknown OBIS code: " << cyng::io::to_hex(server)); break;
             }
         } else {
             CYNG_LOG_WARNING(
@@ -573,6 +565,7 @@ namespace smf {
                     if (c2 == 0xFF) {
                         c2 = 1;
                         c1++;
+                        BOOST_ASSERT_MSG(c1 != 0xFF, "visible meter overflow");
                     } else {
                         c2++;
                     }
@@ -647,6 +640,7 @@ namespace smf {
                         if (c2 == 0xFF) {
                             c2 = 1;
                             c1++;
+                            BOOST_ASSERT_MSG(c1 != 0xFF, "active meter overflow");
                         } else {
                             c2++;
                         }

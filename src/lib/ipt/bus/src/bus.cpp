@@ -58,8 +58,6 @@ namespace smf {
             , channels_()
             , closing_channels_() {}
 
-        bus::~bus() {}
-
         bool bus::is_authorized() const { return (state_holder_) ? state_holder_->is_authorized() : false; }
 
         void bus::start() {
@@ -811,7 +809,7 @@ namespace smf {
                         }
                         // BOOST_ASSERT_MSG(!pos->second.first.empty(), "no target name");
                         std::string const target = pos->second.first;
-                        sp->dispatch("pushdata.transfer", cyng::make_tuple(channel, source, data, target));
+                        sp->dispatch("pushdata.transfer", channel, source, data, target);
                     } else {
                         CYNG_LOG_WARNING(logger_, "[ipt] remove target " << channel << ':' << source);
                         //

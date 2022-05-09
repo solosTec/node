@@ -747,7 +747,8 @@ namespace smf {
         auto const reader = cyng::make_reader(cfg);
         auto s = cyng::db::create_db_session(reader.get("DB"));
 
-        bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s);
+        auto const md = get_store_meta_data();
+        bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, md);
         BOOST_ASSERT(bridge_->is_open());
         bridge_->dispatch("start", cyng::make_tuple());
     }
