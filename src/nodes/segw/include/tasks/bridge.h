@@ -106,7 +106,16 @@ namespace smf {
         cyng::stash stash_;
     };
 
+    /**
+     * Read table "TCfg" and transfer content to cache table "cfg".
+     *
+     * @return a tuple with the application tag and the server id.
+     */
     std::tuple<boost::uuids::uuid, cyng::buffer_t> load_configuration(cyng::logger, cyng::db::session, cyng::store &);
+
+    /**
+     * Check if the specified index is a valid IPv6 NIC.
+     */
     std::uint32_t validate_nic_index(std::uint32_t);
 
 } // namespace smf

@@ -9,6 +9,7 @@ set (config_cpp
     src/lib/config/src/schemes.cpp
     src/lib/config/src/kv_store.cpp
     src/lib/config/src/protocols.cpp
+    src/lib/config/src/persistence.cpp
 )
     
 set (config_h
@@ -18,6 +19,7 @@ set (config_h
     include/smf/config/schemes.h
     include/smf/config/kv_store.h
     include/smf/config/protocols.h
+    include/smf/config/persistence.h
 )
 
 

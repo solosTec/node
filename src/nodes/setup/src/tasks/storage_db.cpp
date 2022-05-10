@@ -8,9 +8,9 @@
 
 #include <smf.h>
 #include <smf/cluster/bus.h>
+#include <smf/config/persistence.h>
 #include <smf/config/schemes.h>
 
-#include <cyng/db/details/statement_interface.h>
 #include <cyng/db/storage.h>
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
@@ -290,47 +290,9 @@ namespace smf {
             auto const pos = sql_map_.find(table_name);
             if (pos != sql_map_.end()) {
                 auto const &meta = pos->second;
-                auto const sql = cyng::sql::insert(db_.get_dialect(), meta).bind_values(meta).to_str();
-
-                auto stmt = db_.create_statement();
-                std::pair<int, bool> const r = stmt->prepare(sql);
-                if (r.second) {
-                    BOOST_ASSERT(r.first == data.size() + key.size() + 1);
-
-                    //
-                    //	pk
-                    //
-                    std::size_t col_index{0};
-                    for (auto &kp : key) {
-                        auto const width = meta.get_column(col_index).width_;
-                        stmt->push(kp, width); //	pk
-                        ++col_index;
-                    }
-
-                    //
-                    //	gen
-                    //
-                    stmt->push(cyng::make_object(gen), 0);
-                    ++col_index;
-
-                    //
-                    //	body
-                    //
-                    for (auto &val : data) {
-                        auto const width = meta.get_column(col_index).width_;
-                        stmt->push(val, width);
-                        ++col_index;
-                    }
-
-                    if (stmt->execute()) {
-                        stmt->clear();
-                    }
-
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[db] insert error: " << sql);
+                if (!config::persistent_insert(meta, db_, key, data, gen)) {
+                    CYNG_LOG_ERROR(logger_, "[persistence] insert " << table_name << ": " << key.at(0) << " failed");
                 }
-            } else {
-                CYNG_LOG_WARNING(logger_, "[db] insert - unknown table: " << table_name);
             }
         }
     }

@@ -910,6 +910,12 @@ if(${CAPITAL_NAME}_BUILD_TOOLS)
 endif()
 
 #
+# tests
+# call CMake with -DSMF_TEST_TCP_STRESS:BOOL=TRUE to generate unit tests 
+#
+add_subdirectory(src/tools/tests)
+
+#
 # unit tests
 #
 #
@@ -919,7 +925,6 @@ endif()
 if(${CAPITAL_NAME}_UNIT_TEST)
 
     add_subdirectory(unit_test)
-    add_subdirectory(tests)
 
 endif()
 

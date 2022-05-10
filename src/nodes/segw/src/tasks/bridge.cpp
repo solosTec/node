@@ -215,16 +215,6 @@ namespace smf {
         stash_.clear();
     }
 
-    // void bridge::init_data_cache() {
-
-    //    auto const data = get_store_meta_data();
-    //    for (auto const &m : data) {
-
-    //        CYNG_LOG_TRACE(logger_, "create table: " << m.get_name());
-    //        cache_.create_table(m);
-    //    }
-    //}
-
     void bridge::load_config_data() {
 
         //
@@ -234,7 +224,7 @@ namespace smf {
         //
         // load_configuration();
         // auto tpl = cfg_.get_obj("language-code");
-        load_meter(); //  "TMeter"
+        load_meter(); //  "TMeterMBus", "TMeterIEC"
         // load_data_collectors();
         // load_data_mirror();
         // load_iec_devices();
@@ -355,7 +345,7 @@ namespace smf {
                         auto obj = cyng::restore(val, type);
 
 #ifdef _DEBUG_SEGW
-                    // CYNG_LOG_DEBUG(logger_, "load - " << path << " = " << obj);
+                    // CYNG_LOG_DEBUG(logger, "load - " << path << " = " << obj);
 #endif
                         if (boost::algorithm::equals(path, "tag")) {
                             //	set system tag
@@ -370,7 +360,11 @@ namespace smf {
                             CYNG_LOG_INFO(logger, "server id: " << cyng::to_string(id));
                         } else if (boost::algorithm::equals(path, "nms/nic-index")) {
                             //  enforce u32
-                            auto const index = validate_nic_index(cyng::numeric_cast<std::uint32_t>(obj, 0u));
+                            auto const nicidx = cyng::numeric_cast<std::uint32_t>(obj, 0u);
+                            auto const index = validate_nic_index(nicidx);
+                            if (nicidx != index) {
+                                CYNG_LOG_ERROR(logger, "[" << index << "] is an invalid nic index - use [" << index << "]");
+                            }
                             cfg->merge(
                                 rec.key(),
                                 cyng::data_generator(index),
@@ -387,7 +381,7 @@ namespace smf {
                                     1u,     //	only needed for insert operations
                                     tag)) { //	tag maybe not initialized yet
 
-                                CYNG_LOG_ERROR(logger, "cannot insert config key " << path << ": " << val << '#' << type);
+                                CYNG_LOG_ERROR(logger, "cannot merge config key " << path << ": " << val << '#' << type);
                             }
                         }
                     } catch (std::exception const &ex) {
@@ -403,17 +397,37 @@ namespace smf {
     }
 
     void bridge::load_meter() {
+
         cache_.access(
             [&](cyng::table *tbl) {
                 cyng::db::storage s(db_);
-                s.loop(get_table_meter(), [&](cyng::record const &rec) -> bool {
+                s.loop(get_table_meter_mbus(), [&](cyng::record const &rec) -> bool {
                     //
-                    //  ToDo: fill "meter" table
+                    //  ToDo: fill "meterMBus" table
+                    //  ToDo: set visible = false
                     //
-                    CYNG_LOG_INFO(logger_, "load meter " << rec.value("meter", ""));
+                    cyng::buffer_t id;
+                    id = rec.value("serverID", id);
+                    if (!tbl->insert(
+                            rec.key(),
+                            cyng::data_generator(
+                                rec.at("lastSeen"),
+                                rec.at("class"),
+                                false, //  visible = false
+                                rec.at("status"),
+                                rec.at("mask"),
+                                rec.at("pubKey"),
+                                rec.at("aes")),
+                            rec.get_generation(),
+                            cfg_.get_tag())) {
+                        CYNG_LOG_ERROR(logger_, "load wireless M-Bus meter " << srv_id_to_str(id) << " failed");
+                    } else {
+                        CYNG_LOG_TRACE(logger_, "load wireless M-Bus meter " << srv_id_to_str(id));
+                    }
+
                     return true;
                 });
-#ifdef _DEBUG
+#ifdef __DEBUG
                 //
                 //  add some demo meter devices
                 //
@@ -440,7 +454,7 @@ namespace smf {
 #endif
             },
 
-            cyng::access::write("meter"));
+            cyng::access::write("meterMBus"));
     }
 
     void bridge::init_lmn_ports() {
@@ -939,10 +953,10 @@ namespace smf {
         auto const cfg_v6 = cyng::sys::get_ipv6_configuration();
         auto const pos = std::find_if(
             std::begin(cfg_v6), std::end(cfg_v6), [index](cyng::sys::ipv_cfg const &cfg) { return cfg.index_ == index; });
+
         if (pos == cfg_v6.end()) {
             auto const nic = get_nic();
             auto const r = get_ipv6_linklocal(nic);
-            // CYNG_LOG_ERROR(logger_, "[" << index << "] is an invalid nic index - use [" << r.second << "]");
 
             //
             //  return an existing index

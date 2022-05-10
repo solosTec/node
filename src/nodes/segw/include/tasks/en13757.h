@@ -9,7 +9,7 @@
 
 #include <cfg.h>
 
-//#include <smf/mbus/radio/parser.h>
+#include <smf/mbus/radio/parser.h>
 
 #include <cyng/log/logger.h>
 //#include <cyng/obj/intrinsics/buffer.h>
@@ -30,7 +30,6 @@ namespace smf {
             std::function<void(cyng::buffer_t)>,
             std::function<void(void)>,        //    reset_target_channels
             std::function<void(std::string)>, //	add_target_channel
-            std::function<void(void)>,        //	update_statistics
             std::function<void(cyng::eod)>    //    stop()
             >;
 
@@ -41,8 +40,9 @@ namespace smf {
         void stop(cyng::eod);
 
         /**
-         * incoming raw wireless M-Bus data from serial interface
-         * "receive"
+         * Incoming raw wireless M-Bus data from serial interface
+         * "receive". The data comes from the "filter@X" task, so not all
+         * devices will be visible here.
          */
         void receive(cyng::buffer_t);
 
@@ -61,7 +61,12 @@ namespace smf {
         /**
          * "update-statistics"
          */
-        void update_statistics();
+        // void update_statistics();
+
+        /**
+         * Check if an AES key is available and if that is the case, decode the data.
+         */
+        void decode(mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &data);
 
       private:
         signatures_t sigs_;
@@ -73,6 +78,16 @@ namespace smf {
          * global logger
          */
         cyng::logger logger_;
+
+        /**
+         * config/data cache
+         */
+        cfg &cfg_;
+
+        /**
+         * parser for wireless M-Bus data
+         */
+        mbus::radio::parser parser_;
     };
 } // namespace smf
 

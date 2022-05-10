@@ -14,10 +14,13 @@
 
 namespace smf {
 
+    class persistence;
     /**
      * manage SQL tables
      */
     class storage {
+        friend class persistence;
+
       public:
         storage(cyng::db::session);
 

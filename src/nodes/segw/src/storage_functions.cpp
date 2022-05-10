@@ -84,71 +84,90 @@ namespace smf {
             },
             0);
     }
+    cyng::meta_sql get_table_oplog() { return cyng::to_sql(get_store_oplog(), {0, 0, 0, 0, 0, 0, 0, 13, 0, 23, 64, 0, 128}); }
 
     cyng::meta_store get_store_meter() {
 
         return cyng::meta_store(
             "meter",
             {
-                cyng::column("tag", cyng::TC_UUID),            //	SAH1 hash of "meter"
-                cyng::column("meter", cyng::TC_BUFFER),        //	02-e61e-03197715-3c-07, or 03197715
-                cyng::column("type", cyng::TC_STRING),         //	IEC, M-Bus, wM-Bus
-                cyng::column("activity", cyng::TC_TIME_POINT), //	last activity
-                cyng::column("active", cyng::TC_BOOL),         //	active
-                cyng::column("desc", cyng::TC_STRING)          //	optional description
+                cyng::column("tag", cyng::TC_UUID),     //	SAH1 hash of "meter"
+                cyng::column("meter", cyng::TC_BUFFER), //	02-e61e-03197715-3c-07, or 03197715
+                cyng::column("type", cyng::TC_STRING),  //	IEC, M-Bus, wM-Bus
+                cyng::column("desc", cyng::TC_STRING)   //	optional description/manufacturer
             },
             1);
     }
+    cyng::meta_sql get_table_meter() { return cyng::to_sql(get_store_meter(), {0, 23, 0, 128}); }
 
-    cyng::meta_sql get_table_oplog() { return cyng::to_sql(get_store_oplog(), {0, 0, 0, 0, 0, 0, 0, 13, 0, 23, 64, 0, 128}); }
-    cyng::meta_sql get_table_meter() { return cyng::to_sql(get_store_meter(), {0, 23, 0, 0, 0, 128}); }
+    cyng::meta_store get_store_meter_mbus() {
+        return cyng::meta_store(
+            "meterMBus",
+            {
+                cyng::column("serverID", cyng::TC_BUFFER),     //	server/meter ID <- key
+                cyng::column("lastSeen", cyng::TC_TIME_POINT), //	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
+                cyng::column("class", cyng::TC_STRING),        //	device/quality class (always "---" == 2D 2D 2D)
+                cyng::column("visible", cyng::TC_BOOL),        //	active/visible
+                cyng::column("status", cyng::TC_UINT32),       //	"Statusinformation: 00"
+                //	Contains a bit mask to define the bits of the status word, that if changed
+                //	will result in an entry in the log-book.
+                cyng::column("mask", cyng::TC_BUFFER), //	"Bitmaske: 00 00"
+                // cyng::column("interval", cyng::TC_UINT32, 0), //	Time between two data sets: 49000
+                //	--- optional data
+                cyng::column("pubKey", cyng::TC_BUFFER), //	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
+                cyng::column("aes", cyng::TC_AES128)     //	AES-Key
+            },
+            1);
+    }
+    cyng::meta_sql get_table_meter_mbus() { return cyng::to_sql(get_store_meter_mbus(), {9, 0, 16, 0, 0, 0, 16, 32}); }
 
-    std::vector<cyng::meta_store> get_store_meta_data() { return {get_store_cfg(), get_store_oplog(), get_store_meter()}; }
+    cyng::meta_store get_store_meter_iec() {
+        return cyng::meta_store(
+            "meterIEC",
+            {
+                // cyng::column("nr", cyng::TC_UINT8, 0),        //	number
+                cyng::column("meterID", cyng::TC_BUFFER), //	max. 32 bytes (8181C7930AFF)
+                cyng::column("address", cyng::TC_BUFFER), //	mostly the same as meterID (8181C7930CFF)
+                cyng::column("descr", cyng::TC_STRING),
+                cyng::column("baudrate", cyng::TC_UINT32), //	9600, ... (in opening sequence) (8181C7930BFF)
+                cyng::column("p1", cyng::TC_STRING),       //	login password (8181C7930DFF)
+                                                           //, "p2"		//	login password
+                cyng::column("w5", cyng::TC_STRING)        //	W5 password (reserved for national applications) (8181C7930EFF)
+            },
+            1);
+    }
+    cyng::meta_sql get_table_meter_iec() { return cyng::to_sql(get_store_meter_iec(), {32, 32, 128, 0, 32, 32}); }
+
+    std::vector<cyng::meta_store> get_store_meta_data() {
+        return {
+            get_store_cfg(),   // cfg
+            get_store_oplog(), // opLog
+            // get_store_meter(),  // meter
+            get_store_meter_mbus(), // meterMBus
+            get_store_meter_iec()   // meterIEC
+        };
+    }
 
     std::vector<cyng::meta_sql> get_sql_meta_data() {
 
         return {
-            get_table_cfg(),
-            get_table_oplog(),
-            get_table_meter(),
+            get_table_cfg(),   // TCfg
+            get_table_oplog(), // TOpLog
+            // get_table_meter(),
+            get_table_meter_mbus(), //  TMeterMBus
+            get_table_meter_iec()   // TMeterIEC
+        };
+    }
 
-            cyng::meta_sql(
-                "TMeterMBus",
-                {
-                    cyng::column_sql("serverID", cyng::TC_BUFFER, 9),     //	server/meter ID
-                    cyng::column_sql("lastSeen", cyng::TC_TIME_POINT, 0), //	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
-                    cyng::column_sql("class", cyng::TC_STRING, 16),       //	device class (always "---" == 2D 2D 2D)
-                    cyng::column_sql("active", cyng::TC_BOOL, 0),         //	active
-                    cyng::column_sql("descr", cyng::TC_STRING, 128),      //	manufacturer/description
-                    //	---
-                    cyng::column_sql("status", cyng::TC_UINT32, 0), //	"Statusinformation: 00"
-                    //	Contains a bit mask to define the bits of the status word, that if changed
-                    //	will result in an entry in the log-book.
-                    cyng::column_sql("mask", cyng::TC_BUFFER, 0),     //	"Bitmaske: 00 00"
-                    cyng::column_sql("interval", cyng::TC_UINT32, 0), //	Time between two data sets: 49000
-                    //	--- optional data
-                    cyng::column_sql("pubKey", cyng::TC_BUFFER, 16), //	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
-                    cyng::column_sql("aes", cyng::TC_AES128, 32)     //	AES-Key
-                                                                     // cyng::column_sql("user", cyng::TC_STRING, 32),
-                    // cyng::column_sql("pwd", cyng::TC_STRING, 32)
-
-                },
-                1),
-
-            cyng::meta_sql(
-                "TMeterIEC",
-                {
-                    cyng::column_sql("nr", cyng::TC_UINT8, 0),        //	number
-                    cyng::column_sql("meterID", cyng::TC_BUFFER, 32), //	max. 32 bytes (8181C7930AFF)
-                    cyng::column_sql("address", cyng::TC_BUFFER, 32), //	mostly the same as meterID (8181C7930CFF)
-                    cyng::column_sql("descr", cyng::TC_STRING, 128),
-                    cyng::column_sql("baudrate", cyng::TC_UINT32, 0), //	9600, ... (in opening sequence) (8181C7930BFF)
-                    cyng::column_sql("p1", cyng::TC_STRING, 32),      //	login password (8181C7930DFF)
-                    //, "p2"		//	login password
-                    cyng::column_sql(
-                        "w5", cyng::TC_STRING, 32) //	W5 password (reserved for national applications) (8181C7930EFF)
-                },
-                1)};
+    cyng::meta_sql get_sql_meta_data(std::string name) {
+        if (boost::algorithm::equals(name, "meterMBus")) {
+            return get_table_meter_mbus();
+        } else if (boost::algorithm::equals(name, "meterIEC")) {
+            return get_table_meter_iec();
+        } else if (boost::algorithm::equals(name, "opLog")) {
+            return get_table_oplog();
+        }
+        return cyng::meta_sql(name, {}, 0);
     }
 
     bool init_storage(cyng::db::session &db) {

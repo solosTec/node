@@ -63,11 +63,8 @@ namespace smf {
                 case 1:
                 case 3:
                 case 7:
-                case 8:
-                    ss << '-';
-                    break;
-                default:
-                    break;
+                case 8: ss << '-'; break;
+                default: break;
                 }
             }
         } else {
@@ -101,13 +98,11 @@ namespace smf {
     }
 
     cyng::buffer_t get_id_as_buffer(srv_id_t address) {
-        cyng::buffer_t r;
-        r.reserve(4);
-        r.push_back(address.at(6));
-        r.push_back(address.at(5));
-        r.push_back(address.at(4));
-        r.push_back(address.at(3));
-        return r;
+        return {
+            static_cast<char>(address.at(6)),
+            static_cast<char>(address.at(5)),
+            static_cast<char>(address.at(4)),
+            static_cast<char>(address.at(3))};
     }
 
     std::string get_id(srv_id_t address) {

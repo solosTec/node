@@ -5,12 +5,15 @@
  *
  */
 
+#include <smf/config/persistence.h>
 #include <smf/obis/defs.h>
 #include <smf/sml/event.h>
 #include <storage.h>
 #include <tasks/persistence.h>
 
+#include <cyng/db/session.h>
 #include <cyng/log/record.h>
+#include <cyng/sql/sql.hpp>
 #include <cyng/store/slot.h>
 
 #include <boost/algorithm/string.hpp>
@@ -38,6 +41,7 @@ namespace smf {
     void persistence::connect() {
 
         cfg_.get_cache().connect_only("cfg", cyng::make_slot(channel_));
+        cfg_.get_cache().connect_only("meterMBus", cyng::make_slot(channel_));
         CYNG_LOG_INFO(logger_, "[persistence] connected");
     }
 
@@ -55,16 +59,23 @@ namespace smf {
 
     void persistence::insert(cyng::table const *tbl, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid) {
 
-        CYNG_LOG_TRACE(logger_, "insert " << tbl->meta().get_name());
+        BOOST_ASSERT_MSG(!key.empty(), "[persistence] empty key");
+        // CYNG_LOG_TRACE(logger_, "[persistence] insert " << tbl->meta().get_name());
         if (boost::algorithm::equals(tbl->meta().get_name(), "cfg")) {
-            CYNG_LOG_TRACE(logger_, key.at(0) << " := " << data.at(0));
+            CYNG_LOG_TRACE(logger_, "[persistence] " << tbl->meta().get_name() << "- " << key.at(0) << " := " << data.at(0));
             if (!storage_.cfg_insert(key.at(0), data.at(0))) {
                 CYNG_LOG_WARNING(logger_, "[persistence] insert " << tbl->meta().get_name() << " <" << key.at(0) << "> failed");
             }
-        } else if (boost::algorithm::equals(tbl->meta().get_name(), "meter")) {
-            //  convert data
+            //} else if (boost::algorithm::equals(tbl->meta().get_name(), "meter")) {
+            //    //  convert data
         } else {
+            //
             // use default mechanism
+            //
+            auto const meta = get_sql_meta_data(tbl->meta().get_name());
+            if (!config::persistent_insert(meta, storage_.db_, key, data, gen)) {
+                CYNG_LOG_ERROR(logger_, "[persistence] insert " << tbl->meta().get_name() << ": " << key.at(0) << " failed");
+            }
         }
     }
 

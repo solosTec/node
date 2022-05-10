@@ -5,9 +5,10 @@
  *
  */
 
+#include <smf/mbus/flag_id.h>
+
 #include <limits>
 #include <numeric>
-#include <smf/mbus/flag_id.h>
 
 namespace smf {
     namespace mbus {

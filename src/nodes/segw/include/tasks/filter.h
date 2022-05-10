@@ -20,7 +20,7 @@
 
 namespace smf {
     /**
-     * filter for wireless M-Bus data
+     * filter for wireless M-Bus data (EN 13757-4)
      */
     class filter {
         template <typename T> friend class cyng::task;

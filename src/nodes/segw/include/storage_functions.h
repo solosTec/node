@@ -16,11 +16,18 @@ namespace smf {
     std::vector<cyng::meta_store> get_store_meta_data();
     std::vector<cyng::meta_sql> get_sql_meta_data();
 
+    /**
+     * get the SQL meta data of the specified in-memory store.
+     */
+    cyng::meta_sql get_sql_meta_data(std::string);
+
     cyng::meta_store get_store_cfg();
     cyng::meta_store get_store_oplog();
+    cyng::meta_store get_store_meter_mbus();
 
     cyng::meta_sql get_table_cfg();
     cyng::meta_sql get_table_oplog();
+    cyng::meta_sql get_table_meter_mbus();
     cyng::meta_sql get_table_meter();
 
     /**
