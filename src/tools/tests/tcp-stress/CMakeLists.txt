@@ -31,7 +31,7 @@ target_include_directories(tcp_client
 target_link_libraries(tcp_client 
     PRIVATE 
         cyng::rnd
-        Boost::boost 
+        Boost::program_options
 		"$<$<PLATFORM_ID:Windows>:C:/local/boost_1_79_0/lib64-msvc-14.3/libboost_program_options-vc143-mt-gd-x64-1_79.lib>"
         "$<$<PLATFORM_ID:Linux>:pthread;${CMAKE_DL_LIBS}>"
 )
