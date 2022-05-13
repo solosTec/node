@@ -9,6 +9,7 @@
 
 #include <smf/sml.h>
 
+#include <cyng/obj/factory.hpp>
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/intrinsics/obis.h>
@@ -95,9 +96,20 @@ namespace smf {
         cyng::tuple_t tree_child_list(cyng::obis code, std::initializer_list<cyng::tuple_t> list);
 
         /**
-         * Generate a SML_ListEntry
+         * Generate a SML_ListEntry (SML_GetList.Res)
          */
         cyng::tuple_t list_entry(cyng::obis code, std::uint32_t status, std::uint8_t unit, std::int8_t scaler, cyng::object value);
+
+        /**
+         * Generate a SML_PeriodEntry (SML_GetProfileList.Res)
+         */
+        cyng::tuple_t period_entry(cyng::obis code, std::uint8_t unit, std::int8_t scaler, cyng::object value);
+        /**
+         * Generate a SML_PeriodEntry (SML_GetProfileList.Res) with scaler = 0
+         */
+        template <typename T> cyng::object period_entry(cyng::obis code, std::uint8_t unit, T &&value) {
+            return cyng::make_object(period_entry(code, unit, 0u, cyng::make_object(value)));
+        }
 
     } // namespace sml
 } // namespace smf

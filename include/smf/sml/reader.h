@@ -82,6 +82,21 @@ namespace smf {
         [[nodiscard]] std::tuple<cyng::buffer_t, cyng::obis_path_t, cyng::obis, cyng::attr_t, cyng::tuple_t>
         read_get_proc_parameter_response(cyng::tuple_t msg);
 
+        /** @brief message_e::GET_PROFILE_LIST_REQUEST (1024)
+         *  @return server id, username, password, withRawData, beginTime, endTime, parameterTreePath, objList, dasDetails
+         */
+        [[nodiscard]] std::tuple<
+            cyng::buffer_t,
+            std::string,
+            std::string,
+            bool,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point,
+            cyng::obis_path_t,
+            cyng::object,
+            cyng::object>
+        read_get_profile_list_request(cyng::tuple_t msg);
+
         /** @brief message_e::GET_PROFILE_LIST_RESPONSE (1025)
          *  @return server id, tree path, act time, register period, val time, M-Bus state, period list
          */

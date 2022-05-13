@@ -50,6 +50,11 @@ namespace smf {
         sml::status_word_t get_status_word() const;
 
         /**
+         * update statuw word
+         */
+        void update_status_word(sml::status_bit, bool);
+
+        /**
          * loop over all elements
          */
         void loop(std::function<void(std::vector<std::string> &&, cyng::object)> cb);

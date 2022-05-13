@@ -14,8 +14,11 @@
 #ifdef _DEBUG
 #include <cyng/io/ostream.h>
 #endif
-#include <boost/assert.hpp>
+
+#include <chrono>
 #include <memory>
+
+#include <boost/assert.hpp>
 
 namespace smf {
     namespace sml {
@@ -324,6 +327,67 @@ namespace smf {
             return {{}, {}, {}, {}, {}};
         }
 
+        std::tuple<
+            cyng::buffer_t,
+            std::string,
+            std::string,
+            bool,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point,
+            cyng::obis_path_t,
+            cyng::object,
+            cyng::object>
+        read_get_profile_list_request(cyng::tuple_t msg) {
+            BOOST_ASSERT(msg.size() == 9);
+            if (msg.size() == 9) {
+                //
+                //	iterate over message
+                //
+                auto pos = msg.begin();
+
+                //
+                //	serverId
+                //
+                auto const server = cyng::to_buffer(*pos++);
+
+                //
+                //	username
+                //
+                auto const user = to_string(*pos++);
+
+                //
+                //	password
+                //
+                auto const pwd = to_string(*pos++);
+
+                auto const has_raw_data = cyng::value_cast(*pos++, false);
+
+                //
+                //	beginTime
+                //
+                auto const now = std::chrono::system_clock::now();
+                auto const begin_tp = cyng::value_cast(read_time(*pos++), now - std::chrono::hours(24));
+
+                //
+                //	endTime
+                //
+                auto const end_tp = cyng::value_cast(read_time(*pos++), now);
+
+                //
+                //	parameterTreePath == parameter address
+                //	std::vector<obis>
+                //
+                auto const path = read_param_tree_path(*pos++);
+
+                auto const obj_list = *pos++;
+                auto const das_details = *pos++;
+
+                return std::make_tuple(server, user, pwd, has_raw_data, begin_tp, end_tp, path, obj_list, das_details);
+            }
+
+            return {{}, {}, {}, {}, {}, {}, {}, {}, {}};
+        }
+
         std::tuple<cyng::buffer_t, cyng::obis_path_t, cyng::object, std::chrono::seconds, cyng::object, std::uint32_t, sml_list_t>
         read_get_profile_list_response(cyng::tuple_t msg) {
             BOOST_ASSERT(msg.size() == 9);
@@ -601,10 +665,8 @@ namespace smf {
         switch (u) {
         case mbus::unit::UNDEFINED_:
         case mbus::unit::OTHER_UNIT:
-        case mbus::unit::COUNT:
-            return obis::get_name(code);
-        default:
-            break;
+        case mbus::unit::COUNT: return obis::get_name(code);
+        default: break;
         }
         return mbus::get_unit_name(u);
     }

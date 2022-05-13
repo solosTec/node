@@ -18,12 +18,13 @@ namespace smf {
         class response_generator;
     }
 
+    class storage;
     /**
      * response to IP-T/SML messages
      */
     class response_engine {
       public:
-        response_engine(cfg &config, cyng::logger, sml::response_generator &);
+        response_engine(cyng::logger, cfg &config, storage &, sml::response_generator &);
 
         void generate_get_proc_parameter_response(
             sml::messages_t &,
@@ -44,6 +45,19 @@ namespace smf {
             cyng::obis,
             cyng::attr_t,
             cyng::tuple_t);
+
+        void generate_get_profile_list_response(
+            sml::messages_t &,
+            std::string trx,
+            cyng::buffer_t,
+            std::string,
+            std::string,
+            bool,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point,
+            cyng::obis_path_t,
+            cyng::object,
+            cyng::object);
 
       private:
         [[nodiscard]] cyng::tuple_t
@@ -142,9 +156,18 @@ namespace smf {
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_security(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
 
+        [[nodiscard]] void get_profile_list_response_oplog(
+            sml::messages_t &msgs,
+            std::string const &trx,
+            cyng::buffer_t const &server,
+            cyng::obis_path_t const &path,
+            std::chrono::system_clock::time_point const &begin,
+            std::chrono::system_clock::time_point const &end);
+
       private:
-        cfg &cfg_;
         cyng::logger logger_;
+        cfg &cfg_;
+        storage &storage_;
         sml::response_generator &res_gen_;
     };
 

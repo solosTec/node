@@ -32,6 +32,7 @@ namespace smf {
             std::function<void(cyng::table const *, boost::uuids::uuid)>,
             std::function<void(cyng::table const *, bool)>,
             std::function<void()>, //	power_return
+            std::function<void(bool)>, //	authorized
             std::function<void(cyng::eod)>>;
 
       public:
@@ -45,6 +46,11 @@ namespace smf {
          * place power return message into OBIS log
          */
         void power_return();
+
+        /**
+         * place WANGSM message into OBIS log
+         */
+        void authorized(bool);
 
         void insert(cyng::table const *, cyng::key_t, cyng::data_t, std::uint64_t, boost::uuids::uuid);
 

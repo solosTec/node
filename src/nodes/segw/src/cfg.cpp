@@ -33,6 +33,14 @@ namespace smf {
 
     sml::status_word_t cfg::get_status_word() const { return status_word_; }
 
+    void cfg::update_status_word(sml::status_bit e, bool on) {
+        if (on) {
+            status_word_ = sml::set(status_word_, e);
+        } else {
+            status_word_ = sml::remove(status_word_, e);
+        }
+    }
+
     void cfg::loop(std::function<void(std::vector<std::string> &&, cyng::object)> cb) {
         cache_.access(
             [&](cyng::table const *cfg) {

@@ -25,13 +25,17 @@ target_include_directories(tcp_client
         ${CYNG_INCLUDE_DIRS}
 )
 
+target_link_directories(tcp_client
+    PRIVATE
+        ${Boost_LIBRARY_DIRS}
+)
 #
 #   For an unknown reason the Boost.Program_options will not be found on windows
 #
 target_link_libraries(tcp_client 
     PRIVATE 
         cyng::rnd
-        Boost::program_options
+#        Boost::program_options
 		"$<$<PLATFORM_ID:Windows>:C:/local/boost_1_79_0/lib64-msvc-14.3/libboost_program_options-vc143-mt-gd-x64-1_79.lib>"
         "$<$<PLATFORM_ID:Linux>:pthread;${CMAKE_DL_LIBS}>"
 )

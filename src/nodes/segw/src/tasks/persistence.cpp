@@ -5,11 +5,12 @@
  *
  */
 
+#include <tasks/persistence.h>
+
 #include <smf/config/persistence.h>
 #include <smf/obis/defs.h>
 #include <smf/sml/event.h>
 #include <storage.h>
-#include <tasks/persistence.h>
 
 #include <cyng/db/session.h>
 #include <cyng/log/record.h>
@@ -20,7 +21,16 @@
 
 namespace smf {
     persistence::persistence(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cfg &config, storage &s)
-        : sigs_{std::bind(&persistence::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), std::bind(&persistence::modify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), std::bind(&persistence::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2), std::bind(&persistence::trx, this, std::placeholders::_1, std::placeholders::_2), std::bind(&persistence::power_return, this), std::bind(&persistence::stop, this, std::placeholders::_1)}
+        : sigs_{
+            std::bind(&persistence::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), //    "db.insert"
+            std::bind(&persistence::modify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), //    "db.modify"
+            std::bind(&persistence::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), // "db.remove"
+            std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2), // "db.clear"
+            std::bind(&persistence::trx, this, std::placeholders::_1, std::placeholders::_2), // "db.trx"
+            std::bind(&persistence::power_return, this), // "oplog.power.return"
+            std::bind(&persistence::authorized, this, std::placeholders::_1), // "oplog.power.return"
+            std::bind(&persistence::stop, this, std::placeholders::_1)
+        }
         , channel_(wp)
         , logger_(logger)
         , cfg_(config)
@@ -28,7 +38,8 @@ namespace smf {
         , distributor_(logger, ctl, config) {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"db.insert", "db.modify", "db.remove", "db.clear", "db.trx", "power-return"});
+            sp->set_channel_names(
+                {"db.insert", "db.modify", "db.remove", "db.clear", "db.trx", "oplog.power.return", "oplog.authorized"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
 
@@ -50,11 +61,22 @@ namespace smf {
         storage_.generate_op_log(
             cfg_.get_status_word(),
             sml::LOG_CODE_09,  //	0x00100023 - power return
-            OBIS_PEER_SCM,     //	source is SCM
+            OBIS_PEER_SCM,     //	peer: source is SCM
             cfg_.get_srv_id(), //	server ID
             "",                //	target
             0,                 //	nr
             "power return");   //	description
+    }
+
+    void persistence::authorized(bool success) {
+        storage_.generate_op_log(
+            cfg_.get_status_word(),
+            (success ? sml::LOG_CODE_61 : sml::LOG_CODE_65),
+            OBIS_PEER_ADDRESS_WANGSM, //	source is WANGSM
+            cfg_.get_srv_id(),        //	server ID
+            "",                       //	target
+            0,                        //	nr
+            "IP-T access");           //	description
     }
 
     void persistence::insert(cyng::table const *tbl, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid) {

@@ -214,8 +214,7 @@ namespace smf {
             if (pos != sql_map_.end()) {
 
                 auto const &meta = pos->second;
-                auto const sql =
-                    cyng::sql::update(db_.get_dialect(), meta).set_placeholder(meta, attr.first).where(meta, cyng::sql::pk())();
+                auto const sql = cyng::sql::update(db_.get_dialect(), meta).set_placeholder(attr.first).where(cyng::sql::pk())();
 
                 auto stmt = db_.create_statement();
                 std::pair<int, bool> const r = stmt->prepare(sql);
@@ -302,7 +301,7 @@ namespace smf {
         auto const pos = sql_map_.find(table_name);
         if (pos != sql_map_.end()) {
             auto const &meta = pos->second;
-            auto const sql = cyng::sql::remove(db_.get_dialect(), meta).self().where(meta, cyng::sql::pk())();
+            auto const sql = cyng::sql::remove(db_.get_dialect(), meta).where(cyng::sql::pk())();
 
             auto stmt = db_.create_statement();
             std::pair<int, bool> const r = stmt->prepare(sql);

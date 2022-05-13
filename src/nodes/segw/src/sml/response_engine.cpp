@@ -5,6 +5,8 @@
  *
  */
 
+#include <storage.h>
+
 #include <smf.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
@@ -31,9 +33,10 @@
 
 namespace smf {
 
-    response_engine::response_engine(cfg &config, cyng::logger logger, sml::response_generator &rg)
-        : cfg_(config)
-        , logger_(logger)
+    response_engine::response_engine(cyng::logger logger, cfg &config, storage &s, sml::response_generator &rg)
+        : logger_(logger)
+        , cfg_(config)
+        , storage_(s)
         , res_gen_(rg) {}
 
     void response_engine::generate_get_proc_parameter_response(
@@ -173,8 +176,8 @@ namespace smf {
             CYNG_LOG_INFO(
                 logger_,
                 "SML_SetProcParameter.Req - trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
-                                                   << ", pwd: " << pwd << ", path: " << path << " ("
-                                                   << obis::get_name(path.front()));
+                                                   << ", pwd: " << pwd << ", path: " << path << " (" << obis::get_name(path.front())
+                                                   << ")");
 
             //
             //  SML_SetProcParameter requests are generating an attention code as response
@@ -190,6 +193,52 @@ namespace smf {
                 logger_,
                 "SML_SetProcParameter.Req has no path - trx: " << trx << ", server: " << cyng::io::to_hex(server)
                                                                << ", user: " << user << ", pwd: " << pwd);
+        }
+    }
+
+    void response_engine::generate_get_profile_list_response(
+        sml::messages_t &msgs,
+        std::string trx,
+        cyng::buffer_t server,                       // server id
+        std::string user,                            // username
+        std::string pwd,                             // password
+        bool,                                        // has raw data
+        std::chrono::system_clock::time_point begin, // begin
+        std::chrono::system_clock::time_point end,   // end
+        cyng::obis_path_t path,                      // parameter tree path
+        cyng::object,                                // object list
+        cyng::object                                 // das details
+    ) {
+        if (!path.empty()) {
+            CYNG_LOG_INFO(
+                logger_,
+                "SML_GetProfileList.Req - trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
+                                                 << ", pwd: " << pwd << ", path: " << path << " (" << obis::get_name(path.front())
+                                                 << ")");
+            switch (path.front().to_uint64()) {
+            case CODE_CLASS_OP_LOG: //	81 81 c7 89 e1 ff
+                get_profile_list_response_oplog(msgs, trx, server, path, begin, end);
+                break;
+            case CODE_PROFILE_1_MINUTE:     //	 81 81 C7 86 10 FF
+            case CODE_PROFILE_15_MINUTE:    // 81 81 C7 86 11 FF
+                                            // profile_15_minute(trx, client_id, srv_id, start, end);
+            case CODE_PROFILE_60_MINUTE:    // 81 81 C7 86 12 FF
+            case CODE_PROFILE_24_HOUR:      // 81 81 C7 86 13 FF
+            case CODE_PROFILE_LAST_2_HOURS: // 81 81 C7 86 14 FF
+            case CODE_PROFILE_LAST_WEEK:    // 81 81 C7 86 15 FF
+            case CODE_PROFILE_1_MONTH:      // 81 81 C7 86 16 FF
+            case CODE_PROFILE_1_YEAR:       // 81 81 C7 86 17 FF
+            case CODE_PROFILE_INITIAL:      // 81 81 C7 86 18 FF
+                // return get_profile(code, trx, client_id, srv_id, start, end);
+                break;
+            default: CYNG_LOG_WARNING(logger_, "SML_GetProfileList.Req unknown OBIS code: " << cyng::io::to_hex(server)); break;
+            }
+
+        } else {
+            CYNG_LOG_WARNING(
+                logger_,
+                "SML_GetProfileList.Req has no path - trx: " << trx << ", server: " << cyng::io::to_hex(server)
+                                                             << ", user: " << user << ", pwd: " << pwd);
         }
     }
 
@@ -541,39 +590,41 @@ namespace smf {
                 std::uint8_t c1 = 1, c2 = 1;
                 tbl->loop([&](cyng::record &&rec, std::size_t) -> bool {
                     //
-                    //  use all metering devices
+                    //  use only visible metering devices
                     //
-                    res.add(
-                        {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
-                         cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
-                         OBIS_SERVER_ID},
-                        sml::to_attribute(rec.at("meter")));
-                    res.add(
-                        {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
-                         cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
-                         OBIS_DEVICE_CLASS},
-                        sml::make_attribute("+++"));
-                    res.add(
-                        {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
-                         cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
-                         OBIS_CURRENT_UTC},
-                        sml::to_attribute(rec.at("activity")));
+                    if (rec.value("visible", false)) {
+                        res.add(
+                            {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
+                             cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
+                             OBIS_SERVER_ID},
+                            sml::to_attribute(rec.at("serverID")));
+                        res.add(
+                            {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
+                             cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
+                             OBIS_DEVICE_CLASS},
+                            sml::to_attribute(rec.at("class")));
+                        res.add(
+                            {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
+                             cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
+                             OBIS_CURRENT_UTC},
+                            sml::to_attribute(rec.at("lastSeen")));
 
-                    //
-                    //  update counter
-                    //
-                    if (c2 == 0xFF) {
-                        c2 = 1;
-                        c1++;
-                        BOOST_ASSERT_MSG(c1 != 0xFF, "visible meter overflow");
-                    } else {
-                        c2++;
+                        //
+                        //  update counter
+                        //
+                        if (c2 == 0xFF) {
+                            c2 = 1;
+                            c1++;
+                            BOOST_ASSERT_MSG(c1 != 0xFF, "visible meter overflow");
+                        } else {
+                            c2++;
+                        }
                     }
 
                     return true;
                 });
             },
-            cyng::access::read("meter"));
+            cyng::access::read("meterMBus"));
 
         return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), res.to_child_list()));
     }
@@ -614,42 +665,37 @@ namespace smf {
                 //
                 std::uint8_t c1 = 1, c2 = 1;
                 tbl->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                    //
-                    //  use only activated metering devices
-                    //
-                    if (rec.value("active", false)) {
-                        res.add(
-                            {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
-                             cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
-                             OBIS_SERVER_ID},
-                            sml::to_attribute(rec.at("meter")));
-                        res.add(
-                            {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
-                             cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
-                             OBIS_DEVICE_CLASS},
-                            sml::make_attribute("+++"));
-                        res.add(
-                            {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
-                             cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
-                             OBIS_CURRENT_UTC},
-                            sml::to_attribute(rec.at("activity")));
+                    res.add(
+                        {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
+                         cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
+                         OBIS_SERVER_ID},
+                        sml::to_attribute(rec.at("serverID")));
+                    res.add(
+                        {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
+                         cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
+                         OBIS_DEVICE_CLASS},
+                        sml::to_attribute(rec.at("class")));
+                    res.add(
+                        {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
+                         cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
+                         OBIS_CURRENT_UTC},
+                        sml::to_attribute(rec.at("lastSeen")));
 
-                        //
-                        //  update counter
-                        //
-                        if (c2 == 0xFF) {
-                            c2 = 1;
-                            c1++;
-                            BOOST_ASSERT_MSG(c1 != 0xFF, "active meter overflow");
-                        } else {
-                            c2++;
-                        }
+                    //
+                    //  update counter
+                    //
+                    if (c2 == 0xFF) {
+                        c2 = 1;
+                        c1++;
+                        BOOST_ASSERT_MSG(c1 != 0xFF, "active meter overflow");
+                    } else {
+                        c2++;
                     }
 
                     return true;
                 });
             },
-            cyng::access::read("meter"));
+            cyng::access::read("meterMBus"));
 
         return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), res.to_child_list()));
     }
@@ -774,6 +820,110 @@ namespace smf {
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
         return cyng::tuple_t{};
+    }
+
+    void response_engine::get_profile_list_response_oplog(
+        sml::messages_t &msgs,
+        std::string const &trx,
+        cyng::buffer_t const &server,
+        cyng::obis_path_t const &path,
+        std::chrono::system_clock::time_point const &begin,
+        std::chrono::system_clock::time_point const &end) {
+
+        BOOST_ASSERT_MSG(begin < end, "invalid time range");
+
+        CYNG_LOG_INFO(logger_, "op log from " << begin << " to " << end);
+
+        //
+        //  collect all log entries
+        //
+        //
+        // std::uint8_t push_nr = 1;
+        storage_.loop_oplog(begin, end, [&, this](cyng::record &&rec) {
+            //  example:
+            //  [ROWID: 000000000025883d][actTime: 1999-12-30T23:00:00+0100][age: 1999-12-30T23:00:00+0100][regPeriod:
+            //  00022202][valTime: 1969-12-31T23:59:59+0100][status: 0000000000000000][event: 000007e6][peer: null][utc:
+            //  1969-12-31T23:59:59+0100][serverId: 30][target: power return][pushNr: 0][details: null]
+            CYNG_LOG_TRACE(logger_, "op record: " << rec.to_string());
+
+            auto const now = std::chrono::system_clock::now();
+            auto const age = rec.value("age", now);
+            auto const act_time = rec.value("actTime", now);
+            auto const val_time = rec.value<std::uint32_t>("valTime", now.time_since_epoch().count());
+            auto const reg_period = rec.value<std::uint32_t>("regPeriod", 900u);
+            auto const status = rec.value<std::uint64_t>("status", 0u);
+
+            auto const event_class = rec.value<std::uint32_t>("event", 0u);
+            auto const target = rec.value("target", "");
+            auto const push_nr = rec.value<std::uint8_t>("pushNr", 0u);
+            auto const details = rec.value("details", "");
+            cyng::obis peer;
+            peer = rec.value("peer", peer);
+
+            msgs.push_back(res_gen_.get_profile_list(
+                trx,
+                server,
+                age,
+                reg_period,
+                OBIS_CLASS_OP_LOG, //	path entry: 81 81 C7 89 E1 FF
+                val_time,
+                status,
+                {//	81 81 C7 89 E2 FF - OBIS_CLASS_EVENT
+                 //  62FF                                    unit: 255
+                 //  5200                                    scaler: 0
+                 //  64800008                                value: 8388616
+                 sml::period_entry(OBIS_CLASS_EVENT, 0xFF, event_class),
+                 //	81 81 00 00 00 FF - PEER_ADDRESS
+                 //  62FF                                    unit: 255
+                 //  5200                                    scaler: 0
+                 //  078146000002FF                          value: 81 46 00 00 02 FF
+                 sml::period_entry(OBIS_PEER_ADDRESS, 0xFF, peer),
+                 //  0781042B070000                          objName: 81 04 2B 07 00 00
+                 //  62FE                                    unit: 254
+                 //  5200                                    scaler: 0
+                 //  5500000000                              value: 0
+                 sml::period_entry(OBIS_CLASS_OP_LOG_FIELD_STRENGTH, 0xFE, 0u),
+                 //  81 04 1A 07 00 00                       objName: CLASS_OP_LOG_CELL
+                 //  62FF                                    unit: 255
+                 //  5200                                    scaler: 0
+                 //  6200                                    value: 0
+                 sml::period_entry(OBIS_CLASS_OP_LOG_CELL, 0xFF, 0u),
+                 //  81 04 17 07 00 00                       objName:  CLASS_OP_LOG_AREA_CODE
+                 //  62FF                                    unit: 255
+                 //  5200                                    scaler: 0
+                 //  6200                                    value: 0
+                 sml::period_entry(OBIS_CLASS_OP_LOG_AREA_CODE, 0xFF, 0u),
+                 //  81 04 0D 06 00 00                       objName: CLASS_OP_LOG_PROVIDER
+                 //  62FF                                    unit: 255
+                 //  5200                                    scaler: 0
+                 //  6200                                    value: 0
+                 sml::period_entry(OBIS_CLASS_OP_LOG_PROVIDER, 0xFF, 0u),
+                 //  01 00 00 09 0B 00                       objName:  CURRENT_UTC
+                 //  6207                                    unit: 7
+                 //  5200                                    scaler: 0
+                 //  655B8E3F04                              value: 1536048900
+                 sml::period_entry(OBIS_CURRENT_UTC, 0xFF, age),
+                 //  81 81 C7 82 04 FF                       objName:  SERVER_ID
+                 //  62FF                                    unit: 255
+                 //  5200                                    scaler: 0
+                 //  0A01A815743145040102                    value: 01 A8 15 74 31 45 04 01 02
+                 sml::period_entry(OBIS_SERVER_ID, 0xFF, server),
+                 //  81 47 17 07 00 FF                       objName:  PUSH_TARGET
+                 //  62FF                                    unit: 255
+                 //  5200                                    scaler: 0
+                 //  0F706F77657240736F6C6F73746563          value: power@solostec
+                 sml::period_entry(OBIS_PUSH_TARGET, 0xFF, target),
+                 // 81 81 C7 8A 01 FF                       objName:  ROOT_PUSH_OPERATIONS
+                 // 62FF                                    unit: 255
+                 // 5200                                    scaler: 0
+                 // 6201                                    value: 1
+                 sml::period_entry(OBIS_ROOT_PUSH_OPERATIONS, 0xFF, push_nr),
+                 // 81 81 C7 81 23 FF
+                 // 62FF                                    unit: 255
+                 // 5200                                    scaler: 0
+                 sml::period_entry(OBIS_DATA_PUSH_DETAILS, 0xFF, details)}));
+            return true;
+        });
     }
 
     cyng::tuple_t generate_tree_ntp(std::vector<std::string> const &ntp_servers) {

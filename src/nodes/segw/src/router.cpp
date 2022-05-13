@@ -6,6 +6,7 @@
  */
 
 #include <router.h>
+#include <storage.h>
 
 #include <config/cfg_hardware.h>
 #include <config/cfg_ipt.h>
@@ -30,10 +31,10 @@
 
 namespace smf {
 
-    router::router(cyng::controller &ctl, cfg &config, cyng::logger logger)
-        : ctl_(ctl)
+    router::router(cyng::logger logger, cyng::controller &ctl, cfg &config, storage &store)
+        : logger_(logger)
+        , ctl_(ctl)
         , cfg_(config)
-        , logger_(logger)
         , bus_()
         , parser_([this](
                       std::string trx,
@@ -63,12 +64,13 @@ namespace smf {
                     &response_engine::generate_set_proc_parameter_response,
                     std::tuple_cat(std::make_tuple(&engine_, std::ref(messages_), trx), sml::read_set_proc_parameter_request(msg)));
                 break;
-            case sml::msg_type::CLOSE_REQUEST:
-                generate_close_response(trx, sml::read_public_close_request(msg));
+            case sml::msg_type::GET_PROFILE_LIST_REQUEST:
+                std::apply(
+                    &response_engine::generate_get_profile_list_response,
+                    std::tuple_cat(std::make_tuple(&engine_, std::ref(messages_), trx), sml::read_get_profile_list_request(msg)));
                 break;
-            default:
-                CYNG_LOG_WARNING(logger_, "message type " << smf::sml::get_name(type) << " is not supported yet");
-                break;
+            case sml::msg_type::CLOSE_REQUEST: generate_close_response(trx, sml::read_public_close_request(msg)); break;
+            default: CYNG_LOG_WARNING(logger_, "message type " << smf::sml::get_name(type) << " is not supported yet"); break;
             }
             //
             //  send response
@@ -77,7 +79,7 @@ namespace smf {
         })
         , messages_()
         , res_gen_()
-        , engine_(cfg_, logger, res_gen_) {}
+        , engine_(logger, cfg_, store, res_gen_) {}
 
     void router::start() {
 
@@ -148,6 +150,12 @@ namespace smf {
     }
 
     void router::auth_state(bool auth, boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep) {
+        //
+        //  update status word
+        //
+        cfg_.update_status_word(sml::status_bit::NOT_AUTHORIZED_IPT, !auth);
+        ctl_.get_registry().dispatch("persistence", "oplog.authorized", auth);
+
         if (auth) {
             CYNG_LOG_INFO(logger_, "[ipt] authorized at " << rep);
             cfg_ipt ipt_cfg(cfg_);

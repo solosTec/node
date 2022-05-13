@@ -13,24 +13,23 @@
 #include <cyng/task/task_fwd.h>
 
 namespace smf {
-	namespace sml {
-		class server
-		{
-		public:
-			server(cyng::controller& ctl, cfg&, cyng::logger);
+    namespace sml {
+        class server {
+          public:
+            server(cyng::logger, cyng::controller &ctl, cfg &);
 
-			void start(boost::asio::ip::tcp::endpoint ep);
-			void stop();
+            void start(boost::asio::ip::tcp::endpoint ep);
+            void stop();
 
-		private:
-			void do_accept();
+          private:
+            void do_accept();
 
-		private:
-			cfg& cfg_;
-			cyng::logger logger_;
-			boost::asio::ip::tcp::acceptor acceptor_;
-		};
-	}
-}
+          private:
+            cyng::logger logger_;
+            cfg &cfg_;
+            boost::asio::ip::tcp::acceptor acceptor_;
+        };
+    } // namespace sml
+} // namespace smf
 
 #endif

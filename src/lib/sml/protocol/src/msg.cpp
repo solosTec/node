@@ -168,5 +168,15 @@ namespace smf {
             );
         }
 
+        cyng::tuple_t period_entry(cyng::obis code, std::uint8_t unit, std::int8_t scaler, cyng::object value) {
+            return cyng::make_tuple(
+                code,         // object name
+                unit,         // unit code
+                scaler,       // scale factor
+                value,        // value
+                cyng::null{}  // signature
+            );
+        }
+
     } // namespace sml
 } // namespace smf

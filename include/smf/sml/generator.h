@@ -124,6 +124,19 @@ namespace smf {
             [[nodiscard]] cyng::tuple_t get_list(cyng::buffer_t const &server, cyng::tuple_t val_list);
 
             /**
+             * SML_GetProfileList.Res
+             */
+            [[nodiscard]] cyng::tuple_t get_profile_list(
+                std::string const &trx,
+                cyng::buffer_t const &server,
+                std::chrono::system_clock::time_point act_time,
+                std::uint32_t reg_period,
+                cyng::obis,
+                std::uint32_t val_time,
+                std::uint64_t status,
+                cyng::tuple_t);
+
+            /**
              * Attention
              */
             [[nodiscard]] cyng::tuple_t

@@ -146,9 +146,39 @@ namespace smf {
                     cyng::null{},                  // list name
                     cyng::null{},                  // act. sensor time
                     val_list,                      // SML_List / SML_ListEntry
-                    cyng::null{},                  //    listSignature
+                    cyng::null{},                  // listSignature
                     cyng::null{}),                 // actGatewayTime
                 static_cast<std::uint16_t>(0xFFFF) //  crc placeholder
+            );
+        }
+
+        cyng::tuple_t response_generator::get_profile_list(
+            std::string const &trx,
+            cyng::buffer_t const &server,
+            std::chrono::system_clock::time_point act_time,
+            std::uint32_t reg_period,
+            cyng::obis code,
+            std::uint32_t val_time,
+            std::uint64_t status,
+            cyng::tuple_t data) {
+
+            return make_message(
+                trx,
+                1,
+                0,
+                msg_type::GET_PROFILE_LIST_RESPONSE,
+                cyng::make_tuple(
+                    server,
+                    act_time,
+                    reg_period,
+                    cyng::obis_path_t({code}),
+                    val_time,
+                    status,
+                    std::move(data), // SML_List / SML_ListEntry
+                    cyng::null{},    // rawdata
+                    cyng::null{}     // signature
+                    ),
+                static_cast<std::uint16_t>(0xFFFF) // crc placeholder
             );
         }
 
@@ -157,6 +187,7 @@ namespace smf {
             cyng::buffer_t const &server,
             attention_type type,
             std::string txt) {
+
             return make_message(
                 trx,
                 1,

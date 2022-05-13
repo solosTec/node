@@ -10,6 +10,7 @@
 #include <storage_functions.h>
 
 #include <cyng/obj/intrinsics/obis.h>
+#include <cyng/store/record.h>
 #include <cyng/task/task_fwd.h>
 
 namespace smf {
@@ -37,6 +38,11 @@ namespace smf {
             std::string target,
             std::uint8_t nr,
             std::string description);
+
+        void loop_oplog(
+            std::chrono::system_clock::time_point const &begin,
+            std::chrono::system_clock::time_point const &end,
+            std::function<bool(cyng::record &&)>);
 
       private:
         cyng::db::session db_;

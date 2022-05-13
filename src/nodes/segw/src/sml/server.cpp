@@ -13,9 +13,9 @@
 namespace smf {
     namespace sml {
 
-        server::server(cyng::controller &ctl, cfg &c, cyng::logger logger)
-            : cfg_(c)
-            , logger_(logger)
+        server::server(cyng::logger logger, cyng::controller &ctl, cfg &c)
+            : logger_(logger)
+            , cfg_(c)
             , acceptor_(ctl.get_ctx()) {}
 
         void server::start(boost::asio::ip::tcp::endpoint ep) {

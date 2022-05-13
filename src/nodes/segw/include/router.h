@@ -20,12 +20,14 @@
 
 namespace smf {
 
+    class storage;
+
     /**
      * routing of IP-T/SML messages
      */
     class router {
       public:
-        router(cyng::controller &, cfg &config, cyng::logger);
+        router(cyng::logger, cyng::controller &, cfg &config, storage &);
         void start();
         void stop();
 
@@ -48,9 +50,9 @@ namespace smf {
         void generate_close_response(std::string trx, cyng::object gsign);
 
       private:
+        cyng::logger logger_;
         cyng::controller &ctl_;
         cfg &cfg_;
-        cyng::logger logger_;
         std::unique_ptr<ipt::bus> bus_;
         sml::unpack parser_;
         sml::messages_t messages_; //	sml response

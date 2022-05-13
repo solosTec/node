@@ -54,8 +54,8 @@ namespace smf {
         , cache_(std::begin(md), std::end(md))  // initialize data cache
         , cfg_(logger, cache_, load_configuration(logger, db_, cache_)) //  get tag and server id
         , fabric_(ctl)
-        , router_(ctl, cfg_, logger)
-        , sml_(ctl, cfg_, logger)
+        , router_(logger, ctl, cfg_, storage_)
+        , sml_(logger, ctl, cfg_)
         , stash_(ctl.get_ctx()) {
 
         if (auto sp = channel_.lock(); sp) {
@@ -239,7 +239,7 @@ namespace smf {
         auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", ctl_, logger_, cfg_, storage_);
         BOOST_ASSERT(channel->is_open());
         stash_.lock(channel);
-        channel->dispatch("power-return");
+        channel->dispatch("oplog.power.return");
 
         //
         //  check some values
@@ -427,31 +427,6 @@ namespace smf {
 
                     return true;
                 });
-#ifdef __DEBUG
-                //
-                //  add some demo meter devices
-                //
-                {
-                    //  02-e61e-04123675-3c-07
-                    auto const name = cyng::make_buffer({0x02, 0xe6, 0x1e, 0x04, 0x12, 0x36, 0x75, 0x3c, 0x07});
-                    auto const tag = cfg_.get_name(name);
-                    tbl->insert(
-                        cyng::key_generator(tag),
-                        cyng::data_generator(name, "wM-Bus", std::chrono::system_clock::now(), true, "02-e61e-04123675-3c-07"),
-                        0,
-                        cfg_.get_tag());
-                }
-                {
-                    //  02-e61e-83245629-3c-07
-                    auto const name = cyng::make_buffer({0x02, 0xe6, 0x1e, 0x83, 0x24, 0x56, 0x29, 0x3c, 0x07});
-                    auto const tag = cfg_.get_name(name);
-                    tbl->insert(
-                        cyng::key_generator(tag),
-                        cyng::data_generator(name, "wM-Bus", std::chrono::system_clock::now(), true, "02-e61e-83245629-3c-07"),
-                        0,
-                        cfg_.get_tag());
-                }
-#endif
             },
 
             cyng::access::write("meterMBus"));
