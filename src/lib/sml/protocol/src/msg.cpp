@@ -1,7 +1,7 @@
-#include <smf/sml/crc16.h>
 #include <smf/sml/msg.h>
+
+#include <smf/sml/crc16.h>
 #include <smf/sml/serializer.h>
-//#include <smf/sml/value.hpp>
 
 #include <cyng/obj/util.hpp>
 #ifdef _DEBUG

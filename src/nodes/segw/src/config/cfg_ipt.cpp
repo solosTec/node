@@ -10,6 +10,7 @@
 #include <smf/obis/conv.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/tree.hpp>
+#include <smf/sml/msg.h>
 #include <smf/sml/value.hpp>
 
 #include <cyng/obj/numeric_cast.hpp>
@@ -87,6 +88,10 @@ namespace smf {
 
     std::string cfg_ipt::get_host(std::uint8_t idx) const { return cfg_.get_value(host_path(idx), "segw.ch"); }
     std::string cfg_ipt::get_service(std::uint8_t idx) const { return cfg_.get_value(target_port_path(idx), "26862"); }
+    std::uint16_t cfg_ipt::get_service_as_port(std::uint8_t idx) const {
+        return cyng::string_to_numeric<std::uint32_t>(cfg_.get_obj(target_port_path(idx)), 26862u);
+    }
+    std::uint16_t cfg_ipt::get_source_port(std::uint8_t idx) const { return 0u; }
 
     std::string cfg_ipt::get_account(std::uint8_t idx) const { return cfg_.get_value(account_path(idx), "no-account"); }
     std::string cfg_ipt::get_pwd(std::uint8_t idx) const { return cfg_.get_value(pwd_path(idx), "no-password"); }
@@ -120,27 +125,40 @@ namespace smf {
     }
 
     cyng::tuple_t cfg_ipt::get_params_as_child_list() const {
-        sml::obj_tree_t tree;
-        // tree.add(
-        //     {{0x81, 0x49, 0x0d, 0x07, 0x00, 0x01}, {0x81, 0x49, 0x17, 0x07, 0x00, 0x01}},
-        // sml::make_attribute("METER_ADDRESS/ACCESS_USER_NAME/NMS_PORT"));
-        cfg_.loop(cyng::to_str(OBIS_ROOT_IPT_PARAM), [&](std::vector<std::string> &&vec, cyng::object obj) {
-            if (cyng::is_hex(vec.back())) {
-                // std::cout << vec.size() << obj << std::endl;
-                tree.add(obis::to_obis_path(vec), obj);
-            }
-        });
-        return tree.to_tuple<cyng::object>([](cyng::obis code, cyng::object obj) -> cyng::object {
-            std::cerr << code << ": " << obj << std::endl;
-            if (code.starts_with({0x81, 0x49, 0x1A, 0x07, 0x00})) {
-                //  convert to u32
-                if (obj.tag() == cyng::TC_STRING) {
-                    auto const port = cyng::string_to_numeric<std::uint32_t>(obj, 26862u);
-                    return cyng::make_object(port);
-                }
-            }
-            return cyng::make_object(sml::to_value(obj));
-        });
+
+        //
+        //  The response is hard coded since
+        //  cfg_.loop(cyng::to_str(OBIS_ROOT_IPT_PARAM),...
+        //  obis::to_obis_path(vec)
+        //  didn't produce the expected results.
+        //
+        return sml::tree_child_list(
+            OBIS_ROOT_IPT_PARAM,
+            cyng::make_tuple(
+                //  redundance 1
+                sml::tree_child_list(
+                    cyng::make_obis(OBIS_ROOT_IPT_PARAM, 1u),
+                    cyng::make_tuple(
+                        sml::tree_param(cyng::make_obis(OBIS_TARGET_IP_ADDRESS, 1u), sml::make_attribute(get_host(1))),
+                        // sml::tree_param(cyng::make_obis(OBIS_TARGET_IP_ADDRESS, 1u), sml::make_attribute(0x5201a8c0)),
+                        sml::tree_param(cyng::make_obis(OBIS_TARGET_PORT, 1u), sml::make_attribute(get_service_as_port(1))),
+                        sml::tree_param(cyng::make_obis(OBIS_SOURCE_PORT, 1u), sml::make_attribute(get_source_port(1))),
+                        sml::tree_param(cyng::make_obis(OBIS_IPT_ACCOUNT, 1u), sml::make_attribute(get_account(1))),
+                        sml::tree_param(cyng::make_obis(OBIS_IPT_PASSWORD, 1u), sml::make_attribute(get_pwd(1))))),
+
+                //  redundance 2
+                sml::tree_child_list(
+                    cyng::make_obis(OBIS_ROOT_IPT_PARAM, 2u),
+                    cyng::make_tuple(
+                        sml::tree_param(cyng::make_obis(OBIS_TARGET_IP_ADDRESS, 2u), sml::make_attribute(get_host(2))),
+                        sml::tree_param(cyng::make_obis(OBIS_TARGET_PORT, 2u), sml::make_attribute(get_service_as_port(2))),
+                        sml::tree_param(cyng::make_obis(OBIS_SOURCE_PORT, 2u), sml::make_attribute(get_source_port(2))),
+                        sml::tree_param(cyng::make_obis(OBIS_IPT_ACCOUNT, 2u), sml::make_attribute(get_account(2))),
+                        sml::tree_param(cyng::make_obis(OBIS_IPT_PASSWORD, 2u), sml::make_attribute(get_pwd(2))))),
+                sml::tree_param(OBIS_TCP_WAIT_TO_RECONNECT, sml::make_attribute(get_reconnect_timeout().count())),
+                sml::tree_param(OBIS_TCP_CONNECT_RETRIES, sml::make_attribute(get_reconnect_count())),
+                sml::tree_param(OBIS_HAS_SSL_CONFIG, sml::make_attribute(false)),
+                sml::tree_empty(OBIS_SSL_CERTIFICATES))); //  no certificates
     }
 
     bool cfg_ipt::set_proc_parameter(cyng::obis_path_t path, cyng::object obj) {

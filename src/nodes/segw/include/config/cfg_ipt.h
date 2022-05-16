@@ -20,8 +20,16 @@ namespace smf {
 
         bool is_enabled() const;
 
+        /**
+         * Index starts with 1
+         */
         std::string get_host(std::uint8_t idx) const;
         std::string get_service(std::uint8_t idx) const;
+        std::uint16_t get_service_as_port(std::uint8_t idx) const;
+        /**
+         * @return 0 - dummy function
+         */
+        std::uint16_t get_source_port(std::uint8_t idx) const;
         std::string get_account(std::uint8_t idx) const;
         std::string get_pwd(std::uint8_t idx) const;
         ipt::scramble_key get_sk(std::uint8_t idx) const;
