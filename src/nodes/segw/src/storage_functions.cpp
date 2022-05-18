@@ -105,11 +105,13 @@ namespace smf {
         return cyng::meta_store(
             "meterMBus",
             {
-                cyng::column("serverID", cyng::TC_BUFFER),     //	server/meter ID <- key
-                cyng::column("lastSeen", cyng::TC_TIME_POINT), //	last seen - Letzter Datensatz: 20.06.2018 14:34:22"
-                cyng::column("class", cyng::TC_STRING),        //	device/quality class (always "---" == 2D 2D 2D)
-                cyng::column("visible", cyng::TC_BOOL),        //	active/visible
-                cyng::column("status", cyng::TC_UINT32),       //	"Statusinformation: 00"
+                cyng::column("serverID", cyng::TC_BUFFER), //	OBIS_SERVER_ID: server/meter ID <- key
+                cyng::column(
+                    "lastSeen",
+                    cyng::TC_TIME_POINT),                //	OBIS_CURRENT_UTC: last seen - Letzter Datensatz: 20.06.2018 14:34:22"
+                cyng::column("class", cyng::TC_STRING),  //	DEVICE_CLASS: device/quality class (always "---" == 2D 2D 2D)
+                cyng::column("visible", cyng::TC_BOOL),  //	active/visible
+                cyng::column("status", cyng::TC_UINT32), //	"Statusinformation: 00"
                 //	Contains a bit mask to define the bits of the status word, that if changed
                 //	will result in an entry in the log-book.
                 cyng::column("mask", cyng::TC_BUFFER), //	"Bitmaske: 00 00"

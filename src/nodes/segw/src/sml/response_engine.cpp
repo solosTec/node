@@ -8,6 +8,8 @@
 #include <storage.h>
 
 #include <smf.h>
+#include <smf/mbus/flag_id.h>
+#include <smf/mbus/server_id.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/tree.hpp>
@@ -24,6 +26,7 @@
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/intrinsics/aes_key.hpp>
 #include <cyng/sys/info.h>
 #include <cyng/sys/ntp.h>
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
@@ -118,7 +121,7 @@ namespace smf {
                 msgs.push_back(get_proc_parameter_device_info(trx, server, path));
                 break;
             case CODE_ROOT_SENSOR_PARAMS: //	81 81 C7 86 00 FF
-                // msgs.push_back(get_proc_parameter_sensor_param(trx, server, path));
+                msgs.push_back(get_proc_parameter_sensor_param(trx, server, path));
                 break;
             case CODE_ROOT_DATA_COLLECTOR: //	 0x8181C78620FF (Datenspiegel)
                 msgs.push_back(get_proc_parameter_data_collector(trx, server, path));
@@ -542,6 +545,16 @@ namespace smf {
         //  81 48 17 07 00 FF
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_IF_LAN_DSL);
+
+        //
+        // * own Ip address in WAN
+        // * subnet mask
+        // * gateway
+        // * primary DNS
+        // * secondary DNS
+        // * tertiary DNS
+        //
+
         return res_gen_.get_proc_parameter(
             trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
     }
@@ -620,10 +633,13 @@ namespace smf {
             },
             cyng::access::read("meterMBus"));
 
-        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(
-            OBIS_ROOT_VISIBLE_DEVICES, //  81 81 10 06 ff ff
-            tpl_outer));
-
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                OBIS_ROOT_VISIBLE_DEVICES, //  81 81 10 06 ff ff
+                tpl_outer));
     }
 
     cyng::tuple_t
@@ -719,11 +735,13 @@ namespace smf {
             },
             cyng::access::read("meterMBus"));
 
-        auto child_list = sml::tree_child_list(
-            OBIS_ROOT_ACTIVE_DEVICES, //  81 81 11 06 ff ff
-            tpl_outer);
-
-        return res_gen_.get_proc_parameter(trx, server, path, child_list);
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                OBIS_ROOT_ACTIVE_DEVICES, //  81 81 11 06 ff ff
+                tpl_outer));
 
         //
         //  example to illustrate the structure
@@ -775,7 +793,93 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_SENSOR_PARAMS);
+
+        //
+        // 81 81 C7 82 04 FF - SERVER_ID
+        // 81 81 C7 82 02 FF - DEVICE_CLASS
+        // 81 81 C7 82 03 FF - DATA_MANUFACTURER
+        // 81 00 60 05 00 00 - CLASS_OP_LOG_STATUS_WORD (example: 0202a0)
+        // 81 81 C7 86 01 FF - ROOT_SENSOR_BITMASK
+        // 81 81 C7 86 02 FF - AVERAGE_TIME_MS (time between two data sets (example: 636D60 -> 28000))
+        // 01 00 00 09 0B 00 - CURRENT_UTC (last data record)
+        // --- optional
+        // 81 81 c7 82 05 ff - DATA_PUBLIC_KEY
+        // 81 81 c7 86 03 ff - DATA_AES_KEY
+        // 81 81 61 3c 01 ff - DATA_USER_NAME (user)
+        // 81 81 61 3c 02 ff - DATA_USER_PWD (password)
+        //
+        //
+        srv_id_t const id = to_srv_id(server);
+        auto const manufacturer = mbus::decode(get_manufacturer_code(id));
+
+        cyng::tuple_t result;
+        cfg_.get_cache().access(
+            [&](cyng::table const *tbl) {
+                auto const rec = tbl->lookup(cyng::key_generator(server));
+                if (!rec.empty()) {
+
+                    cyng::buffer_t mask, pub_key;
+                    mask = rec.value("mask", mask);
+                    pub_key = rec.value("pubKey", pub_key);
+
+                    auto const last_seen = rec.value("lastSeen", std::chrono::system_clock::now());
+                    auto const dev_class = rec.value("class", "");
+
+                    cyng::crypto::aes_128_key aes;
+                    aes = rec.value("aes", aes);
+                    auto const aes_buffer = cyng::to_buffer(aes);
+
+                    auto const status = rec.value<std::uint32_t>("status", 0u);
+
+                    result = res_gen_.get_proc_parameter(
+                        trx,
+                        server,
+                        path,
+                        sml::tree_child_list(
+                            path.at(0),
+                            {sml::tree_child_list(
+                                path.at(0),
+                                {
+
+                                    sml::tree_param(OBIS_SERVER_ID, sml::make_value(server)),
+                                    sml::tree_param(OBIS_DEVICE_CLASS, sml::make_value(dev_class)),
+                                    sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(manufacturer)),
+                                    sml::tree_param(OBIS_CLASS_OP_LOG_STATUS_WORD, sml::make_value(status)),
+                                    sml::tree_param(OBIS_AVERAGE_TIME_MS, sml::make_value(28000u)),
+                                    sml::tree_param(OBIS_ROOT_SENSOR_BITMASK, sml::make_value(mask)),
+                                    sml::tree_param(OBIS_CURRENT_UTC, sml::make_value(last_seen)),
+                                    sml::tree_param(OBIS_DATA_PUBLIC_KEY, sml::make_value(pub_key)),
+                                    sml::tree_param(OBIS_DATA_AES_KEY, sml::make_value(aes_buffer)),
+                                    sml::tree_param(OBIS_DATA_USER_NAME, sml::make_value("")),
+                                    sml::tree_param(OBIS_DATA_USER_PWD, sml::make_value(""))
+
+                                })}));
+                }
+            },
+            cyng::access::read("meterMBus"));
+
+        return (result.empty()) //  dummy response
+                   ? res_gen_.get_proc_parameter(
+                         trx,
+                         server,
+                         path,
+                         sml::tree_child_list(
+                             path.at(0),
+                             {sml::tree_child_list(
+                                 path.at(0),
+                                 {
+
+                                     sml::tree_param(OBIS_SERVER_ID, sml::make_value(server)),
+                                     sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(manufacturer)),
+                                     sml::tree_param(OBIS_AVERAGE_TIME_MS, sml::make_value(0u)),
+                                     sml::tree_param(OBIS_DATA_USER_NAME, sml::make_value("")),
+                                     sml::tree_param(OBIS_DATA_USER_PWD, sml::make_value(""))
+
+                                 })}))
+                   : result;
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_data_collector(

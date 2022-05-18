@@ -80,9 +80,35 @@ namespace smf {
                 auto const key = cyng::key_generator(h.get_server_id_as_buffer());
                 auto const rec = tbl->lookup(key);
                 if (rec.empty()) {
+                //
+                //  wireless M-Bus meter not found - insert
+                //
+
+#if defined(_DEBUG)
                     //
-                    //  wireless M-Bus meter not found - insert
+                    //	start with some known AES keys
                     //
+                    auto const id = srv_id_to_str(h.get_server_id());
+                    // auto const id = sml::from_server_id(dev_id);
+                    if (boost::algorithm::equals(id, "01-e61e-29436587-bf-03") ||
+                        boost::algorithm::equals(id, "01-e61e-13090016-3c-07")) {
+                        aes_key.key_ = {
+                            0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8, 0x51, 0x72, 0x89, 0x10, 0xE6, 0x6D, 0x83, 0xF8};
+                    } else if (id == "01-a815-74314504-01-02") {
+                        //	23A84B07EBCBAF948895DF0E9133520D
+                        aes_key.key_ = {
+                            0x23, 0xA8, 0x4B, 0x07, 0xEB, 0xCB, 0xAF, 0x94, 0x88, 0x95, 0xDF, 0x0E, 0x91, 0x33, 0x52, 0x0D};
+                    } else if (
+                        boost::algorithm::equals(id, "01-e61e-79426800-02-0e") ||
+                        boost::algorithm::equals(id, "01-e61e-57140621-36-03")) {
+                        //	6140B8C066EDDE3773EDF7F8007A45AB
+                        aes_key.key_ = {
+                            0x61, 0x40, 0xB8, 0xC0, 0x66, 0xED, 0xDE, 0x37, 0x73, 0xED, 0xF7, 0xF8, 0x00, 0x7A, 0x45, 0xAB};
+                    } else {
+                        aes_key.key_ = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
+                    }
+#endif
+
                     tbl->insert(
                         key,
                         cyng::data_generator(now, "---", true, 0u, cyng::make_buffer({0, 0}), cyng::make_buffer({0}), aes_key),

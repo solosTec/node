@@ -56,6 +56,11 @@ namespace smf {
 
     /**
      * @return 2 byte code
+     *
+     * Example:
+     * @code
+     * auto const manufacturer = mbus::decode(get_manufacturer_code(srv_id));
+     * @endcode
      */
     std::pair<char, char> get_manufacturer_code(srv_id_t);
 

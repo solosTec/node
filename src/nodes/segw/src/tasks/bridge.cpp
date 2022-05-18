@@ -684,6 +684,7 @@ namespace smf {
         //  only wireless M-Bus supports filter
         //
         stop_filter(lmn_type::WIRELESS);
+        stash_.stop("EN-13757"); //  unlock and stop
     }
 
     void bridge::stop_filter(lmn_type type) {
