@@ -24,6 +24,7 @@ namespace smf {
             PROC_PAR_PERIODENTRY = 2,
             PROC_PAR_TUPELENTRY = 3,
             PROC_PAR_TIME = 4,
+            PROC_PAR_LIST_ENTRY = 5
         };
 
         /**

@@ -133,7 +133,9 @@ namespace smf {
                 std::end(nodes),
                 std::back_inserter(tpl),
                 [](typename obis_node<T>::list_t::value_type const &node) {
-                    return cyng::make_object(cyng::make_tuple(node.first, node.second.value_, to_tuple<T>(node.second.nodes_)));
+                    auto tmp = to_tuple<T>(node.second.nodes_);
+                    return (tmp.empty()) ? cyng::make_object(cyng::make_tuple(node.first, node.second.value_, cyng::null{}))
+                                         : cyng::make_object(cyng::make_tuple(node.first, node.second.value_, tmp));
                 });
             return tpl;
         }
@@ -147,8 +149,10 @@ namespace smf {
                 std::end(nodes),
                 std::back_inserter(tpl),
                 [=](typename obis_node<T>::list_t::value_type const &node) {
-                    return cyng::make_object(
-                        cyng::make_tuple(node.first, f(node.first, node.second.value_), to_tuple<T, R>(node.second.nodes_, f)));
+                    auto tmp = to_tuple<T, R>(node.second.nodes_, f);
+                    return (tmp.empty())
+                               ? cyng::make_object(cyng::make_tuple(node.first, f(node.first, node.second.value_), cyng::null{}))
+                               : cyng::make_object(cyng::make_tuple(node.first, f(node.first, node.second.value_), tmp));
                 });
             return tpl;
         }
@@ -296,6 +300,8 @@ namespace smf {
             /**
              * convert an obis tree into a child list:
              * child_list : code, value, child_list
+             * Note: the returned child doesn't work as SML child list since
+             * the child list itself is not embedded in a tuple.
              */
             cyng::tuple_t to_child_list() const;
 

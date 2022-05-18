@@ -434,11 +434,13 @@ namespace smf {
 
     void bridge::init_lmn_ports() {
 
-        init_lmn_port(lmn_type::WIRELESS);
+        if (init_lmn_port(lmn_type::WIRELESS)) {
+            cfg_.update_status_word(sml::status_bit::WIRELESS_MBUS_IF_AVAILABLE, true);
+        }
         init_lmn_port(lmn_type::WIRED);
     }
 
-    void bridge::init_lmn_port(lmn_type type) {
+    bool bridge::init_lmn_port(lmn_type type) {
 
         cfg_lmn cfg(cfg_, type);
         auto const port = cfg.get_port();
@@ -510,13 +512,16 @@ namespace smf {
                 channel->dispatch("open", cyng::make_tuple());
             }
 
-        } else {
-            CYNG_LOG_WARNING(logger_, "LMN [" << port << "] is not enabled");
+            return true;
         }
+        CYNG_LOG_WARNING(logger_, "LMN [" << port << "] is not enabled");
+        return false;
     }
 
     void bridge::stop_lmn_ports() {
         stop_lmn_port(lmn_type::WIRELESS);
+        cfg_.update_status_word(sml::status_bit::WIRELESS_MBUS_IF_AVAILABLE, false);
+
         stop_lmn_port(lmn_type::WIRED);
     }
 

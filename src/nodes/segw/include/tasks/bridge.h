@@ -68,7 +68,7 @@ namespace smf {
          * start reading from serial ports
          */
         void init_lmn_ports();
-        void init_lmn_port(lmn_type);
+        bool init_lmn_port(lmn_type);
         void stop_lmn_ports();
         void stop_lmn_port(lmn_type);
 

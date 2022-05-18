@@ -173,6 +173,9 @@ namespace smf {
 
     cyng::tuple_t generate_tree_ntp(std::vector<std::string> const &ntp_servers);
 
+    cyng::tuple_t generate_active_device_entry(std::uint8_t, std::uint8_t, cyng::buffer_t, std::chrono::system_clock::time_point);
+    cyng::tuple_t generate_visible_device_entry(std::uint8_t, std::uint8_t, cyng::buffer_t, std::chrono::system_clock::time_point);
+
 } // namespace smf
 
 #endif

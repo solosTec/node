@@ -124,14 +124,11 @@ namespace smf {
             case cyng::TC_INT32:
             case cyng::TC_INT64:
             case cyng::TC_BUFFER:
-            case cyng::TC_STRING:
-                return cyng::attr_t(PROC_PAR_VALUE, obj);
-            case cyng::TC_TIME_POINT:
-                return cyng::attr_t(PROC_PAR_TIME, obj);
+            case cyng::TC_STRING: return cyng::attr_t(PROC_PAR_VALUE, obj);
+            case cyng::TC_TIME_POINT: return cyng::attr_t(PROC_PAR_TIME, obj);
             case cyng::TC_SECOND: //	convert to [uint]
                 return detail::factory_policy<std::uint32_t>::create(cyng::value_cast(obj, std::chrono::seconds(900)).count());
-            default:
-                break;
+            default: break;
             }
             //  empty attribute
             return make_attribute();

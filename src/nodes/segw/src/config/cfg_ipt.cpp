@@ -138,23 +138,25 @@ namespace smf {
                 //  redundance 1
                 sml::tree_child_list(
                     cyng::make_obis(OBIS_ROOT_IPT_PARAM, 1u),
-                    cyng::make_tuple(
+                    cyng::make_tuple( // tuple start
                         sml::tree_param(cyng::make_obis(OBIS_TARGET_IP_ADDRESS, 1u), sml::make_attribute(get_host(1))),
                         // sml::tree_param(cyng::make_obis(OBIS_TARGET_IP_ADDRESS, 1u), sml::make_attribute(0x5201a8c0)),
                         sml::tree_param(cyng::make_obis(OBIS_TARGET_PORT, 1u), sml::make_attribute(get_service_as_port(1))),
                         sml::tree_param(cyng::make_obis(OBIS_SOURCE_PORT, 1u), sml::make_attribute(get_source_port(1))),
                         sml::tree_param(cyng::make_obis(OBIS_IPT_ACCOUNT, 1u), sml::make_attribute(get_account(1))),
-                        sml::tree_param(cyng::make_obis(OBIS_IPT_PASSWORD, 1u), sml::make_attribute(get_pwd(1))))),
+                        sml::tree_param(cyng::make_obis(OBIS_IPT_PASSWORD, 1u), sml::make_attribute(get_pwd(1)))) // tuple end
+                    ),
 
                 //  redundance 2
                 sml::tree_child_list(
                     cyng::make_obis(OBIS_ROOT_IPT_PARAM, 2u),
-                    cyng::make_tuple(
+                    cyng::make_tuple( // tuple start
                         sml::tree_param(cyng::make_obis(OBIS_TARGET_IP_ADDRESS, 2u), sml::make_attribute(get_host(2))),
                         sml::tree_param(cyng::make_obis(OBIS_TARGET_PORT, 2u), sml::make_attribute(get_service_as_port(2))),
                         sml::tree_param(cyng::make_obis(OBIS_SOURCE_PORT, 2u), sml::make_attribute(get_source_port(2))),
                         sml::tree_param(cyng::make_obis(OBIS_IPT_ACCOUNT, 2u), sml::make_attribute(get_account(2))),
-                        sml::tree_param(cyng::make_obis(OBIS_IPT_PASSWORD, 2u), sml::make_attribute(get_pwd(2))))),
+                        sml::tree_param(cyng::make_obis(OBIS_IPT_PASSWORD, 2u), sml::make_attribute(get_pwd(2)))) //  tuple end
+                    ),
                 sml::tree_param(OBIS_TCP_WAIT_TO_RECONNECT, sml::make_attribute(get_reconnect_timeout().count())),
                 sml::tree_param(OBIS_TCP_CONNECT_RETRIES, sml::make_attribute(get_reconnect_count())),
                 sml::tree_param(OBIS_HAS_SSL_CONFIG, sml::make_attribute(false)),

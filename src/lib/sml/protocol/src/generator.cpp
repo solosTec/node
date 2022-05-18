@@ -94,9 +94,9 @@ namespace smf {
                 msg_type::OPEN_RESPONSE,
                 cyng::make_tuple(
                     cyng::null{}, // codepage
-                    client,
-                    file_id,
                     to_srv_id(server),
+                    trx,
+                    client,
                     cyng::null{}, //  reference time
                     cyng::null{}  //  version
                     ),
@@ -121,6 +121,8 @@ namespace smf {
             cyng::buffer_t const &server,
             cyng::obis_path_t const &path,
             cyng::tuple_t params) {
+
+            BOOST_ASSERT_MSG(params.size() == 3 || params.empty(), "invalid parameter list");
 
             return make_message(
                 trx,

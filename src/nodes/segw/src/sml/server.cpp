@@ -29,6 +29,7 @@ namespace smf {
                 acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
             if (!ec) {
                 acceptor_.set_option(boost::asio::ip::tcp::socket::reuse_address(true));
+                cfg_.update_status_word(sml::status_bit::SERVICE_IF_AVAILABLE, true);
                 do_accept();
             } else {
                 CYNG_LOG_ERROR(logger_, "[SML] server cannot start listening at " << ep << ": " << ec.message());
@@ -50,6 +51,7 @@ namespace smf {
             });
         }
         void server::stop() {
+            cfg_.update_status_word(sml::status_bit::SERVICE_IF_AVAILABLE, false);
             boost::system::error_code ec;
             acceptor_.cancel(ec);
             acceptor_.close(ec);

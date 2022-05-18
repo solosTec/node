@@ -136,7 +136,8 @@ namespace smf {
                 msgs.push_back(get_proc_parameter_list_services(trx, server, path));
                 break;
             case CODE_ACTUATORS: //	0x0080801100FF
-                // msgs.push_back(get_proc_parameter_actuators(trx, server, path));
+                //  not longer supported
+                msgs.push_back(get_proc_parameter_actuators(trx, server, path));
                 break;
             case CODE_IF_EDL: //	0x81050D0700FF - M-Bus EDL (RJ10)
                 // msgs.push_back(get_proc_parameter_edl(trx, server, path));
@@ -304,6 +305,7 @@ namespace smf {
                          sml::tree_param(
                              cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x01),
                              sml::make_value("VSES-1KW-221-1F0")), //  model code
+                                                                   // sml::make_value("VMET-1KW-221-1F0)),
                          sml::tree_param(
                              cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x02),
                              sml::make_value(hw.get_serial_number())) //  serial number
@@ -577,47 +579,39 @@ namespace smf {
         //  * device class
         //  * timestamp (last seen)
         //
-        //
-        //  read data from table "meter"
-        //
-        sml::tree_t res;
 
+        cyng::tuple_t tpl_outer;
         cfg_.get_cache().access(
             [&](cyng::table const *tbl) {
                 //
                 //  convert data into tree child list
                 //
-                std::uint8_t c1 = 1, c2 = 1;
+                std::uint8_t q = 1, s = 1;
+                cyng::buffer_t srv;
+                auto const now = std::chrono::system_clock::now();
+                cyng::tuple_t tpl_inner; //  current
+
                 tbl->loop([&](cyng::record &&rec, std::size_t) -> bool {
                     //
                     //  use only visible metering devices
                     //
                     if (rec.value("visible", false)) {
-                        res.add(
-                            {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
-                             cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
-                             OBIS_SERVER_ID},
-                            sml::to_attribute(rec.at("serverID")));
-                        res.add(
-                            {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
-                             cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
-                             OBIS_DEVICE_CLASS},
-                            sml::to_attribute(rec.at("class")));
-                        res.add(
-                            {cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, 0xff),
-                             cyng::make_obis(0x81, 0x81, 0x10, 0x06, c1, c2),
-                             OBIS_CURRENT_UTC},
-                            sml::to_attribute(rec.at("lastSeen")));
+                        srv = rec.value("serverID", srv);
+                        tpl_inner.push_back(
+                            cyng::make_object(generate_visible_device_entry(q, s, srv, rec.value("lastSeen", now))));
 
                         //
-                        //  update counter
+                        //  update counter and lists
                         //
-                        if (c2 == 0xFF) {
-                            c2 = 1;
-                            c1++;
-                            BOOST_ASSERT_MSG(c1 != 0xFF, "visible meter overflow");
+                        if (s == 0xFE) {
+                            BOOST_ASSERT_MSG(s != 0xFF, "visible meter overflow");
+                            tpl_outer.push_back(cyng::make_object(
+                                sml::tree_child_list(cyng::make_obis(0x81, 0x81, 0x10, 0x06, q, 0xff), tpl_inner)));
+                            tpl_inner.clear();
+                            s = 1;
+                            q++;
                         } else {
-                            c2++;
+                            s++;
                         }
                     }
 
@@ -626,7 +620,38 @@ namespace smf {
             },
             cyng::access::read("meterMBus"));
 
-        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), res.to_child_list()));
+        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(
+            OBIS_ROOT_VISIBLE_DEVICES, //  81 81 10 06 ff ff
+            tpl_outer));
+
+    }
+
+    cyng::tuple_t
+    generate_active_device_entry(std::uint8_t q, std::uint8_t s, cyng::buffer_t srv, std::chrono::system_clock::time_point tp) {
+        return sml::tree_child_list(
+            cyng::make_obis(0x81, 0x81, 0x11, 0x06, q, s),
+            cyng::make_tuple(
+                sml::tree_param(
+                    OBIS_SERVER_ID,
+                    sml::make_attribute(srv)),                                                               // serverID
+                sml::tree_param(OBIS_DEVICE_CLASS, sml::make_attribute(cyng::make_buffer({'-', '-', '-'}))), // class
+                sml::tree_param(OBIS_CURRENT_UTC, sml::make_attribute(tp))                                   // lastSeen
+                )                                                                                            // [1] device
+        ); // record - 81 81 11 06 [q s]
+    }
+
+    cyng::tuple_t
+    generate_visible_device_entry(std::uint8_t q, std::uint8_t s, cyng::buffer_t srv, std::chrono::system_clock::time_point tp) {
+        return sml::tree_child_list(
+            cyng::make_obis(0x81, 0x81, 0x10, 0x06, q, s),
+            cyng::make_tuple(
+                sml::tree_param(
+                    OBIS_SERVER_ID,
+                    sml::make_attribute(srv)),                                                               // serverID
+                sml::tree_param(OBIS_DEVICE_CLASS, sml::make_attribute(cyng::make_buffer({'-', '-', '-'}))), // class
+                sml::tree_param(OBIS_CURRENT_UTC, sml::make_attribute(tp))                                   // lastSeen
+                )                                                                                            // [1] device
+        ); // record - 81 81 10 06 [q s]
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_active_devices(
@@ -655,49 +680,84 @@ namespace smf {
 
         //
         //  read data from table "meter"
-        //
-        sml::tree_t res;
-
+        cyng::tuple_t tpl_outer;
         cfg_.get_cache().access(
             [&](cyng::table const *tbl) {
                 //
                 //  convert data into tree child list
                 //
-                std::uint8_t c1 = 1, c2 = 1;
+                std::uint8_t q = 1, s = 1;
+                cyng::buffer_t srv;
+                auto const now = std::chrono::system_clock::now();
+                cyng::tuple_t tpl_inner; //  current
+
                 tbl->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                    res.add(
-                        {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
-                         cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
-                         OBIS_SERVER_ID},
-                        sml::to_attribute(rec.at("serverID")));
-                    res.add(
-                        {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
-                         cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
-                         OBIS_DEVICE_CLASS},
-                        sml::to_attribute(rec.at("class")));
-                    res.add(
-                        {cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, 0xff),
-                         cyng::make_obis(0x81, 0x81, 0x11, 0x06, c1, c2),
-                         OBIS_CURRENT_UTC},
-                        sml::to_attribute(rec.at("lastSeen")));
+                    srv = rec.value("serverID", srv);
+                    tpl_inner.push_back(cyng::make_object(generate_active_device_entry(q, s, srv, rec.value("lastSeen", now))));
 
                     //
-                    //  update counter
+                    //  update counter and lists
                     //
-                    if (c2 == 0xFF) {
-                        c2 = 1;
-                        c1++;
-                        BOOST_ASSERT_MSG(c1 != 0xFF, "active meter overflow");
+                    if (s == 0xFE) {
+                        BOOST_ASSERT_MSG(s != 0xFF, "active meter overflow");
+                        tpl_outer.push_back(
+                            cyng::make_object(sml::tree_child_list(cyng::make_obis(0x81, 0x81, 0x11, 0x06, q, 0xff), tpl_inner)));
+                        tpl_inner.clear();
+                        s = 1;
+                        q++;
                     } else {
-                        c2++;
+                        s++;
                     }
 
                     return true;
                 });
+
+                BOOST_ASSERT_MSG(s != 0xFF, "active meter overflow");
+                tpl_outer.push_back(
+                    cyng::make_object(sml::tree_child_list(cyng::make_obis(0x81, 0x81, 0x11, 0x06, q, 0xff), tpl_inner)));
+                tpl_inner.clear();
             },
             cyng::access::read("meterMBus"));
 
-        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), res.to_child_list()));
+        auto child_list = sml::tree_child_list(
+            OBIS_ROOT_ACTIVE_DEVICES, //  81 81 11 06 ff ff
+            tpl_outer);
+
+        return res_gen_.get_proc_parameter(trx, server, path, child_list);
+
+        //
+        //  example to illustrate the structure
+        //
+#ifdef _SMF_DEMO_MODE
+        auto child_list = sml::tree_child_list(
+            OBIS_ROOT_ACTIVE_DEVICES, //  81 81 11 06 ff ff
+            cyng::make_tuple(         //  outer tuple start
+                sml::tree_child_list(
+                    cyng::make_obis(0x81, 0x81, 0x11, 0x06, 1u, 0xff),
+                    cyng::make_tuple( //  inner tuple start
+                        generate_active_device_entry(
+                            1u,
+                            1u,
+                            cyng::make_buffer({0x01, 0x24, 0x23, 0x96, 0x07, 0x20, 0x00, 0x63, 0x0e}),
+                            std::chrono::system_clock::now() // [1] record - 81 81 11 06 [01 FF]
+                            ),
+                        generate_active_device_entry(
+                            1u,
+                            2u,
+                            cyng::make_buffer({0x01, 0xE6, 0x1E, 0x57, 0x14, 0x06, 0x21, 0x36, 0x03}),
+                            std::chrono::system_clock::now() // [2] record - 81 81 11 06 [02 FF]
+                            ),
+                        generate_active_device_entry(
+                            1u,
+                            3u,
+                            cyng::make_buffer({0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02}),
+                            std::chrono::system_clock::now() // [3] record - 81 81 11 06 [03 FF]
+                            )))))                            // 81 81 11 06 ff ff
+            ;
+        CYNG_LOG_DEBUG(logger_, "OBIS_ROOT_ACTIVE_DEVICES - meterMBus child list: " << child_list);
+
+        return res_gen_.get_proc_parameter(trx, server, path, child_list);
+#endif //_SMF_DEMO_MODE
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_device_info(
@@ -802,6 +862,18 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
+
+        //
+        //   example:
+        //   0080801101ff: null
+        //   008080110101: null
+        //   0080801110ff : 0ae00001
+        //   0080801112ff : b
+        //   0080801113ff : true
+        //   0080801114ff : 0
+        //   0080801115ff : 23
+        //   0080801116ff : 45696e736368616c74656e204d616e75656c6c
+        //
         return cyng::tuple_t{};
     }
 
