@@ -70,12 +70,6 @@ namespace smf {
         CYNG_LOG_INFO(logger_, "segw start");
 
         //
-        //	initialize data cache
-        //
-        // CYNG_LOG_INFO(logger_, "check: data cache");
-        // init_data_cache();
-
-        //
         //	load configuration data from data base
         //
         CYNG_LOG_INFO(logger_, "initialize: configuration data");
@@ -222,13 +216,12 @@ namespace smf {
         //	Preload must be done before we connect to the cache. Otherwise
         //	we would receive our own changes.
         //
-        // load_configuration();
-        // auto tpl = cfg_.get_obj("language-code");
         load_meter(); //  "TMeterMBus", "TMeterIEC"
-        // load_data_collectors();
+        //  load_iec_devices();
+        load_table(get_table_data_collector());
+        load_table(get_table_push_ops());
         // load_data_mirror();
-        // load_iec_devices();
-        // load_privileges();
+        //  load_privileges();
     }
 
     void bridge::init_cache_persistence() {
@@ -403,8 +396,7 @@ namespace smf {
                 cyng::db::storage s(db_);
                 s.loop(get_table_meter_mbus(), [&](cyng::record const &rec) -> bool {
                     //
-                    //  ToDo: fill "meterMBus" table
-                    //  ToDo: set visible = false
+                    //  set visible = false
                     //
                     cyng::buffer_t id;
                     id = rec.value("serverID", id);
@@ -428,12 +420,35 @@ namespace smf {
                     return true;
                 });
             },
-
             cyng::access::write("meterMBus"));
     }
 
-    void bridge::init_lmn_ports() {
+    void bridge::load_table(cyng::meta_sql const &ms) {
+        //
+        //	get in-memory meta data
+        //
+        auto const m = cyng::to_mem(ms);
+        CYNG_LOG_INFO(logger_, "[bridge] load table [" << ms.get_name() << "/" << m.get_name() << "]");
 
+        cache_.access(
+            [&](cyng::table *tbl) {
+                cyng::db::storage s(db_);
+                s.loop(ms, [&](cyng::record const &rec) -> bool {
+                    CYNG_LOG_TRACE(logger_, "[storage] load " << rec.to_string());
+                    if (!tbl->insert(rec.key(), rec.data(), rec.get_generation(), cfg_.get_tag())) {
+                        CYNG_LOG_WARNING(
+                            logger_,
+                            "[bridge] load table [" << ms.get_name() << "/" << m.get_name() << "]: " << rec.to_string()
+                                                    << " failed");
+                    }
+
+                    return true;
+                });
+            },
+            cyng::access::write(m.get_name()));
+    }
+
+    void bridge::init_lmn_ports() {
         if (init_lmn_port(lmn_type::WIRELESS)) {
             cfg_.update_status_word(sml::status_bit::WIRELESS_MBUS_IF_AVAILABLE, true);
         }
@@ -441,7 +456,6 @@ namespace smf {
     }
 
     bool bridge::init_lmn_port(lmn_type type) {
-
         cfg_lmn cfg(cfg_, type);
         auto const port = cfg.get_port();
 
@@ -554,13 +568,11 @@ namespace smf {
     void bridge::stop_ipt_bus() { router_.stop(); }
 
     void bridge::init_broker_clients() {
-
         init_broker_clients(lmn_type::WIRELESS);
         init_broker_clients(lmn_type::WIRED);
     }
 
     void bridge::init_broker_clients(lmn_type type) {
-
         cfg_broker cfg(cfg_, type);
         auto const port = cfg.get_port();
 
@@ -607,12 +619,10 @@ namespace smf {
     }
 
     void bridge::stop_broker_clients() {
-
         stop_broker_clients(lmn_type::WIRELESS);
         stop_broker_clients(lmn_type::WIRED);
     }
     void bridge::stop_broker_clients(lmn_type type) {
-
         cfg_broker cfg(cfg_, type);
         auto const port = cfg.get_port();
 
@@ -635,7 +645,6 @@ namespace smf {
     }
 
     void bridge::init_filter(lmn_type type) {
-
         cfg_blocklist cfg(cfg_, type);
 
         //  "filter@" + port name
@@ -688,14 +697,12 @@ namespace smf {
     }
 
     void bridge::stop_filter(lmn_type type) {
-
         cfg_blocklist cfg(cfg_, type);
 
         stash_.stop(cfg.get_task_name()); //  unlock and stop
     }
 
     void bridge::init_gpio() {
-
         cfg_gpio cfg(cfg_);
         auto p = cfg.get_path();
         if (cfg.is_enabled()) {
@@ -821,13 +828,11 @@ namespace smf {
     }
 
     void bridge::init_redirectors() {
-
         init_redirector(lmn_type::WIRELESS);
         init_redirector(lmn_type::WIRED);
     }
 
     void bridge::init_redirector(lmn_type type) {
-
         //
         // https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/netstat
         //  debug open listeners with (windows):
@@ -876,7 +881,6 @@ namespace smf {
     }
 
     void bridge::init_redirector_ipv6(cfg_listener const &cfg) {
-
         //  use same link-local address as NMS and the ip port from the listener
         auto const ep = cfg.get_link_local_ep();
         cfg_nms nms(cfg_);
@@ -917,7 +921,6 @@ namespace smf {
         stop_redirector(lmn_type::WIRED);
     }
     void bridge::stop_redirector(lmn_type type) {
-
         cfg_listener cfg(cfg_, type);
         if (cfg.is_enabled()) {
             CYNG_LOG_INFO(logger_, "stop listener for port [" << cfg.get_port_name() << "] " << cfg);

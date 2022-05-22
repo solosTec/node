@@ -889,8 +889,41 @@ namespace smf {
         //  81 81 C7 86 20 FF (Datenspiegel)
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_DATA_COLLECTOR);
+
+        //
+        //  hard coded example
+        //
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                path.at(0),
+                {sml::tree_child_list(
+                    cyng::make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, 1u),
+                    {
+                        sml::tree_param(OBIS_DATA_COLLECTOR_ACTIVE, sml::make_value(true)),
+                        sml::tree_param(OBIS_DATA_COLLECTOR_SIZE, sml::make_value(100u)),
+                        sml::tree_param(OBIS_DATA_REGISTER_PERIOD, sml::make_value(0u)),
+                        sml::tree_param(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE)),
+                        sml::tree_child_list(
+                            OBIS_DATA_COLLECTOR_REGISTER, // 81 81 c7 8a 23 ff
+                            cyng::make_tuple(
+                                // 81 81 C7 8A 23 01       ______(01 00 01 08 00 FF)
+                                sml::tree_param(
+                                    cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, 1u),
+                                    sml::make_value(cyng::make_obis(0x01, 0x00, 0x01, 0x08, 0x00, 0xFF))),
+                                // 81 81 C7 8A 23 02       ______(01 00 01 08 01 FF)
+                                sml::tree_param(
+                                    cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, 2u),
+                                    sml::make_value(cyng::make_obis(0x01, 0x00, 0x01, 0x08, 0x01, 0xFF)))
+                                // 81 81 C7 8A 23 03       ______(01 00 01 08 02 FF)
+                                // 81 81 C7 8A 23 04       ______(01 00 02 08 00 FF)
+                                // 81 81 C7 8A 23 05       ______(01 00 02 08 01 FF)
+                                // 81 81 C7 8A 23 06       ______(01 00 02 08 02 FF)
+                                // 81 81 C7 8A 23 07       ______(01 00 10 07 00 FF)
+                                )) //  add profile as list if OBIS codes
+                    })}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_1107_interface(

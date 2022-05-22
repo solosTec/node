@@ -24,11 +24,15 @@ namespace smf {
     cyng::meta_store get_store_cfg();
     cyng::meta_store get_store_oplog();
     cyng::meta_store get_store_meter_mbus();
+    cyng::meta_store get_store_data_collector();
+    cyng::meta_store get_store_push_ops();
 
     cyng::meta_sql get_table_cfg();
     cyng::meta_sql get_table_oplog();
     cyng::meta_sql get_table_meter_mbus();
     cyng::meta_sql get_table_meter();
+    cyng::meta_sql get_table_data_collector();
+    cyng::meta_sql get_table_push_ops();
 
     /**
      * create all tables defined in get_sql_meta_data()

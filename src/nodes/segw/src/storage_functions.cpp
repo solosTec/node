@@ -128,7 +128,6 @@ namespace smf {
         return cyng::meta_store(
             "meterIEC",
             {
-                // cyng::column("nr", cyng::TC_UINT8, 0),        //	number
                 cyng::column("meterID", cyng::TC_BUFFER), //	max. 32 bytes (8181C7930AFF)
                 cyng::column("address", cyng::TC_BUFFER), //	mostly the same as meterID (8181C7930CFF)
                 cyng::column("descr", cyng::TC_STRING),
@@ -141,13 +140,47 @@ namespace smf {
     }
     cyng::meta_sql get_table_meter_iec() { return cyng::to_sql(get_store_meter_iec(), {32, 32, 128, 0, 32, 32}); }
 
+    cyng::meta_store get_store_push_ops() {
+        return cyng::meta_store(
+            "pushOps",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER),  // server/meter/sensor ID
+                cyng::column("interval", cyng::TC_UINT32), // (81 81 C7 8A 02 FF - PUSH_INTERVAL) push interval in seconds
+                cyng::column("delay", cyng::TC_UINT32),    // (81 81 C7 8A 04 FF - PUSH_SOURCE) push source
+                cyng::column("source", cyng::TC_OBIS),     // 9600, ... (in opening sequence) (8181C7930BFF)
+                cyng::column("target", cyng::TC_STRING),   // (81 47 17 07 00 FF - PUSH_TARGET) target name
+                cyng::column("service", cyng::TC_OBIS)     // (81 49 00 00 10 FF - PUSH_SERVICE) push service
+                //  ToDo: last successfull push
+            },
+            1);
+    }
+    cyng::meta_sql get_table_push_ops() { return cyng::to_sql(get_store_push_ops(), {9, 0, 0, 0, 0, 0}); }
+
+    cyng::meta_store get_store_data_collector() {
+        return cyng::meta_store(
+            "dataCollector",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), //	server/meter/sensor ID
+                cyng::column("profile", cyng::TC_OBIS),   //	type 1min, 15min, 1h, ... (OBIS_PROFILE)
+                cyng::column("active", cyng::TC_BOOL),    // turned on / off(OBIS_DATA_COLLECTOR_ACTIVE)
+                cyng::column("maxSize", cyng::TC_UINT32), //	max entry count (OBIS_DATA_COLLECTOR_SIZE)
+                cyng::column(
+                    "regPeriod",
+                    cyng::TC_SECOND) //	register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
+            },
+            1);
+    }
+    cyng::meta_sql get_table_data_collector() { return cyng::to_sql(get_store_data_collector(), {9, 0, 0, 0, 0}); }
+
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
             get_store_cfg(),   // cfg
             get_store_oplog(), // opLog
             // get_store_meter(),  // meter
-            get_store_meter_mbus(), // meterMBus
-            get_store_meter_iec()   // meterIEC
+            get_store_meter_mbus(),     // meterMBus
+            get_store_meter_iec(),      // meterIEC
+            get_store_data_collector(), // dataCollector
+            get_store_push_ops()        // pushOps
         };
     }
 
@@ -157,8 +190,10 @@ namespace smf {
             get_table_cfg(),   // TCfg
             get_table_oplog(), // TOpLog
             // get_table_meter(),
-            get_table_meter_mbus(), //  TMeterMBus
-            get_table_meter_iec()   // TMeterIEC
+            get_table_meter_mbus(),     //  TMeterMBus
+            get_table_meter_iec(),      // TMeterIEC
+            get_table_data_collector(), // TDataCollector
+            get_table_push_ops()        // TPushOps
         };
     }
 

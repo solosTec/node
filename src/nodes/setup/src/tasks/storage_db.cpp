@@ -152,7 +152,12 @@ namespace smf {
                 cyng::db::storage s(db_);
                 s.loop(ms, [&](cyng::record const &rec) -> bool {
                     CYNG_LOG_TRACE(logger_, "[storage] load " << rec.to_string());
-                    tbl->insert(rec.key(), rec.data(), rec.get_generation(), cluster_bus_.get_tag());
+                    if (!tbl->insert(rec.key(), rec.data(), rec.get_generation(), cluster_bus_.get_tag())) {
+                        CYNG_LOG_WARNING(
+                            logger_,
+                            "[storage] load table [" << ms.get_name() << "/" << m.get_name() << "]: " << rec.to_string()
+                                                     << " failed");
+                    }
 
                     return true;
                 });

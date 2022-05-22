@@ -48,7 +48,16 @@ namespace smf {
         void init_cache_persistence();
         void stop_cache_persistence();
 
+        /**
+         * Load tables with meter configuration into cache
+         * and reset some initial values (like visiblity)
+         */
         void load_meter();
+
+        /**
+         * Load specified table into cache
+         */
+        void load_table(cyng::meta_sql const &ms);
 
         void init_gpio();
         void stop_gpio();
