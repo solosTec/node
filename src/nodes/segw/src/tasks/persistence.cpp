@@ -51,9 +51,16 @@ namespace smf {
 
     void persistence::connect() {
 
-        cfg_.get_cache().connect_only("cfg", cyng::make_slot(channel_));
-        cfg_.get_cache().connect_only("meterMBus", cyng::make_slot(channel_));
-        CYNG_LOG_INFO(logger_, "[persistence] connected");
+        CYNG_LOG_INFO(logger_, "[persistence] connecting");
+        connect("cfg");
+        connect("meterMBus");
+        connect("dataCollector");
+        connect("pushOps");
+    }
+
+    void persistence::connect(std::string name) {
+        cfg_.get_cache().connect_only(name, cyng::make_slot(channel_));
+        CYNG_LOG_TRACE(logger_, "[persistence] table " << name << " is connected");
     }
 
     void persistence::power_return() {

@@ -41,6 +41,7 @@ namespace smf {
       private:
         void stop(cyng::eod);
         void connect();
+        void connect(std::string);
 
         /**
          * place power return message into OBIS log

@@ -18,13 +18,14 @@
 #include <boost/uuid/nil_generator.hpp>
 
 namespace smf {
-    cfg::cfg(cyng::logger logger, cyng::store &cache, std::tuple<boost::uuids::uuid, cyng::buffer_t> initial_values)
+    cfg::cfg(cyng::logger logger, cyng::store &cache, std::tuple<boost::uuids::uuid, cyng::buffer_t, std::uint32_t> initial_values)
         : kv_store(cache, "cfg", std::get<0>(initial_values))
         , logger_(logger)
         , cache_(cache)
         , id_(std::get<1>(initial_values))
         , status_word_(sml::get_initial_value())
-        , name_gen_(config::device_name) {}
+        , name_gen_(config::device_name)
+        , op_time_(std::get<2>(initial_values)) {}
 
     boost::uuids::uuid cfg::get_name(std::string const &name) const { return name_gen_(name); }
     boost::uuids::uuid cfg::get_name(cyng::buffer_t const &name) const { return name_gen_(name.data(), name.size()); }
@@ -40,6 +41,8 @@ namespace smf {
             status_word_ = sml::remove(status_word_, e);
         }
     }
+
+    std::uint32_t cfg::get_operating_time() const { return op_time_; }
 
     void cfg::loop(std::function<void(std::vector<std::string> &&, cyng::object)> cb) {
         cache_.access(

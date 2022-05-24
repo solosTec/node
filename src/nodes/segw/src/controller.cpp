@@ -594,22 +594,33 @@ namespace smf {
 
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
-        if (s.is_alive())
+        if (s.is_alive()) {
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::init_storage(s);
+        } else {
+            std::cout << "**error: no configuration found" << std::endl;
+        }
     }
 
     void controller::transfer_config(cyng::object &&cfg) {
         auto const reader = cyng::make_reader(cfg);
         auto s = cyng::db::create_db_session(reader.get("DB"));
-        if (s.is_alive())
+        if (s.is_alive()) {
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::transfer_config(s, std::move(cfg));
+        } else {
+            std::cout << "**error: no configuration found" << std::endl;
+        }
     }
 
     void controller::clear_config(cyng::object &&cfg) {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
-        if (s.is_alive())
+        if (s.is_alive()) {
             smf::clear_config(s);
+        } else {
+            std::cout << "**error: no configuration found" << std::endl;
+        }
     }
 
     void controller::list_config(cyng::object &&cfg) {
@@ -618,8 +629,11 @@ namespace smf {
         std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
 
         auto s = cyng::db::create_db_session(reader.get("DB"));
-        if (s.is_alive())
+        if (s.is_alive()) {
             smf::list_config(s);
+        } else {
+            std::cout << "**error: no configuration found" << std::endl;
+        }
     }
 
     void
@@ -663,6 +677,8 @@ namespace smf {
             if (smf::add_config_value(s, path, value, type)) {
                 std::cout << path << " := " << value << " (" << type << ")" << std::endl;
             }
+        } else {
+            std::cout << "**error: no configuration found" << std::endl;
         }
     }
 
@@ -676,6 +692,8 @@ namespace smf {
             if (smf::del_config_value(s, path)) {
                 std::cout << path << " removed" << std::endl;
             }
+        } else {
+            std::cout << "**error: no configuration found" << std::endl;
         }
     }
 
@@ -685,6 +703,8 @@ namespace smf {
         if (s.is_alive()) {
             std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::alter_table(s, table); //
+        } else {
+            std::cout << "**error: no configuration found" << std::endl;
         }
     }
 
@@ -719,9 +739,7 @@ namespace smf {
                 return "50";
             else if (boost::algorithm::equals(str, "wmbus"))
                 return "50";
-            else if (boost::algorithm::equals(str, "rs485"))
-                return "53";
-            else if (boost::algorithm::equals(str, "RS-485"))
+            else if (boost::algorithm::equals(str, "rs485") || boost::algorithm::equals(str, "RS-485"))
                 return "53";
             else if (boost::algorithm::equals(str, "ether"))
                 return "46";

@@ -48,6 +48,9 @@ namespace smf {
         void init_cache_persistence();
         void stop_cache_persistence();
 
+        void init_op_counter();
+        void stop_op_counter();
+
         /**
          * Load tables with meter configuration into cache
          * and reset some initial values (like visiblity)
@@ -120,7 +123,8 @@ namespace smf {
      *
      * @return a tuple with the application tag and the server id.
      */
-    std::tuple<boost::uuids::uuid, cyng::buffer_t> load_configuration(cyng::logger, cyng::db::session, cyng::store &);
+    std::tuple<boost::uuids::uuid, cyng::buffer_t, std::uint32_t>
+    load_configuration(cyng::logger, cyng::db::session, cyng::store &);
 
     /**
      * Check if the specified index is a valid IPv6 NIC.

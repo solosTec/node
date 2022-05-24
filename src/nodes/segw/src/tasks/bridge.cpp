@@ -8,6 +8,7 @@
 #include <tasks/CP210x.h>
 #include <tasks/bridge.h>
 #include <tasks/broker.h>
+#include <tasks/counter.h>
 #include <tasks/en13757.h>
 #include <tasks/filter.h>
 #include <tasks/gpio.h>
@@ -80,6 +81,12 @@ namespace smf {
         //
         CYNG_LOG_INFO(logger_, "initialize: persistent data");
         init_cache_persistence();
+
+        //
+        //	start the operating hours counter
+        //
+        CYNG_LOG_INFO(logger_, "initialize: operating hours counter ");
+        init_op_counter();
 
         //
         //	GPIO
@@ -198,6 +205,12 @@ namespace smf {
         stop_gpio();
 
         //
+        //	stop the operating hours counter
+        //
+        CYNG_LOG_INFO(logger_, "stop: operating hours counter ");
+        stop_op_counter();
+
+        //
         //	connect database to data cache
         //
         CYNG_LOG_INFO(logger_, "stop: persistent data");
@@ -235,10 +248,17 @@ namespace smf {
         channel->dispatch("oplog.power.return");
 
         //
-        //  check some values
+        // Check some values.
+        // The main motivation for this code section is to make sure
+        // that some configuration entries are available. Missing
+        // entries are possible after an update or when configuration files
+        // are invalid.
         //
         cache_.access(
             [&](cyng::table *cfg) {
+                //
+                //  nms/nic
+                //
                 auto const nic = get_nic();
                 auto const key = cyng::key_generator("nms/nic");
                 if (!cfg->exist(key)) {
@@ -250,6 +270,9 @@ namespace smf {
                         cfg_.get_tag()); //	tag mybe not available yet
                 }
                 {
+                    //
+                    //  nms/nic-index
+                    //
                     auto const r = get_ipv6_linklocal(nic);
                     auto const key_index = cyng::key_generator("nms/nic-index");
                     if (!cfg->exist(key_index)) {
@@ -260,6 +283,9 @@ namespace smf {
                             1u,              //	only needed for insert operations
                             cfg_.get_tag()); //	tag mybe not available yet
                     }
+                    //
+                    //  nms/nic-linklocal
+                    //
                     auto const key_linklocal = cyng::key_generator("nms/nic-linklocal");
                     if (!cfg->exist(key_linklocal)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-linklocal: " << r.first);
@@ -271,6 +297,9 @@ namespace smf {
                     }
                 }
                 {
+                    //
+                    //  nms/nic-ipv4
+                    //
                     auto const ipv4 = get_ipv4_address(nic);
                     auto const key = cyng::key_generator("nms/nic-ipv4");
                     if (!cfg->exist(key)) {
@@ -283,6 +312,9 @@ namespace smf {
                     }
                 }
                 {
+                    //
+                    //  nms/delay
+                    //
                     auto const delay = std::chrono::seconds(12);
                     auto const key = cyng::key_generator("nms/delay");
                     if (!cfg->exist(key)) {
@@ -295,6 +327,9 @@ namespace smf {
                     }
                 }
                 {
+                    //
+                    //  nms/mode
+                    //
                     auto const key = cyng::key_generator("nms/mode");
                     if (!cfg->exist(key)) {
                         std::string const mode("production");
@@ -306,17 +341,47 @@ namespace smf {
                             cfg_.get_tag()); //	tag mybe not available yet
                     }
                 }
+                {
+                    //
+                    //  opcounter
+                    // Fixme: Insert operation triggers a warning, since the entry is already
+                    // an element in the database.
+                    //
+                    auto const key = cyng::key_generator("opcounter");
+                    if (!cfg->exist(key)) {
+                        CYNG_LOG_INFO(logger_, "initialize opcounter");
+                        cfg->insert(
+                            key,
+                            cyng::data_generator(static_cast<std::uint32_t>(1u)),
+                            1u,              //	only needed for insert operations
+                            cfg_.get_tag()); //	tag mybe not available yet
+                    }
+                }
             },
             cyng::access::write("cfg"));
     }
 
     void bridge::stop_cache_persistence() { stash_.stop("persistence"); }
 
-    std::tuple<boost::uuids::uuid, cyng::buffer_t>
+    void bridge::init_op_counter() {
+        CYNG_LOG_INFO(logger_, "init operation counter");
+        auto channel = ctl_.create_named_channel_with_ref<counter>("counter", logger_, cfg_);
+        BOOST_ASSERT(channel->is_open());
+        channel->dispatch("inc");
+        stash_.lock(channel);
+    }
+
+    void bridge::stop_op_counter() {
+        CYNG_LOG_INFO(logger_, "stop operation counter");
+        stash_.stop("counter");
+    }
+
+    std::tuple<boost::uuids::uuid, cyng::buffer_t, std::uint32_t>
     load_configuration(cyng::logger logger, cyng::db::session db, cyng::store &cache) {
 
         boost::uuids::uuid tag = boost::uuids::nil_uuid();
         cyng::buffer_t id = cyng::make_buffer({0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+        std::uint32_t opcounter{0};
 
         cache.access(
             [&](cyng::table *cfg) {
@@ -340,7 +405,7 @@ namespace smf {
 #ifdef _DEBUG_SEGW
                     // CYNG_LOG_DEBUG(logger, "load - " << path << " = " << obj);
 #endif
-                        if (boost::algorithm::equals(path, "tag")) {
+                        if (boost::algorithm::equals(path, "tag") && (obj.tag() == cyng::TC_STRING)) {
                             //	set system tag
                             auto const stag = cyng::value_cast(obj, "");
                             BOOST_ASSERT_MSG(stag.size() == 36, "invalid tag string");
@@ -356,13 +421,28 @@ namespace smf {
                             auto const nicidx = cyng::numeric_cast<std::uint32_t>(obj, 0u);
                             auto const index = validate_nic_index(nicidx);
                             if (nicidx != index) {
-                                CYNG_LOG_ERROR(logger, "[" << index << "] is an invalid nic index - use [" << index << "]");
+                                CYNG_LOG_ERROR(logger, "[" << nicidx << "] is an invalid nic index - use [" << index << "]");
+                                cfg->insert(rec.key(), cyng::data_generator(index), 1,
+                                            tag); //	tag maybe not initialized yet
+
+                                //
+                                //  list possible values
+                                //
+                                auto const cfg_v6 = cyng::sys::get_ipv6_configuration();
+                                for (auto const &cfg : cfg_v6) {
+                                    CYNG_LOG_TRACE(logger, "[" << cfg.index_ << "]: " << cfg.device_);
+                                }
                             }
+                        } else if (boost::algorithm::equals(path, "opcounter")) {
+
+                            opcounter = cyng::numeric_cast<std::uint32_t>(obj, 0u);
+                            CYNG_LOG_INFO(logger, "initial operation timer: " << opcounter << " seconds");
                             cfg->merge(
                                 rec.key(),
-                                cyng::data_generator(index),
+                                cyng::data_generator(opcounter),
                                 1u,   //	only needed for insert operations
                                 tag); //	tag maybe not initialized yet
+
                         } else {
 
                             //
@@ -386,7 +466,7 @@ namespace smf {
             },
             cyng::access::write("cfg"));
 
-        return std::make_tuple(tag, id);
+        return std::make_tuple(tag, id, opcounter);
     }
 
     void bridge::load_meter() {

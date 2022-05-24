@@ -20,15 +20,18 @@
 
 namespace smf {
 
+    class bridge;
+    class counter;
+
     /**
      * manage configuration data
      */
-    class bridge;
     class cfg : public kv_store {
         friend class bridge;
+        friend class counter; //  manage operation time counter
 
       public:
-        cfg(cyng::logger, cyng::store &, std::tuple<boost::uuids::uuid, cyng::buffer_t>);
+        cfg(cyng::logger, cyng::store &, std::tuple<boost::uuids::uuid, cyng::buffer_t, std::uint32_t>);
 
         inline cyng::store &get_cache() { return cache_; }
 
@@ -50,9 +53,14 @@ namespace smf {
         sml::status_word_t get_status_word() const;
 
         /**
-         * update statuw word
+         * update status word
          */
         void update_status_word(sml::status_bit, bool);
+
+        /**
+         * @return Operating hours counter (in seconds)
+         */
+        std::uint32_t get_operating_time() const;
 
         /**
          * loop over all elements
@@ -86,6 +94,11 @@ namespace smf {
         sml::status_word_t status_word_;
 
         boost::uuids::name_generator_sha1 name_gen_;
+
+        /**
+         * operating time in seconds
+         */
+        std::uint32_t op_time_;
     };
 } // namespace smf
 

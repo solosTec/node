@@ -46,6 +46,7 @@ set (segw_tasks
     include/tasks/nms.h
     include/tasks/rdr.h
     include/tasks/en13757.h
+    include/tasks/counter.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
@@ -57,6 +58,7 @@ set (segw_tasks
     src/tasks/nms.cpp
     src/tasks/rdr.cpp
     src/tasks/en13757.cpp
+    src/tasks/counter.cpp
 )
 
 set (segw_config

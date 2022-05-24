@@ -212,6 +212,7 @@ namespace smf {
         BOOST_ASSERT(db.is_alive());
 
         try {
+
             //
             //	start transaction
             //
@@ -222,12 +223,15 @@ namespace smf {
                 auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
                 if (!db.execute(sql)) {
                     std::cerr << "**error: " << sql << std::endl;
+                } else {
+                    std::cerr << "**info: " << sql << std::endl;
                 }
             }
 
             return true;
         } catch (std::exception const &ex) {
             boost::ignore_unused(ex);
+            std::cerr << "**error: " << ex.what() << std::endl;
         }
         return false;
     }
@@ -1169,6 +1173,7 @@ namespace smf {
 
         } catch (std::exception const &ex) {
             boost::ignore_unused(ex);
+            std::cerr << "**error: " << ex.what() << std::endl;
         }
         return false;
     }
