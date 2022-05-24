@@ -51,7 +51,8 @@ namespace smf {
         cyng::param_t create_ipt_spec(std::string const &hostname) const;
         cyng::param_t create_ipt_config(std::string const &hostname) const;
         cyng::param_t create_ipt_params() const;
-        cyng::param_t create_virtual_meter_spec() const;
+        cyng::param_t create_wireless_virtual_meter_spec() const;
+        cyng::param_t create_wired_virtual_meter_spec() const;
         cyng::param_t create_lmn_spec(std::string const &hostname) const;
         cyng::param_t create_server_id() const;
 

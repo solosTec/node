@@ -6,14 +6,14 @@
  */
 
 #include <controller.h>
-#include <smf.h>
-#include <storage_functions.h>
 
 #include <config/cfg_nms.h>
+#include <smf.h>
+#include <smf/config/protocols.h>
+#include <smf/obis/defs.h>
+#include <storage_functions.h>
 #include <tasks/bridge.h>
 #include <tasks/gpio.h>
-
-#include <smf/obis/defs.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/log/record.h>
@@ -143,6 +143,7 @@ namespace smf {
             cyng::make_param("version", SMF_VERSION_TAG),
             cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
+            cyng::make_param("opcounter", 0), //  operation time counter
             //  This makes trouble on OECP-1 hardware
             // cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             // cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
@@ -170,10 +171,7 @@ namespace smf {
             create_gpio_spec(),
 
             //	hardware
-            create_hardware_spec(),
-
-            //	virtual meter
-            create_virtual_meter_spec())});
+            create_hardware_spec())});
     }
 
     cyng::param_t controller::create_server_id() const {
@@ -212,22 +210,28 @@ namespace smf {
         return cyng::make_param(
             "net",
             cyng::tuple_factory(
-                cyng::make_param("mac", srv_mac),
-                // cyng::make_param("nics", macs),
-                cyng::make_param(cyng::to_str(OBIS_SERVER_ID), cyng::io::to_hex(tmp))
-                // cyng::make_param("local-links", local_links)));
-                ));
+                cyng::make_param("mac", srv_mac), cyng::make_param(cyng::to_str(OBIS_SERVER_ID), cyng::io::to_hex(tmp))));
     }
 
-    cyng::param_t controller::create_virtual_meter_spec() const {
+    cyng::param_t controller::create_wireless_virtual_meter_spec() const {
         return cyng::make_param(
             "virtual-meter",
             cyng::tuple_factory(
                 cyng::make_param("enabled", false),
-                cyng::make_param("server", "01-d81c-10000001-3c-02"), //	1CD8
-                cyng::make_param("port-index", 1),                    //	0 = wireless, 1 = wired
-                cyng::make_param("protocol", "iec"),                  //	wired => IEC
-                cyng::make_param("interval", 26000)                   //	seconds push interval
+                cyng::make_param("server", "01-d81c-10000001-3c-02"),                            //	1CD8
+                cyng::make_param("protocol", config::get_name(config::protocol::WIRELESS_MBUS)), //	wireless M-Bus
+                cyng::make_param("interval", "00:00:07.000000")                                  //	push interval
+                ));
+    }
+
+    cyng::param_t controller::create_wired_virtual_meter_spec() const {
+        return cyng::make_param(
+            "virtual-meter",
+            cyng::tuple_factory(
+                cyng::make_param("enabled", false),
+                cyng::make_param("server", "51540472"),
+                cyng::make_param("protocol", config::get_name(config::protocol::IEC)), //	wired => IEC
+                cyng::make_param("interval", "00:02:00.000000")                        //	push interval
                 ));
     }
 
@@ -268,13 +272,15 @@ namespace smf {
             cyng::make_param("speed", 115200),
 
 #endif
-            cyng::make_param("protocol", "wM-Bus:EN13757-4"), //	raw, mbus, iec, sml
+            //  wM-Bus-EN13757-4"
+            cyng::make_param("protocol", config::get_name(config::protocol::WIRELESS_MBUS)), //	raw, mbus, iec, sml
             cyng::make_param("broker-enabled", true),
             cyng::make_param("broker-login", false),
             // cyng::make_param("broker-timeout", 12), //	seconds
             cyng::make_param("hex-dump", false),
             create_wireless_broker(hostname),
-            create_wireless_block_list()
+            create_wireless_block_list(),
+            create_wireless_virtual_meter_spec()
 
         );
     }
@@ -393,7 +399,8 @@ namespace smf {
             cyng::make_param("hex-dump", false),
             create_rs485_broker(hostname),
             create_rs485_listener(),
-            create_rs485_block_list());
+            create_rs485_block_list(),
+            create_wired_virtual_meter_spec());
     }
 
     cyng::param_t controller::create_gpio_spec() const {
@@ -617,6 +624,7 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::clear_config(s);
         } else {
             std::cout << "**error: no configuration found" << std::endl;

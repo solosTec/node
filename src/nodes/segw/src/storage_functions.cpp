@@ -13,6 +13,7 @@
 
 #include <smf/ipt/config.h>
 #include <smf/ipt/scramble_key_format.h>
+#include <smf/mbus/server_id.h>
 #include <smf/obis/defs.h>
 
 #include <cyng/db/details/statement_interface.h>
@@ -326,7 +327,7 @@ namespace smf {
             //
             //	transfer virtual meter configuration
             //
-            transfer_vmeter(stmt, cyng::container_cast<cyng::param_map_t>(reader["virtual-meter"].get()));
+            // transfer_vmeter(stmt, cyng::container_cast<cyng::param_map_t>(reader["virtual-meter"].get()));
 
         } else {
 
@@ -732,6 +733,11 @@ namespace smf {
                     //
                     transfer_listener(stmt, counter, cyng::container_cast<cyng::param_map_t>(param.second));
 
+                } else if (boost::algorithm::equals(param.first, "virtual-meter")) {
+                    //
+                    //  virtual meter
+                    //
+                    transfer_virtual_meter(stmt, counter, cyng::container_cast<cyng::param_map_t>(param.second));
                 } else {
                     insert_config_record(
                         stmt,
@@ -860,6 +866,78 @@ namespace smf {
         }
     }
 
+    void transfer_virtual_meter(cyng::db::statement_ptr stmt, std::size_t counter, cyng::param_map_t &&pmap) {
+        for (auto const &param : pmap) {
+            //"enabled": false,
+            //"server": "01-d81c-10000001-3c-02",
+            //"protocol": "wM-Bus-EN13757-4",
+            //"interval": 00:00:07.000000
+
+            if (boost::algorithm::equals(param.first, "server")) {
+                // cyng::hex_to_buffer(id);
+                auto const srv = cyng::value_cast(param.second, "");
+                auto const id = to_srv_id(srv);
+                switch (detect_server_type(id)) {
+                case srv_type::MBUS_WIRED: // M-Bus (long)
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), "type"),
+                        cyng::make_object("MBUS_WIRED"),
+                        "server type is M-Bus (long)");
+                    break;
+                case srv_type::MBUS_RADIO: // M-Bus (long)
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), "type"),
+                        cyng::make_object("MBUS_RADIO"),
+                        "server type is M-Bus (long)");
+                    break;
+                case srv_type::W_MBUS: // wireless M-Bus (short)
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), "type"),
+                        cyng::make_object("W_MBUS"),
+                        "server type is wireless M-Bus (short)");
+                    break;
+                case srv_type::SERIAL:
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), "type"),
+                        cyng::make_object("SERIAL"),
+                        "server type is serial");
+                    break;
+                default:
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), "type"),
+                        cyng::make_object("other"),
+                        "server type is not supported");
+                    break;
+                }
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), param.first),
+                    cyng::make_object(id),
+                    "virtual meter server id: " + srv);
+
+            } else if (boost::algorithm::equals(param.first, "interval")) {
+                auto const inp = cyng::value_cast(param.second, "00:00:32.000000");
+                auto const interval = cyng::to_seconds(inp);
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), param.first),
+                    cyng::make_object(interval),
+                    "push interval " + inp);
+            } else {
+                insert_config_record(
+                    stmt,
+                    cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), param.first),
+                    param.second,
+                    "virtual meter: " + param.first);
+            }
+        }
+    }
+
     void transfer_broker(cyng::db::statement_ptr stmt, std::size_t counter, cyng::vector_t &&vec) {
 
         std::size_t broker_index{0};
@@ -954,31 +1032,31 @@ namespace smf {
         }
     }
 
-    void transfer_vmeter(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap) {
+    // void transfer_vmeter(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap) {
 
-        for (auto const &param : pmap) {
-            if (boost::algorithm::equals(param.first, "interval")) {
+    //    for (auto const &param : pmap) {
+    //        if (boost::algorithm::equals(param.first, "interval")) {
 
-                auto const interval = cyng::numeric_cast<std::uint32_t>(param.second, 26000);
-                insert_config_record(
-                    stmt,
-                    cyng::to_path(cfg::sep, "vmeter", param.first),
-                    cyng::make_object(std::chrono::seconds(interval)),
-                    "virtual meter interval (sec) " + std::to_string(interval));
-            } else if (boost::algorithm::equals(param.first, "port-index")) {
+    //            auto const interval = cyng::numeric_cast<std::uint32_t>(param.second, 26000);
+    //            insert_config_record(
+    //                stmt,
+    //                cyng::to_path(cfg::sep, "vmeter", param.first),
+    //                cyng::make_object(std::chrono::seconds(interval)),
+    //                "virtual meter interval (sec) " + std::to_string(interval));
+    //        } else if (boost::algorithm::equals(param.first, "port-index")) {
 
-                auto const index = cyng::numeric_cast<std::size_t>(param.second, 1);
-                insert_config_record(
-                    stmt,
-                    cyng::to_path(cfg::sep, "vmeter", param.first),
-                    cyng::make_object(index),
-                    "virtual meter port index " + std::to_string(index));
-            } else {
-                insert_config_record(
-                    stmt, cyng::to_path(cfg::sep, "vmeter", param.first), param.second, "virtual meter: " + param.first);
-            }
-        }
-    }
+    //            auto const index = cyng::numeric_cast<std::size_t>(param.second, 1);
+    //            insert_config_record(
+    //                stmt,
+    //                cyng::to_path(cfg::sep, "vmeter", param.first),
+    //                cyng::make_object(index),
+    //                "virtual meter port index " + std::to_string(index));
+    //        } else {
+    //            insert_config_record(
+    //                stmt, cyng::to_path(cfg::sep, "vmeter", param.first), param.second, "virtual meter: " + param.first);
+    //        }
+    //    }
+    //}
 
     void clear_config(cyng::db::session &db) {
         BOOST_ASSERT(db.is_alive());

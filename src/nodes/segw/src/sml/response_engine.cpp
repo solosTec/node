@@ -623,6 +623,10 @@ namespace smf {
                             tpl_inner.clear();
                             s = 1;
                             q++;
+                            if (q == 0xFE) {
+                                //  cap = 0xFEFE
+                                return false;
+                            }
                         } else {
                             s++;
                         }
@@ -723,6 +727,10 @@ namespace smf {
                         q++;
                     } else {
                         s++;
+                        if (q == 0xFE) {
+                            //  cap = 0xFEFE
+                            return false;
+                        }
                     }
 
                     return true;

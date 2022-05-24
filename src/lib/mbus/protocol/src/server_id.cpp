@@ -94,7 +94,8 @@ namespace smf {
             return cyng::hex_to_buffer(id);
         }
 
-        return cyng::buffer_t{};
+        // return (s.size() == 8) ? to_meter_id(s) : cyng::hex_to_buffer(s);
+        return cyng::hex_to_buffer(s);
     }
 
     cyng::buffer_t get_id_as_buffer(srv_id_t address) {
@@ -168,8 +169,6 @@ namespace smf {
             return srv_type::GW;
         else if (buffer.size() == 10 && buffer.at(1) == '3')
             return srv_type::BCD;
-        else if (buffer.size() == 8 && buffer.at(2) == '4')
-            return srv_type::EON;
         else if ((buffer.size() == 10) && (buffer.at(0) == '0') && (buffer.at(1) == '6'))
             return srv_type::DKE_1;
         else if ((buffer.size() == 10) && (buffer.at(0) == '0') && (buffer.at(1) == '9'))
@@ -180,6 +179,8 @@ namespace smf {
                      return ((c >= '0') && (c <= '9')) || ((c >= 'A') && (c <= 'Z'));
                  })) {
             return srv_type::SERIAL;
+        } else if (buffer.size() == 8 && buffer.at(2) == '4') {
+            return srv_type::EON;
         }
 
         return srv_type::OTHER;

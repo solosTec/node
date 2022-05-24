@@ -230,11 +230,11 @@ namespace smf {
         //	we would receive our own changes.
         //
         load_meter(); //  "TMeterMBus", "TMeterIEC"
-        //  load_iec_devices();
+        //  ToDo: load_iec_devices();
         load_table(get_table_data_collector());
         load_table(get_table_push_ops());
-        // load_data_mirror();
-        //  load_privileges();
+        // ToDo: load_data_mirror();
+        // ToDo: load_privileges();
     }
 
     void bridge::init_cache_persistence() {

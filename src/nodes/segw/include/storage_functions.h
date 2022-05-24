@@ -55,11 +55,12 @@ namespace smf {
     void transfer_nms(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap);
     void transfer_lnm(cyng::db::statement_ptr stmt, cyng::vector_t &&vec);
     void transfer_gpio(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap);
-    void transfer_vmeter(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap);
+    // void transfer_vmeter(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap);
 
     void transfer_broker(cyng::db::statement_ptr stmt, std::size_t counter, cyng::vector_t &&vec);
     void transfer_listener(cyng::db::statement_ptr stmt, std::size_t counter, cyng::param_map_t &&pmap);
     void transfer_blocklist(cyng::db::statement_ptr stmt, std::size_t counter, cyng::param_map_t &&pmap);
+    void transfer_virtual_meter(cyng::db::statement_ptr stmt, std::size_t counter, cyng::param_map_t &&pmap);
 
     /**
      * Clear table "TCfg"
