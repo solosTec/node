@@ -65,8 +65,6 @@ namespace smf {
         void init_gpio();
         void stop_gpio();
 
-        void init_virtual_meter();
-
         void init_sml_server();
 
         /**

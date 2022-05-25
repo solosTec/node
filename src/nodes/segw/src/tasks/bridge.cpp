@@ -107,12 +107,6 @@ namespace smf {
         init_nms_server();
 
         //
-        //	virtual meter
-        //
-        CYNG_LOG_INFO(logger_, "initialize: virtual meter");
-        init_virtual_meter();
-
-        //
         //	IP-T client
         //	connect to IP-T server
         //
@@ -132,7 +126,7 @@ namespace smf {
         init_filter();
 
         //
-        //	LMN - open serial ports
+        //	LMN - open serial ports or virtual meter
         //	"let the data come in"
         //
         CYNG_LOG_INFO(logger_, "initialize: LMN ports");
@@ -542,6 +536,15 @@ namespace smf {
         if (cfg.is_enabled()) {
 
             CYNG_LOG_INFO(logger_, "init LMN [" << port << "]");
+
+            cfg_vmeter vmeter(cfg_, type);
+            if (vmeter.is_enabled()) {
+                auto srv = vmeter.get_server();
+                CYNG_LOG_INFO(logger_, "start virtual meter [" << srv << "]");
+                //
+                //  ToDo: substitute LMN task with the virtual meter task
+                //
+            }
             auto channel = ctl_.create_named_channel_with_ref<lmn>(port, ctl_, logger_, cfg_, type);
             BOOST_ASSERT(channel->is_open());
             stash_.lock(channel);
@@ -830,21 +833,6 @@ namespace smf {
             }
         } else {
             CYNG_LOG_TRACE(logger_, "[gpio] not running");
-        }
-    }
-
-    void bridge::init_virtual_meter() {
-        cfg_vmeter cfg(cfg_);
-        auto srv = cfg.get_server();
-        if (cfg.is_enabled()) {
-
-            CYNG_LOG_INFO(logger_, "start virtual meter [" << srv << "]");
-            //
-            //	ToDo:
-            //
-
-        } else {
-            CYNG_LOG_TRACE(logger_, "virtual meter [" << srv << "] is not enabled");
         }
     }
 

@@ -21,8 +21,7 @@ namespace smf {
         /**
          * numerical value of the specified LMN enum type
          */
-        constexpr std::uint8_t get_index() const { return static_cast<std::uint8_t>(type_); }
-
+        constexpr std::uint8_t get_index() const { return static_cast<std::uint8_t>(get_type()); }
         constexpr lmn_type get_type() const { return type_; }
 
         std::string get_path_id() const;

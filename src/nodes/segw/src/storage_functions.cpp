@@ -907,13 +907,16 @@ namespace smf {
                         "server type is serial");
                     break;
                 default:
-                    insert_config_record(
-                        stmt,
-                        cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), "type"),
-                        cyng::make_object("other"),
-                        "server type is not supported");
+                    // insert_config_record(
+                    //     stmt,
+                    //     cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), "type"),
+                    //     cyng::make_object("other"),
+                    //     "server type is not supported");
                     break;
                 }
+                //
+                //  "virtual-meter/N/server" as data type cyng::buffer
+                //
                 insert_config_record(
                     stmt,
                     cyng::to_path(cfg::sep, "virtual-meter", std::to_string(counter), param.first),
