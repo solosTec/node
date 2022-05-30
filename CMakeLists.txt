@@ -103,6 +103,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	    set(${CAPITAL_NAME}_BUILD_TOOLS OFF CACHE BOOL "build developer tools")
     endif()
 
+    if(NOT DEFINED ${CAPITAL_NAME}_TEST_TOOLS)
+	    set(${CAPITAL_NAME}_TEST_TOOLS OFF CACHE BOOL "build test tools")
+    endif()
+
 endif()
 
 
@@ -164,11 +168,24 @@ set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build SHARED libraries")
 
 # Find packages ...
 
+set(SMF_BOOST_COMPONENTS regex iostreams program_options system thread random locale)
+
+#
+# unit tests
+# call CMake with -DSMF_UNIT_TEST:BOOL=TRUE to generate unit tests 
+#
+if(${CAPITAL_NAME}_UNIT_TEST)
+
+    list(APPEND SMF_BOOST_COMPONENTS unit_test_framework)
+    add_subdirectory(unit_test)
+
+endif()
+
 # Find Boost
 set(Boost_NO_BOOST_CMAKE OFF)
 find_package(Boost 1.75 
     REQUIRED 
-    COMPONENTS regex iostreams program_options unit_test_framework system thread random date_time locale
+    COMPONENTS ${SMF_BOOST_COMPONENTS}
 )
 # note: https://github.com/chriskohlhoff/asio/issues/585
 add_compile_definitions(BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE BOOST_BIND_NO_PLACEHOLDERS BOOST_SPIRIT_UNICODE BOOST_MPL_LIMIT_LIST_SIZE=50)
@@ -191,7 +208,11 @@ message(STATUS "** Boost_DATE_TIME_LIBRARY      : ${Boost_DATE_TIME_LIBRARY}")
 message(STATUS "** Boost_PROGRAM_OPTIONS_LIBRARY: ${Boost_PROGRAM_OPTIONS_LIBRARY}")
 message(STATUS "** Boost_RANDOM_LIBRARY         : ${Boost_RANDOM_LIBRARY}")
 message(STATUS "** Boost_REGEX_LIBRARY          : ${Boost_REGEX_LIBRARY}")
+if(${CAPITAL_NAME}_UNIT_TEST)
 message(STATUS "** Boost_UNIT_TEST_FRAMEWORK    : ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
+else()
+message(STATUS "** Boost_UNIT_TEST_FRAMEWORK    : not installed")
+endif()
 
 
 message(STATUS "** Search openSSL   : ${OPENSSL_ROOT_DIR}")
@@ -909,23 +930,12 @@ if(${CAPITAL_NAME}_BUILD_TOOLS)
 
 endif()
 
-#
-# tests
-# call CMake with -DSMF_TEST_TCP_STRESS:BOOL=TRUE to generate unit tests 
-#
-add_subdirectory(src/tools/tests)
-
-#
-# unit tests
-#
-#
-# unit tests
-# call CMake with -DSMF_UNIT_TEST:BOOL=TRUE to generate unit tests 
-#
-if(${CAPITAL_NAME}_UNIT_TEST)
-
-    add_subdirectory(unit_test)
-
+if(${CAPITAL_NAME}_TEST_TOOLS)
+    #
+    # tests
+    # call CMake with -DSMF_TEST_TCP_STRESS:BOOL=TRUE to generate unit tests 
+    #
+    add_subdirectory(src/tools/tests)
 endif()
 
 #
