@@ -46,13 +46,17 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     #
     #   print CMake version
     #
-    message(STATUS "** CMAKE_VERSION      : ${CMAKE_VERSION}")
+    message(STATUS "** CMake              : ${CMAKE_VERSION}")
 
     math(EXPR "${PROJECT_NAME}_VERSION_NUMERAL" "${PROJECT_VERSION_MAJOR}*100000+${PROJECT_VERSION_MINOR}*1000+${PROJECT_VERSION_PATCH}" OUTPUT_FORMAT DECIMAL)
     message(STATUS "** Version numeral    : ${${PROJECT_NAME}_VERSION_NUMERAL}")
 
     message(STATUS "** Compiler           : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")
 
+    # Alpine Linux v3.16/alpine
+    cmake_host_system_information(RESULT SMF_HOST_PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
+    cmake_host_system_information(RESULT SMF_HOST_ID_NAME QUERY DISTRIB_ID)
+    message(STATUS "** Host System        : ${SMF_HOST_PRETTY_NAME}/${SMF_HOST_ID_NAME}")
 
     # Let's ensure -std=c++xx instead of -std=g++xx
     set(CMAKE_CXX_EXTENSIONS OFF)
@@ -1071,14 +1075,7 @@ else()
 
     set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
-    find_program(LSB_RELEASE_EXEC lsb_release)
-    execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
-        OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    message(STATUS "** LSB release                  : ${LSB_RELEASE_ID_SHORT}")
-
-    if (${LSB_RELEASE_ID_SHORT} STREQUAL "openSUSE")
+    if (${SMF_HOST_ID_NAME} STREQUAL "openSUSE")
         message(STATUS "** Generator                    : RPM")
         set(CPACK_GENERATOR "RPM")
         set(CPACK_SOURCE_GENERATOR "RPM")
