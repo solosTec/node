@@ -53,10 +53,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     message(STATUS "** Compiler           : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")
 
-    # Alpine Linux v3.16/alpine
-    cmake_host_system_information(RESULT SMF_HOST_PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
-    cmake_host_system_information(RESULT SMF_HOST_ID_NAME QUERY DISTRIB_ID)
-    message(STATUS "** Host System        : ${SMF_HOST_PRETTY_NAME}/${SMF_HOST_ID_NAME}")
+    if (NOT WIN32) 
+        # /etc/os-release
+        # Alpine Linux v3.16/alpine
+        cmake_host_system_information(RESULT SMF_HOST_PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
+        cmake_host_system_information(RESULT SMF_HOST_ID_NAME QUERY DISTRIB_ID)
+        message(STATUS "** Host System        : ${SMF_HOST_PRETTY_NAME}/${SMF_HOST_ID_NAME} - (${CMAKE_SYSTEM_NAME})")
+    else()
+        message(STATUS "** Host System        : ${CMAKE_SYSTEM_NAME}")
+    endif()
 
     # Let's ensure -std=c++xx instead of -std=g++xx
     set(CMAKE_CXX_EXTENSIONS OFF)
