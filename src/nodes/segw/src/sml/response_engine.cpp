@@ -14,6 +14,7 @@
 #include <smf/obis/defs.h>
 #include <smf/obis/tree.hpp>
 #include <smf/sml/generator.h>
+#include <smf/sml/select.h>
 #include <smf/sml/value.hpp>
 #include <sml/response_engine.h>
 
@@ -26,13 +27,16 @@
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/algorithm/reader.hpp>
+#include <cyng/obj/algorithm/swap_bytes.h>
+#include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/intrinsics/aes_key.hpp>
+#include <cyng/store/key.hpp>
 #include <cyng/sys/info.h>
 #include <cyng/sys/ntp.h>
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
 #include <cyng/scm/mgr.h>
 #endif
-#include <cyng/obj/algorithm/swap_bytes.h>
 
 namespace smf {
 
@@ -54,7 +58,7 @@ namespace smf {
         if (!path.empty()) {
             CYNG_LOG_INFO(
                 logger_,
-                "SML_GetProcParameter.Req - trx: " << trx << ", server: " << cyng::io::to_hex(server) << " ("
+                "[SML_GetProcParameter.Req] trx: " << trx << ", server: " << cyng::io::to_hex(server) << " ("
                                                    << obis::get_name(path.front()) << "), user: " << user << ", pwd: " << pwd
                                                    << ", path: " << path << ", attr: " << attr);
 
@@ -155,13 +159,16 @@ namespace smf {
             //    break;
             // case CODE_ROOT_SERIAL:
             //    break;
-            default: CYNG_LOG_WARNING(logger_, "SML_GetProcParameter.Req unknown OBIS code: " << cyng::io::to_hex(server)); break;
+            default:
+                CYNG_LOG_WARNING(logger_, "[SML_GetProcParameter.Req] unknown OBIS code: " << cyng::io::to_hex(server));
+                msgs.push_back(res_gen_.get_attention(trx, server, sml::attention_type::UNKNOWN_OBIS_CODE, "ip-t"));
+                break;
             }
         } else {
             CYNG_LOG_WARNING(
                 logger_,
-                "SML_GetProcParameter.Req has no path - trx: " << trx << ", server: " << cyng::io::to_hex(server)
-                                                               << ", user: " << user << ", pwd: " << pwd);
+                "[SML_GetProcParameter.Req] has no path - trx: " << trx << ", server: " << cyng::io::to_hex(server)
+                                                                 << ", user: " << user << ", pwd: " << pwd);
         }
     }
 
@@ -179,9 +186,11 @@ namespace smf {
             BOOST_ASSERT(path.back() == code);
             CYNG_LOG_INFO(
                 logger_,
-                "SML_SetProcParameter.Req - trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
+                "[SML_SetProcParameter.Req] trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
                                                    << ", pwd: " << pwd << ", path: " << path << " (" << obis::get_name(path.front())
                                                    << ")");
+
+            BOOST_ASSERT(path.back() == code);
 
             //
             //  SML_SetProcParameter requests are generating an attention code as response
@@ -190,7 +199,18 @@ namespace smf {
             case CODE_ROOT_IPT_PARAM: //	0x81490D0700FF
                 msgs.push_back(set_proc_parameter_ipt_param(trx, server, path, attr));
                 break;
-            default: CYNG_LOG_WARNING(logger_, "SML_SetProcParameter.Req unknown OBIS code: " << cyng::io::to_hex(server)); break;
+            case CODE_ROOT_DATA_COLLECTOR: //	 0x8181C78620FF (Datenspiegel)
+                msgs.push_back(set_proc_parameter_data_collector(trx, server, path, child_list));
+                break;
+            case CODE_CLEAR_DATA_COLLECTOR: //  0x8181C7838205 (Datenspiegel)
+                msgs.push_back(clear_proc_parameter_data_collector(trx, server, path, child_list));
+                break;
+            default:
+                CYNG_LOG_WARNING(
+                    logger_,
+                    "SML_SetProcParameter.Req unknown OBIS code: " << path.front() << ", server: " << cyng::io::to_hex(server));
+                msgs.push_back(res_gen_.get_attention(trx, server, sml::attention_type::UNKNOWN_OBIS_CODE, "ip-t"));
+                break;
             }
         } else {
             CYNG_LOG_WARNING(
@@ -216,7 +236,7 @@ namespace smf {
         if (!path.empty()) {
             CYNG_LOG_INFO(
                 logger_,
-                "SML_GetProfileList.Req - trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
+                "[SML_GetProfileList.Req] trx: " << trx << ", server: " << cyng::io::to_hex(server) << ", user: " << user
                                                  << ", pwd: " << pwd << ", path: " << path << " (" << obis::get_name(path.front())
                                                  << ")");
             switch (path.front().to_uint64()) {
@@ -235,14 +255,14 @@ namespace smf {
             case CODE_PROFILE_INITIAL:      // 81 81 C7 86 18 FF
                 // return get_profile(code, trx, client_id, srv_id, start, end);
                 break;
-            default: CYNG_LOG_WARNING(logger_, "SML_GetProfileList.Req unknown OBIS code: " << cyng::io::to_hex(server)); break;
+            default: CYNG_LOG_WARNING(logger_, "[SML_GetProfileList.Req] unknown OBIS code: " << cyng::io::to_hex(server)); break;
             }
 
         } else {
             CYNG_LOG_WARNING(
                 logger_,
-                "SML_GetProfileList.Req has no path - trx: " << trx << ", server: " << cyng::io::to_hex(server)
-                                                             << ", user: " << user << ", pwd: " << pwd);
+                "[SML_GetProfileList.Req] has no path - trx: " << trx << ", server: " << cyng::io::to_hex(server)
+                                                               << ", user: " << user << ", pwd: " << pwd);
         }
     }
 
@@ -472,6 +492,151 @@ namespace smf {
         return (cfg.set_proc_parameter(path, attr.second))
                    ? res_gen_.get_attention(trx, server, sml::attention_type::OK, "ok")
                    : res_gen_.get_attention(trx, server, sml::attention_type::UNKNOWN_OBIS_CODE, "ip-t");
+    }
+
+    cyng::tuple_t response_engine::set_proc_parameter_data_collector(
+        std::string const &trx,
+        cyng::buffer_t const &server,
+        cyng::obis_path_t const &path,
+        cyng::tuple_t const &child_list) {
+        CYNG_LOG_TRACE(
+            logger_,
+            "[SML_SetProcParameter.Req] data collector child list - size " << child_list.size() << ": "
+                                                                           << cyng::io::to_typed(child_list));
+        BOOST_ASSERT(path.size() > 1);
+
+        cfg_.get_cache().access(
+            [&](cyng::table *tbl_dc, cyng::table *tbl_mirror) {
+                sml::collect(child_list, [&, this](cyng::prop_map_t const &pm) {
+                    CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] child list: " << pm);
+                    auto const nr = path.back()[cyng::obis::VG_STORAGE];
+                    auto const key = cyng::key_generator(server, nr);
+                    auto const rec = tbl_dc->lookup(key);
+                    if (rec.empty()) {
+                        CYNG_LOG_DEBUG(
+                            logger_, "[SML_SetProcParameter.Req] insert new data collector to server " << server << "#" << +nr);
+                        insert_data_collector(tbl_dc, tbl_mirror, key, pm, cfg_.get_tag());
+                    } else {
+                        CYNG_LOG_DEBUG(
+                            logger_, "[SML_SetProcParameter.Req] update data collector of server " << server << "#" << +nr);
+                        update_data_collector(tbl_dc, tbl_mirror, key, pm, cfg_.get_tag());
+                    }
+                });
+            },
+            cyng::access::write("dataCollector"),
+            cyng::access::write("dataMirror"));
+
+        return res_gen_.get_attention(trx, server, sml::attention_type::UNKNOWN_OBIS_CODE, "ip-t");
+    }
+
+    cyng::tuple_t response_engine::clear_proc_parameter_data_collector(
+        std::string const &trx,
+        cyng::buffer_t const &server,
+        cyng::obis_path_t const &path,
+        cyng::tuple_t const &child_list) {
+        cfg_.get_cache().access(
+            [&](cyng::table *tbl_dc, cyng::table *tbl_mirror) {
+                sml::collect(child_list, [&, this](cyng::prop_map_t const &pm) {
+                    //
+                    //  clear data collector
+                    //
+                    CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] clear " << pm);
+                    auto const nr = path.back()[cyng::obis::VG_STORAGE];
+                    auto const key = cyng::key_generator(server, nr);
+                    // auto const rec = tbl_dc->lookup(key);
+
+                    //
+                    //  clear data mirror
+                    //
+                });
+            },
+            cyng::access::write("dataCollector"),
+            cyng::access::write("dataMirror"));
+    }
+
+    void insert_data_collector(
+        cyng::table *tbl_dc,
+        cyng::table *tbl_mirror,
+        cyng::key_t const &key,
+        cyng::prop_map_t const &pm,
+        boost::uuids::uuid source) {
+
+        BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
+
+        // Example:
+        // $(
+        //       ("8181c78621ff":true),
+        //       ("8181c78622ff":64),
+        //       ("8181c78781ff":0),
+        //       ("8181c78a23ff":$(
+        //           ("8181c78a2301":070003010002),
+        //           ("8181c78a2302":0800010200ff))),
+        //       ("8181c78a83ff":8181c78612ff))
+        //
+        //  table "dataCollector"
+        auto const reader = cyng::make_reader(pm);
+        auto const profile = reader.get(OBIS_PROFILE, cyng::make_obis({}));
+        auto const active = reader.get(OBIS_DATA_COLLECTOR_ACTIVE, false);
+        auto const size = reader.get<std::uint32_t>(OBIS_DATA_COLLECTOR_SIZE, 100);
+        auto const period = reader.get(OBIS_DATA_REGISTER_PERIOD, std::chrono::seconds(0));
+
+        tbl_dc->insert(key, cyng::data_generator(profile, active, size, period), 1, source);
+
+        //
+        //  insert register codes
+        //
+        auto const regs = cyng::container_cast<cyng::prop_map_t>(reader.get(OBIS_DATA_COLLECTOR_REGISTER));
+        for (auto const &reg : regs) {
+            tbl_mirror->insert(
+                cyng::extend_key(key, reg.first[cyng::obis::VG_STORAGE]), cyng::data_generator(reg.second), 1, source);
+        }
+    }
+
+    void update_data_collector(
+        cyng::table *tbl_dc,
+        cyng::table *tbl_mirror,
+        cyng::key_t const &key,
+        cyng::prop_map_t const &pm,
+        boost::uuids::uuid source) {
+
+        //
+        //  update data collector
+        //
+        for (auto const &prop : pm) {
+            if (prop.first == OBIS_PROFILE) {
+                tbl_dc->modify(key, cyng::make_param("profile", prop.second), source);
+            } else if (prop.first == OBIS_DATA_COLLECTOR_ACTIVE) {
+                tbl_dc->modify(key, cyng::make_param("active", prop.second), source);
+            } else if (prop.first == OBIS_DATA_COLLECTOR_SIZE) {
+                tbl_dc->modify(key, cyng::make_param("maxSize", prop.second), source);
+            } else if (prop.first == OBIS_DATA_REGISTER_PERIOD) {
+                tbl_dc->modify(key, cyng::make_param("regPeriod", prop.second), source);
+            }
+        }
+
+        //
+        //  update register codes
+        //
+        auto const reader = cyng::make_reader(pm);
+        auto const regs = cyng::container_cast<cyng::prop_map_t>(reader.get(OBIS_DATA_COLLECTOR_REGISTER));
+        for (auto const &reg : regs) {
+            update_data_mirror(
+                tbl_mirror,
+                cyng::extend_key(key, reg.first[cyng::obis::VG_STORAGE]),
+                cyng::value_cast(reg.second, cyng::make_obis({})),
+                source);
+        }
+    }
+
+    void update_data_mirror(cyng::table *tbl_mirror, cyng::key_t const &key, cyng::obis reg, boost::uuids::uuid source) {
+        auto const rec = tbl_mirror->lookup(key);
+        if (rec.empty()) {
+            //  insert
+            tbl_mirror->insert(key, cyng::data_generator(reg), 0, source);
+        } else {
+            //  remove
+            tbl_mirror->erase(key, source);
+        }
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_wmbus_state(
@@ -901,37 +1066,84 @@ namespace smf {
         //
         //  hard coded example
         //
-        return res_gen_.get_proc_parameter(
-            trx,
-            server,
-            path,
-            sml::tree_child_list(
-                path.at(0),
-                {sml::tree_child_list(
-                    cyng::make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, 1u),
-                    {
-                        sml::tree_param(OBIS_DATA_COLLECTOR_ACTIVE, sml::make_value(true)),
-                        sml::tree_param(OBIS_DATA_COLLECTOR_SIZE, sml::make_value(100u)),
-                        sml::tree_param(OBIS_DATA_REGISTER_PERIOD, sml::make_value(0u)),
-                        sml::tree_param(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE)),
-                        sml::tree_child_list(
-                            OBIS_DATA_COLLECTOR_REGISTER, // 81 81 c7 8a 23 ff
-                            cyng::make_tuple(
-                                // 81 81 C7 8A 23 01       ______(01 00 01 08 00 FF)
-                                sml::tree_param(
-                                    cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, 1u),
-                                    sml::make_value(cyng::make_obis(0x01, 0x00, 0x01, 0x08, 0x00, 0xFF))),
-                                // 81 81 C7 8A 23 02       ______(01 00 01 08 01 FF)
-                                sml::tree_param(
-                                    cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, 2u),
-                                    sml::make_value(cyng::make_obis(0x01, 0x00, 0x01, 0x08, 0x01, 0xFF)))
-                                // 81 81 C7 8A 23 03       ______(01 00 01 08 02 FF)
-                                // 81 81 C7 8A 23 04       ______(01 00 02 08 00 FF)
-                                // 81 81 C7 8A 23 05       ______(01 00 02 08 01 FF)
-                                // 81 81 C7 8A 23 06       ______(01 00 02 08 02 FF)
-                                // 81 81 C7 8A 23 07       ______(01 00 10 07 00 FF)
-                                )) //  add profile as list if OBIS codes
-                    })}));
+        // return res_gen_.get_proc_parameter(
+        //    trx,
+        //    server,
+        //    path,
+        //    sml::tree_child_list(
+        //        path.at(0),
+        //        {sml::tree_child_list(
+        //            cyng::make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, 1u), // nr = 1u
+        //            {
+        //                sml::tree_param(OBIS_DATA_COLLECTOR_ACTIVE, sml::make_value(true)),
+        //                sml::tree_param(OBIS_DATA_COLLECTOR_SIZE, sml::make_value(100u)),
+        //                sml::tree_param(OBIS_DATA_REGISTER_PERIOD, sml::make_value(0u)),
+        //                sml::tree_param(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE)),
+        //                sml::tree_child_list(
+        //                    OBIS_DATA_COLLECTOR_REGISTER, // 81 81 c7 8a 23 ff
+        //                    cyng::make_tuple(
+        //                        // 81 81 C7 8A 23 01       ______(01 00 01 08 00 FF)
+        //                        sml::tree_param(
+        //                            cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, 1u),
+        //                            sml::make_value(cyng::make_obis(0x01, 0x00, 0x01, 0x08, 0x00, 0xFF))),
+        //                        // 81 81 C7 8A 23 02       ______(01 00 01 08 01 FF)
+        //                        sml::tree_param(
+        //                            cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, 2u),
+        //                            sml::make_value(cyng::make_obis(0x01, 0x00, 0x01, 0x08, 0x01, 0xFF)))
+        //                        // 81 81 C7 8A 23 03       ______(01 00 01 08 02 FF)
+        //                        // 81 81 C7 8A 23 04       ______(01 00 02 08 00 FF)
+        //                        // 81 81 C7 8A 23 05       ______(01 00 02 08 01 FF)
+        //                        // 81 81 C7 8A 23 06       ______(01 00 02 08 02 FF)
+        //                        // 81 81 C7 8A 23 07       ______(01 00 10 07 00 FF)
+        //                        )) //  add profile as list if OBIS codes
+        //            })}));
+
+        cyng::tuple_t dc; //  data collectors
+        cfg_.get_cache().access(
+            [&, this](cyng::table const *tbl_dc, cyng::table const *tbl_mirror) {
+                tbl_dc->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
+                    auto const id = rec.value("meterID", cyng::buffer_t{});
+                    if (server == id) {
+
+                        auto const nr = rec.value<std::uint8_t>("nr", 0);
+                        auto const profile = rec.value("profile", cyng::obis{});
+                        auto const active = rec.value("active", false);
+                        auto const size = rec.value<std::uint32_t>("maxSize", 0);
+                        auto const period = rec.value<std::chrono::seconds>("regPeriod", std::chrono::seconds(0));
+
+                        dc.push_back(cyng::make_object(sml::tree_child_list(
+                            cyng::make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
+                            {sml::tree_param(OBIS_DATA_COLLECTOR_ACTIVE, sml::make_value(active)),
+                             sml::tree_param(OBIS_DATA_COLLECTOR_SIZE, sml::make_value(size)),
+                             sml::tree_param(OBIS_DATA_REGISTER_PERIOD, sml::make_value(period)),
+                             sml::tree_param(OBIS_PROFILE, sml::make_value(profile)),
+                             sml::tree_child_list(
+                                 OBIS_DATA_COLLECTOR_REGISTER, get_collector_registers(tbl_mirror, server, nr))})));
+                    }
+                    return true;
+                });
+            },
+            cyng::access::read("dataCollector"),
+            cyng::access::read("dataMirror"));
+
+        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), dc));
+    }
+
+    cyng::tuple_t get_collector_registers(cyng::table const *tbl_mirror, cyng::buffer_t const &server, std::uint8_t nr) {
+        cyng::tuple_t regs;
+        tbl_mirror->loop([&](cyng::record &&rec, std::size_t) -> bool {
+            auto const id = rec.value("meterID", cyng::buffer_t{});
+            auto const nr_mirror = rec.value<std::uint8_t>("nr", 0);
+            if (server == id && nr == nr_mirror) {
+                auto const idx = rec.value<std::uint8_t>("idx", 0);
+                auto const reg = rec.value("register", cyng::obis{});
+
+                regs.push_back(
+                    cyng::make_object(sml::tree_param(cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx), sml::make_value(reg))));
+            }
+            return true;
+        });
+        return regs;
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_1107_interface(

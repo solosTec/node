@@ -59,7 +59,7 @@ namespace smf {
                 || OBIS_DATA_PUSH_DETAILS == code || OBIS_DEVICE_MODEL == code || OBIS_DEVICE_SERIAL == code ||
                 OBIS_DEVICE_CLASS == code) {
                 //	buffer to string
-                cyng::buffer_t const buffer = cyng::to_buffer(obj);
+                auto const buffer = cyng::to_buffer(obj);
                 return (cyng::is_ascii(buffer)) ? cyng::make_object(cyng::make_string(buffer)) : cyng::make_object(buffer);
 
             } else if (OBIS_TARGET_IP_ADDRESS == code || code.starts_with({0x81, 0x49, 0x17, 0x07, 0x0})) {
@@ -73,9 +73,25 @@ namespace smf {
             } else if (OBIS_CURRENT_UTC == code || OBIS_ACT_SENSOR_TIME == code) {
                 return read_time(obj);
             } else if (OBIS_SERIAL_NR == code) {
-                cyng::buffer_t const buffer = cyng::to_buffer(obj);
+                auto const buffer = cyng::to_buffer(obj);
                 auto const serial_nr = cyng::io::to_hex(buffer);
                 return cyng::make_object(serial_nr);
+            } else if (OBIS_PROFILE == code) {
+                //  convert to OBIS
+                auto const buffer = cyng::to_buffer(obj);
+                if (buffer.size() == 6) {
+                    return cyng::make_object(cyng::make_obis(buffer));
+                }
+            } else if (cyng::compare_n(code, OBIS_DATA_COLLECTOR_REGISTER, 5)) {
+                //  OBIS code
+                auto const buffer = cyng::to_buffer(obj);
+                if (buffer.size() == 6) {
+                    if (code[cyng::obis::VG_STORAGE] != 0xff) {
+                        //  convert to OBIS
+                        auto reg = cyng::make_obis(buffer);
+                        return cyng::make_object(reg);
+                    }
+                }
             }
             return obj;
         }
@@ -123,10 +139,8 @@ namespace smf {
                         std::time_t const tt = cyng::value_cast<std::uint32_t>(choice.back(), 0);
                         return cyng::make_object(std::chrono::system_clock::from_time_t(tt));
                     } break;
-                    case TIME_SECINDEX:
-                        return choice.back();
-                    default:
-                        break;
+                    case TIME_SECINDEX: return choice.back();
+                    default: break;
                     }
                 }
             }
@@ -167,8 +181,7 @@ namespace smf {
                     auto const str = scale_value(value, scaler);
                     return cyng::make_object(str);
                 } break;
-                default:
-                    break;
+                default: break;
                 }
             }
 
@@ -180,16 +193,11 @@ namespace smf {
             if (tpl.size() == 2) {
                 const auto type = cyng::value_cast<std::uint8_t>(tpl.front(), 0);
                 switch (type) {
-                case PROC_PAR_VALUE:
-                    return {type, customize_value(code, tpl.back())};
-                case PROC_PAR_PERIODENTRY:
-                    return {type, customize_value(code, tpl.back())};
-                case PROC_PAR_TUPELENTRY:
-                    return {type, customize_value(code, tpl.back())};
-                case PROC_PAR_TIME:
-                    return {type, read_time(tpl.back())};
-                default:
-                    break;
+                case PROC_PAR_VALUE: return {type, customize_value(code, tpl.back())};
+                case PROC_PAR_PERIODENTRY: return {type, customize_value(code, tpl.back())};
+                case PROC_PAR_TUPELENTRY: return {type, customize_value(code, tpl.back())};
+                case PROC_PAR_TIME: return {type, read_time(tpl.back())};
+                default: break;
                 }
             }
             return {PROC_PAR_UNDEF, obj};

@@ -226,8 +226,8 @@ namespace smf {
         load_meter(); //  "TMeterMBus", "TMeterIEC"
         //  ToDo: load_iec_devices();
         load_table(get_table_data_collector());
+        load_table(get_table_data_mirror());
         load_table(get_table_push_ops());
-        // ToDo: load_data_mirror();
         // ToDo: load_privileges();
     }
 

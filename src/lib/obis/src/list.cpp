@@ -73,7 +73,14 @@ namespace smf {
             return {{}, {}, {}};
         }
 
-        bool has_child_list(cyng::tuple_t const &tpl) { return (tpl.size() == 3) && (tpl.back().tag() == cyng::TC_TUPLE); }
+        bool has_child_list(cyng::tuple_t const &tpl) {
+            // return (tpl.size() == 3) && (tpl.back().tag() == cyng::TC_TUPLE);
+            if ((tpl.size() == 3) && (tpl.back().tag() == cyng::TC_TUPLE)) {
+                auto const *ptr = cyng::object_cast<cyng::tuple_t>(tpl.back());
+                return (ptr != nullptr && !ptr->empty());
+            }
+            return false;
+        }
 
         void dump(std::ostream &os, cyng::tuple_t const &tpl, bool resolved, std::size_t depth) {
             if (tpl.size() == 3 && tpl.front().tag() == cyng::TC_OBIS) {

@@ -145,7 +145,9 @@ namespace smf {
         return cyng::meta_store(
             "pushOps",
             {
-                cyng::column("meterID", cyng::TC_BUFFER),  // server/meter/sensor ID
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                cyng::column("nr", cyng::TC_UINT8),       // index - starts with 1
+                // -- body
                 cyng::column("interval", cyng::TC_UINT32), // (81 81 C7 8A 02 FF - PUSH_INTERVAL) push interval in seconds
                 cyng::column("delay", cyng::TC_UINT32),    // (81 81 C7 8A 04 FF - PUSH_SOURCE) push source
                 cyng::column("source", cyng::TC_OBIS),     // 9600, ... (in opening sequence) (8181C7930BFF)
@@ -153,25 +155,44 @@ namespace smf {
                 cyng::column("service", cyng::TC_OBIS)     // (81 49 00 00 10 FF - PUSH_SERVICE) push service
                 //  ToDo: last successfull push
             },
-            1);
+            2);
     }
-    cyng::meta_sql get_table_push_ops() { return cyng::to_sql(get_store_push_ops(), {9, 0, 0, 0, 0, 0}); }
+    cyng::meta_sql get_table_push_ops() { return cyng::to_sql(get_store_push_ops(), {9, 0, 0, 0, 0, 0, 0}); }
 
     cyng::meta_store get_store_data_collector() {
+        //
+        //  The index allows multiple entries of the same meter id.
+        //
         return cyng::meta_store(
             "dataCollector",
             {
-                cyng::column("meterID", cyng::TC_BUFFER), //	server/meter/sensor ID
-                cyng::column("profile", cyng::TC_OBIS),   //	type 1min, 15min, 1h, ... (OBIS_PROFILE)
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                cyng::column("nr", cyng::TC_UINT8),       // index - starts with 1
+                //  -- body
+                cyng::column("profile", cyng::TC_OBIS),   // type 1min, 15min, 1h, ... (OBIS_PROFILE)
                 cyng::column("active", cyng::TC_BOOL),    // turned on / off(OBIS_DATA_COLLECTOR_ACTIVE)
-                cyng::column("maxSize", cyng::TC_UINT32), //	max entry count (OBIS_DATA_COLLECTOR_SIZE)
+                cyng::column("maxSize", cyng::TC_UINT32), // max entry count (OBIS_DATA_COLLECTOR_SIZE)
                 cyng::column(
                     "regPeriod",
                     cyng::TC_SECOND) //	register period - if 0, recording is event-driven (OBIS_DATA_REGISTER_PERIOD)
             },
-            1);
+            2);
     }
-    cyng::meta_sql get_table_data_collector() { return cyng::to_sql(get_store_data_collector(), {9, 0, 0, 0, 0}); }
+    cyng::meta_sql get_table_data_collector() { return cyng::to_sql(get_store_data_collector(), {9, 0, 0, 0, 0, 0}); }
+
+    cyng::meta_store get_store_data_mirror() {
+        return cyng::meta_store(
+            "dataMirror",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                cyng::column("nr", cyng::TC_UINT8),       // index - starts with 1
+                cyng::column("idx", cyng::TC_UINT8),      // The register codes have an index by it's own
+                //   -- body
+                cyng::column("register", cyng::TC_OBIS) // OBIS code
+            },
+            3);
+    }
+    cyng::meta_sql get_table_data_mirror() { return cyng::to_sql(get_store_data_mirror(), {9, 0, 0, 0}); }
 
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
@@ -181,6 +202,7 @@ namespace smf {
             get_store_meter_mbus(),     // meterMBus
             get_store_meter_iec(),      // meterIEC
             get_store_data_collector(), // dataCollector
+            get_store_data_mirror(),    // dataMirror
             get_store_push_ops()        // pushOps
         };
     }
@@ -194,6 +216,7 @@ namespace smf {
             get_table_meter_mbus(),     //  TMeterMBus
             get_table_meter_iec(),      // TMeterIEC
             get_table_data_collector(), // TDataCollector
+            get_table_data_mirror(),    // TDataMirror
             get_table_push_ops()        // TPushOps
         };
     }
@@ -205,7 +228,14 @@ namespace smf {
             return get_table_meter_iec();
         } else if (boost::algorithm::equals(name, "opLog")) {
             return get_table_oplog();
+        } else if (boost::algorithm::equals(name, "dataCollector")) {
+            return get_table_data_collector();
+        } else if (boost::algorithm::equals(name, "dataMirror")) {
+            return get_table_data_mirror();
+        } else if (boost::algorithm::equals(name, "pushOps")) {
+            return get_table_push_ops();
         }
+        BOOST_ASSERT_MSG(false, "table not found");
         return cyng::meta_sql(name, {}, 0);
     }
 

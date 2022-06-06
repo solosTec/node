@@ -102,6 +102,18 @@ namespace smf {
             cyng::obis_path_t const &path,
             cyng::attr_t const &attr);
 
+        [[nodiscard]] cyng::tuple_t set_proc_parameter_data_collector(
+            std::string const &trx,
+            cyng::buffer_t const &server,
+            cyng::obis_path_t const &path,
+            cyng::tuple_t const &child_list);
+
+        [[nodiscard]] cyng::tuple_t clear_proc_parameter_data_collector(
+            std::string const &trx,
+            cyng::buffer_t const &server,
+            cyng::obis_path_t const &path,
+            cyng::tuple_t const &child_list);
+
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_wmbus_state(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
 
@@ -175,6 +187,16 @@ namespace smf {
 
     cyng::tuple_t generate_active_device_entry(std::uint8_t, std::uint8_t, cyng::buffer_t, std::chrono::system_clock::time_point);
     cyng::tuple_t generate_visible_device_entry(std::uint8_t, std::uint8_t, cyng::buffer_t, std::chrono::system_clock::time_point);
+
+    void insert_data_collector(cyng::table *, cyng::table *, cyng::key_t const &, cyng::prop_map_t const &, boost::uuids::uuid);
+    void update_data_collector(cyng::table *, cyng::table *, cyng::key_t const &, cyng::prop_map_t const &, boost::uuids::uuid);
+
+    /**
+     * update register codes
+     */
+    void update_data_mirror(cyng::table *, cyng::key_t const &, cyng::obis, boost::uuids::uuid);
+
+    cyng::tuple_t get_collector_registers(cyng::table const *, cyng::buffer_t const &, std::uint8_t);
 
 } // namespace smf
 

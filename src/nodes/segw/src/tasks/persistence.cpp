@@ -55,6 +55,7 @@ namespace smf {
         connect("cfg");
         connect("meterMBus");
         connect("dataCollector");
+        connect("dataMirror");
         connect("pushOps");
     }
 

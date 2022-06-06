@@ -1,6 +1,7 @@
+#include <smf/sml/select.h>
+
 #include <smf/obis/defs.h>
 #include <smf/obis/list.h>
-#include <smf/sml/select.h>
 
 #include <cyng/obj/buffer_cast.hpp>
 #include <cyng/obj/container_cast.hpp>
@@ -51,11 +52,24 @@ namespace smf {
             select(tpl, root, 0, cb);
         }
 
-        void collect(cyng::tuple_t const &tpl, cyng::obis o, std::function<void(cyng::prop_map_t const &)> cb) {
+        void collect(cyng::tuple_t const &tpl, std::function<void(cyng::prop_map_t const &)> cb) {
             cyng::prop_map_t om;
-            for (auto const &v : tpl) {
-                auto const [c, attr] = get_attribute(v);
-                om.emplace(c, attr.second);
+            for (auto const &obj : tpl) {
+                auto const list = cyng::container_cast<cyng::tuple_t>(obj);
+
+                //
+                //  child list and attribute are exclusive (in most cases)
+                //
+                if (has_child_list(list)) {
+                    //  cyng::obis, cyng::tuple_t
+                    auto const [c, tpl] = get_list(list);
+                    //  recursion
+                    collect(tpl, [&](cyng::prop_map_t const &pm) { om.emplace(c, cyng::make_object(pm)); });
+                    // om.emplace(c, cyng::make_object(tpl));
+                } else {
+                    auto const [c, attr] = get_attribute(list);
+                    om.emplace(c, attr.second);
+                }
             }
             // std::cerr << '#' << idx << " - " << om << std::endl;
             cb(om);

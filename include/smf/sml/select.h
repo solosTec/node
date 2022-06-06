@@ -21,7 +21,13 @@ namespace smf {
         //  select (device) information from a get proc parameter response.
         //
         void select(cyng::tuple_t const &, cyng::obis root, std::function<void(cyng::prop_map_t const &, std::size_t)> cb);
-        void collect(cyng::tuple_t const &tpl, cyng::obis o, std::function<void(cyng::prop_map_t const &)> cb);
+
+        /**
+         * @brief Recursive traversing a child list to produce a property map.
+         *
+         * Collect all attribute values. Child lists are inserted as a tree.
+         */
+        void collect(cyng::tuple_t const &tpl, std::function<void(cyng::prop_map_t const &)> cb);
 
         /**
          * Collect also nested data like in ROOT_PUSH_OPERATIONS (81 81 c7 8a 01 ff).
