@@ -276,7 +276,7 @@ namespace smf {
 
         BOOST_ASSERT(!path.empty());
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_param(path.front(), sml::make_value(cfg_.get_status_word())));
+            trx, server, path, sml::make_param_tree(path.front(), sml::make_value(cfg_.get_status_word())));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_device_ident(
@@ -299,40 +299,40 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
                 {// obis code that descrives the device class
-                 sml::tree_param(OBIS_DEVICE_CLASS, sml::make_value(hw.get_device_class())),
+                 sml::make_param_tree(OBIS_DEVICE_CLASS, sml::make_value(hw.get_device_class())),
                  //  manufacturer
-                 sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(hw.get_manufacturer())),
+                 sml::make_param_tree(OBIS_DATA_MANUFACTURER, sml::make_value(hw.get_manufacturer())),
                  //  server id (05 + MAC)
-                 sml::tree_param(OBIS_SERVER_ID, sml::make_value(cfg_.get_srv_id())),
+                 sml::make_param_tree(OBIS_SERVER_ID, sml::make_value(cfg_.get_srv_id())),
 
                  //	firmware
-                 sml::tree_child_list(
+                 sml::make_child_list_tree(
                      OBIS_ROOT_FIRMWARE,
                      {//	section 1
-                      sml::tree_child_list(
+                      sml::make_child_list_tree(
                           cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x07, 0x01),
-                          {sml::tree_param(OBIS_DEVICE_KERNEL, sml::make_value("CURRENT_VERSION")),
-                           sml::tree_param(OBIS_VERSION, sml::make_value(SMF_VERSION_TAG)),
-                           sml::tree_param(OBIS_DEVICE_ACTIVATED, sml::make_value(true))}),
+                          {sml::make_param_tree(OBIS_DEVICE_KERNEL, sml::make_value("CURRENT_VERSION")),
+                           sml::make_param_tree(OBIS_VERSION, sml::make_value(SMF_VERSION_TAG)),
+                           sml::make_param_tree(OBIS_DEVICE_ACTIVATED, sml::make_value(true))}),
                       //	section 2
-                      sml::tree_child_list(
+                      sml::make_child_list_tree(
                           cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x07, 0x02),
-                          {sml::tree_param(OBIS_DEVICE_KERNEL, sml::make_value("KERNEL")),
-                           sml::tree_param(OBIS_VERSION, sml::make_value(cyng::sys::get_os_name())),
-                           sml::tree_param(OBIS_DEVICE_ACTIVATED, sml::make_value(true))})}),
+                          {sml::make_param_tree(OBIS_DEVICE_KERNEL, sml::make_value("KERNEL")),
+                           sml::make_param_tree(OBIS_VERSION, sml::make_value(cyng::sys::get_os_name())),
+                           sml::make_param_tree(OBIS_DEVICE_ACTIVATED, sml::make_value(true))})}),
 
                  //	hardware
-                 sml::tree_child_list(
+                 sml::make_child_list_tree(
                      OBIS_HARDWARE_FEATURES,
                      {
-                         sml::tree_param(
+                         sml::make_param_tree(
                              cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x01),
                              sml::make_value("VSES-1KW-221-1F0")), //  model code
                                                                    // sml::make_value("VMET-1KW-221-1F0)),
-                         sml::tree_param(
+                         sml::make_param_tree(
                              cyng::make_obis(0x81, 0x81, 0xc7, 0x82, 0x0a, 0x02),
                              sml::make_value(hw.get_serial_number())) //  serial number
                      })}));
@@ -353,16 +353,18 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
-                {sml::tree_child_list(
+                {sml::make_child_list_tree(
                     path.at(0),
                     // OBIS_ROOT_DEVICE_TIME,
                     {
-                        sml::tree_param(OBIS_CURRENT_UTC, sml::make_value(now)),
-                        sml::tree_param(cyng::make_obis(0x00, 0x00, 0x60, 0x08, 0x00, 0xFF), sml::make_value(0u)),  //  second index
-                        sml::tree_param(cyng::make_obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x01), sml::make_value(0u)),  //  timezone
-                        sml::tree_param(cyng::make_obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x02), sml::make_value(true)) //  sync active
+                        sml::make_param_tree(OBIS_CURRENT_UTC, sml::make_value(now)),
+                        sml::make_param_tree(
+                            cyng::make_obis(0x00, 0x00, 0x60, 0x08, 0x00, 0xFF), sml::make_value(0u)), //  second index
+                        sml::make_param_tree(cyng::make_obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x01), sml::make_value(0u)), //  timezone
+                        sml::make_param_tree(
+                            cyng::make_obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x02), sml::make_value(true)) //  sync active
                     })}));
     }
 
@@ -386,12 +388,12 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
-                {sml::tree_param(OBIS_NTP_PORT, sml::make_value(ntp_port)),
-                 sml::tree_param(OBIS_NTP_ACTIVE, sml::make_value(ntp_active)), //  second index
-                 sml::tree_param(OBIS_NTP_TZ, sml::make_value(ntp_tz)),         //  timezone
-                 sml::tree_child_list(OBIS_NTP_SERVER, generate_tree_ntp(ntp_servers))}));
+                {sml::make_param_tree(OBIS_NTP_PORT, sml::make_value(ntp_port)),
+                 sml::make_param_tree(OBIS_NTP_ACTIVE, sml::make_value(ntp_active)), //  second index
+                 sml::make_param_tree(OBIS_NTP_TZ, sml::make_value(ntp_tz)),         //  timezone
+                 sml::make_child_list_tree(OBIS_NTP_SERVER, generate_tree_ntp(ntp_servers))}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_access_rights(
@@ -403,7 +405,7 @@ namespace smf {
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_ACCESS_RIGHTS);
 
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+            trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_custom_interface(
@@ -415,7 +417,7 @@ namespace smf {
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_CUSTOM_INTERFACE);
 
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+            trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_custom_param(
@@ -463,11 +465,11 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
-                {sml::tree_param(OBIS_TARGET_IP_ADDRESS, sml::make_value(ip_address)),
-                 sml::tree_param(OBIS_TARGET_PORT, sml::make_value(target_port)),
-                 sml::tree_param(OBIS_SOURCE_PORT, sml::make_value(source_port))}));
+                {sml::make_param_tree(OBIS_TARGET_IP_ADDRESS, sml::make_value(ip_address)),
+                 sml::make_param_tree(OBIS_TARGET_PORT, sml::make_value(target_port)),
+                 sml::make_param_tree(OBIS_SOURCE_PORT, sml::make_value(source_port))}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_ipt_param(
@@ -772,13 +774,14 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
                 {
-                    sml::tree_param(OBIS_W_MBUS_ADAPTER_MANUFACTURER, sml::make_value(hw.get_adapter_manufacturer())), //  string
-                    sml::tree_param(OBIS_W_MBUS_ADAPTER_ID, sml::make_value(hw.get_adapter_id())),                     //  buffer
-                    sml::tree_param(OBIS_W_MBUS_FIRMWARE, sml::make_value(hw.get_adapter_firmware_version())),         //  string
-                    sml::tree_param(OBIS_W_MBUS_HARDWARE, sml::make_value(hw.get_adapter_hardware_version()))          //  string
+                    sml::make_param_tree(
+                        OBIS_W_MBUS_ADAPTER_MANUFACTURER, sml::make_value(hw.get_adapter_manufacturer())),          //  string
+                    sml::make_param_tree(OBIS_W_MBUS_ADAPTER_ID, sml::make_value(hw.get_adapter_id())),             //  buffer
+                    sml::make_param_tree(OBIS_W_MBUS_FIRMWARE, sml::make_value(hw.get_adapter_firmware_version())), //  string
+                    sml::make_param_tree(OBIS_W_MBUS_HARDWARE, sml::make_value(hw.get_adapter_hardware_version()))  //  string
                 }));
     }
 
@@ -799,14 +802,15 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
                 {
-                    sml::tree_param(OBIS_W_MBUS_PROTOCOL, sml::make_value(0x02)),  //  protocol 0 = T, 1 = S, 2 = A, 3 = P
-                    sml::tree_param(OBIS_W_MBUS_MODE_S, sml::make_value(0x1e)),    //  S2 mode
-                    sml::tree_param(OBIS_W_MBUS_MODE_T, sml::make_value(0x14)),    //  T2 mode
-                    sml::tree_param(OBIS_W_MBUS_REBOOT, sml::make_value(0x15180)), //  reboot
-                    sml::tree_param(OBIS_W_MBUS_POWER, sml::make_value(1u)) //  power:  0 = default, 1 = low, 2 = medium, 3 = high
+                    sml::make_param_tree(OBIS_W_MBUS_PROTOCOL, sml::make_value(0x02)),  //  protocol 0 = T, 1 = S, 2 = A, 3 = P
+                    sml::make_param_tree(OBIS_W_MBUS_MODE_S, sml::make_value(0x1e)),    //  S2 mode
+                    sml::make_param_tree(OBIS_W_MBUS_MODE_T, sml::make_value(0x14)),    //  T2 mode
+                    sml::make_param_tree(OBIS_W_MBUS_REBOOT, sml::make_value(0x15180)), //  reboot
+                    sml::make_param_tree(
+                        OBIS_W_MBUS_POWER, sml::make_value(1u)) //  power:  0 = default, 1 = low, 2 = medium, 3 = high
                 }));
     }
 
@@ -818,7 +822,7 @@ namespace smf {
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_LAN_DSL);
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+            trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_lan_dsl_param(
@@ -839,7 +843,7 @@ namespace smf {
         //
 
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+            trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_memory(
@@ -855,11 +859,11 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
                 {
-                    sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x11, 0xFF), sml::make_value(10u)), //  mirror
-                    sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x12, 0xFF), sml::make_value(12u))  //  tmp
+                    sml::make_param_tree(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x11, 0xFF), sml::make_value(10u)), //  mirror
+                    sml::make_param_tree(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x12, 0xFF), sml::make_value(12u))  //  tmp
                 }));
     }
 
@@ -902,7 +906,7 @@ namespace smf {
                         if (s == 0xFE) {
                             BOOST_ASSERT_MSG(s != 0xFF, "visible meter overflow");
                             tpl_outer.push_back(cyng::make_object(
-                                sml::tree_child_list(cyng::make_obis(0x81, 0x81, 0x10, 0x06, q, 0xff), tpl_inner)));
+                                sml::make_child_list_tree(cyng::make_obis(0x81, 0x81, 0x10, 0x06, q, 0xff), tpl_inner)));
                             tpl_inner.clear();
                             s = 1;
                             q++;
@@ -924,36 +928,36 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 OBIS_ROOT_VISIBLE_DEVICES, //  81 81 10 06 ff ff
                 tpl_outer));
     }
 
     cyng::tuple_t
     generate_active_device_entry(std::uint8_t q, std::uint8_t s, cyng::buffer_t srv, std::chrono::system_clock::time_point tp) {
-        return sml::tree_child_list(
+        return sml::make_child_list_tree(
             cyng::make_obis(0x81, 0x81, 0x11, 0x06, q, s),
             cyng::make_tuple(
-                sml::tree_param(
+                sml::make_param_tree(
                     OBIS_SERVER_ID,
-                    sml::make_attribute(srv)),                                                               // serverID
-                sml::tree_param(OBIS_DEVICE_CLASS, sml::make_attribute(cyng::make_buffer({'-', '-', '-'}))), // class
-                sml::tree_param(OBIS_CURRENT_UTC, sml::make_attribute(tp))                                   // lastSeen
-                )                                                                                            // [1] device
+                    sml::make_attribute(srv)),                                                                    // serverID
+                sml::make_param_tree(OBIS_DEVICE_CLASS, sml::make_attribute(cyng::make_buffer({'-', '-', '-'}))), // class
+                sml::make_param_tree(OBIS_CURRENT_UTC, sml::make_attribute(tp))                                   // lastSeen
+                )                                                                                                 // [1] device
         ); // record - 81 81 11 06 [q s]
     }
 
     cyng::tuple_t
     generate_visible_device_entry(std::uint8_t q, std::uint8_t s, cyng::buffer_t srv, std::chrono::system_clock::time_point tp) {
-        return sml::tree_child_list(
+        return sml::make_child_list_tree(
             cyng::make_obis(0x81, 0x81, 0x10, 0x06, q, s),
             cyng::make_tuple(
-                sml::tree_param(
+                sml::make_param_tree(
                     OBIS_SERVER_ID,
-                    sml::make_attribute(srv)),                                                               // serverID
-                sml::tree_param(OBIS_DEVICE_CLASS, sml::make_attribute(cyng::make_buffer({'-', '-', '-'}))), // class
-                sml::tree_param(OBIS_CURRENT_UTC, sml::make_attribute(tp))                                   // lastSeen
-                )                                                                                            // [1] device
+                    sml::make_attribute(srv)),                                                                    // serverID
+                sml::make_param_tree(OBIS_DEVICE_CLASS, sml::make_attribute(cyng::make_buffer({'-', '-', '-'}))), // class
+                sml::make_param_tree(OBIS_CURRENT_UTC, sml::make_attribute(tp))                                   // lastSeen
+                )                                                                                                 // [1] device
         ); // record - 81 81 10 06 [q s]
     }
 
@@ -1003,8 +1007,8 @@ namespace smf {
                     //
                     if (s == 0xFE) {
                         BOOST_ASSERT_MSG(s != 0xFF, "active meter overflow");
-                        tpl_outer.push_back(
-                            cyng::make_object(sml::tree_child_list(cyng::make_obis(0x81, 0x81, 0x11, 0x06, q, 0xff), tpl_inner)));
+                        tpl_outer.push_back(cyng::make_object(
+                            sml::make_child_list_tree(cyng::make_obis(0x81, 0x81, 0x11, 0x06, q, 0xff), tpl_inner)));
                         tpl_inner.clear();
                         s = 1;
                         q++;
@@ -1021,7 +1025,7 @@ namespace smf {
 
                 BOOST_ASSERT_MSG(s != 0xFF, "active meter overflow");
                 tpl_outer.push_back(
-                    cyng::make_object(sml::tree_child_list(cyng::make_obis(0x81, 0x81, 0x11, 0x06, q, 0xff), tpl_inner)));
+                    cyng::make_object(sml::make_child_list_tree(cyng::make_obis(0x81, 0x81, 0x11, 0x06, q, 0xff), tpl_inner)));
                 tpl_inner.clear();
             },
             cyng::access::read("meterMBus"));
@@ -1030,7 +1034,7 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 OBIS_ROOT_ACTIVE_DEVICES, //  81 81 11 06 ff ff
                 tpl_outer));
 
@@ -1038,10 +1042,10 @@ namespace smf {
         //  example to illustrate the structure
         //
 #ifdef _SMF_DEMO_MODE
-        auto child_list = sml::tree_child_list(
+        auto child_list = sml::make_child_list_tree(
             OBIS_ROOT_ACTIVE_DEVICES, //  81 81 11 06 ff ff
             cyng::make_tuple(         //  outer tuple start
-                sml::tree_child_list(
+                sml::make_child_list_tree(
                     cyng::make_obis(0x81, 0x81, 0x11, 0x06, 1u, 0xff),
                     cyng::make_tuple( //  inner tuple start
                         generate_active_device_entry(
@@ -1077,7 +1081,7 @@ namespace smf {
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_DEVICE_INFO);
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+            trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_sensor_param(
@@ -1129,23 +1133,23 @@ namespace smf {
                         trx,
                         server,
                         path,
-                        sml::tree_child_list(
+                        sml::make_child_list_tree(
                             path.at(0),
-                            {sml::tree_child_list(
+                            {sml::make_child_list_tree(
                                 path.at(0),
                                 {
 
-                                    sml::tree_param(OBIS_SERVER_ID, sml::make_value(server)),
-                                    sml::tree_param(OBIS_DEVICE_CLASS, sml::make_value(dev_class)),
-                                    sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(manufacturer)),
-                                    sml::tree_param(OBIS_CLASS_OP_LOG_STATUS_WORD, sml::make_value(status)),
-                                    sml::tree_param(OBIS_AVERAGE_TIME_MS, sml::make_value(28000u)),
-                                    sml::tree_param(OBIS_ROOT_SENSOR_BITMASK, sml::make_value(mask)),
-                                    sml::tree_param(OBIS_CURRENT_UTC, sml::make_value(last_seen)),
-                                    sml::tree_param(OBIS_DATA_PUBLIC_KEY, sml::make_value(pub_key)),
-                                    sml::tree_param(OBIS_DATA_AES_KEY, sml::make_value(aes_buffer)),
-                                    sml::tree_param(OBIS_DATA_USER_NAME, sml::make_value("")),
-                                    sml::tree_param(OBIS_DATA_USER_PWD, sml::make_value(""))
+                                    sml::make_param_tree(OBIS_SERVER_ID, sml::make_value(server)),
+                                    sml::make_param_tree(OBIS_DEVICE_CLASS, sml::make_value(dev_class)),
+                                    sml::make_param_tree(OBIS_DATA_MANUFACTURER, sml::make_value(manufacturer)),
+                                    sml::make_param_tree(OBIS_CLASS_OP_LOG_STATUS_WORD, sml::make_value(status)),
+                                    sml::make_param_tree(OBIS_AVERAGE_TIME_MS, sml::make_value(28000u)),
+                                    sml::make_param_tree(OBIS_ROOT_SENSOR_BITMASK, sml::make_value(mask)),
+                                    sml::make_param_tree(OBIS_CURRENT_UTC, sml::make_value(last_seen)),
+                                    sml::make_param_tree(OBIS_DATA_PUBLIC_KEY, sml::make_value(pub_key)),
+                                    sml::make_param_tree(OBIS_DATA_AES_KEY, sml::make_value(aes_buffer)),
+                                    sml::make_param_tree(OBIS_DATA_USER_NAME, sml::make_value("")),
+                                    sml::make_param_tree(OBIS_DATA_USER_PWD, sml::make_value(""))
 
                                 })}));
                 }
@@ -1157,17 +1161,17 @@ namespace smf {
                          trx,
                          server,
                          path,
-                         sml::tree_child_list(
+                         sml::make_child_list_tree(
                              path.at(0),
-                             {sml::tree_child_list(
+                             {sml::make_child_list_tree(
                                  path.at(0),
                                  {
 
-                                     sml::tree_param(OBIS_SERVER_ID, sml::make_value(server)),
-                                     sml::tree_param(OBIS_DATA_MANUFACTURER, sml::make_value(manufacturer)),
-                                     sml::tree_param(OBIS_AVERAGE_TIME_MS, sml::make_value(0u)),
-                                     sml::tree_param(OBIS_DATA_USER_NAME, sml::make_value("")),
-                                     sml::tree_param(OBIS_DATA_USER_PWD, sml::make_value(""))
+                                     sml::make_param_tree(OBIS_SERVER_ID, sml::make_value(server)),
+                                     sml::make_param_tree(OBIS_DATA_MANUFACTURER, sml::make_value(manufacturer)),
+                                     sml::make_param_tree(OBIS_AVERAGE_TIME_MS, sml::make_value(0u)),
+                                     sml::make_param_tree(OBIS_DATA_USER_NAME, sml::make_value("")),
+                                     sml::make_param_tree(OBIS_DATA_USER_PWD, sml::make_value(""))
 
                                  })}))
                    : result;
@@ -1188,24 +1192,24 @@ namespace smf {
         //    trx,
         //    server,
         //    path,
-        //    sml::tree_child_list(
+        //    sml::make_child_list_tree(
         //        path.at(0),
-        //        {sml::tree_child_list(
+        //        {sml::make_child_list_tree(
         //            cyng::make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, 1u), // nr = 1u
         //            {
-        //                sml::tree_param(OBIS_DATA_COLLECTOR_ACTIVE, sml::make_value(true)),
-        //                sml::tree_param(OBIS_DATA_COLLECTOR_SIZE, sml::make_value(100u)),
-        //                sml::tree_param(OBIS_DATA_REGISTER_PERIOD, sml::make_value(0u)),
-        //                sml::tree_param(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE)),
-        //                sml::tree_child_list(
+        //                sml::make_param_tree(OBIS_DATA_COLLECTOR_ACTIVE, sml::make_value(true)),
+        //                sml::make_param_tree(OBIS_DATA_COLLECTOR_SIZE, sml::make_value(100u)),
+        //                sml::make_param_tree(OBIS_DATA_REGISTER_PERIOD, sml::make_value(0u)),
+        //                sml::make_param_tree(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE)),
+        //                sml::make_child_list_tree(
         //                    OBIS_DATA_COLLECTOR_REGISTER, // 81 81 c7 8a 23 ff
         //                    cyng::make_tuple(
         //                        // 81 81 C7 8A 23 01       ______(01 00 01 08 00 FF)
-        //                        sml::tree_param(
+        //                        sml::make_param_tree(
         //                            cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, 1u),
         //                            sml::make_value(cyng::make_obis(0x01, 0x00, 0x01, 0x08, 0x00, 0xFF))),
         //                        // 81 81 C7 8A 23 02       ______(01 00 01 08 01 FF)
-        //                        sml::tree_param(
+        //                        sml::make_param_tree(
         //                            cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, 2u),
         //                            sml::make_value(cyng::make_obis(0x01, 0x00, 0x01, 0x08, 0x01, 0xFF)))
         //                        // 81 81 C7 8A 23 03       ______(01 00 01 08 02 FF)
@@ -1229,13 +1233,13 @@ namespace smf {
                         auto const size = rec.value<std::uint32_t>("maxSize", 0);
                         auto const period = rec.value<std::chrono::seconds>("regPeriod", std::chrono::seconds(0));
 
-                        dc.push_back(cyng::make_object(sml::tree_child_list(
+                        dc.push_back(cyng::make_object(sml::make_child_list_tree(
                             cyng::make_obis(0x81, 0x81, 0xC7, 0x86, 0x20, nr),
-                            {sml::tree_param(OBIS_DATA_COLLECTOR_ACTIVE, sml::make_value(active)),
-                             sml::tree_param(OBIS_DATA_COLLECTOR_SIZE, sml::make_value(size)),
-                             sml::tree_param(OBIS_DATA_REGISTER_PERIOD, sml::make_value(period)),
-                             sml::tree_param(OBIS_PROFILE, sml::make_value(profile)),
-                             sml::tree_child_list(
+                            {sml::make_param_tree(OBIS_DATA_COLLECTOR_ACTIVE, sml::make_value(active)),
+                             sml::make_param_tree(OBIS_DATA_COLLECTOR_SIZE, sml::make_value(size)),
+                             sml::make_param_tree(OBIS_DATA_REGISTER_PERIOD, sml::make_value(period)),
+                             sml::make_param_tree(OBIS_PROFILE, sml::make_value(profile)),
+                             sml::make_child_list_tree(
                                  OBIS_DATA_COLLECTOR_REGISTER, get_collector_registers(tbl_mirror, server, nr))})));
                     }
                     return true;
@@ -1244,7 +1248,7 @@ namespace smf {
             cyng::access::read("dataCollector"),
             cyng::access::read("dataMirror"));
 
-        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_child_list(path.at(0), dc));
+        return res_gen_.get_proc_parameter(trx, server, path, sml::make_child_list_tree(path.at(0), dc));
     }
 
     cyng::tuple_t get_collector_registers(cyng::table const *tbl_mirror, cyng::buffer_t const &server, std::uint8_t nr) {
@@ -1256,8 +1260,8 @@ namespace smf {
                 auto const idx = rec.value<std::uint8_t>("idx", 0);
                 auto const reg = rec.value("register", cyng::obis{});
 
-                regs.push_back(
-                    cyng::make_object(sml::tree_param(cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx), sml::make_value(reg))));
+                regs.push_back(cyng::make_object(
+                    sml::make_param_tree(cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx), sml::make_value(reg))));
             }
             return true;
         });
@@ -1272,7 +1276,7 @@ namespace smf {
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_IF_1107);
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_child_list(path.at(0), {sml::tree_child_list(path.at(0), {})}));
+            trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_storage_timeshift(
@@ -1288,12 +1292,12 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
-                {sml::tree_child_list(
+                {sml::make_child_list_tree(
                     path.at(0),
                     {
-                        sml::tree_param(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x01, 0xFF), sml::make_value(10u)) //  seconds
+                        sml::make_param_tree(cyng::make_obis(0x00, 0x80, 0x80, 0x00, 0x01, 0xFF), sml::make_value(10u)) //  seconds
                     })}));
     }
 
@@ -1312,18 +1316,18 @@ namespace smf {
             trx,
             server,
             path,
-            sml::tree_child_list(
+            sml::make_child_list_tree(
                 path.at(0),
-                {sml::tree_child_list(
+                {sml::make_child_list_tree(
                     cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, 1u), // nr = 1u
-                    {sml::tree_param(OBIS_PUSH_INTERVAL, sml::make_value(1234u)),
-                     sml::tree_param(OBIS_PUSH_DELAY, sml::make_value(4321u)),
-                     sml::tree_param(OBIS_PUSH_TARGET, sml::make_value("Malou")),
+                    {sml::make_param_tree(OBIS_PUSH_INTERVAL, sml::make_value(1234u)),
+                     sml::make_param_tree(OBIS_PUSH_DELAY, sml::make_value(4321u)),
+                     sml::make_param_tree(OBIS_PUSH_TARGET, sml::make_value("Malou")),
                      //	push service:
                      //	* 81 81 C7 8A 21 FF == IP-T
                      //	* 81 81 C7 8A 22 FF == SML client address
                      //	* 81 81 C7 8A 23 FF == KNX ID
-                     sml::tree_param(OBIS_PUSH_SERVICE, sml::make_value(OBIS_PUSH_SERVICE_IPT)),
+                     sml::make_param_tree(OBIS_PUSH_SERVICE, sml::make_value(OBIS_PUSH_SERVICE_IPT)),
 
                      //
                      //	push source (81 81 C7 8A 04 FF) has both, an
@@ -1339,11 +1343,11 @@ namespace smf {
                          //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
                          //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
                          sml::make_value(OBIS_PUSH_SOURCE_PROFILE),
-                         sml::tree_child_list(
+                         sml::make_child_list_tree(
                              OBIS_PUSH_SOURCE_PROFILE,
-                             {sml::tree_param(OBIS_PUSH_SERVER_ID, sml::make_value(server)),
+                             {sml::make_param_tree(OBIS_PUSH_SERVER_ID, sml::make_value(server)),
                               sml::make_empty_tree(OBIS_PUSH_IDENTIFIERS),
-                              sml::tree_param(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE))}))})}));
+                              sml::make_param_tree(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE))}))})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_list_services(
@@ -1367,11 +1371,11 @@ namespace smf {
         auto data = ss.str();
         CYNG_LOG_INFO(logger_, "active services: " << data);
 
-        return res_gen_.get_proc_parameter(trx, server, path, sml::tree_param(path.front(), sml::make_value(data)));
+        return res_gen_.get_proc_parameter(trx, server, path, sml::make_param_tree(path.front(), sml::make_value(data)));
 
 #else
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::tree_param(path.front(), sml::make_value("smfService:smfConfiguration-001;")));
+            trx, server, path, sml::make_param_tree(path.front(), sml::make_value("smfService:smfConfiguration-001;")));
 #endif
     }
 
@@ -1520,7 +1524,8 @@ namespace smf {
         std::uint8_t nr = 0;
         std::transform(std::begin(ntp_servers), std::end(ntp_servers), std::back_inserter(tpl), [&nr](std::string const &name) {
             ++nr;
-            return cyng::make_object(sml::tree_param(cyng::make_obis(0x81, 0x81, 0xC7, 0x88, 0x02, nr), sml::make_value(name)));
+            return cyng::make_object(
+                sml::make_param_tree(cyng::make_obis(0x81, 0x81, 0xC7, 0x88, 0x02, nr), sml::make_value(name)));
         });
         return tpl;
     }

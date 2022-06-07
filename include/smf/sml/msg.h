@@ -74,8 +74,8 @@ namespace smf {
          * Generate a tree with an parameter entry and an empty
          * child list
          */
-        cyng::tuple_t tree_param(cyng::obis code, cyng::tuple_t param);
-        cyng::tuple_t tree_param(cyng::obis code, cyng::attr_t attr);
+        cyng::tuple_t make_param_tree(cyng::obis code, cyng::tuple_t param);
+        cyng::tuple_t make_param_tree(cyng::obis code, cyng::attr_t attr);
 
         /**
          * Generate a tree with an child list entry and an empty
@@ -84,7 +84,7 @@ namespace smf {
          * @param code parameter name
          * @param child_list list of SML_Tree
          */
-        cyng::tuple_t tree_child_list(cyng::obis code, cyng::tuple_t child_list);
+        cyng::tuple_t make_child_list_tree(cyng::obis code, cyng::tuple_t child_list);
 
         /**
          * Generate a tree with an child list entry and an empty
@@ -93,7 +93,7 @@ namespace smf {
          * @param code parameter name
          * @param list list of SML_Tree. Contains tuples with 3 (or 0) elements
          */
-        cyng::tuple_t tree_child_list(cyng::obis code, std::initializer_list<cyng::tuple_t> list);
+        cyng::tuple_t make_child_list_tree(cyng::obis code, std::initializer_list<cyng::tuple_t> list);
 
         /**
          * Generate a SML_ListEntry (SML_GetList.Res)

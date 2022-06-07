@@ -134,10 +134,10 @@ namespace smf {
 
         cyng::tuple_t make_empty_tree(cyng::obis code) { return cyng::make_tuple(code, cyng::null{}, cyng::null{}); }
 
-        cyng::tuple_t tree_param(cyng::obis code, cyng::tuple_t param) { return cyng::make_tuple(code, param, cyng::null{}); }
-        cyng::tuple_t tree_param(cyng::obis code, cyng::attr_t attr) { return cyng::make_tuple(code, attr, cyng::null{}); }
+        cyng::tuple_t make_param_tree(cyng::obis code, cyng::tuple_t param) { return cyng::make_tuple(code, param, cyng::null{}); }
+        cyng::tuple_t make_param_tree(cyng::obis code, cyng::attr_t attr) { return cyng::make_tuple(code, attr, cyng::null{}); }
 
-        cyng::tuple_t tree_child_list(cyng::obis code, cyng::tuple_t child_list) {
+        cyng::tuple_t make_child_list_tree(cyng::obis code, cyng::tuple_t child_list) {
 #ifdef _DEBUG
             for (auto const &obj : child_list) {
                 auto const tpl = cyng::container_cast<cyng::tuple_t>(obj);
@@ -147,7 +147,7 @@ namespace smf {
             return cyng::make_tuple(code, cyng::null{}, child_list);
         }
 
-        cyng::tuple_t tree_child_list(cyng::obis code, std::initializer_list<cyng::tuple_t> list) {
+        cyng::tuple_t make_child_list_tree(cyng::obis code, std::initializer_list<cyng::tuple_t> list) {
 #ifdef _DEBUG
             for (auto &tpl : list) {
                 BOOST_ASSERT(tpl.size() == 3 || tpl.empty());

@@ -314,9 +314,9 @@ namespace smf {
                     server_id,
                     get_name(),
                     get_pwd(),
-                    path,                           //  parameter tree path (OBIS)
-                    tree_param(path.back(), attr)), //  parameter tree
-                static_cast<std::uint16_t>(0xFFFF)  //  crc placeholder
+                    path,                                //  parameter tree path (OBIS)
+                    make_param_tree(path.back(), attr)), //  parameter tree
+                static_cast<std::uint16_t>(0xFFFF)       //  crc placeholder
             );
         }
 
