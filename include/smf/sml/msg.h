@@ -68,7 +68,7 @@ namespace smf {
         /**
          * Generate an empty tree
          */
-        cyng::tuple_t tree_empty(cyng::obis code);
+        cyng::tuple_t make_empty_tree(cyng::obis code);
 
         /**
          * Generate a tree with an parameter entry and an empty
@@ -104,6 +104,13 @@ namespace smf {
          * Generate a SML_PeriodEntry (SML_GetProfileList.Res)
          */
         cyng::tuple_t period_entry(cyng::obis code, std::uint8_t unit, std::int8_t scaler, cyng::object value);
+
+        /**
+         * Creates an SML tree with an attribute and a child list. It's expected that each entry of the child list
+         * is itself a tree consisting of 3 (three) objects.
+         */
+        cyng::tuple_t make_tree(cyng::obis code, cyng::tuple_t param, cyng::tuple_t list);
+
         /**
          * Generate a SML_PeriodEntry (SML_GetProfileList.Res) with scaler = 0
          */

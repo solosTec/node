@@ -132,7 +132,7 @@ namespace smf {
                 trx, group_no, abort_code, cyng::make_tuple(static_cast<std::uint16_t>(type), body), crc, cyng::eod());
         }
 
-        cyng::tuple_t tree_empty(cyng::obis code) { return cyng::make_tuple(code, cyng::null{}, cyng::null{}); }
+        cyng::tuple_t make_empty_tree(cyng::obis code) { return cyng::make_tuple(code, cyng::null{}, cyng::null{}); }
 
         cyng::tuple_t tree_param(cyng::obis code, cyng::tuple_t param) { return cyng::make_tuple(code, param, cyng::null{}); }
         cyng::tuple_t tree_param(cyng::obis code, cyng::attr_t attr) { return cyng::make_tuple(code, attr, cyng::null{}); }
@@ -156,6 +156,16 @@ namespace smf {
             return cyng::make_tuple(code, cyng::null{}, cyng::make_tuple(list));
         }
 
+        cyng::tuple_t make_tree(cyng::obis code, cyng::tuple_t param, cyng::tuple_t list) {
+#ifdef _DEBUG
+            for (auto const &obj : list) {
+                auto const tpl = cyng::container_cast<cyng::tuple_t>(obj);
+                BOOST_ASSERT(tpl.size() == 3 || tpl.empty());
+            }
+#endif
+            return cyng::make_tuple(code, param, list);
+        }
+
         cyng::tuple_t list_entry(cyng::obis code, std::uint32_t status, std::uint8_t unit, std::int8_t scaler, cyng::object value) {
             return cyng::make_tuple(
                 code,         // object name
@@ -170,11 +180,11 @@ namespace smf {
 
         cyng::tuple_t period_entry(cyng::obis code, std::uint8_t unit, std::int8_t scaler, cyng::object value) {
             return cyng::make_tuple(
-                code,         // object name
-                unit,         // unit code
-                scaler,       // scale factor
-                value,        // value
-                cyng::null{}  // signature
+                code,        // object name
+                unit,        // unit code
+                scaler,      // scale factor
+                value,       // value
+                cyng::null{} // signature
             );
         }
 

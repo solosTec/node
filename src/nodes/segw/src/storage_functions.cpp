@@ -148,11 +148,14 @@ namespace smf {
                 cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
                 cyng::column("nr", cyng::TC_UINT8),       // index - starts with 1
                 // -- body
-                cyng::column("interval", cyng::TC_UINT32), // (81 81 C7 8A 02 FF - PUSH_INTERVAL) push interval in seconds
-                cyng::column("delay", cyng::TC_UINT32),    // (81 81 C7 8A 04 FF - PUSH_SOURCE) push source
-                cyng::column("source", cyng::TC_OBIS),     // 9600, ... (in opening sequence) (8181C7930BFF)
-                cyng::column("target", cyng::TC_STRING),   // (81 47 17 07 00 FF - PUSH_TARGET) target name
-                cyng::column("service", cyng::TC_OBIS)     // (81 49 00 00 10 FF - PUSH_SERVICE) push service
+                cyng::column("interval", cyng::TC_SECOND), // (81 81 C7 8A 02 FF - PUSH_INTERVAL) push interval in seconds
+                cyng::column("delay", cyng::TC_SECOND),    // (81 81 C7 8A 04 FF - PUSH_DELAY) delay in seconds
+                //	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
+                //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
+                //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
+                cyng::column("source", cyng::TC_OBIS),   // (81 81 c7 8a 04 ff - PUSH_SOURCE) source type
+                cyng::column("target", cyng::TC_STRING), // (81 47 17 07 00 FF - PUSH_TARGET) target name
+                cyng::column("service", cyng::TC_OBIS)   // (81 49 00 00 10 FF - PUSH_SERVICE) push service
                 //  ToDo: last successfull push
             },
             2);

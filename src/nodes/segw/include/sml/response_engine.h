@@ -114,6 +114,12 @@ namespace smf {
             cyng::obis_path_t const &path,
             cyng::tuple_t const &child_list);
 
+        [[nodiscard]] cyng::tuple_t set_proc_parameter_push_ops(
+            std::string const &trx,
+            cyng::buffer_t const &server,
+            cyng::obis_path_t const &path,
+            cyng::tuple_t const &child_list);
+
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_wmbus_state(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
 
@@ -197,6 +203,9 @@ namespace smf {
     void update_data_mirror(cyng::table *, cyng::key_t const &, cyng::obis, boost::uuids::uuid);
 
     cyng::tuple_t get_collector_registers(cyng::table const *, cyng::buffer_t const &, std::uint8_t);
+
+    bool insert_push_op(cyng::table *, cyng::key_t const &, cyng::prop_map_t const &, boost::uuids::uuid);
+    void update_push_op(cyng::table *, cyng::key_t const &, cyng::prop_map_t const &, boost::uuids::uuid);
 
 } // namespace smf
 

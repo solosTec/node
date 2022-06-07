@@ -160,7 +160,7 @@ namespace smf {
                 sml::tree_param(OBIS_TCP_WAIT_TO_RECONNECT, sml::make_attribute(get_reconnect_timeout().count())),
                 sml::tree_param(OBIS_TCP_CONNECT_RETRIES, sml::make_attribute(get_reconnect_count())),
                 sml::tree_param(OBIS_HAS_SSL_CONFIG, sml::make_attribute(false)),
-                sml::tree_empty(OBIS_SSL_CERTIFICATES))); //  no certificates
+                sml::make_empty_tree(OBIS_SSL_CERTIFICATES))); //  no certificates
     }
 
     bool cfg_ipt::set_proc_parameter(cyng::obis_path_t path, cyng::object obj) {

@@ -262,7 +262,7 @@ namespace smf {
                     get_name(),
                     get_pwd(),
                     cyng::make_tuple(OBIS_REBOOT), //  path entry
-                    tree_empty(OBIS_REBOOT)),      //  params
+                    make_empty_tree(OBIS_REBOOT)), //  params
                 static_cast<std::uint16_t>(0xFFFF) // crc placeholder
             );
         }

@@ -137,7 +137,7 @@ namespace smf {
                 msgs.push_back(get_proc_parameter_storage_timeshift(trx, server, path));
                 break;
             case CODE_ROOT_PUSH_OPERATIONS: //	0x8181C78A01FF
-                // msgs.push_back(get_proc_parameter_push_ops(trx, server, path));
+                msgs.push_back(get_proc_parameter_push_ops(trx, server, path));
                 break;
             case CODE_LIST_SERVICES: //	0x990000000004
                 msgs.push_back(get_proc_parameter_list_services(trx, server, path));
@@ -204,6 +204,9 @@ namespace smf {
                 break;
             case CODE_CLEAR_DATA_COLLECTOR: //  0x8181C7838205 (Datenspiegel)
                 msgs.push_back(clear_proc_parameter_data_collector(trx, server, path, child_list));
+                break;
+            case CODE_ROOT_PUSH_OPERATIONS: //	0x8181C78A01FF
+                msgs.push_back(set_proc_parameter_push_ops(trx, server, path, child_list));
                 break;
             default:
                 CYNG_LOG_WARNING(
@@ -526,7 +529,7 @@ namespace smf {
             cyng::access::write("dataCollector"),
             cyng::access::write("dataMirror"));
 
-        return res_gen_.get_attention(trx, server, sml::attention_type::UNKNOWN_OBIS_CODE, "ip-t");
+        return res_gen_.get_attention(trx, server, sml::attention_type::OK, "OK");
     }
 
     cyng::tuple_t response_engine::clear_proc_parameter_data_collector(
@@ -534,25 +537,140 @@ namespace smf {
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path,
         cyng::tuple_t const &child_list) {
+        // CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] list " << child_list);
         cfg_.get_cache().access(
             [&](cyng::table *tbl_dc, cyng::table *tbl_mirror) {
                 sml::collect(child_list, [&, this](cyng::prop_map_t const &pm) {
                     //
+                    // example:
+                    // $(("8181c78204ff":01242396072000630e),("8181c78a83ff":00008181c786))
+                    //
+                    BOOST_ASSERT_MSG(pm.size() == 2, "two entries (8181c78204ff, 8181c78a83ff) expected");
+
+                    auto const reader = cyng::make_reader(pm);
+                    auto const profile = reader.get(OBIS_PROFILE, cyng::make_obis({}));
+                    auto const server = reader.get(OBIS_SERVER_ID, cyng::make_buffer({}));
+
+                    //
                     //  clear data collector
                     //
                     CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] clear " << pm);
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "[SML_SetProcParameter.Req] delete data collector server : " << server << ", profile: " << profile);
                     auto const nr = path.back()[cyng::obis::VG_STORAGE];
-                    auto const key = cyng::key_generator(server, nr);
-                    // auto const rec = tbl_dc->lookup(key);
+                    // cyng::key_t pk;
+                    tbl_dc->erase(
+                        [&](cyng::record &&rec) -> bool {
+                            auto const server_rec = rec.value("meterID", cyng::make_buffer({}));
+                            auto const profile_rec = rec.value("profile", cyng::make_obis({}));
+                            if (server_rec == server && profile_rec == profile) {
 
-                    //
-                    //  clear data mirror
-                    //
+                                //
+                                //  delete also all related mirror data
+                                //
+
+                                //  extract "nr"
+                                auto const nr = rec.value<std::uint8_t>("nr", 0u);
+                                tbl_mirror->erase(
+                                    [&](cyng::record &&rec) -> bool {
+                                        auto const server_mirror = rec.value("meterID", cyng::make_buffer({}));
+                                        auto const nr_mirror = rec.value<std::uint8_t>("nr", 0u);
+                                        ; // delete record from "dataMirror" if true
+                                        return (server_rec == server_mirror) && (nr == nr_mirror);
+                                    },
+                                    cfg_.get_tag());
+
+                                return true; // delete record from "dataCollector" if true
+                            }
+                            return false;
+                        },
+                        cfg_.get_tag());
                 });
             },
             cyng::access::write("dataCollector"),
             cyng::access::write("dataMirror"));
+
+        return res_gen_.get_attention(trx, server, sml::attention_type::OK, "OK");
     }
+
+    cyng::tuple_t response_engine::set_proc_parameter_push_ops(
+        std::string const &trx,
+        cyng::buffer_t const &server,
+        cyng::obis_path_t const &path,
+        cyng::tuple_t const &child_list) {
+
+        auto const nr = path.back()[cyng::obis::VG_STORAGE];
+
+        CYNG_LOG_TRACE(logger_, "[SML_SetProcParameter.Req] push ops #" << +nr << ": " << cyng::io::to_typed(child_list));
+
+        cfg_.get_cache().access(
+            [&, this](cyng::table *tbl_push) {
+                sml::collect(child_list, [&, this](cyng::prop_map_t const &pm) {
+                    //
+                    //  insert/update "pushOps"
+                    //
+                    CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] push ops " << pm);
+                    auto const key = cyng::key_generator(server, nr);
+                    auto const rec = tbl_push->lookup(key);
+                    if (rec.empty()) {
+                        //  insert
+                        CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] insert new push op " << server << "#" << +nr);
+                        insert_push_op(tbl_push, key, pm, cfg_.get_tag());
+
+                        //
+                        //	Annotation: Inserting a PushOp requires to start a start a <push> task.
+                        //	The task has the specified interval and collects and push data from the data collector
+                        //	to the target on the IP-T master.
+                        //	Therefore a data collector must exists (with the same) key. And the <push> tasks
+                        //	requires also the profile OBIS code from the data collector. So a missing data collector
+                        //	is a failure.
+                        //	In this case the <push> task configuration will be written into the database
+                        //	but the task itself will not be started.
+                        //
+
+                    } else {
+                        //  update
+                        //	ToDo: an empty parameter set indicates that the record hast be removed
+                        CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] update push op " << server << "#" << +nr);
+                        update_push_op(tbl_push, key, pm, cfg_.get_tag());
+                    }
+                });
+            },
+            cyng::access::write("pushOps"));
+        return res_gen_.get_attention(trx, server, sml::attention_type::OK, "OK");
+    }
+
+    bool insert_push_op(cyng::table *tbl, cyng::key_t const &key, cyng::prop_map_t const &pm, boost::uuids::uuid source) {
+        BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
+
+        // Example:
+        //  $(
+        //      ("8147170700ff":push-target-3), //  PUSH_TARGET
+        //      ("8149000010ff":8181c78a21ff),  //  PUSH_SERVICE
+        //      ("8181c78a02ff":3840),  //  PUSH_INTERVAL
+        //      ("8181c78a03ff":14),    //  PUSH_DELAY
+        //      ("8181c78a04ff":$(      //  PUSH_SOURCE
+        //          ("8181c78a81ff":01242396072000630e),    //  PUSH_SERVER_ID
+        //          ("8181c78a83ff":8181c78611ff)))         //  PROFILE
+        //  )
+        //  table "pushOps"
+        auto const reader = cyng::make_reader(pm);
+        auto const interval = reader.get(OBIS_PUSH_INTERVAL, std::chrono::seconds(900u));
+        auto const delay = reader.get(OBIS_PUSH_DELAY, std::chrono::seconds(0u));
+        auto const target = reader.get(OBIS_PUSH_TARGET, "");
+
+        //	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
+        //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
+        //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
+        auto const origin = reader.get(OBIS_PUSH_SOURCE, cyng::make_obis({}));
+        auto const id = reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_SERVER_ID, cyng::make_buffer({}));
+        auto const service = reader[OBIS_PUSH_SOURCE].get(OBIS_PROFILE, cyng::make_obis({})); //  profile
+        // BOOST_ASSERT(id == server);
+
+        return tbl->insert(key, cyng::data_generator(interval, delay, origin, target, service), 1, source);
+    }
+    void update_push_op(cyng::table *tbl, cyng::key_t const &key, cyng::prop_map_t const &pm, boost::uuids::uuid source) {}
 
     void insert_data_collector(
         cyng::table *tbl_dc,
@@ -1183,7 +1301,49 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        return cyng::tuple_t{};
+
+        BOOST_ASSERT(!path.empty());
+        BOOST_ASSERT(path.at(0) == OBIS_ROOT_PUSH_OPERATIONS);
+
+        //
+        //  hard coded example
+        //
+        return res_gen_.get_proc_parameter(
+            trx,
+            server,
+            path,
+            sml::tree_child_list(
+                path.at(0),
+                {sml::tree_child_list(
+                    cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, 1u), // nr = 1u
+                    {sml::tree_param(OBIS_PUSH_INTERVAL, sml::make_value(1234u)),
+                     sml::tree_param(OBIS_PUSH_DELAY, sml::make_value(4321u)),
+                     sml::tree_param(OBIS_PUSH_TARGET, sml::make_value("Malou")),
+                     //	push service:
+                     //	* 81 81 C7 8A 21 FF == IP-T
+                     //	* 81 81 C7 8A 22 FF == SML client address
+                     //	* 81 81 C7 8A 23 FF == KNX ID
+                     sml::tree_param(OBIS_PUSH_SERVICE, sml::make_value(OBIS_PUSH_SERVICE_IPT)),
+
+                     //
+                     //	push source (81 81 C7 8A 04 FF) has both, an
+                     //	* SML value (OBIS code) with the push source and
+                     //	* SML tree with additional information about the
+                     //	push server ID (81 81 C7 8A 81 FF), the profile (81 81 C7 8A 83 FF)
+                     //	and the list of identifiers of the values to be delivered by the push source.
+                     //
+
+                     sml::make_tree(
+                         OBIS_PUSH_SOURCE, // 81 81 c7 8a 04 ff
+                         //	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
+                         //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
+                         //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
+                         sml::make_value(OBIS_PUSH_SOURCE_PROFILE),
+                         sml::tree_child_list(
+                             OBIS_PUSH_SOURCE_PROFILE,
+                             {sml::tree_param(OBIS_PUSH_SERVER_ID, sml::make_value(server)),
+                              sml::make_empty_tree(OBIS_PUSH_IDENTIFIERS),
+                              sml::tree_param(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE))}))})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_list_services(

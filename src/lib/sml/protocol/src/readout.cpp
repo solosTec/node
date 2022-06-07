@@ -25,18 +25,33 @@ namespace smf {
                 OBIS_CUSTOM_IF_IP_ADDRESS_2 == code || OBIS_CUSTOM_IF_DHCP_LOCAL_IP_MASK == code ||
                 OBIS_CUSTOM_IF_DHCP_DEFAULT_GW == code || OBIS_CUSTOM_IF_DHCP_DNS == code ||
                 OBIS_CUSTOM_IF_DHCP_START_ADDRESS == code || OBIS_CUSTOM_IF_DHCP_END_ADDRESS == code || OBIS_NMS_ADDRESS == code) {
+                //
+                //  ip address
+                //
                 return cyng::make_object(ip_address_to_str(obj));
             } else if (
                 cyng::compare_n(code, OBIS_TARGET_PORT, 5)    //	TARGET_PORT
                 || cyng::compare_n(code, OBIS_SOURCE_PORT, 5) //	SOURCE_PORT
                 || OBIS_BROKER_SERVICE == code || OBIS_NMS_PORT == code) {
+                //
+                //  u16
+                //
                 return cyng::make_object(cyng::numeric_cast<std::uint16_t>(obj, 0u));
             } else if (OBIS_W_MBUS_MODE_S == code || OBIS_W_MBUS_MODE_T == code) {
+                //
+                //  u8
+                //
                 return cyng::make_object(cyng::numeric_cast<std::uint8_t>(obj, 0u));
             } else if (OBIS_MBUS_STATE == code) {
+                //
+                //  i32
+                //
                 auto const state = cyng::numeric_cast<std::int32_t>(obj, 0);
                 return cyng::make_object(state);
             } else if (OBIS_CLASS_EVENT == code) {
+                //
+                //  u32
+                //
                 auto const state = cyng::numeric_cast<std::uint32_t>(obj, 0);
                 return cyng::make_object(state);
             } else if (
@@ -58,21 +73,31 @@ namespace smf {
                 OBIS_PEER_ADDRESS == code //	//	OBIS-T-Kennzahl der Ereignisquelle
                 || OBIS_DATA_PUSH_DETAILS == code || OBIS_DEVICE_MODEL == code || OBIS_DEVICE_SERIAL == code ||
                 OBIS_DEVICE_CLASS == code) {
+                //
                 //	buffer to string
+                //
                 auto const buffer = cyng::to_buffer(obj);
                 return (cyng::is_ascii(buffer)) ? cyng::make_object(cyng::make_string(buffer)) : cyng::make_object(buffer);
 
             } else if (OBIS_TARGET_IP_ADDRESS == code || code.starts_with({0x81, 0x49, 0x17, 0x07, 0x0})) {
+                //
+                //  IPv4 address
                 // 81 49 17 07 00 NN    //  primary and secondary IP-T server
+                //
                 return cyng::make_object(to_ip_address_v4(obj));
             } else if (OBIS_DEVICE_CLASS == code || OBIS_DATA_AES_KEY == code) {
-
                 if (cyng::is_null(obj)) {
                     return cyng::make_object("");
                 }
             } else if (OBIS_CURRENT_UTC == code || OBIS_ACT_SENSOR_TIME == code) {
+                //
+                // SML time
+                //
                 return read_time(obj);
             } else if (OBIS_SERIAL_NR == code) {
+                //
+                // buffer => hex
+                //
                 auto const buffer = cyng::to_buffer(obj);
                 auto const serial_nr = cyng::io::to_hex(buffer);
                 return cyng::make_object(serial_nr);
@@ -92,7 +117,11 @@ namespace smf {
                         return cyng::make_object(reg);
                     }
                 }
+            } else if (OBIS_PUSH_INTERVAL == code || OBIS_PUSH_DELAY == code) {
+                auto const sec = cyng::numeric_cast<std::uint32_t>(obj, 0);
+                return cyng::make_object(std::chrono::seconds(sec));
             }
+
             return obj;
         }
 

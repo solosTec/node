@@ -227,65 +227,43 @@ namespace smf {
                 //
                 //	remove from target table
                 //
-                //#ifdef _DEBUG
-                // tbl_target->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                //     CYNG_LOG_TRACE(logger_, "[db] target: " << rec.to_string());
-                //     return true;
-                // });
-                //#endif
+                auto const target_count = tbl_target->erase(
+                    [&](cyng::record &&rec) -> bool {
+                        auto const device = rec.value("device", boost::uuids::nil_uuid());
+                        return device == dev;
+                    },
+                    cfg_.get_tag());
 
-                cyng::key_list_t keys;
-                tbl_target->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                    auto const device = rec.value("device", boost::uuids::nil_uuid());
-                    if (device == dev) {
-                        keys.insert(rec.key());
-                    }
-                    return true;
-                });
-
-                for (auto const &pk : keys) {
-                    tbl_target->erase(pk, cfg_.get_tag());
-                }
-                if (!keys.empty())
-                    CYNG_LOG_INFO(logger_, "[db] remove session " << dev << ", with " << keys.size() << " targets");
-                keys.clear();
+                if (target_count != 0)
+                    CYNG_LOG_INFO(logger_, "[db] remove session " << dev << ", with " << target_count << " targets");
 
                 //
                 //	remove from channel table
                 //
-                //#ifdef _DEBUG
-                // tbl_channel->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                //     CYNG_LOG_TRACE(logger_, "[db] channel: " << rec.to_string());
-                //     return true;
-                // });
-                //#endif
-                tbl_channel->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                    auto const target = rec.value("target_tag", boost::uuids::nil_uuid());
-                    if (target == tag) {
-                        keys.insert(rec.key());
-                    }
-                    auto const owner = rec.value("owner", boost::uuids::nil_uuid());
-                    if (owner == dev) {
+                auto const cannel_count = tbl_channel->erase(
+                    [&](cyng::record &&rec) -> bool {
+                        auto const target = rec.value("target_tag", boost::uuids::nil_uuid());
+                        auto const owner = rec.value("owner", boost::uuids::nil_uuid());
+                        if (owner == dev) {
 
-                        //
-                        //  decrease listener count in table "target"
-                        //
-                        auto const target = rec.value<std::uint32_t>("target", 0);
-                        auto const key_target = cyng::key_generator(target);
-                        auto const rec_target = tbl_target->lookup(key_target);
-                        if (!rec_target.empty()) {
-                            auto const channels = rec_target.value<std::uint64_t>("channels", 0);
-                            tbl_target->modify(key_target, cyng::param_map_factory("channels", channels - 1), cfg_.get_tag());
+                            //
+                            //  decrease listener count in table "target"
+                            //
+                            auto const target = rec.value<std::uint32_t>("target", 0);
+                            auto const key_target = cyng::key_generator(target);
+                            auto const rec_target = tbl_target->lookup(key_target);
+                            if (!rec_target.empty()) {
+                                auto const channels = rec_target.value<std::uint64_t>("channels", 0);
+                                tbl_target->modify(key_target, cyng::param_map_factory("channels", channels - 1), cfg_.get_tag());
+                            }
                         }
-                    }
-                    return true;
-                });
 
-                for (auto const &pk : keys) {
-                    tbl_channel->erase(pk, cfg_.get_tag());
-                }
-                if (!keys.empty()) {
-                    CYNG_LOG_INFO(logger_, "[db] remove session " << dev << ", with " << keys.size() << " channels");
+                        return target == tag;
+                    },
+                    cfg_.get_tag());
+
+                if (cannel_count != 0) {
+                    CYNG_LOG_INFO(logger_, "[db] remove session " << dev << ", with " << cannel_count << " channels");
                 }
             },
             cyng::access::write("session"),
@@ -911,20 +889,20 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_05),
             cyng::data_generator(
-                "35074614", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "35074614", //	[string] meter number (i.e. 16000913) 4 bytes
+                "35074614",                          //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "35074614",                          //	[string] meter number (i.e. 16000913) 4 bytes
                 "MA0000000000000000000000035074614", // cyng::column("code", cyng::TC_STRING),		//	[string]
                                                      // metering code
                                                      // - changed at 2019-01-31
-                "ELS", // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
-                std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
-                                                  // manufacture
-                "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
-                "", // cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
-                "", // cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+                "ELS",                               // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+                std::chrono::system_clock::now(),    // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                     // manufacture
+                "",        // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+                "",        // cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+                "",        // cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
                 "AS 1440", // cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung =
                            // "NXT4-S20EW-6N00-4000-5020-E50/Q"
-                "", // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+                "",        // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
                 boost::uuids::nil_uuid(), // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 "IEC" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
                 ),
@@ -991,18 +969,18 @@ namespace smf {
             "gateway",
             cyng::key_generator(tag_07),
             cyng::data_generator(
-                "0500153B01EC46", //	server ID
-                "EMH", //	manufacturer
+                "0500153B01EC46",                 //	server ID
+                "EMH",                            //	manufacturer
                 std::chrono::system_clock::now(), //	tom
                 "06441734",
-                cyng::mac48(), // cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
-                cyng::mac48(), // cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
-                "pw", // cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
-                "root", // cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
+                cyng::mac48(),      // cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
+                cyng::mac48(),      // cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
+                "pw",               // cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
+                "root",             // cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
                 "A815408943050131", // cyng::column("mbus", cyng::TC_STRING),			//	(9) W-Mbus ID (i.e.
                                     // A815408943050131)
-                "operator", // cyng::column("userName", cyng::TC_STRING),		//	(10)
-                "operator" // cyng::column("userPwd", cyng::TC_STRING)		//	(11)
+                "operator",         // cyng::column("userName", cyng::TC_STRING),		//	(10)
+                "operator"          // cyng::column("userPwd", cyng::TC_STRING)		//	(11)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1040,11 +1018,11 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_08),
             cyng::data_generator(
-                "01-e61e-29436587-bf-03", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "87654329", //	[string] meter number (i.e. 16000913) 4 bytes
-                "CH87654329", // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
-                              // 2019-01-31
-                "MAN", // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+                "01-e61e-29436587-bf-03",         //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "87654329",                       //	[string] meter number (i.e. 16000913) 4 bytes
+                "CH87654329",                     // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
+                                                  // 2019-01-31
+                "MAN",                            // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
                                                   // manufacture
                 "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
@@ -1054,8 +1032,8 @@ namespace smf {
                     // "NXT4-S20EW-6N00-4000-5020-E50/Q"
                 "", // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
                 boost::uuids::nil_uuid(), // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
-                        // ...)
+                "M-Bus"                   // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                                          // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1090,11 +1068,11 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_09),
             cyng::data_generator(
-                "01-e61e-13090016-3c-07", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "16000913", //	[string] meter number (i.e. 16000913) 4 bytes
-                "CH16000913", // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
-                              // 2019-01-31
-                "MAN", // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+                "01-e61e-13090016-3c-07",         //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "16000913",                       //	[string] meter number (i.e. 16000913) 4 bytes
+                "CH16000913",                     // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
+                                                  // 2019-01-31
+                "MAN",                            // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
                                                   // manufacture
                 "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
@@ -1104,8 +1082,8 @@ namespace smf {
                     // "NXT4-S20EW-6N00-4000-5020-E50/Q"
                 "", // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
                 boost::uuids::nil_uuid(), // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
-                        // ...)
+                "M-Bus"                   // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                                          // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1140,11 +1118,11 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_10),
             cyng::data_generator(
-                "01-a815-74314504-01-02", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "04453174", //	[string] meter number (i.e. 16000913) 4 bytes
-                "CH04453174", // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
-                              // 2019-01-31
-                "MAN", // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+                "01-a815-74314504-01-02",         //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "04453174",                       //	[string] meter number (i.e. 16000913) 4 bytes
+                "CH04453174",                     // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
+                                                  // 2019-01-31
+                "MAN",                            // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
                                                   // manufacture
                 "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
@@ -1154,8 +1132,8 @@ namespace smf {
                     // "NXT4-S20EW-6N00-4000-5020-E50/Q"
                 "", // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
                 boost::uuids::nil_uuid(), // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
-                        // ...)
+                "M-Bus"                   // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                                          // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1190,11 +1168,11 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_11),
             cyng::data_generator(
-                "01-e61e-79426800-02-0e", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "00684279", //	[string] meter number (i.e. 16000913) 4 bytes
-                "CH00684279", // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
-                              // 2019-01-31
-                "MAN", // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+                "01-e61e-79426800-02-0e",         //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "00684279",                       //	[string] meter number (i.e. 16000913) 4 bytes
+                "CH00684279",                     // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
+                                                  // 2019-01-31
+                "MAN",                            // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
                                                   // manufacture
                 "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
@@ -1204,8 +1182,8 @@ namespace smf {
                     // "NXT4-S20EW-6N00-4000-5020-E50/Q"
                 "", // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
                 boost::uuids::nil_uuid(), // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
-                        // ...)
+                "M-Bus"                   // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                                          // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1240,11 +1218,11 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_12),
             cyng::data_generator(
-                "01-e61e-57140621-36-03", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "21061457", //	[string] meter number (i.e. 16000913) 4 bytes
-                "CH21061457", // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
-                              // 2019-01-31
-                "MAN", // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+                "01-e61e-57140621-36-03",         //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "21061457",                       //	[string] meter number (i.e. 16000913) 4 bytes
+                "CH21061457",                     // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
+                                                  // 2019-01-31
+                "MAN",                            // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
                                                   // manufacture
                 "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
@@ -1254,8 +1232,8 @@ namespace smf {
                     // "NXT4-S20EW-6N00-4000-5020-E50/Q"
                 "", // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
                 boost::uuids::nil_uuid(), // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
-                "M-Bus" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
-                        // ...)
+                "M-Bus"                   // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM,
+                                          // ...)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1291,10 +1269,10 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_13),
             cyng::data_generator(
-                "01-e61e-08646300-36-03", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "00636408",               //	[string] meter number (i.e. 16000913) 4 bytes
-                "CH00636408", // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
-                              // 2019-01-31
+                "01-e61e-08646300-36-03",         //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "00636408",                       //	[string] meter number (i.e. 16000913) 4 bytes
+                "CH00636408",                     // cyng::column("code", cyng::TC_STRING),		//	[string] metering code - changed at
+                                                  // 2019-01-31
                 "MAN",                            // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
                 std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of manufacture
                 "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
@@ -1330,18 +1308,18 @@ namespace smf {
             "gateway",
             cyng::key_generator(tag_14),
             cyng::data_generator(
-                "0500153B021774", //	server ID
-                "EMH", //	manufacturer
+                "0500153B021774",                 //	server ID
+                "EMH",                            //	manufacturer
                 std::chrono::system_clock::now(), //	tom
                 "B021774",
-                cyng::mac48(), // cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
-                cyng::mac48(), // cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
-                "pw", // cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
-                "root", // cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
+                cyng::mac48(),      // cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
+                cyng::mac48(),      // cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
+                "pw",               // cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
+                "root",             // cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
                 "A815408943050131", // cyng::column("mbus", cyng::TC_STRING),			//	(9) W-Mbus ID (i.e.
                                     // A815408943050131)
-                "operator", // cyng::column("userName", cyng::TC_STRING),		//	(10)
-                "operator" // cyng::column("userPwd", cyng::TC_STRING)		//	(11)
+                "operator",         // cyng::column("userName", cyng::TC_STRING),		//	(10)
+                "operator"          // cyng::column("userPwd", cyng::TC_STRING)		//	(11)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1371,20 +1349,20 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_15),
             cyng::data_generator(
-                "01-e61e-08646300-36-03", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "03218421", //	[string] meter number (i.e. 16000913) 4 bytes
+                "01-e61e-08646300-36-03",            //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "03218421",                          //	[string] meter number (i.e. 16000913) 4 bytes
                 "CH0000000000000000000000003218421", // cyng::column("code", cyng::TC_STRING),		//	[string]
                                                      // metering code
                                                      // - changed at 2019-01-31
-                "ELS", // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
-                std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
-                                                  // manufacture
+                "ELS",                               // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+                std::chrono::system_clock::now(),    // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                     // manufacture
                 "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
                 "", // cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
                 "1019 1000 0321 8421", // cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e.
                                        // 06441734)
-                "AS1440", // cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung =
-                          // "NXT4-S20EW-6N00-4000-5020-E50/Q"
+                "AS1440",              // cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung =
+                                       // "NXT4-S20EW-6N00-4000-5020-E50/Q"
                 "", // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
                 boost::uuids::nil_uuid(), // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 "IEC" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
@@ -1431,20 +1409,20 @@ namespace smf {
             "meter",
             cyng::key_generator(tag_16),
             cyng::data_generator(
-                "35074616", //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
-                "35074616", //	[string] meter number (i.e. 16000913) 4 bytes
+                "35074616",                          //	ident nummer (i.e. 1EMH0006441734, 01-e61e-13090016-3c-07)
+                "35074616",                          //	[string] meter number (i.e. 16000913) 4 bytes
                 "MA0000000000000000000000035074616", // cyng::column("code", cyng::TC_STRING),		//	[string]
                                                      // metering code
                                                      // - changed at 2019-01-31
-                "ELS", // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
-                std::chrono::system_clock::now(), // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
-                                                  // manufacture
-                "", // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
-                "", // cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
-                "", // cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
+                "ELS",                               // cyng::column("maker", cyng::TC_STRING),		//	[string] manufacturer
+                std::chrono::system_clock::now(),    // cyng::column("tom", cyng::TC_TIME_POINT),	//	[ts] time of
+                                                     // manufacture
+                "",        // cyng::column("vFirmware", cyng::TC_STRING),	//	[string] firmwareversion (i.e. 11600000)
+                "",        // cyng::column("vParam", cyng::TC_STRING),	//	[string] parametrierversion (i.e. 16A098828.pse)
+                "",        // cyng::column("factoryNr", cyng::TC_STRING),	//	[string] fabrik nummer (i.e. 06441734)
                 "AS 1440", // cyng::column("item", cyng::TC_STRING),		//	[string] ArtikeltypBezeichnung =
                            // "NXT4-S20EW-6N00-4000-5020-E50/Q"
-                "", // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
+                "",        // cyng::column("mClass", cyng::TC_STRING),	//	[string] Metrological Class: A, B, C, Q3/Q1, ...
                 boost::uuids::nil_uuid(), // cyng::column("gw", cyng::TC_UUID),			//	optional gateway pk
                 "IEC" // cyng::column("protocol", cyng::TC_STRING)	//	[string] data protocol (IEC, M-Bus, COSEM, ...)
                 ),
@@ -1482,18 +1460,18 @@ namespace smf {
             "gateway",
             cyng::key_generator(tag_17),
             cyng::data_generator(
-                "0500153B022980", //	server ID
-                "EMH", //	manufacturer
+                "0500153B022980",                 //	server ID
+                "EMH",                            //	manufacturer
                 std::chrono::system_clock::now(), //	tom
                 "B022980",
-                cyng::mac48(), // cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
-                cyng::mac48(), // cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
-                "pw", // cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
-                "root", // cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
+                cyng::mac48(),      // cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
+                cyng::mac48(),      // cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
+                "pw",               // cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
+                "root",             // cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
                 "A815408943050131", // cyng::column("mbus", cyng::TC_STRING),			//	(9) W-Mbus ID (i.e.
                                     // A815408943050131)
-                "operator", // cyng::column("userName", cyng::TC_STRING),		//	(10)
-                "operator" // cyng::column("userPwd", cyng::TC_STRING)		//	(11)
+                "operator",         // cyng::column("userName", cyng::TC_STRING),		//	(10)
+                "operator"          // cyng::column("userPwd", cyng::TC_STRING)		//	(11)
                 ),
             1u //	only needed for insert operations
             ,
@@ -1517,18 +1495,18 @@ namespace smf {
             "gateway",
             cyng::key_generator(tag_18),
             cyng::data_generator(
-                "0500153B02297e", //	server ID
-                "EMH", //	manufacturer
+                "0500153B02297e",                 //	server ID
+                "EMH",                            //	manufacturer
                 std::chrono::system_clock::now(), //	tom
                 "B02297e",
-                cyng::mac48(), // cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
-                cyng::mac48(), // cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
-                "pw", // cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
-                "root", // cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
+                cyng::mac48(),      // cyng::column("ifService", cyng::TC_MAC48),		//	(5) MAC of service interface
+                cyng::mac48(),      // cyng::column("ifData", cyng::TC_STRING),		//	(6) MAC of WAN interface
+                "pw",               // cyng::column("pwdDef", cyng::TC_STRING),		//	(7) Default PW
+                "root",             // cyng::column("pwdRoot", cyng::TC_STRING),		//	(8) root PW
                 "A815408943050131", // cyng::column("mbus", cyng::TC_STRING),			//	(9) W-Mbus ID (i.e.
                                     // A815408943050131)
-                "operator", // cyng::column("userName", cyng::TC_STRING),		//	(10)
-                "operator" // cyng::column("userPwd", cyng::TC_STRING)		//	(11)
+                "operator",         // cyng::column("userName", cyng::TC_STRING),		//	(10)
+                "operator"          // cyng::column("userPwd", cyng::TC_STRING)		//	(11)
                 ),
             1u //	only needed for insert operations
             ,
