@@ -213,7 +213,6 @@ message(STATUS "** Boost Path                   : ${Boost_LIBRARY_DIRS}")
 message(STATUS "** Boost_LIBRARIES              : ${Boost_LIBRARIES}")
 message(STATUS "** Boost_THREAD_LIBRARY         : ${Boost_THREAD_LIBRARY}")
 message(STATUS "** Boost_SYSTEM_LIBRARY         : ${Boost_SYSTEM_LIBRARY}")
-message(STATUS "** Boost_DATE_TIME_LIBRARY      : ${Boost_DATE_TIME_LIBRARY}")
 message(STATUS "** Boost_PROGRAM_OPTIONS_LIBRARY: ${Boost_PROGRAM_OPTIONS_LIBRARY}")
 message(STATUS "** Boost_RANDOM_LIBRARY         : ${Boost_RANDOM_LIBRARY}")
 message(STATUS "** Boost_REGEX_LIBRARY          : ${Boost_REGEX_LIBRARY}")
@@ -224,7 +223,7 @@ message(STATUS "** Boost_UNIT_TEST_FRAMEWORK    : not installed")
 endif()
 
 
-message(STATUS "** Search openSSL   : ${OPENSSL_ROOT_DIR}")
+message(STATUS "** OpenSSL search path          : ${OPENSSL_ROOT_DIR}")
 find_package(OpenSSL 1.0.2 REQUIRED)
 if(OPENSSL_FOUND)
 
