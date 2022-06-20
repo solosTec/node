@@ -1377,7 +1377,7 @@ BOOST_AUTO_TEST_CASE(generator) {
         auto const path = cyng::make_obis_path(cyng::hex_to_buffer("8148170700FF"));
         smf::sml::messages_t msgs;
         msgs.push_back(res_gen.get_proc_parameter(
-            "21042716170468656-1", server, path, smf::sml::tree_param(path.front(), smf::sml::make_value(1234))));
+            "21042716170468656-1", server, path, smf::sml::make_param_tree(path.front(), smf::sml::make_value(1234))));
         auto const buffer = smf::sml::to_sml(msgs);
 #ifdef _DEBUG
         {
