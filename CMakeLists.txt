@@ -160,8 +160,8 @@ endif()
 #
 find_package(SMFSEC REQUIRED)
 if (SMFSEC_FOUND)
-    message(STATUS "** SMFSEC_INCLUDE_DIRS     : ${SMFSEC_INCLUDE_DIRS}")
-    message(STATUS "** SMFSEC_LIBRARIES        : ${SMFSEC_LIBRARIES}")
+    message(STATUS "** SMFSEC_INCLUDE_DIRS  : ${SMFSEC_INCLUDE_DIRS}")
+    message(STATUS "** SMFSEC_LIBRARIES     : ${SMFSEC_LIBRARIES}")
 else()
     message(FATAL_ERROR "** SMFSEC library not found")
 endif()
@@ -186,7 +186,6 @@ set(SMF_BOOST_COMPONENTS regex iostreams program_options system thread random lo
 if(${CAPITAL_NAME}_UNIT_TEST)
 
     list(APPEND SMF_BOOST_COMPONENTS unit_test_framework)
-    add_subdirectory(unit_test)
 
 endif()
 
@@ -944,6 +943,16 @@ if(${CAPITAL_NAME}_TEST_TOOLS)
     # call CMake with -DSMF_TEST_TCP_STRESS:BOOL=TRUE to generate unit tests 
     #
     add_subdirectory(src/tools/tests)
+endif()
+
+#
+# unit tests
+# call CMake with -DSMF_UNIT_TEST:BOOL=TRUE to generate unit tests 
+#
+if(${CAPITAL_NAME}_UNIT_TEST)
+
+    add_subdirectory(unit_test)
+
 endif()
 
 #

@@ -723,7 +723,7 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(81, 81, c7, 8a, 45, ff), {"PUSH_SOURCE_ACTIVE_SENSORS", cyng::TC_NULL, "list of active meters changed"}},
         {DEFINE_OBIS(81, 81, c7, 8a, 81, ff), {"PUSH_SERVER_ID", cyng::TC_NULL, ""}},
         {DEFINE_OBIS(81, 81, c7, 8a, 82, ff),
-         {"PUSH_IDENTIFIERS", cyng::TC_NULL, "list of identifiers of the values to be delivered by the push source"}},
+         {"PUSH_IDENTIFIERS", cyng::TC_NULL, "list of registers to be delivered by the push source"}},
         {DEFINE_OBIS(81, 81, c7, 8a, 83, ff), {"PROFILE", cyng::TC_NULL, "encode profiles"}},
         {DEFINE_OBIS(81, 81, c7, 90, 00, ff), {"ROOT_IF", cyng::TC_NULL, ""}},
         {DEFINE_OBIS(81, 81, c7, 93, 00, ff), {"IF_1107", cyng::TC_NULL, ""}},
@@ -857,46 +857,20 @@ int main(int argc, char **argv) {
                 ofs << "\t// #" << std::dec << counter << std::hex << std::endl;
 
                 switch (next_group) {
-                case cyng::obis::media::MEDIA_ABSTRACT:
-                    ofs << "\t// Abstract objects" << std::endl;
-                    break;
-                case cyng::obis::media::MEDIA_ELECTRICITY:
-                    ofs << "\t// Electricity" << std::endl;
-                    break;
-                case cyng::obis::media::MEDIA_HEAT_COST_ALLOCATOR:
-                    ofs << "\t// Heat Cost Allocators" << std::endl;
-                    break;
-                case cyng::obis::media::MEDIA_COOLING:
-                    ofs << "\t// Cooling" << std::endl;
-                    break;
-                case cyng::obis::media::MEDIA_HEAT:
-                    ofs << "\t// Heat" << std::endl;
-                    break;
-                case cyng::obis::media::MEDIA_GAS:
-                    ofs << "\t// Gas" << std::endl;
-                    break;
-                case cyng::obis::media::MEDIA_WATER_COLD:
-                    ofs << "\t// Water (cold)" << std::endl;
-                    break;
-                case cyng::obis::media::MEDIA_WATER_HOT:
-                    ofs << "\t// Water (hot)" << std::endl;
-                    break;
-                case 15:
-                    ofs << "\t//  other" << std::endl;
-                    break;
-                case 16:
-                    ofs << "\t// Oil" << std::endl;
-                    break;
-                case 17:
-                    ofs << "\t// Compressed air" << std::endl;
-                    break;
-                case 18:
-                    ofs << "\t// Nitrogen" << std::endl;
-                    break;
+                case cyng::obis::media::MEDIA_ABSTRACT: ofs << "\t// Abstract objects" << std::endl; break;
+                case cyng::obis::media::MEDIA_ELECTRICITY: ofs << "\t// Electricity" << std::endl; break;
+                case cyng::obis::media::MEDIA_HEAT_COST_ALLOCATOR: ofs << "\t// Heat Cost Allocators" << std::endl; break;
+                case cyng::obis::media::MEDIA_COOLING: ofs << "\t// Cooling" << std::endl; break;
+                case cyng::obis::media::MEDIA_HEAT: ofs << "\t// Heat" << std::endl; break;
+                case cyng::obis::media::MEDIA_GAS: ofs << "\t// Gas" << std::endl; break;
+                case cyng::obis::media::MEDIA_WATER_COLD: ofs << "\t// Water (cold)" << std::endl; break;
+                case cyng::obis::media::MEDIA_WATER_HOT: ofs << "\t// Water (hot)" << std::endl; break;
+                case 15: ofs << "\t//  other" << std::endl; break;
+                case 16: ofs << "\t// Oil" << std::endl; break;
+                case 17: ofs << "\t// Compressed air" << std::endl; break;
+                case 18: ofs << "\t// Nitrogen" << std::endl; break;
 
-                default:
-                    ofs << "\t// next group" << std::endl;
-                    break;
+                default: ofs << "\t// next group" << std::endl; break;
                 }
                 group = next_group;
             }

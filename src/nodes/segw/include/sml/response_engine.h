@@ -204,8 +204,22 @@ namespace smf {
 
     cyng::tuple_t get_collector_registers(cyng::table const *, cyng::buffer_t const &, std::uint8_t);
 
-    bool insert_push_op(cyng::table *, cyng::key_t const &, cyng::prop_map_t const &, boost::uuids::uuid);
-    void update_push_op(cyng::table *, cyng::key_t const &, cyng::prop_map_t const &, boost::uuids::uuid);
+    bool insert_push_op(
+        cyng::table *,
+        cyng::table *,
+        cyng::table const *tbl_col,
+        cyng::table const *tbl_mir,
+        cyng::key_t const &,
+        cyng::prop_map_t const &,
+        cyng::buffer_t const &server,
+        boost::uuids::uuid);
+    void update_push_op(
+        cyng::table *,
+        cyng::table *,
+        cyng::key_t const &,
+        cyng::prop_map_t const &,
+        cyng::buffer_t const &server,
+        boost::uuids::uuid);
 
 } // namespace smf
 

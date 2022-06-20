@@ -153,14 +153,44 @@ namespace smf {
                 //	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
                 //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
                 //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
-                cyng::column("source", cyng::TC_OBIS),   // (81 81 c7 8a 04 ff - PUSH_SOURCE) source type
+                cyng::column("source", cyng::TC_OBIS),   // (81 81 c7 8a 04 ff - PUSH_SOURCE) source type - mostly
+                                                         // PUSH_SOURCE_SENSOR_LIST (81 81 C7 8A 44 FF)
                 cyng::column("target", cyng::TC_STRING), // (81 47 17 07 00 FF - PUSH_TARGET) target name
-                cyng::column("service", cyng::TC_OBIS)   // (81 49 00 00 10 FF - PUSH_SERVICE) push service
+                cyng::column("service", cyng::TC_OBIS),  // (81 49 00 00 10 FF - PUSH_SERVICE) push service (= PUSH_SERVICE_IPT)
+                cyng::column("profile", cyng::TC_OBIS)   // (81 81 C7 8A 83 FF - PROFILE) 5, 15, 60, 1440 minutes
                 //  ToDo: last successfull push
             },
             2);
     }
-    cyng::meta_sql get_table_push_ops() { return cyng::to_sql(get_store_push_ops(), {9, 0, 0, 0, 0, 0, 0}); }
+    cyng::meta_sql get_table_push_ops() {
+        //
+        // SELECT hex(meterID), nr, printf('%012X', service) FROM TPushOps;
+        //
+        // SELECT hex(TPushOps.meterID), TPushOps.target, TPushOps.nr, TPushRegister.idx FROM TPushOps INNER JOIN TPushRegister ON
+        // TPushRegister.meterID = TPushOps.meterID AND TPushRegister.nr = TPushOps.nr;
+        //
+        return cyng::to_sql(get_store_push_ops(), {9, 0, 0, 0, 0, 0, 0, 0});
+    }
+
+    cyng::meta_store get_store_push_register() {
+        return cyng::meta_store(
+            "pushRegister",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                cyng::column("nr", cyng::TC_UINT8),       // index - starts with 1
+                cyng::column("idx", cyng::TC_UINT8),      // The register codes have an index by it's own
+                // -- body
+                cyng::column("register", cyng::TC_OBIS) // OBIS code
+            },
+            3);
+    }
+    cyng::meta_sql get_table_push_register() {
+
+        //
+        //  select hex(meterID), nr, idx, printf('%012X', register) from TPushRegister;
+        //
+        return cyng::to_sql(get_store_push_register(), {9, 0, 0, 0});
+    }
 
     cyng::meta_store get_store_data_collector() {
         //
@@ -181,7 +211,12 @@ namespace smf {
             },
             2);
     }
-    cyng::meta_sql get_table_data_collector() { return cyng::to_sql(get_store_data_collector(), {9, 0, 0, 0, 0, 0}); }
+    cyng::meta_sql get_table_data_collector() {
+        //
+        //  SELECT hex(meterID), nr, printf('%012X', profile), active FROM TDataCollector;
+        //
+        return cyng::to_sql(get_store_data_collector(), {9, 0, 0, 0, 0, 0});
+    }
 
     cyng::meta_store get_store_data_mirror() {
         return cyng::meta_store(
@@ -195,7 +230,12 @@ namespace smf {
             },
             3);
     }
-    cyng::meta_sql get_table_data_mirror() { return cyng::to_sql(get_store_data_mirror(), {9, 0, 0, 0}); }
+    cyng::meta_sql get_table_data_mirror() {
+        //
+        //  SELECT hex(meterID), nr, idx, printf('%012X', register) FROM TDataMirror;
+        //
+        return cyng::to_sql(get_store_data_mirror(), {9, 0, 0, 0});
+    }
 
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
@@ -206,7 +246,8 @@ namespace smf {
             get_store_meter_iec(),      // meterIEC
             get_store_data_collector(), // dataCollector
             get_store_data_mirror(),    // dataMirror
-            get_store_push_ops()        // pushOps
+            get_store_push_ops(),       // pushOps
+            get_store_push_register()   // pushRegister
         };
     }
 
@@ -220,7 +261,8 @@ namespace smf {
             get_table_meter_iec(),      // TMeterIEC
             get_table_data_collector(), // TDataCollector
             get_table_data_mirror(),    // TDataMirror
-            get_table_push_ops()        // TPushOps
+            get_table_push_ops(),       // TPushOps
+            get_table_push_register()   // TPushRegister
         };
     }
 
@@ -237,6 +279,8 @@ namespace smf {
             return get_table_data_mirror();
         } else if (boost::algorithm::equals(name, "pushOps")) {
             return get_table_push_ops();
+        } else if (boost::algorithm::equals(name, "pushRegister")) {
+            return get_table_push_register();
         }
         BOOST_ASSERT_MSG(false, "table not found");
         return cyng::meta_sql(name, {}, 0);

@@ -578,7 +578,7 @@ namespace smf {
                                     [&](cyng::record &&rec) -> bool {
                                         auto const server_mirror = rec.value("meterID", cyng::make_buffer({}));
                                         auto const nr_mirror = rec.value<std::uint8_t>("nr", 0u);
-                                        ; // delete record from "dataMirror" if true
+                                        // delete record from "dataMirror" if true
                                         return (server_rec == server_mirror) && (nr == nr_mirror);
                                     },
                                     cfg_.get_tag());
@@ -607,7 +607,7 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[SML_SetProcParameter.Req] push ops #" << +nr << ": " << cyng::io::to_typed(child_list));
 
         cfg_.get_cache().access(
-            [&, this](cyng::table *tbl_push) {
+            [&, this](cyng::table *tbl_push, cyng::table *tbl_reg, cyng::table const *tbl_col, cyng::table const *tbl_mir) {
                 sml::collect(child_list, [&, this](cyng::prop_map_t const &pm) {
                     //
                     //  insert/update "pushOps"
@@ -618,13 +618,13 @@ namespace smf {
                     if (rec.empty()) {
                         //  insert
                         CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] insert new push op " << server << "#" << +nr);
-                        insert_push_op(tbl_push, key, pm, cfg_.get_tag());
+                        insert_push_op(tbl_push, tbl_reg, tbl_col, tbl_mir, key, pm, server, cfg_.get_tag());
 
                         //
-                        //	Annotation: Inserting a PushOp requires to start a start a <push> task.
+                        //	Annotation: Inserting a PushOp requires to start a <push> task.
                         //	The task has the specified interval and collects and push data from the data collector
                         //	to the target on the IP-T master.
-                        //	Therefore a data collector must exists (with the same) key. And the <push> tasks
+                        //	Therefore a data collector must exists (with the same) key. And the <push> task
                         //	requires also the profile OBIS code from the data collector. So a missing data collector
                         //	is a failure.
                         //	In this case the <push> task configuration will be written into the database
@@ -635,16 +635,32 @@ namespace smf {
                         //  update
                         //	ToDo: an empty parameter set indicates that the record hast be removed
                         CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] update push op " << server << "#" << +nr);
-                        update_push_op(tbl_push, key, pm, cfg_.get_tag());
+                        update_push_op(tbl_push, tbl_reg, key, pm, server, cfg_.get_tag());
                     }
                 });
             },
-            cyng::access::write("pushOps"));
+            cyng::access::write("pushOps"),
+            cyng::access::write("pushRegister"),
+            cyng::access::read("dataCollector"),
+            cyng::access::read("dataMirror"));
         return res_gen_.get_attention(trx, server, sml::attention_type::OK, "OK");
     }
 
-    bool insert_push_op(cyng::table *tbl, cyng::key_t const &key, cyng::prop_map_t const &pm, boost::uuids::uuid source) {
+    bool insert_push_op(
+        cyng::table *tbl,
+        cyng::table *tbl_reg,
+        cyng::table const *tbl_col,
+        cyng::table const *tbl_mir,
+        cyng::key_t const &key,
+        cyng::prop_map_t const &pm,
+        cyng::buffer_t const &server,
+        boost::uuids::uuid source) {
+
         BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
+        BOOST_ASSERT_MSG(boost::algorithm::equals(tbl->meta().get_name(), "pushOps"), "pushOps expected");
+        BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_reg->meta().get_name(), "pushRegister"), "pushRegister expected");
+        BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_col->meta().get_name(), "dataCollector"), "dataCollector expected");
+        BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_mir->meta().get_name(), "dataMirror"), "dataMirror expected");
 
         // Example:
         //  $(
@@ -664,15 +680,71 @@ namespace smf {
 
         //	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
         //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
-        //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
-        auto const origin = reader.get(OBIS_PUSH_SOURCE, cyng::make_obis({}));
-        auto const id = reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_SERVER_ID, cyng::make_buffer({}));
-        auto const service = reader[OBIS_PUSH_SOURCE].get(OBIS_PROFILE, cyng::make_obis({})); //  profile
-        // BOOST_ASSERT(id == server);
+        //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_VISIBLE_SENSORS)
+        auto const origin = reader.get(OBIS_PUSH_SOURCE, OBIS_PUSH_SOURCE_PROFILE);
+        auto const id = reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_SERVER_ID, server);
+        BOOST_ASSERT(id == server);
 
-        return tbl->insert(key, cyng::data_generator(interval, delay, origin, target, service), 1, source);
+        auto const profile = reader[OBIS_PUSH_SOURCE].get(OBIS_PROFILE, OBIS_PROFILE_15_MINUTE);
+        auto const service = reader.get(OBIS_PUSH_SERVICE, OBIS_PUSH_SERVICE_IPT);
+
+        //  "pushOps"
+        if (tbl->insert(key, cyng::data_generator(interval, delay, origin, target, service, profile), 1, source)) {
+
+            auto const regs = cyng::container_cast<cyng::prop_map_t>(reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_IDENTIFIERS));
+            if (regs.empty()) {
+                //
+                // Add all registers from table "dataMirror" that are active.
+                // Multiple profiles will be ignored!
+                //
+                tbl_col->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                    auto const id_col = rec.value("meterID", server);
+                    auto const profile_col = rec.value("profile", OBIS_PROFILE);
+                    auto const active = rec.value("active", false);
+                    if (active && (profile_col == profile) && (id == id_col)) {
+                        auto const nr_col = rec.value("nr", 0u);
+
+                        tbl_mir->loop([&](cyng::record &&rec_mir, std::size_t) -> bool {
+                            auto const id_mir = rec_mir.value("meterID", server);
+                            auto const nr_mir = rec_mir.value("nr", 0u);
+                            if ((id_col == id_mir) && (nr_col == nr_mir)) {
+                                auto const idx_mir = rec_mir.value("idx", 0u);
+                                auto const reg_mir = rec_mir.value("register", OBIS_DATA_COLLECTOR_REGISTER);
+                                //  "pushRegister"
+                                tbl_reg->insert(cyng::extend_key(key, idx_mir), cyng::data_generator(reg_mir), 1, source);
+                            }
+                            return true;
+                        });
+                        //  Multiple matching profiles will be ignored!
+                        return false;
+                    }
+                    return true;
+                });
+            } else {
+                //
+                //  add only the specified registers
+                //
+                for (auto const &reg : regs) {
+                    tbl_reg->insert(
+                        cyng::extend_key(key, reg.first[cyng::obis::VG_STORAGE]), cyng::data_generator(reg.second), 1, source);
+                }
+            }
+            return true;
+        }
+        return false;
     }
-    void update_push_op(cyng::table *tbl, cyng::key_t const &key, cyng::prop_map_t const &pm, boost::uuids::uuid source) {}
+    void update_push_op(
+        cyng::table *tbl,
+        cyng::table *tbl_reg,
+        cyng::key_t const &key,
+        cyng::prop_map_t const &pm,
+        cyng::buffer_t const &server,
+        boost::uuids::uuid source) {
+
+        BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
+        BOOST_ASSERT_MSG(boost::algorithm::equals(tbl->meta().get_name(), "pushOps"), "pushOps expected");
+        BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_reg->meta().get_name(), "pushRegister"), "pushRegister expected");
+    }
 
     void insert_data_collector(
         cyng::table *tbl_dc,
@@ -1254,11 +1326,11 @@ namespace smf {
     cyng::tuple_t get_collector_registers(cyng::table const *tbl_mirror, cyng::buffer_t const &server, std::uint8_t nr) {
         cyng::tuple_t regs;
         tbl_mirror->loop([&](cyng::record &&rec, std::size_t) -> bool {
-            auto const id = rec.value("meterID", cyng::buffer_t{});
+            auto const id = rec.value("meterID", server);
             auto const nr_mirror = rec.value<std::uint8_t>("nr", 0);
             if (server == id && nr == nr_mirror) {
                 auto const idx = rec.value<std::uint8_t>("idx", 0);
-                auto const reg = rec.value("register", cyng::obis{});
+                auto const reg = rec.value("register", OBIS_DATA_COLLECTOR_REGISTER); //  81 81 C7 8A NN
 
                 regs.push_back(cyng::make_object(
                     sml::make_param_tree(cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x23, idx), sml::make_value(reg))));
@@ -1312,6 +1384,7 @@ namespace smf {
         //
         //  hard coded example
         //
+        /*
         return res_gen_.get_proc_parameter(
             trx,
             server,
@@ -1320,9 +1393,9 @@ namespace smf {
                 path.at(0),
                 {sml::make_child_list_tree(
                     cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, 1u), // nr = 1u
-                    {sml::make_param_tree(OBIS_PUSH_INTERVAL, sml::make_value(1234u)),
-                     sml::make_param_tree(OBIS_PUSH_DELAY, sml::make_value(4321u)),
-                     sml::make_param_tree(OBIS_PUSH_TARGET, sml::make_value("Malou")),
+                    {sml::make_param_tree(OBIS_PUSH_INTERVAL, sml::make_value(1234u)),  // 81 81 c7 8a 02 ff
+                     sml::make_param_tree(OBIS_PUSH_DELAY, sml::make_value(4321u)),     // 81 81 c7 8a 03 ff
+                     sml::make_param_tree(OBIS_PUSH_TARGET, sml::make_value("Malou")),  // 81 47 17 07 00 ff
                      //	push service:
                      //	* 81 81 C7 8A 21 FF == IP-T
                      //	* 81 81 C7 8A 22 FF == SML client address
@@ -1348,6 +1421,103 @@ namespace smf {
                              {sml::make_param_tree(OBIS_PUSH_SERVER_ID, sml::make_value(server)),
                               sml::make_empty_tree(OBIS_PUSH_IDENTIFIERS),
                               sml::make_param_tree(OBIS_PROFILE, sml::make_value(OBIS_PROFILE_15_MINUTE))}))})}));
+        */
+
+        smf::sml::tree_t tree;
+
+        cfg_.get_cache().access(
+            [&](cyng::table const *tbl_push, cyng::table const *tbl_reg) {
+                tbl_push->loop([&](cyng::record &&rec, std::size_t) -> bool {
+                    auto const id = rec.value("meterID", cyng::make_buffer({}));
+                    CYNG_LOG_DEBUG(logger_, "server/id " << server << "/" << id);
+                    if (id == server) {
+                        //   record id
+                        auto const nr = rec.value<std::uint8_t>("nr", 0u);
+
+                        //
+                        //  push interval
+                        //
+                        auto const interval = rec.value("interval", std::chrono::seconds(0));
+                        tree.add(
+                            {cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr), OBIS_PUSH_INTERVAL}, sml::make_attribute(interval));
+
+                        //
+                        //  push delay
+                        //
+                        auto const delay = rec.value("delay", std::chrono::seconds(0));
+                        tree.add({cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr), OBIS_PUSH_DELAY}, sml::make_attribute(delay));
+
+                        //
+                        //  target name
+                        //
+                        auto const target = rec.value("target", "undefined");
+                        tree.add(
+                            {cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr), OBIS_PUSH_TARGET}, sml::make_attribute(target));
+
+                        //	hard coded push service:
+                        //	* 81 81 C7 8A 21 FF == IP-T
+                        //	* 81 81 C7 8A 22 FF == SML client address
+                        //	* 81 81 C7 8A 23 FF == KNX ID
+                        tree.add(
+                            {cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr), OBIS_PUSH_SERVICE},
+                            sml::make_attribute(OBIS_PUSH_SERVICE_IPT));
+
+                        //	hard coded push source:
+                        //	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
+                        //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
+                        //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
+                        tree.add(
+                            {cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr), OBIS_PUSH_SOURCE},
+                            sml::make_attribute(OBIS_PUSH_SOURCE_PROFILE));
+
+                        //
+                        //  PUSH_SOURCE/PUSH_SERVER_ID
+                        //
+                        tree.add(
+                            {cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr), OBIS_PUSH_SOURCE, OBIS_PUSH_SERVER_ID},
+                            sml::make_attribute(server));
+
+                        //
+                        //  PUSH_SOURCE/PROFILE
+                        //
+                        auto const profile = rec.value("profile", OBIS_PROFILE_15_MINUTE);
+                        tree.add(
+                            {cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr), OBIS_PUSH_SOURCE, OBIS_PROFILE},
+                            sml::make_attribute(profile));
+
+                        //
+                        // PUSH_SOURCE/PUSH_IDENTIFIERS
+                        // insert push registers from table "pushRegister"
+                        //
+                        tbl_reg->loop([&, this](cyng::record &&reg, std::size_t) -> bool {
+                            //
+                            //  collect all registers of this push op
+                            //
+                            auto const id_reg = reg.value("meterID", server);
+                            auto const nr_reg = reg.value("nr", nr);
+                            if ((server == id_reg) && (nr_reg == nr)) {
+                                auto const idx = reg.value<std::uint8_t>("idx", 0);
+                                auto const r = reg.value("register", OBIS_PUSH_IDENTIFIERS); // 81 81 c7 8a 82 NN
+
+                                tree.add(
+                                    {cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x01, nr),
+                                     OBIS_PUSH_SOURCE,
+                                     OBIS_PUSH_IDENTIFIERS,
+                                     cyng::make_obis(0x81, 0x81, 0xC7, 0x8A, 0x82, idx)},
+                                    sml::make_attribute(r));
+                            }
+                            return true;
+                        });
+                    }
+                    return true;
+                });
+            },
+            cyng::access::read("pushOps"),
+            cyng::access::read("pushRegister"));
+
+        CYNG_LOG_DEBUG(logger_, "get_proc_parameter_push_ops: " << tree.to_sml());
+
+        return res_gen_.get_proc_parameter(trx, server, path, sml::make_child_list_tree(path.at(0), tree.to_sml()));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_list_services(

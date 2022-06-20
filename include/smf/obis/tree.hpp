@@ -134,12 +134,16 @@ namespace smf {
                 std::back_inserter(tpl),
                 [](typename obis_node<T>::list_t::value_type const &node) {
                     auto tmp = to_tuple<T>(node.second.nodes_);
-                    return (tmp.empty()) ? cyng::make_object(cyng::make_tuple(node.first, node.second.value_, cyng::null{}))
-                                         : cyng::make_object(cyng::make_tuple(node.first, node.second.value_, tmp));
+                    return cyng::make_object(
+                        tmp.empty() ? cyng::make_tuple(node.first, node.second.value_, cyng::null{})
+                                    : cyng::make_tuple(node.first, node.second.value_, tmp));
                 });
             return tpl;
         }
 
+        /**
+         * @tparam f transformer function for value T.
+         */
         template <typename T, typename R>
         cyng::tuple_t to_tuple(typename obis_node<T>::list_t const &nodes, std::function<R(cyng::obis, T)> f) {
             cyng::tuple_t tpl; //  result
@@ -150,9 +154,9 @@ namespace smf {
                 std::back_inserter(tpl),
                 [=](typename obis_node<T>::list_t::value_type const &node) {
                     auto tmp = to_tuple<T, R>(node.second.nodes_, f);
-                    return (tmp.empty())
-                               ? cyng::make_object(cyng::make_tuple(node.first, f(node.first, node.second.value_), cyng::null{}))
-                               : cyng::make_object(cyng::make_tuple(node.first, f(node.first, node.second.value_), tmp));
+                    return cyng::make_object(
+                        tmp.empty() ? cyng::make_tuple(node.first, f(node.first, node.second.value_), cyng::null{})
+                                    : cyng::make_tuple(node.first, f(node.first, node.second.value_), tmp));
                 });
             return tpl;
         }
@@ -302,8 +306,16 @@ namespace smf {
              * child_list : code, value, child_list
              * Note: the returned child doesn't work as SML child list since
              * the child list itself is not embedded in a tuple.
+             * To use in an SML context use function to_sml().
+             * @see to_sml()
              */
             cyng::tuple_t to_child_list() const;
+
+            /**
+             * convert an obis tree into a child list that can be used in
+             * an SML context for serialization.
+             */
+            cyng::tuple_t to_sml() const;
 
             /**
              * Convert to cyng::prop_map_t.

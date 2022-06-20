@@ -30,6 +30,7 @@ namespace smf {
      */
     cyng::meta_store get_store_data_mirror();
     cyng::meta_store get_store_push_ops();
+    cyng::meta_store get_store_push_register();
 
     cyng::meta_sql get_table_cfg();
     cyng::meta_sql get_table_oplog();
@@ -38,6 +39,7 @@ namespace smf {
     cyng::meta_sql get_table_data_collector();
     cyng::meta_sql get_table_data_mirror();
     cyng::meta_sql get_table_push_ops();
+    cyng::meta_sql get_table_push_register();
 
     /**
      * create all tables defined in get_sql_meta_data()

@@ -57,6 +57,7 @@ namespace smf {
         connect("dataCollector");
         connect("dataMirror");
         connect("pushOps");
+        connect("pushRegister");
     }
 
     void persistence::connect(std::string name) {

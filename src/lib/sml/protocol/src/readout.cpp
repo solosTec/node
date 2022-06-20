@@ -101,20 +101,24 @@ namespace smf {
                 auto const buffer = cyng::to_buffer(obj);
                 auto const serial_nr = cyng::io::to_hex(buffer);
                 return cyng::make_object(serial_nr);
-            } else if (OBIS_PROFILE == code) {
+            } else if (OBIS_PROFILE == code || OBIS_PUSH_SERVICE == code || OBIS_PUSH_SOURCE == code) {
                 //  convert to OBIS
                 auto const buffer = cyng::to_buffer(obj);
+                BOOST_ASSERT(buffer.size() == 6);
                 if (buffer.size() == 6) {
                     return cyng::make_object(cyng::make_obis(buffer));
                 }
-            } else if (cyng::compare_n(code, OBIS_DATA_COLLECTOR_REGISTER, 5)) {
+            } else if (cyng::compare_n(code, OBIS_DATA_COLLECTOR_REGISTER, 5) || cyng::compare_n(code, OBIS_PUSH_IDENTIFIERS, 5)) {
                 //  OBIS code
-                auto const buffer = cyng::to_buffer(obj);
-                if (buffer.size() == 6) {
-                    if (code[cyng::obis::VG_STORAGE] != 0xff) {
-                        //  convert to OBIS
-                        auto reg = cyng::make_obis(buffer);
-                        return cyng::make_object(reg);
+                if (obj.tag() != cyng::TC_NULL) {
+                    auto const buffer = cyng::to_buffer(obj);
+                    BOOST_ASSERT(buffer.size() == 6);
+                    if (buffer.size() == 6) {
+                        if (code[cyng::obis::VG_STORAGE] != 0xff) {
+                            //  convert to OBIS
+                            auto reg = cyng::make_obis(buffer);
+                            return cyng::make_object(reg);
+                        }
                     }
                 }
             } else if (OBIS_PUSH_INTERVAL == code || OBIS_PUSH_DELAY == code) {

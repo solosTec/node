@@ -228,6 +228,7 @@ namespace smf {
         load_table(get_table_data_collector());
         load_table(get_table_data_mirror());
         load_table(get_table_push_ops());
+        load_table(get_table_push_register());
         // ToDo: load_privileges();
     }
 

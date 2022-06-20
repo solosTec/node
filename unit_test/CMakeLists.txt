@@ -1,6 +1,8 @@
 # Dependencies
 find_package(Boost 1.75 REQUIRED COMPONENTS unit_test_framework)
 
+message(STATUS "** prepare unit tests **")
+
 set(test_assets
     assets/smf--SML-202012T071425-power@solostec8bbb6264-bc4a4b92.sml
     assets/iec.log    

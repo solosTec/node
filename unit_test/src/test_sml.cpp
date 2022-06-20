@@ -1404,29 +1404,29 @@ BOOST_AUTO_TEST_CASE(select) {
     //
     //  simulate output from SML parser
     //
-    auto const msg = cyng::make_tuple(smf::sml::tree_child_list(
+    auto const msg = cyng::make_tuple(smf::sml::make_child_list_tree(
         cyng::make_obis(0x81, 0x81, 0x11, 0x06, 0x01, 0xFF),
         cyng::make_tuple(
-            smf::sml::tree_child_list(
+            smf::sml::make_child_list_tree(
                 cyng::make_obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x01),
                 //  list of devices
                 //  1. device
                 cyng::make_tuple(
-                    smf::sml::tree_param(
+                    smf::sml::make_param_tree(
                         smf::OBIS_SERVER_ID,
                         cyng::make_attr(1, cyng::make_buffer({0x01, 0xA8, 0x15, 0x74, 0x31, 0x45, 0x04, 0x01, 0x02}))),
-                    smf::sml::tree_param(smf::OBIS_DEVICE_CLASS, cyng::make_attr(1, "---")),
-                    smf::sml::tree_param(smf::OBIS_CURRENT_UTC, cyng::make_attr(4, std::chrono::system_clock::now())))),
+                    smf::sml::make_param_tree(smf::OBIS_DEVICE_CLASS, cyng::make_attr(1, "---")),
+                    smf::sml::make_param_tree(smf::OBIS_CURRENT_UTC, cyng::make_attr(4, std::chrono::system_clock::now())))),
             //  2. device
-            smf::sml::tree_child_list(
+            smf::sml::make_child_list_tree(
                 cyng::make_obis(0x81, 0x81, 0x11, 0x06, 0x01, 0x02),
                 //  list of devices
                 cyng::make_tuple(
-                    smf::sml::tree_param(
+                    smf::sml::make_param_tree(
                         smf::OBIS_SERVER_ID,
                         cyng::make_attr(1, cyng::make_buffer({0x01, 0xE6, 0x1E, 0x57, 0x14, 0x06, 0x21, 0x36, 0x03}))),
-                    smf::sml::tree_param(smf::OBIS_DEVICE_CLASS, cyng::make_attr(1, "+++")),
-                    smf::sml::tree_param(smf::OBIS_CURRENT_UTC, cyng::make_attr(4, std::chrono::system_clock::now())))))));
+                    smf::sml::make_param_tree(smf::OBIS_DEVICE_CLASS, cyng::make_attr(1, "+++")),
+                    smf::sml::make_param_tree(smf::OBIS_CURRENT_UTC, cyng::make_attr(4, std::chrono::system_clock::now())))))));
 
     cyng::io::serialize_pretty(std::cout, msg);
     std::cout << std::endl;

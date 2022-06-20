@@ -72,6 +72,9 @@ BOOST_AUTO_TEST_CASE(tree) {
     auto const cl2 = t.get_subtree(psub1).to_child_list();
     std::cout << cyng::io::to_pretty(cl2) << std::endl;
 
+    auto const cl3 = t.to_sml();
+    std::cout << cyng::io::to_pretty(cl3) << std::endl;
+
     cyng::obis_path_t psub2{smf::OBIS_METER_ADDRESS, smf::OBIS_ACCESS_USER_NAME};
     auto const s1 = t.size(psub2);
     // std::cout << "size: " << s1 << std::endl;
