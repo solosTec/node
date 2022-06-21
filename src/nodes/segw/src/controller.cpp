@@ -138,6 +138,8 @@ namespace smf {
         //
         auto const hostname = cyng::sys::get_hostname();
 
+        auto const [srv_mac, srv_id] = get_server_id();
+
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
@@ -149,7 +151,7 @@ namespace smf {
             // cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             cyng::make_param("generate-profile", false),
 
-            create_server_id(),
+            create_net(srv_mac, srv_id),
 
             //	SQLite3
             create_db_spec(cwd),
@@ -171,11 +173,12 @@ namespace smf {
             create_gpio_spec(),
 
             //	hardware
-            create_hardware_spec())});
+            create_hardware_spec(srv_id))});
     }
 
-    cyng::param_t controller::create_server_id() const {
+    std::tuple<cyng::mac48, std::string> controller::get_server_id() const {
 
+        //
         //	get adapter data
         //
         auto macs = cyng::sys::get_mac48_adresses();
@@ -195,22 +198,22 @@ namespace smf {
             macs.push_back(cyng::generate_random_mac48());
         }
 
-        //	smf_CROSSCOMPILING = true
-        //	__NATIVE_PLATFORM
 #if defined(__CROSS_PLATFORM)
         auto srv_mac = macs.back(); //	eth2
 #else
         auto srv_mac = macs.front();
 #endif
-
         //	build a server ID
         auto tmp = cyng::to_buffer(srv_mac);
         tmp.insert(tmp.begin(), 0x05);
 
+        return {srv_mac, cyng::io::to_hex(tmp)};
+    }
+
+    cyng::param_t controller::create_net(cyng::mac48 const &srv_mac, std::string const &srv_id) const {
+
         return cyng::make_param(
-            "net",
-            cyng::tuple_factory(
-                cyng::make_param("mac", srv_mac), cyng::make_param(cyng::to_str(OBIS_SERVER_ID), cyng::io::to_hex(tmp))));
+            "net", cyng::tuple_factory(cyng::make_param("mac", srv_mac), cyng::make_param(cyng::to_str(OBIS_SERVER_ID), srv_id)));
     }
 
     cyng::param_t controller::create_wireless_virtual_meter_spec() const {
@@ -418,7 +421,7 @@ namespace smf {
             ());
     }
 
-    cyng::param_t controller::create_hardware_spec() const {
+    cyng::param_t controller::create_hardware_spec(std::string const &srv_id) const {
 
         //
         //	generate a random serial number with a length of
@@ -429,7 +432,7 @@ namespace smf {
         std::uint32_t sn{0};
         sn_ss >> sn;
 
-        auto const model = detect_model();
+        auto const model = detect_model(srv_id);
 
         return cyng::make_param(
             "hardware",
@@ -809,17 +812,17 @@ namespace smf {
                   << boost::asio::ip::tcp::endpoint(cyng::sys::make_link_local_address(r.first, r.second), port) << std::endl;
     }
 
-    std::string detect_model() {
+    std::string detect_model(std::string const &srv_id) {
         auto const nics = cyng::sys::get_nic_names();
 
         if (std::find(std::begin(nics), std::end(nics), "br0") != nics.end()) {
-            return "smf-gw:plc";
+            return "smf-gw:plc:" + srv_id;
         } else if (std::find(std::begin(nics), std::end(nics), "eth0") != nics.end()) {
-            return "smf-gw:eth";
+            return "smf-gw:eth:" + srv_id;
         } else if (std::find(std::begin(nics), std::end(nics), "ens33") != nics.end()) {
-            return "smf-gw:virt"; //  linux on VMware
+            return "smf-gw:virt:" + srv_id; //  linux on VMware
         } else if (std::find(std::begin(nics), std::end(nics), "Ethernet") != nics.end()) {
-            return "smf-gw:win"; //  Windows
+            return "smf-gw:win:" + srv_id; //  Windows
         }
 
         return "smf-gw:virtual";

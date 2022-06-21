@@ -18,6 +18,7 @@
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/parse/buffer.h>
+#include <cyng/parse/string.h>
 #include <cyng/vm/generator.hpp>
 #include <cyng/vm/linearize.hpp>
 #include <cyng/vm/mesh.h>
@@ -569,7 +570,7 @@ namespace smf {
                     //
                     auto const id = cyng::value_cast(pos->second, "");
 
-                    if (boost::algorithm::starts_with(id, "swf-gw:") || boost::algorithm::starts_with(id, "EMH-")) {
+                    if (boost::algorithm::starts_with(id, "smf-gw:") || boost::algorithm::starts_with(id, "EMH-")) {
                         //
                         //  check if gateway already present
                         //
@@ -582,16 +583,27 @@ namespace smf {
         }
     }
 
+    std::string detect_server_id(std::string const &id) {
+        auto const vec = cyng::split(id, ":");
+        if (vec.size() == 3 && vec.at(2).size() == 14) {
+            return vec.at(2);
+        }
+        return "05000000000000";
+    }
+
     void session::auto_insert_gateway(cyng::key_t key, std::string id, boost::uuids::uuid source) {
 
         //  28c4b783-f35d-49f1-9027-a75dbae9f5e2|1|0500153B02517E|EMH|2459307.01790509|06441734|00:00:00:00:00:00|00:00:00:00:00:00|pw|root|A815408943050131|operator|operator
+
+        auto const srv_id = detect_server_id(id);
+
         cache_.get_store().access(
             [&](cyng::table *tbl_gw) {
                 if (!tbl_gw->exist(key)) {
                     tbl_gw->insert(
                         key,
                         cyng::data_generator(
-                            "05000000000000",                 // server id
+                            srv_id,                           // server id
                             "---",                            // manufacturer
                             std::chrono::system_clock::now(), // TOM
                             "0",                              // fabrik nummer

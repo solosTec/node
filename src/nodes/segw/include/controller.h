@@ -44,7 +44,7 @@ namespace smf {
         cyng::param_t create_rs485_listener() const;
         cyng::param_t create_rs485_block_list() const;
         cyng::param_t create_gpio_spec() const;
-        cyng::param_t create_hardware_spec() const;
+        cyng::param_t create_hardware_spec(std::string const &) const;
         cyng::param_t create_nms_server_spec(std::filesystem::path const &) const;
         cyng::param_t create_sml_server_spec() const;
         cyng::param_t create_db_spec(std::filesystem::path const &) const;
@@ -54,7 +54,9 @@ namespace smf {
         cyng::param_t create_wireless_virtual_meter_spec() const;
         cyng::param_t create_wired_virtual_meter_spec() const;
         cyng::param_t create_lmn_spec(std::string const &hostname) const;
-        cyng::param_t create_server_id() const;
+        cyng::param_t create_net(cyng::mac48 const &, std::string const &) const;
+
+        std::tuple<cyng::mac48, std::string> get_server_id() const;
 
         void init_storage(cyng::object &&);
         void transfer_config(cyng::object &&);
@@ -75,14 +77,16 @@ namespace smf {
      * When running on the segw hardware tries to figure out if this is a BPL device
      * and returns the link local address of "
      */
-    std::string get_nms_address(std::string nic);
+    // std::string get_nms_address(std::string nic);
 
     void print_nms_defaults(std::ostream &);
 
     /**
      * Examine hardware to generate the model name.
+     * Since the model name contains the server id, it's possible to
+     * generate a proper configuration automatically.
      */
-    std::string detect_model();
+    std::string detect_model(std::string const &srv_id);
 
 } // namespace smf
 

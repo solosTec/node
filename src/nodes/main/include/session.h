@@ -297,6 +297,11 @@ namespace smf {
      */
     std::chrono::seconds smooth(std::chrono::seconds interval);
 
+    /**
+     * Try to detect the server ID
+     */
+    std::string detect_server_id(std::string const &);
+
 } // namespace smf
 
 #endif
