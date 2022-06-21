@@ -113,7 +113,7 @@ namespace smf {
     /**
      * signal an modify event
      */
-    void persistence::modify(cyng::table const *tbl, cyng::key_t key, cyng::attr_t attr, std::uint64_t, boost::uuids::uuid) {
+    void persistence::modify(cyng::table const *tbl, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid) {
 
         if (boost::algorithm::equals(tbl->meta().get_name(), "cfg")) {
             BOOST_ASSERT(key.size() == 1);
@@ -135,7 +135,11 @@ namespace smf {
             }
         } else {
             // use default mechanism
-            CYNG_LOG_TRACE(logger_, "modify " << tbl->meta().get_name());
+            auto const meta = get_sql_meta_data(tbl->meta().get_name());
+            CYNG_LOG_TRACE(logger_, "modify " << meta.get_name());
+            if (!config::persistent_update(meta, storage_.db_, key, attr, gen)) {
+                CYNG_LOG_ERROR(logger_, "[persistence] modify " << meta.get_name() << ": " << key.at(0) << " failed");
+            }
         }
     }
 
@@ -152,7 +156,11 @@ namespace smf {
             }
         } else {
             // use default mechanism
-            CYNG_LOG_TRACE(logger_, "modify " << tbl->meta().get_name());
+            auto const meta = get_sql_meta_data(tbl->meta().get_name());
+            CYNG_LOG_TRACE(logger_, "remove " << meta.get_name());
+            if (!config::persistent_remove(meta, storage_.db_, key)) {
+                CYNG_LOG_ERROR(logger_, "[persistence] remove " << meta.get_name() << ": " << key.at(0) << " failed");
+            }
         }
     }
 
@@ -161,7 +169,11 @@ namespace smf {
      */
     void persistence::clear(cyng::table const *tbl, boost::uuids::uuid) {
 
-        CYNG_LOG_TRACE(logger_, "clear " << tbl->meta().get_name());
+        auto const meta = get_sql_meta_data(tbl->meta().get_name());
+        CYNG_LOG_TRACE(logger_, "clear " << meta.get_name());
+        if (!config::persistent_clear(meta, storage_.db_)) {
+            CYNG_LOG_ERROR(logger_, "[persistence] clear " << meta.get_name() << " failed");
+        }
     }
 
     void persistence::trx(cyng::table const *tbl, bool) { CYNG_LOG_TRACE(logger_, "trx " << tbl->meta().get_name()); }

@@ -219,31 +219,13 @@ namespace smf {
             if (pos != sql_map_.end()) {
 
                 auto const &meta = pos->second;
-                auto const sql = cyng::sql::update(db_.get_dialect(), meta).set_placeholder(attr.first).where(cyng::sql::pk())();
-
-                auto stmt = db_.create_statement();
-                std::pair<int, bool> const r = stmt->prepare(sql);
-                if (r.second) {
-                    BOOST_ASSERT(r.first == 2 + key.size()); //	attribute to "gen"
-
-                    auto const width = meta.get_body_column(attr.first).width_;
-                    stmt->push(attr.second, width);
-                    stmt->push(cyng::make_object(gen), 0); //	name
-
-                    //
-                    //	key
-                    //
-                    for (auto &kp : key) {
-                        stmt->push(kp, 36); //	pk
-                    }
-
-                    if (stmt->execute()) {
-                        stmt->clear();
-                    }
-
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[db] update error: " << sql);
+                //
+                //  use generic function from config library
+                //
+                if (!config::persistent_update(meta, db_, key, attr, gen)) {
+                    CYNG_LOG_ERROR(logger_, "[persistence] update " << table_name << ": " << key.at(0) << " failed");
                 }
+
             } else {
                 CYNG_LOG_WARNING(logger_, "[db] update - unknown table: " << table_name);
             }
@@ -306,30 +288,8 @@ namespace smf {
         auto const pos = sql_map_.find(table_name);
         if (pos != sql_map_.end()) {
             auto const &meta = pos->second;
-            auto const sql = cyng::sql::remove(db_.get_dialect(), meta).where(cyng::sql::pk())();
-
-            auto stmt = db_.create_statement();
-            std::pair<int, bool> const r = stmt->prepare(sql);
-            if (r.second) {
-
-                BOOST_ASSERT(r.first == key.size());
-
-                //
-                //	pk
-                //
-                std::size_t col_index{0};
-                for (auto &kp : key) {
-                    auto const width = meta.get_column(col_index).width_;
-                    stmt->push(kp, width); //	pk
-                    ++col_index;
-                }
-
-                if (stmt->execute()) {
-                    stmt->clear();
-                }
-
-            } else {
-                CYNG_LOG_WARNING(logger_, "[db] delete error: " << sql);
+            if (!config::persistent_remove(meta, db_, key)) {
+                CYNG_LOG_ERROR(logger_, "[persistence] remove " << table_name << ": " << key.at(0) << " failed");
             }
         } else {
             CYNG_LOG_WARNING(logger_, "[db] remove - unknown table: " << table_name);
@@ -341,9 +301,11 @@ namespace smf {
         auto const pos = sql_map_.find(table_name);
         if (pos != sql_map_.end()) {
             auto const &ms = pos->second;
-            //  ToDo: clear table
-            CYNG_LOG_ERROR(logger_, "[db] clear table is not implemented yet");
-
+            //  clear table
+            auto const &meta = pos->second;
+            if (!config::persistent_clear(meta, db_)) {
+                CYNG_LOG_ERROR(logger_, "[persistence] clear " << table_name << " failed");
+            }
         } else {
             CYNG_LOG_WARNING(logger_, "[db] clear - unknown table: " << table_name);
         }
