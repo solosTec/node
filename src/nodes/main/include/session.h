@@ -134,7 +134,9 @@ namespace smf {
         void pty_login(boost::uuids::uuid, std::string, std::string, boost::asio::ip::tcp::endpoint, std::string);
 
         /**
-         * pty logout
+         * @brief pty logout
+         *
+         * Client session was closed.
          */
         void pty_logout(boost::uuids::uuid tag, boost::uuids::uuid dev);
 

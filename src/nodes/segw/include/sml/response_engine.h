@@ -217,6 +217,7 @@ namespace smf {
         cyng::table *,
         cyng::table *,
         cyng::key_t const &,
+        cyng::record const &,
         cyng::prop_map_t const &,
         cyng::buffer_t const &server,
         boost::uuids::uuid);

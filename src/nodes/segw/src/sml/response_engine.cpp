@@ -635,7 +635,7 @@ namespace smf {
                         //  update
                         //	ToDo: an empty parameter set indicates that the record hast be removed
                         CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] update push op " << server << "#" << +nr);
-                        update_push_op(tbl_push, tbl_reg, key, pm, server, cfg_.get_tag());
+                        update_push_op(tbl_push, tbl_reg, key, rec, pm, server, cfg_.get_tag());
                     }
                 });
             },
@@ -733,10 +733,12 @@ namespace smf {
         }
         return false;
     }
+
     void update_push_op(
         cyng::table *tbl,
         cyng::table *tbl_reg,
         cyng::key_t const &key,
+        cyng::record const &rec,
         cyng::prop_map_t const &pm,
         cyng::buffer_t const &server,
         boost::uuids::uuid source) {
@@ -744,6 +746,51 @@ namespace smf {
         BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl->meta().get_name(), "pushOps"), "pushOps expected");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_reg->meta().get_name(), "pushRegister"), "pushRegister expected");
+
+        auto const reader = cyng::make_reader(pm);
+        auto const regs = cyng::container_cast<cyng::prop_map_t>(reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_IDENTIFIERS));
+        if (regs.empty()) {
+            //
+            //  delete
+            //
+
+            auto const nr = rec.value<std::uint8_t>("nr", 0u);
+
+            //  "pushOps"
+            if (tbl->erase(key, source)) {
+                tbl_reg->erase(
+                    [&](cyng::record &&rec) -> bool {
+                        //
+                        //  remove all registers of this push op
+                        //
+                        auto const id = rec.value("meterID", server);
+                        auto const nr_reg = rec.value<std::uint8_t>("nr", 0u);
+                        return (id == server) && (nr == nr_reg);
+                    },
+                    source);
+            }
+        } else {
+            //
+            //  update
+            //
+            for (auto const &prop : pm) {
+                if (prop.first == OBIS_PUSH_INTERVAL) {
+                    tbl->modify(key, cyng::make_param("interval", prop.second), source);
+                } else if (prop.first == OBIS_PUSH_DELAY) {
+                    tbl->modify(key, cyng::make_param("delay", prop.second), source);
+                } else if (prop.first == OBIS_PUSH_SOURCE) {
+                    tbl->modify(key, cyng::make_param("source", prop.second), source);
+                } else if (prop.first == OBIS_PUSH_TARGET) {
+                    tbl->modify(key, cyng::make_param("target", prop.second), source);
+                } else if (prop.first == OBIS_PROFILE) {
+                    tbl->modify(key, cyng::make_param("profile", prop.second), source);
+                } else if (prop.first == OBIS_PUSH_SERVICE) {
+                    tbl->modify(key, cyng::make_param("service", prop.second), source);
+                } else {
+                    BOOST_ASSERT_MSG(false, "unknown push op attribute");
+                }
+            }
+        }
     }
 
     void insert_data_collector(
@@ -803,6 +850,8 @@ namespace smf {
                 tbl_dc->modify(key, cyng::make_param("maxSize", prop.second), source);
             } else if (prop.first == OBIS_DATA_REGISTER_PERIOD) {
                 tbl_dc->modify(key, cyng::make_param("regPeriod", prop.second), source);
+            } else {
+                BOOST_ASSERT_MSG(false, "unknown data collector attribute");
             }
         }
 

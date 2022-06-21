@@ -1019,7 +1019,9 @@ namespace smf {
     }
 
     void session::pty_logout(boost::uuids::uuid tag, boost::uuids::uuid dev) {
-        CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " logout [l-vm:" << vm_.get_tag() << "]");
+        CYNG_LOG_INFO(
+            logger_,
+            "[pty/" << protocol_layer_ << "] logout (vm: " << vm_.get_tag() << ", tag: " << tag << ", dev: " << dev << ")");
 
         //
         //	Remove session table, targets and channels.
@@ -1054,7 +1056,7 @@ namespace smf {
 
     void session::pty_open_connection(boost::uuids::uuid tag, boost::uuids::uuid dev, std::string msisdn, cyng::param_map_t token) {
 
-        CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " {" << tag << "} connects => " << msisdn);
+        CYNG_LOG_INFO(logger_, "[pty/" << protocol_layer_ << "] {" << tag << "} connects => " << msisdn);
 
         //
         //	forward to callee
