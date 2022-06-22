@@ -17,6 +17,12 @@
 namespace smf {
     /**
      * define an array that contains the server ID
+     *
+     * [0] 1 byte 01/02 01 == wireless, 02 == wired
+     * [1-2] 2 bytes manufacturer ID
+     * [3-6] 4 bytes serial number (reversed)
+     * [7] 1 byte device type / media
+     * [8] 1 byte product revision
      */
     using srv_id_t = std::array<std::uint8_t, 9>;
 
@@ -65,6 +71,7 @@ namespace smf {
     std::pair<char, char> get_manufacturer_code(srv_id_t);
 
     constexpr std::uint8_t get_medium(srv_id_t address) noexcept { return address.at(8); }
+    const char *get_medium_name(srv_id_t address) noexcept;
 
     /**
      * generates a metering code

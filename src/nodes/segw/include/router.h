@@ -8,6 +8,9 @@
 #define SMF_SEGW_ROUTER_H
 
 #include <cfg.h>
+#include <config/cfg_hardware.h>
+#include <config/cfg_ipt.h>
+
 #include <sml/response_engine.h>
 
 #include <smf/ipt/bus.h>
@@ -28,7 +31,7 @@ namespace smf {
     class router {
       public:
         router(cyng::logger, cyng::controller &, cfg &config, storage &);
-        void start();
+        bool start();
         void stop();
 
       private:
@@ -49,11 +52,16 @@ namespace smf {
             std::uint8_t);
         void generate_close_response(std::string trx, cyng::object gsign);
 
+        void init_ipt_push();
+        void stop_ipt_push();
+
       private:
         cyng::logger logger_;
         cyng::controller &ctl_;
         cfg &cfg_;
-        std::unique_ptr<ipt::bus> bus_;
+        cfg_ipt ipt_cfg_;
+        cfg_hardware hw_cfg_;
+        ipt::bus bus_;
         sml::unpack parser_;
         sml::messages_t messages_; //	sml response
         sml::response_generator res_gen_;

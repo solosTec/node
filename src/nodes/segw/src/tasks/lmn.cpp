@@ -207,7 +207,10 @@ namespace smf {
                 //
                 do_read();
             } else {
-                CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] connection closed: " << ec.message());
+                //
+                //  object could be already invalid
+                //
+                CYNG_LOG_ERROR(logger_, "[LMN] closed: " << ec.message());
             }
         });
     }

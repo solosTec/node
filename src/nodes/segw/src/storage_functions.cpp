@@ -118,7 +118,7 @@ namespace smf {
                 cyng::column("mask", cyng::TC_BUFFER), //	"Bitmaske: 00 00"
                 // cyng::column("interval", cyng::TC_UINT32, 0), //	Time between two data sets: 49000
                 //	--- optional data
-                cyng::column("pubKey", cyng::TC_BUFFER), //	Public Key: 18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
+                cyng::column("pubKey", cyng::TC_BUFFER), //	Public Key: "18 01 16 05 E6 1E 0D 02 BF 0C FA 35 7D 9E 77 03"
                 cyng::column("aes", cyng::TC_AES128)     //	AES-Key
             },
             1);

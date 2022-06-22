@@ -43,7 +43,8 @@ target_link_libraries(dash
         smf::obis
         cyng::cyng 
         ${SMFSEC_LIBRARIES}
-        ${OPENSSL_LIBRARIES}
+#        ${OPENSSL_LIBRARIES}
+        OpenSSL::SSL
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(parser) {
         });
 
     smf::mbus::radio::parser p(
-        [&](smf::mbus::radio::header const &h, smf::mbus::radio::tpl const &t, cyng::buffer_t const &payload) {
+        [&](smf::mbus::radio::header const &h, smf::mbus::radio::tplayer const &t, cyng::buffer_t const &payload) {
             std::cout << smf::mbus::to_str(h) << std::endl;
 
             auto mc = smf::get_manufacturer_code(h.get_server_id());
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(parser) {
                            0x2d, 0xb5, 0x4a, 0xbb, 0x76, 0xb3, 0xa3});
 
     smf::mbus::radio::parser p_long(
-        [&](smf::mbus::radio::header const &h, smf::mbus::radio::tpl const &t, cyng::buffer_t const &payload) {
+        [&](smf::mbus::radio::header const &h, smf::mbus::radio::tplayer const &t, cyng::buffer_t const &payload) {
             std::cout << smf::mbus::to_str(h) << std::endl;
             auto const sec = t.get_secondary_address();
             std::cout << smf::srv_id_to_str(sec) << std::endl;
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(parser) {
     });
 
     smf::mbus::radio::parser p_short(
-        [&](smf::mbus::radio::header const &h, smf::mbus::radio::tpl const &t, cyng::buffer_t const &payload) {
+        [&](smf::mbus::radio::header const &h, smf::mbus::radio::tplayer const &t, cyng::buffer_t const &payload) {
             std::cout << smf::mbus::to_str(h) << std::endl;
 
             auto mc = smf::get_manufacturer_code(h.get_server_id());

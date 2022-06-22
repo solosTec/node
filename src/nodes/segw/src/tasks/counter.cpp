@@ -13,14 +13,15 @@ namespace smf {
 		, cyng::logger logger, cfg& config)
 		: sigs_{
 			std::bind(&counter::inc, this),	//	0
-			std::bind(&counter::stop, this, std::placeholders::_1)	//	1
+            std::bind(&counter::save, this),	//	1
+            std::bind(&counter::stop, this, std::placeholders::_1)	//	2
 		}	
 		, channel_(wp)
 		, logger_(logger)
         , cfg_(config)
 	{
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"inc"});
+            sp->set_channel_names({"inc", "save"});
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created: " << cfg_.op_time_ << " seconds");
         }
     }
@@ -29,7 +30,7 @@ namespace smf {
         //
         //  save current value
         //
-        cfg_.set_value("opcounter", cfg_.op_time_);
+        // cfg_.set_value("opcounter", cfg_.op_time_); // -- persistence layer could be already offline
         CYNG_LOG_INFO(logger_, "op counter stopped");
     }
 
@@ -57,5 +58,7 @@ namespace smf {
             }
         }
     }
+
+    void counter::save() { cfg_.set_value("opcounter", cfg_.op_time_); }
 
 } // namespace smf

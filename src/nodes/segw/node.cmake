@@ -10,6 +10,7 @@ set (segw_cpp
     src/storage_functions.cpp
     src/distributor.cpp
     src/router.cpp
+    src/profiles.cpp
 )
     
 set (segw_h
@@ -18,6 +19,7 @@ set (segw_h
     include/storage_functions.h
     include/distributor.h
     include/router.h
+    include/profiles.h
 )
 
 if(WIN32)
@@ -47,6 +49,7 @@ set (segw_tasks
     include/tasks/rdr.h
     include/tasks/en13757.h
     include/tasks/counter.h
+    include/tasks/push.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
@@ -59,6 +62,7 @@ set (segw_tasks
     src/tasks/rdr.cpp
     src/tasks/en13757.cpp
     src/tasks/counter.cpp
+    src/tasks/push.cpp
 )
 
 set (segw_config

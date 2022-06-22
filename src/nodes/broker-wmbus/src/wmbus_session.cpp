@@ -52,7 +52,7 @@ namespace smf {
         , writer_(writer)
         , buffer_()
         , buffer_write_()
-        , parser_([this](mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &data) {
+        , parser_([this](mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data) {
             this->decode(h, t, data);
         })
         , gatekeeper_() {}
@@ -152,7 +152,7 @@ namespace smf {
         }
     }
 
-    void wmbus_session::decode(mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &data) {
+    void wmbus_session::decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data) {
 
         if (bus_.is_connected()) {
 
@@ -265,21 +265,20 @@ namespace smf {
                 }
 
                 switch (frame_type) {
-                case mbus::FIELD_CI_RES_LONG_SML:  //	0x7E - long header
-                case mbus::FIELD_CI_RES_SHORT_SML: //	0x7F - short header
+                case mbus::FIELD_CI_RES_LONG_SML:  // 0x7E - long header
+                case mbus::FIELD_CI_RES_SHORT_SML: // 0x7F - short header
                     push_sml_data(payload);
                     break;
                 case mbus::FIELD_CI_RES_LONG_DLMS:  // 0x7C
-                case mbus::FIELD_CI_RES_SHORT_DLSM: //	0x7D - short header
+                case mbus::FIELD_CI_RES_SHORT_DLSM: // 0x7D - short header
                     push_dlsm_data(payload);
                     break;
-                case mbus::FIELD_CI_HEADER_LONG:  //	0x72 - 12 byte header followed by variable format data (EN 13757-3)
-                case mbus::FIELD_CI_HEADER_SHORT: //	0x7A - 4 byte header followed by variable format data (EN 13757-3)
+                case mbus::FIELD_CI_HEADER_LONG:  // 0x72 - 12 byte header followed by variable format data (EN 13757-3)
+                case mbus::FIELD_CI_HEADER_SHORT: // 0x7A - 4 byte header followed by variable format data (EN 13757-3)
                     push_data(payload);
                     break;
 
-                default:
-                    break;
+                default: break;
                 }
 
             } else {

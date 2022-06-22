@@ -42,7 +42,7 @@ namespace smf {
 		, logger_(logger)
 		, cfg_blocklist_(config, type)
 		, cfg_gpio_(config)
-		, parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
+		, parser_([this](mbus::radio::header const& h, mbus::radio::tplayer const& t, cyng::buffer_t const& data) {
 			auto const flag_id = get_manufacturer_code(h.get_server_id());
 			CYNG_LOG_TRACE(logger_, "[filter] apply " 
                 << cfg_blocklist_.get_mode() 
@@ -132,7 +132,7 @@ namespace smf {
 
     void filter::add_target_channel(std::string name) { targets_.insert(name); }
 
-    void filter::check(mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &payload) {
+    void filter::check(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &payload) {
 
         auto const id = get_id(h.get_server_id());
         if (cfg_blocklist_.is_listed(id)) {

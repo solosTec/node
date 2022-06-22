@@ -24,6 +24,7 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(void)>,     //	inc
+            std::function<void(void)>,     //	save
             std::function<void(cyng::eod)> // stop task
             >;
 
@@ -38,6 +39,13 @@ namespace smf {
          *
          */
         void inc();
+
+        /**
+         * @brief save current counter
+         *
+         * This function is not thread safe.
+         */
+        void save();
 
       private:
         signatures_t sigs_;

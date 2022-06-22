@@ -7,6 +7,8 @@
 
 #include <smf/mbus/server_id.h>
 
+#include <smf/mbus/medium.h>
+
 #include <cyng/obj/buffer_cast.hpp>
 #include <cyng/parse/buffer.h>
 #include <cyng/parse/hex.h>
@@ -130,6 +132,10 @@ namespace smf {
         std::stringstream ss(get_id(address));
         ss >> id;
         return id;
+    }
+
+    const char *get_medium_name(srv_id_t address) noexcept {
+        return mbus::get_medium_name(static_cast<mbus::device_type>(get_medium(address)));
     }
 
     std::pair<char, char> get_manufacturer_code(srv_id_t address) {

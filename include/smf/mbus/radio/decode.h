@@ -16,32 +16,26 @@
 
 #include <boost/assert.hpp>
 
-namespace smf
-{
-	namespace mbus	
-	{
-		namespace radio
-		{
-			/**
-			 * build initial vector
-			 */
-			cyng::crypto::aes::iv_t build_initial_vector(srv_id_t const& srv_id, std::uint8_t access_nr);
+namespace smf {
+    namespace mbus {
+        namespace radio {
+            /**
+             * build initial vector
+             */
+            cyng::crypto::aes::iv_t build_initial_vector(srv_id_t const &srv_id, std::uint8_t access_nr);
 
-			/**
-			 * decode
-			 */
-			cyng::buffer_t decode(srv_id_t const& srv_id
-				, std::uint8_t access_nr
-				, cyng::crypto::aes_128_key key
-				, cyng::buffer_t const&);
+            /**
+             * decode
+             */
+            cyng::buffer_t
+            decode(srv_id_t const &srv_id, std::uint8_t access_nr, cyng::crypto::aes_128_key key, cyng::buffer_t const &);
 
-			/**
-			 * @return true if the first two bytes are 0x2f
-			 */
-			bool is_decoded(cyng::buffer_t const&);
-		}
-	}
-}
-
+            /**
+             * @return true if the first two bytes are 0x2f
+             */
+            bool is_decoded(cyng::buffer_t const &);
+        } // namespace radio
+    }     // namespace mbus
+} // namespace smf
 
 #endif

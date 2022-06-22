@@ -29,12 +29,12 @@ namespace smf {
         namespace radio {
             class parser;
             class header;
-            class tpl;
+            class tplayer;
 
             /**
              * Takes header data and payload and restores the original (unparsed) message
              */
-            cyng::buffer_t restore_data(header const &, tpl const &, cyng::buffer_t const &);
+            cyng::buffer_t restore_data(header const &, tplayer const &, cyng::buffer_t const &);
 
             /**
              * [0] - total size (length field excluded)
@@ -47,7 +47,7 @@ namespace smf {
              */
             class header {
                 friend class parser;
-                friend cyng::buffer_t restore_data(header const &, tpl const &, cyng::buffer_t const &);
+                friend cyng::buffer_t restore_data(header const &, tplayer const &, cyng::buffer_t const &);
 
                 using value_type = std::uint8_t;
                 using SIZE = std::integral_constant<std::size_t, 11>;
@@ -77,8 +77,8 @@ namespace smf {
                 constexpr std::uint8_t effective_payload_size() const noexcept {
 
                     switch (get_tpl_type(get_frame_type())) {
-                    case tpl_type::SHORT: return payload_size() - 5;
-                    case tpl_type::LONG: return payload_size() - 13;
+                    case tplayer_type::SHORT: return payload_size() - 5;
+                    case tplayer_type::LONG: return payload_size() - 13;
                     default: break;
                     }
                     return payload_size() - 1;
@@ -87,7 +87,9 @@ namespace smf {
                 /**
                  * @true for long TPL
                  */
-                constexpr bool has_secondary_address() const noexcept { return get_tpl_type(get_frame_type()) == tpl_type::LONG; }
+                constexpr bool has_secondary_address() const noexcept {
+                    return get_tpl_type(get_frame_type()) == tplayer_type::LONG;
+                }
 
                 /**
                  * @return packet type
@@ -162,9 +164,9 @@ namespace smf {
              *
              * length of encrypted data
              */
-            class tpl {
+            class tplayer {
                 friend class parser;
-                friend cyng::buffer_t restore_data(header const &, tpl const &, cyng::buffer_t const &);
+                friend cyng::buffer_t restore_data(header const &, tplayer const &, cyng::buffer_t const &);
 
                 using value_type = std::uint8_t;
                 //	first 8 bytes only in long TPLs
@@ -175,7 +177,7 @@ namespace smf {
               public:
                 constexpr static std::size_t size() noexcept { return SIZE::value; }
 
-                tpl();
+                tplayer();
 
                 void reset();
 

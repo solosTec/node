@@ -6,19 +6,22 @@
  */
 
 #include <router.h>
-#include <storage.h>
 
-#include <config/cfg_hardware.h>
-#include <config/cfg_ipt.h>
+#include <storage.h>
+#include <tasks/push.h>
+
 #include <config/cfg_sml.h>
 
 #include <smf/ipt/codes.h>
 #include <smf/ipt/transpiler.h>
+#include <smf/obis/db.h>
+#include <smf/obis/defs.h>
 #include <smf/sml/reader.h>
 
 #include <cyng/io/io_buffer.h>
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
+#include <cyng/store/db.h>
 #include <cyng/task/controller.h>
 
 #ifdef _DEBUG_SEGW
@@ -35,7 +38,16 @@ namespace smf {
         : logger_(logger)
         , ctl_(ctl)
         , cfg_(config)
-        , bus_()
+        , ipt_cfg_(config)
+        , hw_cfg_(config)
+        , bus_(
+              ctl_.get_ctx(),
+              logger_,
+              ipt_cfg_.get_toggle(),
+              hw_cfg_.get_model(),
+              std::bind(&router::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
+              std::bind(&router::ipt_stream, this, std::placeholders::_1),
+              std::bind(&router::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
         , parser_([this](
                       std::string trx,
                       std::uint8_t group_no,
@@ -81,50 +93,45 @@ namespace smf {
         })
         , messages_()
         , res_gen_()
-        , engine_(logger, cfg_, store, res_gen_) {}
+        , engine_(logger, ctl_, cfg_, store, bus_, res_gen_) {}
 
-    void router::start() {
+    bool router::start() {
 
-        cfg_ipt ipt_cfg(cfg_);
-        if (ipt_cfg.is_enabled()) {
+        if (ipt_cfg_.is_enabled()) {
             //
             //	start IP-T bus
             //
-            cfg_hardware hw_cfg(cfg_);
-            CYNG_LOG_INFO(logger_, "[ipt bus] initialize as " << hw_cfg.get_model());
+            CYNG_LOG_INFO(logger_, "[ipt bus] initialize as " << hw_cfg_.get_model());
             try {
-                bus_ = std::make_unique<ipt::bus>(
-                    ctl_.get_ctx(),
-                    logger_,
-                    ipt_cfg.get_toggle(),
-                    hw_cfg.get_model(),
-                    std::bind(&router::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
-                    std::bind(&router::ipt_stream, this, std::placeholders::_1),
-                    std::bind(&router::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-                bus_->start();
+                // bus_ = std::make_unique<ipt::bus>(
+                //     ctl_.get_ctx(),
+                //     logger_,
+                //     ipt_cfg.get_toggle(),
+                //     hw_cfg.get_model(),
+                //     std::bind(&router::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
+                //     std::bind(&router::ipt_stream, this, std::placeholders::_1),
+                //     std::bind(&router::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+                bus_.start();
+
+                init_ipt_push();
+
+                return true;
+
             } catch (std::exception const &ex) {
                 CYNG_LOG_ERROR(logger_, "[ipt bus] start failed " << ex.what());
-                bus_.reset();
+                // bus_.reset();
             }
-
-            //
-            //	start OBIS log
-            //
-        } else {
-            CYNG_LOG_WARNING(logger_, "[ipt bus] not enabled");
         }
+        CYNG_LOG_WARNING(logger_, "[ipt bus] not enabled");
+        return false;
     }
 
     void router::stop() {
-        cfg_ipt ipt_cfg(cfg_);
-        if (ipt_cfg.is_enabled()) {
-            if (bus_) {
-                CYNG_LOG_INFO(logger_, "[ipt bus] stop");
-                bus_->stop();
-                bus_.reset();
-            } else {
-                CYNG_LOG_WARNING(logger_, "[ipt bus] is null");
-            }
+
+        if (ipt_cfg_.is_enabled()) {
+            stop_ipt_push();
+            CYNG_LOG_INFO(logger_, "[ipt bus] stop");
+            bus_.stop();
         } else {
             CYNG_LOG_TRACE(logger_, "[ipt bus] not enabled");
         }
@@ -160,9 +167,8 @@ namespace smf {
 
         if (auth) {
             CYNG_LOG_INFO(logger_, "[ipt] authorized at " << rep);
-            cfg_ipt ipt_cfg(cfg_);
-            ipt_cfg.set_local_enpdoint(lep);
-            ipt_cfg.set_remote_enpdoint(rep);
+            ipt_cfg_.set_local_enpdoint(lep);
+            ipt_cfg_.set_remote_enpdoint(rep);
             register_targets();
         } else {
             CYNG_LOG_WARNING(logger_, "[ipt] authorization lost");
@@ -195,8 +201,8 @@ namespace smf {
         //
         //  send
         //
-        if (bus_) {
-            bus_->transfer(std::move(buffer));
+        if (bus_.is_authorized()) {
+            bus_.transfer(std::move(buffer));
         }
 
         //
@@ -230,5 +236,37 @@ namespace smf {
     }
 
     void router::generate_close_response(std::string trx, cyng::object gsign) { messages_.push_back(res_gen_.public_close(trx)); }
+
+    void router::init_ipt_push() {
+
+        //
+        //  start all push tasks
+        //
+        cfg_.get_cache().access(
+            [&, this](cyng::table const *tbl) {
+                tbl->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
+                    auto const key = rec.key();
+                    auto const profile = rec.value("profile", OBIS_PROFILE);
+                    auto const interval = rec.value("interval", std::chrono::seconds(0));
+                    auto const delay = rec.value("delay", std::chrono::seconds(0));
+                    auto const target = rec.value("target", "");
+                    CYNG_LOG_INFO(logger_, "initialize: push task \"" << target << "\", " << obis::get_name(profile));
+
+                    auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, key);
+                    BOOST_ASSERT(channel->is_open());
+                    // stash_.lock(channel);
+                    channel->dispatch("run");
+                    return true;
+                });
+            },
+            cyng::access::read("pushOps"));
+    }
+    void router::stop_ipt_push() {
+        //
+        //  stops all tasks with this name
+        //
+        CYNG_LOG_INFO(logger_, "stop push tasks");
+        ctl_.get_registry().stop("push");
+    }
 
 } // namespace smf

@@ -5,9 +5,13 @@
  *
  */
 
+#include <sml/response_engine.h>
+
 #include <storage.h>
+#include <tasks/push.h>
 
 #include <smf.h>
+#include <smf/ipt/bus.h>
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/server_id.h>
 #include <smf/obis/db.h>
@@ -16,7 +20,6 @@
 #include <smf/sml/generator.h>
 #include <smf/sml/select.h>
 #include <smf/sml/value.hpp>
-#include <sml/response_engine.h>
 
 #include <config/cfg_hardware.h>
 #include <config/cfg_ipt.h>
@@ -34,16 +37,26 @@
 #include <cyng/store/key.hpp>
 #include <cyng/sys/info.h>
 #include <cyng/sys/ntp.h>
+#include <cyng/task/controller.h>
+
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
 #include <cyng/scm/mgr.h>
 #endif
 
 namespace smf {
 
-    response_engine::response_engine(cyng::logger logger, cfg &config, storage &s, sml::response_generator &rg)
+    response_engine::response_engine(
+        cyng::logger logger,
+        cyng::controller &ctl,
+        cfg &config,
+        storage &s,
+        ipt::bus &bus,
+        sml::response_generator &rg)
         : logger_(logger)
+        , ctl_(ctl)
         , cfg_(config)
         , storage_(s)
+        , bus_(bus)
         , res_gen_(rg) {}
 
     void response_engine::generate_get_proc_parameter_response(
@@ -618,18 +631,8 @@ namespace smf {
                     if (rec.empty()) {
                         //  insert
                         CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] insert new push op " << server << "#" << +nr);
-                        insert_push_op(tbl_push, tbl_reg, tbl_col, tbl_mir, key, pm, server, cfg_.get_tag());
-
-                        //
-                        //	Annotation: Inserting a PushOp requires to start a <push> task.
-                        //	The task has the specified interval and collects and push data from the data collector
-                        //	to the target on the IP-T master.
-                        //	Therefore a data collector must exists (with the same) key. And the <push> task
-                        //	requires also the profile OBIS code from the data collector. So a missing data collector
-                        //	is a failure.
-                        //	In this case the <push> task configuration will be written into the database
-                        //	but the task itself will not be started.
-                        //
+                        if (!insert_push_op(tbl_push, tbl_reg, tbl_col, tbl_mir, key, pm, server, cfg_.get_tag())) {
+                        }
 
                     } else {
                         //  update
@@ -646,7 +649,7 @@ namespace smf {
         return res_gen_.get_attention(trx, server, sml::attention_type::OK, "OK");
     }
 
-    bool insert_push_op(
+    bool response_engine::insert_push_op(
         cyng::table *tbl,
         cyng::table *tbl_reg,
         cyng::table const *tbl_col,
@@ -729,6 +732,22 @@ namespace smf {
                         cyng::extend_key(key, reg.first[cyng::obis::VG_STORAGE]), cyng::data_generator(reg.second), 1, source);
                 }
             }
+
+            //
+            //	Annotation: Inserting a PushOp requires to start a <push> task.
+            //	The task has the specified interval and collects and push data from the data collector
+            //	to the target on the IP-T master.
+            //	Therefore a data collector must exists (with the same) key. And the <push> task
+            //	requires also the profile OBIS code from the data collector. So a missing data collector
+            //	is a failure.
+            //	In this case the <push> task configuration will be written into the database
+            //	but the task itself will not be started.
+            //
+
+            auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, key);
+            BOOST_ASSERT(channel->is_open());
+            channel->dispatch("run");
+
             return true;
         }
         return false;
@@ -750,14 +769,17 @@ namespace smf {
         auto const reader = cyng::make_reader(pm);
         auto const regs = cyng::container_cast<cyng::prop_map_t>(reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_IDENTIFIERS));
         if (regs.empty()) {
-            //
-            //  delete
-            //
 
+            //
+            //  delete push op
+            //
             auto const nr = rec.value<std::uint8_t>("nr", 0u);
 
             //  "pushOps"
             if (tbl->erase(key, source)) {
+                //
+                //  ToDo: stop push task
+                //
                 tbl_reg->erase(
                     [&](cyng::record &&rec) -> bool {
                         //

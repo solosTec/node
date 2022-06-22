@@ -11,11 +11,15 @@
 #include <smf/sml/msg.h>
 
 #include <cyng/log/logger.h>
+#include <cyng/task/task_fwd.h>
 
 namespace smf {
 
     namespace sml {
         class response_generator;
+    }
+    namespace ipt {
+        class bus;
     }
 
     class storage;
@@ -24,7 +28,7 @@ namespace smf {
      */
     class response_engine {
       public:
-        response_engine(cyng::logger, cfg &config, storage &, sml::response_generator &);
+        response_engine(cyng::logger, cyng::controller &, cfg &config, storage &, ipt::bus &, sml::response_generator &);
 
         void generate_get_proc_parameter_response(
             sml::messages_t &,
@@ -182,10 +186,22 @@ namespace smf {
             std::chrono::system_clock::time_point const &begin,
             std::chrono::system_clock::time_point const &end);
 
+        bool insert_push_op(
+            cyng::table *,
+            cyng::table *,
+            cyng::table const *tbl_col,
+            cyng::table const *tbl_mir,
+            cyng::key_t const &,
+            cyng::prop_map_t const &,
+            cyng::buffer_t const &server,
+            boost::uuids::uuid);
+
       private:
         cyng::logger logger_;
+        cyng::controller &ctl_;
         cfg &cfg_;
         storage &storage_;
+        ipt::bus &bus_;
         sml::response_generator &res_gen_;
     };
 
@@ -204,15 +220,6 @@ namespace smf {
 
     cyng::tuple_t get_collector_registers(cyng::table const *, cyng::buffer_t const &, std::uint8_t);
 
-    bool insert_push_op(
-        cyng::table *,
-        cyng::table *,
-        cyng::table const *tbl_col,
-        cyng::table const *tbl_mir,
-        cyng::key_t const &,
-        cyng::prop_map_t const &,
-        cyng::buffer_t const &server,
-        boost::uuids::uuid);
     void update_push_op(
         cyng::table *,
         cyng::table *,

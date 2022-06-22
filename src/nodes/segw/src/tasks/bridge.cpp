@@ -24,7 +24,7 @@
 #include <config/cfg_nms.h>
 #include <config/cfg_sml.h>
 #include <config/cfg_vmeter.h>
-
+#include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 
 #include <cyng/db/storage.h>
@@ -213,7 +213,13 @@ namespace smf {
         //
         //  release all remaining references
         //
+        stash_.stop();
         stash_.clear();
+
+        //
+        //  relaxed task termination
+        //
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     void bridge::load_config_data() {
@@ -356,7 +362,11 @@ namespace smf {
             cyng::access::write("cfg"));
     }
 
-    void bridge::stop_cache_persistence() { stash_.stop("persistence"); }
+    void bridge::stop_cache_persistence() {
+
+        CYNG_LOG_INFO(logger_, "stop task persistence");
+        stash_.stop("persistence");
+    }
 
     void bridge::init_op_counter() {
         CYNG_LOG_INFO(logger_, "init operation counter");
@@ -367,7 +377,8 @@ namespace smf {
     }
 
     void bridge::stop_op_counter() {
-        CYNG_LOG_INFO(logger_, "stop operation counter");
+        CYNG_LOG_INFO(logger_, "stop task operation counter");
+        // ctl_.get_registry().dispatch("counter", "save");
         stash_.stop("counter");
     }
 
@@ -647,7 +658,14 @@ namespace smf {
         }
     }
 
-    void bridge::init_ipt_bus() { router_.start(); }
+    void bridge::init_ipt_bus() {
+        if (router_.start()) {
+            //
+            //	IP-T push
+            //
+            CYNG_LOG_INFO(logger_, "initialize: IP-T");
+        }
+    }
 
     void bridge::stop_ipt_bus() { router_.stop(); }
 
@@ -783,7 +801,9 @@ namespace smf {
     void bridge::stop_filter(lmn_type type) {
         cfg_blocklist cfg(cfg_, type);
 
-        stash_.stop(cfg.get_task_name()); //  unlock and stop
+        auto const name = cfg.get_task_name();
+        CYNG_LOG_INFO(logger_, "stop filter task [" << name << "]");
+        stash_.stop(name); //  unlock and stop
     }
 
     void bridge::init_gpio() {
@@ -830,6 +850,7 @@ namespace smf {
             auto const pins = cfg.get_pins();
             for (auto const pin : pins) {
                 auto const name = cfg_gpio::get_name(pin);
+                CYNG_LOG_INFO(logger_, "stop gpio task " << name);
                 stash_.stop(name); //  unlock and stop
             }
         } else {

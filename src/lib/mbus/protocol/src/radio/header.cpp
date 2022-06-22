@@ -38,16 +38,16 @@ namespace smf {
                     static_cast<char>(data_.at(8)),
                     static_cast<char>(data_.at(9))};
             }
-            cyng::buffer_t restore_data(header const &h, tpl const &t, cyng::buffer_t const &payload) {
+            cyng::buffer_t restore_data(header const &h, tplayer const &t, cyng::buffer_t const &payload) {
                 cyng::buffer_t res;
                 res.reserve(h.total_size() + 1);
                 res.insert(res.end(), h.data_.begin(), h.data_.end()); //	header
                 switch (get_tpl_type(h.get_frame_type())) {
-                case tpl_type::SHORT:
+                case tplayer_type::SHORT:
                     //	skip secondary address
                     res.insert(res.end(), t.data_.begin() + 8, t.data_.end()); //	tpl short
                     break;
-                case tpl_type::LONG:
+                case tplayer_type::LONG:
                     res.insert(res.end(), t.data_.begin(), t.data_.end()); //	tpl long
                     break;
                 default:
@@ -58,10 +58,10 @@ namespace smf {
                 return res;
             }
 
-            tpl::tpl()
+            tplayer::tplayer()
                 : data_{0} {}
 
-            void tpl::reset() { data_.fill(0); }
+            void tplayer::reset() { data_.fill(0); }
 
         } // namespace radio
 

@@ -12,6 +12,7 @@ set (mbus_cpp
     src/lib/mbus/protocol/src/vif.cpp
     src/lib/mbus/protocol/src/server_id.cpp
     src/lib/mbus/protocol/src/reader.cpp
+    src/lib/mbus/protocol/src/field_definitions.cpp
 )
     
 set (mbus_h

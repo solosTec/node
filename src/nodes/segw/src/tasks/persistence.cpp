@@ -136,7 +136,7 @@ namespace smf {
         } else {
             // use default mechanism
             auto const meta = get_sql_meta_data(tbl->meta().get_name());
-            CYNG_LOG_TRACE(logger_, "modify " << meta.get_name());
+            CYNG_LOG_TRACE(logger_, "modify " << meta.get_name() << "[" << attr.first << "] = " << attr.second);
             if (!config::persistent_update(meta, storage_.db_, key, attr, gen)) {
                 CYNG_LOG_ERROR(logger_, "[persistence] modify " << meta.get_name() << ": " << key.at(0) << " failed");
             }

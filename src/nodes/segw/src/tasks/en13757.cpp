@@ -1,5 +1,6 @@
 ﻿#include <tasks/en13757.h>
 
+#include <smf/mbus/field_definitions.h>
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/radio/decode.h>
 #include <smf/mbus/server_id.h>
@@ -28,7 +29,7 @@ namespace smf {
 		, ctl_(ctl)
 		, logger_(logger)
         , cfg_(config)
-        , parser_([this](mbus::radio::header const& h, mbus::radio::tpl const& t, cyng::buffer_t const& data) {
+        , parser_([this](mbus::radio::header const& h, mbus::radio::tplayer const& t, cyng::buffer_t const& data) {
 
             this->decode(h, t, data);
             //   auto const res = smf::mbus::radio::decode(h.get_server_id(), t.get_access_no(), aes, payload);
@@ -64,14 +65,15 @@ namespace smf {
 
     // void en13757::update_statistics() { CYNG_LOG_TRACE(logger_, "[EN-13757] update statistics"); }
 
-    void en13757::decode(mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &data) {
-        auto const flag_id = get_manufacturer_code(h.get_server_id());
-        CYNG_LOG_TRACE(
-            logger_,
-            "[EN-13757] read meter: " << get_id(h.get_server_id()) << " (" << mbus::decode(flag_id.first, flag_id.second) << ")");
+    void en13757::decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data) {
+        // auto const flag_id = get_manufacturer_code(h.get_server_id());
+        // CYNG_LOG_TRACE(
+        //     logger_,
+        //     "[EN-13757] read meter: " << get_id(h.get_server_id()) << " (" << mbus::decode(flag_id.first, flag_id.second) << ", "
+        //                               << get_medium_name(h.get_server_id()) << ")");
 
         //
-        //  get the AES key from table "TMeterMBus"
+        //   get the AES key from table "TMeterMBus"
         //
         cfg_.get_cache().access(
             [&](cyng::table *tbl) {
@@ -124,9 +126,36 @@ namespace smf {
                     //  update
                     //
                     tbl->modify(rec.key(), cyng::make_param("lastSeen", now), cfg_.get_tag());
+
+                    BOOST_ASSERT_MSG(!cyng::is_null(aes_key), "no aes key");
+                    if (h.has_secondary_address()) {
+                        decode(t.get_secondary_address(), t.get_access_no(), h.get_frame_type(), data, aes_key);
+                    } else {
+                        decode(h.get_server_id(), t.get_access_no(), h.get_frame_type(), data, aes_key);
+                    }
                 }
             },
             cyng::access::write("meterMBus"));
+    }
+
+    void en13757::decode(
+        srv_id_t address,
+        std::uint8_t access_no,
+        std::uint8_t frame_type,
+        cyng::buffer_t const &data,
+        cyng::crypto::aes_128_key const &key) {
+
+        auto const flag_id = get_manufacturer_code(address);
+        CYNG_LOG_TRACE(
+            logger_,
+            "[EN-13757] read meter: " << get_id(address) << " (" << mbus::decode(flag_id.first, flag_id.second) << ", "
+                                      << get_medium_name(address) << ", "
+                                      << mbus::field_name(static_cast<mbus::ci_field>(frame_type)) << ")");
+
+        auto const payload = mbus::radio::decode(address, access_no, key, data);
+        if (mbus::radio::is_decoded(payload)) {
+            CYNG_LOG_DEBUG(logger_, "[EN-13757] payload: " << payload);
+        }
     }
 
 } // namespace smf

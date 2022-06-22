@@ -78,7 +78,7 @@ namespace smf {
         /**
          * Apply filter and forward all valid data.
          */
-        void check(mbus::radio::header const &h, mbus::radio::tpl const &t, cyng::buffer_t const &data);
+        void check(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data);
         bool check_frequency(std::string const &id);
 
       private:

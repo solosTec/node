@@ -234,7 +234,6 @@ if(OPENSSL_FOUND)
     message(STATUS "** openSSL crypto library       : ${OPENSSL_CRYPTO_LIBRARY}")
     message(STATUS "** openSSL SSL library          : ${OPENSSL_SSL_LIBRARY}")
     message(STATUS "** openSSL Libraries            : ${OPENSSL_LIBRARIES}")
-
     set(${PROJECT_NAME}_SSL_VERSION ${OPENSSL_VERSION})
 #
 else()
