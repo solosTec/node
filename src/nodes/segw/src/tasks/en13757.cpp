@@ -3,9 +3,15 @@
 #include <smf/mbus/field_definitions.h>
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/radio/decode.h>
+#include <smf/mbus/reader.h>
 #include <smf/mbus/server_id.h>
+#include <smf/sml/reader.h>
+#include <smf/sml/readout.h>
+#include <smf/sml/unpack.h>
 
+#include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/controller.h>
@@ -146,16 +152,118 @@ namespace smf {
         cyng::crypto::aes_128_key const &key) {
 
         auto const flag_id = get_manufacturer_code(address);
+        auto const manufacturer = mbus::decode(flag_id.first, flag_id.second);
         CYNG_LOG_TRACE(
             logger_,
-            "[EN-13757] read meter: " << get_id(address) << " (" << mbus::decode(flag_id.first, flag_id.second) << ", "
-                                      << get_medium_name(address) << ", "
+            "[EN-13757] read meter: " << get_id(address) << " (" << manufacturer << ", " << get_medium_name(address) << ", "
                                       << mbus::field_name(static_cast<mbus::ci_field>(frame_type)) << ")");
 
         auto const payload = mbus::radio::decode(address, access_no, key, data);
         if (mbus::radio::is_decoded(payload)) {
             CYNG_LOG_DEBUG(logger_, "[EN-13757] payload: " << payload);
+            switch (frame_type) {
+            case mbus::FIELD_CI_HEADER_LONG:
+            case mbus::FIELD_CI_HEADER_SHORT: {
+                auto const id = get_id(address);
+                read_mbus(
+                    address,
+                    id, //	meter id
+                    get_medium(address),
+                    manufacturer,
+                    frame_type,
+                    payload);
+            } break;
+            case mbus::FIELD_CI_RES_LONG_DLMS:
+            case mbus::FIELD_CI_RES_SHORT_DLSM:
+                // read_dlms(address, payload);
+                break;
+            case mbus::FIELD_CI_RES_LONG_SML:
+            case mbus::FIELD_CI_RES_SHORT_SML: read_sml(address, payload); break;
+            default: break;
+            }
         }
     }
+    std::size_t en13757::read_sml(srv_id_t const &address, cyng::buffer_t const &payload) {
+        smf::sml::unpack p(
+            [&, this](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+                CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
 
+                auto const [client, server, code, tp1, tp2, data] = sml::read_get_list_response(msg);
+                for (auto const &m : data) {
+                    CYNG_LOG_TRACE(logger_, "[sml] " << m.first << ": " << m.second);
+
+                    //
+                    //	extract values
+                    //
+                    auto const reader = cyng::make_reader(m.second);
+                    auto const value = cyng::io::to_plain(reader.get("value"));
+                    auto const unit_name = cyng::value_cast(reader.get("unit-name"), "");
+
+                    //
+                    //	store data to csv file
+                    //
+                    // writer_->dispatch("store", cyng::make_tuple(m.first, value, unit_name));
+                }
+
+                // count = data.size();
+            });
+        p.read(payload.begin() + 2, payload.end());
+        return 0;
+    }
+
+    std::size_t en13757::read_mbus(
+        srv_id_t const &address,
+        std::string const &id,
+        std::uint8_t medium,
+        std::string const &manufacturer,
+        std::uint8_t frame_type,
+        cyng::buffer_t const &payload) {
+
+        // CYNG_LOG_TRACE(logger_, "[wmbus] payload " << payload);
+        std::size_t offset = 2;
+        cyng::obis code;
+        cyng::object obj;
+        std::int8_t scaler = 0;
+        smf::mbus::unit u;
+        std::stringstream ss;
+        bool valid = false;
+        bool init = false;
+        std::size_t count{0};
+        cyng::tuple_t sml_list;
+
+        while (offset < payload.size()) {
+            std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(payload, offset, 1);
+            if (valid) {
+
+                //
+                //  scaling the value
+                //
+                auto const value = sml::read_value(code, scaler, obj);
+
+                //
+                //	store data to csv file
+                //
+                // writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_unit_name(u)));
+
+                if (!init) {
+                    init = true;
+                } else {
+                    ss << ", ";
+                }
+                ss << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
+                CYNG_LOG_TRACE(logger_, "[wmbus] " << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u));
+                ++count;
+
+                //
+                //  produce a SML_ListEntry
+                // ToDo: extra handling of time points
+                // How to serialize time points in SML Lists?
+                //
+                if (obj.tag() != cyng::TC_TIME_POINT) {
+                    // sml_list.push_back(cyng::make_object(sml::list_entry(code, 0, mbus::to_u8(u), scaler, obj)));
+                }
+            }
+        }
+        return 0;
+    }
 } // namespace smf

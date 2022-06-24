@@ -120,8 +120,21 @@ namespace smf {
 
             /**
              * SML_GetList.Res
+             *
+             * @param trx transaction name
+             * @param client gateway ID
+             * @param server meter ID
+             * @param code optional list name
+             * @param data tuple of measuring data
+             * @param seconds_idx seconds index featuring monotonous mathematical growth
              */
-            [[nodiscard]] cyng::tuple_t get_list(cyng::buffer_t const &server, cyng::tuple_t val_list);
+            [[nodiscard]] cyng::tuple_t get_list(
+                std::string const &trx,
+                cyng::buffer_t const &client,
+                cyng::buffer_t const &server,
+                cyng::obis code,
+                cyng::tuple_t data,
+                std::uint32_t seconds_idx);
 
             /**
              * SML_GetProfileList.Res

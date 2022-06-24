@@ -1,6 +1,7 @@
+#include <smf/sml/reader.h>
+
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
-#include <smf/sml/reader.h>
 #include <smf/sml/readout.h>
 
 #include <cyng/obj/buffer_cast.hpp>
@@ -136,6 +137,44 @@ namespace smf {
                 return *msg.begin();
             }
             return cyng::make_object();
+        }
+
+        std::tuple<cyng::buffer_t, cyng::buffer_t, std::string, std::string, cyng::obis> read_get_list_request(cyng::tuple_t msg) {
+            BOOST_ASSERT(msg.size() == 5);
+            if (msg.size() == 5) {
+                //
+                //	iterate over message
+                //
+                auto pos = msg.begin();
+
+                //
+                //	client id - MAC address from caller
+                //
+                auto const client = cyng::to_buffer(*pos++);
+
+                //
+                //	serverId - meter ID
+                //
+                auto const server = cyng::to_buffer(*pos++);
+
+                //
+                //	username
+                //
+                auto const user = to_string(*pos++);
+
+                //
+                //	password
+                //
+                auto const pwd = to_string(*pos++);
+
+                //
+                //	OBIS code
+                //
+                auto const code = read_obis(*pos++);
+
+                return {client, server, user, pwd, code};
+            }
+            return {{}, {}, {}, {}, {}};
         }
 
         std::tuple<cyng::buffer_t, cyng::buffer_t, cyng::obis, cyng::object, cyng::object, sml_list_t>

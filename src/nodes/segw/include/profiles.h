@@ -20,7 +20,8 @@ namespace smf {
     /**
      * calculate next time point to push data for specified profile
      */
-    std::chrono::system_clock::time_point next(std::chrono::seconds interval, cyng::obis profile);
+    std::chrono::system_clock::time_point
+    next(std::chrono::seconds interval, cyng::obis profile, std::chrono::system_clock::time_point);
 
     /**
      * @return minutes since Unix epoch (00:00:00 UTC on 1 January 1970)

@@ -63,6 +63,15 @@ namespace smf {
             cyng::object,
             cyng::object);
 
+        void generate_get_list_response(
+            sml::messages_t &msgs,
+            std::string trx,
+            cyng::buffer_t,
+            cyng::buffer_t,
+            std::string,
+            std::string,
+            cyng::obis);
+
       private:
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_status_word(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
@@ -178,13 +187,15 @@ namespace smf {
         [[nodiscard]] cyng::tuple_t
         get_proc_parameter_security(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path);
 
-        [[nodiscard]] void get_profile_list_response_oplog(
+        void get_profile_list_response_oplog(
             sml::messages_t &msgs,
             std::string const &trx,
             cyng::buffer_t const &server,
             cyng::obis_path_t const &path,
             std::chrono::system_clock::time_point const &begin,
             std::chrono::system_clock::time_point const &end);
+
+        [[nodiscard]] cyng::tuple_t get_list_current_data_record(std::string trx, cyng::buffer_t, cyng::buffer_t, cyng::obis);
 
         bool insert_push_op(
             cyng::table *,

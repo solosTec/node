@@ -57,30 +57,30 @@ namespace smf {
         return sec;
     }
 
-    std::chrono::system_clock::time_point next(std::chrono::seconds interval, cyng::obis profile) {
+    std::chrono::system_clock::time_point
+    next(std::chrono::seconds interval, cyng::obis profile, std::chrono::system_clock::time_point now) {
         auto count = interval.count();
-        auto const now = std::chrono::system_clock::now();
         auto const epoch = std::chrono::time_point<std::chrono::system_clock>{};
 
         switch (profile.to_uint64()) {
         case CODE_PROFILE_1_MINUTE: {
             auto const minutes = minutes_since_epoch(now).count();
-            return epoch + std::chrono::minutes(minutes + (count / 60u));
+            return epoch + std::chrono::minutes(minutes) + std::chrono::minutes(count / 60u);
         } break;
 
         case CODE_PROFILE_15_MINUTE: {
             auto const quarters = minutes_since_epoch(now).count() / 15u;
-            return epoch + std::chrono::minutes((quarters * 15u) + (count / 60u));
+            return epoch + std::chrono::minutes(quarters * 15u) + std::chrono::minutes(count / 60u);
         } break;
 
         case CODE_PROFILE_60_MINUTE: {
             auto const hours = hours_since_epoch(now).count();
-            return epoch + std::chrono::hours(hours + (count / 3600u));
+            return epoch + std::chrono::hours(hours) + std::chrono::hours(count / 3600u);
         } break;
 
         case CODE_PROFILE_24_HOUR: {
             auto const hours = hours_since_epoch(now).count();
-            return epoch + std::chrono::hours(hours + (count / 3600u));
+            return epoch + std::chrono::hours(hours) + std::chrono::hours(count / 3600u);
         } break;
 
         case CODE_PROFILE_1_MONTH:

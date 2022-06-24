@@ -51,6 +51,16 @@ namespace smf {
          */
         cyng::object read_public_close_response(cyng::tuple_t msg);
 
+        /** @brief GET_LIST_REQUEST (1792)
+         *
+         * SML push data
+         *
+         * @return tuple with client id, server id, list name (obis code), sensor time, gateway time and a map
+         * with all readouts.
+         */
+        [[nodiscard]] std::tuple<cyng::buffer_t, cyng::buffer_t, std::string, std::string, cyng::obis>
+        read_get_list_request(cyng::tuple_t msg);
+
         /** @brief GET_LIST_RESPONSE (1793)
          *
          * SML push data

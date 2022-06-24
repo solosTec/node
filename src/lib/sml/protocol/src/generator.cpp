@@ -2,6 +2,7 @@
 #include <smf/obis/defs.h>
 #include <smf/sml/generator.h>
 #include <smf/sml/msg.h>
+#include <smf/sml/value.hpp>
 
 #include <cyng/obj/util.hpp>
 #include <cyng/parse/string.h>
@@ -134,22 +135,84 @@ namespace smf {
             );
         }
 
-        cyng::tuple_t response_generator::get_list(cyng::buffer_t const &server, cyng::tuple_t val_list) {
+        cyng::tuple_t response_generator::get_list(
+            std::string const &trx,
+            cyng::buffer_t const &client,
+            cyng::buffer_t const &server,
+            cyng::obis code,
+            cyng::tuple_t values,
+            std::uint32_t seconds_idx) {
 
-            trx trx_mgr;
+            // { null
+            //. 01a815743145040102:binary
+            //. null
+            //. null
+            //. { { 0100010800ff:binary
+            //. . . 000202a0u32
+            //. . . null
+            //. . . 1eu8
+            //. . . -1i8
+            //. . . 14521i64
+            //. . . null}
+            //. . { 0100020800ff:binary
+            //. . . 000202a0u32
+            //. . . null
+            //. . . 1eu8
+            //. . . -1i8
+            //. . . 940026i64
+            //. . . null}
+            //. . { 0100010801ff:binary
+            //. . . null
+            //. . . null
+            //. . . 1eu8
+            //. . . -1i8
+            //. . . 0i64
+            //. . . null}
+            //. . { 0100020801ff:binary
+            //. . . null
+            //. . . null
+            //. . . 1eu8
+            //. . . -1i8
+            //. . . 0i64
+            //. . . null}
+            //. . { 0100010802ff:binary
+            //. . . null
+            //. . . null
+            //. . . 1eu8
+            //. . . -1i8
+            //. . . 14521i64
+            //. . . null}
+            //. . { 0100020802ff:binary
+            //. . . null
+            //. . . null
+            //. . . 1eu8
+            //. . . -1i8
+            //. . . 940026i64
+            //. . . null}
+            //. . { 0100100700ff:binary
+            //. . . null
+            //. . . null
+            //. . . 1bu8
+            //. . . -1i8
+            //. . . -138i32
+            //. . . null}}
+            //. null
+            //. { 1u8
+            //. . 0c1d636bu32}}
+
             return make_message(
-                *trx_mgr,
+                trx,
                 1, //  group
                 0, //  abort code
                 msg_type::GET_LIST_RESPONSE,
                 cyng::make_tuple(
-                    cyng::null{},                  // client id
+                    client,                        // client id (optional)
                     server,                        // server id
-                    cyng::null{},                  // list name
-                    cyng::null{},                  // act. sensor time
-                    val_list,                      // SML_List / SML_ListEntry
-                    cyng::null{},                  // listSignature
-                    cyng::null{}),                 // actGatewayTime
+                    code,                          // list name (optional)
+                    cyng::null{},                  // act. sensor time (optional)
+                    values,                        // SML_List / SML_ListEntry
+                    cyng::null{},                  // listSignature (optional)
+                    make_attribute(seconds_idx)),  // actGatewayTime (optional)
                 static_cast<std::uint16_t>(0xFFFF) //  crc placeholder
             );
         }

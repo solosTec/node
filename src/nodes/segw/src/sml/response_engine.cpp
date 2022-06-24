@@ -271,7 +271,10 @@ namespace smf {
             case CODE_PROFILE_INITIAL:      // 81 81 C7 86 18 FF
                 // return get_profile(code, trx, client_id, srv_id, start, end);
                 break;
-            default: CYNG_LOG_WARNING(logger_, "[SML_GetProfileList.Req] unknown OBIS code: " << cyng::io::to_hex(server)); break;
+            default:
+                CYNG_LOG_WARNING(logger_, "[SML_GetProfileList.Req] unknown OBIS code: " << cyng::io::to_hex(server));
+                msgs.push_back(res_gen_.get_attention(trx, server, sml::attention_type::UNKNOWN_OBIS_CODE, "SML_GetProfileList"));
+                break;
             }
 
         } else {
@@ -282,11 +285,40 @@ namespace smf {
         }
     }
 
+    void response_engine::generate_get_list_response(
+        sml::messages_t &msgs,
+        std::string trx,
+        cyng::buffer_t client,
+        cyng::buffer_t server,
+        std::string user,
+        std::string pwd,
+        cyng::obis code) {
+
+        CYNG_LOG_INFO(
+            logger_,
+            "[SML_GetList.Req] trx: " << trx << ", client: " << cyng::io::to_hex(client) << ", server: " << cyng::io::to_hex(server)
+                                      << ", user: " << user << ", pwd: " << pwd << ", code: " << code << " ("
+                                      << obis::get_name(code) << ")");
+
+        switch (code.to_uint64()) {
+        case CODE_LIST_CURRENT_DATA_RECORD:
+            // [SML_GetList.Req]
+            //  trx: 220624103458605119-2,
+            //  client: 005056c00008,
+            //  server: 01242396072000630e,
+            //  user: operator,
+            //  pwd: operator,
+            //  code: 990000000003 (LIST_CURRENT_DATA_RECORD)
+            msgs.push_back(get_list_current_data_record(trx, client, server, code));
+            break;
+        default: msgs.push_back(res_gen_.get_attention(trx, server, sml::attention_type::UNKNOWN_OBIS_CODE, "SML_GetList")); break;
+        }
+    }
+
     cyng::tuple_t response_engine::get_proc_parameter_status_word(
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         BOOST_ASSERT(!path.empty());
         return res_gen_.get_proc_parameter(
             trx, server, path, sml::make_param_tree(path.front(), sml::make_value(cfg_.get_status_word())));
@@ -296,7 +328,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         // auto const srv_id = cfg_.get_srv_id();
 
         cfg_hardware const hw(cfg_);
@@ -355,7 +386,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         //  81 81 c7 88 10 ff
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_DEVICE_TIME);
@@ -383,7 +413,6 @@ namespace smf {
 
     cyng::tuple_t
     response_engine::get_proc_parameter_ntp(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path) {
-
         //  81 81 c7 88 01 ff
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_NTP);
@@ -459,7 +488,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         //  81 49 0D 06 00 FF
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_IPT_STATE);
@@ -614,7 +642,6 @@ namespace smf {
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path,
         cyng::tuple_t const &child_list) {
-
         auto const nr = path.back()[cyng::obis::VG_STORAGE];
 
         CYNG_LOG_TRACE(logger_, "[SML_SetProcParameter.Req] push ops #" << +nr << ": " << cyng::io::to_typed(child_list));
@@ -658,7 +685,6 @@ namespace smf {
         cyng::prop_map_t const &pm,
         cyng::buffer_t const &server,
         boost::uuids::uuid source) {
-
         BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl->meta().get_name(), "pushOps"), "pushOps expected");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_reg->meta().get_name(), "pushRegister"), "pushRegister expected");
@@ -692,7 +718,20 @@ namespace smf {
         auto const service = reader.get(OBIS_PUSH_SERVICE, OBIS_PUSH_SERVICE_IPT);
 
         //  "pushOps"
-        if (tbl->insert(key, cyng::data_generator(interval, delay, origin, target, service, profile), 1, source)) {
+        if (tbl->insert(
+                key,
+                cyng::data_generator(
+                    interval,
+                    delay,
+                    origin,
+                    target,
+                    service,
+                    profile,
+                    static_cast<std::size_t>(0),     //  task
+                    std::chrono::system_clock::now() //  offset
+                    ),
+                1,
+                source)) {
 
             auto const regs = cyng::container_cast<cyng::prop_map_t>(reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_IDENTIFIERS));
             if (regs.empty()) {
@@ -746,7 +785,8 @@ namespace smf {
 
             auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, key);
             BOOST_ASSERT(channel->is_open());
-            channel->dispatch("run");
+            tbl->modify(key, cyng::make_param("task", channel->get_id()), source);
+            channel->dispatch("init");
 
             return true;
         }
@@ -761,7 +801,6 @@ namespace smf {
         cyng::prop_map_t const &pm,
         cyng::buffer_t const &server,
         boost::uuids::uuid source) {
-
         BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl->meta().get_name(), "pushOps"), "pushOps expected");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_reg->meta().get_name(), "pushRegister"), "pushRegister expected");
@@ -821,7 +860,6 @@ namespace smf {
         cyng::key_t const &key,
         cyng::prop_map_t const &pm,
         boost::uuids::uuid source) {
-
         BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
 
         // Example:
@@ -859,7 +897,6 @@ namespace smf {
         cyng::key_t const &key,
         cyng::prop_map_t const &pm,
         boost::uuids::uuid source) {
-
         //
         //  update data collector
         //
@@ -906,7 +943,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         //  81 06 0F 06 00 FF
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_W_MBUS_STATUS);
@@ -932,7 +968,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         //  81 06 19 07 00 FF
         //   8106190701ff: 0
         //      8106190702ff: 1e (S2 mode)
@@ -993,7 +1028,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         //  00 80 80 00 10 FF
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_MEMORY_USAGE);
@@ -1231,7 +1265,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_SENSOR_PARAMS);
 
@@ -1426,7 +1459,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         //  00 80 80 00 00 FF
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_STORAGE_TIME_SHIFT);
@@ -1448,7 +1480,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_PUSH_OPERATIONS);
 
@@ -1624,7 +1655,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-
         //
         //   example:
         //   0080801101ff: null
@@ -1663,7 +1693,6 @@ namespace smf {
         cyng::obis_path_t const &path,
         std::chrono::system_clock::time_point const &begin,
         std::chrono::system_clock::time_point const &end) {
-
         BOOST_ASSERT_MSG(begin < end, "invalid time range");
 
         CYNG_LOG_INFO(logger_, "op log from " << begin << " to " << end);
@@ -1758,6 +1787,14 @@ namespace smf {
                  sml::period_entry(OBIS_DATA_PUSH_DETAILS, 0xFF, details)}));
             return true;
         });
+    }
+
+    cyng::tuple_t
+    response_engine::get_list_current_data_record(std::string trx, cyng::buffer_t client, cyng::buffer_t server, cyng::obis code) {
+        cyng::tuple_t tpl; //	current data record
+
+        tpl.push_back(cyng::make_object(sml::list_entry(OBIS_REG_POS_ACT_E, 0, 2, 1, cyng::make_object(1234))));
+        return res_gen_.get_list(trx, client, server, code, tpl, cfg_.get_operating_time());
     }
 
     cyng::tuple_t generate_tree_ntp(std::vector<std::string> const &ntp_servers) {

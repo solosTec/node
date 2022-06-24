@@ -26,6 +26,7 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
+            std::function<void(void)>, //	init
             std::function<void(void)>, //	run
             std::function<void(cyng::eod)>>;
 
@@ -34,6 +35,7 @@ namespace smf {
 
       private:
         void stop(cyng::eod);
+        void init();
         void run();
 
       private:

@@ -153,12 +153,13 @@ namespace smf {
                 //	* 81 81 C7 8A 42 FF == profile (PUSH_SOURCE_PROFILE)
                 //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
                 //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_SENSOR_LIST)
-                cyng::column("source", cyng::TC_OBIS),   // (81 81 c7 8a 04 ff - PUSH_SOURCE) source type - mostly
-                                                         // PUSH_SOURCE_SENSOR_LIST (81 81 C7 8A 44 FF)
-                cyng::column("target", cyng::TC_STRING), // (81 47 17 07 00 FF - PUSH_TARGET) target name
-                cyng::column("service", cyng::TC_OBIS),  // (81 49 00 00 10 FF - PUSH_SERVICE) push service (= PUSH_SERVICE_IPT)
-                cyng::column("profile", cyng::TC_OBIS)   // (81 81 C7 8A 83 FF - PROFILE) 5, 15, 60, 1440 minutes
-                //  ToDo: last successfull push
+                cyng::column("source", cyng::TC_OBIS),      // (81 81 c7 8a 04 ff - PUSH_SOURCE) source type - mostly
+                                                            // PUSH_SOURCE_SENSOR_LIST (81 81 C7 8A 44 FF)
+                cyng::column("target", cyng::TC_STRING),    // (81 47 17 07 00 FF - PUSH_TARGET) target name
+                cyng::column("service", cyng::TC_OBIS),     // (81 49 00 00 10 FF - PUSH_SERVICE) push service (= PUSH_SERVICE_IPT)
+                cyng::column("profile", cyng::TC_OBIS),     // (81 81 C7 8A 83 FF - PROFILE) 5, 15, 60, 1440 minutes
+                cyng::column("task", cyng::TC_UINT64),      // push task id
+                cyng::column("offset", cyng::TC_TIME_POINT) // last push time
             },
             2);
     }
@@ -169,7 +170,7 @@ namespace smf {
         // SELECT hex(TPushOps.meterID), TPushOps.target, TPushOps.nr, TPushRegister.idx FROM TPushOps INNER JOIN TPushRegister ON
         // TPushRegister.meterID = TPushOps.meterID AND TPushRegister.nr = TPushOps.nr;
         //
-        return cyng::to_sql(get_store_push_ops(), {9, 0, 0, 0, 0, 0, 0, 0});
+        return cyng::to_sql(get_store_push_ops(), {9, 0, 0, 0, 0, 0, 0, 0, 0, 0});
     }
 
     cyng::meta_store get_store_push_register() {

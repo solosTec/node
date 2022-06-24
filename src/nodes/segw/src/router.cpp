@@ -81,6 +81,11 @@ namespace smf {
                     &response_engine::generate_get_profile_list_response,
                     std::tuple_cat(std::make_tuple(&engine_, std::ref(messages_), trx), sml::read_get_profile_list_request(msg)));
                 break;
+            case sml::msg_type::GET_LIST_REQUEST:
+                std::apply(
+                    &response_engine::generate_get_list_response,
+                    std::tuple_cat(std::make_tuple(&engine_, std::ref(messages_), trx), sml::read_get_list_request(msg)));
+                break;
             case sml::msg_type::CLOSE_REQUEST:
                 generate_close_response(trx, sml::read_public_close_request(msg));
                 //
@@ -243,7 +248,11 @@ namespace smf {
         //  start all push tasks
         //
         cfg_.get_cache().access(
-            [&, this](cyng::table const *tbl) {
+            [&, this](cyng::table *tbl) {
+                //
+                //  store task ids
+                //
+                std::map<cyng::key_t, std::size_t> task_ids;
                 tbl->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
                     auto const key = rec.key();
                     auto const profile = rec.value("profile", OBIS_PROFILE);
@@ -254,12 +263,19 @@ namespace smf {
 
                     auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, key);
                     BOOST_ASSERT(channel->is_open());
-                    // stash_.lock(channel);
-                    channel->dispatch("run");
+                    channel->dispatch("init");
+                    task_ids.emplace(key, channel->get_id());
                     return true;
                 });
+
+                //
+                //  update task ids
+                //
+                for (auto const &v : task_ids) {
+                    tbl->modify(v.first, cyng::make_param("task", v.second), cfg_.get_tag());
+                }
             },
-            cyng::access::read("pushOps"));
+            cyng::access::write("pushOps"));
     }
     void router::stop_ipt_push() {
         //

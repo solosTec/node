@@ -74,6 +74,15 @@ namespace smf {
             cyng::buffer_t const &data,
             cyng::crypto::aes_128_key const &);
 
+        std::size_t read_sml(srv_id_t const &address, cyng::buffer_t const &payload);
+        std::size_t read_mbus(
+            srv_id_t const &address,
+            std::string const &id,
+            std::uint8_t medium,
+            std::string const &manufacturer,
+            std::uint8_t frame_type,
+            cyng::buffer_t const &payload);
+
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
