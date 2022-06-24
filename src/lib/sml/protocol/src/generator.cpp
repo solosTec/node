@@ -217,6 +217,26 @@ namespace smf {
             );
         }
 
+        cyng::tuple_t response_generator::get_list(cyng::buffer_t const &server, cyng::tuple_t data) {
+
+            trx trx_mgr;
+            return make_message(
+                *trx_mgr,
+                1, //  group
+                0, //  abort code
+                msg_type::GET_LIST_RESPONSE,
+                cyng::make_tuple(
+                    cyng::null{},                  // client id (optional)
+                    server,                        // server id
+                    cyng::null{},                  // list name (optional)
+                    cyng::null{},                  // act. sensor time (optional)
+                    data,                          // SML_List / SML_ListEntry
+                    cyng::null{},                  // listSignature (optional)
+                    make_attribute(0)),            // actGatewayTime (optional)
+                static_cast<std::uint16_t>(0xFFFF) //  crc placeholder
+            );
+        }
+
         cyng::tuple_t response_generator::get_profile_list(
             std::string const &trx,
             cyng::buffer_t const &server,
