@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(id) {
     BOOST_REQUIRE_EQUAL(m2.at(2) & 0xFF, 0x00);
     BOOST_REQUIRE_EQUAL(m2.at(3) & 0xFF, 0x2f);
 
-    auto const s1 = smf::srv_id_to_str(smf::srv_id_t({0x02, 0xe6, 0x1e, 0x03, 0x19, 0x77, 0x15, 0x3c, 0x07}));
+    auto const s1 = smf::to_str(smf::srv_id_t({0x02, 0xe6, 0x1e, 0x03, 0x19, 0x77, 0x15, 0x3c, 0x07}));
     BOOST_REQUIRE_EQUAL(s1, "02-e61e-03197715-3c-07");
 
     auto const b1 = smf::to_srv_id(s1);
@@ -168,9 +168,9 @@ BOOST_AUTO_TEST_CASE(parser) {
         [&](smf::mbus::radio::header const &h, smf::mbus::radio::tplayer const &t, cyng::buffer_t const &payload) {
             std::cout << smf::mbus::to_str(h) << std::endl;
             auto const sec = t.get_secondary_address();
-            std::cout << smf::srv_id_to_str(sec) << std::endl;
+            std::cout << smf::to_str(sec) << std::endl;
 
-            BOOST_REQUIRE_EQUAL(smf::srv_id_to_str(sec), "01-e61e-57140621-36-03");
+            BOOST_REQUIRE_EQUAL(smf::to_str(sec), "01-e61e-57140621-36-03");
 
             auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>("6140B8C066EDDE3773EDF7F8007A45AB");
 

@@ -68,14 +68,17 @@ namespace smf {
          */
         void decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data);
         void decode(
+            cyng::table *tbl_readout,
+            cyng::table *tbl_data,
             srv_id_t address,
             std::uint8_t access_no,
             std::uint8_t frame_type,
             cyng::buffer_t const &data,
             cyng::crypto::aes_128_key const &);
 
-        std::size_t read_sml(srv_id_t const &address, cyng::buffer_t const &payload);
-        std::size_t read_mbus(
+        void read_sml(cyng::table *tbl_data, srv_id_t const &address, cyng::buffer_t const &payload);
+        void read_mbus(
+            cyng::table *tbl_data,
             srv_id_t const &address,
             std::string const &id,
             std::uint8_t medium,

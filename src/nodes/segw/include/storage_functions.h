@@ -32,6 +32,12 @@ namespace smf {
     cyng::meta_store get_store_push_ops();
     cyng::meta_store get_store_push_register();
 
+    /**
+     * Contains latest readout data.
+     */
+    cyng::meta_store get_store_readout();
+    cyng::meta_store get_store_readout_data();
+
     cyng::meta_sql get_table_cfg();
     cyng::meta_sql get_table_oplog();
     cyng::meta_sql get_table_meter_mbus();

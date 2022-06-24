@@ -61,11 +61,11 @@ namespace smf {
             CTRL_FIELD_SND_NR = 0x44,  //	Send spontaneous/periodical application data without request (S1 mode)
             CTRL_FIELD_SND_IR = 0x46,  //	Send manually initiated installation data (Send Installation Request)
             CTRL_FIELD_ACC_NR = 0x47,  //	Contains no data – signals an empty transmission or provides the opportunity to
-                                       //access the bidirectional meter, between two application data transmissions
+                                       // access the bidirectional meter, between two application data transmissions
             CTRL_FIELD_ACC_DMD = 0x48, //	Access demand to master in order to request new important application data (alerts)
 
             //	Acknowledge the reception of a SND-UD (acknowledgement of transmission only); It shall also be used as a response to
-            //an REQ-UD1, when no alert happened CTRL_FIELD_ACK = 0x00,
+            // an REQ-UD1, when no alert happened CTRL_FIELD_ACK = 0x00,
             CTRL_FIELD_ACK_1 = 0x10,
             CTRL_FIELD_ACK_2 = 0x20,
             CTRL_FIELD_ACK_3 = 0x30,
@@ -84,31 +84,31 @@ namespace smf {
 
         enum ci_field : std::uint8_t {
 
-            FIELD_CI_RESET = 0x50,               //!<		Reset(EN 13757-3)
-            FIELD_CI_DATA_SEND = 0x51,           //!<	Data send - mode 1 (EN 13757-3)
-            FIELD_CI_SLAVE_SELECT = 0x52,        //!<	Slave select - mode 1 (EN 13757-3)
-            FIELD_CI_APPLICATION_RESET = 0x53,   //!<	Application reset or select (EN 13757-3).
+            FIELD_CI_RESET = 0x50,               //!< Reset(EN 13757-3)
+            FIELD_CI_DATA_SEND = 0x51,           //!< Data send - mode 1 (EN 13757-3)
+            FIELD_CI_SLAVE_SELECT = 0x52,        //!< Slave select - mode 1 (EN 13757-3)
+            FIELD_CI_APPLICATION_RESET = 0x53,   //!< Application reset or select (EN 13757-3).
             FIELD_CI_SYNC = 0x54,                //!< syncronize action
-            FIELD_CI_CMD_TO_DEVICE_SHORT = 0x5A, //!<	CMD to device with short header (OMS Vol.2 Issue 2.0.0/2009-07-20)
-            FIELD_CI_CMD_TO_DEVICE_LONG = 0x5B,  //!<	CMD to device with long header (OMS Vol.2 Issue 2.0.0/2009-07-20)
-            FIELD_CI_CMD_TLS_HANDSHAKE = 0x5F,   //!<	Security Management (TLS-Handshake)
+            FIELD_CI_CMD_TO_DEVICE_SHORT = 0x5A, //!< CMD to device with short header (OMS Vol.2 Issue 2.0.0/2009-07-20)
+            FIELD_CI_CMD_TO_DEVICE_LONG = 0x5B,  //!< CMD to device with long header (OMS Vol.2 Issue 2.0.0/2009-07-20)
+            FIELD_CI_CMD_TLS_HANDSHAKE = 0x5F,   //!< Security Management (TLS-Handshake)
             FIELD_CI_CMD_DLMS_LONG = 0x60,
             FIELD_CI_CMD_DLMS_SHORT = 0x61,
             FIELD_CI_CMD_SML_LONG = 0x64,
             FIELD_CI_CMD_SML_SHORT = 0x65,
             FIELD_CI_TIME_SYNC_1 = 0x6C,     //!< Time synchronization (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
-            FIELD_CI_TIME_SYNC_2 = 0x6D,     //!<	Time synchronization (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
-            FIELD_CI_APL_ERROR_SHORT = 0x6E, //!<	Error from device with short header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
-            FIELD_CI_APL_ERROR_LONG = 0x6F,  //!<	Error from device with long header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
-            FIELD_CI_APL_ERROR = 0x70,       //!<		Report of general application errors (EN 13757-3)
-            FIELD_CI_ALARM = 0x71,           //!<		report of alarms (EN 13757-3)
-            FIELD_CI_HEADER_LONG = 0x72,     //!<	12 byte header followed by variable format data (EN 13757-3)
-            FIELD_CI_APL_ALARM_SHORT = 0x74, //!	<Alarm from device with short header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
-            FIELD_CI_APL_ALARM_LONG = 0x75,  //!<	Alarm from device with long header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
-            FIELD_CI_HEADER_NO = 0x78,       //!<	Variable data format respond without header (EN 13757-3) - no encryption
-            FIELD_CI_HEADER_SHORT = 0x7A,    //!<	4 byte header followed by variable data format respond (EN 13757-3)
+            FIELD_CI_TIME_SYNC_2 = 0x6D,     //!< Time synchronization (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
+            FIELD_CI_APL_ERROR_SHORT = 0x6E, //!< Error from device with short header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
+            FIELD_CI_APL_ERROR_LONG = 0x6F,  //!< Error from device with long header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
+            FIELD_CI_APL_ERROR = 0x70,       //!< Report of general application errors (EN 13757-3)
+            FIELD_CI_ALARM = 0x71,           //!< report of alarms (EN 13757-3)
+            FIELD_CI_HEADER_LONG = 0x72,     //!< 12 byte header followed by variable format data (EN 13757-3)
+            FIELD_CI_APL_ALARM_SHORT = 0x74, //!< Alarm from device with short header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
+            FIELD_CI_APL_ALARM_LONG = 0x75,  //!< Alarm from device with long header (OMS Vol.2 Issue 3.0.0xxxx-xx-xx)
+            FIELD_CI_HEADER_NO = 0x78,       //!< Variable data format respond without header (EN 13757-3) - no encryption
+            FIELD_CI_HEADER_SHORT = 0x7A,    //!< 4 byte header followed by variable data format respond (EN 13757-3)
             FIELD_CI_RES_LONG_DLMS = 0x7C,
-            FIELD_CI_RES_SHORT_DLSM = 0x7D, //!<	short header
+            FIELD_CI_RES_SHORT_DLSM = 0x7D, //!< short header
             FIELD_CI_RES_LONG_SML = 0x7E,
             FIELD_CI_RES_SHORT_SML = 0x7F,          //!<	short header
             FIELD_CI_LINK_TO_DEVICE_LONG = 0x80,    //!<	Link extension to device with long header (OMS Vol.2 Issue 2.0.02009-07-20)

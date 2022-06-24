@@ -195,7 +195,8 @@ namespace smf {
             std::chrono::system_clock::time_point const &begin,
             std::chrono::system_clock::time_point const &end);
 
-        [[nodiscard]] cyng::tuple_t get_list_current_data_record(std::string trx, cyng::buffer_t, cyng::buffer_t, cyng::obis);
+        [[nodiscard]] cyng::tuple_t
+        get_list_current_data_record(std::string const &trx, cyng::buffer_t const &, cyng::buffer_t const &, cyng::obis);
 
         bool insert_push_op(
             cyng::table *,

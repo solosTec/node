@@ -1789,11 +1789,36 @@ namespace smf {
         });
     }
 
-    cyng::tuple_t
-    response_engine::get_list_current_data_record(std::string trx, cyng::buffer_t client, cyng::buffer_t server, cyng::obis code) {
+    cyng::tuple_t response_engine::get_list_current_data_record(
+        std::string const &trx,
+        cyng::buffer_t const &client,
+        cyng::buffer_t const &server,
+        cyng::obis code) {
         cyng::tuple_t tpl; //	current data record
 
-        tpl.push_back(cyng::make_object(sml::list_entry(OBIS_REG_POS_ACT_E, 0, 2, 1, cyng::make_object(1234))));
+        cfg_.get_cache().access(
+            [&, this](cyng::table const *tbl_readout, cyng::table const *tbl_data) {
+                auto const rec = tbl_readout->lookup(cyng::key_generator(server));
+                if (!rec.empty()) {
+                    if (rec.value("decrypted", false)) {
+                        tbl_data->loop([&, this](cyng::record &&data, std::size_t) -> bool {
+                            auto const id = data.value("meterID", server);
+                            if (id == server) {
+                                auto const reg = data.value("register", code);
+                                auto const unit = data.value("unit", 0);
+                                auto const scaler = data.value("scaler", 0);
+                                auto const reading = data.value("reading", "");
+                                //  ToDo: restore original object
+                                tpl.push_back(cyng::make_object(sml::list_entry(reg, 0, unit, scaler, cyng::make_object(reading))));
+                            }
+                            return true;
+                        });
+                    }
+                }
+            },
+            cyng::access::read("readout"),
+            cyng::access::read("readoutData"));
+
         return res_gen_.get_list(trx, client, server, code, tpl, cfg_.get_operating_time());
     }
 

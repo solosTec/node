@@ -281,7 +281,7 @@ namespace smf {
                 }
 
             } else {
-                bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", srv_id_to_str(address), "has no AES key");
+                bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", to_str(address), "has no AES key");
             }
         } else {
             CYNG_LOG_ERROR(logger_, "[wmbus] no database");

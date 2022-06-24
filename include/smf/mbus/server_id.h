@@ -26,6 +26,11 @@ namespace smf {
      */
     using srv_id_t = std::array<std::uint8_t, 9>;
 
+    /**
+     * Copy all bytes from the array into a buffer
+     */
+    cyng::buffer_t to_buffer(srv_id_t const &);
+
     /*
      * Example: 0x3105c => 96072000
      */
@@ -40,7 +45,7 @@ namespace smf {
      * Produce a string with the format:
      * tt-mmmm-nnnnnnnn-vv-uu
      */
-    std::string srv_id_to_str(srv_id_t);
+    std::string to_str(srv_id_t);
     std::string srv_id_to_str(cyng::buffer_t);
 
     /**
@@ -53,6 +58,10 @@ namespace smf {
      * @return meter id as string
      */
     std::string get_id(srv_id_t);
+
+    /**
+     * @return meter id as buffer with 6 bytes length
+     */
     cyng::buffer_t get_id_as_buffer(srv_id_t);
 
     /**

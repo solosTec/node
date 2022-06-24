@@ -238,26 +238,57 @@ namespace smf {
         return cyng::to_sql(get_store_data_mirror(), {9, 0, 0, 0});
     }
 
+    cyng::meta_store get_store_readout() {
+        return cyng::meta_store(
+            "readout",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                //   -- body
+                cyng::column("payload", cyng::TC_BUFFER),      // raw (encrypted)
+                cyng::column("ci", cyng::TC_UINT8),            // frame type (CI field - M-Bus only)
+                cyng::column("received", cyng::TC_TIME_POINT), // receiving time
+                cyng::column("secidx", cyng::TC_UINT32),       // seconds index (gateway)
+                cyng::column("decrypted", cyng::TC_BOOL)       // if true readout data available
+            },
+            1);
+    }
+
+    cyng::meta_store get_store_readout_data() {
+        return cyng::meta_store(
+            "readoutData",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                cyng::column("register", cyng::TC_OBIS),  // OBIS code,
+                                                          //   -- body
+                cyng::column("reading", cyng::TC_STRING), // value as string
+                cyng::column("type", cyng::TC_UINT32),    // data type code
+                cyng::column("scaler", cyng::TC_UINT8),   // decimal place
+                cyng::column("unit", cyng::TC_UINT8),     // physical unit
+                cyng::column("status", cyng::TC_UINT32)   // status
+            },
+            2);
+    }
+
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
-            get_store_cfg(),   // cfg
-            get_store_oplog(), // opLog
-            // get_store_meter(),  // meter
+            get_store_cfg(),            // cfg
+            get_store_oplog(),          // opLog
             get_store_meter_mbus(),     // meterMBus
             get_store_meter_iec(),      // meterIEC
             get_store_data_collector(), // dataCollector
             get_store_data_mirror(),    // dataMirror
             get_store_push_ops(),       // pushOps
-            get_store_push_register()   // pushRegister
+            get_store_push_register(),  // pushRegister
+            get_store_readout(),        // readout - ephemeral
+            get_store_readout_data()    // readoutData - ephemeral
         };
     }
 
     std::vector<cyng::meta_sql> get_sql_meta_data() {
 
         return {
-            get_table_cfg(),   // TCfg
-            get_table_oplog(), // TOpLog
-            // get_table_meter(),
+            get_table_cfg(),            // TCfg
+            get_table_oplog(),          // TOpLog
             get_table_meter_mbus(),     //  TMeterMBus
             get_table_meter_iec(),      // TMeterIEC
             get_table_data_collector(), // TDataCollector

@@ -173,9 +173,7 @@ namespace smf {
                             }
                         }
                         break;
-                    default:
-                        CYNG_LOG_ERROR(logger_, "[upload] unknown upload policy");
-                        break;
+                    default: CYNG_LOG_ERROR(logger_, "[upload] unknown upload policy"); break;
                     }
                 }
             },
@@ -569,7 +567,7 @@ namespace smf {
                 medium   //	2 == electricity
             };
 
-            return srv_id_to_str(server_id);
+            return to_str(server_id);
         }
 
         return meter_id;
