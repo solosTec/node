@@ -406,9 +406,9 @@ target_include_directories(smf_http
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+    PRIVATE
         ${CYNG_INCLUDE_DIRS}
         ${SMFSEC_INCLUDE_DIRS}
-    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -503,10 +503,10 @@ target_include_directories(smf_mbus
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-        ${CYNG_INCLUDE_DIRS}
-        ${SMFSEC_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
     PRIVATE
+        ${CYNG_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -551,10 +551,10 @@ target_include_directories(smf_iec
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-        ${CYNG_INCLUDE_DIRS}
-        ${SMFSEC_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
     PRIVATE
+        ${CYNG_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -597,10 +597,10 @@ target_include_directories(smf_hci
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-        ${CYNG_INCLUDE_DIRS}
-        ${SMFSEC_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
     PRIVATE
+        ${CYNG_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -874,10 +874,10 @@ target_include_directories(smf_modbus
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-        ${CYNG_INCLUDE_DIRS}
-        ${SMFSEC_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
     PRIVATE
+        ${CYNG_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -1005,16 +1005,16 @@ if(${CMAKE_CROSSCOMPILING})
 
 endif()
 
+#
+# install
+#
+
 if(UNIX)
 include(GNUInstallDirs)
 endif()
 
-#
-# install
-#
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" # target directory
-#        DESTINATION "install" # target directory
         FILES_MATCHING # install only matched files
         PATTERN "*.h"
         PATTERN "*hpp"
@@ -1039,9 +1039,9 @@ install(TARGETS ${SMF_TARGET_LIST}
 include(CMakePackageConfigHelpers)
 
 write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/node/ConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}/ConfigVersion.cmake"
     VERSION 
-        "${PROJECT_VERSION}"
+        "${CMAKE_PROJECT_VERSION}"
     COMPATIBILITY 
         AnyNewerVersion
 )
@@ -1052,7 +1052,7 @@ install(EXPORT SMFTargets
     NAMESPACE 
         SMF::
     DESTINATION
-        ${CMAKE_INSTALL_LIBDIR}/cmake/smf
+        ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
 )
 
 #

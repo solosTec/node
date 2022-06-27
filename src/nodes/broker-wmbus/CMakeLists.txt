@@ -51,7 +51,13 @@ target_link_libraries(broker-wmbus
         cyng::store
         cyng::rnd
         cyng::parse
-#        ${OPENSSL_LIBRARIES}
+# required for aarch64
+        cyng::db
+        cyng::rnd
+        cyng::sql
+#        cyng::parse
+        cyng::net
+        cyng::sqlite3
         OpenSSL::SSL
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;smfsec::smfsec;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
