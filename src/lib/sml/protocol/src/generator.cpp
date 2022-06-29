@@ -240,12 +240,12 @@ namespace smf {
         cyng::tuple_t response_generator::get_profile_list(
             std::string const &trx,
             cyng::buffer_t const &server,
-            std::chrono::system_clock::time_point act_time,
+            std::chrono::system_clock::time_point act_time, //  ToDo: use seconds index
             std::uint32_t reg_period,
             cyng::obis code,
             std::uint32_t val_time,
             std::uint64_t status,
-            cyng::tuple_t data) {
+            cyng::tuple_t &&data) {
 
             return make_message(
                 trx,
@@ -255,9 +255,9 @@ namespace smf {
                 cyng::make_tuple(
                     server,
                     act_time,
-                    reg_period,
+                    (reg_period == 0 ? 900u : reg_period),
                     cyng::obis_path_t({code}),
-                    val_time,
+                    make_sec_index(val_time),
                     status,
                     std::move(data), // SML_List / SML_ListEntry
                     cyng::null{},    // rawdata

@@ -221,6 +221,10 @@ namespace smf {
             case CODE_ROOT_PUSH_OPERATIONS: //	0x8181C78A01FF
                 msgs.push_back(set_proc_parameter_push_ops(trx, server, path, child_list));
                 break;
+            case CODE_SERVER_ID:
+                //  active/deactivate
+                //  attr contains the server id
+                break;
             default:
                 CYNG_LOG_WARNING(
                     logger_,
@@ -1736,52 +1740,52 @@ namespace smf {
                  //  5200                                    scaler: 0
                  //  64800008                                value: 8388616
                  sml::period_entry(OBIS_CLASS_EVENT, 0xFF, event_class),
-                 //	81 81 00 00 00 FF - PEER_ADDRESS
+                 //	 81 81 00 00 00 FF - PEER_ADDRESS
                  //  62FF                                    unit: 255
                  //  5200                                    scaler: 0
                  //  078146000002FF                          value: 81 46 00 00 02 FF
                  sml::period_entry(OBIS_PEER_ADDRESS, 0xFF, peer),
-                 //  0781042B070000                          objName: 81 04 2B 07 00 00
+                 //  81 04 2B 07 00 00 - CLASS_OP_LOG_FIELD_STRENGTH
                  //  62FE                                    unit: 254
                  //  5200                                    scaler: 0
                  //  5500000000                              value: 0
                  sml::period_entry(OBIS_CLASS_OP_LOG_FIELD_STRENGTH, 0xFE, 0u),
-                 //  81 04 1A 07 00 00                       objName: CLASS_OP_LOG_CELL
+                 //  81 04 1A 07 00 00 - CLASS_OP_LOG_CELL
                  //  62FF                                    unit: 255
                  //  5200                                    scaler: 0
                  //  6200                                    value: 0
                  sml::period_entry(OBIS_CLASS_OP_LOG_CELL, 0xFF, 0u),
-                 //  81 04 17 07 00 00                       objName:  CLASS_OP_LOG_AREA_CODE
+                 //  81 04 17 07 00 00 - CLASS_OP_LOG_AREA_CODE
                  //  62FF                                    unit: 255
                  //  5200                                    scaler: 0
                  //  6200                                    value: 0
                  sml::period_entry(OBIS_CLASS_OP_LOG_AREA_CODE, 0xFF, 0u),
-                 //  81 04 0D 06 00 00                       objName: CLASS_OP_LOG_PROVIDER
+                 //  81 04 0D 06 00 00 - CLASS_OP_LOG_PROVIDER
                  //  62FF                                    unit: 255
                  //  5200                                    scaler: 0
                  //  6200                                    value: 0
                  sml::period_entry(OBIS_CLASS_OP_LOG_PROVIDER, 0xFF, 0u),
-                 //  01 00 00 09 0B 00                       objName:  CURRENT_UTC
+                 //  01 00 00 09 0B 00 - CURRENT_UTC
                  //  6207                                    unit: 7
                  //  5200                                    scaler: 0
-                 //  655B8E3F04                              value: 1536048900
-                 sml::period_entry(OBIS_CURRENT_UTC, 0xFF, age),
-                 //  81 81 C7 82 04 FF                       objName:  SERVER_ID
+                 //  655B8E3F04                              value: 1536048900 (not a sml value!)
+                 sml::period_entry(OBIS_CURRENT_UTC, 0xFF, std::chrono::system_clock::to_time_t(age)),
+                 //  81 81 C7 82 04 FF - SERVER_ID
                  //  62FF                                    unit: 255
                  //  5200                                    scaler: 0
                  //  0A01A815743145040102                    value: 01 A8 15 74 31 45 04 01 02
                  sml::period_entry(OBIS_SERVER_ID, 0xFF, server),
-                 //  81 47 17 07 00 FF                       objName:  PUSH_TARGET
+                 //  81 47 17 07 00 FF -  PUSH_TARGET
                  //  62FF                                    unit: 255
                  //  5200                                    scaler: 0
                  //  0F706F77657240736F6C6F73746563          value: power@solostec
                  sml::period_entry(OBIS_PUSH_TARGET, 0xFF, target),
-                 // 81 81 C7 8A 01 FF                       objName:  ROOT_PUSH_OPERATIONS
+                 // 81 81 C7 8A 01 FF - ROOT_PUSH_OPERATIONS
                  // 62FF                                    unit: 255
                  // 5200                                    scaler: 0
                  // 6201                                    value: 1
                  sml::period_entry(OBIS_ROOT_PUSH_OPERATIONS, 0xFF, push_nr),
-                 // 81 81 C7 81 23 FF
+                 // 81 81 C7 81 23 FF - DATA_PUSH_DETAILS
                  // 62FF                                    unit: 255
                  // 5200                                    scaler: 0
                  sml::period_entry(OBIS_DATA_PUSH_DETAILS, 0xFF, details)}));

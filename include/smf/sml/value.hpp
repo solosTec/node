@@ -173,6 +173,7 @@ namespace smf {
          * Make a timestamp as type TIME_SECINDEX (1)
          */
         cyng::tuple_t make_sec_index(std::chrono::system_clock::time_point);
+        cyng::tuple_t make_sec_index(std::uint64_t);
 
     } // namespace sml
 } // namespace smf

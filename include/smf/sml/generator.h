@@ -155,7 +155,7 @@ namespace smf {
                 cyng::obis,
                 std::uint32_t val_time,
                 std::uint64_t status,
-                cyng::tuple_t);
+                cyng::tuple_t &&);
 
             /**
              * Attention

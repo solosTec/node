@@ -95,7 +95,10 @@ namespace smf {
         cyng::tuple_t make_sec_index(std::chrono::system_clock::time_point tp) {
             //	1. UNIX timestamp - Y2K38 problem.
             std::time_t ut = std::chrono::system_clock::to_time_t(tp);
-            return cyng::make_tuple(static_cast<std::uint8_t>(TIME_SECINDEX), static_cast<std::uint32_t>(ut));
+            return make_sec_index(ut);
+        }
+        cyng::tuple_t make_sec_index(std::uint64_t index) {
+            return cyng::make_tuple(static_cast<std::uint8_t>(TIME_SECINDEX), index);
         }
 
         cyng::attr_t make_timestamp_attr(std::chrono::system_clock::time_point tp) {

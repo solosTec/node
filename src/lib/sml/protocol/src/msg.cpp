@@ -28,7 +28,6 @@ namespace smf {
                 BOOST_ASSERT_MSG(req.size() == 6, "invalid SML message size");
                 msg.push_back(set_crc16(serialize(req)));
             }
-
             return boxing(msg);
         }
 
