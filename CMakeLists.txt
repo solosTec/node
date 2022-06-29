@@ -406,9 +406,9 @@ target_include_directories(smf_http
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${SMFSEC_INCLUDE_DIRS}
     PRIVATE
         ${CYNG_INCLUDE_DIRS}
-        ${SMFSEC_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -504,9 +504,9 @@ target_include_directories(smf_mbus
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${OPENSSL_INCLUDE_DIR}
+        ${SMFSEC_INCLUDE_DIRS}
     PRIVATE
         ${CYNG_INCLUDE_DIRS}
-        ${SMFSEC_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
