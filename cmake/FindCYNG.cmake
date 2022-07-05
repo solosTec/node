@@ -26,6 +26,8 @@
 #	cyng::sqlite3
 #
 
+message(STATUS "** CYNG Tree Name     : [${SMF_BUILD_TREE_STEM}]")
+
 #
 #	try PkgConfig
 #
@@ -73,10 +75,7 @@ else(PC_CYNG_FOUND)
             cyng.h
         PATH_SUFFIXES
 			include
-			build/v5te/include
-			build/x64/include
-			build/include
-			v5te/include
+			${SMF_BUILD_TREE_STEM}/include
         PATHS
 			${CYNG_SEARCH_PATH}
         DOC 
@@ -84,7 +83,7 @@ else(PC_CYNG_FOUND)
 		NO_CMAKE_FIND_ROOT_PATH
     )
 
-	if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.24") 
+	if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20") 
 		cmake_path(GET CYNG_INCLUDE_DIR_BUILD PARENT_PATH CYNG_BUILD_DIR)
 	else()
 		get_filename_component(CYNG_BUILD_DIR ${CYNG_INCLUDE_DIR_BUILD} DIRECTORY)
@@ -129,17 +128,11 @@ else(PC_CYNG_FOUND)
             PATH_SUFFIXES
 				"lib"
                 "usr/lib/"
-				"build/v5te"
-				"build/x64"
-                "v5te/src/net"
-				"build/src/net"
+				"${SMF_BUILD_TREE_STEM}"
+                "${SMF_BUILD_TREE_STEM}/src/net"
 				"build"
 				"build/Debug"
 				"build/Release"
-				"v5te"
-				"src/net"
-				"build/src/net/Debug"
-				"build/src/net/Release"
 			DOC 
 				"CYNG libraries"
 		)

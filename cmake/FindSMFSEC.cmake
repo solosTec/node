@@ -13,6 +13,8 @@
 #     smfsec::smfsec
 #
 
+message(STATUS "** CYNG Tree Name     : [${SMF_BUILD_TREE_STEM}]")
+
 #
 #	try PkgConfig
 #
@@ -65,12 +67,9 @@ else(PC_SMFSEC_FOUND)
             PATH_SUFFIXES
 				"lib"
                 "usr/lib/"
-				"build/v5te"
-				"build/x64"
-				"build"
-				"v5te"
-				"build/Debug"
-				"build/Release"
+				"${SMF_BUILD_TREE_STEM}"
+				"${SMF_BUILD_TREE_STEM}/Debug"
+				"${SMF_BUILD_TREE_STEM}/Release"
 			DOC 
 				"SMFSEC libraries"
 		)
@@ -91,8 +90,8 @@ if (SMFSEC_INCLUDE_DIR_SRC AND SMFSEC_LIBRARIES)
     set(SMFSEC_FOUND ON)
     unset(SMFSEC_INCLUDE_DIR_SRC CACHE)
 	if(NOT SMFSEC_FIND_QUIETLY)
-		message(STATUS "** SMFSEC_LIBRARIES    : ${SMFSEC_LIBRARIES}")
-		message(STATUS "** SMFSEC_INCLUDE_DIRS : ${SMFSEC_INCLUDE_DIRS}")
+		message(STATUS "** SMFSEC_LIBRARIES         : ${SMFSEC_LIBRARIES}")
+		message(STATUS "** SMFSEC_INCLUDE_DIRS      : ${SMFSEC_INCLUDE_DIRS}")
 	endif(NOT SMFSEC_FIND_QUIETLY)
 endif(SMFSEC_INCLUDE_DIR_SRC AND SMFSEC_LIBRARIES)
 
