@@ -50,6 +50,7 @@ set (segw_tasks
     include/tasks/en13757.h
     include/tasks/counter.h
     include/tasks/push.h
+    include/tasks/store.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
@@ -63,6 +64,7 @@ set (segw_tasks
     src/tasks/en13757.cpp
     src/tasks/counter.cpp
     src/tasks/push.cpp
+    src/tasks/store.cpp
 )
 
 set (segw_config

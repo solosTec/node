@@ -269,6 +269,42 @@ namespace smf {
             2);
     }
 
+    cyng::meta_store get_store_mirror() {
+        return cyng::meta_store(
+            "mirror",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                cyng::column("profile", cyng::TC_OBIS),   // load profile
+                //   -- body
+                cyng::column("payload", cyng::TC_BUFFER),      // raw (encrypted)
+                cyng::column("ci", cyng::TC_UINT8),            // frame type (CI field - M-Bus only)
+                cyng::column("received", cyng::TC_TIME_POINT), // receiving time
+                cyng::column("secidx", cyng::TC_UINT32),       // seconds index (gateway)
+                cyng::column("decrypted", cyng::TC_BOOL)       // if true readout data available
+            },
+            2);
+    }
+
+    cyng::meta_sql get_table_mirror() { return cyng::to_sql(get_store_mirror(), {9, 0, 0, 0, 0, 0, 0}); }
+
+    cyng::meta_store get_store_mirror_data() {
+        return cyng::meta_store(
+            "mirrorData",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                cyng::column("profile", cyng::TC_OBIS),   // load profile
+                cyng::column("register", cyng::TC_OBIS),  // OBIS code
+                //   -- body
+                cyng::column("reading", cyng::TC_STRING), // value as string
+                cyng::column("type", cyng::TC_UINT32),    // data type code
+                cyng::column("scaler", cyng::TC_UINT8),   // decimal place
+                cyng::column("unit", cyng::TC_UINT8),     // physical unit
+                cyng::column("status", cyng::TC_UINT32)   // status
+            },
+            3);
+    }
+    cyng::meta_sql get_table_mirror_data() { return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 0, 0, 0, 0}); }
+
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
             get_store_cfg(),            // cfg
@@ -280,7 +316,9 @@ namespace smf {
             get_store_push_ops(),       // pushOps
             get_store_push_register(),  // pushRegister
             get_store_readout(),        // readout - ephemeral
-            get_store_readout_data()    // readoutData - ephemeral
+            get_store_readout_data(),   // readoutData - ephemeral
+            get_store_mirror(),         // mirror
+            get_store_mirror_data()     // mirrorData
         };
     }
 
@@ -294,7 +332,9 @@ namespace smf {
             get_table_data_collector(), // TDataCollector
             get_table_data_mirror(),    // TDataMirror
             get_table_push_ops(),       // TPushOps
-            get_table_push_register()   // TPushRegister
+            get_table_push_register(),  // TPushRegister
+            get_table_mirror(),         // Tmirror
+            get_table_mirror_data()     // TMirrorData
         };
     }
 
@@ -313,6 +353,10 @@ namespace smf {
             return get_table_push_ops();
         } else if (boost::algorithm::equals(name, "pushRegister")) {
             return get_table_push_register();
+        } else if (boost::algorithm::equals(name, "mirror")) {
+            return get_table_mirror();
+        } else if (boost::algorithm::equals(name, "mirrorData")) {
+            return get_table_mirror_data();
         }
         BOOST_ASSERT_MSG(false, "table not found");
         return cyng::meta_sql(name, {}, 0);
