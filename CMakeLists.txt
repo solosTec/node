@@ -1,6 +1,6 @@
 #
 #
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.20)
 cmake_policy(SET CMP0074 NEW)
                                                      
 #	                                     
@@ -52,6 +52,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     message(STATUS "** Version numeral    : ${${PROJECT_NAME}_VERSION_NUMERAL}")
 
     message(STATUS "** Compiler           : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")
+
+    # root name of build tree
+    set(path_build_tree ${CMAKE_BINARY_DIR})
+    cmake_path(GET path_build_tree STEM SMF_BUILD_TREE_STEM)
+    message(STATUS "** Build Tree Path    : ${CMAKE_BINARY_DIR}")
 
     if (NOT WIN32) 
         # /etc/os-release
@@ -160,8 +165,8 @@ endif()
 #
 find_package(SMFSEC REQUIRED)
 if (SMFSEC_FOUND)
-    message(STATUS "** SMFSEC_INCLUDE_DIRS  : ${SMFSEC_INCLUDE_DIRS}")
-    message(STATUS "** SMFSEC_LIBRARIES     : ${SMFSEC_LIBRARIES}")
+    message(STATUS "** SMFSEC_INCLUDE_DIRS      : ${SMFSEC_INCLUDE_DIRS}")
+    message(STATUS "** SMFSEC_LIBRARIES         : ${SMFSEC_LIBRARIES}")
 else()
     message(FATAL_ERROR "** SMFSEC library not found")
 endif()
@@ -406,9 +411,9 @@ target_include_directories(smf_http
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-        ${SMFSEC_INCLUDE_DIRS}
     PRIVATE
         ${CYNG_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -504,9 +509,9 @@ target_include_directories(smf_mbus
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${OPENSSL_INCLUDE_DIR}
-        ${SMFSEC_INCLUDE_DIRS}
     PRIVATE
         ${CYNG_INCLUDE_DIRS}
+        ${SMFSEC_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
