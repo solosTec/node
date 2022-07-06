@@ -76,6 +76,7 @@ else(PC_CYNG_FOUND)
         PATH_SUFFIXES
 			include
 			${SMF_BUILD_TREE_STEM}/include
+			build/include
         PATHS
 			${CYNG_SEARCH_PATH}
         DOC 
@@ -130,6 +131,7 @@ else(PC_CYNG_FOUND)
                 "usr/lib/"
 				"${SMF_BUILD_TREE_STEM}"
                 "${SMF_BUILD_TREE_STEM}/src/net"
+				"build/src/net"
 				"build"
 				"build/Debug"
 				"build/Release"

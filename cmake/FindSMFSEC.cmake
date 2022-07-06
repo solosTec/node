@@ -13,7 +13,7 @@
 #     smfsec::smfsec
 #
 
-message(STATUS "** CYNG Tree Name     : [${SMF_BUILD_TREE_STEM}]")
+message(STATUS "** SMFSec Tree Name   : [${SMF_BUILD_TREE_STEM}]")
 
 #
 #	try PkgConfig
