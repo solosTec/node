@@ -78,7 +78,11 @@ namespace smf {
         //
         cfg_.get_cache().access(
             [&](cyng::table *tbl, cyng::table *tbl_readout, cyng::table *tbl_data) {
-                cyng::crypto::aes_128_key aes_key;
+                cyng::crypto::aes_128_key aes_key; // default is 0
+
+                //
+                //  lookup table "meterMBus"
+                //
                 auto const now = std::chrono::system_clock::now();
                 auto const key = cyng::key_generator(h.get_server_id_as_buffer());
                 auto const rec = tbl->lookup(key);

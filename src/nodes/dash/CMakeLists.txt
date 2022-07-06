@@ -19,12 +19,14 @@ target_compile_options(dash
 )
 
 target_include_directories(dash
-    PRIVATE
+    PUBLIC 
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${OPENSSL_INCLUDE_DIR}
+    PRIVATE
+        ${SMFSEC_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
 )
 

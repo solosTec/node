@@ -58,6 +58,8 @@ namespace smf {
         connect("dataMirror");
         connect("pushOps");
         connect("pushRegister");
+        connect("mirror");
+        connect("mirrorData");
     }
 
     void persistence::connect(std::string name) {
