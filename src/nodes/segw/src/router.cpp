@@ -9,6 +9,7 @@
 
 #include <storage.h>
 #include <tasks/push.h>
+#include <tasks/store.h>
 
 #include <config/cfg_sml.h>
 
@@ -16,6 +17,7 @@
 #include <smf/ipt/transpiler.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
+#include <smf/obis/profile.h>
 #include <smf/sml/reader.h>
 
 #include <cyng/io/io_buffer.h>
@@ -119,6 +121,7 @@ namespace smf {
                 bus_.start();
 
                 init_ipt_push();
+                init_ipt_store();
 
                 return true;
 
@@ -135,6 +138,7 @@ namespace smf {
 
         if (ipt_cfg_.is_enabled()) {
             stop_ipt_push();
+            stop_ipt_store();
             CYNG_LOG_INFO(logger_, "[ipt bus] stop");
             bus_.stop();
         } else {
@@ -259,7 +263,7 @@ namespace smf {
                     auto const interval = rec.value("interval", std::chrono::seconds(0));
                     auto const delay = rec.value("delay", std::chrono::seconds(0));
                     auto const target = rec.value("target", "");
-                    CYNG_LOG_INFO(logger_, "initialize: push task \"" << target << "\", " << obis::get_name(profile));
+                    CYNG_LOG_INFO(logger_, "[ipt] initialize: push task \"" << target << "\", " << obis::get_name(profile));
 
                     auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, key);
                     BOOST_ASSERT(channel->is_open());
@@ -281,8 +285,28 @@ namespace smf {
         //
         //  stops all tasks with this name
         //
-        CYNG_LOG_INFO(logger_, "stop push tasks");
+        CYNG_LOG_INFO(logger_, "[ipt] stop push tasks");
         ctl_.get_registry().stop("push");
+    }
+
+    void router::init_ipt_store() {
+        //
+        //  start collecting push data
+        //
+        for (auto const profile : sml::get_profiles()) {
+            CYNG_LOG_INFO(logger_, "[ipt] start store task " << cyng::to_string(profile));
+            // auto channel = ctl_.create_named_channel_with_ref<store>(cyng::to_string(profile), logger_, bus_, cfg_, profile);
+            // BOOST_ASSERT(channel->is_open());
+        }
+    }
+    void router::stop_ipt_store() {
+        //
+        //  stop collecting push data
+        //
+        for (auto const profile : sml::get_profiles()) {
+            CYNG_LOG_INFO(logger_, "[ipt] stop store task " << cyng::to_string(profile));
+            // ctl_.get_registry().stop(cyng::to_string(profile));
+        }
     }
 
 } // namespace smf

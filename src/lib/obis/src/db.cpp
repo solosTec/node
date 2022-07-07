@@ -18,11 +18,10 @@ namespace smf {
 
 #include <smf/obis/db.ipp>
 
-            default:
-                break;
+            default: break;
             }
 
-            return cyng::to_str(o);
+            return cyng::to_string(o);
         }
 
         std::string get_description(cyng::obis o) {
@@ -30,8 +29,7 @@ namespace smf {
 
 #include <smf/obis/descr.ipp>
 
-            default:
-                break;
+            default: break;
             }
 
             return "";

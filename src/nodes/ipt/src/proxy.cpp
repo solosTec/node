@@ -84,17 +84,13 @@ namespace smf {
             case sml::msg_type::GET_LIST_RESPONSE:
                 // get_list_response(trx, group_no, msg);
                 break;
-            case sml::msg_type::CLOSE_RESPONSE:
-                on(evt_close_response{trx, msg});
-                break;
+            case sml::msg_type::CLOSE_RESPONSE: on(evt_close_response{trx, msg}); break;
             case sml::msg_type::ATTENTION_RESPONSE: {
                 auto const code = sml::read_attention_response(msg);
                 CYNG_LOG_WARNING(
                     logger_, "[sml] " << sml::get_name(type) << ": " << trx << ", " << msg << " - " << obis::get_name(code));
             } break;
-            default:
-                CYNG_LOG_WARNING(logger_, "[sml] " << sml::get_name(type) << ": " << trx << ", " << msg);
-                break;
+            default: CYNG_LOG_WARNING(logger_, "[sml] " << sml::get_name(type) << ": " << trx << ", " << msg); break;
             }
         })
         , req_gen_("operator", "operator")
@@ -197,18 +193,12 @@ namespace smf {
 
     std::string proxy::backup_s::get_state() const {
         switch (state_) {
-        case query_state::OFF:
-            return "OFF";
-        case query_state::QRY_BASIC:
-            return "BASIC";
-        case query_state::QRY_METER:
-            return "METER";
-        case query_state::QRY_ACCESS:
-            return "ACCESS";
-        case query_state::QRY_USER:
-            return "USER";
-        default:
-            break;
+        case query_state::OFF: return "OFF";
+        case query_state::QRY_BASIC: return "BASIC";
+        case query_state::QRY_METER: return "METER";
+        case query_state::QRY_ACCESS: return "ACCESS";
+        case query_state::QRY_USER: return "USER";
+        default: break;
         }
         return "invalid state";
     }
@@ -396,8 +386,7 @@ namespace smf {
                 cfg_backup_user(prx);
             }
             break;
-        default:
-            break;
+        default: break;
         }
     }
 
@@ -819,8 +808,8 @@ namespace smf {
         cyng::param_map_t pm;
         std::transform(evt.list_.begin(), evt.list_.end(), std::inserter(pm, pm.end()), [](sml::sml_list_t::value_type const &v) {
             auto const pos = v.second.find("value");
-            return (pos != v.second.end()) ? cyng::make_param(cyng::to_str(v.first), pos->second)
-                                           : cyng::make_param(cyng::to_str(v.first), "-");
+            return (pos != v.second.end()) ? cyng::make_param(cyng::to_string(v.first), pos->second)
+                                           : cyng::make_param(cyng::to_string(v.first), "-");
         });
         pm.emplace("status", cyng::make_object(evt.mbus_state_));
 

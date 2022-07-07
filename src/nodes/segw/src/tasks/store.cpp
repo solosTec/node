@@ -1,8 +1,8 @@
 ﻿#include <tasks/store.h>
 
-#include <profiles.h>
 #include <smf/ipt/bus.h>
 #include <smf/obis/defs.h>
+#include <smf/obis/profile.h>
 
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
@@ -14,8 +14,8 @@ namespace smf {
 		, cyng::logger logger
         , ipt::bus& bus
         , cfg& config
-        , cyng::key_t key)
-		: sigs_{
+        , cyng::obis profile)
+	: sigs_{
             std::bind(&store::init, this),	//	0
             std::bind(&store::run, this),	//	0
             std::bind(&store::stop, this, std::placeholders::_1)	//	1
@@ -24,10 +24,8 @@ namespace smf {
 		, logger_(logger)
         , bus_(bus)
         , cfg_(config)
-        , key_(key)
+        , profile_(profile)
 	{
-        BOOST_ASSERT(key.size() == 2);
-
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"init", "run"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "#" << sp->get_id() << "] created");
@@ -36,85 +34,43 @@ namespace smf {
 
     void store::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[store] stopped"); }
 
-    void store::init() {
-
-        auto const now = std::chrono::system_clock::now();
-
-        cfg_.get_cache().access(
-            [&, this](cyng::table const *tbl) {
-                auto const rec = tbl->lookup(key_);
-                if (!rec.empty()) {
-                    auto const interval = rec.value("interval", std::chrono::seconds(0));
-                    auto const delay = rec.value("delay", std::chrono::seconds(0));
-                    auto const profile = rec.value("profile", OBIS_PROFILE);
-                    auto const target = rec.value("target", "");
-
-                    //
-                    //	recalibrate start time dependent from profile type
-                    // ToDo: consider delay
-                    //
-                    auto sp = channel_.lock();
-                    BOOST_ASSERT_MSG(sp, "push task already stopped");
-                    if (sp) {
-                        sp->suspend(interval, "run");
-                    }
-
-                    // auto const next_push = smf::next(interval, profile, now);
-                    //  BOOST_ASSERT_MSG(next_push > now, "negative time span");
-                    //  auto sp = channel_.lock();
-                    //  if (sp) {
-                    //      if (next_push > now) {
-                    //          auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
-                    //          sp->suspend(span, "run");
-                    //          CYNG_LOG_TRACE(logger_, "[push] " << target << " - init: " << std::chrono::system_clock::now() +
-                    //          span);
-                    //      } else {
-                    //          sp->suspend(interval, "run");
-                    //          CYNG_LOG_WARNING(
-                    //              logger_, "[push] " << target << " - init: " << std::chrono::system_clock::now() + interval);
-                    //      }
-                    //  }
-                } else {
-                    CYNG_LOG_ERROR(logger_, "[store] no table record for " << key_);
-                }
-            },
-            cyng::access::read("pushOps"));
-    }
+    void store::init() { auto const now = std::chrono::system_clock::now(); }
 
     void store::run() {
 
-        std::string target;
+        // std::string target;
 
-        cfg_.get_cache().access(
-            [&, this](cyng::table const *tbl) {
-                auto const rec = tbl->lookup(key_);
-                if (!rec.empty()) {
-                    auto const interval = rec.value("interval", std::chrono::seconds(0));
-                    auto const delay = rec.value("delay", std::chrono::seconds(0));
-                    auto const profile = rec.value("profile", OBIS_PROFILE);
-                    target = rec.value("target", "");
+        // cfg_.get_cache().access(
+        //     [&, this](cyng::table const *tbl) {
+        //         auto const rec = tbl->lookup(key_);
+        //         if (!rec.empty()) {
+        //             auto const interval = rec.value("interval", std::chrono::seconds(0));
+        //             auto const delay = rec.value("delay", std::chrono::seconds(0));
+        //             auto const profile = rec.value("profile", OBIS_PROFILE);
+        //             target = rec.value("target", "");
 
-                    auto sp = channel_.lock();
-                    if (sp) {
-                        sp->suspend(interval, "run");
-                        CYNG_LOG_TRACE(logger_, "[store] " << target << " - next: " << std::chrono::system_clock::now() + interval);
-                    }
-                } else {
-                    CYNG_LOG_ERROR(logger_, "[store] no table record for " << key_);
-                }
-            },
-            cyng::access::read("pushOps"));
+        //            auto sp = channel_.lock();
+        //            if (sp) {
+        //                sp->suspend(interval, "run");
+        //                CYNG_LOG_TRACE(logger_, "[store] " << target << " - next: " << std::chrono::system_clock::now() +
+        //                interval);
+        //            }
+        //        } else {
+        //            CYNG_LOG_ERROR(logger_, "[store] no table record for " << key_);
+        //        }
+        //    },
+        //    cyng::access::read("pushOps"));
 
-        if (!target.empty()) {
-            if (bus_.is_authorized()) {
-                //
-                //  ToDo: open push channel
-                //
+        // if (!target.empty()) {
+        //     if (bus_.is_authorized()) {
+        //         //
+        //         //  ToDo: open push channel
+        //         //
 
-            } else {
-                CYNG_LOG_WARNING(logger_, "[store] IP-T bus not authorized: " << target);
-            }
-        } else {
-        }
+        //    } else {
+        //        CYNG_LOG_WARNING(logger_, "[store] IP-T bus not authorized: " << target);
+        //    }
+        //} else {
+        //}
     }
 } // namespace smf

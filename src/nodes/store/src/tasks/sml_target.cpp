@@ -211,7 +211,7 @@ namespace smf {
                 value.second.emplace("code", cyng::make_object(obis::get_name(value.first)));
                 value.second.emplace("descr", cyng::make_object(obis::get_description(value.first)));
 
-                return {cyng::to_str(value.first), cyng::make_object(value.second)};
+                return {cyng::to_string(value.first), cyng::make_object(value.second)};
             });
         return r;
     }

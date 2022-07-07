@@ -10,7 +10,6 @@ set (segw_cpp
     src/storage_functions.cpp
     src/distributor.cpp
     src/router.cpp
-    src/profiles.cpp
 )
     
 set (segw_h
@@ -19,7 +18,6 @@ set (segw_h
     include/storage_functions.h
     include/distributor.h
     include/router.h
-    include/profiles.h
 )
 
 if(WIN32)

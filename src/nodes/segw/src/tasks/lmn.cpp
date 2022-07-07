@@ -106,7 +106,7 @@ namespace smf {
         try {
             auto const parity = cfg_.get_parity();
             port_.set_option(parity); // default none
-            CYNG_LOG_INFO(logger_, "[" << port << "] parity: " << serial::to_str(parity));
+            CYNG_LOG_INFO(logger_, "[" << port << "] parity: " << serial::to_string(parity));
 
             auto const databits = cfg_.get_databits();
             port_.set_option(databits);
@@ -114,7 +114,7 @@ namespace smf {
 
             auto const stopbits = cfg_.get_stopbits();
             port_.set_option(stopbits);
-            CYNG_LOG_INFO(logger_, "[" << port << "] stopbits: " << serial::to_str(stopbits));
+            CYNG_LOG_INFO(logger_, "[" << port << "] stopbits: " << serial::to_string(stopbits));
 
             auto const baud_rate = cfg_.get_baud_rate();
             port_.set_option(baud_rate);
@@ -122,7 +122,7 @@ namespace smf {
 
             auto const flow_control = cfg_.get_flow_control();
             port_.set_option(flow_control);
-            CYNG_LOG_INFO(logger_, "[" << port << "] flow-control: " << serial::to_str(flow_control));
+            CYNG_LOG_INFO(logger_, "[" << port << "] flow-control: " << serial::to_string(flow_control));
         } catch (std::exception const &ex) {
 
             CYNG_LOG_ERROR(logger_, "set options [" << port << "] failed - " << ex.what());
@@ -260,7 +260,7 @@ namespace smf {
             //
             boost::asio::serial_port_base::parity parity;
             port_.get_option(parity, ec);
-            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new parity " << val << "/" << serial::to_str(parity));
+            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new parity " << val << "/" << serial::to_string(parity));
         } else {
             CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set parity " << val << " failed: " << ec.message());
         }
@@ -281,7 +281,8 @@ namespace smf {
             boost::asio::serial_port_base::flow_control flow_control;
             port_.get_option(flow_control, ec);
 
-            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new flow control " << val << "/" << serial::to_str(flow_control));
+            CYNG_LOG_INFO(
+                logger_, "[" << cfg_.get_port() << "] new flow control " << val << "/" << serial::to_string(flow_control));
         } else {
             CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set flow control " << val << " failed: " << ec.message());
         }
@@ -302,7 +303,7 @@ namespace smf {
             boost::asio::serial_port_base::stop_bits stopbits;
             port_.get_option(stopbits);
 
-            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new stopbits " << val << "/" << serial::to_str(stopbits));
+            CYNG_LOG_INFO(logger_, "[" << cfg_.get_port() << "] new stopbits " << val << "/" << serial::to_string(stopbits));
         } else {
             CYNG_LOG_ERROR(logger_, "[" << cfg_.get_port() << "] set stopbits " << val << " failed: " << ec.message());
         }

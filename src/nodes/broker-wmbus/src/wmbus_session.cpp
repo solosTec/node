@@ -155,7 +155,7 @@ namespace smf {
 
         if (bus_.is_connected()) {
 
-            auto const meter = mbus::to_str(h);
+            auto const meter = mbus::to_string(h);
             CYNG_LOG_TRACE(logger_, "[wmbus] meter: " << meter << " (" << key_gw_wmbus_ << ")");
 
             // key_gw_wmbus_
@@ -172,7 +172,7 @@ namespace smf {
                 decode(h.get_server_id(), t.get_access_no(), h.get_frame_type(), data);
             }
         } else {
-            CYNG_LOG_WARNING(logger_, "[wmbus] meter: " << mbus::to_str(h) << " cannot decode data since offline");
+            CYNG_LOG_WARNING(logger_, "[wmbus] meter: " << mbus::to_string(h) << " cannot decode data since offline");
         }
     }
 
@@ -281,7 +281,7 @@ namespace smf {
                 }
 
             } else {
-                bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", to_str(address), "has no AES key");
+                bus_.sys_msg(cyng::severity::LEVEL_WARNING, "[wmbus]", to_string(address), "has no AES key");
             }
         } else {
             CYNG_LOG_ERROR(logger_, "[wmbus] no database");

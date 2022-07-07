@@ -567,7 +567,7 @@ namespace smf {
                 medium   //	2 == electricity
             };
 
-            return to_str(server_id);
+            return to_string(server_id);
         }
 
         return meter_id;

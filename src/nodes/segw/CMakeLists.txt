@@ -37,6 +37,7 @@ target_link_directories(segw
 target_link_libraries(segw 
     PRIVATE
         cyng::cyng 
+        smfsec::smfsec
         smf::config
         smf::ipt
         smf::ipt_bus

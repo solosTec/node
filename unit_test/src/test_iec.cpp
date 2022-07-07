@@ -810,12 +810,12 @@ BOOST_AUTO_TEST_CASE(convert) {
             if (r.size() == 2) {
                 // convert(r.at(0), r.at(1));
                 auto const code = smf::iec::to_obis(r.at(0), 1);
-                std::cout << " => " << cyng::to_str(code) << ": " << r.at(1) << std::endl;
+                std::cout << " => " << cyng::to_string(code) << ": " << r.at(1) << std::endl;
 
             } else if (r.size() == 3) {
                 // convert(r.at(0), r.at(1), r.at(2));
                 auto const code = smf::iec::to_obis(r.at(0), 1);
-                std::cout << " => " << cyng::to_str(code) << ": " << r.at(1) << ", " << r.at(2) << std::endl;
+                std::cout << " => " << cyng::to_string(code) << ": " << r.at(1) << ", " << r.at(2) << std::endl;
             } else {
                 std::cout << "ERROR" << std::endl;
             }

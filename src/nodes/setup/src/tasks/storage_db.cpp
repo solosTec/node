@@ -255,7 +255,7 @@ namespace smf {
                 CYNG_LOG_DEBUG(logger_, "[db] insert config data " << key.at(0) << ": " << v);
 
                 auto const ms = config::get_table_config();
-                auto const sql = cyng::sql::insert(db_.get_dialect(), ms).bind_values(ms).to_str();
+                auto const sql = cyng::sql::insert(db_.get_dialect(), ms).bind_values(ms).to_string();
                 auto stmt = db_.create_statement();
                 std::pair<int, bool> const r = stmt->prepare(sql);
                 if (r.second) {
@@ -322,7 +322,7 @@ namespace smf {
 
             auto const vec = get_sql_meta_data();
             for (auto const &m : vec) {
-                auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
+                auto const sql = cyng::sql::create(db.get_dialect(), m).to_string();
                 if (!db.execute(sql)) {
                     std::cerr << "**error: " << sql << std::endl;
                 } else {
@@ -335,7 +335,7 @@ namespace smf {
             //
             {
                 auto const m = config::get_table_cfg_set();
-                auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
+                auto const sql = cyng::sql::create(db.get_dialect(), m).to_string();
                 if (!db.execute(sql)) {
                     std::cerr << "**error: " << sql << std::endl;
                 } else {
@@ -348,7 +348,7 @@ namespace smf {
             //
             {
                 auto const m = config::get_table_config();
-                auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
+                auto const sql = cyng::sql::create(db.get_dialect(), m).to_string();
                 if (!db.execute(sql)) {
                     std::cerr << "**error: " << sql << std::endl;
                 } else {
@@ -402,7 +402,7 @@ namespace smf {
         //
         //  drop table
         //
-        auto const sql_drop = cyng::sql::drop(db.get_dialect(), m).to_str();
+        auto const sql_drop = cyng::sql::drop(db.get_dialect(), m).to_string();
         if (!db.execute(sql_drop)) {
             std::cerr << "**error: " << sql_drop << std::endl;
         } else {
@@ -411,7 +411,7 @@ namespace smf {
             //
             //  create table
             //
-            auto const sql_create = cyng::sql::create(db.get_dialect(), m).to_str();
+            auto const sql_create = cyng::sql::create(db.get_dialect(), m).to_string();
             if (!db.execute(sql_create)) {
                 std::cerr << "**error: " << sql_create << std::endl;
             } else {
@@ -444,7 +444,7 @@ namespace smf {
     void generate_access_rights(cyng::db::session &db, std::string const &user) {
 
         auto ms = config::get_table_gui_user();
-        auto const sql = cyng::sql::insert(db.get_dialect(), ms).bind_values(ms).to_str();
+        auto const sql = cyng::sql::insert(db.get_dialect(), ms).bind_values(ms).to_string();
         auto stmt = db.create_statement();
         std::pair<int, bool> r = stmt->prepare(sql);
         if (r.second) {
@@ -471,7 +471,7 @@ namespace smf {
     void generate_random_devs(cyng::db::session &db, std::uint32_t count) {
 
         auto ms = config::get_table_device();
-        auto const sql = cyng::sql::insert(db.get_dialect(), ms).bind_values(ms).to_str();
+        auto const sql = cyng::sql::insert(db.get_dialect(), ms).bind_values(ms).to_string();
         auto stmt = db.create_statement();
         std::pair<int, bool> r = stmt->prepare(sql);
         if (r.second) {

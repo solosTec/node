@@ -374,7 +374,7 @@ namespace smf {
 
             auto const vec = get_sql_meta_data();
             for (auto const &m : vec) {
-                auto const sql = cyng::sql::create(db.get_dialect(), m).to_str();
+                auto const sql = cyng::sql::create(db.get_dialect(), m).to_string();
                 if (!db.execute(sql)) {
                     std::cerr << "**error: " << sql << std::endl;
                 } else {
@@ -499,7 +499,7 @@ namespace smf {
         insert_config_record(
             stmt,
             cyng::to_path(cfg::sep, OBIS_SERVER_ID),
-            cyng::make_object(cyng::find_value(pmap, cyng::to_str(OBIS_SERVER_ID), std::string())),
+            cyng::make_object(cyng::find_value(pmap, cyng::to_string(OBIS_SERVER_ID), std::string())),
             "Server ID");
 
         auto const vec = cyng::vector_cast<std::string>(cyng::find(pmap, "local-links"), std::string("0000::0000:0000:0000:0000"));
@@ -611,7 +611,7 @@ namespace smf {
 
         //  81 48 27 32 06 01 - minutes
         auto const tcp_wait_to_reconnect =
-            cyng::numeric_cast<std::uint32_t>(cyng::find(pmap, cyng::to_str(OBIS_TCP_WAIT_TO_RECONNECT)), 1u);
+            cyng::numeric_cast<std::uint32_t>(cyng::find(pmap, cyng::to_string(OBIS_TCP_WAIT_TO_RECONNECT)), 1u);
         insert_config_record(
             stmt,
             cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM, OBIS_TCP_WAIT_TO_RECONNECT),
@@ -620,7 +620,7 @@ namespace smf {
 
         // 81 48 31 32 02 01
         auto const obis_tcp_connect_retries =
-            cyng::numeric_cast<std::uint32_t>(cyng::find(pmap, cyng::to_str(OBIS_TCP_CONNECT_RETRIES)), 20u);
+            cyng::numeric_cast<std::uint32_t>(cyng::find(pmap, cyng::to_string(OBIS_TCP_CONNECT_RETRIES)), 20u);
         insert_config_record(
             stmt,
             cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM, OBIS_TCP_CONNECT_RETRIES),
@@ -628,7 +628,7 @@ namespace smf {
             "reconnect counter");
 
         // 00 80 80 00 03 01 - has SSL configuration
-        auto const obis_has_ssl_config = cyng::value_cast(cyng::find(pmap, cyng::to_str(OBIS_HAS_SSL_CONFIG)), false);
+        auto const obis_has_ssl_config = cyng::value_cast(cyng::find(pmap, cyng::to_string(OBIS_HAS_SSL_CONFIG)), false);
         insert_config_record(
             stmt,
             cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM, OBIS_HAS_SSL_CONFIG),
@@ -1416,7 +1416,7 @@ namespace smf {
         //
         //  drop table
         //
-        auto const sql_drop = cyng::sql::drop(db.get_dialect(), m).to_str();
+        auto const sql_drop = cyng::sql::drop(db.get_dialect(), m).to_string();
         if (!db.execute(sql_drop)) {
             std::cerr << "**error: " << sql_drop << std::endl;
         } else {
@@ -1425,7 +1425,7 @@ namespace smf {
             //
             //  create table
             //
-            auto const sql_create = cyng::sql::create(db.get_dialect(), m).to_str();
+            auto const sql_create = cyng::sql::create(db.get_dialect(), m).to_string();
             if (!db.execute(sql_create)) {
                 std::cerr << "**error: " << sql_create << std::endl;
             } else {

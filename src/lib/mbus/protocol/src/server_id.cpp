@@ -52,7 +52,7 @@ namespace smf {
 
     cyng::buffer_t to_buffer(srv_id_t const &id) { return cyng::buffer_t(id.begin(), id.end()); }
 
-    std::string to_str(srv_id_t id) { return srv_id_to_str(to_buffer(id)); }
+    std::string to_string(srv_id_t id) { return srv_id_to_str(to_buffer(id)); }
 
     std::string srv_id_to_str(cyng::buffer_t id) {
         std::ostringstream ss;

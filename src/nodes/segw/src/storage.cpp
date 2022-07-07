@@ -143,7 +143,7 @@ namespace smf {
                              .all(ms, true)
                              .from()
                              .where(std::string("utc between julianday(?) and julianday(?)"))
-                             .to_str();
+                             .to_string();
         // std::string const sql =
         //     "select gen, datetime(actTime), datetime(age), regPeriod, valTime, status, event, peer, datetime(utc), serverId,
         //     target, pushNr, details from TOpLog where utc between julianday(?) and julianday(?) order by utc;";

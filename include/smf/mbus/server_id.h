@@ -45,7 +45,7 @@ namespace smf {
      * Produce a string with the format:
      * tt-mmmm-nnnnnnnn-vv-uu
      */
-    std::string to_str(srv_id_t);
+    std::string to_string(srv_id_t);
     std::string srv_id_to_str(cyng::buffer_t);
 
     /**

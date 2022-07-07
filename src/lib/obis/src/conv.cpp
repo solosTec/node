@@ -23,12 +23,12 @@ namespace smf {
         std::vector<std::string> to_str_vector(cyng::obis_path_t const &path, bool translate) {
             std::vector<std::string> vec;
             std::transform(path.begin(), path.end(), std::back_inserter(vec), [&](cyng::obis code) {
-                return (translate) ? get_name(code) : cyng::to_str(code);
+                return (translate) ? get_name(code) : cyng::to_string(code);
             });
             return vec;
         }
 
-        std::string to_str(cyng::obis_path_t const &path, bool translate, char sep) {
+        std::string to_string(cyng::obis_path_t const &path, bool translate, char sep) {
             auto const vec = to_str_vector(path, translate);
             std::stringstream ss;
             bool init = false;

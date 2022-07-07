@@ -1,8 +1,8 @@
 ﻿#include <tasks/push.h>
 
-#include <profiles.h>
 #include <smf/ipt/bus.h>
 #include <smf/obis/defs.h>
+#include <smf/obis/profile.h>
 
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>

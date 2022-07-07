@@ -54,6 +54,8 @@ namespace smf {
 
         void init_ipt_push();
         void stop_ipt_push();
+        void init_ipt_store();
+        void stop_ipt_store();
 
       private:
         cyng::logger logger_;

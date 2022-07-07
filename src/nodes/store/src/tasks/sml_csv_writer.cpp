@@ -78,7 +78,7 @@ namespace smf {
 
             of << "obis,value,scaler,unit,descr" << std::endl;
 
-            of << cyng::to_str(OBIS_SERIAL_NR) << ',' << meter << ',' << ',' << ',' << "serial number" << std::endl;
+            of << cyng::to_string(OBIS_SERIAL_NR) << ',' << meter << ',' << ',' << ',' << "serial number" << std::endl;
 
             for (auto const &value : values) {
                 auto const reader = cyng::make_reader(cyng::container_cast<cyng::param_map_t>(value.second));

@@ -61,6 +61,7 @@ target_link_libraries(unit_test
         smf::ipt
         smf::mbus
         smf::obis
+        smfsec::smfsec
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
         OpenSSL::SSL

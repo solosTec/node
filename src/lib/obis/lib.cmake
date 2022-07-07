@@ -9,6 +9,7 @@ set (obis_cpp
     src/lib/obis/src/db.cpp
     src/lib/obis/src/tree.cpp
     src/lib/obis/src/list.cpp
+    src/lib/obis/src/profile.cpp
 )
     
 set (obis_h
@@ -19,6 +20,7 @@ set (obis_h
     include/smf/obis/db.h   
     include/smf/obis/tree.hpp   
     include/smf/obis/list.h
+    include/smf/obis/profile.h
 )
 
 

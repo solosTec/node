@@ -95,7 +95,7 @@ namespace smf {
                     //
                     //	start with some known AES keys
                     //
-                    auto const id = to_str(h.get_server_id());
+                    auto const id = to_string(h.get_server_id());
                     // auto const id = sml::from_server_id(dev_id);
                     if (boost::algorithm::equals(id, "01-e61e-29436587-bf-03") ||
                         boost::algorithm::equals(id, "01-e61e-13090016-3c-07")) {
@@ -161,7 +161,7 @@ namespace smf {
 
         CYNG_LOG_TRACE(
             logger_,
-            "[EN-13757] read meter: " << to_str(address) << " (" << manufacturer << ", " << get_medium_name(address) << ", "
+            "[EN-13757] read meter: " << to_string(address) << " (" << manufacturer << ", " << get_medium_name(address) << ", "
                                       << mbus::field_name(static_cast<mbus::ci_field>(frame_type)) << ")");
 
         auto const payload = mbus::radio::decode(address, access_no, key, data);

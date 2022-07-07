@@ -72,7 +72,7 @@ namespace smf {
             return ss.str();
         }
 
-        std::string to_str(radio::header const &h) {
+        std::string to_string(radio::header const &h) {
             std::stringstream ss;
             ss << h;
             return ss.str();

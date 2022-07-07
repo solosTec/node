@@ -5,8 +5,9 @@
  *
  */
 
-#include <smf/obis/db.h>
 #include <smf/obis/list.h>
+
+#include <smf/obis/db.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/obj/container_cast.hpp>

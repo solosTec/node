@@ -418,7 +418,7 @@ namespace smf {
                             tag = cyng::to_uuid(stag, boost::uuids::nil_uuid());
                             CYNG_LOG_INFO(logger, "source tag: " << tag);
                             BOOST_ASSERT_MSG(!tag.is_nil(), "invalid tag value");
-                        } else if (boost::algorithm::equals(path, cyng::to_str(OBIS_SERVER_ID))) {
+                        } else if (boost::algorithm::equals(path, cyng::to_string(OBIS_SERVER_ID))) {
                             //	init server ID in cache
                             id = cyng::hex_to_buffer(val);
                             CYNG_LOG_INFO(logger, "server id: " << cyng::to_string(id));

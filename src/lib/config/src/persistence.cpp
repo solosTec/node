@@ -12,7 +12,7 @@ namespace smf {
             cyng::key_t key,
             cyng::data_t const &data,
             std::uint64_t gen) {
-            auto const sql = cyng::sql::insert(db.get_dialect(), meta).bind_values(meta).to_str();
+            auto const sql = cyng::sql::insert(db.get_dialect(), meta).bind_values(meta).to_string();
             auto stmt = db.create_statement();
             std::pair<int, bool> const r = stmt->prepare(sql);
             if (r.second) {

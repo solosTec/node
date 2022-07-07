@@ -31,7 +31,7 @@ namespace smf {
             std::function<void(cyng::eod)>>;
 
       public:
-        store(cyng::channel_weak, cyng::logger, ipt::bus &, cfg &config, cyng::key_t);
+        store(cyng::channel_weak, cyng::logger, ipt::bus &, cfg &config, cyng::obis);
 
       private:
         void stop(cyng::eod);
@@ -49,7 +49,7 @@ namespace smf {
 
         ipt::bus &bus_;
         cfg &cfg_;
-        cyng::key_t const key_;
+        cyng::obis const profile_;
     };
 
 } // namespace smf

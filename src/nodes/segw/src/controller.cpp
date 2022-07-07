@@ -213,7 +213,8 @@ namespace smf {
     cyng::param_t controller::create_net(cyng::mac48 const &srv_mac, std::string const &srv_id) const {
 
         return cyng::make_param(
-            "net", cyng::tuple_factory(cyng::make_param("mac", srv_mac), cyng::make_param(cyng::to_str(OBIS_SERVER_ID), srv_id)));
+            "net",
+            cyng::tuple_factory(cyng::make_param("mac", srv_mac), cyng::make_param(cyng::to_string(OBIS_SERVER_ID), srv_id)));
     }
 
     cyng::param_t controller::create_wireless_virtual_meter_spec() const {
@@ -449,10 +450,10 @@ namespace smf {
                 cyng::make_param(
                     "adapter",
                     cyng::tuple_factory(
-                        cyng::make_param(cyng::to_str(OBIS_W_MBUS_ADAPTER_MANUFACTURER), "RC1180-MBUS3"), //	manufacturer
-                        cyng::make_param(cyng::to_str(OBIS_W_MBUS_ADAPTER_ID), "A815174589030131"),
-                        cyng::make_param(cyng::to_str(OBIS_W_MBUS_FIRMWARE), "3.08"), // firmware (81 06 00 02 00 00)
-                        cyng::make_param(cyng::to_str(OBIS_W_MBUS_HARDWARE), "2.00")  //	hardware (81 06 00 02 03 FF)
+                        cyng::make_param(cyng::to_string(OBIS_W_MBUS_ADAPTER_MANUFACTURER), "RC1180-MBUS3"), //	manufacturer
+                        cyng::make_param(cyng::to_string(OBIS_W_MBUS_ADAPTER_ID), "A815174589030131"),
+                        cyng::make_param(cyng::to_string(OBIS_W_MBUS_FIRMWARE), "3.08"), // firmware (81 06 00 02 00 00)
+                        cyng::make_param(cyng::to_string(OBIS_W_MBUS_HARDWARE), "2.00")  //	hardware (81 06 00 02 03 FF)
                         ))));
     }
 

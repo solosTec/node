@@ -128,7 +128,7 @@ namespace smf {
 
         //
         //  The response is hard coded since
-        //  cfg_.loop(cyng::to_str(OBIS_ROOT_IPT_PARAM),...
+        //  cfg_.loop(cyng::to_string(OBIS_ROOT_IPT_PARAM),...
         //  obis::to_obis_path(vec)
         //  didn't produce the expected results.
         //
@@ -167,7 +167,7 @@ namespace smf {
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.front() == OBIS_ROOT_IPT_PARAM);
         if (!path.empty() && path.front() == OBIS_ROOT_IPT_PARAM) {
-            auto const key = obis::to_str(path, false, cfg::sep);
+            auto const key = obis::to_string(path, false, cfg::sep);
             return cfg_.set_value(key, obj);
         }
         return false;
@@ -183,6 +183,6 @@ namespace smf {
         return cfg_.get_value(remote_ep_path(), boost::asio::ip::tcp::endpoint());
     }
 
-    const std::string cfg_ipt::root = cyng::to_str(OBIS_ROOT_IPT_PARAM);
+    const std::string cfg_ipt::root = cyng::to_string(OBIS_ROOT_IPT_PARAM);
 
 } // namespace smf

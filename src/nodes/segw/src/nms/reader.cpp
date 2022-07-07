@@ -378,9 +378,9 @@ namespace smf {
                     cyng::make_param(
                         rs485.get_port(),
                         cyng::param_map_factory("enabled", rs485.is_enabled())("index", rs485.get_index())(
-                            "parity", serial::to_str(rs485.get_parity()))("databits", rs485.get_databits().value())(
-                            "flow-control", serial::to_str(rs485.get_flow_control()))(
-                            "stopbits", serial::to_str(rs485.get_stopbits()))("baudrate", rs485.get_baud_rate().value())(
+                            "parity", serial::to_string(rs485.get_parity()))("databits", rs485.get_databits().value())(
+                            "flow-control", serial::to_string(rs485.get_flow_control()))(
+                            "stopbits", serial::to_string(rs485.get_stopbits()))("baudrate", rs485.get_baud_rate().value())(
                             "protocol", rs485.get_protocol())("broker", rs485_broker.get_target_vector())(
                             "listener",
                             cyng::param_map_factory("enabled", rs485_listener.is_enabled())(
@@ -390,9 +390,9 @@ namespace smf {
                     cyng::make_param(
                         wmbus.get_port(),
                         cyng::param_map_factory("enabled", wmbus.is_enabled())("index", wmbus.get_index())(
-                            "parity", serial::to_str(wmbus.get_parity()))("databits", wmbus.get_databits().value())(
-                            "flow-control", serial::to_str(wmbus.get_flow_control()))(
-                            "stopbits", serial::to_str(wmbus.get_stopbits()))("baudrate", wmbus.get_baud_rate().value())(
+                            "parity", serial::to_string(wmbus.get_parity()))("databits", wmbus.get_databits().value())(
+                            "flow-control", serial::to_string(wmbus.get_flow_control()))(
+                            "stopbits", serial::to_string(wmbus.get_stopbits()))("baudrate", wmbus.get_baud_rate().value())(
                             "protocol", wmbus.get_protocol())("broker", wmbus_broker.get_target_vector())(
                             "max-readout-frequency", wmbus_blocklist.get_max_frequency())(
                             "blocklist",
@@ -612,67 +612,41 @@ namespace smf {
 
         std::string get_code_name(int status) {
             switch (status) {
-            case -99:
-                return "UNDEFINED";
-            case 0:
-                return "SUCCESS";
-            case 1:
-                return "DOWNLOADING"; //  Firmware Download Procedure Initiated Successfully
-            case 2:
-                return "VERIFIED"; //  Firmware Verification Procedure Initiated Successfully
-            case 3:
-                return "INITIATED"; //  Firmware Update Procedure Initiated Successfully
-            case -1:
-                return "CURL-ERROR-GENERAL"; //    Error while executing curl command
-            case -2:
-                return "INVALID-SIGNATURE"; //    Couldn't verify the signatures, aborting FW update
-            case -6:
-                return "ABORTED"; //   Error while initiating FW Update, aborting FW update
+            case -99: return "UNDEFINED";
+            case 0: return "SUCCESS";
+            case 1: return "DOWNLOADING";         //  Firmware Download Procedure Initiated Successfully
+            case 2: return "VERIFIED";            //  Firmware Verification Procedure Initiated Successfully
+            case 3: return "INITIATED";           //  Firmware Update Procedure Initiated Successfully
+            case -1: return "CURL-ERROR-GENERAL"; //    Error while executing curl command
+            case -2: return "INVALID-SIGNATURE";  //    Couldn't verify the signatures, aborting FW update
+            case -6: return "ABORTED";            //   Error while initiating FW Update, aborting FW update
 
-            case 101:
-                return "PARAMETER-ERROR-DOWNLOAD"; //  Parameter error in FW Download
-            case 102:
-                return "ROOT-CA-NOT-FOUND-1"; //   Path to Root CA not found
-            case 103:
-                return "CERTSOUT-NOT-FOUND-1"; //   Path to Certsout not found
-            case 104:
-                return "HTTP-DOWNLOAD-FAILED"; //   HTTP error as download failed
-            case 105:
-                return "CURL-ERROR-DOWNLOAD"; //   Curl error as download failed
+            case 101: return "PARAMETER-ERROR-DOWNLOAD"; //  Parameter error in FW Download
+            case 102: return "ROOT-CA-NOT-FOUND-1";      //   Path to Root CA not found
+            case 103: return "CERTSOUT-NOT-FOUND-1";     //   Path to Certsout not found
+            case 104: return "HTTP-DOWNLOAD-FAILED";     //   HTTP error as download failed
+            case 105: return "CURL-ERROR-DOWNLOAD";      //   Curl error as download failed
 
-            case 201:
-                return "PARAMETER-ERROR-VERIFICATION"; //   Parameter Error in FW Verification
-            case 202:
-                return "OPENSSL-TOOL-NOT-FOUND"; //   Openssl tool not found
-            case 203:
-                return "CERT-FORMAT-NOT-SUPPORTED"; //   Format (DER/PEM) not supported
-            case 204:
-                return "ROOT-CA-NOT-FOUND-2"; //   Path to Root CA not found
-            case 205:
-                return "SIGNATURES-NOT-FOUND"; //   Signatures not found
-            case 206:
-                return "FW-FILE-NOT-FOUND"; //   FW File not found
-            case 207:
-                return "CERTSOUT-NOT-FOUND-2"; //   Path to Certsout not found
-            case 209:
-                return "INVALID-COMMAND-OPTIONS"; //   an error occurred parsing the command options
-            case 210:
-                return "CANNOT-READ-INPUT-FILE"; //   one of the input files could not be read
+            case 201: return "PARAMETER-ERROR-VERIFICATION"; //   Parameter Error in FW Verification
+            case 202: return "OPENSSL-TOOL-NOT-FOUND";       //   Openssl tool not found
+            case 203: return "CERT-FORMAT-NOT-SUPPORTED";    //   Format (DER/PEM) not supported
+            case 204: return "ROOT-CA-NOT-FOUND-2";          //   Path to Root CA not found
+            case 205: return "SIGNATURES-NOT-FOUND";         //   Signatures not found
+            case 206: return "FW-FILE-NOT-FOUND";            //   FW File not found
+            case 207: return "CERTSOUT-NOT-FOUND-2";         //   Path to Certsout not found
+            case 209: return "INVALID-COMMAND-OPTIONS";      //   an error occurred parsing the command options
+            case 210: return "CANNOT-READ-INPUT-FILE";       //   one of the input files could not be read
             case 211:
                 return "SIGNATURE-VERIFICATION-FAILED"; //   Signature verification ERROR (an error occurred creating the CMS
                                                         //   file or when reading the MIME message)
-            case 212:
-                return "CANNOT-DECRYPT-MESSAGE"; //   an error occurred decrypting or verifying the message
+            case 212: return "CANNOT-DECRYPT-MESSAGE";  //   an error occurred decrypting or verifying the message
             case 213:
                 return "CANNOT-WRITE-OUT-SIGNERS-CERTIFICATE"; //   the message was verified correctly but an error occurred
                                                                //   writing out the signers certificates
-            case 214:
-                return "UNKNOWN-ERROR"; //   unknown error
+            case 214: return "UNKNOWN-ERROR";                  //   unknown error
 
-            case 250:
-                return "ALREADY-RUNNING"; //   Script is already running
-            default:
-                break;
+            case 250: return "ALREADY-RUNNING"; //   Script is already running
+            default: break;
             }
 
             return "OTHER-ERROR";

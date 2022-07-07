@@ -258,7 +258,7 @@ namespace smf {
             return os;
         }
 
-        std::string to_str(radio::header const &h);
+        std::string to_string(radio::header const &h);
     } // namespace mbus
 } // namespace smf
 
