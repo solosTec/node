@@ -40,45 +40,42 @@ namespace smf {
 
         auto const now = std::chrono::system_clock::now();
 
-        cfg_.get_cache().access(
-            [&, this](cyng::table const *tbl) {
-                auto const rec = tbl->lookup(key_);
-                if (!rec.empty()) {
-                    auto const interval = rec.value("interval", std::chrono::seconds(0));
-                    auto const delay = rec.value("delay", std::chrono::seconds(0));
-                    auto const profile = rec.value("profile", OBIS_PROFILE);
-                    auto const target = rec.value("target", "");
+        auto sp = channel_.lock();
+        BOOST_ASSERT_MSG(sp, "push task already stopped");
+        if (sp) {
 
-                    //
-                    //	recalibrate start time dependent from profile type
-                    // ToDo: consider delay
-                    //
-                    auto sp = channel_.lock();
-                    BOOST_ASSERT_MSG(sp, "push task already stopped");
-                    if (sp) {
-                        sp->suspend(interval, "run");
+            cfg_.get_cache().access(
+                [&, this](cyng::table const *tbl) {
+                    auto const rec = tbl->lookup(key_);
+                    if (!rec.empty()) {
+                        auto const interval = rec.value("interval", std::chrono::seconds(0));
+                        auto const delay = rec.value("delay", std::chrono::seconds(0));
+                        auto const profile = rec.value("profile", OBIS_PROFILE);
+                        auto const target = rec.value("target", "");
+
+                        //
+                        //  Calculate initial start time dependent from profile type.
+                        //  ToDo: consider delay
+                        //
+
+                        auto const next_push = sml::next(interval, profile, now);
+                        BOOST_ASSERT_MSG(next_push > now, "negative time span");
+
+                        if (next_push > now) {
+                            auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
+                            sp->suspend(span, "run");
+                            CYNG_LOG_TRACE(logger_, "[push] " << target << " - init: " << std::chrono::system_clock::now() + span);
+                        } else {
+                            sp->suspend(interval, "run");
+                            CYNG_LOG_WARNING(
+                                logger_, "[push] " << target << " - init: " << std::chrono::system_clock::now() + interval);
+                        }
+                    } else {
+                        CYNG_LOG_ERROR(logger_, "[push] no table record for " << key_);
                     }
-
-                    // auto const next_push = smf::next(interval, profile, now);
-                    //  BOOST_ASSERT_MSG(next_push > now, "negative time span");
-                    //  auto sp = channel_.lock();
-                    //  if (sp) {
-                    //      if (next_push > now) {
-                    //          auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
-                    //          sp->suspend(span, "run");
-                    //          CYNG_LOG_TRACE(logger_, "[push] " << target << " - init: " << std::chrono::system_clock::now() +
-                    //          span);
-                    //      } else {
-                    //          sp->suspend(interval, "run");
-                    //          CYNG_LOG_WARNING(
-                    //              logger_, "[push] " << target << " - init: " << std::chrono::system_clock::now() + interval);
-                    //      }
-                    //  }
-                } else {
-                    CYNG_LOG_ERROR(logger_, "[push] no table record for " << key_);
-                }
-            },
-            cyng::access::read("pushOps"));
+                },
+                cyng::access::read("pushOps"));
+        }
     }
 
     void push::run() {

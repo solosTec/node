@@ -1,6 +1,7 @@
 ﻿#include <tasks/store.h>
 
 #include <smf/ipt/bus.h>
+#include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
 
@@ -34,43 +35,38 @@ namespace smf {
 
     void store::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[store] stopped"); }
 
-    void store::init() { auto const now = std::chrono::system_clock::now(); }
+    void store::init() {
+        //
+        //  calculate initial start time
+        //
+        auto const now = std::chrono::system_clock::now();
+        // std::chrono::minutes interval(1);
+        auto sp = channel_.lock();
+        BOOST_ASSERT_MSG(sp, "store task already stopped");
+        if (sp) {
+            auto const interval = sml::interval_time(profile_);
+            auto const next_push = sml::next(interval, profile_, now);
+            BOOST_ASSERT_MSG(next_push > now, "negative time span");
+
+            auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
+            sp->suspend(span, "run");
+
+            CYNG_LOG_TRACE(
+                logger_, "[store] " << obis::get_name(profile_) << " - next: " << std::chrono::system_clock::now() + span);
+        }
+    }
 
     void store::run() {
 
-        // std::string target;
+        auto sp = channel_.lock();
+        BOOST_ASSERT_MSG(sp, "store task already stopped");
+        if (sp) {
+            auto const interval = sml::interval_time(profile_);
+            sp->suspend(interval, "run");
+            CYNG_LOG_TRACE(
+                logger_, "[store] " << obis::get_name(profile_) << " - next: " << std::chrono::system_clock::now() + interval);
+        }
 
-        // cfg_.get_cache().access(
-        //     [&, this](cyng::table const *tbl) {
-        //         auto const rec = tbl->lookup(key_);
-        //         if (!rec.empty()) {
-        //             auto const interval = rec.value("interval", std::chrono::seconds(0));
-        //             auto const delay = rec.value("delay", std::chrono::seconds(0));
-        //             auto const profile = rec.value("profile", OBIS_PROFILE);
-        //             target = rec.value("target", "");
-
-        //            auto sp = channel_.lock();
-        //            if (sp) {
-        //                sp->suspend(interval, "run");
-        //                CYNG_LOG_TRACE(logger_, "[store] " << target << " - next: " << std::chrono::system_clock::now() +
-        //                interval);
-        //            }
-        //        } else {
-        //            CYNG_LOG_ERROR(logger_, "[store] no table record for " << key_);
-        //        }
-        //    },
-        //    cyng::access::read("pushOps"));
-
-        // if (!target.empty()) {
-        //     if (bus_.is_authorized()) {
-        //         //
-        //         //  ToDo: open push channel
-        //         //
-
-        //    } else {
-        //        CYNG_LOG_WARNING(logger_, "[store] IP-T bus not authorized: " << target);
-        //    }
-        //} else {
-        //}
+        ;
     }
 } // namespace smf

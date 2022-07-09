@@ -17,7 +17,20 @@ namespace smf {
                 OBIS_PROFILE_INITIAL};
         }
 
-        std::uint32_t rasterize_interval(std::uint32_t sec, cyng::obis profile) {
+        std::chrono::seconds interval_time(cyng::obis profile) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(1));
+            case CODE_PROFILE_15_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(15));
+            case CODE_PROFILE_60_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(1));
+            case CODE_PROFILE_24_HOUR: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(1));
+            case CODE_PROFILE_1_MONTH: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(30));
+            case CODE_PROFILE_1_YEAR: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(365));
+            default: BOOST_ASSERT_MSG(false, "not implemented yet"); break;
+            }
+            return std ::chrono::minutes(1);
+        }
+
+        std::int64_t rasterize_interval(std::int64_t sec, cyng::obis profile) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE:
                 //	guarantee that interval has at least 1 minute
@@ -72,7 +85,13 @@ namespace smf {
 
         std::chrono::system_clock::time_point
         next(std::chrono::seconds interval, cyng::obis profile, std::chrono::system_clock::time_point now) {
-            auto count = interval.count();
+
+            //
+            //  clean up parameters.
+            //  count is interval in seconds
+            //
+            auto count = rasterize_interval(interval.count(), profile);
+            BOOST_ASSERT(count > 0);
             auto const epoch = std::chrono::time_point<std::chrono::system_clock>{};
 
             switch (profile.to_uint64()) {
@@ -92,8 +111,8 @@ namespace smf {
             } break;
 
             case CODE_PROFILE_24_HOUR: {
-                auto const hours = hours_since_epoch(now).count();
-                return epoch + std::chrono::hours(hours) + std::chrono::hours(count / 3600u);
+                auto const days = hours_since_epoch(now).count() / 24;
+                return epoch + std::chrono::hours(days * 24) + std::chrono::hours(count / 3600u);
             } break;
 
             case CODE_PROFILE_1_MONTH:

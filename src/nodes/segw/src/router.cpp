@@ -295,8 +295,8 @@ namespace smf {
         //
         for (auto const profile : sml::get_profiles()) {
             CYNG_LOG_INFO(logger_, "[ipt] start store task " << cyng::to_string(profile));
-            // auto channel = ctl_.create_named_channel_with_ref<store>(cyng::to_string(profile), logger_, bus_, cfg_, profile);
-            // BOOST_ASSERT(channel->is_open());
+            auto channel = ctl_.create_named_channel_with_ref<store>(cyng::to_string(profile), logger_, bus_, cfg_, profile);
+            BOOST_ASSERT(channel->is_open());
         }
     }
     void router::stop_ipt_store() {
@@ -305,7 +305,7 @@ namespace smf {
         //
         for (auto const profile : sml::get_profiles()) {
             CYNG_LOG_INFO(logger_, "[ipt] stop store task " << cyng::to_string(profile));
-            // ctl_.get_registry().stop(cyng::to_string(profile));
+            ctl_.get_registry().stop(cyng::to_string(profile));
         }
     }
 

@@ -20,9 +20,20 @@ namespace smf {
         cyng::obis_path_t get_profiles();
 
         /**
-         * Put the length of an interval in a certain grid depended from the profile.
+         * @return interval time for the specified profile
          */
-        std::uint32_t rasterize_interval(std::uint32_t sec, cyng::obis profile);
+        std::chrono::seconds interval_time(cyng::obis profile);
+
+        /**
+         * Put the length of an interval in a certain grid depended from the profile and guaranties
+         * that the interval is not null.
+         * int is used based on the following data types from the chrono library:
+         * @code
+         * using minutes      = duration<int, ratio<60>>;
+         * using hours        = duration<int, ratio<3600>>;
+         * @endcode
+         */
+        std::int64_t rasterize_interval(std::int64_t sec, cyng::obis profile);
 
         /**
          * calculate next time point to push data for specified profile
