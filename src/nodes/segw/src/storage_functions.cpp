@@ -247,7 +247,7 @@ namespace smf {
                 cyng::column("payload", cyng::TC_BUFFER),      // raw (encrypted)
                 cyng::column("ci", cyng::TC_UINT8),            // frame type (CI field - M-Bus only)
                 cyng::column("received", cyng::TC_TIME_POINT), // receiving time
-                cyng::column("secidx", cyng::TC_UINT32),       // seconds index (gateway)
+                cyng::column("secIdx", cyng::TC_UINT32),       // seconds index (gateway)
                 cyng::column("decrypted", cyng::TC_BOOL)       // if true readout data available
             },
             1);
@@ -285,15 +285,20 @@ namespace smf {
             2);
     }
 
-    cyng::meta_sql get_table_mirror() { return cyng::to_sql(get_store_mirror(), {9, 0, 0, 0, 0, 0, 0}); }
+    cyng::meta_sql get_table_mirror() {
+        //
+        //  select hex(meterID), profile, datetime(received), secIdx from TMirror;
+        //
+        return cyng::to_sql(get_store_mirror(), {9, 0, 0, 0, 0, 0, 0});
+    }
 
     cyng::meta_store get_store_mirror_data() {
         return cyng::meta_store(
             "mirrorData",
             {
                 cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
-                cyng::column("profile", cyng::TC_OBIS),   // load profile
                 cyng::column("register", cyng::TC_OBIS),  // OBIS code
+                cyng::column("profile", cyng::TC_OBIS),   // load profile
                 //   -- body
                 cyng::column("reading", cyng::TC_STRING), // value as string
                 cyng::column("type", cyng::TC_UINT32),    // data type code

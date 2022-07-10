@@ -38,6 +38,8 @@ namespace smf {
         void init();
         void run();
 
+        void transfer();
+
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;

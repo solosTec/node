@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <smf/obis/defs.h>
 #include <smf/obis/list.h>
+#include <smf/obis/profile.h>
 #include <smf/obis/tree.hpp>
 #include <smf/sml/value.hpp>
 
@@ -13,6 +14,7 @@
 #include <cyng/obj/factory.hpp>
 #include <cyng/obj/value_cast.hpp>
 
+#include <chrono>
 #include <iostream>
 
 BOOST_AUTO_TEST_SUITE(obis_suite)
@@ -121,6 +123,24 @@ BOOST_AUTO_TEST_CASE(otree) {
     auto const prop1 = ot.to_prop_map();
     std::cout << prop1 << std::endl;
     std::cout << cyng::io::to_pretty(cyng::make_object(prop1)) << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(profile) {
+
+    auto const profile = smf::OBIS_PROFILE_15_MINUTE;
+    // auto const now = std::chrono::system_clock::now();
+
+    // 2022-07-10 16:56:32
+    auto const now = std::chrono::time_point<std::chrono::system_clock>(std::chrono::seconds(1657472192));
+
+    auto const interval = smf::sml::interval_time(profile);
+    auto const next_push = smf::sml::next(interval, profile, now);
+    BOOST_ASSERT_MSG(next_push > now, "negative time span");
+
+    auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
+
+    //  2022-07-10 17:00:00.0000000
+    std::cout << next_push << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

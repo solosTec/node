@@ -17,8 +17,20 @@ namespace smf {
         , cyng::key_t key)
 		: sigs_{
             std::bind(&push::init, this),	//	0
-            std::bind(&push::run, this),	//	0
-            std::bind(&push::stop, this, std::placeholders::_1)	//	1
+            std::bind(&push::run, this),	//	1
+            std::bind(
+                    &push::on_channel_open,
+                    this,
+                    std::placeholders::_1,
+                    std::placeholders::_2,
+                    std::placeholders::_3,
+                    std::placeholders::_4),
+            std::bind(
+            &push::on_channel_close,
+            this,
+            std::placeholders::_1,
+            std::placeholders::_2), // "on.channel.close"
+            std::bind(&push::stop, this, std::placeholders::_1)	
 		}	
 		, channel_(wp)
 		, logger_(logger)
@@ -29,7 +41,7 @@ namespace smf {
         BOOST_ASSERT(key.size() == 2);
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"init", "run"});
+            sp->set_channel_names({"init", "run", "on.channel.open", "on.channel.close"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "#" << sp->get_id() << "] created");
         }
     }
@@ -64,11 +76,10 @@ namespace smf {
                         if (next_push > now) {
                             auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
                             sp->suspend(span, "run");
-                            CYNG_LOG_TRACE(logger_, "[push] " << target << " - init: " << std::chrono::system_clock::now() + span);
+                            CYNG_LOG_TRACE(logger_, "[push] " << target << " at " << next_push);
                         } else {
                             sp->suspend(interval, "run");
-                            CYNG_LOG_WARNING(
-                                logger_, "[push] " << target << " - init: " << std::chrono::system_clock::now() + interval);
+                            CYNG_LOG_WARNING(logger_, "[push] " << target << " - init: " << now + interval);
                         }
                     } else {
                         CYNG_LOG_ERROR(logger_, "[push] no table record for " << key_);
@@ -105,13 +116,48 @@ namespace smf {
         if (!target.empty()) {
             if (bus_.is_authorized()) {
                 //
-                //  ToDo: open push channel
-                //
+                //  ToDo: collect data
+                //  open push channel
+                if (open_channel(ipt::push_channel(target, "", "", "", "", 30u))) {
+                    //  ToDo: send data
+                    //  ToDo: close push channel
+                    //
+                }
 
             } else {
                 CYNG_LOG_WARNING(logger_, "[push] IP-T bus not authorized: " << target);
             }
         } else {
+            CYNG_LOG_WARNING(logger_, "[push] no push target defined");
         }
     }
+
+    bool push::open_channel(ipt::push_channel &&pc) { return bus_.open_channel(pc, channel_); }
+
+    void push::on_channel_open(bool success, std::string meter, std::uint32_t channel, std::uint32_t source) {
+        if (success) {
+            CYNG_LOG_INFO(logger_, "[push] channel is open");
+
+            //
+            //  send data
+            //
+
+            //
+            //  close channel
+            //
+            bus_.close_channel(channel, channel_);
+
+        } else {
+            CYNG_LOG_WARNING(logger_, "[push] open channel failed");
+        }
+    }
+
+    void push::on_channel_close(bool success, std::uint32_t channel) {
+        if (success) {
+            CYNG_LOG_INFO(logger_, "[push] channel " << channel << " is closed");
+        } else {
+            CYNG_LOG_WARNING(logger_, "[push] close channel " << channel << " failed");
+        }
+    }
+
 } // namespace smf

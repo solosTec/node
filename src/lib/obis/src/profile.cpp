@@ -10,11 +10,12 @@ namespace smf {
                 OBIS_PROFILE_15_MINUTE,
                 OBIS_PROFILE_60_MINUTE,
                 OBIS_PROFILE_24_HOUR,
-                OBIS_PROFILE_LAST_2_HOURS,
-                OBIS_PROFILE_LAST_WEEK,
+                // OBIS_PROFILE_LAST_2_HOURS,
+                // OBIS_PROFILE_LAST_WEEK,
                 OBIS_PROFILE_1_MONTH,
                 OBIS_PROFILE_1_YEAR,
-                OBIS_PROFILE_INITIAL};
+                // OBIS_PROFILE_INITIAL
+            };
         }
 
         std::chrono::seconds interval_time(cyng::obis profile) {
@@ -91,8 +92,25 @@ namespace smf {
                 sec -= (sec % 3600u);
                 break;
 
-            case CODE_PROFILE_1_MONTH:
-            case CODE_PROFILE_1_YEAR:
+            case CODE_PROFILE_1_MONTH: {
+                // auto today = std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now());
+                //   assume 30 days
+                if (sec < 86400u * 30u) {
+                    sec = 86400u * 30u;
+                }
+                //	rasterization to full days
+                sec -= (sec % 86400u);
+                break;
+            }
+            case CODE_PROFILE_1_YEAR: {
+                //   assume 364 days
+                if (sec < 86400u * 364u) {
+                    sec = 86400u * 364u;
+                }
+                //	rasterization to full days
+                sec -= (sec % 86400u);
+                break;
+            }
             default:
                 //
                 //  ToDo: implement
@@ -132,7 +150,7 @@ namespace smf {
 
             case CODE_PROFILE_24_HOUR: {
                 auto const days = hours_since_epoch(now).count() / 24;
-                return epoch + std::chrono::hours(days * 24) + std::chrono::hours(count / 3600u);
+                return epoch + std::chrono::hours(days * 24) + std::chrono::hours(count / 3600u * 24u);
             } break;
 
             case CODE_PROFILE_1_MONTH:

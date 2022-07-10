@@ -6,6 +6,7 @@
  */
 
 #include <smf/ipt/config.h>
+
 #include <smf/ipt/scramble_key_format.h>
 
 #include <cyng/obj/algorithm/find.h>

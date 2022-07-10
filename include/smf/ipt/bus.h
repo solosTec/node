@@ -102,6 +102,7 @@ namespace smf {
 
             /**
              * open a push channel (TP_RES_OPEN_CONNECTION)
+             * Requires a methode "on.channel.open" to receive the response
              *
              * @return true if process was started
              */

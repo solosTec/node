@@ -9,6 +9,8 @@
 
 #include <cfg.h>
 
+#include <smf/ipt/config.h>
+
 #include <cyng/log/logger.h>
 #include <cyng/store/key.hpp>
 #include <cyng/task/task_fwd.h>
@@ -26,8 +28,10 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>, //	init
-            std::function<void(void)>, //	run
+            std::function<void(void)>,                                                                         //	init
+            std::function<void(void)>,                                                                         //	run
+            std::function<void(bool success, std::string meter, std::uint32_t channel, std::uint32_t source)>, //  on_channel_open
+            std::function<void(bool, std::uint32_t)>,                                                          //  on_channel_close
             std::function<void(cyng::eod)>>;
 
       public:
@@ -37,6 +41,10 @@ namespace smf {
         void stop(cyng::eod);
         void init();
         void run();
+
+        bool open_channel(ipt::push_channel &&);
+        void on_channel_open(bool success, std::string meter, std::uint32_t channel, std::uint32_t source);
+        void on_channel_close(bool success, std::uint32_t);
 
       private:
         signatures_t sigs_;

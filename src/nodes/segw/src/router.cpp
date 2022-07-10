@@ -263,7 +263,7 @@ namespace smf {
                     auto const interval = rec.value("interval", std::chrono::seconds(0));
                     auto const delay = rec.value("delay", std::chrono::seconds(0));
                     auto const target = rec.value("target", "");
-                    CYNG_LOG_INFO(logger_, "[ipt] initialize: push task \"" << target << "\", " << obis::get_name(profile));
+                    CYNG_LOG_INFO(logger_, "[ipt] initialize: \"push\" task [" << target << "], " << obis::get_name(profile));
 
                     auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, key);
                     BOOST_ASSERT(channel->is_open());
@@ -285,7 +285,7 @@ namespace smf {
         //
         //  stops all tasks with this name
         //
-        CYNG_LOG_INFO(logger_, "[ipt] stop push tasks");
+        CYNG_LOG_INFO(logger_, "[ipt] stop \"push\" tasks");
         ctl_.get_registry().stop("push");
     }
 
@@ -294,9 +294,11 @@ namespace smf {
         //  start collecting push data
         //
         for (auto const profile : sml::get_profiles()) {
-            CYNG_LOG_INFO(logger_, "[ipt] start store task " << cyng::to_string(profile));
+            CYNG_LOG_INFO(
+                logger_, "[ipt] start \"store\" task " << obis::get_name(profile) << " (" << cyng::to_string(profile) << ")");
             auto channel = ctl_.create_named_channel_with_ref<store>(cyng::to_string(profile), logger_, bus_, cfg_, profile);
             BOOST_ASSERT(channel->is_open());
+            channel->dispatch("init");
         }
     }
     void router::stop_ipt_store() {
@@ -304,7 +306,7 @@ namespace smf {
         //  stop collecting push data
         //
         for (auto const profile : sml::get_profiles()) {
-            CYNG_LOG_INFO(logger_, "[ipt] stop store task " << cyng::to_string(profile));
+            CYNG_LOG_INFO(logger_, "[ipt] stop \"store\" task " << obis::get_name(profile));
             ctl_.get_registry().stop(cyng::to_string(profile));
         }
     }
