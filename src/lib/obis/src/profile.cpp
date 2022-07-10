@@ -22,11 +22,31 @@ namespace smf {
             case CODE_PROFILE_1_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(1));
             case CODE_PROFILE_15_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(15));
             case CODE_PROFILE_60_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(1));
-            case CODE_PROFILE_24_HOUR: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(1));
-            case CODE_PROFILE_1_MONTH: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(30));
-            case CODE_PROFILE_1_YEAR: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(365));
+            case CODE_PROFILE_24_HOUR:
+#if __cplusplus >= 202002L
+                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(1));
+#else
+                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24));
+#endif
+            case CODE_PROFILE_1_MONTH:
+#if __cplusplus >= 202002L
+                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(30));
+#else
+                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24 * 30));
+#endif
+            case CODE_PROFILE_1_YEAR:
+#if __cplusplus >= 202002L
+                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(365));
+#else
+                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24 * 30 * 365));
+#endif
             default: BOOST_ASSERT_MSG(false, "not implemented yet"); break;
             }
+
+            //
+            //  this is an error
+            //
+            BOOST_ASSERT_MSG(false, "not a load profile");
             return std ::chrono::minutes(1);
         }
 

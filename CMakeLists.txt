@@ -87,6 +87,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	    add_compile_definitions(_WIN32_WINNT=0x0A00 _SCL_SECURE_NO_WARNINGS WIN32_LEAN_AND_MEAN)
         add_compile_options(/bigobj)
         add_compile_options(/MP)
+        # __cplusplus is 199711L otherwise
+        add_compile_options("/Zc:__cplusplus") 
+
         message(STATUS "** compile definitions: ${CMAKE_CXX_FLAGS}")
 
     elseif(CMAKE_COMPILER_IS_GNUCXX)
