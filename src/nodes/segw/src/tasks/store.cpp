@@ -59,6 +59,7 @@ namespace smf {
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "store task already stopped");
         if (sp) {
+            auto const now = std::chrono::system_clock::now();
             auto const interval = sml::interval_time(profile_);
             sp->suspend(interval, "run");
             CYNG_LOG_TRACE(
@@ -67,11 +68,11 @@ namespace smf {
             //
             //  transfer readout data for all defined profiles
             //
-            transfer();
+            transfer(now);
         }
     }
 
-    void store::transfer() {
+    void store::transfer(std::chrono::system_clock::time_point now) {
         std::size_t meta_count = 0, data_count = 0;
 
         cfg_.get_cache().access(
@@ -100,7 +101,10 @@ namespace smf {
                             //
                             //  transfer "readout" => "mirror"
                             //
-                            auto const pk_mirror = cyng::extend_key(pk, profile_);
+                            auto const received = rec_ro.value("received", now);
+                            auto const idx = sml::to_index(received, profile_);
+                            //  "meterID", "profile", "idx"
+                            auto const pk_mirror = cyng::extend_key(pk, profile_, idx);
                             if (tbl_mirror->insert(pk_mirror, rec_ro.data(), 1, cfg_.get_tag())) {
                                 ++meta_count;
 
@@ -111,6 +115,7 @@ namespace smf {
                                         //  transfer "readoutData" => "mirrorData"
                                         //
                                         auto const reg = rec_ro_data.value<cyng::obis>("register", {});
+                                        //  "meterID", "profile", "idx", "register"
                                         auto const pk_mirror_data = cyng::extend_key(pk_mirror, reg);
                                         CYNG_LOG_TRACE(
                                             logger_,

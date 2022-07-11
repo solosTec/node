@@ -275,6 +275,7 @@ namespace smf {
             {
                 cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
                 cyng::column("profile", cyng::TC_OBIS),   // load profile
+                cyng::column("idx", cyng::TC_INT64),      // time stamp index (with offset)
                 //   -- body
                 cyng::column("payload", cyng::TC_BUFFER),      // raw (encrypted)
                 cyng::column("ci", cyng::TC_UINT8),            // frame type (CI field - M-Bus only)
@@ -282,14 +283,14 @@ namespace smf {
                 cyng::column("secidx", cyng::TC_UINT32),       // seconds index (gateway)
                 cyng::column("decrypted", cyng::TC_BOOL)       // if true readout data available
             },
-            2);
+            3);
     }
 
     cyng::meta_sql get_table_mirror() {
         //
         //  select hex(meterID), profile, datetime(received), secIdx from TMirror;
         //
-        return cyng::to_sql(get_store_mirror(), {9, 0, 0, 0, 0, 0, 0});
+        return cyng::to_sql(get_store_mirror(), {9, 0, 0, 0, 0, 0, 0, 0});
     }
 
     cyng::meta_store get_store_mirror_data() {
@@ -297,8 +298,9 @@ namespace smf {
             "mirrorData",
             {
                 cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
-                cyng::column("register", cyng::TC_OBIS),  // OBIS code
                 cyng::column("profile", cyng::TC_OBIS),   // load profile
+                cyng::column("idx", cyng::TC_INT64),      // time stamp index (with offset)
+                cyng::column("register", cyng::TC_OBIS),  // OBIS code (data type)
                 //   -- body
                 cyng::column("reading", cyng::TC_STRING), // value as string
                 cyng::column("type", cyng::TC_UINT32),    // data type code
@@ -306,9 +308,9 @@ namespace smf {
                 cyng::column("unit", cyng::TC_UINT8),     // physical unit
                 cyng::column("status", cyng::TC_UINT32)   // status
             },
-            3);
+            4);
     }
-    cyng::meta_sql get_table_mirror_data() { return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 0, 0, 0, 0}); }
+    cyng::meta_sql get_table_mirror_data() { return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 0, 0, 0, 0, 0}); }
 
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {

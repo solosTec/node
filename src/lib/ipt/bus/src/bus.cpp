@@ -594,7 +594,9 @@ namespace smf {
                 send(state_holder_, [=, this]() -> cyng::buffer_t {
                     CYNG_LOG_INFO(logger_, "[ipt] close channel: " << channel);
 
-                    BOOST_ASSERT_MSG(state_holder_->has_state(state_value::AUTHORIZED), "AUTHORIZED state expected");
+                    BOOST_ASSERT_MSG(
+                        state_holder_->has_state(state_value::AUTHORIZED) || state_holder_->has_state(state_value::LINKED),
+                        "AUTHORIZED state expected");
                     auto const r = serializer_.req_close_push_channel(channel);
 
                     //

@@ -2,6 +2,12 @@
 
 #include <smf/obis/defs.h>
 
+#ifdef _DEBUG
+#include <cyng/io/ostream.h>
+#include <cyng/io/serialize.h>
+#include <iostream>
+#endif
+
 namespace smf {
     namespace sml {
         cyng::obis_path_t get_profiles() {
@@ -167,6 +173,51 @@ namespace smf {
             return now;
         }
 
+        std::int64_t to_index(std::chrono::system_clock::time_point now, cyng::obis profile) {
+
+            BOOST_ASSERT(now > offset_);
+
+            auto const start = calculate_offset(now);
+#ifdef _DEBUG
+            std::cout << "start: " << start << std::endl;
+#endif
+
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return minutes_since_epoch(start).count();
+            case CODE_PROFILE_15_MINUTE: return minutes_since_epoch(start).count() / 15u;
+            case CODE_PROFILE_60_MINUTE: return hours_since_epoch(start).count();
+            case CODE_PROFILE_24_HOUR: return hours_since_epoch(start).count() / 24u;
+            case CODE_PROFILE_1_MONTH:
+                //  ToDo: calculate the exact count of months
+                return hours_since_epoch(start).count() / (24u * 30u);
+            case CODE_PROFILE_1_YEAR:
+                //  ToDo: calculate the exact count of years
+                return hours_since_epoch(start).count() / (24u * 364u);
+            default: break;
+            }
+
+            return std::chrono::duration_cast<std::chrono::seconds>(start.time_since_epoch()).count();
+        }
+
+        std::chrono::system_clock::time_point to_time_point(std::int64_t idx, cyng::obis profile) {
+
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return offset_ + std::chrono::minutes(idx);
+            case CODE_PROFILE_15_MINUTE: return offset_ + std::chrono::minutes(idx * 15u);
+            case CODE_PROFILE_60_MINUTE: return offset_ + std::chrono::hours(idx);
+            case CODE_PROFILE_24_HOUR: return offset_ + std::chrono::hours(idx * 24u);
+            case CODE_PROFILE_1_MONTH:
+                //  ToDo: calculate the exact count of months
+                return offset_ + std::chrono::hours(idx * 24u * 30u);
+            case CODE_PROFILE_1_YEAR:
+                //  ToDo: calculate the exact count of years
+                return offset_ + std::chrono::hours(idx * 24u * 30u * 364u);
+            default: break;
+            }
+
+            return offset_ + std::chrono::minutes(idx);
+        }
+
     } // namespace sml
 
     std::chrono::minutes minutes_since_epoch(std::chrono::system_clock::time_point tp) {
@@ -175,5 +226,10 @@ namespace smf {
 
     std::chrono::hours hours_since_epoch(std::chrono::system_clock::time_point tp) {
         return std::chrono::duration_cast<std::chrono::hours>(tp.time_since_epoch());
+    }
+
+    std::chrono::system_clock::time_point calculate_offset(std::chrono::system_clock::time_point tp) {
+        auto const epoch = std::chrono::time_point<std::chrono::system_clock>{};
+        return tp - (offset_ - epoch);
     }
 } // namespace smf

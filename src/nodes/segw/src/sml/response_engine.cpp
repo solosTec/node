@@ -662,7 +662,7 @@ namespace smf {
                     if (rec.empty()) {
                         //  insert
                         CYNG_LOG_DEBUG(logger_, "[SML_SetProcParameter.Req] insert new push op " << server << "#" << +nr);
-                        if (!insert_push_op(tbl_push, tbl_reg, tbl_col, tbl_mir, key, pm, server, cfg_.get_tag())) {
+                        if (!insert_push_op(tbl_push, tbl_reg, tbl_col, tbl_mir, server, nr, pm, cfg_.get_tag())) {
                         }
 
                     } else {
@@ -685,11 +685,14 @@ namespace smf {
         cyng::table *tbl_reg,
         cyng::table const *tbl_col,
         cyng::table const *tbl_mir,
-        cyng::key_t const &key,
+        cyng::buffer_t const &meter,
+        std::uint8_t nr,
+        // cyng::key_t const &key,
         cyng::prop_map_t const &pm,
-        cyng::buffer_t const &server,
+        // cyng::buffer_t const &server,
         boost::uuids::uuid source) {
-        BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
+        // BOOST_ASSERT_MSG(key.size() == 2, "invalid key size for table dataCollector");
+        BOOST_ASSERT_MSG(!meter.empty(), "no meter id");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl->meta().get_name(), "pushOps"), "pushOps expected");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_reg->meta().get_name(), "pushRegister"), "pushRegister expected");
         BOOST_ASSERT_MSG(boost::algorithm::equals(tbl_col->meta().get_name(), "dataCollector"), "dataCollector expected");
@@ -715,13 +718,14 @@ namespace smf {
         //	* 81 81 C7 8A 43 FF == installation parameters (PUSH_SOURCE_INSTALL)
         //	* 81 81 C7 8A 44 FF == list of visible sensors/actors (PUSH_SOURCE_VISIBLE_SENSORS)
         auto const origin = reader.get(OBIS_PUSH_SOURCE, OBIS_PUSH_SOURCE_PROFILE);
-        auto const id = reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_SERVER_ID, server);
-        BOOST_ASSERT(id == server);
+        auto const id = reader[OBIS_PUSH_SOURCE].get(OBIS_PUSH_SERVER_ID, meter);
+        BOOST_ASSERT(id == meter);
 
         auto const profile = reader[OBIS_PUSH_SOURCE].get(OBIS_PROFILE, OBIS_PROFILE_15_MINUTE);
         auto const service = reader.get(OBIS_PUSH_SERVICE, OBIS_PUSH_SERVICE_IPT);
 
         //  "pushOps"
+        auto const key = cyng::key_generator(meter, nr);
         if (tbl->insert(
                 key,
                 cyng::data_generator(
@@ -744,14 +748,14 @@ namespace smf {
                 // Multiple profiles will be ignored!
                 //
                 tbl_col->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                    auto const id_col = rec.value("meterID", server);
+                    auto const id_col = rec.value("meterID", meter);
                     auto const profile_col = rec.value("profile", OBIS_PROFILE);
                     auto const active = rec.value("active", false);
                     if (active && (profile_col == profile) && (id == id_col)) {
                         auto const nr_col = rec.value("nr", 0u);
 
                         tbl_mir->loop([&](cyng::record &&rec_mir, std::size_t) -> bool {
-                            auto const id_mir = rec_mir.value("meterID", server);
+                            auto const id_mir = rec_mir.value("meterID", meter);
                             auto const nr_mir = rec_mir.value("nr", 0u);
                             if ((id_col == id_mir) && (nr_col == nr_mir)) {
                                 auto const idx_mir = rec_mir.value("idx", 0u);
@@ -787,7 +791,7 @@ namespace smf {
             //	but the task itself will not be started.
             //
 
-            auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, key);
+            auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, meter, nr);
             BOOST_ASSERT(channel->is_open());
             tbl->modify(key, cyng::make_param("task", channel->get_id()), source);
             channel->dispatch("init");
@@ -913,6 +917,27 @@ namespace smf {
                 tbl_dc->modify(key, cyng::make_param("maxSize", prop.second), source);
             } else if (prop.first == OBIS_DATA_REGISTER_PERIOD) {
                 tbl_dc->modify(key, cyng::make_param("regPeriod", prop.second), source);
+            } else if (prop.first == OBIS_DATA_PUSH_DETAILS) {
+                //  ignore
+            } else if (prop.first == OBIS_DATA_COLLECTOR_REGISTER) {
+                //  81 81 c7 8a 23 ff
+                //  remove registers
+                auto const regs = cyng::container_cast<cyng::prop_map_t>(prop.second);
+                for (auto const &reg : regs) {
+                    auto const pk = cyng::extend_key(key, reg.first[cyng::obis::VG_STORAGE]);
+                    if (cyng::is_null(reg.second)) {
+                        //
+                        //  delete
+                        //
+                        tbl_mirror->erase(key, source);
+                    } else {
+                        //
+                        //  insert/update
+                        //
+                        BOOST_ASSERT_MSG(reg.second.tag() == cyng::TC_OBIS, "OBIS expected");
+                        tbl_mirror->merge(key, cyng::data_generator(reg.second), 0, source);
+                    }
+                }
             } else {
                 BOOST_ASSERT_MSG(false, "unknown data collector attribute");
             }
@@ -921,27 +946,27 @@ namespace smf {
         //
         //  update register codes
         //
-        auto const reader = cyng::make_reader(pm);
-        auto const regs = cyng::container_cast<cyng::prop_map_t>(reader.get(OBIS_DATA_COLLECTOR_REGISTER));
-        for (auto const &reg : regs) {
-            update_data_mirror(
-                tbl_mirror,
-                cyng::extend_key(key, reg.first[cyng::obis::VG_STORAGE]),
-                cyng::value_cast(reg.second, cyng::make_obis({})),
-                source);
-        }
+        // auto const reader = cyng::make_reader(pm);
+        // auto const regs = cyng::container_cast<cyng::prop_map_t>(reader.get(OBIS_DATA_COLLECTOR_REGISTER));
+        // for (auto const &reg : regs) {
+        //    update_data_mirror(
+        //        tbl_mirror,
+        //        cyng::extend_key(key, reg.first[cyng::obis::VG_STORAGE]),
+        //        cyng::value_cast(reg.second, cyng::make_obis({})),
+        //        source);
+        //}
     }
 
-    void update_data_mirror(cyng::table *tbl_mirror, cyng::key_t const &key, cyng::obis reg, boost::uuids::uuid source) {
-        auto const rec = tbl_mirror->lookup(key);
-        if (rec.empty()) {
-            //  insert
-            tbl_mirror->insert(key, cyng::data_generator(reg), 0, source);
-        } else {
-            //  remove
-            tbl_mirror->erase(key, source);
-        }
-    }
+    // void update_data_mirror(cyng::table *tbl_mirror, cyng::key_t const &key, cyng::obis reg, boost::uuids::uuid source) {
+    //     auto const rec = tbl_mirror->lookup(key);
+    //     if (rec.empty()) {
+    //         //  insert
+    //         tbl_mirror->insert(key, cyng::data_generator(reg), 0, source);
+    //     } else {
+    //         //  remove
+    //         tbl_mirror->erase(key, source);
+    //     }
+    // }
 
     cyng::tuple_t response_engine::get_proc_parameter_wmbus_state(
         std::string const &trx,

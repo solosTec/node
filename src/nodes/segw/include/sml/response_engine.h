@@ -203,9 +203,9 @@ namespace smf {
             cyng::table *,
             cyng::table const *tbl_col,
             cyng::table const *tbl_mir,
-            cyng::key_t const &,
+            cyng::buffer_t const &meter,
+            std::uint8_t nr,
             cyng::prop_map_t const &,
-            cyng::buffer_t const &server,
             boost::uuids::uuid);
 
       private:
@@ -228,7 +228,7 @@ namespace smf {
     /**
      * update register codes
      */
-    void update_data_mirror(cyng::table *, cyng::key_t const &, cyng::obis, boost::uuids::uuid);
+    // void update_data_mirror(cyng::table *, cyng::key_t const &, cyng::obis, boost::uuids::uuid);
 
     cyng::tuple_t get_collector_registers(cyng::table const *, cyng::buffer_t const &, std::uint8_t);
 

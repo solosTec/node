@@ -41,6 +41,16 @@ namespace smf {
         std::chrono::system_clock::time_point
         next(std::chrono::seconds interval, cyng::obis profile, std::chrono::system_clock::time_point);
 
+        /**
+         * Calculate an index of the time stamp with an offset to 1. january 2022.
+         */
+        std::int64_t to_index(std::chrono::system_clock::time_point, cyng::obis profile);
+
+        /**
+         * Calculate the time point of the index
+         */
+        std::chrono::system_clock::time_point to_time_point(std::int64_t, cyng::obis profile);
+
     } // namespace sml
 
     /**
@@ -52,6 +62,15 @@ namespace smf {
      * @return hours since Unix epoch (00:00:00 UTC on 1 January 1970)
      */
     std::chrono::hours hours_since_epoch(std::chrono::system_clock::time_point);
+
+    /**
+     * Calculate the offset time to 2022-01-01 00:00:00
+     */
+    std::chrono::system_clock::time_point calculate_offset(std::chrono::system_clock::time_point);
+
+    //  2022-01-01 00:00:00
+    constexpr static std::chrono::time_point<std::chrono::system_clock> offset_ =
+        std::chrono::time_point<std::chrono::system_clock>(std::chrono::seconds(1640991600));
 } // namespace smf
 
 #endif

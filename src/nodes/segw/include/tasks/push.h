@@ -28,14 +28,14 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>,                                                                         //	init
-            std::function<void(void)>,                                                                         //	run
-            std::function<void(bool success, std::string meter, std::uint32_t channel, std::uint32_t source)>, //  on_channel_open
-            std::function<void(bool, std::uint32_t)>,                                                          //  on_channel_close
+            std::function<void(void)>,                                                           //	init
+            std::function<void(void)>,                                                           //	run
+            std::function<void(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
+            std::function<void(bool, std::uint32_t)>,                                            //  on_channel_close
             std::function<void(cyng::eod)>>;
 
       public:
-        push(cyng::channel_weak, cyng::logger, ipt::bus &, cfg &config, cyng::key_t);
+        push(cyng::channel_weak, cyng::logger, ipt::bus &, cfg &config, cyng::buffer_t, std::uint8_t nr);
 
       private:
         void stop(cyng::eod);
@@ -43,8 +43,11 @@ namespace smf {
         void run();
 
         bool open_channel(ipt::push_channel &&);
-        void on_channel_open(bool success, std::string meter, std::uint32_t channel, std::uint32_t source);
+        void on_channel_open(bool success, std::uint32_t, std::uint32_t, std::uint32_t, std::string);
         void on_channel_close(bool success, std::uint32_t);
+
+        void collect_data();
+        cyng::obis_path_t get_registers(cyng::table const *tbl);
 
       private:
         signatures_t sigs_;
@@ -57,7 +60,12 @@ namespace smf {
 
         ipt::bus &bus_;
         cfg &cfg_;
-        cyng::key_t const key_;
+
+        /**
+         * Key into table "pushOps"
+         */
+        cyng::buffer_t const meter_;
+        std::uint8_t const nr_;
     };
 
 } // namespace smf

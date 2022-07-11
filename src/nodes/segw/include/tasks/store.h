@@ -38,7 +38,7 @@ namespace smf {
         void init();
         void run();
 
-        void transfer();
+        void transfer(std::chrono::system_clock::time_point);
 
       private:
         signatures_t sigs_;

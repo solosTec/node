@@ -258,14 +258,22 @@ namespace smf {
                 //
                 std::map<cyng::key_t, std::size_t> task_ids;
                 tbl->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
-                    auto const key = rec.key();
+                    auto const &key = rec.key();
+                    BOOST_ASSERT(key.size() == 2);
+                    auto const meter = rec.value<cyng::buffer_t>("meterID", {});
+                    BOOST_ASSERT(!meter.empty());
+                    auto const nr = rec.value<std::uint8_t>("nr", 0);
+                    BOOST_ASSERT(nr != 0);
+
                     auto const profile = rec.value("profile", OBIS_PROFILE);
                     auto const interval = rec.value("interval", std::chrono::seconds(0));
                     auto const delay = rec.value("delay", std::chrono::seconds(0));
                     auto const target = rec.value("target", "");
-                    CYNG_LOG_INFO(logger_, "[ipt] initialize: \"push\" task [" << target << "], " << obis::get_name(profile));
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "[ipt] initialize: \"push\" task [" << meter << " => " << target << "], " << obis::get_name(profile));
 
-                    auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, key);
+                    auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, meter, nr);
                     BOOST_ASSERT(channel->is_open());
                     channel->dispatch("init");
                     task_ids.emplace(key, channel->get_id());
