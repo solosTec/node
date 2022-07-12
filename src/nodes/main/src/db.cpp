@@ -227,7 +227,7 @@ namespace smf {
                 //
                 //	remove from target table
                 //
-                auto const target_count = tbl_target->erase(
+                auto const target_count = tbl_target->erase_if(
                     [&](cyng::record &&rec) -> bool {
                         auto const device = rec.value("device", boost::uuids::nil_uuid());
                         return device == dev;
@@ -240,7 +240,7 @@ namespace smf {
                 //
                 //	remove from channel table
                 //
-                auto const cannel_count = tbl_channel->erase(
+                auto const cannel_count = tbl_channel->erase_if(
                     [&](cyng::record &&rec) -> bool {
                         auto const target = rec.value("target_tag", boost::uuids::nil_uuid());
                         auto const owner = rec.value("owner", boost::uuids::nil_uuid());

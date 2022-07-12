@@ -607,7 +607,7 @@ namespace smf {
                         "[SML_SetProcParameter.Req] delete data collector server : " << server << ", profile: " << profile);
                     auto const nr = path.back()[cyng::obis::VG_STORAGE];
                     // cyng::key_t pk;
-                    tbl_dc->erase(
+                    tbl_dc->erase_if(
                         [&](cyng::record &&rec) -> bool {
                             auto const server_rec = rec.value("meterID", cyng::make_buffer({}));
                             auto const profile_rec = rec.value("profile", cyng::make_obis({}));
@@ -619,13 +619,10 @@ namespace smf {
 
                                 //  extract "nr"
                                 auto const nr = rec.value<std::uint8_t>("nr", 0u);
-                                tbl_mirror->erase(
-                                    [&](cyng::record &&rec) -> bool {
-                                        auto const server_mirror = rec.value("meterID", cyng::make_buffer({}));
-                                        auto const nr_mirror = rec.value<std::uint8_t>("nr", 0u);
-                                        // delete record from "dataMirror" if true
-                                        return (server_rec == server_mirror) && (nr == nr_mirror);
-                                    },
+
+                                tbl_mirror->erase_if<cyng::buffer_t, std::uint8_t, std::uint8_t, cyng::obis>(
+                                    [&, this](cyng::buffer_t server_mirror, std::uint8_t nr_mirror, std::uint8_t, cyng::obis)
+                                        -> bool { return (server_rec == server_mirror) && (nr == nr_mirror); },
                                     cfg_.get_tag());
 
                                 return true; // delete record from "dataCollector" if true
@@ -827,7 +824,7 @@ namespace smf {
                 //
                 //  ToDo: stop push task
                 //
-                tbl_reg->erase(
+                tbl_reg->erase_if(
                     [&](cyng::record &&rec) -> bool {
                         //
                         //  remove all registers of this push op

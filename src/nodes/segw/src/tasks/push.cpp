@@ -219,16 +219,25 @@ namespace smf {
         BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "pushRegister"));
 
         cyng::obis_path_t regs;
-        tbl->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
-            auto const meter = rec.value("meterID", meter_);
-            auto const nr = rec.value<std::uint8_t>("nr", 0u);
-            if (meter == meter_ && nr == nr_) {
-                auto const reg = rec.value("register", OBIS_PROFILE);
-                regs.push_back(reg);
-            }
 
-            return true;
-        });
+        tbl->loop<cyng::buffer_t, std::uint8_t, std::uint8_t, cyng::obis>(
+            [&](cyng::buffer_t meter, std::uint8_t nr, std::uint8_t idx, cyng::obis reg) -> bool {
+                if (meter == meter_ && nr == nr_) {
+                    regs.push_back(reg);
+                }
+                return true;
+            });
+
+        // tbl->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
+        //     auto const meter = rec.value("meterID", meter_);
+        //     auto const nr = rec.value<std::uint8_t>("nr", 0u);
+        //     if (meter == meter_ && nr == nr_) {
+        //         auto const reg = rec.value("register", OBIS_PROFILE);
+        //         regs.push_back(reg);
+        //     }
+
+        //    return true;
+        //});
         return regs;
     }
 
