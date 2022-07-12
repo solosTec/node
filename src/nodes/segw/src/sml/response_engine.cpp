@@ -620,9 +620,19 @@ namespace smf {
                                 //  extract "nr"
                                 auto const nr = rec.value<std::uint8_t>("nr", 0u);
 
-                                tbl_mirror->erase_if<cyng::buffer_t, std::uint8_t, std::uint8_t, cyng::obis>(
-                                    [&, this](cyng::buffer_t server_mirror, std::uint8_t nr_mirror, std::uint8_t, cyng::obis)
-                                        -> bool { return (server_rec == server_mirror) && (nr == nr_mirror); },
+                                //  gcc 8.4 not read for this
+                                // tbl_mirror->erase_if<cyng::buffer_t, std::uint8_t, std::uint8_t, cyng::obis>(
+                                //    [&, this](cyng::buffer_t server_mirror, std::uint8_t nr_mirror, std::uint8_t, cyng::obis)
+                                //        -> bool { return (server_rec == server_mirror) && (nr == nr_mirror); },
+                                //    cfg_.get_tag());
+
+                                tbl_mirror->erase_if(
+                                    [&](cyng::record &&rec) -> bool {
+                                        auto const server_mirror = rec.value("meterID", cyng::make_buffer({}));
+                                        auto const nr_mirror = rec.value<std::uint8_t>("nr", 0u);
+                                        // delete record from "dataMirror" if true
+                                        return (server_rec == server_mirror) && (nr == nr_mirror);
+                                    },
                                     cfg_.get_tag());
 
                                 return true; // delete record from "dataCollector" if true
