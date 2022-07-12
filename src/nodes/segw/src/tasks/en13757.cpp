@@ -87,15 +87,16 @@ namespace smf {
                 auto const key = cyng::key_generator(h.get_server_id_as_buffer());
                 auto const rec = tbl->lookup(key);
                 if (rec.empty()) {
-                //
-                //  wireless M-Bus meter not found - insert
-                //
+                    //
+                    //  wireless M-Bus meter not found - insert
+                    //
 
-#if defined(_DEBUG)
                     //
                     //	start with some known AES keys
                     //
                     auto const id = to_string(h.get_server_id());
+
+#if defined(_DEBUG)
                     // auto const id = sml::from_server_id(dev_id);
                     if (boost::algorithm::equals(id, "01-e61e-29436587-bf-03") ||
                         boost::algorithm::equals(id, "01-e61e-13090016-3c-07")) {
