@@ -971,7 +971,7 @@ configure_file (
 )
 configure_file (
     "${PROJECT_SOURCE_DIR}/include/version.hpp.in"
-    "${PROJECT_SOURCE_DIR}/include/smf/version.hpp"
+    "${PROJECT_BINARY_DIR}/include/version.hpp"
 )
 
 #
@@ -1021,7 +1021,10 @@ if(UNIX)
 include(GNUInstallDirs)
 endif()
 
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/smf" # source directory
+install(
+        DIRECTORY # source directory
+            "${CMAKE_SOURCE_DIR}/include/smf/" 
+            "${PROJECT_BINARY_DIR}/include/" 
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" # target directory
         FILES_MATCHING # install only matched files
         PATTERN "*.h"
