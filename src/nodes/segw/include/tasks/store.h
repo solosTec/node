@@ -38,7 +38,10 @@ namespace smf {
         void init();
         void run();
 
-        void transfer(std::chrono::system_clock::time_point);
+        /**
+         * @return count of processed readouts and total count of all readout records
+         */
+        std::pair<std::size_t, std::size_t> transfer(std::chrono::system_clock::time_point);
 
       private:
         signatures_t sigs_;

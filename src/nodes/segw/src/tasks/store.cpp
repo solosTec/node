@@ -68,11 +68,13 @@ namespace smf {
             //
             //  transfer readout data for all defined profiles
             //
-            transfer(now);
+            auto const stats = transfer(now);
+            CYNG_LOG_INFO(
+                logger_, "[store] " << obis::get_name(profile_) << " - readouts: " << stats.first << ", records: " << stats.second);
         }
     }
 
-    void store::transfer(std::chrono::system_clock::time_point now) {
+    std::pair<std::size_t, std::size_t> store::transfer(std::chrono::system_clock::time_point now) {
         std::size_t meta_count = 0, data_count = 0;
 
         cfg_.get_cache().access(
@@ -85,6 +87,11 @@ namespace smf {
                 tbl_data_col->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
                     auto const profile = rec.value("profile", profile_);
                     auto const active = rec.value("active", false);
+
+                    if (!active) {
+                        CYNG_LOG_WARNING(logger_, "[store] transfer " << obis::get_name(profile_) << " is deactivated");
+                    }
+
                     if ((profile == profile_) && active) {
                         //
                         //  transfer from "readout" + "readoutData" => "mirror" + "mirrorData"
@@ -105,18 +112,25 @@ namespace smf {
                             auto const idx = sml::to_index(received, profile_);
                             //  "meterID", "profile", "idx"
                             auto const pk_mirror = cyng::extend_key(pk, profile_, idx);
+                            BOOST_ASSERT_MSG(pk_mirror.size() == 3, "wrong key size for table mirror");
                             if (tbl_mirror->insert(pk_mirror, rec_ro.data(), 1, cfg_.get_tag())) {
                                 ++meta_count;
 
                                 tbl_ro_data->loop([&, this](cyng::record &&rec_ro_data, std::size_t) -> bool {
-                                    auto const meter_ro = rec_ro_data.value<cyng::buffer_t>("meterID", {});
+                                    auto const meter_ro = rec_ro_data.value("meterID", meter);
+#ifdef _DEBUG
+                                    CYNG_LOG_DEBUG(
+                                        logger_,
+                                        "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << "/" << meter_ro);
+#endif
                                     if (meter_ro == meter) {
                                         //
                                         //  transfer "readoutData" => "mirrorData"
                                         //
-                                        auto const reg = rec_ro_data.value<cyng::obis>("register", {});
+                                        auto const reg = rec_ro_data.value("register", OBIS_METER_ADDRESS);
                                         //  "meterID", "profile", "idx", "register"
                                         auto const pk_mirror_data = cyng::extend_key(pk_mirror, reg);
+                                        BOOST_ASSERT_MSG(pk_mirror_data.size() == 4, "wrong key size for table mirrorData");
                                         CYNG_LOG_TRACE(
                                             logger_,
                                             "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter
@@ -133,10 +147,21 @@ namespace smf {
                                     return true;
                                 });
 
+                                if (data_count == 0) {
+                                    //
+                                    //  There is an entry in table "readout" but no data in "readoutData"
+                                    //
+                                    CYNG_LOG_WARNING(
+                                        logger_,
+                                        "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << " has no data");
+                                }
+
                             } else {
                                 CYNG_LOG_ERROR(
                                     logger_, "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << " failed");
                             }
+                        } else {
+                            //  no readout data
                         }
                     }
                     return true;
@@ -147,5 +172,7 @@ namespace smf {
             cyng::access::read("readoutData"),
             cyng::access::write("mirror"),
             cyng::access::write("mirrorData"));
+
+        return {meta_count, data_count};
     }
 } // namespace smf

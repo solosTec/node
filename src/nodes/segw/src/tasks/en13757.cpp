@@ -116,9 +116,18 @@ namespace smf {
                     }
 #endif
 
+                    CYNG_LOG_INFO(logger_, "[EN-13757] insert meter: " << id);
                     tbl->insert(
                         key,
-                        cyng::data_generator(now, "---", true, 0u, cyng::make_buffer({0, 0}), cyng::make_buffer({0}), aes_key),
+                        cyng::data_generator(
+                            now,   // lastSeen
+                            "---", // class
+                            true,  // visible
+                            0u,    // status
+                            cyng::make_buffer({0, 0}),
+                            cyng::make_buffer({0}),
+                            aes_key,
+                            h.get_server_id_as_buffer()),
                         1,
                         cfg_.get_tag());
                 } else {
@@ -134,6 +143,29 @@ namespace smf {
 
                     BOOST_ASSERT_MSG(!cyng::is_null(aes_key), "no aes key");
                     if (h.has_secondary_address()) {
+                        auto const id = to_buffer(t.get_secondary_address());
+                        BOOST_ASSERT(id.size() == 9);
+                        auto const key2 = cyng::key_generator(id);
+                        auto const rec2 = tbl->lookup(key2);
+                        if (rec2.empty()) {
+                            CYNG_LOG_INFO(
+                                logger_, "[EN-13757] insert meter: " << to_string(t.get_secondary_address()) << " (secondary)");
+                            tbl->insert(
+                                key2,
+                                cyng::data_generator(
+                                    now,
+                                    "---",
+                                    true, // visible
+                                    0u,
+                                    cyng::make_buffer({0, 0}),
+                                    cyng::make_buffer({0}),
+                                    aes_key,
+                                    id),
+                                1,
+                                cfg_.get_tag());
+
+                            tbl->modify(key, cyng::make_param("secondary", id), cfg_.get_tag());
+                        }
                         decode(
                             tbl_readout, tbl_data, t.get_secondary_address(), t.get_access_no(), h.get_frame_type(), data, aes_key);
                     } else {
@@ -210,20 +242,25 @@ namespace smf {
     }
 
     void en13757::read_sml(cyng::table *tbl_data, srv_id_t const &address, cyng::buffer_t const &payload) {
+
+        //
+        //  ToDo: remove previous stuff
+        //
+
         smf::sml::unpack p(
             [&, this](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
-                CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
+                CYNG_LOG_TRACE(logger_, "[EN-13757] sml " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
 
                 auto const [client, server, code, tp1, tp2, data] = sml::read_get_list_response(msg);
                 for (auto const &m : data) {
-                    CYNG_LOG_TRACE(logger_, "[sml] " << m.first << ": " << m.second);
+                    CYNG_LOG_TRACE(logger_, "[EN-13757] sml " << m.first << ": " << m.second);
 
                     //
                     //	extract values
                     //
                     auto const reader = cyng::make_reader(m.second);
                     auto const obj = reader.get("raw");
-                    auto const value = reader.get("value", ""); //  string
+                    auto const value = reader.get("value", "0"); //  string
                     auto const unit = cyng::value_cast<std::uint8_t>(reader.get("unit"), 0u);
                     auto const unit_name = cyng::value_cast(reader.get("unit-name"), "");
                     auto const scaler = cyng::value_cast<std::uint8_t>(reader.get("scaler"), 0u);
@@ -241,6 +278,8 @@ namespace smf {
                 }
 
                 // count = data.size();
+                CYNG_LOG_INFO(
+                    logger_, "[EN-13757] sml " << server << ": " << data.size() << "/" << tbl_data->size() << " records merged");
             });
         p.read(payload.begin() + 2, payload.end());
     }
@@ -254,7 +293,12 @@ namespace smf {
         std::uint8_t frame_type,
         cyng::buffer_t const &payload) {
 
+        //
+        //  ToDo: remove previous stuff
+        //
+
         std::size_t offset = 2;
+        std::size_t counter = 0;
 
         while (offset < payload.size()) {
             // std::size_t, cyng::obis, cyng::object, std::int8_t, unit, bool
@@ -270,16 +314,21 @@ namespace smf {
                 //	store data to readout cache
                 //
                 auto const val = cyng::io::to_plain(obj);
-                CYNG_LOG_TRACE(logger_, "[wmbus] " << code << ": " << val << "e" << +scaler << " " << smf::mbus::get_unit_name(u));
+                CYNG_LOG_TRACE(
+                    logger_, "[EN-13757] wmbus " << code << ": " << val << "e" << +scaler << " " << smf::mbus::get_unit_name(u));
 
-                tbl_data->merge(
-                    cyng::key_generator(to_buffer(address), code),
-                    cyng::data_generator(val, obj.tag(), scaler, u, 0),
-                    0,
-                    cfg_.get_tag());
+                if (tbl_data->merge(
+                        cyng::key_generator(to_buffer(address), code),
+                        cyng::data_generator(val, obj.tag(), scaler, u, 0),
+                        0,
+                        cfg_.get_tag())) {
+                    ++counter;
+                }
             }
 
             offset = index;
         }
+        CYNG_LOG_INFO(
+            logger_, "[EN-13757] wmbus " << to_string(address) << ": " << counter << "/" << tbl_data->size() << " records merged");
     }
 } // namespace smf

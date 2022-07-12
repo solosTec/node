@@ -2,11 +2,11 @@
 
 #include <smf/obis/defs.h>
 
-#ifdef _DEBUG
-#include <cyng/io/ostream.h>
-#include <cyng/io/serialize.h>
-#include <iostream>
-#endif
+//#ifdef _DEBUG
+//#include <cyng/io/ostream.h>
+//#include <cyng/io/serialize.h>
+//#include <iostream>
+//#endif
 
 namespace smf {
     namespace sml {
@@ -178,9 +178,9 @@ namespace smf {
             BOOST_ASSERT(now > offset_);
 
             auto const start = calculate_offset(now);
-#ifdef _DEBUG
-            std::cout << "start: " << start << std::endl;
-#endif
+//#ifdef _DEBUG
+//            std::cout << "start: " << start << std::endl;
+//#endif
 
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return minutes_since_epoch(start).count();
