@@ -28,6 +28,7 @@ namespace smf {
 
     /**
      * Copy all bytes from the array into a buffer
+     * with a size of 9 bytes.
      */
     cyng::buffer_t to_buffer(srv_id_t const &);
 

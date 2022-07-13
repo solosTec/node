@@ -506,12 +506,24 @@ namespace smf {
                 cyng::make_param("discover", 5798), //	UDP
                 cyng::make_param("account", "operator"),
                 cyng::make_param("pwd", "operator"),
+                cyng::make_param(
+                    "enabled",
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-                cyng::make_param("enabled", false),
+                    false
 #else
-                cyng::make_param("enabled", true),
+                    true
 #endif
-                cyng::make_param("accept-all-ids", false) //	accept only the specified MAC id
+                    ),
+                cyng::make_param("accept-all-ids", false), //	accept only the specified MAC id
+                cyng::make_param(
+                    "auto-config", //  create a data mirror for each new wireless M-Bus device
+#ifdef _DEBUG
+                    false
+#else
+                    true
+#endif
+                    ),
+                cyng::make_param("default_profile", CODE_PROFILE_15_MINUTE) //	profile to use in auto-config mode
                 ));
     }
 

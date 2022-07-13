@@ -39,6 +39,7 @@ namespace smf {
                 //
                 for (auto &val : data) {
                     auto const width = meta.get_column(col_index).width_;
+                    BOOST_ASSERT(val); //  null values not allowed
                     stmt->push(val, width);
                     ++col_index;
                 }

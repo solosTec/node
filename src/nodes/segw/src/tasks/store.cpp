@@ -122,6 +122,18 @@ namespace smf {
                                     CYNG_LOG_DEBUG(
                                         logger_,
                                         "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << "/" << meter_ro);
+                                    {
+                                        auto const data = rec_ro_data.data();
+                                        for (auto const &obj : data) {
+                                            // BOOST_ASSERT(obj); //  null values not allowed
+                                            if (obj) {
+                                                CYNG_LOG_DEBUG(logger_, "[store] transfer " << obj);
+                                            } else {
+                                                CYNG_LOG_ERROR(logger_, "[store] transfer null value: " << data);
+                                            }
+                                        }
+                                    }
+
 #endif
                                     if (meter_ro == meter) {
                                         //

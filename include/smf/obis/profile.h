@@ -20,6 +20,11 @@ namespace smf {
         cyng::obis_path_t get_profiles();
 
         /**
+         * @return true if code is a (supported) load profile
+         */
+        bool is_profile(cyng::obis code);
+
+        /**
          * @return interval time for the specified profile
          */
         std::chrono::seconds interval_time(cyng::obis profile);

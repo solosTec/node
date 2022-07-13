@@ -9,6 +9,8 @@
 
 #include <cfg.h>
 
+#include <cyng/obj/intrinsics/obis.h>
+
 namespace smf {
 
     class cfg_sml {
@@ -28,6 +30,13 @@ namespace smf {
          * if true, server id must not match
          */
         bool accept_all_ids() const;
+
+        /**
+         * if true, an entry in table "dataCollector" and "dataMirror" for 15 minute profile will
+         * be created automatically.
+         */
+        bool is_auto_config() const;
+        cyng::obis get_default_profile() const;
 
       private:
         cfg &cfg_;

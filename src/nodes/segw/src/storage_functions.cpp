@@ -14,7 +14,9 @@
 #include <smf/ipt/config.h>
 #include <smf/ipt/scramble_key_format.h>
 #include <smf/mbus/server_id.h>
+#include <smf/obis/db.h>
 #include <smf/obis/defs.h>
+#include <smf/obis/profile.h>
 
 #include <cyng/db/details/statement_interface.h>
 #include <cyng/db/storage.h>
@@ -128,7 +130,7 @@ namespace smf {
         //
         //  SELECT hex(serverID), hex(secondary), datetime(lastSeen), visible, status, hex(aes) FROM TMeterMBus;
         //
-        return cyng::to_sql(get_store_meter_mbus(), {9, 0, 16, 0, 0, 0, 16, 32, 9}); 
+        return cyng::to_sql(get_store_meter_mbus(), {9, 0, 16, 0, 0, 0, 16, 32, 9});
     }
 
     cyng::meta_store get_store_meter_iec() {
@@ -267,7 +269,7 @@ namespace smf {
                 cyng::column("register", cyng::TC_OBIS),  // OBIS code,
                                                           //   -- body
                 cyng::column("reading", cyng::TC_STRING), // value as string
-                cyng::column("type", cyng::TC_UINT32),    // data type code
+                cyng::column("type", cyng::TC_UINT16),    // data type code
                 cyng::column("scaler", cyng::TC_UINT8),   // decimal place
                 cyng::column("unit", cyng::TC_UINT8),     // physical unit
                 cyng::column("status", cyng::TC_UINT32)   // status
@@ -309,14 +311,23 @@ namespace smf {
                 cyng::column("register", cyng::TC_OBIS),  // OBIS code (data type)
                 //   -- body
                 cyng::column("reading", cyng::TC_STRING), // value as string
-                cyng::column("type", cyng::TC_UINT32),    // data type code
+                cyng::column("type", cyng::TC_UINT16),    // data type code
                 cyng::column("scaler", cyng::TC_UINT8),   // decimal place
                 cyng::column("unit", cyng::TC_UINT8),     // physical unit
                 cyng::column("status", cyng::TC_UINT32)   // status
             },
             4);
     }
-    cyng::meta_sql get_table_mirror_data() { return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 0, 0, 0, 0, 0}); }
+    cyng::meta_sql get_table_mirror_data() {
+        //
+        // SELECT hex(TMirrorData.meterID), TMirrorData.profile, TMirrorData.register, TMirrorData.reading FROM TMirrorData;
+        //
+        // SELECT hex(TMirrorData.meterID), datetime(TMirror.received), TMirrorData.profile, TMirrorData.register,
+        // TMirrorData.reading FROM TMirrorData INNER JOIN TMirror ON TMirror.meterID = TMirrorData.meterID AND TMirror.profile =
+        // TMirrorData.profile AND TMirror.idx = TMirrorData.idx;
+        //
+        return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 0, 0, 0, 0, 0});
+    }
 
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
@@ -677,6 +688,8 @@ namespace smf {
 
     void transfer_sml(cyng::db::statement_ptr stmt, cyng::param_map_t &&pmap) {
 
+        auto flag_default_profile = false;
+
         for (auto const &param : pmap) {
             if (boost::algorithm::equals(param.first, "address")) {
 
@@ -701,10 +714,32 @@ namespace smf {
                     cyng::to_path(cfg::sep, "sml", param.first),
                     cyng::make_object(sml_discover),
                     "SML discovery port (" + std::to_string(sml_discover) + ")");
-            } else {
+            } else if (boost::algorithm::equals(param.first, "default-profile")) {
+                auto const code = cyng::numeric_cast<std::uint64_t>(param.second, CODE_PROFILE_15_MINUTE);
+                auto const profile = cyng::make_obis(code);
+                if (sml::is_profile(profile)) {
 
+                    insert_config_record(
+                        stmt,
+                        cyng::to_path(cfg::sep, "sml", param.first),
+                        cyng::make_object(profile),
+                        "default profile for auto-config mode (" + obis::get_name(profile) + ")");
+                    flag_default_profile = true;
+                }
+            } else {
                 insert_config_record(stmt, cyng::to_path(cfg::sep, "sml", param.first), param.second, "SML: " + param.first);
             }
+        }
+
+        if (!flag_default_profile) {
+            //
+            //  profile not supported or missing
+            //
+            insert_config_record(
+                stmt,
+                cyng::to_path(cfg::sep, "sml", "default-profile"),
+                cyng::make_object(OBIS_PROFILE_15_MINUTE),
+                "use \"15 minutes\" as default profile");
         }
     }
 

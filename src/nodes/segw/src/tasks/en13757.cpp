@@ -5,6 +5,7 @@
 #include <smf/mbus/radio/decode.h>
 #include <smf/mbus/reader.h>
 #include <smf/mbus/server_id.h>
+#include <smf/obis/defs.h>
 #include <smf/sml/reader.h>
 #include <smf/sml/readout.h>
 #include <smf/sml/unpack.h>
@@ -35,6 +36,7 @@ namespace smf {
 		, ctl_(ctl)
 		, logger_(logger)
         , cfg_(config)
+        , cfg_sml_(config)
         , parser_([this](mbus::radio::header const& h, mbus::radio::tplayer const& t, cyng::buffer_t const& data) {
 
             this->decode(h, t, data);
@@ -69,15 +71,20 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[EN-13757] add target channel: " << name);
     }
 
-    // void en13757::update_statistics() { CYNG_LOG_TRACE(logger_, "[EN-13757] update statistics"); }
-
     void en13757::decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data) {
+
+        auto const auto_cfg = cfg_sml_.is_auto_config();
+        auto const def_profile = cfg_sml_.get_default_profile();
 
         //
         //   get the AES key from table "TMeterMBus"
         //
         cfg_.get_cache().access(
-            [&](cyng::table *tbl, cyng::table *tbl_readout, cyng::table *tbl_data) {
+            [&](cyng::table *tbl,
+                cyng::table *tbl_readout,
+                cyng::table *tbl_data,
+                cyng::table *tbl_collector,
+                cyng::table *tbl_mirror) {
                 cyng::crypto::aes_128_key aes_key; // default is 0
 
                 //
@@ -97,7 +104,6 @@ namespace smf {
                     auto const id = to_string(h.get_server_id());
 
 #if defined(_DEBUG)
-                    // auto const id = sml::from_server_id(dev_id);
                     if (boost::algorithm::equals(id, "01-e61e-29436587-bf-03") ||
                         boost::algorithm::equals(id, "01-e61e-13090016-3c-07")) {
                         aes_key.key_ = {
@@ -128,69 +134,112 @@ namespace smf {
                             cyng::make_buffer({0, 0}),
                             cyng::make_buffer({0}),
                             aes_key,
+                            //  same as pk
                             h.get_server_id_as_buffer()),
                         1,
                         cfg_.get_tag());
+                }
+
+                //
+                //  get AES key
+                //
+                aes_key = rec.value("aes", aes_key);
+
+                //
+                //  update
+                //
+                tbl->modify(rec.key(), cyng::make_param("lastSeen", now), cfg_.get_tag());
+
+                BOOST_ASSERT_MSG(!cyng::is_null(aes_key), "no aes key");
+                if (h.has_secondary_address()) {
+                    //
+                    //  working with secondary address
+                    //
+                    auto const meter = to_buffer(t.get_secondary_address());
+                    BOOST_ASSERT(meter.size() == 9);
+                    auto const key2 = cyng::key_generator(meter);
+                    auto const rec2 = tbl->lookup(key2);
+                    if (rec2.empty()) {
+                        CYNG_LOG_INFO(
+                            logger_, "[EN-13757] insert meter: " << to_string(t.get_secondary_address()) << " (secondary)");
+                        tbl->insert(
+                            key2,
+                            cyng::data_generator(
+                                now,
+                                "---",
+                                true, // visible
+                                0u,
+                                cyng::make_buffer({0, 0}),
+                                cyng::make_buffer({0}),
+                                aes_key,
+                                meter),
+                            1,
+                            cfg_.get_tag());
+
+                        //
+                        //  Update the adaptor with the primary address
+                        //
+                        tbl->modify(key, cyng::make_param("secondary", meter), cfg_.get_tag());
+                    } else {
+                        tbl->modify(key2, cyng::make_param("lastSeen", now), cfg_.get_tag());
+                    }
+                    decode(
+                        tbl_readout,
+                        tbl_data,
+                        tbl_collector,
+                        tbl_mirror,
+                        t.get_secondary_address(),
+                        t.get_access_no(),
+                        h.get_frame_type(),
+                        data,
+                        aes_key,
+                        //  start auto configuration only for new meters
+                        auto_cfg && rec2.empty(),
+                        def_profile);
                 } else {
                     //
-                    //  get AES key
+                    //  working with primary address
                     //
-                    aes_key = rec.value("aes", aes_key);
-
-                    //
-                    //  update
-                    //
-                    tbl->modify(rec.key(), cyng::make_param("lastSeen", now), cfg_.get_tag());
-
-                    BOOST_ASSERT_MSG(!cyng::is_null(aes_key), "no aes key");
-                    if (h.has_secondary_address()) {
-                        auto const id = to_buffer(t.get_secondary_address());
-                        BOOST_ASSERT(id.size() == 9);
-                        auto const key2 = cyng::key_generator(id);
-                        auto const rec2 = tbl->lookup(key2);
-                        if (rec2.empty()) {
-                            CYNG_LOG_INFO(
-                                logger_, "[EN-13757] insert meter: " << to_string(t.get_secondary_address()) << " (secondary)");
-                            tbl->insert(
-                                key2,
-                                cyng::data_generator(
-                                    now,
-                                    "---",
-                                    true, // visible
-                                    0u,
-                                    cyng::make_buffer({0, 0}),
-                                    cyng::make_buffer({0}),
-                                    aes_key,
-                                    id),
-                                1,
-                                cfg_.get_tag());
-
-                            tbl->modify(key, cyng::make_param("secondary", id), cfg_.get_tag());
-                        }
-                        decode(
-                            tbl_readout, tbl_data, t.get_secondary_address(), t.get_access_no(), h.get_frame_type(), data, aes_key);
-                    } else {
-                        decode(tbl_readout, tbl_data, h.get_server_id(), t.get_access_no(), h.get_frame_type(), data, aes_key);
-                    }
+                    decode(
+                        tbl_readout,
+                        tbl_data,
+                        tbl_collector,
+                        tbl_mirror,
+                        h.get_server_id(),
+                        t.get_access_no(),
+                        h.get_frame_type(),
+                        data,
+                        aes_key,
+                        //  start auto configuration only for new meters
+                        auto_cfg && rec.empty(),
+                        def_profile);
                 }
+                //}
             },
             cyng::access::write("meterMBus"),
             cyng::access::write("readout"),
-            cyng::access::write("readoutData"));
+            cyng::access::write("readoutData"),
+            //  auto configuration
+            cyng::access::write("dataCollector"),
+            cyng::access::write("dataMirror"));
     }
 
     void en13757::decode(
         cyng::table *tbl_readout,
         cyng::table *tbl_data,
+        cyng::table *tbl_collector,
+        cyng::table *tbl_mirror,
         srv_id_t address,
         std::uint8_t access_no,
         std::uint8_t frame_type,
         cyng::buffer_t const &data,
-        cyng::crypto::aes_128_key const &key) {
+        cyng::crypto::aes_128_key const &key,
+        bool auto_cfg,
+        cyng::obis def_profile) {
 
         auto const flag_id = get_manufacturer_code(address);
         auto const manufacturer = mbus::decode(flag_id.first, flag_id.second);
-        auto const id = get_id(address); //  meter id (6 bytes)
+        auto const id = get_id(address); //  meter id as string
 
         CYNG_LOG_TRACE(
             logger_,
@@ -199,32 +248,68 @@ namespace smf {
 
         auto const payload = mbus::radio::decode(address, access_no, key, data);
         if (mbus::radio::is_decoded(payload)) {
-            CYNG_LOG_DEBUG(logger_, "[EN-13757] payload: " << payload);
+            CYNG_LOG_DEBUG(logger_, "[EN-13757] " << to_string(address) << " payload: " << payload);
 
+            //
+            //  update table "readout" with latest readout meta data
+            //
             tbl_readout->merge(
                 cyng::key_generator(to_buffer(address)),
-                cyng::data_generator(payload, frame_type, std::chrono::system_clock::now(), cfg_.get_operating_time(), true),
+                cyng::data_generator(
+                    payload, frame_type, std::chrono::system_clock::now(), cfg_.get_operating_time(), true // encrypted
+                    ),
                 1u,
                 cfg_.get_tag());
+
+            if (auto_cfg) {
+                //
+                //  configure a the data collector
+                //
+                auto const meter = to_buffer(address);
+                BOOST_ASSERT(meter.size() == 9);
+                tbl_collector->insert(
+                    cyng::key_generator(meter, static_cast<std::uint8_t>(1)), //  start with nr = 1
+                    cyng::data_generator(def_profile, true, 100u, std::chrono::seconds(0)),
+                    1,
+                    cfg_.get_tag());
+            }
 
             switch (frame_type) {
             case mbus::FIELD_CI_HEADER_LONG:
             case mbus::FIELD_CI_HEADER_SHORT: {
+                //
+                //  decode M-Bus format
+                //
                 read_mbus(
                     tbl_data,
+                    tbl_mirror,
                     address,
-                    id, //	meter id
+                    id, //	meter id as string
                     get_medium(address),
                     manufacturer,
                     frame_type,
-                    payload);
+                    payload,
+                    auto_cfg,
+                    def_profile);
             } break;
             case mbus::FIELD_CI_RES_LONG_DLMS:
             case mbus::FIELD_CI_RES_SHORT_DLSM:
                 // read_dlms(address, payload);
                 break;
             case mbus::FIELD_CI_RES_LONG_SML:
-            case mbus::FIELD_CI_RES_SHORT_SML: read_sml(tbl_data, address, payload); break;
+            case mbus::FIELD_CI_RES_SHORT_SML:
+                //
+                //  decode SML format
+                //
+                read_sml(
+                    tbl_data,
+                    tbl_mirror,
+                    address,
+                    id, //	meter id as string
+                    payload,
+                    auto_cfg,
+                    def_profile);
+                break;
             default: break;
             }
         } else {
@@ -235,23 +320,53 @@ namespace smf {
             tbl_readout->merge(
                 cyng::key_generator(to_buffer(address)),
                 cyng::data_generator(
-                    data, frame_type, std::chrono::system_clock::now(), cfg_.get_operating_time(), false // encrypted
+                    data, frame_type, std::chrono::system_clock::now(), cfg_.get_operating_time(), false // not encrypted
                     ),
                 1u,
                 cfg_.get_tag());
+
+            //
+            //  cannot provide encrypted readout data
+            //
         }
     }
 
-    void en13757::read_sml(cyng::table *tbl_data, srv_id_t const &address, cyng::buffer_t const &payload) {
+    void en13757::read_sml(
+        cyng::table *tbl_data,
+        cyng::table *tbl_mirror,
+        srv_id_t const &address,
+        std::string const &id,
+        cyng::buffer_t const &payload,
+        bool auto_cfg,
+        cyng::obis def_profile) {
 
         //
-        //  ToDo: remove previous stuff
+        //  get the binary server id
         //
+        auto const meter = to_buffer(address);
+        BOOST_ASSERT(meter.size() == 9);
+
+        //
+        //  remove previous stuff from table "readoutData"
+        //
+        auto const removed = tbl_data->erase_if(
+            [&](cyng::record &&rec) -> bool {
+                //
+                //  remove all records with the same meter id
+                //
+                return rec.value("meterID", meter) == meter;
+            },
+            cfg_.get_tag());
+
+        if (removed != 0) {
+            CYNG_LOG_TRACE(logger_, "[EN-13757] sml removed " << removed << " readout data records of " << id);
+        }
 
         smf::sml::unpack p(
             [&, this](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
                 CYNG_LOG_TRACE(logger_, "[EN-13757] sml " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
 
+                std::uint8_t idx = 0;
                 auto const [client, server, code, tp1, tp2, data] = sml::read_get_list_response(msg);
                 for (auto const &m : data) {
                     CYNG_LOG_TRACE(logger_, "[EN-13757] sml " << m.first << ": " << m.second);
@@ -262,7 +377,7 @@ namespace smf {
                     auto const reader = cyng::make_reader(m.second);
                     auto const obj = reader.get("raw");
                     auto const value = reader.get("value", "0"); //  string
-                    auto const unit = cyng::value_cast<std::uint8_t>(reader.get("unit"), 0u);
+                    auto const unit = cyng::numeric_cast<std::uint8_t>(reader.get("unit"), 0u);
                     auto const unit_name = cyng::value_cast(reader.get("unit-name"), "");
                     auto const scaler = cyng::value_cast<std::uint8_t>(reader.get("scaler"), 0u);
                     auto const status = cyng::value_cast<std::uint32_t>(reader.get("status"), 0u);
@@ -271,10 +386,45 @@ namespace smf {
                     //
                     //	store data readout cache
                     //
-                    tbl_data->merge(
-                        cyng::key_generator(to_buffer(address), m.first),
-                        cyng::data_generator(value, obj.tag(), scaler, unit, status),
-                        0,
+                    if (tbl_data->insert(
+                            cyng::key_generator(meter, m.first),
+                            cyng::data_generator(value, obj.tag(), scaler, unit, status),
+                            1,
+                            cfg_.get_tag())) {
+
+                        BOOST_ASSERT(idx < 0xFF);
+                        ++idx;
+
+                        if (auto_cfg) {
+
+                            CYNG_LOG_INFO(logger_, "[EN-13757] sml auto config " << id << ": " << m.first);
+                            //
+                            // create an entry in table "dataMirror" assuming the
+                            // nr is 1.
+                            //
+                            tbl_mirror->insert(
+                                cyng::key_generator(meter, static_cast<std::uint8_t>(1), idx), //  start with nr = 1
+                                cyng::data_generator(m.first),
+                                1,
+                                cfg_.get_tag());
+                        }
+                    }
+                }
+
+                if (auto_cfg) {
+                    //
+                    //  push always UTC time (01 00 00 09 0b 00 -  CURRENT_UTC) and second index (81 00 00 09 0b 00 -
+                    //  ACT_SENSOR_TIME)
+                    //
+                    tbl_mirror->insert(
+                        cyng::key_generator(meter, static_cast<std::uint8_t>(1), idx), //  start with nr = 1
+                        cyng::data_generator(OBIS_CURRENT_UTC),
+                        1,
+                        cfg_.get_tag());
+                    tbl_mirror->insert(
+                        cyng::key_generator(meter, static_cast<std::uint8_t>(1), idx), //  start with nr = 1
+                        cyng::data_generator(OBIS_ACT_SENSOR_TIME),
+                        1,
                         cfg_.get_tag());
                 }
 
@@ -287,19 +437,40 @@ namespace smf {
 
     void en13757::read_mbus(
         cyng::table *tbl_data,
+        cyng::table *tbl_mirror,
         srv_id_t const &address,
         std::string const &id,
         std::uint8_t medium,
         std::string const &manufacturer,
         std::uint8_t frame_type,
-        cyng::buffer_t const &payload) {
+        cyng::buffer_t const &payload,
+        bool auto_cfg,
+        cyng::obis def_profile) {
 
         //
-        //  ToDo: remove previous stuff
+        //  get the binary server id
         //
+        auto const meter = to_buffer(address);
+        BOOST_ASSERT(meter.size() == 9);
+
+        //
+        //  remove previous stuff from table "readoutData"
+        //
+        auto const removed = tbl_data->erase_if(
+            [&](cyng::record &&rec) -> bool {
+                //
+                //  remove all records with the same meter id
+                //
+                return rec.value("meterID", meter) == meter;
+            },
+            cfg_.get_tag());
+
+        if (removed != 0) {
+            CYNG_LOG_TRACE(logger_, "[EN-13757] wmbus removed " << removed << " readout data records of " << id);
+        }
 
         std::size_t offset = 2;
-        std::size_t counter = 0;
+        std::uint8_t idx = 0;
 
         while (offset < payload.size()) {
             // std::size_t, cyng::obis, cyng::object, std::int8_t, unit, bool
@@ -318,18 +489,48 @@ namespace smf {
                 CYNG_LOG_TRACE(
                     logger_, "[EN-13757] wmbus " << code << ": " << val << "e" << +scaler << " " << smf::mbus::get_unit_name(u));
 
-                if (tbl_data->merge(
+                if (tbl_data->insert(
                         cyng::key_generator(to_buffer(address), code),
-                        cyng::data_generator(val, obj.tag(), scaler, u, 0),
-                        0,
+                        cyng::data_generator(val, obj.tag(), scaler, mbus::to_u8(u), static_cast<std::uint32_t>(0)),
+                        1,
                         cfg_.get_tag())) {
-                    ++counter;
+                    ++idx;
+
+                    if (auto_cfg) {
+                        CYNG_LOG_INFO(logger_, "[EN-13757] wmbus auto config " << id << ": " << code);
+                        //
+                        // create an entry in table "dataMirror" assuming the
+                        // nr is 1.
+                        //
+                        tbl_mirror->insert(
+                            cyng::key_generator(meter, static_cast<std::uint8_t>(1), idx), //  start with nr = 1
+                            cyng::data_generator(code),
+                            1,
+                            cfg_.get_tag());
+                    }
                 }
             }
 
             offset = index;
         }
+
+        if (auto_cfg) {
+            //
+            //  push always UTC time (01 00 00 09 0b 00 -  CURRENT_UTC) and second index (81 00 00 09 0b 00 -
+            //  ACT_SENSOR_TIME)
+            //
+            tbl_mirror->insert(
+                cyng::key_generator(meter, static_cast<std::uint8_t>(1), idx), //  start with nr = 1
+                cyng::data_generator(OBIS_CURRENT_UTC),
+                1,
+                cfg_.get_tag());
+            tbl_mirror->insert(
+                cyng::key_generator(meter, static_cast<std::uint8_t>(1), idx), //  start with nr = 1
+                cyng::data_generator(OBIS_ACT_SENSOR_TIME),
+                1,
+                cfg_.get_tag());
+        }
         CYNG_LOG_INFO(
-            logger_, "[EN-13757] wmbus " << to_string(address) << ": " << counter << "/" << tbl_data->size() << " records merged");
+            logger_, "[EN-13757] wmbus " << to_string(address) << ": " << +idx << "/" << tbl_data->size() << " records merged");
     }
 } // namespace smf

@@ -8,11 +8,11 @@
 #define SMF_SEGW_EN13757_H
 
 #include <cfg.h>
+#include <config/cfg_sml.h>
 
 #include <smf/mbus/radio/parser.h>
 
 #include <cyng/log/logger.h>
-//#include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/task/task_fwd.h>
 
 namespace smf {
@@ -70,21 +70,35 @@ namespace smf {
         void decode(
             cyng::table *tbl_readout,
             cyng::table *tbl_data,
+            cyng::table *tbl_collector,
+            cyng::table *tbl_mirror,
             srv_id_t address,
             std::uint8_t access_no,
             std::uint8_t frame_type,
             cyng::buffer_t const &data,
-            cyng::crypto::aes_128_key const &);
+            cyng::crypto::aes_128_key const &,
+            bool auto_cfg,
+            cyng::obis def_profile);
 
-        void read_sml(cyng::table *tbl_data, srv_id_t const &address, cyng::buffer_t const &payload);
+        void read_sml(
+            cyng::table *tbl_data,
+            cyng::table *tbl_mirror,
+            srv_id_t const &address,
+            std::string const &id,
+            cyng::buffer_t const &payload,
+            bool auto_cfg,
+            cyng::obis def_profile);
         void read_mbus(
             cyng::table *tbl_data,
+            cyng::table *tbl_mirror,
             srv_id_t const &address,
             std::string const &id,
             std::uint8_t medium,
             std::string const &manufacturer,
             std::uint8_t frame_type,
-            cyng::buffer_t const &payload);
+            cyng::buffer_t const &payload,
+            bool auto_cfg,
+            cyng::obis def_profile);
 
       private:
         signatures_t sigs_;
@@ -101,6 +115,7 @@ namespace smf {
          * config/data cache
          */
         cfg &cfg_;
+        cfg_sml const cfg_sml_;
 
         /**
          * parser for wireless M-Bus data

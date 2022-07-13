@@ -24,6 +24,11 @@ namespace smf {
             };
         }
 
+        bool is_profile(cyng::obis code) {
+            auto const profiles = get_profiles();
+            return std::find(profiles.begin(), profiles.end(), code) != profiles.end();
+        }
+
         std::chrono::seconds interval_time(cyng::obis profile) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(1));
@@ -178,9 +183,9 @@ namespace smf {
             BOOST_ASSERT(now > offset_);
 
             auto const start = calculate_offset(now);
-//#ifdef _DEBUG
-//            std::cout << "start: " << start << std::endl;
-//#endif
+            //#ifdef _DEBUG
+            //            std::cout << "start: " << start << std::endl;
+            //#endif
 
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return minutes_since_epoch(start).count();
