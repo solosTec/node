@@ -13,10 +13,12 @@ target_compile_definitions(segw
 
 #
 # -Wno-psabi for gcc > 7.1
+# EDITANDCONTINUE
 #
 target_compile_options(segw 
     PRIVATE 
         $<$<AND:$<VERSION_GREATER_EQUAL:${CMAKE_CXX_COMPILER_VERSION},7.1>,$<CXX_COMPILER_ID:GNU>>:-Wno-psabi>
+        $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/ZI>
 )
 
 target_include_directories(segw

@@ -90,6 +90,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
         # __cplusplus is 199711L otherwise
         add_compile_options("/Zc:__cplusplus") 
 
+        # EDITANDCONTINUE
+        #add_compile_options("/ZI") 
+
         message(STATUS "** compile definitions: ${CMAKE_CXX_FLAGS}")
 
     elseif(CMAKE_COMPILER_IS_GNUCXX)

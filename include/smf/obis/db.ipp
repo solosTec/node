@@ -32,6 +32,7 @@ case 0x616101ff: return "MBUS_STATE_1";	// not relevant under calibration law
 case 0x616102ff: return "MBUS_STATE_2";	// not relevant under calibration law
 case 0x616103ff: return "MBUS_STATE_3";	// not relevant under calibration law
 case 0x80800000ff: return "STORAGE_TIME_SHIFT";	// root push operations
+case 0x8080000101: return "HAS_WAN";	// WAN on customer interface
 case 0x8080000301: return "HAS_SSL_CONFIG";	// SSL/TSL configuration available
 case 0x80800004ff: return "SSL_CERTIFICATES";	// list of SSL certificates
 case 0x80800010ff: return "ROOT_MEMORY_USAGE";	// request memory usage
@@ -311,6 +312,9 @@ case 0x810417070000: return "CLASS_OP_LOG_AREA_CODE";	// aktueller Location - od
 case 0x8104180700ff: return "IF_PLC";
 case 0x81041a070000: return "CLASS_OP_LOG_CELL";	// aktuelle Zelleninformation
 case 0x81042b070000: return "CLASS_OP_LOG_FIELD_STRENGTH";
+case 0x8104623c0101: return "PPPoE_USERNAME";	// PPPoE username
+case 0x8104623c0201: return "PPPoE_PASSWORD";	// PPPoE passphrase
+case 0x8104623c0301: return "PPPoE_MODE";	// PPPoE mode
 case 0x8105000000ff: return "LOG_SOURCE_eHZ";
 case 0x81050d070001: return "IF_EDL_PROTOCOL";	// always 1
 case 0x81050d070002: return "IF_EDL_BAUDRATE";	// 0 = auto, 6 = 9600, 10 = 115200 baud
@@ -350,17 +354,23 @@ case 0x814800000000: return "COMPUTER_NAME";
 case 0x814800000001: return "LOG_SOURCE_WAN_DHCP";
 case 0x814800000002: return "LOG_SOURCE_WAN_IP";
 case 0x814800000003: return "LOG_SOURCE_WAN_PPPoE";
+case 0x814800320101: return "LAN_PPPoE_ENABLED";
 case 0x814800320201: return "LAN_DHCP_ENABLED";
 case 0x81480d0600ff: return "ROOT_LAN_DSL";	// see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
 case 0x814817070000: return "CODE_IF_LAN_ADDRESS";	// IPv4 or IPv6 address
+case 0x814817070001: return "CODE_IF_DSL_ADDRESS";	// IPv4 or IPv6 address
 case 0x8148170700ff: return "IF_LAN_DSL";	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
 case 0x814817070100: return "CODE_IF_LAN_SUBNET_MASK";
 case 0x814817070200: return "CODE_IF_LAN_GATEWAY";
 case 0x814817070400: return "CODE_IF_LAN_DNS_PRIMARY";
+case 0x814817070401: return "CODE_IF_LAN_DSL_PRIMARY";	// set/get OBIS_IF_LAN_DSL
 case 0x814817070500: return "CODE_IF_LAN_DNS_SECONDARY";
+case 0x814817070501: return "CODE_IF_LAN_DSL_SECONDARY";	// set/get OBIS_IF_LAN_DSL
 case 0x814817070600: return "CODE_IF_LAN_DNS_TERTIARY";
+case 0x814817070601: return "CODE_IF_LAN_DLS_TERTIARY";	// set/get OBIS_IF_LAN_DSL
 case 0x814827320601: return "TCP_WAIT_TO_RECONNECT";
 case 0x814831320201: return "TCP_CONNECT_RETRIES";
+case 0x814831320701: return "TCP_REPLY_ICMP";	// reply tp received ICMP packages
 case 0x814900000001: return "LOG_SOURCE_WAN_IPT_CONTROLLER";
 case 0x814900000002: return "LOG_SOURCE_WAN_IPT";
 case 0x8149000010ff: return "PUSH_SERVICE";	// options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
@@ -491,7 +501,7 @@ case 0x8181c78a43ff: return "PUSH_SOURCE_INSTALL";	// configuration changed
 case 0x8181c78a44ff: return "PUSH_SOURCE_VISIBLE_SENSORS";	// list of visible meters changed
 case 0x8181c78a45ff: return "PUSH_SOURCE_ACTIVE_SENSORS";	// list of active meters changed
 case 0x8181c78a81ff: return "PUSH_SERVER_ID";
-case 0x8181c78a82ff: return "PUSH_IDENTIFIERS";	// list of identifiers of the values to be delivered by the push source
+case 0x8181c78a82ff: return "PUSH_IDENTIFIERS";	// list of registers to be delivered by the push source
 case 0x8181c78a83ff: return "PROFILE";	// encode profiles
 case 0x8181c79000ff: return "ROOT_IF";
 case 0x8181c79300ff: return "IF_1107";

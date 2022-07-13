@@ -32,6 +32,7 @@ case 0x616101ff: return "not relevant under calibration law";	// not relevant un
 case 0x616102ff: return "not relevant under calibration law";	// not relevant under calibration law
 case 0x616103ff: return "not relevant under calibration law";	// not relevant under calibration law
 case 0x80800000ff: return "root push operations";	// root push operations
+case 0x8080000101: return "WAN on customer interface";	// WAN on customer interface
 case 0x8080000301: return "SSL/TSL configuration available";	// SSL/TSL configuration available
 case 0x80800004ff: return "list of SSL certificates";	// list of SSL certificates
 case 0x80800010ff: return "request memory usage";	// request memory usage
@@ -311,6 +312,9 @@ case 0x810417070000: return "aktueller Location - oder Areacode";	// aktueller L
 case 0x8104180700ff: return "";
 case 0x81041a070000: return "aktuelle Zelleninformation";	// aktuelle Zelleninformation
 case 0x81042b070000: return "";
+case 0x8104623c0101: return "PPPoE username";	// PPPoE username
+case 0x8104623c0201: return "PPPoE passphrase";	// PPPoE passphrase
+case 0x8104623c0301: return "PPPoE mode";	// PPPoE mode
 case 0x8105000000ff: return "";
 case 0x81050d070001: return "always 1";	// always 1
 case 0x81050d070002: return "0 = auto, 6 = 9600, 10 = 115200 baud";	// 0 = auto, 6 = 9600, 10 = 115200 baud
@@ -350,17 +354,23 @@ case 0x814800000000: return "";
 case 0x814800000001: return "";
 case 0x814800000002: return "";
 case 0x814800000003: return "";
+case 0x814800320101: return "";
 case 0x814800320201: return "";
 case 0x81480d0600ff: return "see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter";	// see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
 case 0x814817070000: return "IPv4 or IPv6 address";	// IPv4 or IPv6 address
+case 0x814817070001: return "IPv4 or IPv6 address";	// IPv4 or IPv6 address
 case 0x8148170700ff: return "see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter";	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
 case 0x814817070100: return "";
 case 0x814817070200: return "";
 case 0x814817070400: return "";
+case 0x814817070401: return "set/get OBIS_IF_LAN_DSL";	// set/get OBIS_IF_LAN_DSL
 case 0x814817070500: return "";
+case 0x814817070501: return "set/get OBIS_IF_LAN_DSL";	// set/get OBIS_IF_LAN_DSL
 case 0x814817070600: return "";
+case 0x814817070601: return "set/get OBIS_IF_LAN_DSL";	// set/get OBIS_IF_LAN_DSL
 case 0x814827320601: return "";
 case 0x814831320201: return "";
+case 0x814831320701: return "reply tp received ICMP packages";	// reply tp received ICMP packages
 case 0x814900000001: return "";
 case 0x814900000002: return "";
 case 0x8149000010ff: return "options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX";	// options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
@@ -491,7 +501,7 @@ case 0x8181c78a43ff: return "configuration changed";	// configuration changed
 case 0x8181c78a44ff: return "list of visible meters changed";	// list of visible meters changed
 case 0x8181c78a45ff: return "list of active meters changed";	// list of active meters changed
 case 0x8181c78a81ff: return "";
-case 0x8181c78a82ff: return "list of identifiers of the values to be delivered by the push source";	// list of identifiers of the values to be delivered by the push source
+case 0x8181c78a82ff: return "list of registers to be delivered by the push source";	// list of registers to be delivered by the push source
 case 0x8181c78a83ff: return "encode profiles";	// encode profiles
 case 0x8181c79000ff: return "";
 case 0x8181c79300ff: return "";

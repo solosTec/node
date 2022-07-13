@@ -1,5 +1,5 @@
-	// generated at 2022-05-06 16:59:35
-	// 569 OBIS codes (3414 Bytes)
+	// generated at 2022-07-13 13:25:05
+	// 579 OBIS codes (3474 Bytes)
 
 	// #1
 	// Abstract objects
@@ -37,6 +37,7 @@
 	OBIS_CODE_DEFINITION(00, 00, 61, 61, 02, ff, MBUS_STATE_2);	// not relevant under calibration law
 	OBIS_CODE_DEFINITION(00, 00, 61, 61, 03, ff, MBUS_STATE_3);	// not relevant under calibration law
 	OBIS_CODE_DEFINITION(00, 80, 80, 00, 00, ff, STORAGE_TIME_SHIFT);	// root push operations
+	OBIS_CODE_DEFINITION(00, 80, 80, 00, 01, 01, HAS_WAN);	// WAN on customer interface
 	OBIS_CODE_DEFINITION(00, 80, 80, 00, 03, 01, HAS_SSL_CONFIG);	// SSL/TSL configuration available
 	OBIS_CODE_DEFINITION(00, 80, 80, 00, 04, ff, SSL_CERTIFICATES);	// list of SSL certificates
 	OBIS_CODE_DEFINITION(00, 80, 80, 00, 10, ff, ROOT_MEMORY_USAGE);	// request memory usage
@@ -70,7 +71,7 @@
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 03, CLASS_MBUS_SEARCH_DEVICE);	// bool - search device now and by restart
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 04, CLASS_MBUS_AUTO_ACTIVATE);	// bool - automatic activation of meters
 	OBIS_CODE_DEFINITION(00, b0, 00, 02, 00, 05, CLASS_MBUS_BITRATE);	// used baud rates(bitmap)
-	// #68
+	// #69
 	// Electricity
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 00, ff, SERVER_ID_1_1);	// Identifikationsnummer 1.1 - comes as unsigned int with 3 bytes (this is the server ID)
 	OBIS_CODE_DEFINITION(01, 00, 00, 00, 01, ff, SERVER_ID_1_2);	// Identifikationsnummer 1.2
@@ -278,12 +279,12 @@
 	OBIS_CODE_DEFINITION(01, 00, 60, 57, 00, ff, REG_ACTIVE_TARFIFF);	// Active tariff
 	OBIS_CODE_DEFINITION(01, 00, 60, 60, 09, ff, REG_FRAUD_FLAG);	// Fraud flag
 	OBIS_CODE_DEFINITION(01, 01, 62, 17, 00, ff, REG_SM_POWER_THRESHOLD);	// Power threshold (D.23.0)
-	// #274
+	// #275
 	// Water (cold)
 	OBIS_CODE_DEFINITION(08, 00, 01, 00, 00, ff, WATER_CURRENT);	// Volume (V), accumulated, total, current value
 	OBIS_CODE_DEFINITION(08, 00, 01, 02, 00, ff, WATER_DATE);	// Volume (V), accumulated, total, due date value
 	OBIS_CODE_DEFINITION(08, 00, 02, 00, 00, ff, WATER_FLOW_RATE);	// Flow rate, average (Va/t), current value 
-	// #277
+	// #278
 	// next group
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 00, ACT_SENSOR_TIME);	// actSensorTime - current UTC time
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 01, TZ_OFFSET);	// u16 - offset to actual time zone in minutes (-720 .. +720)
@@ -294,18 +295,18 @@
 	OBIS_CODE_DEFINITION(81, 02, 00, 00, 01, 00, INTERFACE_02_NAME);	// s - interface name
 	OBIS_CODE_DEFINITION(81, 02, 00, 07, 00, ff, ROOT_CUSTOM_INTERFACE);	// see: 7.3.1.3 Datenstruktur zum Lesen / Setzen der Parameter für die Kundenschnittstelle
 	OBIS_CODE_DEFINITION(81, 02, 00, 07, 01, ff, CUSTOM_IF_IP_REF);	// u8 - 0 == manual, 1 == DHCP
-	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 01, CUSTOM_IF_DHCP_LOCAL_IP_MASK);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 02, CUSTOM_IF_DHCP_DEFAULT_GW);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 03, CUSTOM_IF_DHCP_DNS);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 04, CUSTOM_IF_DHCP_START_ADDRESS);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 05, CUSTOM_IF_DHCP_END_ADDRESS);	// ip:tcp:ep
+	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 01, CUSTOM_IF_DHCP_LOCAL_IP_MASK);	// ip:address
+	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 02, CUSTOM_IF_DHCP_DEFAULT_GW);	// ip:address
+	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 03, CUSTOM_IF_DHCP_DNS);	// ip:address
+	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 04, CUSTOM_IF_DHCP_START_ADDRESS);	// ip:address
+	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, 05, CUSTOM_IF_DHCP_END_ADDRESS);	// ip:address
 	OBIS_CODE_DEFINITION(81, 02, 00, 07, 02, ff, CUSTOM_IF_DHCP);	// bool - if true use a DHCP server
 	OBIS_CODE_DEFINITION(81, 02, 00, 07, 10, ff, ROOT_CUSTOM_PARAM);	// see: 7.3.1.4 Datenstruktur für dynamischen Eigenschaften der Endkundenschnittstelle 
-	OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 00, CUSTOM_IF_IP_CURRENT_1);	// ip:tcp:ep - current IP address (customer interface)
-	OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 01, CUSTOM_IF_IP_ADDRESS_1);	// ip:tcp:ep - first manual set IP address
-	OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 02, CUSTOM_IF_IP_ADDRESS_2);	// ip:tcp:ep - second manual set IP address
-	OBIS_CODE_DEFINITION(81, 02, 17, 07, 01, 01, CUSTOM_IF_IP_MASK_1);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 02, 17, 07, 01, 02, CUSTOM_IF_IP_MASK_2);	// ip:tcp:ep
+	OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 00, CUSTOM_IF_IP_CURRENT_1);	// ip:address - current IP address (customer interface)
+	OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 01, CUSTOM_IF_IP_ADDRESS_1);	// ip:address - first manual set IP address
+	OBIS_CODE_DEFINITION(81, 02, 17, 07, 00, 02, CUSTOM_IF_IP_ADDRESS_2);	// ip:address - second manual set IP address
+	OBIS_CODE_DEFINITION(81, 02, 17, 07, 01, 01, CUSTOM_IF_IP_MASK_1);	// ip:address
+	OBIS_CODE_DEFINITION(81, 02, 17, 07, 01, 02, CUSTOM_IF_IP_MASK_2);	// ip:address
 	OBIS_CODE_DEFINITION(81, 03, 00, 00, 00, ff, LOG_SOURCE_RS232);
 	OBIS_CODE_DEFINITION(81, 03, 00, 00, 01, 00, INTERFACE_03_NAME);	// s - interface name
 	OBIS_CODE_DEFINITION(81, 04, 00, 00, 00, ff, LOG_SOURCE_ETH);	// WAN interface
@@ -322,6 +323,9 @@
 	OBIS_CODE_DEFINITION(81, 04, 18, 07, 00, ff, IF_PLC);
 	OBIS_CODE_DEFINITION(81, 04, 1a, 07, 00, 00, CLASS_OP_LOG_CELL);	// u16 - aktuelle Zelleninformation
 	OBIS_CODE_DEFINITION(81, 04, 2b, 07, 00, 00, CLASS_OP_LOG_FIELD_STRENGTH);
+	OBIS_CODE_DEFINITION(81, 04, 62, 3c, 01, 01, PPPoE_USERNAME);	// s - PPPoE username
+	OBIS_CODE_DEFINITION(81, 04, 62, 3c, 02, 01, PPPoE_PASSWORD);	// s - PPPoE passphrase
+	OBIS_CODE_DEFINITION(81, 04, 62, 3c, 03, 01, PPPoE_MODE);	// u8 - PPPoE mode
 	OBIS_CODE_DEFINITION(81, 05, 00, 00, 00, ff, LOG_SOURCE_eHZ);
 	OBIS_CODE_DEFINITION(81, 05, 0d, 07, 00, 01, IF_EDL_PROTOCOL);	// u8 - always 1
 	OBIS_CODE_DEFINITION(81, 05, 0d, 07, 00, 02, IF_EDL_BAUDRATE);	// 0 = auto, 6 = 9600, 10 = 115200 baud
@@ -361,23 +365,29 @@
 	OBIS_CODE_DEFINITION(81, 48, 00, 00, 00, 01, LOG_SOURCE_WAN_DHCP);
 	OBIS_CODE_DEFINITION(81, 48, 00, 00, 00, 02, LOG_SOURCE_WAN_IP);
 	OBIS_CODE_DEFINITION(81, 48, 00, 00, 00, 03, LOG_SOURCE_WAN_PPPoE);
+	OBIS_CODE_DEFINITION(81, 48, 00, 32, 01, 01, LAN_PPPoE_ENABLED);	// bool
 	OBIS_CODE_DEFINITION(81, 48, 00, 32, 02, 01, LAN_DHCP_ENABLED);	// bool
 	OBIS_CODE_DEFINITION(81, 48, 0d, 06, 00, ff, ROOT_LAN_DSL);	// see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
-	OBIS_CODE_DEFINITION(81, 48, 17, 07, 00, 00, CODE_IF_LAN_ADDRESS);	// ip:tcp:ep - IPv4 or IPv6 address
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 00, 00, CODE_IF_LAN_ADDRESS);	// ip:address - IPv4 or IPv6 address
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 00, 01, CODE_IF_DSL_ADDRESS);	// ip:address - IPv4 or IPv6 address
 	OBIS_CODE_DEFINITION(81, 48, 17, 07, 00, ff, IF_LAN_DSL);	// see: 7.3.1.18 Datenstruktur zum Lesen / Setzen der LAN/DSL-Parameter
-	OBIS_CODE_DEFINITION(81, 48, 17, 07, 01, 00, CODE_IF_LAN_SUBNET_MASK);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 48, 17, 07, 02, 00, CODE_IF_LAN_GATEWAY);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 48, 17, 07, 04, 00, CODE_IF_LAN_DNS_PRIMARY);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 48, 17, 07, 05, 00, CODE_IF_LAN_DNS_SECONDARY);	// ip:tcp:ep
-	OBIS_CODE_DEFINITION(81, 48, 17, 07, 06, 00, CODE_IF_LAN_DNS_TERTIARY);	// ip:tcp:ep
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 01, 00, CODE_IF_LAN_SUBNET_MASK);	// ip:address
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 02, 00, CODE_IF_LAN_GATEWAY);	// ip:address
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 04, 00, CODE_IF_LAN_DNS_PRIMARY);	// ip:address
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 04, 01, CODE_IF_LAN_DSL_PRIMARY);	// ip:address - set/get OBIS_IF_LAN_DSL
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 05, 00, CODE_IF_LAN_DNS_SECONDARY);	// ip:address
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 05, 01, CODE_IF_LAN_DSL_SECONDARY);	// ip:address - set/get OBIS_IF_LAN_DSL
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 06, 00, CODE_IF_LAN_DNS_TERTIARY);	// ip:address
+	OBIS_CODE_DEFINITION(81, 48, 17, 07, 06, 01, CODE_IF_LAN_DLS_TERTIARY);	// ip:address - set/get OBIS_IF_LAN_DSL
 	OBIS_CODE_DEFINITION(81, 48, 27, 32, 06, 01, TCP_WAIT_TO_RECONNECT);	// u8
 	OBIS_CODE_DEFINITION(81, 48, 31, 32, 02, 01, TCP_CONNECT_RETRIES);	// u32
+	OBIS_CODE_DEFINITION(81, 48, 31, 32, 07, 01, TCP_REPLY_ICMP);	// bool - reply tp received ICMP packages
 	OBIS_CODE_DEFINITION(81, 49, 00, 00, 00, 01, LOG_SOURCE_WAN_IPT_CONTROLLER);
 	OBIS_CODE_DEFINITION(81, 49, 00, 00, 00, 02, LOG_SOURCE_WAN_IPT);
 	OBIS_CODE_DEFINITION(81, 49, 00, 00, 10, ff, PUSH_SERVICE);	// options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
 	OBIS_CODE_DEFINITION(81, 49, 0d, 06, 00, ff, ROOT_IPT_STATE);	// see: 7.3.1.8 Datenstruktur zur Abfrage des IPT Status 
 	OBIS_CODE_DEFINITION(81, 49, 0d, 07, 00, ff, ROOT_IPT_PARAM);	// see: 7.3.1.9 Datenstruktur zur Lesen/Setzen der IPT Parameter 
-	OBIS_CODE_DEFINITION(81, 49, 17, 07, 00, 00, TARGET_IP_ADDRESS);	// ip:tcp:ep - ip address of IP-T master 
+	OBIS_CODE_DEFINITION(81, 49, 17, 07, 00, 00, TARGET_IP_ADDRESS);	// ip:address - ip address of IP-T master 
 	OBIS_CODE_DEFINITION(81, 49, 19, 07, 00, 00, SOURCE_PORT);	// u16 - target port of IP-T master 
 	OBIS_CODE_DEFINITION(81, 49, 1a, 07, 00, 00, TARGET_PORT);	// u16 - source port of IP-T master 
 	OBIS_CODE_DEFINITION(81, 49, 63, 3c, 01, 00, IPT_ACCOUNT);	// s
@@ -502,7 +512,7 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, 8a, 44, ff, PUSH_SOURCE_VISIBLE_SENSORS);	// list of visible meters changed
 	OBIS_CODE_DEFINITION(81, 81, c7, 8a, 45, ff, PUSH_SOURCE_ACTIVE_SENSORS);	// list of active meters changed
 	OBIS_CODE_DEFINITION(81, 81, c7, 8a, 81, ff, PUSH_SERVER_ID);
-	OBIS_CODE_DEFINITION(81, 81, c7, 8a, 82, ff, PUSH_IDENTIFIERS);	// list of identifiers of the values to be delivered by the push source
+	OBIS_CODE_DEFINITION(81, 81, c7, 8a, 82, ff, PUSH_IDENTIFIERS);	// list of registers to be delivered by the push source
 	OBIS_CODE_DEFINITION(81, 81, c7, 8a, 83, ff, PROFILE);	// encode profiles
 	OBIS_CODE_DEFINITION(81, 81, c7, 90, 00, ff, ROOT_IF);
 	OBIS_CODE_DEFINITION(81, 81, c7, 93, 00, ff, IF_1107);
@@ -547,7 +557,7 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 12, ATTENTION_END_LIMIT_BEFORE_START);	// attention: end limit before start
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	// attention: range is empty - not the profile
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 14, ATTENTION_MISSING_CLOSE_MSG);	// attention: missing close message
-	// #539
+	// #549
 	// next group
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 00, ff, ROOT_BROKER);	// 90 00 00 00 00 NN - broker list
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 01, ff, BROKER_LOGIN);
@@ -557,7 +567,7 @@
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 05, ff, BROKER_PWD);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 06, ff, BROKER_TIMEOUT);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, a0, ff, BROKER_BLOCKLIST);
-	// #547
+	// #557
 	// next group
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 00, ff, ROOT_SERIAL);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 01, ff, SERIAL_NAME);	// example: /dev/ttyAPP0
@@ -567,7 +577,7 @@
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 05, ff, SERIAL_STOPBITS);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 06, ff, SERIAL_SPEED);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 07, ff, SERIAL_TASK);	// LMN port task
-	// #555
+	// #565
 	// next group
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 00, ff, ROOT_NMS);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 01, ff, NMS_ADDRESS);
@@ -575,7 +585,7 @@
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 03, ff, NMS_USER);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 04, ff, NMS_PWD);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 05, ff, NMS_ENABLED);
-	// #561
+	// #571
 	// next group
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 00, ff, ROOT_REDIRECTOR);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 01, ff, REDIRECTOR_LOGIN);
@@ -583,7 +593,7 @@
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 03, ff, REDIRECTOR_SERVICE);	// u16 - port
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 04, ff, REDIRECTOR_USER);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 05, ff, REDIRECTOR_PWD);
-	// #567
+	// #577
 	// next group
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	// current data set
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 04, LIST_SERVICES);

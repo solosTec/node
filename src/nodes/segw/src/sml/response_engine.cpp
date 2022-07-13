@@ -35,6 +35,7 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/intrinsics/aes_key.hpp>
 #include <cyng/store/key.hpp>
+#include <cyng/sys/dns.h>
 #include <cyng/sys/info.h>
 #include <cyng/sys/ntp.h>
 #include <cyng/task/controller.h>
@@ -1044,6 +1045,15 @@ namespace smf {
         // * DNS (primary, secondary, tertiary)
         //
 
+        //  boost::asio::ip::address
+        auto const dns = cyng::sys::get_dns_servers();
+        auto const primary = dns.size() > 0 ? dns.at(0) : boost::asio::ip::address();
+        auto const secondary = dns.size() > 1 ? dns.at(1) : boost::asio::ip::address();
+        auto const tertiary = dns.size() > 2 ? dns.at(2) : boost::asio::ip::address();
+
+        //  "81490d0700ff/remote-ep"
+        auto const ep_remote = cfg_.get_value("81490d0700ff/remote-ep", boost::asio::ip::tcp::endpoint());
+
         return res_gen_.get_proc_parameter(
             trx,
             server,
@@ -1051,8 +1061,35 @@ namespace smf {
             sml::make_child_list_tree(
                 path.at(0),
                 {
-                    sml::make_param_tree(OBIS_CODE_IF_LAN_ADDRESS, sml::make_value(0x02030405))
-                    // sml::make_child_list_tree(path.at(0), {})
+                    //  81 48 17 07 00 00 2986387648 (32 39 38 36 33 38 37 36 34 38)
+                    sml::make_param_tree(
+                        OBIS_CODE_IF_LAN_ADDRESS,
+                        sml::make_value(ep_remote.address().to_v4().to_uint())), // 81 48 17 07 00 00 -    ip address
+
+                    sml::make_param_tree(
+                        OBIS_CODE_IF_LAN_DNS_PRIMARY, sml::make_value(primary.to_v4().to_uint())), // 81 48 17 07 04 00 (ip:tcp:ep)
+                    sml::make_param_tree(
+                        OBIS_CODE_IF_LAN_DNS_SECONDARY,
+                        sml::make_value(secondary.to_v4().to_uint())), // 81 48 17 07 05 00 (ip:tcp:ep)
+                    sml::make_param_tree(
+                        OBIS_CODE_IF_LAN_DNS_TERTIARY,
+                        sml::make_value(tertiary.to_v4().to_uint())), // 81 48 17 07 06 00 (ip:tcp:ep)
+
+                    sml::make_param_tree(OBIS_CODE_IF_LAN_SUBNET_MASK, sml::make_value(16777215)), // 81 48 17 07 01 00 (ip:tcp:ep)
+                    sml::make_param_tree(OBIS_CODE_IF_LAN_GATEWAY, sml::make_value(16820416))      // 81 48 17 07 02 00 (ip:tcp:ep)
+
+                    //  81 48 17 07 04 00 2652373566 (32 36 35 32 33 37 33 35 36 36)
+                    //  81 48 17 07 05 00 1007747646 (31 30 30 37 37 34 37 36 34 36)
+                    //  81 48 17 07 06 00 2719482430 (32 37 31 39 34 38 32 34 33 30)
+                    //  81 48 17 07 01 00 16777215 (31 36 37 37 37 32 31 35)
+                    //  81 48 17 07 02 00 16820416 (31 36 38 32 30 34 31 36)
+
+                    // OBIS_CODE_DEFINITION(81, 48, 17, 07, 01, 00, CODE_IF_LAN_SUBNET_MASK);	// ip:tcp:ep
+                    // OBIS_CODE_DEFINITION(81, 48, 17, 07, 02, 00, CODE_IF_LAN_GATEWAY);	// ip:tcp:ep
+                    // OBIS_CODE_DEFINITION(81, 48, 17, 07, 04, 00, CODE_IF_LAN_DNS_PRIMARY);	// ip:tcp:ep
+                    // OBIS_CODE_DEFINITION(81, 48, 17, 07, 05, 00, CODE_IF_LAN_DNS_SECONDARY);	// ip:tcp:ep
+                    // OBIS_CODE_DEFINITION(81, 48, 17, 07, 06, 00, CODE_IF_LAN_DNS_TERTIARY);	// ip:tcp:ep
+
                 }));
         // return res_gen_.get_proc_parameter(
         //     trx,
@@ -1080,8 +1117,15 @@ namespace smf {
         // * ICMP on/off
         //
 
-        // return res_gen_.get_proc_parameter(
-        //     trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
+        auto const dns = cyng::sys::get_dns_servers();
+        auto const primary = dns.size() > 0 ? dns.at(0) : boost::asio::ip::address();
+        auto const secondary = dns.size() > 1 ? dns.at(1) : boost::asio::ip::address();
+        auto const tertiary = dns.size() > 2 ? dns.at(2) : boost::asio::ip::address();
+
+        std::string const host = boost::asio::ip::host_name();
+
+        //  "81490d0700ff/local-ep"
+        auto const ep_local = cfg_.get_value("81490d0700ff/local-ep", boost::asio::ip::tcp::endpoint());
 
         return res_gen_.get_proc_parameter(
             trx,
@@ -1090,8 +1134,40 @@ namespace smf {
             sml::make_child_list_tree(
                 path.at(0),
                 {
-                    sml::make_param_tree(OBIS_COMPUTER_NAME, sml::make_value("hello")), //  hostname
-                    sml::make_param_tree(OBIS_LAN_DHCP_ENABLED, sml::make_value(true))  //  DHCP enabled
+                    sml::make_param_tree(OBIS_COMPUTER_NAME, sml::make_value(host)),    //  81 48 00 00 00 00 - hostname
+                    sml::make_param_tree(OBIS_LAN_DHCP_ENABLED, sml::make_value(true)), //  81 48 00 32 02 01 - DHCP enabled
+
+                    sml::make_param_tree(
+                        OBIS_CODE_IF_LAN_DSL_PRIMARY,
+                        sml::make_value(primary.to_v4().to_uint())), //   81 48 17 07 04 00 - CODE_IF_LAN_DSL_PRIMARY - primary DNS
+                    sml::make_param_tree(
+                        OBIS_CODE_IF_LAN_DSL_SECONDARY, sml::make_value(secondary.to_v4().to_uint())), //    secondary DNS
+                    sml::make_param_tree(OBIS_CODE_IF_LAN_DLS_TERTIARY, sml::make_value(tertiary.to_v4().to_uint())), //
+                    //  81 48 17 07 00 01 - 0 (30)
+                    sml::make_param_tree(
+                        OBIS_CODE_IF_DSL_ADDRESS, sml::make_value(ep_local.address().to_v4().to_uint())), //    ip address
+                    // sml::make_param_tree(OBIS_CODE_IF_DSL_ADDRESS, sml::make_value(ep_remote.address())), //    ip address
+                    //  81 48 17 07 01 01 - 0 (30)
+                    sml::make_param_tree(
+                        cyng::make_obis(0x81, 0x48, 0x17, 0x07, 0x01, 0x01),
+                        sml::make_value(0)), //   Eigene Subnetz-Maske (u32/octet)
+                    //  81 48 17 07 02 01 - 0 (30)
+                    sml::make_param_tree(cyng::make_obis(0x81, 0x48, 0x17, 0x07, 0x02, 0x01), sml::make_value(6)), //   gateway
+                    //  00 80 80 00 02 01 False(46 61 6C 73 65)
+                    sml::make_param_tree(OBIS_HAS_WAN, sml::make_value(false)), // WAN on costumer interface
+                    //  81 48 00 32 02 01 True(54 72 75 65)
+                    sml::make_param_tree(cyng::make_obis(0x81, 0x48, 0x00, 0x32, 0x02, 0x01), sml::make_value(true)), //
+                    //  81 48 00 32 03 01 False(46 61 6C 73 65) - PPPoE Enabled
+                    sml::make_param_tree(OBIS_LAN_PPPoE_ENABLED, sml::make_value(false)), //    false => no PPPoE required
+                    //  81 48 31 32 07 01 True(54 72 75 65) - ICMP-Pakete beantworten OBIS_TCP_REPLY_ICMP
+                    sml::make_param_tree(OBIS_TCP_REPLY_ICMP, sml::make_value(true)), //
+                    //  81 04 62 3C 01 01 user(75 73 65 72)
+                    sml::make_param_tree(OBIS_PPPoE_USERNAME, sml::make_value("account")), //
+                    //  81 04 62 3C 02 01 password(70 61 73 73 77 6F 72 64)
+                    sml::make_param_tree(OBIS_PPPoE_PASSWORD, sml::make_value("secret")), //
+                    //  81 04 62 3C 03 01 0 (30)
+                    sml::make_param_tree(OBIS_PPPoE_MODE, sml::make_value(1)) // Wird dieser Parameter geschrieben, darf ein
+                                                                              // KM-Modul einen Reboot-Vorgang durchführen.
                 }));
     }
 
