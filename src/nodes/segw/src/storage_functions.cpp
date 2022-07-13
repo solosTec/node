@@ -124,7 +124,12 @@ namespace smf {
             },
             1);
     }
-    cyng::meta_sql get_table_meter_mbus() { return cyng::to_sql(get_store_meter_mbus(), {9, 0, 16, 0, 0, 0, 16, 32, 9}); }
+    cyng::meta_sql get_table_meter_mbus() {
+        //
+        //  SELECT hex(serverID), hex(secondary), datetime(lastSeen), visible, status, hex(aes) FROM TMeterMBus;
+        //
+        return cyng::to_sql(get_store_meter_mbus(), {9, 0, 16, 0, 0, 0, 16, 32, 9}); 
+    }
 
     cyng::meta_store get_store_meter_iec() {
         return cyng::meta_store(

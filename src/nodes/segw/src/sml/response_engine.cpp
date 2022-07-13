@@ -395,6 +395,7 @@ namespace smf {
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_DEVICE_TIME);
 
         auto const now = std::chrono::system_clock::now();
+        auto const optime = cfg_.get_operating_time();
 
         return res_gen_.get_proc_parameter(
             trx,
@@ -408,7 +409,7 @@ namespace smf {
                     {
                         sml::make_param_tree(OBIS_CURRENT_UTC, sml::make_value(now)),
                         sml::make_param_tree(
-                            cyng::make_obis(0x00, 0x00, 0x60, 0x08, 0x00, 0xFF), sml::make_value(0u)), //  second index
+                            cyng::make_obis(0x00, 0x00, 0x60, 0x08, 0x00, 0xFF), sml::make_value(optime)), //  second index
                         sml::make_param_tree(cyng::make_obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x01), sml::make_value(0u)), //  timezone
                         sml::make_param_tree(
                             cyng::make_obis(0x81, 0x00, 0x00, 0x09, 0x0B, 0x02), sml::make_value(true)) //  sync active
@@ -1035,8 +1036,30 @@ namespace smf {
         //  81 48 0D 06 00 FF
         BOOST_ASSERT(!path.empty());
         BOOST_ASSERT(path.at(0) == OBIS_ROOT_LAN_DSL);
+
+        //
+        // * ip address in WAN
+        // * subnet mask
+        // * gateway
+        // * DNS (primary, secondary, tertiary)
+        //
+
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
+            trx,
+            server,
+            path,
+            sml::make_child_list_tree(
+                path.at(0),
+                {
+                    sml::make_param_tree(OBIS_CODE_IF_LAN_ADDRESS, sml::make_value(0x02030405))
+                    // sml::make_child_list_tree(path.at(0), {})
+                }));
+        // return res_gen_.get_proc_parameter(
+        //     trx,
+        //     server,
+        //     path,
+        //     sml::make_child_list_tree(
+        //         path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_lan_dsl_param(
@@ -1048,16 +1071,28 @@ namespace smf {
         BOOST_ASSERT(path.at(0) == OBIS_IF_LAN_DSL);
 
         //
-        // * own Ip address in WAN
+        // * computer name
+        // * DHCP on/off
+        // * IP address
         // * subnet mask
         // * gateway
-        // * primary DNS
-        // * secondary DNS
-        // * tertiary DNS
+        // * DNS (1, 2, 3)
+        // * ICMP on/off
         //
 
+        // return res_gen_.get_proc_parameter(
+        //     trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
+
         return res_gen_.get_proc_parameter(
-            trx, server, path, sml::make_child_list_tree(path.at(0), {sml::make_child_list_tree(path.at(0), {})}));
+            trx,
+            server,
+            path,
+            sml::make_child_list_tree(
+                path.at(0),
+                {
+                    sml::make_param_tree(OBIS_COMPUTER_NAME, sml::make_value("hello")), //  hostname
+                    sml::make_param_tree(OBIS_LAN_DHCP_ENABLED, sml::make_value(true))  //  DHCP enabled
+                }));
     }
 
     cyng::tuple_t response_engine::get_proc_parameter_memory(
