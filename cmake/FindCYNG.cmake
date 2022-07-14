@@ -26,7 +26,8 @@
 #	cyng::sqlite3
 #
 
-message(STATUS "** CYNG Tree Name     : [${SMF_BUILD_TREE_STEM}]")
+# mostly [build]
+message(STATUS "** CYNG build tree    : [${SMF_BUILD_TREE_STEM}]")
 
 #
 #	try PkgConfig
@@ -56,8 +57,8 @@ else(PC_CYNG_FOUND)
 	file(GLOB CYNG_SEARCH_PATH "${CMAKE_PREFIX_PATH}/cyng*" "${PROJECT_SOURCE_DIR}/../cyng*" "${PROJECT_SOURCE_DIR}/../../sysroot-target")
     find_path(CYNG_INCLUDE_DIR_SRC
         NAMES 
-            cyng/version.hpp
 			cyng/meta.hpp
+            cyng/obj/object.h
         PATH_SUFFIXES
             include
         PATHS
@@ -119,7 +120,13 @@ else(PC_CYNG_FOUND)
         list(APPEND REQUESTED_LIBS "scm")
     endif(WIN32)
 
+	# D:/reboot/node/../cyng
+	message(STATUS "** CYNG_SEARCH_PATH         : ${CYNG_SEARCH_PATH}")
+
 	foreach(__LIB ${REQUESTED_LIBS})
+
+#		message(STATUS "** find         : cyng_${__LIB}")
+#		message(STATUS "** here         : ${SMF_BUILD_TREE_STEM}/src/${__LIB}")
 
 		find_library("__CYNG_${__LIB}" 
 			NAME
@@ -132,7 +139,10 @@ else(PC_CYNG_FOUND)
 				"${SMF_BUILD_TREE_STEM}"
                 "${SMF_BUILD_TREE_STEM}/src/${__LIB}"
 				"build/src/${__LIB}"
-				"build"
+                "${SMF_BUILD_TREE_STEM}/src/${__LIB}/Debug"
+                "${SMF_BUILD_TREE_STEM}/src/${__LIB}/Release"
+				"${SMF_BUILD_TREE_STEM}/Debug"
+				"${SMF_BUILD_TREE_STEM}/Release"
 				"build/Debug"
 				"build/Release"
 			DOC 
