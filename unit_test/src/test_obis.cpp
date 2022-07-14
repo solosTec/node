@@ -150,6 +150,9 @@ BOOST_AUTO_TEST_CASE(profile) {
     //  2022-07-10 16:56:32.0000000/2022-07-10 16:45:00.0000000
     std::cout << now << "/" << tp << std::endl;
     BOOST_REQUIRE_LE(tp, now);
+
+    auto const tpf = smf::sml::floor(now, profile);
+    std::cout << now << "/" << tpf << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

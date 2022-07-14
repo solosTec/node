@@ -62,6 +62,23 @@ namespace smf {
             return std ::chrono::minutes(1);
         }
 
+        std::chrono::system_clock::time_point floor(std::chrono::system_clock::time_point tp, cyng::obis profile) {
+            auto const epoch = std::chrono::time_point<std::chrono::system_clock>{};
+
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return epoch + minutes_since_epoch(tp);
+            case CODE_PROFILE_15_MINUTE: return epoch + (minutes_since_epoch(tp) / 15) * 15;
+            case CODE_PROFILE_60_MINUTE: return epoch + hours_since_epoch(tp);
+            case CODE_PROFILE_24_HOUR: return epoch + (hours_since_epoch(tp) / 24) * 24;
+            case CODE_PROFILE_1_MONTH: return epoch + (hours_since_epoch(tp) / (24 * 30) * (24 * 30));
+            case CODE_PROFILE_1_YEAR: return epoch + (hours_since_epoch(tp) / (24 * 364) * (24 * 364));
+            default: break;
+            }
+            //  error
+            BOOST_ASSERT_MSG(false, "not implemented yet");
+            return tp;
+        }
+
         std::int64_t rasterize_interval(std::int64_t sec, cyng::obis profile) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE:

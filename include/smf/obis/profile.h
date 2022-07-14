@@ -30,6 +30,16 @@ namespace smf {
         std::chrono::seconds interval_time(cyng::obis profile);
 
         /**
+         * Computes the largest time point not greater than arg.
+         *
+         * Same effect as:
+         * @code
+         * smf::sml::to_time_point(smf::sml::to_index(now, profile), profile);
+         * @endcode
+         */
+        std::chrono::system_clock::time_point floor(std::chrono::system_clock::time_point, cyng::obis profile);
+
+        /**
          * Put the length of an interval in a certain grid depended from the profile and guaranties
          * that the interval is not null.
          * int is used based on the following data types from the chrono library:
@@ -64,6 +74,8 @@ namespace smf {
     std::chrono::minutes minutes_since_epoch(std::chrono::system_clock::time_point tp);
 
     /**
+     * std::chrono::day requires C++20
+     *
      * @return hours since Unix epoch (00:00:00 UTC on 1 January 1970)
      */
     std::chrono::hours hours_since_epoch(std::chrono::system_clock::time_point);
