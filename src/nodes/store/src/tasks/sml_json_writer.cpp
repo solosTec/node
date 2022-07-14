@@ -10,6 +10,8 @@
 #include <smf/mbus/server_id.h>
 #include <smf/mbus/units.h>
 
+#include <cyng/io/ostream.h>
+#include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
@@ -42,12 +44,6 @@ namespace smf {
         }
     }
 
-    sml_json_writer::~sml_json_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "sml_json_writer(~)" << std::endl;
-#endif
-    }
-
     void sml_json_writer::stop(cyng::eod) {}
     void sml_json_writer::open_response(cyng::buffer_t, cyng::buffer_t) {}
     void sml_json_writer::close_response() {}
@@ -58,23 +54,39 @@ namespace smf {
         std::uint32_t status,
         cyng::obis_path_t path,
         cyng::param_map_t values) {
-        // CYNG_LOG_TRACE(logger_, "[sml.json.writer] get_profile_list_response #" << values.size());
-        auto const file_name = get_json_filename(prefix_, suffix_, srv_id_to_str(server_id), std::chrono::system_clock::now());
-        auto const file_path = root_dir_ / file_name;
 
-        std::ofstream of(file_path.string(), std::ios::app);
+        if (path.size() == 1) {
+            auto const profile = path.front();
 
-        if (of.is_open()) {
+            auto const id = srv_id_to_str(server_id);
+            auto const file_name = sml_json_filename(prefix_, suffix_, id, std::chrono::system_clock::now());
+            auto const file_path = root_dir_ / file_name;
 
-            CYNG_LOG_TRACE(logger_, "[sml.json.writer] get_profile_list_response #" << values.size() << ": " << file_path);
+            std::ofstream of(file_path.string(), std::ios::app);
+
+            if (of.is_open()) {
+
+                CYNG_LOG_TRACE(logger_, "[sml.json.writer] get_profile_list_response #" << values.size() << ": " << file_path);
+                auto const tpl = cyng::make_tuple(
+                    cyng::make_param("trx", trx),
+                    cyng::make_param("serverId", id),
+                    cyng::make_param("actTime", act_time),
+                    cyng::make_param("status", status),
+                    cyng::make_param("profile", profile),
+                    cyng::make_param("data", values));
+                cyng::io::serialize_json(of, tpl);
+
+            } else {
+                CYNG_LOG_ERROR(logger_, "[sml.json.writer] cannot open " << file_path);
+            }
         } else {
-            CYNG_LOG_ERROR(logger_, "[sml.json.writer] cannot open " << file_path);
+            CYNG_LOG_WARNING(logger_, "[sml.json.writer] get_profile_list_response - invalid path size: " << path);
         }
     }
     void sml_json_writer::get_proc_parameter_response() {}
 
     std::filesystem::path
-    get_json_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now) {
+    sml_json_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now) {
 
         auto tt = std::chrono::system_clock::to_time_t(now);
 #ifdef _MSC_VER

@@ -47,12 +47,6 @@ namespace smf {
         }
     }
 
-    iec_influx_writer::~iec_influx_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "iec_influx_writer(~)" << std::endl;
-#endif
-    }
-
     void iec_influx_writer::stop(cyng::eod) {}
     void iec_influx_writer::open(std::string id) {
         id_ = id;

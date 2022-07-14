@@ -64,7 +64,7 @@ namespace smf {
 
         // CYNG_LOG_TRACE(logger_, "[sml.csv.writer] get_profile_list_response: #" << values.size());
 
-        auto const file_name = get_csv_filename(prefix_, suffix_, srv_id_to_str(server_id), std::chrono::system_clock::now());
+        auto const file_name = sml_csv_filename(prefix_, suffix_, srv_id_to_str(server_id), std::chrono::system_clock::now());
         auto const file_path = root_dir_ / file_name;
 
         std::ofstream of(file_path.string(), std::ios::app);
@@ -76,23 +76,23 @@ namespace smf {
             auto const srv_id = to_srv_id(server_id);
             auto const meter = get_id(srv_id);
 
-            of << "obis,value,scaler,unit,descr" << std::endl;
+            of << "obis,value,scaler,unit,status,descr" << std::endl;
 
             of << cyng::to_string(OBIS_SERIAL_NR) << ',' << meter << ',' << ',' << ',' << "serial number" << std::endl;
 
             for (auto const &value : values) {
                 auto const reader = cyng::make_reader(cyng::container_cast<cyng::param_map_t>(value.second));
-                auto const code = reader.get("code", ""); //  obis
                 auto const unit = reader.get("unit-name", "");
-                // auto const val = reader.get("value", "");
+                auto const reading = reader.get("value", "0");
                 auto const scaler = reader.get<std::int8_t>("scaler", 0);
                 auto const descr = reader.get("descr", "");
                 of << value.first                //  obis
-                   << ',' << reader.get("value") //  value
+                   << ',' << reading             //  value
                    << ',' << +scaler             //  scaler,
                    << ',' << unit                //  unit
                                                  //  raw
-                   << ',' << descr               //  descr
+                   << ',' << status              //  status
+                   << ',' << '"' << descr << '"' //  descr
                    << std::endl;
             }
 
@@ -103,7 +103,7 @@ namespace smf {
     void sml_csv_writer::get_proc_parameter_response() {}
 
     std::filesystem::path
-    get_csv_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now) {
+    sml_csv_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now) {
 
         auto tt = std::chrono::system_clock::to_time_t(now);
 #ifdef _MSC_VER

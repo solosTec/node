@@ -326,7 +326,7 @@ namespace smf {
         // TMirrorData.reading FROM TMirrorData INNER JOIN TMirror ON TMirror.meterID = TMirrorData.meterID AND TMirror.profile =
         // TMirrorData.profile AND TMirror.idx = TMirrorData.idx;
         //
-        return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 0, 0, 0, 0, 0});
+        return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 256, 0, 0, 0, 0});
     }
 
     std::vector<cyng::meta_store> get_store_meta_data() {

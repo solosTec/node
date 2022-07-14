@@ -30,7 +30,7 @@ namespace smf {
 
       public:
         sml_target(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger, ipt::bus &);
-        ~sml_target();
+        ~sml_target() = default;
 
         void stop(cyng::eod);
 

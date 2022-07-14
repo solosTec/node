@@ -30,7 +30,9 @@ namespace smf {
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger)		
-        , out_(out)
+        , root_dir_(out)
+        , prefix_(prefix)
+        , suffix_(suffix)
 		, ostream_()
         , id_()
  {
@@ -46,22 +48,12 @@ namespace smf {
 
     void iec_csv_writer::open(std::string meter) {
 
-        auto const now = std::chrono::system_clock::now();
-        std::time_t const tt = std::chrono::system_clock::to_time_t(now);
-        struct tm tm = {0};
-#if defined(BOOST_OS_WINDOWS_AVAILABLE)
-        ::gmtime_s(&tm, &tt);
-#else
-        ::gmtime_r(&tt, &tm);
-#endif
-
         //
         //	make a file name
         //
-        std::stringstream ss;
-        ss << std::put_time(&tm, "%FT%H-%M_") << meter << ".csv";
-
-        std::filesystem::path path = out_ / ss.str();
+        auto const now = std::chrono::system_clock::now();
+        auto const file_name = iec_csv_filename(prefix_, suffix_, meter, now);
+        std::filesystem::path path = root_dir_ / file_name;
 
         if (ostream_.is_open())
             ostream_.close();
@@ -98,6 +90,21 @@ namespace smf {
         } else {
             CYNG_LOG_INFO(logger_, "[iec.csv.writer] commit " << id_ << " failed");
         }
+    }
+
+    std::filesystem::path
+    iec_csv_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now) {
+        auto tt = std::chrono::system_clock::to_time_t(now);
+#ifdef _MSC_VER
+        struct tm tm;
+        _gmtime64_s(&tm, &tt);
+#else
+        auto tm = *std::gmtime(&tt);
+#endif
+
+        std::stringstream ss;
+        ss << prefix << server_id << '_' << std::put_time(&tm, "%Y%m%dT%H%M%S") << '.' << suffix;
+        return ss.str();
     }
 
 } // namespace smf

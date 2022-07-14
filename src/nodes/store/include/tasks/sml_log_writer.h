@@ -27,7 +27,7 @@ namespace smf {
 
       public:
         sml_log_writer(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger);
-        ~sml_log_writer();
+        ~sml_log_writer() = default;
 
       private:
         void stop(cyng::eod);

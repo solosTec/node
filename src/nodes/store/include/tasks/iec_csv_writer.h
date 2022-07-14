@@ -48,10 +48,15 @@ namespace smf {
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
-        std::filesystem::path const out_;
+        std::filesystem::path const root_dir_;
+        std::string const prefix_;
+        std::string const suffix_;
         std::ofstream ostream_;
         std::string id_; //	current meter id/name
     };
+
+    std::filesystem::path
+    iec_csv_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now);
 
 } // namespace smf
 

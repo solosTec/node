@@ -11,6 +11,8 @@
 #include <smf/controller_base.h>
 #include <smf/ipt/config.h>
 
+#include <cyng/db/session.h>
+
 namespace smf {
 
     class controller : public config::controller_base {
@@ -42,7 +44,14 @@ namespace smf {
             std::set<std::string> const &,
             std::set<std::string> const &writer);
 
-        void start_sml_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
+        void start_sml_db(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            cyng::db::session,
+            cyng::param_map_t &&,
+            std::string const &);
+
         void start_sml_xml(
             cyng::controller &,
             cyng::stash &channels,
@@ -97,7 +106,21 @@ namespace smf {
             std::string const &cert,
             std::string const &db);
 
-        void start_iec_db(cyng::controller &, cyng::stash &channels, cyng::logger, cyng::param_map_t &&, std::string const &);
+        void start_iec_db(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            cyng::db::session,
+            cyng::param_map_t &&,
+            std::string const &);
+        void start_iec_json(
+            cyng::controller &,
+            cyng::stash &channels,
+            cyng::logger,
+            std::string const &,
+            std::string,
+            std::string,
+            std::string);
         void start_iec_log(
             cyng::controller &,
             cyng::stash &channels,
@@ -137,8 +160,9 @@ namespace smf {
             std::string const &db);
 
       private:
-        void init_storage(cyng::object &&);
-        int create_influx_dbs(cyng::object &&, std::string const &cmd);
+        std::map<std::string, cyng::db::session> init_storage(cyng::object const &);
+        cyng::db::session init_storage(cyng::param_map_t const &);
+        int create_influx_dbs(cyng::object const &, std::string const &cmd);
     };
 } // namespace smf
 

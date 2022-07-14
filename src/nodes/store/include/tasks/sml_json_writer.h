@@ -33,7 +33,7 @@ namespace smf {
             std::filesystem::path out,
             std::string prefix,
             std::string suffix);
-        ~sml_json_writer();
+        ~sml_json_writer() = default;
 
       private:
         void stop(cyng::eod);
@@ -59,7 +59,7 @@ namespace smf {
     };
 
     std::filesystem::path
-    get_json_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now);
+    sml_json_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now);
 
 } // namespace smf
 

@@ -30,12 +30,6 @@ namespace smf {
         }
     }
 
-    dlms_target::~dlms_target() {
-#ifdef _DEBUG_STORE
-        std::cout << "dlms_target(~)" << std::endl;
-#endif
-    }
-
     void dlms_target::stop(cyng::eod) {}
 
     void dlms_target::register_target(std::string name) { bus_.register_target(name, channel_); }

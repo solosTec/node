@@ -27,12 +27,6 @@ namespace smf {
         }
     }
 
-    sml_log_writer::~sml_log_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "iec_target(~)" << std::endl;
-#endif
-    }
-
     void sml_log_writer::stop(cyng::eod) {}
     void sml_log_writer::open_response(cyng::buffer_t, cyng::buffer_t) {}
     void sml_log_writer::close_response() {}

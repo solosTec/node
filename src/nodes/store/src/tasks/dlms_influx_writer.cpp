@@ -40,12 +40,6 @@ namespace smf {
         }
     }
 
-    dlms_influx_writer::~dlms_influx_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "dlms_influx_writer(~)" << std::endl;
-#endif
-    }
-
     void dlms_influx_writer::stop(cyng::eod) {}
 
 } // namespace smf

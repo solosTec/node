@@ -60,11 +60,8 @@ namespace smf {
         std::string const suffix_;
     };
 
-    std::filesystem::path get_csv_filename(
-        std::string prefix,
-        std::string suffix,
-        std::string server_id,
-        std::chrono::system_clock::time_point now);
+    std::filesystem::path
+    sml_csv_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now);
 
 } // namespace smf
 

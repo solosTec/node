@@ -52,12 +52,6 @@ namespace smf {
         }
     }
 
-    sml_influx_writer::~sml_influx_writer() {
-#ifdef _DEBUG_STORE
-        std::cout << "sml_influx_writer(~)" << std::endl;
-#endif
-    }
-
     void sml_influx_writer::stop(cyng::eod) {}
     void sml_influx_writer::open_response(cyng::buffer_t, cyng::buffer_t) {}
     void sml_influx_writer::close_response() {}
@@ -74,10 +68,10 @@ namespace smf {
             auto const profile = obis::to_str_vector(path, true).at(0);
             CYNG_LOG_TRACE(logger_, "[sml.influx] get_profile_list_response #" << values.size() << ": " << profile);
 
-            send_write_stmt(profile, server_id, act_time, /*reg_period, */ status, values);
+            send_write_stmt(profile, server_id, act_time, status, values);
 
         } else {
-            CYNG_LOG_WARNING(logger_, "[sml.influx] get_profile_list_response - invalid path size: " << path.size());
+            CYNG_LOG_WARNING(logger_, "[sml.influx] get_profile_list_response - invalid path size: " << path);
         }
     }
     void sml_influx_writer::get_proc_parameter_response() {}

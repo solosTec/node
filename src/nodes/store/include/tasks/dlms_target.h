@@ -28,7 +28,7 @@ namespace smf {
 
       public:
         dlms_target(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger, ipt::bus &);
-        ~dlms_target();
+        ~dlms_target() = default;
 
         void stop(cyng::eod);
 

@@ -16,6 +16,7 @@ target_compile_definitions(store
 target_compile_options(store 
     PRIVATE 
         $<$<AND:$<VERSION_GREATER_EQUAL:${CMAKE_CXX_COMPILER_VERSION},7.1>,$<CXX_COMPILER_ID:GNU>>:-Wno-psabi>
+        $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/ZI>
 )
 
 target_include_directories(store

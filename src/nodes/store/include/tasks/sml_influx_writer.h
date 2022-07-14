@@ -41,7 +41,7 @@ namespace smf {
             std::string const &protocol,
             std::string const &cert,
             std::string const &db);
-        ~sml_influx_writer();
+        ~sml_influx_writer() = default;
 
       private:
         void stop(cyng::eod);

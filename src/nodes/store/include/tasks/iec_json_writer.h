@@ -1,11 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 Sylko Olzscher
+ * Copyright (c) 2022 Sylko Olzscher
  *
  */
-#ifndef SMF_STORE_TASK_IEC_INFLUX_WRITER_H
-#define SMF_STORE_TASK_IEC_INFLUX_WRITER_H
+#ifndef SMF_STORE_TASK_IEC_JSON_WRITER_H
+#define SMF_STORE_TASK_IEC_JSON_WRITER_H
 
 #include <cyng/log/logger.h>
 #include <cyng/task/controller.h>
@@ -15,27 +15,25 @@
 
 namespace smf {
 
-    class iec_influx_writer {
+    class iec_json_writer {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
             std::function<void(std::string)>,
             std::function<void(cyng::obis code, std::string value, std::string unit)>,
             std::function<void()>,
-            std::function<void(cyng::eod)>  //  stop()
-        >;
+            std::function<void(cyng::eod)> //  stop/(
+            >;
 
       public:
-        iec_influx_writer(
+        iec_json_writer(
             cyng::channel_weak,
             cyng::controller &ctl,
             cyng::logger logger,
-            std::string const &host,
-            std::string const &service,
-            std::string const &protocol,
-            std::string const &cert,
-            std::string const &db);
-        ~iec_influx_writer() = default;
+            std::filesystem::path out,
+            std::string prefix,
+            std::string suffix);
+        ~iec_json_writer() = default;
 
       private:
         void stop(cyng::eod);
@@ -48,13 +46,13 @@ namespace smf {
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
         cyng::logger logger_;
-        std::string const host_;
-        std::string const service_;
-        std::string const protocol_; //  http/hhtps/ws
-        std::string const cert_;
-        std::string const db_; //  adressed database
-        std::string id_;       //!< meter id
+        std::filesystem::path const root_dir_;
+        std::string const prefix_;
+        std::string const suffix_;
     };
+
+    std::filesystem::path
+    iec_json_filename(std::string prefix, std::string suffix, std::string server_id, std::chrono::system_clock::time_point now);
 
 } // namespace smf
 

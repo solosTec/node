@@ -66,12 +66,6 @@ namespace smf {
         }
     }
 
-    sml_target::~sml_target() {
-#ifdef _DEBUG_STORE
-        std::cout << "sml_target(~)" << std::endl;
-#endif
-    }
-
     void sml_target::stop(cyng::eod) {}
 
     void sml_target::register_target(std::string name) { bus_.register_target(name, channel_); }

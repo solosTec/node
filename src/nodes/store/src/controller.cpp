@@ -6,6 +6,7 @@
  */
 
 #include <controller.h>
+
 #include <influxdb.h>
 #include <tasks/network.h>
 
@@ -13,6 +14,7 @@
 #include <tasks/iec_csv_writer.h>
 #include <tasks/iec_db_writer.h>
 #include <tasks/iec_influx_writer.h>
+#include <tasks/iec_json_writer.h>
 #include <tasks/iec_log_writer.h>
 #include <tasks/sml_abl_writer.h>
 #include <tasks/sml_csv_writer.h>
@@ -66,31 +68,25 @@ namespace smf {
             cyng::make_param("model", "smf.store"), //  ip-t ident
             cyng::make_param("network-delay", 6),   //  seconds to wait before starting ip-t client
 
+            //  list of database(s)
+            cyng::make_param(
+                "db",
+                cyng::make_param(
+                    "default",
+                    cyng::tuple_factory(
+                        cyng::make_param("connection-type", "SQLite"),
+                        cyng::make_param("file-name", (cwd / "store.database").string()),
+                        cyng::make_param("busy-timeout", 12),            //	seconds
+                        cyng::make_param("watchdog", 30),                //	for database connection
+                        cyng::make_param("pool-size", 1),                //	no pooling for SQLite
+                        cyng::make_param("db-schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
+                        cyng::make_param("interval", 12)                 //	seconds
+                        ))),
+
             cyng::make_param("writer", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
-            cyng::make_param(
-                "SML:DB",
-                cyng::tuple_factory(
-                    cyng::make_param("type", "SQLite"),
-                    cyng::make_param("file-name", (cwd / "store.sqlite").string()),
-                    cyng::make_param("busy-timeout", 12),            //	seconds
-                    cyng::make_param("watchdog", 30),                //	for database connection
-                    cyng::make_param("pool-size", 1),                //	no pooling for SQLite
-                    cyng::make_param("db-schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
-                    cyng::make_param("interval", 12)                 //	seconds
-                    )),
-            cyng::make_param(
-                "IEC:DB",
-                cyng::tuple_factory(
-                    cyng::make_param("type", "SQLite"),
-                    cyng::make_param("file-name", (cwd / "store.sqlite").string()),
-                    cyng::make_param("busy-timeout", 12), //	seconds
-                    cyng::make_param("watchdog", 30),     //	for database connection
-                    cyng::make_param("pool-size", 1),     //	no pooling for SQLite
-                    cyng::make_param("db-schema", SMF_VERSION_NAME),
-                    // cyng::make_param("interval", 20),      //	seconds
-                    cyng::make_param("ignore-null", false) //	don't write values equal 0
-                    )),
+            cyng::make_param("SML:DB", cyng::tuple_factory(cyng::make_param("db", "default"))),
+            cyng::make_param("IEC:DB", cyng::tuple_factory(cyng::make_param("db", "default"))),
             cyng::make_param(
                 "SML:XML",
                 cyng::tuple_factory(
@@ -101,14 +97,14 @@ namespace smf {
                 "SML:JSON",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "json").string()),
-                    cyng::make_param("prefix", "smf"),
+                    cyng::make_param("prefix", "sml-"),
                     cyng::make_param("suffix", "json"),
                     cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "SML:ABL",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "abl").string()),
-                    cyng::make_param("prefix", "smf"),
+                    cyng::make_param("prefix", "sml-"),
                     cyng::make_param("suffix", "abl"),
                     cyng::make_param("version", SMF_VERSION_NAME),
                     cyng::make_param("line-ending", "DOS") //	DOS/UNIX, DOS = "\r\n", UNIX = "\n", native = std::endl
@@ -117,28 +113,28 @@ namespace smf {
                 "ALL:BIN",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "sml").string()),
-                    cyng::make_param("prefix", "smf"),
-                    cyng::make_param("suffix", "sml"),
+                    cyng::make_param("prefix", "smf-"),
+                    cyng::make_param("suffix", "bin"),
                     cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "SML:LOG",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "log").string()),
-                    cyng::make_param("prefix", "sml"),
+                    cyng::make_param("prefix", "sml-"),
                     cyng::make_param("suffix", "log"),
                     cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "IEC:LOG",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "log").string()),
-                    cyng::make_param("prefix", "iec"),
+                    cyng::make_param("prefix", "iec-"),
                     cyng::make_param("suffix", "log"),
                     cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
                 "SML:CSV",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "csv").string()),
-                    cyng::make_param("prefix", "sml"),
+                    cyng::make_param("prefix", "sml-"),
                     cyng::make_param("suffix", "csv"),
                     cyng::make_param("header", true),
                     cyng::make_param("version", SMF_VERSION_NAME))),
@@ -146,7 +142,7 @@ namespace smf {
                 "IEC:CSV",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "csv").string()),
-                    cyng::make_param("prefix", "iec"),
+                    cyng::make_param("prefix", "iec-"),
                     cyng::make_param("suffix", "csv"),
                     cyng::make_param("header", true),
                     cyng::make_param("version", SMF_VERSION_NAME))),
@@ -203,6 +199,7 @@ namespace smf {
                     cyng::make_param("DLMS", cyng::make_vector({"dlms@store"})),
                     cyng::make_param("IEC", cyng::make_vector({"LZQJ", "iec@store"})))))});
     }
+
     void controller::run(
         cyng::controller &ctl,
         cyng::stash &channels,
@@ -221,6 +218,11 @@ namespace smf {
         }
 
         //
+        //  data base connections
+        //
+        auto sm = init_storage(cfg);
+
+        //
         // Start writer tasks.
         // No duplicates possible by using a set
         //
@@ -229,8 +231,15 @@ namespace smf {
             auto const tmp = std::filesystem::temp_directory_path();
             for (auto const &name : writer) {
                 if (boost::algorithm::equals(name, "SML:DB")) {
-                    start_sml_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
-                } else if (boost::algorithm::equals(name, "SML:SML")) {
+                    auto const db = reader[name].get("db", "default");
+                    auto const pos = sm.find(db);
+                    if (pos != sm.end()) {
+                        start_sml_db(
+                            ctl, channels, logger, pos->second, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    } else {
+                        CYNG_LOG_FATAL(logger, "no database [" << db << "] for writer " << name << " configured");
+                    }
+                } else if (boost::algorithm::equals(name, "SML:XML")) {
                     start_sml_xml(
                         ctl,
                         channels,
@@ -299,7 +308,24 @@ namespace smf {
                         cyng::value_cast(reader[name]["cert"].get(), "cert.pem"),
                         cyng::value_cast(reader[name]["db"].get(), "SMF"));
                 } else if (boost::algorithm::equals(name, "IEC:DB")) {
-                    start_iec_db(ctl, channels, logger, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    auto const db = reader[name].get("db", "default");
+                    auto const pos = sm.find(db);
+                    if (pos != sm.end()) {
+                        start_iec_db(
+                            ctl, channels, logger, pos->second, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                    } else {
+                        CYNG_LOG_FATAL(logger, "no database [" << db << "] for writer " << name << " configured");
+                    }
+                } else if (boost::algorithm::equals(name, "SML:XML")) {
+                } else if (boost::algorithm::equals(name, "SML:JSON")) {
+                    start_iec_json(
+                        ctl,
+                        channels,
+                        logger,
+                        name,
+                        cyng::value_cast(reader[name]["root-dir"].get(), tmp.string()),
+                        cyng::value_cast(reader[name]["prefix"].get(), "iec"),
+                        cyng::value_cast(reader[name]["suffix"].get(), "json"));
                 } else if (boost::algorithm::equals(name, "IEC:LOG")) {
                     start_iec_log(
                         ctl,
@@ -442,19 +468,56 @@ namespace smf {
     bool controller::run_options(boost::program_options::variables_map &vars) {
 
         //
+        //  read configuration
         //
-        //
+        auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
+
         if (vars["init"].as<bool>()) {
             //	initialize database
-            init_storage(read_config_section(config_.json_path_, config_.config_index_));
+
+            auto sm = init_storage(cfg);
+            auto const reader = cyng::make_reader(cfg);
+
+            auto writer = cyng::set_cast<std::string>(reader["writer"].get(), "ALL:BIN");
+            for (std::string const name : writer) {
+                if (boost::algorithm::equals(name, "SML:DB")) {
+                    auto const db = reader[name].get("db", "default");
+                    auto const pos = sm.find(db);
+                    if (pos != sm.end()) {
+                        std::cout << "***info : writer " << name << " initialize database " << pos->first << std::endl;
+                        sml_db_writer::init_storage(pos->second);
+                    } else {
+                        std::cerr << "***error: writer " << name << " uses an undefined database" << std::endl;
+                    }
+                } else if (boost::algorithm::equals(name, "IEC:DB")) {
+                    auto const db = reader[name].get("db", "default");
+                    auto const pos = sm.find(db);
+                    if (pos != sm.end()) {
+                        std::cout << "***info : writer " << name << " initialize database " << pos->first << std::endl;
+                        iec_db_writer::init_storage(pos->second);
+                    } else {
+                        std::cerr << "***error: writer " << name << " uses an undefined database" << std::endl;
+                    }
+                }
+            }
+
+            //
+            //  close database
+            //
+            for (auto s : sm) {
+                if (s.second.is_alive()) {
+                    s.second.close();
+                }
+            }
             return true;
         }
+
         auto const cmd = vars["influxdb"].as<std::string>();
         if (!cmd.empty()) {
             //	execute a influx db command
             // std::cerr << cmd << " not implemented yet" << std::endl;
             // return ctrl.create_influx_dbs(config_index, cmd);
-            create_influx_dbs(read_config_section(config_.json_path_, config_.config_index_), cmd);
+            create_influx_dbs(cfg, cmd);
             return true;
         }
         //
@@ -465,16 +528,34 @@ namespace smf {
         return controller_base::run_options(vars);
     }
 
-    void controller::init_storage(cyng::object &&cfg) {
+    std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg) {
 
-        auto const reader = cyng::make_reader(std::move(cfg));
-        // auto s = cyng::db::create_db_session(reader.get("DB"));
-        // if (s.is_alive())	smf::init_storage(s);	//	see task/storage_db.h
+        std::map<std::string, cyng::db::session> sm;
+        auto const reader = cyng::make_reader(cfg);
+        BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
+        auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
+        for (auto const &param : pm) {
+            std::cout << "create database [" << param.first << "]" << std::endl;
+            auto const db = cyng::container_cast<cyng::param_map_t>(param.second);
+            sm.emplace(param.first, init_storage(db));
+        }
+        return sm;
     }
 
-    int controller::create_influx_dbs(cyng::object &&cfg, std::string const &cmd) {
+    cyng::db::session controller::init_storage(cyng::param_map_t const &pm) {
+        auto s = cyng::db::create_db_session(pm);
+        if (s.is_alive()) {
+            std::cout << "***info : database created" << std::endl;
+            // smf::init_storage(s);	//	see task/storage_db.h
+        } else {
+            std::cerr << "***error: create database failed: " << pm << std::endl;
+        }
+        return s;
+    }
 
-        auto const reader = cyng::make_reader(std::move(cfg));
+    int controller::create_influx_dbs(cyng::object const &cfg, std::string const &cmd) {
+
+        auto const reader = cyng::make_reader(cfg);
         auto const pmap = cyng::container_cast<cyng::param_map_t>(reader.get("SML:influxdb"));
         std::cout << "***info: " << pmap << std::endl;
 
@@ -532,12 +613,13 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
+        cyng::db::session db,
         cyng::param_map_t &&pm,
         std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml database writer");
             auto const reader = cyng::make_reader(pm);
-            auto channel = ctl.create_named_channel_with_ref<sml_db_writer>(name, ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<sml_db_writer>(name, ctl, logger, db);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -689,15 +771,43 @@ namespace smf {
         cyng::controller &ctl,
         cyng::stash &channels,
         cyng::logger logger,
+        cyng::db::session db,
         cyng::param_map_t &&pm,
         std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start iec database writer");
-            auto channel = ctl.create_named_channel_with_ref<iec_db_writer>(name, ctl, logger);
+            auto channel = ctl.create_named_channel_with_ref<iec_db_writer>(name, ctl, logger, db);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
     }
+    void controller::start_iec_json(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        std::string const &name,
+        std::string out,
+        std::string prefix,
+        std::string suffix) {
+
+        if (!std::filesystem::exists(out)) {
+            std::error_code ec;
+            std::filesystem::create_directories(out, ec);
+            if (ec) {
+                CYNG_LOG_ERROR(logger, "[iec.json.writer] " << ec.message());
+                return; //  give up
+            }
+        } else {
+            CYNG_LOG_INFO(logger, "[iec.json.writer] start -> " << out);
+        }
+
+        if (!out.empty()) {
+            auto channel = ctl.create_named_channel_with_ref<iec_json_writer>(name, ctl, logger, out, prefix, suffix);
+            BOOST_ASSERT(channel->is_open());
+            channels.lock(channel);
+        }
+    }
+
     void controller::start_iec_log(
         cyng::controller &ctl,
         cyng::stash &channels,
