@@ -131,7 +131,7 @@ namespace smf {
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
             auto const start = now - backtrack;
-            std::cout << "start: " << start << std::endl;
+            // std::cout << "start: " << start << std::endl;
             stmt->push(cyng::make_object(profile), 0); //	profile
             stmt->push(cyng::make_object(start), 0);   //	start time
             while (auto res = stmt->get_result()) {
@@ -144,7 +144,7 @@ namespace smf {
                 //  [status: 000202a0]
                 //  [actTime: 2458-12-31T00:00:00+0100]
                 //  [received: 2458-12-31T00:00:00+0100]
-                std::cout << rec.to_string() << std::endl;
+                // std::cout << rec.to_string() << std::endl;
                 // CYNG_LOG_TRACE(logger_, "[report] run " << obis::get_name(profile) << ": " << rec.to_string());
             }
         }
