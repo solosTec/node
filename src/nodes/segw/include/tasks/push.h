@@ -10,6 +10,7 @@
 #include <cfg.h>
 
 #include <smf/ipt/config.h>
+#include <smf/sml/generator.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/store/key.hpp>
@@ -46,8 +47,10 @@ namespace smf {
         void on_channel_open(bool success, std::uint32_t, std::uint32_t, std::uint32_t, std::string);
         void on_channel_close(bool success, std::uint32_t);
 
-        void collect_data();
+        void collect_data(std::uint32_t channel, std::uint32_t source);
         cyng::obis_path_t get_registers(cyng::table const *tbl);
+
+        cyng::tuple_t convert_to_payload(cyng::table const *tbl, cyng::key_t const &, std::uint32_t, cyng::obis_path_t const &);
 
       private:
         signatures_t sigs_;
@@ -66,6 +69,12 @@ namespace smf {
          */
         cyng::buffer_t const meter_;
         std::uint8_t const nr_;
+
+        /**
+         * Generate an SML transaction id.
+         * Example: 3370571-1
+         */
+        sml::trx trx_;
     };
 
 } // namespace smf

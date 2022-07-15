@@ -166,6 +166,17 @@ namespace smf {
         }
 
         cyng::tuple_t list_entry(cyng::obis code, std::uint32_t status, std::uint8_t unit, std::int8_t scaler, cyng::object value) {
+
+            // example:
+            //  77                                        valListEntry(Sequence):
+            //    070100000102FF                          objName: 01 00 00 01 02 FF
+            //    6200                                    status: 0
+            //    01                                      valTime: not set
+            //    6207                                    unit: 7
+            //    5200                                    scaler: 0
+            //    530163                                  value: 355
+            //    01                                      valueSignature: not set
+
             return cyng::make_tuple(
                 code,         // object name
                 status,       // status

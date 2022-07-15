@@ -175,8 +175,8 @@ namespace smf {
         //
         // SELECT hex(meterID), nr, printf('%012X', service) FROM TPushOps;
         //
-        // SELECT hex(TPushOps.meterID), TPushOps.target, TPushOps.nr, TPushRegister.idx FROM TPushOps INNER JOIN TPushRegister ON
-        // TPushRegister.meterID = TPushOps.meterID AND TPushRegister.nr = TPushOps.nr;
+        // SELECT hex(TPushOps.meterID), TPushOps.target, TPushOps.nr, TPushRegister.register FROM TPushOps INNER JOIN TPushRegister
+        // ON TPushRegister.meterID = TPushOps.meterID AND TPushRegister.nr = TPushOps.nr;
         //
         return cyng::to_sql(get_store_push_ops(), {9, 0, 0, 0, 0, 0, 0, 0, 0, 0});
     }
@@ -288,7 +288,7 @@ namespace smf {
                 cyng::column("payload", cyng::TC_BUFFER),      // raw (encrypted)
                 cyng::column("ci", cyng::TC_UINT8),            // frame type (CI field - M-Bus only)
                 cyng::column("received", cyng::TC_TIME_POINT), // receiving time
-                cyng::column("secidx", cyng::TC_UINT32),       // seconds index (gateway)
+                cyng::column("secIdx", cyng::TC_UINT32),       // seconds index (gateway)
                 cyng::column("decrypted", cyng::TC_BOOL)       // if true readout data available
             },
             3);
@@ -296,7 +296,7 @@ namespace smf {
 
     cyng::meta_sql get_table_mirror() {
         //
-        //  select hex(meterID), profile, datetime(received), secIdx from TMirror;
+        //  SELECT hex(meterID), profile, idx, datetime(received), secIdx FROM TMirror;
         //
         return cyng::to_sql(get_store_mirror(), {9, 0, 0, 0, 0, 0, 0, 0});
     }
@@ -324,7 +324,7 @@ namespace smf {
         //
         // SELECT hex(TMirrorData.meterID), datetime(TMirror.received), TMirrorData.profile, TMirrorData.register,
         // TMirrorData.reading FROM TMirrorData INNER JOIN TMirror ON TMirror.meterID = TMirrorData.meterID AND TMirror.profile =
-        // TMirrorData.profile AND TMirror.idx = TMirrorData.idx;
+        // TMirrorData.profile AND TMirror.idx = TMirrorData.idx ORDER BY TMirror.received;
         //
         return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 256, 0, 0, 0, 0});
     }

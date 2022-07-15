@@ -1,6 +1,7 @@
+#include <smf/sml/generator.h>
+
 #include <smf/mbus/server_id.h>
 #include <smf/obis/defs.h>
-#include <smf/sml/generator.h>
 #include <smf/sml/msg.h>
 #include <smf/sml/value.hpp>
 
@@ -15,16 +16,19 @@ namespace smf {
     namespace sml {
 
         trx::trx()
-            : gen_(cyng::crypto::make_rnd_num())
-            , prefix_()
-            , num_(1) {
-            reset(7);
-        }
+            : trx(7u) {}
 
         trx::trx(trx const &other)
             : gen_(cyng::crypto::make_rnd_num())
             , prefix_(other.prefix_)
             , num_(other.num_) {}
+
+        trx::trx(std::size_t size)
+            : gen_(cyng::crypto::make_rnd_num())
+            , prefix_()
+            , num_(1) {
+            reset(size);
+        }
 
         void trx::reset(std::size_t length) {
             prefix_.resize(length);
@@ -199,6 +203,25 @@ namespace smf {
             //. null
             //. { 1u8
             //. . 0c1d636bu32}}
+
+            if (cyng::is_nil(code)) {
+
+                return make_message(
+                    trx,
+                    1, //  group
+                    0, //  abort code
+                    msg_type::GET_LIST_RESPONSE,
+                    cyng::make_tuple(
+                        client,                        // client id (optional)
+                        server,                        // server id
+                        cyng::null{},                  // list name (optional)
+                        cyng::null{},                  // act. sensor time (optional)
+                        values,                        // SML_List / SML_ListEntry
+                        cyng::null{},                  // listSignature (optional)
+                        make_attribute(seconds_idx)),  // actGatewayTime (optional)
+                    static_cast<std::uint16_t>(0xFFFF) //  crc placeholder
+                );
+            }
 
             return make_message(
                 trx,

@@ -5,6 +5,7 @@
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
 
+#include <cyng/db/storage.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/util.hpp>
 
@@ -41,6 +42,7 @@ namespace smf {
         , cfg_(config)
         , meter_(meter)
         , nr_(nr)
+        , trx_(7)
 	{
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"init", "run", "on.channel.open", "on.channel.close"});
@@ -138,16 +140,15 @@ namespace smf {
 
     void push::on_channel_open(bool success, std::uint32_t channel, std::uint32_t source, std::uint32_t count, std::string target) {
         if (success) {
-            CYNG_LOG_INFO(logger_, "[push] channel is open");
+            CYNG_LOG_INFO(
+                logger_,
+                "[push] channel " << target << "#" << count << " is open - channel: " << channel << ", source: " << source);
 
             //
             //  ToDo: collect data
-            //
-            collect_data();
-
-            //
             //  ToDo: send data
             //
+            collect_data(channel, source);
 
             //
             //  close channel
@@ -159,7 +160,12 @@ namespace smf {
         }
     }
 
-    void push::collect_data() {
+    void push::collect_data(std::uint32_t channel, std::uint32_t source) {
+
+        trx_.reset();
+
+        sml::messages_t messages;
+
         cfg_.get_cache().access(
             [&, this](
                 cyng::table const *tbl_ops,
@@ -170,8 +176,11 @@ namespace smf {
                 if (!rec.empty()) {
                     // auto const interval = rec.value("interval", std::chrono::seconds(0));
                     auto const profile = rec.value("profile", OBIS_PROFILE);
-                    // auto const target = rec.value("target", "");
+                    auto const target = rec.value("target", "");
 
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[push] looking for data of meter: " << meter_ << " with profile " << profile << " (" << target << ")");
                     //
                     //  lookup in table "mirror" for readout data
                     //
@@ -180,7 +189,24 @@ namespace smf {
                         auto const mirror_profile = rec_mirror.value("profile", OBIS_PROFILE);
                         auto const decrypted = rec_mirror.value("decrypted", false);
 
+                        if ((meter_ == mirror_meter) && (profile == mirror_profile)) {
+                            CYNG_LOG_TRACE(
+                                logger_,
+                                "[push] match - meter: " << meter_ << "/" << mirror_meter << ", profile: " << profile << "/"
+                                                         << mirror_profile);
+                        } else {
+                            CYNG_LOG_DEBUG(
+                                logger_,
+                                "[push] no match - meter: " << meter_ << "/" << mirror_meter << ", profile: " << profile << "/"
+                                                            << mirror_profile);
+                        }
+                        if (!decrypted) {
+                            CYNG_LOG_WARNING(logger_, "[push] collect data of meter " << mirror_meter << " are still encrypted");
+                        }
+
                         if ((meter_ == mirror_meter) && (profile == mirror_profile) && decrypted) {
+
+                            auto const ops = rec_mirror.value<std::uint32_t>("secIdx", 0u);
 
                             auto const pk = rec_mirror.key();
                             BOOST_ASSERT(pk.size() == 3);
@@ -193,28 +219,108 @@ namespace smf {
                                 logger_,
                                 "[push] collect data of meter: " << meter_ << ", profile: " << obis::get_name(profile) << " with "
                                                                  << regs.size() << " entries");
-                            for (auto const &reg : regs) {
-                                //
-                                //  build key for table "mirrorData"
-                                //
-                                auto const pk_mirror_data = cyng::extend_key(pk, reg);
-                                BOOST_ASSERT(pk_mirror_data.size() == 4);
-                            }
+
+                            //
+                            //  generate payload - SML_GetList.Res
+                            //
+                            messages.push_back(convert_to_payload(tbl_mirror_data, pk, ops, regs));
                         }
 
                         return true;
                     });
 
                 } else {
-                    CYNG_LOG_ERROR(logger_, "[push] no record for " << meter_ << "#" << +nr_ << " in table \"pushOps\"");
+                    CYNG_LOG_ERROR(
+                        logger_,
+                        "[push] no record for " << meter_ << "#" << +nr_ << " in table \"" << tbl_ops->meta().get_name() << "\"");
                 }
             },
             cyng::access::read("pushOps"),
             cyng::access::read("pushRegister"),
             cyng::access::read("mirror"),
             cyng::access::read("mirrorData"));
+
+        //
+        //  convert to SML
+        //  and send payload
+        //
+        auto buffer = sml::to_sml(messages);
+        bus_.transmit(std::make_pair(channel, source), buffer);
     }
 
+    cyng::tuple_t push::convert_to_payload(
+        cyng::table const *tbl_mirror_data,
+        cyng::key_t const &pk,
+        std::uint32_t ops,
+        cyng::obis_path_t const &regs) {
+
+        // <meterID: 01e61e571406213603><profile: 8181c78611ff><idx: 18720><register: 0100000102ff>[reading: 177][type:
+        // 000c][scaler: 0][unit: 7][status: 00000000]
+        //
+        // <meterID: 01e61e571406213603><profile: 8181c78611ff><idx: 18720><register: 0100020000ff>[reading: 1632093][type:
+        // 000c][scaler: -2][unit: d][status: 00000000]
+        //
+        // <meterID: 01e61e571406213603><profile: 8181c78611ff><idx: 18720><register: 0100000902ff>[reading:
+        // 2022-06-30T02:00:00+0200][type: 0010][scaler: 0][unit: ff][status: 00000000]
+
+        cyng::tuple_t data;
+        for (auto const &reg : regs) {
+            //
+            //  build key for table "mirrorData"
+            //
+            auto const pk_mirror_data = cyng::extend_key(pk, reg);
+            BOOST_ASSERT(pk_mirror_data.size() == 4);
+
+            auto const rec_mirror_data = tbl_mirror_data->lookup(pk_mirror_data);
+            if (!rec_mirror_data.empty()) {
+                CYNG_LOG_INFO(logger_, "[push] data: " << rec_mirror_data.to_string());
+
+                //
+                // generate valListEntry
+                // example:
+                //  77                                        valListEntry(Sequence):
+                //    070100000102FF                          objName: 01 00 00 01 02 FF
+                //    6200                                    status: 0
+                //    01                                      valTime: not set
+                //    6207                                    unit: 7
+                //    5200                                    scaler: 0
+                //    530163                                  value: 355
+                //    01                                      valueSignature: not set
+                //
+                auto const reg = rec_mirror_data.value("register", OBIS_PROFILE);
+                auto const scaler = rec_mirror_data.value<std::uint8_t>("scaler", 0u);
+                auto const unit = rec_mirror_data.value<std::uint8_t>("unit", 0u);
+                auto const status = rec_mirror_data.value<std::uint32_t>("status", 0u);
+                auto const type = rec_mirror_data.value<std::uint16_t>("type", 0u);
+                auto const val = rec_mirror_data.value("reading", "");
+                auto const obj = cyng::restore(val, type);
+
+                data.push_back(cyng::make_object(sml::list_entry(
+                    reg,
+                    status, // status
+                    unit,   // unit
+                    scaler, // scaler
+                    obj)    // value
+                                                 ));
+            }
+        }
+
+        //
+        //  generate payload - SML_GetList.Res
+        //
+        sml::response_generator gen;
+        auto const trx = *++trx_;
+        return gen.get_list(
+            trx,
+            cyng::buffer_t{}, // null
+            meter_,           // meter id
+            cyng::obis{},     // => null
+            data,             // data
+            ops               // seconds index (operation counter)
+        );
+
+        // return payload;
+    }
     cyng::obis_path_t push::get_registers(cyng::table const *tbl) {
         BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "pushRegister"));
 

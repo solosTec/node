@@ -42,7 +42,10 @@ namespace smf {
             trx();
             trx(trx const &);
 
-            //~trx();
+            /**
+             * Specify size of transaction id
+             */
+            explicit trx(std::size_t);
 
             /**
              *	generate new transaction id (reshuffling)
@@ -119,7 +122,7 @@ namespace smf {
             get_proc_parameter(std::string const &trx, cyng::buffer_t const &server, cyng::obis_path_t const &path, cyng::tuple_t);
 
             /**
-             * SML_GetList.Res
+             * SML_GetList.Res (0x00000701)
              *
              * @param trx transaction name
              * @param client gateway ID

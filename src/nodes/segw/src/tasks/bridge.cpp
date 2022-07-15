@@ -495,12 +495,14 @@ namespace smf {
                                 rec.at("status"),
                                 rec.at("mask"),
                                 rec.at("pubKey"),
-                                rec.at("aes")),
+                                rec.at("aes"),
+                                rec.at("secondary")),
                             rec.get_generation(),
                             cfg_.get_tag())) {
-                        CYNG_LOG_ERROR(logger_, "load wireless M-Bus meter " << srv_id_to_str(id) << " failed");
+                        CYNG_LOG_ERROR(
+                            logger_, "load table " << srv_id_to_str(id) << " into table " << tbl->meta().get_name() << " failed");
                     } else {
-                        CYNG_LOG_TRACE(logger_, "load wireless M-Bus meter " << srv_id_to_str(id));
+                        CYNG_LOG_INFO(logger_, "load table " << srv_id_to_str(id) << " into table " << tbl->meta().get_name());
                     }
 
                     return true;

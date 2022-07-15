@@ -97,6 +97,7 @@ namespace smf {
 
         /**
          * Generate a SML_ListEntry (SML_GetList.Res)
+         * valListEntry
          */
         cyng::tuple_t list_entry(cyng::obis code, std::uint32_t status, std::uint8_t unit, std::int8_t scaler, cyng::object value);
 
