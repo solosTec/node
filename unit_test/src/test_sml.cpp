@@ -1259,6 +1259,13 @@ BOOST_AUTO_TEST_CASE(serializer) {
     //     cyng::io::write_data_length_field(v, 0x00);
     //}
 
+    //  cyng::io::write_data_length_field() is
+    //  only available if this flag is set.
+#ifndef _DEBUG_UNIT_TEST
+    static_assert(false, "_DEBUG_UNIT_TEST not set");
+    BOOST_REQUIRE(false);
+#endif
+
     {
         auto const r = cyng::io::write_data_length_field(7, 0x00);
         BOOST_REQUIRE_EQUAL(r.size(), 1);

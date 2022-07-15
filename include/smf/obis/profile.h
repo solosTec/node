@@ -25,9 +25,12 @@ namespace smf {
         bool is_profile(cyng::obis code);
 
         /**
+         * @param tp timepoint in the specified period of time. Only required for monthly and annual profiles
          * @return interval time for the specified profile
          */
-        std::chrono::seconds interval_time(cyng::obis profile);
+        std::chrono::seconds interval_time(std::chrono::system_clock::time_point, cyng::obis profile);
+
+        std::chrono::hours backtrack_time(cyng::obis profile);
 
         /**
          * Computes the largest time point not greater than arg.
@@ -38,6 +41,11 @@ namespace smf {
          * @endcode
          */
         std::chrono::system_clock::time_point floor(std::chrono::system_clock::time_point, cyng::obis profile);
+
+        /**
+         * Stick to nearest time point.
+         */
+        std::chrono::system_clock::time_point round(std::chrono::system_clock::time_point, cyng::obis profile);
 
         /**
          * Put the length of an interval in a certain grid depended from the profile and guaranties
@@ -51,7 +59,8 @@ namespace smf {
         std::int64_t rasterize_interval(std::int64_t sec, cyng::obis profile);
 
         /**
-         * calculate next time point to push data for specified profile
+         * Calculate next time point to push data for specified profile.
+         *
          */
         std::chrono::system_clock::time_point
         next(std::chrono::seconds interval, cyng::obis profile, std::chrono::system_clock::time_point);

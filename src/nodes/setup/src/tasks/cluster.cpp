@@ -43,12 +43,6 @@ namespace smf {
         }
     }
 
-    cluster::~cluster() {
-#ifdef _DEBUG_SETUP
-        std::cout << "cluster(~)" << std::endl;
-#endif
-    }
-
     void cluster::stop(cyng::eod) {
         CYNG_LOG_WARNING(logger_, "stop cluster task(" << tag_ << ")");
         bus_.stop();

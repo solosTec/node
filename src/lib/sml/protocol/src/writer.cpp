@@ -5,8 +5,9 @@
  *
  */
 
-#include <smf/sml/value.hpp>
 #include <smf/sml/writer.hpp>
+
+#include <smf/sml/value.hpp>
 
 #include <cyng/io/serialize.hpp>
 #include <cyng/io/serializer/binary.hpp>

@@ -42,6 +42,7 @@ target_link_libraries(report
         smf::config
         smf::cluster
         smf::cluster_bus
+        smf::obis
         cyng::cyng 
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}

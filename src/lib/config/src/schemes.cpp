@@ -5,8 +5,9 @@
  *
  */
 
-#include <smf.h>
 #include <smf/config/schemes.h>
+
+#include <smf.h>
 
 #include <boost/assert.hpp>
 
@@ -563,6 +564,35 @@ namespace smf {
                    boost::algorithm::equals(name, "loRaUplink") || boost::algorithm::equals(name, "iecUplink") ||
                    boost::algorithm::equals(name, "wMBusUplink") || boost::algorithm::equals(name, "cfgSetMeta");
         }
+
+        cyng::meta_store get_store_sml_readout() {
+            return cyng::meta_store(
+                "SMLreadout",
+                {cyng::column("tag", cyng::TC_UUID),
+                 //   -- body
+                 cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                 cyng::column("profile", cyng::TC_OBIS),   // load profile
+                 cyng::column("trx", cyng::TC_STRING),     // ipt transaction
+                 cyng::column("status", cyng::TC_UINT32),
+                 cyng::column("actTime", cyng::TC_TIME_POINT),
+                 cyng::column("received", cyng::TC_TIME_POINT)},
+                1);
+        }
+        cyng::meta_sql get_table_sml_readout() { return cyng::to_sql(get_store_sml_readout(), {0, 9, 0, 21, 0, 0, 0}); }
+
+        cyng::meta_store get_store_sml_readout_data() {
+            return cyng::meta_store(
+                "SMLreadoutData",
+                {cyng::column("tag", cyng::TC_UUID),      // server/meter/sensor ID
+                 cyng::column("register", cyng::TC_OBIS), // OBIS code (data type)
+                 //   -- body
+                 cyng::column("reading", cyng::TC_STRING), // value as string
+                 cyng::column("type", cyng::TC_UINT16),    // data type code
+                 cyng::column("scaler", cyng::TC_UINT8),   // decimal place
+                 cyng::column("unit", cyng::TC_UINT8)},
+                2);
+        }
+        cyng::meta_sql get_table_sml_readout_data() { return cyng::to_sql(get_store_sml_readout_data(), {0, 0, 256, 0, 0, 0}); }
 
     } // namespace config
 } // namespace smf

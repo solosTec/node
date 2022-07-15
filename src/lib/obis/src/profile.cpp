@@ -2,6 +2,8 @@
 
 #include <smf/obis/defs.h>
 
+#include <cyng/sys/clock.h>
+
 //#ifdef _DEBUG
 //#include <cyng/io/ostream.h>
 //#include <cyng/io/serialize.h>
@@ -29,29 +31,14 @@ namespace smf {
             return std::find(profiles.begin(), profiles.end(), code) != profiles.end();
         }
 
-        std::chrono::seconds interval_time(cyng::obis profile) {
+        std::chrono::seconds interval_time(std::chrono::system_clock::time_point tp, cyng::obis profile) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(1));
             case CODE_PROFILE_15_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(15));
             case CODE_PROFILE_60_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(1));
-            case CODE_PROFILE_24_HOUR:
-#if __cplusplus >= 202002L
-                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(1));
-#else
-                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24));
-#endif
-            case CODE_PROFILE_1_MONTH:
-#if __cplusplus >= 202002L
-                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(30));
-#else
-                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24 * 30));
-#endif
-            case CODE_PROFILE_1_YEAR:
-#if __cplusplus >= 202002L
-                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::days(365));
-#else
-                return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24 * 30 * 365));
-#endif
+            case CODE_PROFILE_24_HOUR: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24));
+            case CODE_PROFILE_1_MONTH: return std::chrono::duration_cast<std::chrono::seconds>(cyng::sys::get_length_of_month(tp));
+            case CODE_PROFILE_1_YEAR: return std::chrono::duration_cast<std::chrono::seconds>(cyng::sys::get_length_of_year(tp));
             default: BOOST_ASSERT_MSG(false, "not implemented yet"); break;
             }
 
@@ -62,6 +49,21 @@ namespace smf {
             return std ::chrono::minutes(1);
         }
 
+        std::chrono::hours backtrack_time(cyng::obis profile) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return std::chrono::hours(2); ;
+            case CODE_PROFILE_15_MINUTE: return std::chrono::hours(48);
+            case CODE_PROFILE_60_MINUTE: return std::chrono::hours(52);
+            case CODE_PROFILE_24_HOUR: return std::chrono::hours(60);
+            case CODE_PROFILE_1_MONTH: return std::chrono::hours(24 * 40);
+            case CODE_PROFILE_1_YEAR: return std::chrono::hours(24 * 400);
+            default: break;
+            }
+            //  error
+            BOOST_ASSERT_MSG(false, "not implemented yet");
+            return std::chrono::hours(48);
+        }
+
         std::chrono::system_clock::time_point floor(std::chrono::system_clock::time_point tp, cyng::obis profile) {
             auto const epoch = std::chrono::time_point<std::chrono::system_clock>{};
 
@@ -70,8 +72,30 @@ namespace smf {
             case CODE_PROFILE_15_MINUTE: return epoch + (minutes_since_epoch(tp) / 15) * 15;
             case CODE_PROFILE_60_MINUTE: return epoch + hours_since_epoch(tp);
             case CODE_PROFILE_24_HOUR: return epoch + (hours_since_epoch(tp) / 24) * 24;
-            case CODE_PROFILE_1_MONTH: return epoch + (hours_since_epoch(tp) / (24 * 30) * (24 * 30));
-            case CODE_PROFILE_1_YEAR: return epoch + (hours_since_epoch(tp) / (24 * 364) * (24 * 364));
+            case CODE_PROFILE_1_MONTH: {
+                auto const h = cyng::sys::get_length_of_month(tp); //  hours
+                return epoch + (hours_since_epoch(tp) / h.count()) * h.count();
+            }
+            case CODE_PROFILE_1_YEAR: {
+                auto const h = cyng::sys::get_length_of_year(tp); //  hours
+                return epoch + (hours_since_epoch(tp) / h.count()) * h.count();
+            }
+            default: break;
+            }
+            //  error
+            BOOST_ASSERT_MSG(false, "not implemented yet");
+            return tp;
+        }
+
+        std::chrono::system_clock::time_point round(std::chrono::system_clock::time_point tp, cyng::obis profile) {
+            auto const epoch = std::chrono::time_point<std::chrono::system_clock>{};
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return floor(tp + std::chrono::seconds(30), profile);
+            case CODE_PROFILE_15_MINUTE: return floor(tp + std::chrono::minutes(7), profile);
+            case CODE_PROFILE_60_MINUTE: return floor(tp + std::chrono::minutes(30), profile);
+            case CODE_PROFILE_24_HOUR: return floor(tp + std::chrono::hours(12), profile);
+            case CODE_PROFILE_1_MONTH: return floor(tp + std::chrono::hours(24), profile);
+            case CODE_PROFILE_1_YEAR: return floor(tp + std::chrono::hours(24), profile);
             default: break;
             }
             //  error
@@ -121,7 +145,6 @@ namespace smf {
                 break;
 
             case CODE_PROFILE_1_MONTH: {
-                // auto today = std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now());
                 //   assume 30 days
                 if (sec < 86400u * 30u) {
                     sec = 86400u * 30u;
@@ -181,13 +204,17 @@ namespace smf {
                 return epoch + std::chrono::hours(days * 24) + std::chrono::hours(count / 3600u * 24u);
             } break;
 
-            case CODE_PROFILE_1_MONTH:
-                //  ToDo: use a calendar to get the length of the months
-                return now + std::chrono::hours(24u * 30u);
+            case CODE_PROFILE_1_MONTH: {
+                //  use a calendar to get the length of the months
+                auto const end = cyng::sys::get_end_of_month(now); // last day
+                return end + std::chrono::hours(24);
+            }
 
-            case CODE_PROFILE_1_YEAR:
-                //  ToDo: use a calendar to get the length of the year
-                return now + std::chrono::hours(24u * 365u);
+            case CODE_PROFILE_1_YEAR: {
+                //  use a calendar to get the length of the year
+                auto const end = cyng::sys::get_end_of_year(now); //  last day
+                return end + std::chrono::hours(24);
+            }
 
             default: break;
             }
@@ -209,12 +236,16 @@ namespace smf {
             case CODE_PROFILE_15_MINUTE: return minutes_since_epoch(start).count() / 15u;
             case CODE_PROFILE_60_MINUTE: return hours_since_epoch(start).count();
             case CODE_PROFILE_24_HOUR: return hours_since_epoch(start).count() / 24u;
-            case CODE_PROFILE_1_MONTH:
-                //  ToDo: calculate the exact count of months
-                return hours_since_epoch(start).count() / (24u * 30u);
-            case CODE_PROFILE_1_YEAR:
-                //  ToDo: calculate the exact count of years
-                return hours_since_epoch(start).count() / (24u * 364u);
+            case CODE_PROFILE_1_MONTH: {
+                //  calculate the exact count of months
+                auto const h = cyng::sys::get_length_of_month(now); //  hours
+                return hours_since_epoch(start).count() / h.count();
+            }
+            case CODE_PROFILE_1_YEAR: {
+                //  calculate the exact count of years
+                auto const h = cyng::sys::get_length_of_year(now); //  hours
+                return hours_since_epoch(start).count() / h.count();
+            }
             default: break;
             }
 

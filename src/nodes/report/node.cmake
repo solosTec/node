@@ -28,7 +28,9 @@ endif()
 
 set (report_tasks
   include/tasks/cluster.h
+  include/tasks/report.h
   src/tasks/cluster.cpp
+  src/tasks/report.cpp
 )
 
 source_group("report-assets" FILES ${report_assets})

@@ -1,10 +1,6 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Sylko Olzscher
- *
- */
 #include <tasks/sml_db_writer.h>
+
+#include <smf/config/schemes.h>
 
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
@@ -116,7 +112,7 @@ namespace smf {
             //
             //	prepare statement
             //
-            auto const m = get_table_readout();
+            auto const m = config::get_table_sml_readout();
             auto const sql = cyng::sql::insert(db_.get_dialect(), m).bind_values(m)();
 
             auto stmt = db_.create_statement();
@@ -153,7 +149,7 @@ namespace smf {
     }
 
     void sml_db_writer::store(boost::uuids::uuid tag, cyng::param_map_t const &data) {
-        auto const m = get_table_readout_data();
+        auto const m = config::get_table_sml_readout_data();
         auto const sql = cyng::sql::insert(db_.get_dialect(), m).bind_values(m)();
 
         auto stmt = db_.create_statement();
@@ -194,35 +190,11 @@ namespace smf {
     }
     void sml_db_writer::get_proc_parameter_response() {}
 
-    std::vector<cyng::meta_store> sml_db_writer::get_store_meta_data() { return {get_store_readout(), get_store_readout_data()}; }
-    std::vector<cyng::meta_sql> sml_db_writer::get_sql_meta_data() { return {get_table_readout(), get_table_readout_data()}; }
-
-    cyng::meta_store sml_db_writer::get_store_readout() {
-        return cyng::meta_store(
-            "SMLreadout",
-            {cyng::column("tag", cyng::TC_UUID),
-             //   -- body
-             cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
-             cyng::column("profile", cyng::TC_OBIS),   // load profile
-             cyng::column("trx", cyng::TC_STRING),     // ipt transaction
-             cyng::column("status", cyng::TC_UINT32),
-             cyng::column("actTime", cyng::TC_TIME_POINT),
-             cyng::column("received", cyng::TC_TIME_POINT)},
-            1);
+    std::vector<cyng::meta_store> sml_db_writer::get_store_meta_data() {
+        return {config::get_store_sml_readout(), config::get_store_sml_readout_data()};
     }
-    cyng::meta_sql sml_db_writer::get_table_readout() { return cyng::to_sql(get_store_readout(), {0, 9, 0, 21, 0, 0, 0}); }
-    cyng::meta_store sml_db_writer::get_store_readout_data() {
-        return cyng::meta_store(
-            "SMLreadoutData",
-            {cyng::column("tag", cyng::TC_UUID),      // server/meter/sensor ID
-             cyng::column("register", cyng::TC_OBIS), // OBIS code (data type)
-             //   -- body
-             cyng::column("reading", cyng::TC_STRING), // value as string
-             cyng::column("type", cyng::TC_UINT16),    // data type code
-             cyng::column("scaler", cyng::TC_UINT8),   // decimal place
-             cyng::column("unit", cyng::TC_UINT8)},
-            2);
+    std::vector<cyng::meta_sql> sml_db_writer::get_sql_meta_data() {
+        return {config::get_table_sml_readout(), config::get_table_sml_readout_data()};
     }
-    cyng::meta_sql sml_db_writer::get_table_readout_data() { return cyng::to_sql(get_store_readout_data(), {0, 0, 256, 0, 0, 0}); }
 
 } // namespace smf

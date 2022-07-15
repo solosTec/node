@@ -43,7 +43,7 @@ namespace smf {
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "store task already stopped");
         if (sp) {
-            auto const interval = sml::interval_time(profile_);
+            auto const interval = sml::interval_time(now, profile_);
             auto const next_push = sml::next(interval, profile_, now);
             BOOST_ASSERT_MSG(next_push > now, "negative time span");
 
@@ -60,7 +60,7 @@ namespace smf {
         BOOST_ASSERT_MSG(sp, "store task already stopped");
         if (sp) {
             auto const now = std::chrono::system_clock::now();
-            auto const interval = sml::interval_time(profile_);
+            auto const interval = sml::interval_time(now, profile_);
             sp->suspend(interval, "run");
             CYNG_LOG_TRACE(
                 logger_, "[store] " << obis::get_name(profile_) << " - next: " << std::chrono::system_clock::now() + interval);
@@ -122,17 +122,17 @@ namespace smf {
                                     CYNG_LOG_DEBUG(
                                         logger_,
                                         "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << "/" << meter_ro);
-                                    //{
-                                    //    auto const data = rec_ro_data.data();
-                                    //    for (auto const &obj : data) {
-                                    //        // BOOST_ASSERT(obj); //  null values not allowed
-                                    //        if (obj) {
-                                    //            CYNG_LOG_DEBUG(logger_, "[store] transfer " << obj);
-                                    //        } else {
-                                    //            CYNG_LOG_ERROR(logger_, "[store] transfer null value: " << data);
-                                    //        }
-                                    //    }
-                                    //}
+                                //{
+                                //    auto const data = rec_ro_data.data();
+                                //    for (auto const &obj : data) {
+                                //        // BOOST_ASSERT(obj); //  null values not allowed
+                                //        if (obj) {
+                                //            CYNG_LOG_DEBUG(logger_, "[store] transfer " << obj);
+                                //        } else {
+                                //            CYNG_LOG_ERROR(logger_, "[store] transfer null value: " << data);
+                                //        }
+                                //    }
+                                //}
 #endif
                                     if (meter_ro == meter) {
                                         //

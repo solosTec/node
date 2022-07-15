@@ -725,4 +725,190 @@ BOOST_AUTO_TEST_CASE(payload) {
     // 2f2f07029e3749040000000004a9ff010000000004a9ff020000000004a9ff030b02000004290b0200000d7910333430323030363230313030303030302f2f2f
 }
 
+bool next_combination(cyng::crypto::aes_128_key::key_type &a) {
+    std::uint8_t const n = 0xff;
+    int k = (int)a.size();
+    for (int i = k - 1; i >= 0; i--) {
+        if (a[i] < n - k + i + 1) {
+            a[i]++;
+            for (int j = i + 1; j < k; j++)
+                a[j] = a[j - 1] + 1;
+            return true;
+        }
+    }
+    return false;
+}
+
+BOOST_AUTO_TEST_CASE(crack) {
+
+    auto const inp = cyng::make_buffer(
+        {0xce, 0x44, 0xa8, 0x15,
+         0x74, 0x31, 0x45, 0x04,
+         0x01, 0x02, 0x7f, /* header complete */ 0x46,
+         0x00, 0xc0, 0x05, /* data */ 0x57,
+         0x35, 0xf1, 0x07, 0xc8,
+         0xb4, 0xa7, 0x67, 0x21,
+         0x17, 0x90, 0x97, 0xfa,
+         0xbf, 0xcd, 0x22, 0x92,
+         0xee, 0xc5, 0x15, 0xc5,
+         0x7b, 0x73, 0x8a, 0xe3,
+         0x29, 0x7f, 0x52, 0x9c,
+         0xb1, 0xea, 0xd9, 0xa4,
+         0x1c, 0xed, 0xc9, 0xab,
+         0x75, 0x73, 0x4f, 0x8a,
+         0x3b, 0x4b, 0x42, 0x8b,
+         0xe8, 0x9d, 0x40, 0x02,
+         0x95, 0x31, 0xb3, 0x0b,
+         0x32, 0x51, 0xbf, 0x7d,
+         0x4c, 0xc0, 0xda, 0x37,
+         0x79, 0x77, 0x1b, 0x59,
+         0xa0, 0xac, 0x3c, 0x26,
+         0x81, 0x28, 0x91, 0x95,
+         0x75, 0xc3, 0x53, 0x68,
+         0x89, 0x3a, 0xe3, 0xe7,
+         0x67, 0xfe, 0x6c, 0xcd,
+         0x15, 0xf8, 0x02, 0x3e,
+         0x28, 0x5b, 0x43, 0x8e,
+         0x1a, 0xca, 0x5d, 0xbf,
+         0x0f, 0xb1, 0x71, 0x63,
+         0x5e, 0x00, 0x95, 0x95,
+         0x39, 0xd5, 0x44, 0x93,
+         0x96, 0x22, 0x44, 0xa1,
+         0xc4, 0x9e, 0xa0, 0xc6,
+         0x5e, 0x98, 0xc8, 0x8f,
+         0x1c, 0xa7, 0xcc, 0x19,
+         0x95, 0x6c, 0x88, 0xc2,
+         0xdd, 0x66, 0x87, 0x9a,
+         0xa8, 0x6a, 0x27, 0x86,
+         0x5a, 0x11, 0x54, 0xdc,
+         0x9b, 0x7c, 0xd5, 0x8f,
+         0xb0, 0x17, 0xfc, 0x11,
+         0xaa, 0x6e, 0xa0, 0x6e,
+         0xc7, 0x80, 0x42, 0xb4,
+         0xb0, 0x43, 0x7b, 0x58,
+         0x29, 0x15, 0x30, 0xb1,
+         0xcc, 0x35, 0x7a, 0x97,
+         0xb4, 0x6e, 0x7e, 0x41,
+         0x02, 0x10, 0xb1, 0x50,
+         0xc4, 0x64, 0x80, 0x3d,
+         0x6b, 0xd6, 0xbe, 0xc0,
+         0xb1, 0x45, 0x1f, 0x90,
+         0xcc, 0xc2, 0xcf
+
+        });
+
+    smf::mbus::radio::parser p([&](smf::mbus::radio::header const &h,
+                                   smf::mbus::radio::tplayer const &t,
+                                   cyng::buffer_t const &payload) {
+        std::cout << smf::mbus::to_string(h) << std::endl;
+
+        auto mc = smf::get_manufacturer_code(h.get_server_id());
+        BOOST_REQUIRE_EQUAL(mc.first, static_cast<char>(0x0a8));
+        BOOST_REQUIRE_EQUAL(mc.second, static_cast<char>(0x015));
+
+        cyng::crypto::aes_128_key aes; //	16 bytes
+        BOOST_REQUIRE(cyng::is_null(aes));
+
+        // std::array<std::uint8_t, 128>
+
+        //  FixMe:  000000000000000000000000000000fe
+        //          000000000000000000000000000000ff
+        //          00000000000000000000000000000102 <-
+        // while (next_combination(aes.key_)) {
+        //    std::cout << "aes: " << aes << std::endl;
+        //}
+
+        std::uint32_t counter = 0;
+
+        //  brute force - try all variations
+        for (aes.key_.at(0) = 0x23; aes.key_.at(0) < 0xff; ++aes.key_.at(0)) {
+
+            // auto const percent = (100 * aes.key_.at(0)) / 0xff;
+            // std::cout << "progress " << percent << "%" << std::endl;
+
+            for (aes.key_.at(1) = 0xA8; aes.key_.at(1) < 0xff; ++aes.key_.at(1)) {
+
+                // unsigned val = (aes.key_.at(0) << 8) + aes.key_.at(1);
+                // auto const percent = (100.0 * val) / 0xffff;
+                // std::cout << "progress " << percent << "%" << std::endl;
+
+                for (aes.key_.at(2) = 0; aes.key_.at(2) < 0xff; ++aes.key_.at(2)) {
+                    for (aes.key_.at(3) = 0; aes.key_.at(3) < 0xff; ++aes.key_.at(3)) {
+
+                        std::uint64_t val =
+                            (aes.key_.at(0) << 24) + (aes.key_.at(1) << 16) + (aes.key_.at(2) << 8) + aes.key_.at(3);
+                        auto const percent = (100.0 * val) / 0xffffffff;
+                        std::cout << "progress " << percent << "%" << std::endl;
+
+                        for (aes.key_.at(4) = 0; aes.key_.at(4) < 0xff; ++aes.key_.at(4)) {
+                            for (aes.key_.at(5) = 0; aes.key_.at(5) < 0xff; ++aes.key_.at(5)) {
+                                for (aes.key_.at(6) = 0; aes.key_.at(6) < 0xff; ++aes.key_.at(6)) {
+                                    for (aes.key_.at(7) = 0; aes.key_.at(7) < 0xff; ++aes.key_.at(7)) {
+                                        for (aes.key_.at(8) = 0; aes.key_.at(8) < 0xff; ++aes.key_.at(8)) {
+                                            for (aes.key_.at(9) = 0; aes.key_.at(9) < 0xff; ++aes.key_.at(9)) {
+                                                for (aes.key_.at(10) = 0; aes.key_.at(10) < 0xff; ++aes.key_.at(10)) {
+                                                    for (aes.key_.at(11) = 0; aes.key_.at(11) < 0xff; ++aes.key_.at(11)) {
+                                                        for (aes.key_.at(12) = 0; aes.key_.at(12) < 0xff; ++aes.key_.at(12)) {
+                                                            for (aes.key_.at(13) = 0; aes.key_.at(13) < 0xff; ++aes.key_.at(13)) {
+                                                                for (aes.key_.at(14) = 0; aes.key_.at(14) < 0xff;
+                                                                     ++aes.key_.at(14)) {
+                                                                    for (aes.key_.at(15) = 0; aes.key_.at(15) < 0xff;
+                                                                         ++aes.key_.at(15)) {
+
+                                                                        if (++counter == 0x00) {
+                                                                            std::cout << "intermediate value " << aes << std::endl;
+                                                                        }
+                                                                        auto const res = smf::mbus::radio::decode(
+                                                                            h.get_server_id(), t.get_access_no(), aes, payload);
+                                                                        if (res.at(0) == 0x2f && res.at(1) == 0x2f &&
+                                                                            res.at(2) == 0x76 && res.at(3) == 0x02) {
+                                                                            std::cout
+                                                                                << "*** found: " << aes
+                                                                                << ", expected: 23A84B07EBCBAF948895DF0E9133520D"
+                                                                                << std::endl;
+                                                                            // break;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // auto const aes = cyng::to_aes_key<cyng::crypto::aes128_size>("23A84B07EBCBAF948895DF0E9133520D");
+
+        // BOOST_REQUIRE_EQUAL(res.size(), 0xc0);
+        // BOOST_REQUIRE_EQUAL(res.at(0), 0x2f);
+        // BOOST_REQUIRE_EQUAL(res.at(1), 0x2f);
+
+        //
+        //	read SML data
+        //
+        // smf::sml::unpack p(
+        //    [](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+        //        std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
+        //    });
+        // p.read(res.begin() + 2, res.end());
+
+        // auto const clone = smf::mbus::radio::restore_data(h, t, payload);
+        // BOOST_REQUIRE_EQUAL(clone.size(), inp.size());
+        // for (std::size_t idx = 0; idx < inp.size(); ++idx) {
+        //     BOOST_REQUIRE_EQUAL(clone.at(idx), inp.at(idx));
+        // }
+    });
+    p.read(std::begin(inp), std::end(inp));
+
+    BOOST_REQUIRE(true);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

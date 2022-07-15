@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(profile) {
     // 2022-07-10 16:56:32
     auto const now = std::chrono::time_point<std::chrono::system_clock>(std::chrono::seconds(1657472192));
 
-    auto const interval = smf::sml::interval_time(profile);
+    auto const interval = smf::sml::interval_time(now, profile);
     auto const next_push = smf::sml::next(interval, profile, now);
     BOOST_REQUIRE(next_push > now); // negative time span
 
@@ -151,8 +151,20 @@ BOOST_AUTO_TEST_CASE(profile) {
     std::cout << now << "/" << tp << std::endl;
     BOOST_REQUIRE_LE(tp, now);
 
+    //  same result
+    //  2022-07-10 16:56:32.0000000/2022-07-10 16:45:00.0000000
     auto const tpf = smf::sml::floor(now, profile);
     std::cout << now << "/" << tpf << std::endl;
+    BOOST_REQUIRE_EQUAL(tp, tpf);
+
+    //  1657472192u
+    //  1657472712u
+    //  2022-07-10 17:05:12 GMT+0000
+    for (auto idx = 1657472192u; idx < 1657472712u; idx++) {
+        auto const vt = std::chrono::time_point<std::chrono::system_clock>(std::chrono::seconds(idx));
+        auto const tpv = smf::sml::round(vt, profile);
+        // std::cout << vt << "/" << tpv << std::endl;
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

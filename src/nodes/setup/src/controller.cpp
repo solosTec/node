@@ -82,12 +82,12 @@ namespace smf {
         CYNG_LOG_INFO(logger, cfg);
 #endif
         auto const reader = cyng::make_reader(cfg);
-        auto const tag = read_tag(reader["tag"].get());
+        auto const tag = read_tag(reader.get("tag"));
 
         auto const storage_type = cyng::value_cast(reader["storage"].get(), "DB");
         CYNG_LOG_INFO(logger, "storage type is " << storage_type);
 
-        auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
+        auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader.get("cluster")));
         BOOST_ASSERT(!tgl.empty());
         if (tgl.empty()) {
             CYNG_LOG_FATAL(logger, "no cluster data configured");

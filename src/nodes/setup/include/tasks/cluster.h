@@ -28,9 +28,9 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>,
-            // std::function<void(int)>,
-            std::function<void(cyng::eod)>>;
+            std::function<void(void)>,     // connect
+            std::function<void(cyng::eod)> //  stop
+            >;
 
       public:
         cluster(
@@ -42,7 +42,8 @@ namespace smf {
             toggle::server_vec_t &&,
             std::string storage_type,
             cyng::param_map_t &&cfg_db);
-        ~cluster();
+
+        ~cluster() = default;
 
         void connect();
 
@@ -57,6 +58,7 @@ namespace smf {
         virtual cfg_data_interface *get_cfg_data_interface() override;
         virtual void on_login(bool) override;
         virtual void on_disconnect(std::string msg) override;
+
         virtual void
         db_res_insert(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) override;
         virtual void db_res_trx(std::string, bool) override;

@@ -14,8 +14,8 @@
 #include <cyng/task/controller.h>
 #include <cyng/task/task_fwd.h>
 
-#include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid.hpp>
 
 namespace smf {
 
@@ -59,11 +59,6 @@ namespace smf {
 
         static std::vector<cyng::meta_store> get_store_meta_data();
         static std::vector<cyng::meta_sql> get_sql_meta_data();
-
-        static cyng::meta_store get_store_readout();
-        static cyng::meta_sql get_table_readout();
-        static cyng::meta_store get_store_readout_data();
-        static cyng::meta_sql get_table_readout_data();
 
       private:
         signatures_t sigs_;

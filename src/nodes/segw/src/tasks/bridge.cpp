@@ -5,8 +5,9 @@
  *
  */
 
-#include <tasks/CP210x.h>
 #include <tasks/bridge.h>
+
+#include <tasks/CP210x.h>
 #include <tasks/broker.h>
 #include <tasks/counter.h>
 #include <tasks/en13757.h>

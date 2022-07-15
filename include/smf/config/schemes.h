@@ -189,6 +189,16 @@ namespace smf {
         static constexpr boost::uuids::uuid device_name{
             {0xd5, 0x88, 0x4b, 0xce, 0x9c, 0x2b, 0x40, 0xbf, 0x9f, 0xc0, 0x5c, 0x0e, 0x77, 0xf7, 0x08, 0xc3}};
 
+        //
+        //	readout data shared between "store" and "report" application
+        // -----------------------------------------------------------------+
+        //
+        cyng::meta_store get_store_sml_readout();
+        cyng::meta_store get_store_sml_readout_data();
+
+        cyng::meta_sql get_table_sml_readout();
+        cyng::meta_sql get_table_sml_readout_data();
+
     } // namespace config
 } // namespace smf
 
