@@ -63,12 +63,12 @@ namespace smf {
         std::filesystem::path,
         std::chrono::hours backtrack,
         std::chrono::system_clock::time_point);
-    void generate_report_1_minute(cyng::db::session, std::chrono::hours backtrack, std::chrono::system_clock::time_point);
-    void generate_report_15_minutes(cyng::db::session, std::chrono::hours backtrack, std::chrono::system_clock::time_point);
-    void generate_report_60_minutes(cyng::db::session, std::chrono::hours backtrack, std::chrono::system_clock::time_point);
-    void generate_report_24_hour(cyng::db::session, std::chrono::hours backtrack, std::chrono::system_clock::time_point);
-    void generate_report_1_month(cyng::db::session, std::chrono::hours backtrack, std::chrono::system_clock::time_point);
-    void generate_report_1_year(cyng::db::session, std::chrono::hours backtrack, std::chrono::system_clock::time_point);
+    void generate_report_1_minute(cyng::db::session, std::chrono::system_clock::time_point);
+    void generate_report_15_minutes(cyng::db::session, std::chrono::system_clock::time_point);
+    void generate_report_60_minutes(cyng::db::session, std::chrono::system_clock::time_point);
+    void generate_report_24_hour(cyng::db::session, std::chrono::system_clock::time_point);
+    void generate_report_1_month(cyng::db::session, std::chrono::system_clock::time_point);
+    void generate_report_1_year(cyng::db::session, std::chrono::system_clock::time_point);
 
 } // namespace smf
 

@@ -10,7 +10,9 @@
 #include <smf/cluster/config.h>
 #include <smf/cluster/features.h>
 
+#include <cyng/io/ostream.h> // sys_msg<>()
 #include <cyng/io/parser/parser.h>
+//#include <cyng/io/serialize.h>
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/store/key.hpp>
