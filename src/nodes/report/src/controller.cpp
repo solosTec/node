@@ -202,6 +202,9 @@ namespace smf {
 
             std::cout << "***info: generate 60 minute reports: " << std::endl;
             generate_report(s, OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(40), now);
+
+            std::cout << "***info: generate 24 h reports: " << std::endl;
+            generate_report(s, OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(40), now);
         }
     }
 

@@ -33,12 +33,24 @@ namespace smf {
         std::chrono::system_clock::time_point now) {
 
         switch (profile.to_uint64()) {
-        case CODE_PROFILE_1_MINUTE: generate_report_1_minute(db, cyng::sys::get_start_of_day(now - backtrack), now); break;
-        case CODE_PROFILE_15_MINUTE: generate_report_15_minutes(db, cyng::sys::get_start_of_day(now - backtrack), now); break;
-        case CODE_PROFILE_60_MINUTE: generate_report_60_minutes(db, cyng::sys::get_start_of_day(now - backtrack), now); break;
-        case CODE_PROFILE_24_HOUR: generate_report_24_hour(db, cyng::sys::get_start_of_day(now - backtrack), now); break;
-        case CODE_PROFILE_1_MONTH: generate_report_1_month(db, cyng::sys::get_start_of_month(now - backtrack), now); break;
-        case CODE_PROFILE_1_YEAR: generate_report_1_year(db, cyng::sys::get_start_of_year(now - backtrack), now); break;
+        case CODE_PROFILE_1_MINUTE:
+            generate_report_1_minute(db, profile, root, cyng::sys::get_start_of_day(now - backtrack), now);
+            break;
+        case CODE_PROFILE_15_MINUTE:
+            generate_report_15_minutes(db, profile, root, cyng::sys::get_start_of_day(now - backtrack), now);
+            break;
+        case CODE_PROFILE_60_MINUTE:
+            generate_report_60_minutes(db, profile, root, cyng::sys::get_start_of_day(now - backtrack), now);
+            break;
+        case CODE_PROFILE_24_HOUR:
+            generate_report_24_hour(db, profile, root, cyng::sys::get_start_of_month(now - backtrack), now);
+            break;
+        case CODE_PROFILE_1_MONTH:
+            generate_report_1_month(db, profile, root, cyng::sys::get_start_of_year(now - backtrack), now);
+            break;
+        case CODE_PROFILE_1_YEAR:
+            generate_report_1_year(db, profile, root, cyng::sys::get_start_of_year(now - backtrack), now);
+            break;
 
         default: break;
         }
@@ -46,13 +58,57 @@ namespace smf {
 
     void generate_report_1_minute(
         cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_1_MINUTE;
+
+#ifdef _DEBUG
+        std::cout << "minutely  reports start at " << start << std::endl;
+#endif
+
+        //
+        //  generate reports about the complete time range
+        //
+        while (start < now) {
+
+            start = generate_report_1_minute(db, profile, root, start, std::chrono::hours(24));
+        }
+    }
+
+    std::chrono::system_clock::time_point generate_report_1_minute(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point start,
+        std::chrono::hours span) {
+
+        auto const end = start + span;
+
+#ifdef _DEBUG
+        std::cout << "start " << start << " => " << end << std::endl;
+#endif
+
+        //
+        //  (1) select all meters of this profile that have entries in this
+        // time range
+        //
+        auto const meters = select_meters(db, profile, start, end);
+
+        //
+        //  generate a report for each meter
+        //
+        for (auto const &meter : meters) {
+            collect_report(db, profile, root, start, end, to_srv_id(meter));
+        }
+
+        return end;
     }
 
     void generate_report_15_minutes(
         cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point now) {
 
@@ -65,14 +121,17 @@ namespace smf {
         //
         while (start < now) {
 
-            start = generate_report_15_minutes(db, start, std::chrono::hours(24));
+            start = generate_report_15_minutes(db, profile, root, start, std::chrono::hours(24));
         }
     }
 
-    std::chrono::system_clock::time_point
-    generate_report_15_minutes(cyng::db::session db, std::chrono::system_clock::time_point start, std::chrono::hours span) {
+    std::chrono::system_clock::time_point generate_report_15_minutes(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point start,
+        std::chrono::hours span) {
 
-        auto constexpr profile = OBIS_PROFILE_15_MINUTE;
         auto const end = start + span;
 
 #ifdef _DEBUG
@@ -100,109 +159,124 @@ namespace smf {
         //  generate a report for each meter
         //
         for (auto const &meter : meters) {
-            generate_report_15_minutes(db, start, end, to_srv_id(meter));
+            collect_report(db, profile, root, start, end, to_srv_id(meter));
         }
 
         return end;
     }
 
-    void generate_report_15_minutes(
-        cyng::db::session db,
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end,
-        srv_id_t srv_id) {
-
-        auto constexpr profile = OBIS_PROFILE_15_MINUTE;
-        auto const id = to_buffer(srv_id);
-
-        //
-        //  collect data of a full day
-        //
-        std::map<std::uint64_t, std::map<cyng::obis, sml_data>> data;
-
-        auto const ms = config::get_table_sml_readout();
-        std::string const sql =
-            "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) FROM TSMLreadout WHERE profile = ? AND meterID = ? AND received BETWEEN julianday(?) AND julianday(?) ORDER BY actTime";
-        auto stmt = db.create_statement();
-        std::pair<int, bool> const r = stmt->prepare(sql);
-        if (r.second) {
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            stmt->push(cyng::make_object(id), 9);      //	meterID
-            stmt->push(cyng::make_object(start), 0);   //	start time
-            stmt->push(cyng::make_object(end), 0);     //	end time
-
-            while (auto res = stmt->get_result()) {
-                auto const rec = cyng::to_record(ms, res);
-                auto const tag = rec.value("tag", boost::uuids::nil_uuid());
-                BOOST_ASSERT(!tag.is_nil());
-
-                //
-                //  select readout data
-                //
-                //  std::map<cyng::obis, sml_data>
-                auto const readouts = select_readout_data(db, tag);
-
-                //
-                //  calculate the time slot
-                //
-                auto const act_time = rec.value("actTime", start);
-                auto const slot = sml::to_index(act_time, profile);
-                auto set_time = sml::to_time_point(slot, profile);
-
-#ifdef _DEBUG
-                using cyng::operator<<;
-                std::cout << to_string(srv_id) << " - slot: #" << slot << " (" << set_time
-                          << "), actTime: " << rec.value("actTime", start) << " with " << readouts.size() << " readouts"
-                          << std::endl;
-#endif
-
-                data.emplace(slot, readouts);
-            }
-        }
-
-        //
-        // collect all used profiles
-        //
-        auto const regs = collect_profiles(data);
-#ifdef _DEBUG
-        std::cout << to_string(srv_id) << " has " << regs.size() << " registers: ";
-        for (auto const &reg : regs) {
-            std::cout << reg << " ";
-        }
-        std::cout << std::endl;
-#endif
-
-        //
-        // print report
-        // data
-        auto const file_name = get_filename(profile, srv_id, start);
-        emit_report(file_name, profile, regs, data);
-    }
-
     void generate_report_60_minutes(
         cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_60_MINUTE;
+
+#ifdef _DEBUG
+        std::cout << "1 h reports start at " << start << std::endl;
+#endif
+
+        //
+        //  generate reports about the complete time range
+        //
+        while (start < now) {
+
+            start = generate_report_60_minutes(db, profile, root, start, std::chrono::hours(24));
+        }
+    }
+
+    std::chrono::system_clock::time_point generate_report_60_minutes(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point start,
+        std::chrono::hours span) {
+
+        auto const end = start + span;
+
+#ifdef _DEBUG
+        std::cout << "start " << start << " => " << end << std::endl;
+#endif
+
+        //
+        //  (1) select all meters of this profile that have entries in this
+        // time range
+        //
+        auto const meters = select_meters(db, profile, start, end);
+
+        //
+        //  generate a report for each meter
+        //
+        for (auto const &meter : meters) {
+            collect_report(db, profile, root, start, end, to_srv_id(meter));
+        }
+
+        return end;
     }
 
     void generate_report_24_hour(
         cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_24_HOUR;
+#ifdef _DEBUG
+        std::cout << "daily reports start at " << start << std::endl;
+#endif
+
+        //
+        //  generate reports about the complete time range
+        //
+        while (start < now) {
+
+            start = generate_report_24_hour(db, profile, root, start, std::chrono::hours(24));
+        }
     }
+
+    std::chrono::system_clock::time_point generate_report_24_hour(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point start,
+        std::chrono::hours span) {
+
+        auto const end = start + span;
+
+#ifdef _DEBUG
+        std::cout << "start " << start << " => " << end << std::endl;
+#endif
+
+        //
+        //  (1) select all meters of this profile that have entries in this
+        // time range
+        //
+        auto const meters = select_meters(db, profile, start, end);
+
+        //
+        //  generate a report for each meter
+        //
+        for (auto const &meter : meters) {
+            collect_report(db, profile, root, start, end, to_srv_id(meter));
+        }
+
+        return end;
+    }
+
     void generate_report_1_month(
         cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_1_MONTH;
+        //  ToDo: implement
     }
     void generate_report_1_year(
         cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_1_YEAR;
+        //  ToDo: implement
     }
 
     std::vector<cyng::buffer_t> select_meters(
@@ -305,12 +379,13 @@ namespace smf {
     }
 
     void emit_report(
+        std::filesystem::path root,
         std::string file_name,
         cyng::obis profile,
         std::set<cyng::obis> regs,
         std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &data) {
-        // auto const file_path = root_dir_ / file_name;
-        auto const file_path = std::filesystem::current_path() / file_name;
+
+        auto const file_path = root / file_name;
         std::ofstream of(file_path.string(), std::ios::trunc);
 
         if (of.is_open()) {
@@ -338,6 +413,7 @@ namespace smf {
                 //  print time slot
                 //
                 auto set_time = sml::to_time_point(set.first, profile);
+                using cyng::operator<<;
                 of << set_time << ",";
 
                 //
@@ -353,6 +429,90 @@ namespace smf {
                 of << std::endl;
             }
         }
+    }
+
+    std::map<std::uint64_t, std::map<cyng::obis, sml_data>> collect_data(
+        cyng::db::session db,
+        cyng::obis profile,
+        cyng::buffer_t id,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end) {
+
+        std::map<std::uint64_t, std::map<cyng::obis, sml_data>> data;
+
+        auto const ms = config::get_table_sml_readout();
+        std::string const sql =
+            "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) FROM TSMLreadout WHERE profile = ? AND meterID = ? AND received BETWEEN julianday(?) AND julianday(?) ORDER BY actTime";
+        auto stmt = db.create_statement();
+        std::pair<int, bool> const r = stmt->prepare(sql);
+        if (r.second) {
+            stmt->push(cyng::make_object(profile), 0); //	profile
+            stmt->push(cyng::make_object(id), 9);      //	meterID
+            stmt->push(cyng::make_object(start), 0);   //	start time
+            stmt->push(cyng::make_object(end), 0);     //	end time
+
+            while (auto res = stmt->get_result()) {
+                auto const rec = cyng::to_record(ms, res);
+                auto const tag = rec.value("tag", boost::uuids::nil_uuid());
+                BOOST_ASSERT(!tag.is_nil());
+
+                //
+                //  select readout data
+                //
+                //  std::map<cyng::obis, sml_data>
+                auto const readouts = select_readout_data(db, tag);
+
+                //
+                //  calculate the time slot
+                //
+                auto const act_time = rec.value("actTime", start);
+                auto const slot = sml::to_index(act_time, profile);
+                auto set_time = sml::to_time_point(slot, profile);
+
+#ifdef _DEBUG
+                using cyng::operator<<;
+                std::cout << cyng::to_string(id) << " - slot: #" << slot << " (" << set_time
+                          << "), actTime: " << rec.value("actTime", start) << " with " << readouts.size() << " readouts"
+                          << std::endl;
+#endif
+
+                data.emplace(slot, readouts);
+            }
+        }
+        return data;
+    }
+    void collect_report(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end,
+        srv_id_t srv_id) {
+
+        auto const id = to_buffer(srv_id);
+
+        //
+        //  collect data of a full day
+        //
+        std::map<std::uint64_t, std::map<cyng::obis, sml_data>> data = collect_data(db, profile, id, start, end);
+
+        //
+        // collect all used profiles
+        //
+        auto const regs = collect_profiles(data);
+
+#ifdef _DEBUG
+        std::cout << to_string(srv_id) << " has " << regs.size() << " registers: ";
+        for (auto const &reg : regs) {
+            std::cout << reg << " ";
+        }
+        std::cout << std::endl;
+#endif
+
+        //
+        // print report
+        auto const file_name = get_filename(profile, srv_id, start);
+        emit_report(root, file_name, profile, regs, data);
     }
 
 } // namespace smf

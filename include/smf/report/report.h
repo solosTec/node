@@ -23,23 +23,94 @@ namespace smf {
         std::filesystem::path,
         std::chrono::hours backtrack,
         std::chrono::system_clock::time_point);
-    void generate_report_1_minute(cyng::db::session, std::chrono::system_clock::time_point, std::chrono::system_clock::time_point);
 
-    void
-        generate_report_15_minutes(cyng::db::session, std::chrono::system_clock::time_point, std::chrono::system_clock::time_point);
-    std::chrono::system_clock::time_point
-        generate_report_15_minutes(cyng::db::session, std::chrono::system_clock::time_point, std::chrono::hours);
+    /**
+     * 1 minute reports
+     */
+    void generate_report_1_minute(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::system_clock::time_point);
+
+    std::chrono::system_clock::time_point generate_report_1_minute(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::hours);
+
+    /**
+     * Quarter hour reports
+     */
     void generate_report_15_minutes(
         cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
         std::chrono::system_clock::time_point,
-        std::chrono::system_clock::time_point,
-        srv_id_t);
+        std::chrono::system_clock::time_point);
 
-    void
-        generate_report_60_minutes(cyng::db::session, std::chrono::system_clock::time_point, std::chrono::system_clock::time_point);
-    void generate_report_24_hour(cyng::db::session, std::chrono::system_clock::time_point, std::chrono::system_clock::time_point);
-    void generate_report_1_month(cyng::db::session, std::chrono::system_clock::time_point, std::chrono::system_clock::time_point);
-    void generate_report_1_year(cyng::db::session, std::chrono::system_clock::time_point, std::chrono::system_clock::time_point);
+    std::chrono::system_clock::time_point generate_report_15_minutes(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::hours);
+
+    /**
+     * Hourly reports
+     */
+    void generate_report_60_minutes(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::system_clock::time_point);
+
+    std::chrono::system_clock::time_point generate_report_60_minutes(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::hours);
+
+    /**
+     * Daily reports
+     */
+    void generate_report_24_hour(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::system_clock::time_point);
+
+    std::chrono::system_clock::time_point generate_report_24_hour(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::hours);
+
+    /**
+     * Monthly reports
+     */
+    void generate_report_1_month(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::system_clock::time_point);
+
+    /**
+     * Yearly reports
+     */
+    void generate_report_1_year(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::system_clock::time_point);
 
     [[nodiscard]] std::vector<cyng::buffer_t> select_meters(
         cyng::db::session db,
@@ -58,10 +129,29 @@ namespace smf {
     std::string get_prefix(cyng::obis profile);
 
     void emit_report(
+        std::filesystem::path,
         std::string,
         cyng::obis profile,
         std::set<cyng::obis>,
         std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &);
+
+    /**
+     * Collect data over the specified time range
+     */
+    std::map<std::uint64_t, std::map<cyng::obis, sml_data>> collect_data(
+        cyng::db::session db,
+        cyng::obis profile,
+        cyng::buffer_t,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end);
+
+    void collect_report(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path root,
+        std::chrono::system_clock::time_point,
+        std::chrono::system_clock::time_point,
+        srv_id_t);
 
 } // namespace smf
 
