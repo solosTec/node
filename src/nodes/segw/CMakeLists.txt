@@ -46,8 +46,8 @@ target_link_libraries(segw
         smf::serial_bus
         smf::hci
         smf::mbus
-        smf::sml
         smf::obis
+        smf::sml
 #		${OPENSSL_LIBRARIES}    # don't use quotes here
         OpenSSL::SSL
 		"$<$<PLATFORM_ID:Windows>:odbc32>"

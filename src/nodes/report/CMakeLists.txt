@@ -32,7 +32,6 @@ target_include_directories(report
 
 target_link_directories(report
     PRIVATE
-#        ${SMFSEC_LIBRARIES}
         ${Boost_LIBRARY_DIRS}
 )
 
@@ -42,11 +41,11 @@ target_link_libraries(report
         smf::config
         smf::cluster
         smf::cluster_bus
+        smf::report
         smf::obis
         smf::mbus
-        smf::report
+        smf::sml
         cyng::cyng 
-#        cyng::db
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        

@@ -1110,7 +1110,7 @@ install(EXPORT SMFTargets
     FILE 
         SMFTargets.cmake
     NAMESPACE 
-        SMF::
+        smf::
     DESTINATION
         ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
 )

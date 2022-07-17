@@ -38,7 +38,8 @@ target_link_directories(setup
 
 target_link_libraries(setup 
     PRIVATE
-#        Boost::program_options
+#        smf::obis
+#        smf::sml
         smf::config
         smf::cluster
         smf::cluster_bus
