@@ -314,8 +314,7 @@ BOOST_AUTO_TEST_CASE(esy) {
     while (offset < inp.size()) {
         std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(inp2, offset, 1);
 #ifdef _DEBUG
-        std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
-                  << std::endl
+        std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_name(u) << ": " << obj << std::endl
                   << std::endl;
 #endif
     }
@@ -441,7 +440,7 @@ BOOST_AUTO_TEST_CASE(reader) {
     bool valid = false;
     while (offset + 4 < inp.size()) {
         std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(inp, offset, 1);
-        std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
+        std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_name(u) << std::endl;
     }
 
     //
@@ -515,7 +514,7 @@ BOOST_AUTO_TEST_CASE(reader) {
 
     // while (offset + 4 < inp_01.size()) {
     //	std::tie(offset, code, obj, scaler, u) = smf::mbus::read(inp_01, offset, 1);
-    //	std::cout << obj << " " << smf::mbus::get_unit_name(u) << std::endl;
+    //	std::cout << obj << " " << smf::mbus::get_name(u) << std::endl;
     //}
     smf::sml::unpack p(
         [](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
@@ -548,7 +547,7 @@ BOOST_AUTO_TEST_CASE(reader) {
     offset = 0;
     while (offset + 4 < inp_02.size()) {
         std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(inp_02, offset, 1);
-        std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_unit_name(u) << std::endl;
+        std::cout << obj << " * 10^" << +scaler << " " << smf::mbus::get_name(u) << std::endl;
     }
 
     //  DIF, VIF, VIFE (0x0D 0xFD 0x11 resp.) 0x25 length of string
@@ -655,7 +654,7 @@ BOOST_AUTO_TEST_CASE(payload) {
         while (offset < buffer.size()) {
             std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(buffer, offset, 1);
 #ifdef _DEBUG
-            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
+            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_name(u) << ": " << obj
                       << std::endl
                       << std::endl;
 #endif
@@ -675,7 +674,7 @@ BOOST_AUTO_TEST_CASE(payload) {
         while (offset < buffer.size()) {
             std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(buffer, offset, 1);
 #ifdef _DEBUG
-            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
+            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_name(u) << ": " << obj
                       << std::endl
                       << std::endl;
 #endif
@@ -695,7 +694,7 @@ BOOST_AUTO_TEST_CASE(payload) {
         while (offset < buffer.size()) {
             std::tie(offset, code, obj, scaler, u, valid) = smf::mbus::read(buffer, offset, 1);
 #ifdef _DEBUG
-            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_unit_name(u) << ": " << obj
+            std::cout << "\t-- " << code << ", scaler: " << +scaler << ", unit: " << smf::mbus::get_name(u) << ": " << obj
                       << std::endl
                       << std::endl;
 #endif

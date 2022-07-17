@@ -158,9 +158,9 @@ namespace smf {
 
             for (auto const &value : data) {
                 auto const reader = cyng::make_reader(value.second);
-                auto const scaler = reader.get<std::uint8_t>("scaler", 0);
-                auto const unit = reader.get<std::uint8_t>("unit", 0);
-                auto const reading = reader.get("value", "0");
+                auto const scaler = reader.get<std::int8_t>("scaler", 0); //  signed!
+                auto const unit = reader.get<std::uint8_t>("unit", 0u);
+                auto const reading = reader.get("value", ""); //  string
                 auto const obj = reader.get("raw");
                 auto const type = obj.tag(); //  u16
                 auto const descr = reader.get("descr", "");
@@ -171,13 +171,25 @@ namespace smf {
                 // CYNG_LOG_DEBUG(logger_, "[sml.db] reading: " << reading);
                 // CYNG_LOG_DEBUG(logger_, "[sml.db] type   : " << type);
 
+                //  FixMe: Scaled values must be stored as integers without scaling
+
                 stmt->push(cyng::make_object(tag), 0);         //	tag
                 stmt->push(cyng::make_object(value.first), 0); //	register
                 stmt->push(cyng::make_object(0), 0);           //	gen
-                stmt->push(cyng::make_object(reading), 256);   //	reading
-                stmt->push(cyng::make_object(type), 0);        //	type
-                stmt->push(cyng::make_object(scaler), 0);      //	scaler
-                stmt->push(cyng::make_object(unit), 0);        //	unit
+
+                if (type == cyng::TC_BUFFER) {
+                    //  Buffer values should contain val.size() % 2 == 0 elements
+                    if (reading.size() % 2 == 0) {
+                        stmt->push(cyng::make_object(reading), 256); //	reading
+                    } else {
+                        stmt->push(cyng::make_object(""), 256); //	reading
+                    }
+                } else {
+                    stmt->push(cyng::make_object(reading), 256); //	reading
+                }
+                stmt->push(cyng::make_object(type), 0);   //	type
+                stmt->push(cyng::make_object(scaler), 0); //	scaler
+                stmt->push(cyng::make_object(unit), 0);   //	unit
                 if (stmt->execute()) {
                     stmt->clear();
                 } else {

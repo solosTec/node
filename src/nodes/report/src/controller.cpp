@@ -14,6 +14,7 @@
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
+#include <smf/report/report.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -192,10 +193,15 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             auto const cwd = std::filesystem::current_path();
             auto const now = std::chrono::system_clock::now();
+
+            std::cout << "***info: generate 15 minute reports: " << std::endl;
             generate_report(s, OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(40), now);
+
+            std::cout << "***info: generate 60 minute reports: " << std::endl;
+            generate_report(s, OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(40), now);
         }
     }
 

@@ -1,14 +1,16 @@
 
 #include <tasks/report.h>
 
-#include <smf/config/schemes.h>
+//#include <smf/config/schemes.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
+#include <smf/report/report.h>
 
 #include <cyng/db/storage.h>
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
+#include <cyng/obj/buffer_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/sql/dsl.h>
 #include <cyng/sql/dsl/placeholder.h>
@@ -17,6 +19,8 @@
 #include <cyng/task/channel.h>
 
 #include <iostream>
+
+#include <boost/uuid/nil_generator.hpp>
 
 namespace smf {
 
@@ -42,7 +46,7 @@ namespace smf {
         , backtrack_(backtrack) {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"connect", "run"});
+            sp->set_channel_names({"run"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
     }
@@ -70,109 +74,4 @@ namespace smf {
             generate_report(db_, profile_, root_, backtrack_, now);
         }
     }
-
-    void generate_report(
-        cyng::db::session db,
-        cyng::obis profile,
-        std::filesystem::path root,
-        std::chrono::hours backtrack,
-        std::chrono::system_clock::time_point now) {
-
-#ifdef __DEBUG
-        auto const ms = config::get_table_sml_readout();
-        // auto const sql =
-        //     cyng::sql::select(db_.get_dialect(), m).all(m, false).from().where(cyng::sql::make_constant("meterID") ==
-        //     profile_)();
-        std::string const sql = "SELECT " SELECT tag, meterID, profile, trx, status, datetime(actTime),
-                          datetime(received) FROM TSMLreadout WHERE profile = ? ";
-                                                                                auto stmt = db.create_statement();
-        std::pair<int, bool> const r = stmt->prepare(sql);
-        if (r.second) {
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            while (auto res = stmt->get_result()) {
-                auto const rec = cyng::to_record(ms, res);
-                //  example
-                //  <tag: a2e26a80-fe36-45dc-8a47-1918616243ef>
-                //  [meterID: 01a815743145040102]
-                //  [profile: 8181c78611ff]
-                //  [trx: 44174435]
-                //  [status: 000202a0]
-                //  [actTime: 2458-12-31T00:00:00+0100]
-                //  [received: 2458-12-31T00:00:00+0100]
-                std::cout << rec.to_string() << std::endl;
-                // CYNG_LOG_TRACE(logger_, "[report] run " << obis::get_name(profile) << ": " << rec.to_string());
-            }
-        }
-#endif
-        switch (profile.to_uint64()) {
-        case CODE_PROFILE_1_MINUTE: generate_report_1_minute(db, cyng::sys::get_start_of_day(now - backtrack)); break;
-        case CODE_PROFILE_15_MINUTE: generate_report_15_minutes(db, cyng::sys::get_start_of_day(now - backtrack)); break;
-        case CODE_PROFILE_60_MINUTE: generate_report_60_minutes(db, cyng::sys::get_start_of_day(now - backtrack)); break;
-        case CODE_PROFILE_24_HOUR: generate_report_24_hour(db, cyng::sys::get_start_of_day(now - backtrack)); break;
-        case CODE_PROFILE_1_MONTH: generate_report_1_month(db, cyng::sys::get_start_of_month(now - backtrack)); break;
-        case CODE_PROFILE_1_YEAR: generate_report_1_year(db, cyng::sys::get_start_of_year(now - backtrack)); break;
-
-        default: break;
-        }
-    }
-
-    void generate_report_1_minute(cyng::db::session db, std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_1_MINUTE;
-    }
-
-    void generate_report_15_minutes(cyng::db::session db, std::chrono::system_clock::time_point start) {
-
-        auto constexpr profile = CODE_PROFILE_15_MINUTE;
-
-        //
-        //  generate a report about the previous day
-        //
-
-        //  * get start and end time of previous day
-        //  * collect all occurring register values in this range
-
-        auto const ms = config::get_table_sml_readout();
-        std::string const sql =
-            "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) FROM TSMLreadout WHERE profile = ? AND received > julianday(?) ORDER BY received";
-        auto stmt = db.create_statement();
-        std::pair<int, bool> const r = stmt->prepare(sql);
-        if (r.second) {
-            // auto const start = now - backtrack;
-#ifdef _DEBUG
-            std::cout << "start: " << start << std::endl;
-#endif
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            stmt->push(cyng::make_object(start), 0);   //	start time
-            while (auto res = stmt->get_result()) {
-                auto const rec = cyng::to_record(ms, res);
-                //  example
-                //  <tag: a2e26a80-fe36-45dc-8a47-1918616243ef>
-                //  [meterID: 01a815743145040102]
-                //  [profile: 8181c78611ff]
-                //  [trx: 44174435]
-                //  [status: 000202a0]
-                //  [actTime: 2458-12-31T00:00:00+0100]
-                //  [received: 2458-12-31T00:00:00+0100]
-#ifdef _DEBUG
-                std::cout << rec.value("meterId", cyng::make_buffer({})) << std::endl;
-#endif
-                // CYNG_LOG_TRACE(logger_, "[report] run " << obis::get_name(profile) << ": " << rec.to_string());
-            }
-        }
-    }
-
-    void generate_report_60_minutes(cyng::db::session db, std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_60_MINUTE;
-    }
-
-    void generate_report_24_hour(cyng::db::session db, std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_24_HOUR;
-    }
-    void generate_report_1_month(cyng::db::session db, std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_1_MONTH;
-    }
-    void generate_report_1_year(cyng::db::session db, std::chrono::system_clock::time_point now) {
-        auto constexpr profile = CODE_PROFILE_1_YEAR;
-    }
-
 } // namespace smf

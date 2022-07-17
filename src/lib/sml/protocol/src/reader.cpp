@@ -576,7 +576,7 @@ namespace smf {
             //	unit (see sml_unit_enum) - optional
             //
             auto const unit = read_numeric<std::uint8_t>(*pos++);
-            auto const unit_name = smf::mbus::get_unit_name(smf::mbus::to_unit(unit));
+            auto const unit_name = smf::mbus::get_name(smf::mbus::to_unit(unit));
 
             //
             //	scaler - optional
@@ -707,7 +707,7 @@ namespace smf {
         case mbus::unit::COUNT: return obis::get_name(code);
         default: break;
         }
-        return mbus::get_unit_name(u);
+        return mbus::get_name(u);
     }
 
 } // namespace smf

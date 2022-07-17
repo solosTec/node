@@ -86,13 +86,13 @@ namespace smf {
                     //  reference implementation
                     //
                     // auto const [scaler, u, code] = v.get_vib_type(medium, d);
-                    // std::cout << code << ", scaler: " << +scaler << ", unit: " << mbus::get_unit_name(u) << std::endl;
+                    // std::cout << code << ", scaler: " << +scaler << ", unit: " << mbus::get_name(u) << std::endl;
                 }
 #endif
 
                 auto const [cat, code, scaler, u, valid] = get_vib_category(medium, tariff, v);
 #ifdef _DEBUG
-                std::cout << to_string(cat) << " - " << code << ", scaler: " << +scaler << ", unit: " << mbus::get_unit_name(u)
+                std::cout << to_string(cat) << " - " << code << ", scaler: " << +scaler << ", unit: " << mbus::get_name(u)
                           << std::endl;
 #endif
 
@@ -153,8 +153,7 @@ namespace smf {
                     }
 
                     switch (d.get_data_field_code()) {
-                    case data_field_code::DFC_NO_DATA:
-                        break;
+                    case data_field_code::DFC_NO_DATA: break;
                     case data_field_code::DFC_8_BIT_INT:
                         // std::cout << cyng::to_numeric_be<std::int8_t>(value) << std::endl;
                         break;
@@ -228,8 +227,7 @@ namespace smf {
                             return std::make_tuple(offset, code, cyng::make_object(f), scaler, u, valid);
                         }
                         break;
-                    case data_field_code::DFC_48_BIT_INT:
-                        break;
+                    case data_field_code::DFC_48_BIT_INT: break;
                     case data_field_code::DFC_64_BIT_INT:
                         BOOST_ASSERT(value.size() == 8);
                         if (value.size() == 8) {
@@ -238,8 +236,7 @@ namespace smf {
                                 offset, code, cyng::make_object(cyng::to_numeric_be<std::int64_t>(value)), scaler, u, valid);
                         }
                         break;
-                    case data_field_code::DFC_READOUT:
-                        break;
+                    case data_field_code::DFC_READOUT: break;
                     case data_field_code::DFC_2_DIGIT_BCD:
                         BOOST_ASSERT(value.size() == 1);
                         if (value.size() == 1) {
@@ -272,8 +269,7 @@ namespace smf {
                                 offset, code, cyng::make_object(bcd_to_n<std::uint64_t>(value)), scaler, u, valid);
                         }
                         break;
-                    case data_field_code::DFC_VAR:
-                        break;
+                    case data_field_code::DFC_VAR: break;
                     case data_field_code::DFC_12_DIGIT_BCD:
                         BOOST_ASSERT(value.size() == 6);
                         if (value.size() == 6) {
@@ -283,8 +279,7 @@ namespace smf {
                         }
                         break;
                     case data_field_code::DFC_SPECIAL:
-                    default:
-                        break;
+                    default: break;
                     }
                     // return "unknown";
                     // if (is_bcd(d.get_data_field_code())) {

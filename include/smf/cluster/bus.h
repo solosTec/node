@@ -221,6 +221,7 @@ namespace smf {
          * "sys.msg"
          */
         template <typename Head, typename... Args> void sys_msg(cyng::severity level, Head &&v, Args &&...args) {
+            using cyng::operator<<;
             std::stringstream ss;
             ss << v;
             ((ss << ' ' << args), ...);

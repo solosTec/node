@@ -487,7 +487,7 @@ namespace smf {
                 //
                 auto const val = cyng::io::to_plain(obj);
                 CYNG_LOG_TRACE(
-                    logger_, "[EN-13757] wmbus " << code << ": " << val << "e" << +scaler << " " << smf::mbus::get_unit_name(u));
+                    logger_, "[EN-13757] wmbus " << code << ": " << val << "e" << +scaler << " " << smf::mbus::get_name(u));
 
                 if (tbl_data->insert(
                         cyng::key_generator(to_buffer(address), code),

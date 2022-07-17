@@ -345,14 +345,14 @@ namespace smf {
                 //
                 //	store data to csv file
                 //
-                writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_unit_name(u)));
+                writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_name(u)));
 
                 if (!init) {
                     init = true;
                 } else {
                     ss << ", ";
                 }
-                ss << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_unit_name(u);
+                ss << code << ": " << obj << "e" << +scaler << " " << smf::mbus::get_name(u);
                 ++count;
 
                 //

@@ -7,18 +7,12 @@
 #ifndef SMF_REPORT_TASK_REPORT_H
 #define SMF_REPORT_TASK_REPORT_H
 
+#include <smf/mbus/server_id.h>
+
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/task/task_fwd.h>
-//#include <cyng/vm/mesh.h>
-//
-//#include <functional>
-//#include <memory>
-//#include <string>
-//#include <tuple>
-//
-//#include <boost/uuid/uuid.hpp>
 
 namespace smf {
 
@@ -56,19 +50,6 @@ namespace smf {
         std::filesystem::path const root_;
         std::chrono::hours const backtrack_;
     };
-
-    void generate_report(
-        cyng::db::session,
-        cyng::obis profile,
-        std::filesystem::path,
-        std::chrono::hours backtrack,
-        std::chrono::system_clock::time_point);
-    void generate_report_1_minute(cyng::db::session, std::chrono::system_clock::time_point);
-    void generate_report_15_minutes(cyng::db::session, std::chrono::system_clock::time_point);
-    void generate_report_60_minutes(cyng::db::session, std::chrono::system_clock::time_point);
-    void generate_report_24_hour(cyng::db::session, std::chrono::system_clock::time_point);
-    void generate_report_1_month(cyng::db::session, std::chrono::system_clock::time_point);
-    void generate_report_1_year(cyng::db::session, std::chrono::system_clock::time_point);
 
 } // namespace smf
 

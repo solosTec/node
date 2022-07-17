@@ -43,7 +43,10 @@ target_link_libraries(report
         smf::cluster
         smf::cluster_bus
         smf::obis
+        smf::mbus
+        smf::report
         cyng::cyng 
+#        cyng::db
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        

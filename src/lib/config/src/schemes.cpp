@@ -567,7 +567,7 @@ namespace smf {
 
         cyng::meta_store get_store_sml_readout() {
             return cyng::meta_store(
-                "SMLreadout",
+                "SMLReadout",
                 {cyng::column("tag", cyng::TC_UUID),
                  //   -- body
                  cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
@@ -582,13 +582,13 @@ namespace smf {
 
         cyng::meta_store get_store_sml_readout_data() {
             return cyng::meta_store(
-                "SMLreadoutData",
+                "SMLReadoutData",
                 {cyng::column("tag", cyng::TC_UUID),      // server/meter/sensor ID
                  cyng::column("register", cyng::TC_OBIS), // OBIS code (data type)
                  //   -- body
                  cyng::column("reading", cyng::TC_STRING), // value as string
                  cyng::column("type", cyng::TC_UINT16),    // data type code
-                 cyng::column("scaler", cyng::TC_UINT8),   // decimal place
+                 cyng::column("scaler", cyng::TC_INT8),    // decimal place
                  cyng::column("unit", cyng::TC_UINT8)},
                 2);
         }
