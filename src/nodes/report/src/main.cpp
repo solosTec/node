@@ -25,12 +25,7 @@ int main(int argc, char **argv) {
     //	generic options
     //
     auto generic = smf::config::get_generic_options(config);
-    generic.add_options()("generate,G", boost::program_options::bool_switch()->default_value(false), "generate reports and exit")
-        //("user,U", boost::program_options::value<std::string>()->default_value("")->implicit_value("user"), "create a set of
-        //default access rights and exit")
-        //("gen-devices", boost::program_options::value<std::uint32_t>()->default_value(0u)->implicit_value(12u), "generate a random
-        //set of device configuration")
-        ;
+    generic.add_options()("generate,G", boost::program_options::bool_switch()->default_value(false), "generate reports and exit");
 
     //
     //	cmdline_options contains all generic and node specific options

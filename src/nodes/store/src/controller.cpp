@@ -25,6 +25,10 @@
 #include <tasks/sml_xml_writer.h>
 
 #include <smf.h>
+#include <smf/obis/db.h>
+#include <smf/obis/defs.h>
+#include <smf/obis/profile.h>
+#include <smf/report/report.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -197,7 +201,31 @@ namespace smf {
                 cyng::make_tuple(
                     cyng::make_param("SML", cyng::make_vector({"water@solostec", "gas@solostec", "power@solostec"})),
                     cyng::make_param("DLMS", cyng::make_vector({"dlms@store"})),
-                    cyng::make_param("IEC", cyng::make_vector({"LZQJ", "iec@store"})))))});
+                    cyng::make_param("IEC", cyng::make_vector({"LZQJ", "iec@store"})))),
+            cyng::make_param(
+                "reports",
+                cyng::make_tuple(
+                    create_report_spec(OBIS_PROFILE_1_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MINUTE)),
+                    create_report_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
+                    create_report_spec(OBIS_PROFILE_60_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
+                    create_report_spec(OBIS_PROFILE_24_HOUR, cwd, true, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
+                    // create_report_spec(OBIS_PROFILE_LAST_2_HOURS, cwd, false, sml::backtrack_time(OBIS_PROFILE_LAST_2_HOURS)),
+                    // create_report_spec(OBIS_PROFILE_LAST_WEEK, cwd, false, sml::backtrack_time(OBIS_PROFILE_LAST_WEEK)),
+                    create_report_spec(OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH)), // one month
+                    create_report_spec(OBIS_PROFILE_1_YEAR, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_YEAR))    //  one year
+                    )                                                                                                // reports
+                ))});
+    }
+
+    cyng::prop_t create_report_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
+        return cyng::make_prop(
+            profile,
+            cyng::make_tuple(
+                cyng::make_param("name", obis::get_name(profile)),
+                cyng::make_param("path", (cwd / cyng::to_string(profile)).string()),
+                cyng::make_param("backtrack", backtrack.count()),
+                cyng::make_param("prefix", ""),
+                cyng::make_param("enabled", enabled)));
     }
 
     void controller::run(
@@ -467,14 +495,13 @@ namespace smf {
 
     bool controller::run_options(boost::program_options::variables_map &vars) {
 
-        //
-        //  read configuration
-        //
-        auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
-
         if (vars["init"].as<bool>()) {
             //	initialize database
 
+            //
+            //  read configuration
+            //
+            auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
             auto sm = init_storage(cfg);
             auto const reader = cyng::make_reader(cfg);
 
@@ -512,15 +539,26 @@ namespace smf {
             return true;
         }
 
+        //
+        //	execute a influx db command
+        //
         auto const cmd = vars["influxdb"].as<std::string>();
         if (!cmd.empty()) {
-            //	execute a influx db command
+            auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
             // std::cerr << cmd << " not implemented yet" << std::endl;
             // return ctrl.create_influx_dbs(config_index, cmd);
             create_influx_dbs(cfg, cmd);
             return true;
         }
+
         //
+        //  generate different reports
+        //
+        if (vars["generate"].as<bool>()) {
+            //	generate all reports
+            generate_reports(read_config_section(config_.json_path_, config_.config_index_));
+            return true;
+        }
 
         //
         //	call base classe
@@ -528,6 +566,25 @@ namespace smf {
         return controller_base::run_options(vars);
     }
 
+    void controller::generate_reports(cyng::object &&cfg) {
+
+        auto const reader = cyng::make_reader(std::move(cfg));
+        auto s = cyng::db::create_db_session(reader.get("DB"));
+        if (s.is_alive()) {
+            std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            auto const cwd = std::filesystem::current_path();
+            auto const now = std::chrono::system_clock::now();
+
+            std::cout << "***info: generate 15 minute reports: " << std::endl;
+            generate_report(s, OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(40), now);
+
+            std::cout << "***info: generate 60 minute reports: " << std::endl;
+            generate_report(s, OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(40), now);
+
+            std::cout << "***info: generate 24 h reports: " << std::endl;
+            generate_report(s, OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(40), now);
+        }
+    }
     std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg) {
 
         std::map<std::string, cyng::db::session> sm;
