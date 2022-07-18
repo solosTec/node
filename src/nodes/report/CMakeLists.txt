@@ -46,6 +46,7 @@ target_link_libraries(report
         smf::mbus
         smf::sml
         cyng::cyng 
+        "$<$<PLATFORM_ID:Windows>:pugixml>"
         ${SMFSEC_LIBRARIES}
         ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        

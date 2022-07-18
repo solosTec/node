@@ -36,6 +36,7 @@ target_link_directories(modem
 target_link_libraries(modem 
     PRIVATE
         cyng::cyng 
+        "$<$<PLATFORM_ID:Windows>:pugixml>"
         smf::config
         smf::cluster
         smf::cluster_bus

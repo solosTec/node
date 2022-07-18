@@ -57,6 +57,7 @@ target_link_libraries(broker-wmbus
         cyng::sql
         cyng::net
         cyng::sqlite3
+        "$<$<PLATFORM_ID:Windows>:pugixml>"
         smfsec::smfsec
         OpenSSL::SSL
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;smfsec::smfsec;${CMAKE_DL_LIBS};atomic;pthread>"        

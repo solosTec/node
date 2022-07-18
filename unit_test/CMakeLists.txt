@@ -65,7 +65,7 @@ target_link_libraries(unit_test
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
         OpenSSL::SSL
-        "$<$<PLATFORM_ID:Windows>:odbc32>"
+        "$<$<PLATFORM_ID:Windows>:odbc32;pugixml>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
 #        Boost::thread # not found
         ${Boost_THREAD_LIBRARY}

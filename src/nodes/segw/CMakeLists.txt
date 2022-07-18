@@ -39,6 +39,7 @@ target_link_directories(segw
 target_link_libraries(segw 
     PRIVATE
         cyng::cyng 
+        "$<$<PLATFORM_ID:Windows>:pugixml>"
         smfsec::smfsec
         smf::config
         smf::ipt

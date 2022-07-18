@@ -36,6 +36,7 @@ target_link_directories(ipt
 target_link_libraries(ipt 
     PRIVATE
         cyng::cyng 
+        "$<$<PLATFORM_ID:Windows>:pugixml>"
         smf::config
         smf::cluster
         smf::cluster_bus

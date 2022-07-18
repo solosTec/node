@@ -27,7 +27,7 @@
 #
 
 # mostly [build]
-message(STATUS "** CYNG build tree    : [${SMF_BUILD_TREE_STEM}]")
+message(STATUS "** CYNG build tree          : [${SMF_BUILD_TREE_STEM}]")
 
 #
 #	try PkgConfig
@@ -94,12 +94,14 @@ else(PC_CYNG_FOUND)
 
     find_file(CYNG_PUGI_XML_LIB
         NAMES 
-            pugixml.lib
-			libpugixml.so
+           pugixml
         PATH_SUFFIXES
-			"_deps/pugixml-build"
+ 			"_deps/pugixml-build"
 			"_deps/pugixml-build/Debug"
 			"_deps/pugixml-build/Release"
+			"lib64"
+			"lib"
+			"/usr/lib/x86_64-linux-gnu/"
         PATHS
 			${CYNG_BUILD_DIR}
         DOC 
@@ -177,8 +179,8 @@ if (CYNG_INCLUDE_DIR_SRC AND CYNG_INCLUDE_DIR_BUILD AND CYNG_LIBRARIES)
     unset(CYNG_INCLUDE_DIR_SRC CACHE)
 	unset(CYNG_INCLUDE_DIR_BUILD CACHE)
 	if(NOT CYNG_FIND_QUIETLY)
-		message(STATUS "** CYNG_LIBRARIES    : ${CYNG_LIBRARIES}")
-		message(STATUS "** CYNG_INCLUDE_DIRS : ${CYNG_INCLUDE_DIRS}")
+		message(STATUS "** CYNG_LIBRARIES           : ${CYNG_LIBRARIES}")
+		message(STATUS "** CYNG_INCLUDE_DIRS        : ${CYNG_INCLUDE_DIRS}")
 	endif(NOT CYNG_FIND_QUIETLY)
 endif(CYNG_INCLUDE_DIR_SRC AND CYNG_INCLUDE_DIR_BUILD AND CYNG_LIBRARIES)
 
@@ -211,3 +213,15 @@ if(CYNG_FOUND AND NOT TARGET cyng::cyng)
     )
 
 endif(CYNG_FOUND AND NOT TARGET cyng::cyng)
+
+if (CYNG_PUGI_XML_LIB AND WIN32)
+		message(STATUS "** PugiXML library          : ${CYNG_PUGI_XML_LIB}")
+		add_library(pugixml STATIC IMPORTED)
+		set_target_properties(pugixml 
+			PROPERTIES 
+				IMPORTED_LOCATION 
+					${CYNG_PUGI_XML_LIB}
+		)  
+endif(CYNG_PUGI_XML_LIB AND WIN32)
+
+mark_as_advanced (CYNG_PUGI_XML_LIB)

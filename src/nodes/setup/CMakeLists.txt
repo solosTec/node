@@ -38,15 +38,13 @@ target_link_directories(setup
 
 target_link_libraries(setup 
     PRIVATE
-#        smf::obis
-#        smf::sml
         smf::config
         smf::cluster
         smf::cluster_bus
         cyng::cyng 
+        "$<$<PLATFORM_ID:Windows>:pugixml>"
         ${SMFSEC_LIBRARIES}
         OpenSSL::SSL
-#        ${OPENSSL_LIBRARIES}
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
