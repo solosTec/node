@@ -50,7 +50,12 @@ namespace smf {
         void collect_data(std::uint32_t channel, std::uint32_t source);
         cyng::obis_path_t get_registers(cyng::table const *tbl);
 
-        cyng::tuple_t convert_to_payload(cyng::table const *tbl, cyng::key_t const &, std::uint32_t, cyng::obis_path_t const &);
+        cyng::tuple_t convert_to_payload(
+            cyng::table const *tbl,
+            cyng::key_t const &,
+            std::uint32_t,
+            cyng::obis profile,
+            cyng::obis_path_t const &);
 
       private:
         signatures_t sigs_;

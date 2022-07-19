@@ -227,7 +227,7 @@ namespace smf {
                             //
                             //  generate payload - SML_GetList.Res
                             //
-                            messages.push_back(convert_to_payload(tbl_mirror_data, pk, ops, regs));
+                            messages.push_back(convert_to_payload(tbl_mirror_data, pk, ops, profile, regs));
                         }
 
                         return true;
@@ -256,6 +256,7 @@ namespace smf {
         cyng::table const *tbl_mirror_data,
         cyng::key_t const &pk,
         std::uint32_t ops,
+        cyng::obis profile,
         cyng::obis_path_t const &regs) {
 
         // <meterID: 01e61e571406213603><profile: 8181c78611ff><idx: 18720><register: 0100000102ff>[reading: 177][type:
@@ -324,7 +325,7 @@ namespace smf {
             trx,
             cyng::buffer_t{}, // null
             meter_,           // meter id
-            cyng::obis{},     // => null
+            profile,          // profile
             data,             // data
             ops               // seconds index (operation counter)
         );
