@@ -9,6 +9,7 @@
 
 #include <cyng/db/storage.h>
 #include <cyng/io/ostream.h>
+#include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/buffer_cast.hpp>
 #include <cyng/obj/util.hpp>
@@ -37,19 +38,24 @@ namespace smf {
             generate_report_1_minute(db, profile, root, cyng::sys::get_start_of_day(now - backtrack), now);
             break;
         case CODE_PROFILE_15_MINUTE:
-            generate_report_15_minutes(db, profile, root, cyng::sys::get_start_of_day(now - backtrack), now);
+            generate_report_15_minutes(
+                db, profile, root, cyng::sys::get_start_of_day(now - backtrack), cyng::sys::get_end_of_day(now));
             break;
         case CODE_PROFILE_60_MINUTE:
-            generate_report_60_minutes(db, profile, root, cyng::sys::get_start_of_day(now - backtrack), now);
+            generate_report_60_minutes(
+                db, profile, root, cyng::sys::get_start_of_day(now - backtrack), cyng::sys::get_end_of_day(now));
             break;
         case CODE_PROFILE_24_HOUR:
-            generate_report_24_hour(db, profile, root, cyng::sys::get_start_of_month(now - backtrack), now);
+            generate_report_24_hour(
+                db, profile, root, cyng::sys::get_start_of_month(now - backtrack), cyng::sys::get_end_of_month(now));
             break;
         case CODE_PROFILE_1_MONTH:
-            generate_report_1_month(db, profile, root, cyng::sys::get_start_of_year(now - backtrack), now);
+            generate_report_1_month(
+                db, profile, root, cyng::sys::get_start_of_year(now - backtrack), cyng::sys::get_end_of_year(now));
             break;
         case CODE_PROFILE_1_YEAR:
-            generate_report_1_year(db, profile, root, cyng::sys::get_start_of_year(now - backtrack), now);
+            generate_report_1_year(
+                db, profile, root, cyng::sys::get_start_of_year(now - backtrack), cyng::sys::get_end_of_year(now));
             break;
 
         default: break;
@@ -113,7 +119,8 @@ namespace smf {
         std::chrono::system_clock::time_point now) {
 
 #ifdef _DEBUG
-        std::cout << "15 min reports start at " << start << std::endl;
+        std::cout << "15 min (" << profile << ") report period spans from " << start << " to " << now << " ("
+                  << std::chrono::duration_cast<std::chrono::hours>(now - start) << ")" << std::endl;
 #endif
 
         //
@@ -135,7 +142,8 @@ namespace smf {
         auto const end = start + span;
 
 #ifdef _DEBUG
-        std::cout << "start " << start << " => " << end << std::endl;
+        std::cout << "15 min (" << profile << ") report period spans from " << start << " => " << end << " ("
+                  << std::chrono::duration_cast<std::chrono::hours>(end - start) << ")" << std::endl;
 #endif
 
         //
@@ -173,7 +181,8 @@ namespace smf {
         std::chrono::system_clock::time_point now) {
 
 #ifdef _DEBUG
-        std::cout << "1 h reports start at " << start << std::endl;
+        std::cout << "1h (" << profile << ") report period spans from " << start << " to " << now << " ("
+                  << std::chrono::duration_cast<std::chrono::hours>(now - start) << ")" << std::endl;
 #endif
 
         //
@@ -195,7 +204,9 @@ namespace smf {
         auto const end = start + span;
 
 #ifdef _DEBUG
-        std::cout << "start " << start << " => " << end << std::endl;
+        std::cout << "1h (" << profile << ") report period spans from " << start << " => " << end << " ("
+                  << std::chrono::duration_cast<std::chrono::hours>(end - start) << ")" << std::endl;
+
 #endif
 
         //
@@ -284,15 +295,22 @@ namespace smf {
         cyng::obis profile,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
+
+        BOOST_ASSERT_MSG(start < end, "invalid time range");
+
+        //  SELECT DISTINCT hex(meterID) FROM TSMLreadout WHERE profile = '8181c78611ff' AND actTime BETWEEN julianday('2022-07-19')
+        //  AND julianday('2022-07-20');
         std::string const sql =
-            "SELECT DISTINCT meterID FROM TSMLreadout WHERE profile = ? AND received BETWEEN julianday(?) AND julianday(?)";
+            "SELECT DISTINCT meterID FROM TSMLreadout WHERE profile = ? AND actTime BETWEEN julianday(?) AND julianday(?)";
         auto stmt = db.create_statement();
         std::vector<cyng::buffer_t> meters;
         std::pair<int, bool> const r = stmt->prepare(sql);
+        BOOST_ASSERT_MSG(r.second, "prepare SQL statement failed");
         if (r.second) {
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            stmt->push(cyng::make_object(start), 0);   //	start time
-            stmt->push(cyng::make_object(end), 0);     //	end time
+            //  Without meta data the "real" data type is to be used
+            stmt->push(cyng::make_object(profile.to_uint64()), 0); //	profile
+            stmt->push(cyng::make_object(start), 0);               //	start time
+            stmt->push(cyng::make_object(end), 0);                 //	end time
             while (auto res = stmt->get_result()) {
                 auto const meter = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
                 BOOST_ASSERT(!meter.empty());
@@ -319,7 +337,7 @@ namespace smf {
                 auto const rec = cyng::to_record(ms, res);
 #ifdef _DEBUG
                 using cyng::operator<<;
-                // std::cout << rec.to_tuple() << std::endl;
+                std::cout << rec.to_string() << std::endl;
 #endif
                 auto const code = rec.value<std::uint16_t>("type", cyng::TC_STRING);
                 auto const val = rec.value("reading", "");

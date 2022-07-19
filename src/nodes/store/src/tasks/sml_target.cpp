@@ -4,10 +4,11 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
+#include <tasks/sml_target.h>
+
 #include <smf/mbus/server_id.h>
 #include <smf/obis/db.h>
-
-#include <tasks/sml_target.h>
+#include <smf/obis/profile.h>
 
 #include <cyng/io/hex_dump.hpp>
 #include <cyng/log/record.h>
@@ -115,7 +116,18 @@ namespace smf {
             // if (ro.first == cyng::make_obis({0x01, 0x00, 0x00, 0x09, 0x0b, 0x00})) {
             //    CYNG_LOG_DEBUG(logger_, "get_profile_list_response: " << msg);
             //}
-            CYNG_LOG_DEBUG(logger_, ro.first << ": " << ro.second);
+            CYNG_LOG_DEBUG(logger_, path << " - " << ro.first << ": " << ro.second);
+        }
+
+        BOOST_ASSERT(path.size() == 1);
+        if (!path.empty()) {
+            auto const profile = path.front();
+            if (!sml::is_profile(profile)) {
+                CYNG_LOG_WARNING(
+                    logger_,
+                    "[sml] get_profile_list_response with unsupported profile: " << profile << " from server " << srv_id_to_str(srv)
+                                                                                 << ", trx: " << trx);
+            }
         }
 
         //
@@ -156,25 +168,20 @@ namespace smf {
     }
 
     void sml_target::get_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
-        // std::tuple<cyng::buffer_t, cyng::buffer_t, cyng::obis, cyng::object, cyng::object, sml_list_t>
+
+        //  client, server, obis, sensor-time, gw-time, sml_list_t (data)
         auto const r = smf::sml::read_get_list_response(msg);
 
-        CYNG_LOG_INFO(logger_, "list response from " << srv_id_to_str(std::get<1>(r)));
+        CYNG_LOG_INFO(logger_, "[sml] list response from " << srv_id_to_str(std::get<1>(r)));
         for (auto const &ro : std::get<5>(r)) {
             CYNG_LOG_TRACE(logger_, ro.first << ": " << ro.second);
         }
 
-        // 0100010800ff:
-        // %(("raw":14521),("scaler":-1),("status":00020240),("unit":1e),("unit-name":Wh),("valTime":null),("value":1452.1))
-        // 0100010801ff: %(("raw":0),("scaler":-1),("status":null),("unit":1e),("unit-name":Wh),("valTime":null),("value":0))
-        // 0100010802ff:
-        // %(("raw":14521),("scaler":-1),("status":null),("unit":1e),("unit-name":Wh),("valTime":null),("value":1452.1))
-        // 0100020800ff:
-        // %(("raw":561139),("scaler":-1),("status":00020240),("unit":1e),("unit-name":Wh),("valTime":null),("value":56113.9))
-        // 0100020801ff: %(("raw":0),("scaler":-1),("status":null),("unit":1e),("unit-name":Wh),("valTime":null),("value":0))
-        // 0100020802ff:
-        // %(("raw":561139),("scaler":-1),("status":null),("unit":1e),("unit-name":Wh),("valTime":null),("value":56113.9))
-        // 0100100700ff: %(("raw":0),("scaler":-1),("status":null),("unit":1b),("unit-name":W),("valTime":null),("value":0))
+        //  list response from 01-e61e-57140621-36-03
+        // 0000600601ff: %(("raw":3715),("scaler":0),("status":0),("unit":4),("unit-name":day),("valTime":1970-...,("value":3715))
+        // 0100000102ff: %(("raw":525),("scaler":0),("status":0),("unit":7),("unit-name":second),("valTime":1970-...),("value":525))
+        // 0100020000ff:
+        // %(("raw":1632093),("scaler":-2),("status":0),("unit":d),("unit-name":m3),("valTime":1970-...),("value":16320.93))
 
         auto const pmap = convert_to_param_map(std::get<5>(r));
         //

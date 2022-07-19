@@ -376,10 +376,10 @@ namespace smf {
                     //
                     auto const reader = cyng::make_reader(m.second);
                     auto const obj = reader.get("raw");
-                    auto const value = reader.get("value", "0"); //  string
+                    auto const value = reader.get("value", ""); //  string
                     auto const unit = cyng::numeric_cast<std::uint8_t>(reader.get("unit"), 0u);
                     auto const unit_name = cyng::value_cast(reader.get("unit-name"), "");
-                    auto const scaler = cyng::value_cast<std::uint8_t>(reader.get("scaler"), 0u);
+                    auto const scaler = cyng::value_cast<std::int8_t>(reader.get("scaler"), 0u);
                     auto const status = cyng::value_cast<std::uint32_t>(reader.get("status"), 0u);
                     auto const val_time = cyng::value_cast(reader.get("valTime"), std::chrono::system_clock::now());
 

@@ -9,6 +9,7 @@
 
 #include <influxdb.h>
 #include <tasks/network.h>
+#include <tasks/report.h>
 
 #include <tasks/dlms_influx_writer.h>
 #include <tasks/iec_csv_writer.h>
@@ -41,6 +42,7 @@
 #include <cyng/obj/set_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/vector_cast.hpp>
+#include <cyng/parse/string.h>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 
@@ -405,6 +407,20 @@ namespace smf {
             CYNG_LOG_FATAL(logger, "no writer tasks configured");
         }
 
+        //
+        // start reports
+        //
+        auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("reports"));
+        if (!reports.empty()) {
+            auto const db = reader["reports"].get("db", "default");
+            auto const pos = sm.find(db);
+            if (pos != sm.end()) {
+                start_reports(ctl, channels, logger, pos->second, reports);
+            } else {
+                CYNG_LOG_FATAL(logger, "no database [" << db << "] for reports configured");
+            }
+        }
+
         //  No duplicates possible by using a set
         auto const target_sml = cyng::set_cast<std::string>(reader["targets"]["SML"].get(), "sml@store");
         auto const target_iec = cyng::set_cast<std::string>(reader["targets"]["IEC"].get(), "iec@store");
@@ -447,7 +463,8 @@ namespace smf {
             target_sml,
             target_iec,
             target_dlms,
-            writer);
+            writer,
+            reports);
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
@@ -470,7 +487,8 @@ namespace smf {
         std::set<std::string> const &sml_targets,
         std::set<std::string> const &iec_targets,
         std::set<std::string> const &dlms_targets,
-        std::set<std::string> const &writer) {
+        std::set<std::string> const &writer,
+        cyng::param_map_t const &reports) {
 
         auto channel = ctl.create_named_channel_with_ref<network>(
             "network",
@@ -515,7 +533,7 @@ namespace smf {
                         std::cout << "***info : writer " << name << " initialize database " << pos->first << std::endl;
                         sml_db_writer::init_storage(pos->second);
                     } else {
-                        std::cerr << "***error: writer " << name << " uses an undefined database" << std::endl;
+                        std::cerr << "***error: writer " << name << " uses an undefined database: " << db << std::endl;
                     }
                 } else if (boost::algorithm::equals(name, "IEC:DB")) {
                     auto const db = reader[name].get("db", "default");
@@ -524,7 +542,7 @@ namespace smf {
                         std::cout << "***info : writer " << name << " initialize database " << pos->first << std::endl;
                         iec_db_writer::init_storage(pos->second);
                     } else {
-                        std::cerr << "***error: writer " << name << " uses an undefined database" << std::endl;
+                        std::cerr << "***error: writer " << name << " uses an undefined database: " << db << std::endl;
                     }
                 }
             }
@@ -569,21 +587,58 @@ namespace smf {
 
     void controller::generate_reports(cyng::object &&cfg) {
 
+        //
+        //  data base connections
+        //
+        auto sm = init_storage(cfg);
         auto const reader = cyng::make_reader(std::move(cfg));
-        auto s = cyng::db::create_db_session(reader.get("DB"));
-        if (s.is_alive()) {
-            std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
-            auto const cwd = std::filesystem::current_path();
-            auto const now = std::chrono::system_clock::now();
+        auto const db = reader["reports"].get("db", "default");
 
-            std::cout << "***info: generate 15 minute reports: " << std::endl;
-            generate_report(s, OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(40), now);
+        auto const pos = sm.find(db);
+        if (pos != sm.end()) {
 
-            std::cout << "***info: generate 60 minute reports: " << std::endl;
-            generate_report(s, OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(40), now);
+            if (pos->second.is_alive()) {
+                std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file-name", "") << std::endl;
+                auto const cwd = std::filesystem::current_path();
+                auto const now = std::chrono::system_clock::now();
 
-            std::cout << "***info: generate 24 h reports: " << std::endl;
-            generate_report(s, OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(40), now);
+                auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("reports"));
+                for (auto const &cfg_report : reports) {
+
+                    auto const reader_report = cyng::make_reader(cfg_report.second);
+                    auto const name = reader_report.get("name", "no-name");
+
+                    if (reader_report.get("enabled", false)) {
+                        auto const profile = cyng::to_obis(cfg_report.first);
+                        std::cout << "***info: generate report " << name << " (" << profile << ")" << std::endl;
+
+                        auto const root = reader_report.get("path", cwd.string());
+                        if (!std::filesystem::exists(root)) {
+                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                            std::error_code ec;
+                            if (!std::filesystem::create_directories(root, ec)) {
+                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                            }
+                        }
+                        auto const backtrack = reader_report.get("backtrack", 40);
+                        generate_report(pos->second, profile, root, std::chrono::hours(backtrack), now);
+
+                    } else {
+                        std::cout << "***info: report " << name << " is disabled" << std::endl;
+                    }
+                }
+
+                // std::cout << "***info: generate 15 minute reports: " << std::endl;
+                // generate_report(pos->second, OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(40), now);
+
+                // std::cout << "***info: generate 60 minute reports: " << std::endl;
+                // generate_report(pos->second, OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(40), now);
+
+                // std::cout << "***info: generate 24 h reports: " << std::endl;
+                // generate_report(pos->second, OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(40), now);
+            }
+        } else {
+            std::cerr << "***error: report uses an undefined database: " << db << std::endl;
         }
     }
     std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg) {
@@ -926,6 +981,58 @@ namespace smf {
         auto channel = ctl.create_named_channel_with_ref<dlms_influx_writer>(name, ctl, logger, host, service, protocol, cert, db);
         BOOST_ASSERT(channel->is_open());
         channels.lock(channel);
+    }
+
+    void controller::start_reports(
+        cyng::controller &ctl,
+        cyng::stash &channels,
+        cyng::logger logger,
+        cyng::db::session db,
+        cyng::param_map_t reports) {
+
+        //
+        //	start reporting
+        //
+        for (auto const &cfg : reports) {
+            auto const reader = cyng::make_reader(cfg.second);
+            if (reader.get("enabled", false)) {
+
+                auto const profile = cyng::to_obis(cfg.first);
+                BOOST_ASSERT(sml::is_profile(profile));
+                auto const name = reader.get("name", "");
+                auto const path = reader.get("path", "");
+                auto const backtrack = std::chrono::hours(reader.get("backtrack", sml::backtrack_time(profile).count()));
+
+                if (!std::filesystem::exists(path)) {
+                    CYNG_LOG_WARNING(logger, "output path [" << path << "] of report " << name << " does not exists");
+                    std::error_code ec;
+                    if (!std::filesystem::create_directories(path, ec)) {
+                        CYNG_LOG_ERROR(logger, "cannot create path [" << path << "]: " << ec.message());
+                    }
+                }
+
+                auto channel = ctl.create_named_channel_with_ref<report>(name, ctl, logger, db, profile, path, backtrack);
+                BOOST_ASSERT(channel->is_open());
+                channels.lock(channel);
+
+                //
+                //  calculate start time
+                //
+                auto const now = std::chrono::system_clock::now();
+                auto const next = sml::floor(now + sml::interval_time(now, profile), profile);
+                CYNG_LOG_INFO(logger, "start report " << profile << " (" << name << ") at " << next);
+                // bus_.sys_msg(cyng::severity::LEVEL_INFO, "start report ", profile, " (", name, ") at ", next, " UTC");
+
+                if (next > now) {
+                    channel->suspend(next - now, "run");
+                } else {
+                    channel->suspend(sml::interval_time(now, profile), "run");
+                }
+
+            } else {
+                CYNG_LOG_TRACE(logger, "report " << cfg.first << " is disabled");
+            }
+        }
     }
 
 } // namespace smf

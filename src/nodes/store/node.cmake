@@ -8,12 +8,14 @@ set (store_cpp
     src/controller.cpp
     src/influxdb.cpp
     src/tasks/network.cpp
+    src/tasks/report.cpp
 )
     
 set (store_h
     include/controller.h
     include/influxdb.h
     include/tasks/network.h
+    include/tasks/report.h
 )
 
 if(WIN32)

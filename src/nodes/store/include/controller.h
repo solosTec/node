@@ -42,7 +42,8 @@ namespace smf {
             std::set<std::string> const &,
             std::set<std::string> const &,
             std::set<std::string> const &,
-            std::set<std::string> const &writer);
+            std::set<std::string> const &writer,
+            cyng::param_map_t const &);
 
         void start_sml_db(
             cyng::controller &,
@@ -158,6 +159,13 @@ namespace smf {
             std::string const &protocol,
             std::string const &cert,
             std::string const &db);
+
+        void start_reports(
+            cyng::controller &ctl,
+            cyng::stash &channels,
+            cyng::logger logger,
+            cyng::db::session,
+            cyng::param_map_t reports);
 
       private:
         std::map<std::string, cyng::db::session> init_storage(cyng::object const &);

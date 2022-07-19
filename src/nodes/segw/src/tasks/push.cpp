@@ -176,6 +176,10 @@ namespace smf {
                 if (!rec.empty()) {
                     // auto const interval = rec.value("interval", std::chrono::seconds(0));
                     auto const profile = rec.value("profile", OBIS_PROFILE);
+                    if (!sml::is_profile(profile)) {
+                        CYNG_LOG_WARNING(
+                            logger_, "[push] looking for data of meter: " << meter_ << " with unsupported profile " << profile);
+                    }
                     auto const target = rec.value("target", "");
 
                     CYNG_LOG_TRACE(
@@ -288,12 +292,16 @@ namespace smf {
                 //    01                                      valueSignature: not set
                 //
                 auto const reg = rec_mirror_data.value("register", OBIS_PROFILE);
-                auto const scaler = rec_mirror_data.value<std::uint8_t>("scaler", 0u);
+                BOOST_ASSERT(!cyng::is_nil(reg));
+                auto const scaler = rec_mirror_data.value<std::int8_t>("scaler", 0u);
                 auto const unit = rec_mirror_data.value<std::uint8_t>("unit", 0u);
                 auto const status = rec_mirror_data.value<std::uint32_t>("status", 0u);
                 auto const type = rec_mirror_data.value<std::uint16_t>("type", 0u);
                 auto const val = rec_mirror_data.value("reading", "");
                 auto const obj = cyng::restore(val, type);
+
+                CYNG_LOG_DEBUG(logger_, "[push] data reg: " << reg);
+                CYNG_LOG_DEBUG(logger_, "[push] data val: " << val);
 
                 data.push_back(cyng::make_object(sml::list_entry(
                     reg,
@@ -302,6 +310,8 @@ namespace smf {
                     scaler, // scaler
                     obj)    // value
                                                  ));
+            } else {
+                CYNG_LOG_WARNING(logger_, "[push] no data in \"mirrorData\" for key: " << pk_mirror_data);
             }
         }
 

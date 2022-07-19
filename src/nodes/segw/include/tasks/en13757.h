@@ -59,11 +59,6 @@ namespace smf {
         void add_target_channel(std::string);
 
         /**
-         * "update-statistics"
-         */
-        // void update_statistics();
-
-        /**
          * Check if an AES key is available and if that is the case, decode the data.
          */
         void decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data);

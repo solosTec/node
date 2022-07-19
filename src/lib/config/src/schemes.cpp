@@ -592,7 +592,13 @@ namespace smf {
                  cyng::column("unit", cyng::TC_UINT8)},
                 2);
         }
-        cyng::meta_sql get_table_sml_readout_data() { return cyng::to_sql(get_store_sml_readout_data(), {0, 0, 256, 0, 0, 0}); }
+        cyng::meta_sql get_table_sml_readout_data() {
+            //
+            //  SELECT hex(TSMLReadout.meterID), TSMLReadoutData.register, reading, unit from TSMLReadout INNER JOIN TSMLReadoutData
+            //  ON TSMLReadout.tag = TSMLReadoutData.tag ORDER BY actTime;
+            //
+            return cyng::to_sql(get_store_sml_readout_data(), {0, 0, 256, 0, 0, 0}); 
+        }
 
     } // namespace config
 } // namespace smf

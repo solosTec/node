@@ -1,10 +1,14 @@
 #include <tasks/sml_db_writer.h>
 
 #include <smf/config/schemes.h>
+#include <smf/obis/defs.h>
+#include <smf/obis/profile.h>
 
+#include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/util.hpp>
+#include <cyng/parse/string.h>
 #include <cyng/sql/sql.hpp>
 #include <cyng/task/channel.h>
 
@@ -69,9 +73,19 @@ namespace smf {
 
         if (path.size() == 1) {
             auto const profile = path.front();
-            CYNG_LOG_TRACE(logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << profile);
-
-            store(trx, to_srv_id(server_id), profile, act_time, status, values);
+            if (sml::is_profile(profile)) {
+                CYNG_LOG_TRACE(logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << profile);
+                store(trx, to_srv_id(server_id), profile, act_time, status, values);
+            } else {
+                CYNG_LOG_WARNING(
+                    logger_,
+                    "[sml.db] get_profile_list_response with unsupported profile: " << profile << " from server "
+                                                                                    << srv_id_to_str(server_id));
+                //#ifdef _DEBUG
+                //  assume 15 min profile
+                store(trx, to_srv_id(server_id), OBIS_PROFILE_15_MINUTE, act_time, status, values);
+                //#endif
+            }
 
         } else {
             CYNG_LOG_WARNING(logger_, "[sml.db] get_profile_list_response - invalid path size: " << path);
@@ -160,23 +174,32 @@ namespace smf {
                 auto const reader = cyng::make_reader(value.second);
                 auto const scaler = reader.get<std::int8_t>("scaler", 0); //  signed!
                 auto const unit = reader.get<std::uint8_t>("unit", 0u);
-                auto const reading = reader.get("value", ""); //  string
+                auto const reading = cyng::io::to_plain(reader.get("value")); //  string
                 auto const obj = reader.get("raw");
                 auto const type = obj.tag(); //  u16
                 auto const descr = reader.get("descr", "");
 
-                CYNG_LOG_DEBUG(logger_, "[sml.db] " << value.first << ": " << value.second << " (" << descr << ")");
-                // CYNG_LOG_DEBUG(logger_, "[sml.db] scaler : " << +scaler);
-                // CYNG_LOG_DEBUG(logger_, "[sml.db] unit   : " << +unit);
-                // CYNG_LOG_DEBUG(logger_, "[sml.db] reading: " << reading);
-                // CYNG_LOG_DEBUG(logger_, "[sml.db] type   : " << type);
+                CYNG_LOG_DEBUG(
+                    logger_,
+                    "[sml.db] store " << value.first << ": " << value.second << " ("
+                                      << cyng::intrinsic_name_by_type_code(static_cast<cyng::type_code>(type)) << ")");
+                CYNG_LOG_DEBUG(logger_, "[sml.db] store scaler : " << +scaler);
+                CYNG_LOG_DEBUG(logger_, "[sml.db] store unit   : " << +unit);
+                CYNG_LOG_DEBUG(
+                    logger_, "[sml.db] store reading: " << reading << " (" << cyng::io::to_typed(reader.get("value")) << ")");
+                CYNG_LOG_DEBUG(
+                    logger_,
+                    "[sml.db] store type   : " << type << " ("
+                                               << cyng::intrinsic_name_by_type_code(static_cast<cyng::type_code>(type)) << ")");
 
-                //  FixMe: Scaled values must be stored as integers without scaling
+                stmt->push(cyng::make_object(tag), 0); //	tag
 
-                stmt->push(cyng::make_object(tag), 0);         //	tag
-                stmt->push(cyng::make_object(value.first), 0); //	register
-                stmt->push(cyng::make_object(0), 0);           //	gen
+                auto const reg = cyng::to_obis(value.first);
+                stmt->push(cyng::make_object(reg), 0); //	register
+                CYNG_LOG_DEBUG(logger_, "[sml.db] store reg    : " << reg);
+                stmt->push(cyng::make_object(0), 0); //	gen
 
+                //  Scaled values must be stored as integers without scaling
                 if (type == cyng::TC_BUFFER) {
                     //  Buffer values should contain val.size() % 2 == 0 elements
                     if (reading.size() % 2 == 0) {

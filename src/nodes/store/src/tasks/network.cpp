@@ -10,7 +10,9 @@
 #include <tasks/sml_target.h>
 
 #include <cyng/log/record.h>
+#include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/util.hpp>
+//#include <cyng/parse/string.h>
 #include <cyng/task/channel.h>
 #include <cyng/task/controller.h>
 
@@ -31,7 +33,11 @@ namespace smf {
         std::set<std::string> const &iec_targets,
         std::set<std::string> const &dlms_targets,
         std::set<std::string> const &writer)
-        : sigs_{std::bind(&network::connect, this), std::bind(&network::stop, this, std::placeholders::_1)}
+        : sigs_{
+            std::bind(&network::connect, this),     // connect
+            //std::bind(&network::start, this, std::placeholders::_1), //  start
+            std::bind(&network::stop, this, std::placeholders::_1) // stop
+        }
         , channel_(wp)
         , ctl_(ctl)
         , tag_(tag)
@@ -52,7 +58,7 @@ namespace smf {
         , stash_(ctl_.get_ctx()) {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"connect"});
+            sp->set_channel_names({"connect", "start"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }

@@ -591,7 +591,7 @@ namespace smf {
             return std::make_pair(
                 code,
                 cyng::param_map_factory("unit", unit)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
-                    "valTime", val_time)("status", status) /*("signature", *pos)*/);
+                    "valTime", val_time)("status", status));
         }
 
         sml_list_t read_period_list(cyng::tuple_t::const_iterator pos, cyng::tuple_t::const_iterator end) {

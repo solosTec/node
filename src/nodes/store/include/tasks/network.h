@@ -21,7 +21,11 @@ namespace smf {
     class network {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::tuple<std::function<void()>, std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<
+            std::function<void()>, // connect
+            // std::function<void(cyng::param_map_t)>, // start
+            std::function<void(cyng::eod)> // stop
+            >;
 
       public:
         network(
@@ -51,6 +55,7 @@ namespace smf {
         void ipt_stream(cyng::buffer_t &&);
         void auth_state(bool, boost::asio::ip::tcp::endpoint, boost::asio::ip::tcp::endpoint);
 
+        // void start(cyng::param_map_t reports);
         void register_targets();
 
       private:

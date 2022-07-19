@@ -270,7 +270,7 @@ namespace smf {
                                                           //   -- body
                 cyng::column("reading", cyng::TC_STRING), // value as string
                 cyng::column("type", cyng::TC_UINT16),    // data type code
-                cyng::column("scaler", cyng::TC_UINT8),   // decimal place
+                cyng::column("scaler", cyng::TC_INT8),    // decimal place
                 cyng::column("unit", cyng::TC_UINT8),     // physical unit
                 cyng::column("status", cyng::TC_UINT32)   // status
             },
@@ -312,7 +312,7 @@ namespace smf {
                 //   -- body
                 cyng::column("reading", cyng::TC_STRING), // value as string
                 cyng::column("type", cyng::TC_UINT16),    // data type code
-                cyng::column("scaler", cyng::TC_UINT8),   // decimal place
+                cyng::column("scaler", cyng::TC_INT8),    // decimal place
                 cyng::column("unit", cyng::TC_UINT8),     // physical unit
                 cyng::column("status", cyng::TC_UINT32)   // status
             },

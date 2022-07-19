@@ -25,6 +25,7 @@
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
+#include <cyng/parse/string.h>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/stash.h>
@@ -196,15 +197,31 @@ namespace smf {
             std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             auto const cwd = std::filesystem::current_path();
             auto const now = std::chrono::system_clock::now();
+            auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("reports"));
 
-            std::cout << "***info: generate 15 minute reports: " << std::endl;
-            generate_report(s, OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(40), now);
+            for (auto const &cfg_report : reports) {
+                auto const reader_report = cyng::make_reader(cfg_report.second);
+                auto const name = reader_report.get("name", "no-name");
 
-            std::cout << "***info: generate 60 minute reports: " << std::endl;
-            generate_report(s, OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(40), now);
+                if (reader_report.get("enabled", false)) {
+                    auto const profile = cyng::to_obis(cfg_report.first);
+                    std::cout << "***info: generate report " << name << " (" << profile << ")" << std::endl;
+                    auto const root = reader_report.get("path", cwd.string());
 
-            std::cout << "***info: generate 24 h reports: " << std::endl;
-            generate_report(s, OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(40), now);
+                    if (!std::filesystem::exists(root)) {
+                        std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                        std::error_code ec;
+                        if (!std::filesystem::create_directories(root, ec)) {
+                            std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                        }
+                    }
+
+                    generate_report(s, profile, root, std::chrono::hours(40), now);
+
+                } else {
+                    std::cout << "***info: report " << name << " is disabled" << std::endl;
+                }
+            }
         }
     }
 

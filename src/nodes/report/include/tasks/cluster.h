@@ -30,7 +30,7 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(void)>,              // connect
-            std::function<void(cyng::param_map_t)>, //  start
+            std::function<void(cyng::param_map_t)>, // start
             std::function<void(cyng::eod)>          // stop
             >;
 
