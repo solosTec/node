@@ -126,7 +126,7 @@ namespace smf {
                 "SML:LOG",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "log").string()),
-                    cyng::make_param("prefix", "sml-"),
+                    cyng::make_param("prefix", "sml-protocol"),
                     cyng::make_param("suffix", "log"),
                     cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
@@ -799,17 +799,17 @@ namespace smf {
         std::string suffix,
         bool eol_dos) {
 
-        if (!std::filesystem::exists(out)) {
-            std::error_code ec;
-            std::filesystem::create_directories(out, ec);
-            if (ec) {
-                CYNG_LOG_ERROR(logger, "[sml.abl.writer] " << ec.message());
-                return; //  give up
-            }
-        } else {
-            CYNG_LOG_INFO(logger, "[sml.abl.writer] start -> " << out);
-        }
         if (!out.empty()) {
+            if (!std::filesystem::exists(out)) {
+                std::error_code ec;
+                std::filesystem::create_directories(out, ec);
+                if (ec) {
+                    CYNG_LOG_ERROR(logger, "[sml.abl.writer] " << ec.message());
+                    return; //  give up
+                }
+            } else {
+                CYNG_LOG_INFO(logger, "[sml.abl.writer] start -> " << out);
+            }
             auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>(name, ctl, logger, out, prefix, suffix, eol_dos);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
@@ -826,9 +826,19 @@ namespace smf {
         std::string prefix,
         std::string suffix,
         bool header) {
-        CYNG_LOG_INFO(logger, "start sml log writer -> " << out);
+        // CYNG_LOG_INFO(logger, "start sml log writer -> " << out);
         if (!out.empty()) {
-            auto channel = ctl.create_named_channel_with_ref<sml_log_writer>(name, ctl, logger);
+            if (!std::filesystem::exists(out)) {
+                std::error_code ec;
+                std::filesystem::create_directories(out, ec);
+                if (ec) {
+                    CYNG_LOG_ERROR(logger, "[sml.log.writer] " << ec.message());
+                    return; //  give up
+                }
+            } else {
+                CYNG_LOG_INFO(logger, "[sml.log.writer] start -> " << out);
+            }
+            auto channel = ctl.create_named_channel_with_ref<sml_log_writer>(name, ctl, logger, out, prefix, suffix);
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -843,18 +853,17 @@ namespace smf {
         std::string suffix,
         bool header) {
 
-        if (!std::filesystem::exists(out)) {
-            std::error_code ec;
-            std::filesystem::create_directories(out, ec);
-            if (ec) {
-                CYNG_LOG_ERROR(logger, "[sml.csv.writer] " << ec.message());
-                return; //  give up
-            }
-        } else {
-            CYNG_LOG_INFO(logger, "[sml.csv.writer] start -> " << out);
-        }
-
         if (!out.empty()) {
+            if (!std::filesystem::exists(out)) {
+                std::error_code ec;
+                std::filesystem::create_directories(out, ec);
+                if (ec) {
+                    CYNG_LOG_ERROR(logger, "[sml.csv.writer] " << ec.message());
+                    return; //  give up
+                }
+            } else {
+                CYNG_LOG_INFO(logger, "[sml.csv.writer] start -> " << out);
+            }
 
             auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>(name, ctl, logger, out, prefix, suffix, header);
             BOOST_ASSERT(channel->is_open());

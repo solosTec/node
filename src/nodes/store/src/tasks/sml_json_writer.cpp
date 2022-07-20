@@ -56,7 +56,7 @@ namespace smf {
         cyng::param_map_t values) {
 
         if (path.size() == 1) {
-            auto const profile = path.front();
+            auto const &profile = path.front();
 
             auto const id = srv_id_to_str(server_id);
             auto const file_name = sml_json_filename(prefix_, suffix_, id, std::chrono::system_clock::now());

@@ -121,7 +121,7 @@ namespace smf {
 
         BOOST_ASSERT(path.size() == 1);
         if (!path.empty()) {
-            auto const profile = path.front();
+            auto const &profile = path.front();
             if (!sml::is_profile(profile)) {
                 CYNG_LOG_WARNING(
                     logger_,

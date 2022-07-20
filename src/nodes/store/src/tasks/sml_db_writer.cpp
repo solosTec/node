@@ -72,7 +72,7 @@ namespace smf {
         cyng::param_map_t values) {
 
         if (path.size() == 1) {
-            auto const profile = path.front();
+            auto const &profile = path.front();
             if (sml::is_profile(profile)) {
                 CYNG_LOG_TRACE(logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << profile);
                 store(trx, to_srv_id(server_id), profile, act_time, status, values);

@@ -7,7 +7,9 @@
 #ifndef SMF_STORE_TASK_SML_LOG_WRITER_H
 #define SMF_STORE_TASK_SML_LOG_WRITER_H
 
+#include <cyng/log/log.h>
 #include <cyng/log/logger.h>
+#include <cyng/log/record.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/task_fwd.h>
 
@@ -26,7 +28,13 @@ namespace smf {
             std::function<void(cyng::eod)>>;
 
       public:
-        sml_log_writer(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger);
+        sml_log_writer(
+            cyng::channel_weak,
+            cyng::controller &ctl,
+            cyng::logger logger,
+            std::filesystem::path out,
+            std::string prefix,
+            std::string suffix);
         ~sml_log_writer() = default;
 
       private:
@@ -46,8 +54,10 @@ namespace smf {
         signatures_t sigs_;
         cyng::channel_weak channel_;
         cyng::controller &ctl_;
-        cyng::logger logger_;
+        cyng::logger logger_, protocol_;
     };
+
+    std::filesystem::path sml_log_filename(std::string prefix, std::string suffix);
 
 } // namespace smf
 

@@ -96,14 +96,15 @@ else(PC_CYNG_FOUND)
         NAMES 
            pugixml
         PATH_SUFFIXES
- 			"_deps/pugixml-build"
-			"_deps/pugixml-build/Debug"
-			"_deps/pugixml-build/Release"
 			"lib64"
 			"lib"
-			"/usr/lib/x86_64-linux-gnu/"
         PATHS
+			"/usr/local/lib/"
+			"/usr/lib/x86_64-linux-gnu/"
 			${CYNG_BUILD_DIR}
+ 			"${CMAKE_BINARY_DIR}/_deps/pugixml-build"
+			"${CMAKE_BINARY_DIR}/_deps/pugixml-build/Debug"
+			"${CMAKE_BINARY_DIR}/_deps/pugixml-build/Release"
         DOC 
             "PugiXML"
 		NO_CMAKE_FIND_ROOT_PATH
