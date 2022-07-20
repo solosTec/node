@@ -91,10 +91,17 @@ else(PC_CYNG_FOUND)
 		get_filename_component(CYNG_BUILD_DIR ${CYNG_INCLUDE_DIR_BUILD} DIRECTORY)
 	endif()
 	message(STATUS "** CYNG_BUILD_DIR           : ${CYNG_BUILD_DIR}")
+	message(STATUS "** CYNG_SEARCH_PATH         : ${CYNG_SEARCH_PATH}")
 
     find_file(CYNG_PUGI_XML_LIB
         NAMES 
-           pugixml
+			pugixml
+        PATHS
+			"/usr"
+			"/usr/local"
+			${CYNG_BUILD_DIR}
+            ${CYNG_SEARCH_PATH}
+			"/src/cyng/build"
         PATH_SUFFIXES
 			"lib"
 			"lib64"
@@ -102,9 +109,6 @@ else(PC_CYNG_FOUND)
  			"_deps/pugixml-build"
 			"_deps/pugixml-build/Debug"
 			"_deps/pugixml-build/Release"
-        PATHS
-			"/usr/local"
-			${CYNG_BUILD_DIR}
         DOC 
             "PugiXML"
     )
