@@ -102,12 +102,12 @@ else(PC_CYNG_FOUND)
 			"/usr/local/lib/"
 			"/usr/lib/x86_64-linux-gnu/"
 			${CYNG_BUILD_DIR}
- 			"${CMAKE_BINARY_DIR}/_deps/pugixml-build"
-			"${CMAKE_BINARY_DIR}/_deps/pugixml-build/Debug"
-			"${CMAKE_BINARY_DIR}/_deps/pugixml-build/Release"
+ 			"${CYNG_BUILD_DIR}/_deps/pugixml-build"
+			"${CYNG_BUILD_DIR}/_deps/pugixml-build/Debug"
+			"${CYNG_BUILD_DIR}/_deps/pugixml-build/Release"
         DOC 
             "PugiXML"
-		NO_CMAKE_FIND_ROOT_PATH
+#		NO_CMAKE_FIND_ROOT_PATH
     )
 	message(STATUS "** CYNG_PUGI_XML_LIB        : ${CYNG_PUGI_XML_LIB}")
 
