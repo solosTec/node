@@ -612,7 +612,7 @@ namespace smf {
                     tbl_dc->erase_if(
                         [&](cyng::record &&rec) -> bool {
                             auto const server_rec = rec.value("meterID", cyng::make_buffer({}));
-                            auto const profile_rec = rec.value("profile", cyng::make_obis({}));
+                            auto const profile_rec = rec.value("profile", OBIS_PROFILE);
                             if (server_rec == server && profile_rec == profile) {
 
                                 //
@@ -1551,7 +1551,7 @@ namespace smf {
                     if (server == id) {
 
                         auto const nr = rec.value<std::uint8_t>("nr", 0);
-                        auto const profile = rec.value("profile", cyng::obis{});
+                        auto const profile = rec.value("profile", OBIS_PROFILE);
                         auto const active = rec.value("active", false);
                         auto const size = rec.value<std::uint32_t>("maxSize", 0);
                         auto const period = rec.value<std::chrono::seconds>("regPeriod", std::chrono::seconds(0));

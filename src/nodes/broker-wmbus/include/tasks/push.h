@@ -79,6 +79,12 @@ namespace smf {
         std::map<config::protocol, std::pair<std::uint32_t, std::uint32_t>> channels_;
 
         sml::response_generator sml_generator_;
+
+        /**
+         * Generate an SML transaction id.
+         * Example: 3370571-1
+         */
+        sml::trx trx_;
     };
 
 } // namespace smf

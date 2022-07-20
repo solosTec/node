@@ -140,14 +140,6 @@ namespace smf {
                 std::uint32_t seconds_idx);
 
             /**
-             * SML_GetList.Res without request
-             *
-             * @param server meter ID
-             * @param code optional list name
-             */
-            [[nodiscard]] cyng::tuple_t get_list(cyng::buffer_t const &server, cyng::tuple_t data);
-
-            /**
              * SML_GetProfileList.Res
              */
             [[nodiscard]] cyng::tuple_t get_profile_list(

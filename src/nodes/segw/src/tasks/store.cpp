@@ -27,6 +27,7 @@ namespace smf {
         , cfg_(config)
         , profile_(profile)
 	{
+        BOOST_ASSERT(sml::is_profile(profile));
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"init", "run"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "#" << sp->get_id() << "] created");
@@ -86,6 +87,7 @@ namespace smf {
                 cyng::table *tbl_mirror_data) {
                 tbl_data_col->loop([&, this](cyng::record &&rec, std::size_t) -> bool {
                     auto const profile = rec.value("profile", profile_);
+                    BOOST_ASSERT(sml::is_profile(profile));
                     auto const active = rec.value("active", false);
 
                     if (!active) {

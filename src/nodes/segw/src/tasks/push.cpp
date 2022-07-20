@@ -107,6 +107,7 @@ namespace smf {
                         auto const interval = rec.value("interval", std::chrono::seconds(0));
                         auto const delay = rec.value("delay", std::chrono::seconds(0));
                         auto const profile = rec.value("profile", OBIS_PROFILE);
+                        BOOST_ASSERT(sml::is_profile(profile));
                         target = rec.value("target", "");
 
                         sp->suspend(interval, "run");
@@ -323,7 +324,7 @@ namespace smf {
         auto const trx = *++trx_;
         return gen.get_list(
             trx,
-            cyng::buffer_t{}, // null
+            cyng::buffer_t{}, // client
             meter_,           // meter id
             profile,          // profile
             data,             // data

@@ -266,6 +266,7 @@ namespace smf {
                     BOOST_ASSERT(nr != 0);
 
                     auto const profile = rec.value("profile", OBIS_PROFILE);
+                    BOOST_ASSERT(sml::is_profile(profile));
                     auto const interval = rec.value("interval", std::chrono::seconds(0));
                     auto const delay = rec.value("delay", std::chrono::seconds(0));
                     auto const target = rec.value("target", "");

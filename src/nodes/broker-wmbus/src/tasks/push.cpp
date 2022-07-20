@@ -10,6 +10,7 @@
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/transpiler.h>
 #include <smf/mbus/server_id.h>
+#include <smf/obis/defs.h>
 #include <smf/sml/crc16.h>
 #include <smf/sml/serializer.h>
 
@@ -67,6 +68,7 @@ namespace smf {
         std::bind(&push::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3))
     , channels_()
     , sml_generator_()
+    , trx_(7)
     {
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names(
@@ -123,7 +125,15 @@ namespace smf {
         //
         //  generate SML message
         //
-        auto const tpl = sml_generator_.get_list(srv, sml_list);
+        auto const trx = *++trx_;
+        auto const tpl = sml_generator_.get_list(
+            trx,                  // trx
+            cyng::buffer_t{},     // client
+            srv,                  // meter id
+            OBIS_PROFILE_INITIAL, // profile
+            sml_list,             // data
+            0                     // seconds index
+        );
         auto msg = sml::set_crc16(sml::serialize(tpl));
         auto const payload = sml::boxing(std::move(msg));
 

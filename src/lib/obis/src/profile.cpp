@@ -105,6 +105,7 @@ namespace smf {
 
         std::int64_t rasterize_interval(std::int64_t sec, cyng::obis profile) {
             switch (profile.to_uint64()) {
+            case CODE_PROFILE_INITIAL:
             case CODE_PROFILE_1_MINUTE:
                 //	guarantee that interval has at least 1 minute
                 if (sec < 60u) {
