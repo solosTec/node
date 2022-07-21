@@ -446,19 +446,19 @@ namespace smf {
                 //
                 //	transfer some global entries
                 //
-                insert_config_record(
-                    stmt_insert,
-                    stmt_select,
-                    cyng::to_path(cfg::sep, "country-code"),
-                    reader["country-code"].get(),
-                    "country code");
+                // insert_config_record(
+                //    stmt_insert,
+                //    stmt_select,
+                //    cyng::to_path(cfg::sep, "country-code"),
+                //    reader["country-code"].get(),
+                //    "country code");
 
-                insert_config_record(
-                    stmt_insert,
-                    stmt_select,
-                    cyng::to_path(cfg::sep, "language-code"),
-                    reader["language-code"].get(),
-                    "language code");
+                // insert_config_record(
+                //     stmt_insert,
+                //     stmt_select,
+                //     cyng::to_path(cfg::sep, "language-code"),
+                //     reader["language-code"].get(),
+                //     "language code");
 
                 insert_config_record(
                     stmt_insert,
@@ -535,11 +535,14 @@ namespace smf {
                 //	transfer virtual meter configuration
                 //
                 // transfer_vmeter(stmt, cyng::container_cast<cyng::param_map_t>(reader["virtual-meter"].get()));
+            } else {
+
+                std::cerr << "**error: prepare statement failed: " << sql_select << std::endl;
             }
 
         } else {
 
-            std::cerr << "**error: prepare statement failed" << std::endl;
+            std::cerr << "**error: prepare statement failed" << sql_insert << std::endl;
         }
     }
 
