@@ -241,11 +241,15 @@ namespace smf {
 
     cyng::tuple_t controller::create_wireless_spec(std::string const &hostname) const {
 
-        //	wireless M-Bus
+        //	wireless M-Bus OECP1
         //	stty -F /dev/ttyAPP0 raw
         //	stty -F /dev/ttyAPP0  -echo -echoe -echok
         //	stty -F /dev/ttyAPP0 115200
         //	cat /dev/ttyAPP0 | hexdump
+
+        //  OECP2
+        //  i2cset -y 2 0x8 0xf4 0x1f
+        //  hexdump -C /dev/ttymxc0
 
         return cyng::make_tuple(
 
@@ -267,7 +271,8 @@ namespace smf {
 #else
 
             cyng::make_param("enabled", true),
-            cyng::make_param("port", "/dev/ttyAPP0"),
+            // cyng::make_param("port", "/dev/ttyAPP0"),
+            cyng::make_param("port", "/dev/ttymxc0"),
             cyng::make_param("HCI", "none"),
             cyng::make_param("databits", 8),
             cyng::make_param("parity", "none"),       //	none, odd, even

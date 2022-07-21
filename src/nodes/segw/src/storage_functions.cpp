@@ -665,7 +665,7 @@ namespace smf {
     }
 
     void transfer_ipt_params(cyng::db::statement_ptr stmt_insert, cyng::db::statement_ptr stmt_select, cyng::param_map_t &&pmap) {
-        std::cout << "IP-T parameter: " << pmap << std::endl;
+        // std::cout << "IP-T parameter: " << pmap << std::endl;
 
         // cyng::make_param("enabled", true)
         insert_config_record(
@@ -1349,7 +1349,7 @@ namespace smf {
     }
 
     void transfer_gpio(cyng::db::statement_ptr stmt_insert, cyng::db::statement_ptr stmt_select, cyng::param_map_t &&pmap) {
-        std::cout << "GPIO: " << pmap << std::endl;
+        // std::cout << "GPIO: " << pmap << std::endl;
 
         insert_config_record(
             stmt_insert,
