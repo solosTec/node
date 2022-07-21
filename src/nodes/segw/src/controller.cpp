@@ -47,21 +47,25 @@ namespace smf {
         //
         if (vars["init"].as<bool>()) {
             //	initialize database
+            std::cout << "config file [" << config_.json_path_ << "]#" << config_.config_index_ << std::endl;
             init_storage(read_config_section(config_.json_path_, config_.config_index_));
             return true;
         }
         if (vars["transfer"].as<bool>()) {
             //	transfer JSON configuration into database
+            std::cout << "config file [" << config_.json_path_ << "]#" << config_.config_index_ << std::endl;
             transfer_config(read_config_section(config_.json_path_, config_.config_index_));
             return true;
         }
         if (vars["clear"].as<bool>()) {
             //	clear configuration from database
+            std::cout << "config file [" << config_.json_path_ << "]#" << config_.config_index_ << std::endl;
             clear_config(read_config_section(config_.json_path_, config_.config_index_));
             return true;
         }
         if (vars["list"].as<bool>()) {
             //	show database configuration
+            std::cout << "config file [" << config_.json_path_ << "]#" << config_.config_index_ << std::endl;
             list_config(read_config_section(config_.json_path_, config_.config_index_));
             return true;
         }

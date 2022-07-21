@@ -139,7 +139,7 @@ namespace smf {
             //
             auto const cfg_v4 = cyng::sys::get_ipv4_configuration();
             if (!cfg_v4.empty()) {
-                std::cout << "***info: use " << cfg_v4.front().device_ << " instead" << std::endl;
+                std::cout << "***info   : use " << cfg_v4.front().device_ << " instead" << std::endl;
                 return cfg_v4.front().device_;
             }
 
@@ -147,7 +147,7 @@ namespace smf {
             //  (2) take the first available device
             //
             if (!nics.empty()) {
-                std::cout << "***info: use " << nics.front() << " instead" << std::endl;
+                std::cout << "***info   : use " << nics.front() << " instead" << std::endl;
                 return nics.front();
             }
         }
