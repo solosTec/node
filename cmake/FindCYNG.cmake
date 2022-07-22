@@ -120,7 +120,7 @@ else(PC_CYNG_FOUND)
     #   and this directory is preferred.
 	#	On Windows the Debug build is preferred.
 	#
-    set(REQUESTED_LIBS "db;io;log;obj;parse;rnd;sql;store;sys;task;vm;net;sqlite3")
+    set(REQUESTED_LIBS "db;io;log;obj;parse;rnd;sql;store;sys;task;vm;net;xml;sqlite3")
     
 	if(WIN32)
         list(APPEND REQUESTED_LIBS "scm")
