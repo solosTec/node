@@ -541,9 +541,9 @@ namespace smf {
             "DB",
             cyng::make_tuple(
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-                cyng::make_param("file-name", "/usr/local/etc/smf/segw.sqlite"),
+                cyng::make_param("file-name", "/usr/local/etc/smf/segw.database"),
 #else
-                cyng::make_param("file-name", (cwd / "segw.sqlite").string()),
+                cyng::make_param("file-name", (cwd / "segw.database").string()),
 #endif
                 cyng::make_param("busy-timeout", 12),         //	seconds
                 cyng::make_param("watchdog", 30),             //	for database connection
@@ -627,7 +627,7 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::init_storage(s);
         } else {
             std::cout << "**error: no configuration found" << std::endl;
@@ -638,7 +638,7 @@ namespace smf {
         auto const reader = cyng::make_reader(cfg);
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::transfer_config(s, std::move(cfg));
         } else {
             std::cout << "**error: no configuration found" << std::endl;
@@ -649,7 +649,7 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file-name", "") << std::endl;
             smf::clear_config(s);
         } else {
             std::cout << "**error: no configuration found" << std::endl;

@@ -416,7 +416,15 @@ namespace smf {
 
     void transfer_config(cyng::db::session &db, cyng::object &&cfg) {
         BOOST_ASSERT(db.is_alive());
+
         auto const reader = cyng::make_reader(std::move(cfg));
+        if (reader.size() == 0) {
+            std::cout << "***warning: no config data" << std::endl;
+        }
+        else {
+            std::cout << "***info   : transfer " << reader.size() << " records into database" << std::endl;
+        }
+
 
         //
         //	start transaction
@@ -428,6 +436,7 @@ namespace smf {
         //
         auto const ms = get_table_cfg();
         auto const sql_insert = cyng::sql::insert(db.get_dialect(), ms).bind_values(ms)();
+        std::cout << "***info   : prepare " << sql_insert << std::endl;
 
         auto stmt_insert = db.create_statement();
         std::pair<int, bool> const r_insert = stmt_insert->prepare(sql_insert);
@@ -438,6 +447,7 @@ namespace smf {
             //	prepare SQL SELECT statement
             //
             auto const sql_select = cyng::sql::select(db.get_dialect(), ms).all().from().where(cyng::sql::pk())();
+            std::cout << "***info   : prepare " << sql_select << std::endl;
 
             auto stmt_select = db.create_statement();
             std::pair<int, bool> const r_select = stmt_select->prepare(sql_select);
@@ -460,6 +470,7 @@ namespace smf {
                 //     reader["language-code"].get(),
                 //     "language code");
 
+                // std::cout << "***info   : insert " << cyng::to_path(cfg::sep, "generate-profile") << std::endl;
                 insert_config_record(
                     stmt_insert,
                     stmt_select,
@@ -1706,8 +1717,11 @@ namespace smf {
         //	use already prepared statements
         //
         if (key.empty()) {
-            std::cerr << "***error: empty key" << std::endl;
+            std::cerr << "***error  : empty key" << std::endl;
             return false;
+        }
+        else {
+            // std::cout << "***info   : pk = " << key << std::endl;
         }
         {
             //  key must be cloned
@@ -1720,9 +1734,12 @@ namespace smf {
                 std::cout << "***warning: " << key;
                 std::cout << std::setfill('.') << std::setw((key.size() < 42) ? (42 - key.size()) : 1) << "= ";
                 std::cout << val << " already in use" << std::endl;
+                return false;
+            }
+            else {
+                // std::cout << "***info   : " << key << " is not used" << std::endl;
             }
             stmt_select->clear();
-            return false;
         }
 
         {

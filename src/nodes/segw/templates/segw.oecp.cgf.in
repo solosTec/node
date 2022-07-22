@@ -2,7 +2,8 @@
 #	startup configuration for smart energy gateway (segw)
 #	created : ${${PROJECT_NAME}_NOW_UTC}
 #	platform: @CMAKE_SYSTEM@
+#	version : ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
 #
 [setup]
-json = /usr/local/etc/smf/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+json = /opt/smf/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
 pool-size = 2
