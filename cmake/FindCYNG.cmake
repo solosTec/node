@@ -93,7 +93,7 @@ else(PC_CYNG_FOUND)
 	message(STATUS "** CYNG_BUILD_DIR           : ${CYNG_BUILD_DIR}")
 	message(STATUS "** CYNG_SEARCH_PATH         : ${CYNG_SEARCH_PATH}")
 
-    find_file(CYNG_PUGI_XML_LIB
+    find_library(CYNG_PUGI_XML_LIB
         NAMES 
 			pugixml
         PATHS
