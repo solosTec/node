@@ -70,7 +70,7 @@ namespace smf {
         std::chrono::system_clock::time_point now) {
 
 #ifdef _DEBUG
-        std::cout << "minutely  reports start at " << start << std::endl;
+        std::cout << "minutely reports start at " << start << std::endl;
 #endif
 
         //
@@ -529,6 +529,7 @@ namespace smf {
 
         //
         // print report
+        //
         auto const file_name = get_filename(profile, srv_id, start);
         emit_report(root, file_name, profile, regs, data);
     }

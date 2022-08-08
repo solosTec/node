@@ -597,7 +597,42 @@ namespace smf {
             //  SELECT hex(TSMLReadout.meterID), TSMLReadoutData.register, reading, unit from TSMLReadout INNER JOIN TSMLReadoutData
             //  ON TSMLReadout.tag = TSMLReadoutData.tag ORDER BY actTime;
             //
-            return cyng::to_sql(get_store_sml_readout_data(), {0, 0, 256, 0, 0, 0}); 
+            return cyng::to_sql(get_store_sml_readout_data(), {0, 0, 256, 0, 0, 0});
+        }
+
+        cyng::meta_store get_store_iec_readout() {
+            return cyng::meta_store(
+                "IECreadout",
+                {
+                    cyng::column("tag", cyng::TC_UUID),
+                    //   -- body
+                    cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                    cyng::column("profile", cyng::TC_OBIS)    // load profile
+                },
+                1);
+        }
+        cyng::meta_sql get_table_iec_readout() { return cyng::to_sql(get_store_iec_readout(), {0, 9, 0}); }
+
+        cyng::meta_store get_store_iec_readout_data() {
+            return cyng::meta_store(
+                "IECreadoutData",
+                {
+                    cyng::column("tag", cyng::TC_UUID),
+                    cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                    //   -- body
+                    cyng::column("profile", cyng::TC_OBIS), // load profile
+                    // cyng::column("idx", cyng::TC_INT64),      // time stamp index (with offset)
+                    cyng::column("register", cyng::TC_OBIS),  // OBIS code (data type)
+                    cyng::column("reading", cyng::TC_STRING), // value as string
+                    cyng::column("type", cyng::TC_UINT16),    // data type code
+                    cyng::column("scaler", cyng::TC_INT8),    // decimal place
+                    cyng::column("unit", cyng::TC_UINT8),     // physical unit
+                    // cyng::column("status", cyng::TC_UINT32)   // status
+                },
+                2);
+        }
+        cyng::meta_sql get_table_iec_readout_data() {
+            return cyng::to_sql(get_store_iec_readout_data(), {0, 9, 0, 0, 256, 0, 0, 0});
         }
 
     } // namespace config

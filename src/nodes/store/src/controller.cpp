@@ -216,8 +216,10 @@ namespace smf {
                     // create_report_spec(OBIS_PROFILE_LAST_WEEK, cwd, false, sml::backtrack_time(OBIS_PROFILE_LAST_WEEK)),
                     create_report_spec(OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH)), // one month
                     create_report_spec(OBIS_PROFILE_1_YEAR, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_YEAR))    //  one year
-                    )                                                                                                // reports
-                ))});
+                    )                                                                     // reports tuple
+                ),                                                                        // reports param
+            cyng::make_param("lpex", cyng::make_tuple(cyng::make_param("db", "default"))) // lpex
+            )});
     }
 
     cyng::prop_t create_report_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
@@ -641,6 +643,7 @@ namespace smf {
             std::cerr << "***error: report uses an undefined database: " << db << std::endl;
         }
     }
+
     std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg) {
 
         std::map<std::string, cyng::db::session> sm;
@@ -658,8 +661,9 @@ namespace smf {
     cyng::db::session controller::init_storage(cyng::param_map_t const &pm) {
         auto s = cyng::db::create_db_session(pm);
         if (s.is_alive()) {
+            iec_db_writer::init_storage(s); //	see task/iec_db_writer.h
+            sml_db_writer::init_storage(s); //	see task/sml_db_writer.h
             std::cout << "***info : database created" << std::endl;
-            // smf::init_storage(s);	//	see task/storage_db.h
         } else {
             std::cerr << "***error: create database failed: " << pm << std::endl;
         }

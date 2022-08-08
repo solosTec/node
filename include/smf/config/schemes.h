@@ -199,6 +199,12 @@ namespace smf {
         cyng::meta_sql get_table_sml_readout();
         cyng::meta_sql get_table_sml_readout_data();
 
+        cyng::meta_store get_store_iec_readout();
+        cyng::meta_store get_store_iec_readout_data();
+
+        cyng::meta_sql get_table_iec_readout();
+        cyng::meta_sql get_table_iec_readout_data();
+
     } // namespace config
 } // namespace smf
 
