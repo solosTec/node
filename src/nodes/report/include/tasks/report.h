@@ -32,7 +32,8 @@ namespace smf {
             cyng::db::session,
             cyng::obis profile,
             std::string path,
-            std::chrono::hours backtrack);
+            std::chrono::hours backtrack,
+            std::string prefix);
 
         ~report() = default;
 
@@ -49,6 +50,7 @@ namespace smf {
         cyng::obis const profile_;
         std::filesystem::path const root_;
         std::chrono::hours const backtrack_;
+        std::string const prefix_;
     };
 
 } // namespace smf

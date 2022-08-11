@@ -14,7 +14,7 @@
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
-#include <smf/report/report.h>
+#include <smf/report/csv.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -216,7 +216,8 @@ namespace smf {
                         }
                     }
 
-                    generate_report(s, profile, root, std::chrono::hours(40), now);
+                    auto const prefix = reader_report.get("prefix", "");
+                    generate_csv(s, profile, root, std::chrono::hours(40), now, prefix);
 
                 } else {
                     std::cout << "***info: report " << name << " is disabled" << std::endl;

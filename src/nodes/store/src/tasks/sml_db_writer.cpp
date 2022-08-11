@@ -100,6 +100,17 @@ namespace smf {
         std::uint32_t status,
         cyng::param_map_t const &values) {
 
+        auto const now = std::chrono::system_clock::now();
+
+        //
+        //  check act_time
+        //
+        BOOST_ASSERT(now > sml::offset_);
+        if (now < sml::offset_) {
+            CYNG_LOG_WARNING(logger_, "[sml.db] invalid \"act_time\" " << act_time << " at transaction " << trx);
+            return;
+        }
+
         //
         //  meter id
         //
@@ -110,8 +121,6 @@ namespace smf {
         //  primary key
         //
         auto const tag = uidgen_();
-
-        auto const now = std::chrono::system_clock::now();
 
         //
         //  write to database
@@ -229,7 +238,11 @@ namespace smf {
         return {config::get_store_sml_readout(), config::get_store_sml_readout_data()};
     }
     std::vector<cyng::meta_sql> sml_db_writer::get_sql_meta_data() {
-        return {config::get_table_sml_readout(), config::get_table_sml_readout_data()};
+        return {
+            config::get_table_sml_readout(),
+            config::get_table_sml_readout_data(),
+            config::get_table_customer(),
+            config::get_table_meter_lpex()};
     }
 
 } // namespace smf

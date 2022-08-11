@@ -81,8 +81,10 @@ namespace smf {
                 auto const name = reader.get("name", "");
                 auto const path = reader.get("path", "");
                 auto const backtrack = std::chrono::hours(reader.get("backtrack", sml::backtrack_time(profile).count()));
+                auto const prefix = reader.get("prefix", "");
 
-                auto channel = ctl_.create_named_channel_with_ref<report>(name, ctl_, logger_, db_, profile, path, backtrack);
+                auto channel =
+                    ctl_.create_named_channel_with_ref<report>(name, ctl_, logger_, db_, profile, path, backtrack, prefix);
                 BOOST_ASSERT(channel->is_open());
                 channels_.lock(channel);
 

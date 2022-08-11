@@ -4,12 +4,6 @@
 
 #include <cyng/sys/clock.h>
 
-//#ifdef _DEBUG
-//#include <cyng/io/ostream.h>
-//#include <cyng/io/serialize.h>
-//#include <iostream>
-//#endif
-
 namespace smf {
     namespace sml {
         cyng::obis_path_t get_profiles() {
@@ -223,9 +217,13 @@ namespace smf {
             return now;
         }
 
-        std::int64_t to_index(std::chrono::system_clock::time_point now, cyng::obis profile) {
+        std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point now, cyng::obis profile) {
 
-            BOOST_ASSERT(now > offset_);
+            // BOOST_ASSERT(now > offset_);
+            if (now < offset_) {
+                //  invalid time point
+                return {0, false};
+            }
 
             auto const start = calculate_offset(now);
             //#ifdef _DEBUG
@@ -233,24 +231,25 @@ namespace smf {
             //#endif
 
             switch (profile.to_uint64()) {
-            case CODE_PROFILE_1_MINUTE: return minutes_since_epoch(start).count();
-            case CODE_PROFILE_15_MINUTE: return minutes_since_epoch(start).count() / 15u;
-            case CODE_PROFILE_60_MINUTE: return hours_since_epoch(start).count();
-            case CODE_PROFILE_24_HOUR: return hours_since_epoch(start).count() / 24u;
+            case CODE_PROFILE_1_MINUTE: return {minutes_since_epoch(start).count(), true};
+            case CODE_PROFILE_15_MINUTE: return {minutes_since_epoch(start).count() / 15u, true};
+            case CODE_PROFILE_60_MINUTE: return {hours_since_epoch(start).count(), true};
+            case CODE_PROFILE_24_HOUR: return {hours_since_epoch(start).count() / 24u, true};
             case CODE_PROFILE_1_MONTH: {
                 //  calculate the exact count of months
                 auto const h = cyng::sys::get_length_of_month(now); //  hours
-                return hours_since_epoch(start).count() / h.count();
+                return {hours_since_epoch(start).count() / h.count(), true};
             }
             case CODE_PROFILE_1_YEAR: {
                 //  calculate the exact count of years
                 auto const h = cyng::sys::get_length_of_year(now); //  hours
-                return hours_since_epoch(start).count() / h.count();
+                return {hours_since_epoch(start).count() / h.count(), true};
             }
             default: break;
             }
 
-            return std::chrono::duration_cast<std::chrono::seconds>(start.time_since_epoch()).count();
+            //  unknown profile
+            return {std::chrono::duration_cast<std::chrono::seconds>(start.time_since_epoch()).count(), false};
         }
 
         std::chrono::system_clock::time_point to_time_point(std::int64_t idx, cyng::obis profile) {
@@ -284,6 +283,6 @@ namespace smf {
 
     std::chrono::system_clock::time_point calculate_offset(std::chrono::system_clock::time_point tp) {
         auto const epoch = std::chrono::time_point<std::chrono::system_clock>{};
-        return tp - (offset_ - epoch);
+        return tp - (sml::offset_ - epoch);
     }
 } // namespace smf

@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(profile) {
     // std::int64_t to_index(std::chrono::system_clock::time_point, cyng::obis profile);
     // std::chrono::system_clock::time_point to_index(std::int64_t, cyng::obis profile);
     auto const idx = smf::sml::to_index(now, profile);
-    auto const tp = smf::sml::to_time_point(idx, profile);
+    auto const tp = smf::sml::to_time_point(idx.first, profile);
 
     //  2022-07-10 16:56:32.0000000/2022-07-10 16:45:00.0000000
     std::cout << now << "/" << tp << std::endl;

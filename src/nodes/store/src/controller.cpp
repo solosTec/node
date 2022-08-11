@@ -29,7 +29,9 @@
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
-#include <smf/report/report.h>
+#include <smf/report/csv.h>
+#include <smf/report/lpex.h>
+#include <smf/report/utility.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -133,7 +135,7 @@ namespace smf {
                 "IEC:LOG",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "log").string()),
-                    cyng::make_param("prefix", "iec-"),
+                    cyng::make_param("prefix", "iec-protocol"),
                     cyng::make_param("suffix", "log"),
                     cyng::make_param("version", SMF_VERSION_NAME))),
             cyng::make_param(
@@ -216,9 +218,17 @@ namespace smf {
                     // create_report_spec(OBIS_PROFILE_LAST_WEEK, cwd, false, sml::backtrack_time(OBIS_PROFILE_LAST_WEEK)),
                     create_report_spec(OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH)), // one month
                     create_report_spec(OBIS_PROFILE_1_YEAR, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_YEAR))    //  one year
-                    )                                                                     // reports tuple
-                ),                                                                        // reports param
-            cyng::make_param("lpex", cyng::make_tuple(cyng::make_param("db", "default"))) // lpex
+                    ) // reports tuple
+                ),    // reports param
+            cyng::make_param(
+                "lpex",
+                cyng::make_tuple(
+                    cyng::make_param("db", "default"),
+                    create_lpex_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
+                    create_lpex_spec(OBIS_PROFILE_60_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
+                    create_lpex_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
+                    create_lpex_spec(OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH))) // lpex tuple
+                )                                                                                                  // lpex param
             )});
     }
 
@@ -227,10 +237,24 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / cyng::to_string(profile)).string()),
-                cyng::make_param("backtrack", backtrack.count()),
+                cyng::make_param("path", (cwd / get_prefix(profile)).string()),
+                cyng::make_param("backtrack-hours", backtrack.count()),
                 cyng::make_param("prefix", ""),
                 cyng::make_param("enabled", enabled)));
+    }
+
+    cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
+        return cyng::make_prop(
+            profile,
+            cyng::make_tuple(
+                cyng::make_param("name", obis::get_name(profile)),
+                cyng::make_param("path", (cwd / get_prefix(profile)).string()),
+                cyng::make_param("backtrack-hours", backtrack.count()),
+                cyng::make_param("prefix", "LPEx-"),
+                cyng::make_param("offset", 15), //  minutes
+                cyng::make_param("enabled", enabled),
+                cyng::make_param("print-version", true) // if true first line contains the LPEx version
+                ));
     }
 
     void controller::run(
@@ -573,11 +597,20 @@ namespace smf {
         }
 
         //
-        //  generate different reports
+        //  generate different CSV reports
         //
         if (vars["generate"].as<bool>()) {
             //	generate all reports
-            generate_reports(read_config_section(config_.json_path_, config_.config_index_));
+            generate_csv_reports(read_config_section(config_.json_path_, config_.config_index_));
+            return true;
+        }
+
+        //
+        //  generate different LPEX reports
+        //
+        if (vars["lpex"].as<bool>()) {
+            //	generate all reports
+            generate_lpex_reports(read_config_section(config_.json_path_, config_.config_index_));
             return true;
         }
 
@@ -587,7 +620,7 @@ namespace smf {
         return controller_base::run_options(vars);
     }
 
-    void controller::generate_reports(cyng::object &&cfg) {
+    void controller::generate_csv_reports(cyng::object &&cfg) {
 
         //
         //  data base connections
@@ -612,38 +645,77 @@ namespace smf {
 
                     if (reader_report.get("enabled", false)) {
                         auto const profile = cyng::to_obis(cfg_report.first);
-                        std::cout << "***info: generate report " << name << " (" << profile << ")" << std::endl;
+                        std::cout << "***info: generate csv report " << name << " (" << profile << ")" << std::endl;
 
                         auto const root = reader_report.get("path", cwd.string());
                         if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                            std::cout << "***warning: output path [" << root << "] of csv report " << name << " does not exists";
                             std::error_code ec;
                             if (!std::filesystem::create_directories(root, ec)) {
                                 std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
                             }
                         }
-                        auto const backtrack = reader_report.get("backtrack", 40);
-                        generate_report(pos->second, profile, root, std::chrono::hours(backtrack), now);
+                        auto const backtrack = reader_report.get("backtrack-hours", 40);
+                        auto const prefix = reader_report.get("prefix", "");
+                        generate_csv(pos->second, profile, root, std::chrono::hours(backtrack), now, prefix);
 
                     } else {
-                        std::cout << "***info: report " << name << " is disabled" << std::endl;
+                        std::cout << "***info: csv report " << name << " is disabled" << std::endl;
                     }
                 }
-
-                // std::cout << "***info: generate 15 minute reports: " << std::endl;
-                // generate_report(pos->second, OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(40), now);
-
-                // std::cout << "***info: generate 60 minute reports: " << std::endl;
-                // generate_report(pos->second, OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(40), now);
-
-                // std::cout << "***info: generate 24 h reports: " << std::endl;
-                // generate_report(pos->second, OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(40), now);
             }
         } else {
-            std::cerr << "***error: report uses an undefined database: " << db << std::endl;
+            std::cerr << "***error: csv report uses an undefined database: " << db << std::endl;
         }
     }
 
+    void controller::generate_lpex_reports(cyng::object &&cfg) {
+
+        //
+        //  data base connections
+        //
+        auto sm = init_storage(cfg);
+        auto const reader = cyng::make_reader(std::move(cfg));
+        auto const db = reader["lpex"].get("db", "default");
+
+        auto const pos = sm.find(db);
+        if (pos != sm.end()) {
+
+            if (pos->second.is_alive()) {
+                std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file-name", "") << std::endl;
+                auto const cwd = std::filesystem::current_path();
+                auto const now = std::chrono::system_clock::now();
+
+                auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
+                for (auto const &cfg_report : reports) {
+
+                    auto const reader_report = cyng::make_reader(cfg_report.second);
+                    auto const name = reader_report.get("name", "no-name");
+
+                    if (reader_report.get("enabled", false)) {
+                        auto const profile = cyng::to_obis(cfg_report.first);
+                        std::cout << "***info: generate lpex report " << name << " (" << profile << ")" << std::endl;
+                        auto const root = reader_report.get("path", cwd.string());
+                        if (!std::filesystem::exists(root)) {
+                            std::cout << "***warning: output path [" << root << "] of lpex report " << name << " does not exists";
+                            std::error_code ec;
+                            if (!std::filesystem::create_directories(root, ec)) {
+                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                            }
+                        }
+                        auto const backtrack = reader_report.get("backtrack-hours", 40);
+                        auto const prefix = reader_report.get("prefix", "LPEx-");
+                        generate_lpex(pos->second, profile, root, std::chrono::hours(backtrack), now, prefix);
+
+                    } else {
+                        std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
+                    }
+                }
+            }
+        } else {
+            std::cerr << "***error: lpex report uses an undefined database: " << db << std::endl;
+        }
+    }
     std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg) {
 
         std::map<std::string, cyng::db::session> sm;
@@ -1014,7 +1086,8 @@ namespace smf {
                 BOOST_ASSERT(sml::is_profile(profile));
                 auto const name = reader.get("name", "");
                 auto const path = reader.get("path", "");
-                auto const backtrack = std::chrono::hours(reader.get("backtrack", sml::backtrack_time(profile).count()));
+                auto const backtrack = std::chrono::hours(reader.get("backtrack-hours", sml::backtrack_time(profile).count()));
+                auto const prefix = reader.get("prefix", "");
 
                 if (!std::filesystem::exists(path)) {
                     CYNG_LOG_WARNING(logger, "output path [" << path << "] of report " << name << " does not exists");
@@ -1024,7 +1097,7 @@ namespace smf {
                     }
                 }
 
-                auto channel = ctl.create_named_channel_with_ref<report>(name, ctl, logger, db, profile, path, backtrack);
+                auto channel = ctl.create_named_channel_with_ref<report>(name, ctl, logger, db, profile, path, backtrack, prefix);
                 BOOST_ASSERT(channel->is_open());
                 channels.lock(channel);
 

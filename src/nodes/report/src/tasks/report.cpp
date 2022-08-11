@@ -3,7 +3,7 @@
 
 #include <smf/obis/db.h>
 #include <smf/obis/profile.h>
-#include <smf/report/report.h>
+#include <smf/report/csv.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -23,7 +23,8 @@ namespace smf {
         cyng::db::session db, 
         cyng::obis profile, 
         std::string path,
-        std::chrono::hours backtrack)
+        std::chrono::hours backtrack,
+        std::string prefix)
         : sigs_{
             std::bind(&report::run, this), // start
             std::bind(&report::stop, this, std::placeholders::_1) // stop
@@ -34,7 +35,8 @@ namespace smf {
         , db_(db)
         , profile_(profile)
         , root_(path)
-        , backtrack_(backtrack) {
+        , backtrack_(backtrack)
+        , prefix_(prefix) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -62,7 +64,7 @@ namespace smf {
             //
             //  generate report
             //
-            generate_report(db_, profile_, root_, backtrack_, now);
+            generate_csv(db_, profile_, root_, backtrack_, now, prefix_);
         }
     }
 } // namespace smf

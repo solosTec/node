@@ -188,6 +188,11 @@ namespace smf {
         auto macs = cyng::sys::get_mac48_adresses();
 
         //
+        //  remove macs with null values
+        //
+        std::erase_if(macs, [](cyng::mac48 const &mac) -> bool { return cyng::is_nil(mac); });
+
+        //
         //	get local link addresses
         //
         std::vector<boost::asio::ip::address> local_links;
@@ -417,7 +422,9 @@ namespace smf {
     }
 
     cyng::param_t controller::create_gpio_spec() const {
-        //	available pins are 46, 47, 50, 53, 64, 68
+        //	available pins are
+        //  OECP1: 46, 47, 50, 53, 64, 68
+        //  OECP2: (89, 119, 120) 121, 123
         return cyng::make_param(
             "gpio",
             cyng::param_map_factory(
@@ -427,7 +434,9 @@ namespace smf {
 #else
                 false
 #endif
-                )("path", "/sys/class/gpio")("list", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68
+                ) // enabled/disabled
+            //("path", "/sys/class/gpio")("list", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68 OECP1
+            ("path", "/sys/class/gpio")("list", cyng::make_vector({119, 120, 121, 123})) //	, 64, 68 OECP2
             ());
     }
 

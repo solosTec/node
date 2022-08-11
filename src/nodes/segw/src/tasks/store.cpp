@@ -113,65 +113,75 @@ namespace smf {
                             auto const received = rec_ro.value("received", now);
                             auto const idx = sml::to_index(received, profile_);
                             //  "meterID", "profile", "idx"
-                            auto const pk_mirror = cyng::extend_key(pk, profile_, idx);
-                            BOOST_ASSERT_MSG(pk_mirror.size() == 3, "wrong key size for table mirror");
-                            if (tbl_mirror->insert(pk_mirror, rec_ro.data(), 1, cfg_.get_tag())) {
-                                ++meta_count;
+                            if (idx.second) {
+                                auto const pk_mirror = cyng::extend_key(pk, profile_, idx.first);
+                                BOOST_ASSERT_MSG(pk_mirror.size() == 3, "wrong key size for table mirror");
+                                if (tbl_mirror->insert(pk_mirror, rec_ro.data(), 1, cfg_.get_tag())) {
+                                    ++meta_count;
 
-                                tbl_ro_data->loop([&, this](cyng::record &&rec_ro_data, std::size_t) -> bool {
-                                    auto const meter_ro = rec_ro_data.value("meterID", meter);
+                                    tbl_ro_data->loop([&, this](cyng::record &&rec_ro_data, std::size_t) -> bool {
+                                        auto const meter_ro = rec_ro_data.value("meterID", meter);
 #ifdef _DEBUG
-                                    CYNG_LOG_DEBUG(
-                                        logger_,
-                                        "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << "/" << meter_ro);
-                                //{
-                                //    auto const data = rec_ro_data.data();
-                                //    for (auto const &obj : data) {
-                                //        // BOOST_ASSERT(obj); //  null values not allowed
-                                //        if (obj) {
-                                //            CYNG_LOG_DEBUG(logger_, "[store] transfer " << obj);
-                                //        } else {
-                                //            CYNG_LOG_ERROR(logger_, "[store] transfer null value: " << data);
-                                //        }
-                                //    }
-                                //}
-#endif
-                                    if (meter_ro == meter) {
-                                        //
-                                        //  transfer "readoutData" => "mirrorData"
-                                        //
-                                        auto const reg = rec_ro_data.value("register", OBIS_METER_ADDRESS);
-                                        //  "meterID", "profile", "idx", "register"
-                                        auto const pk_mirror_data = cyng::extend_key(pk_mirror, reg);
-                                        BOOST_ASSERT_MSG(pk_mirror_data.size() == 4, "wrong key size for table mirrorData");
-                                        CYNG_LOG_TRACE(
+                                        CYNG_LOG_DEBUG(
                                             logger_,
-                                            "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter
-                                                                << ", register: " << reg);
-                                        if (tbl_mirror_data->insert(pk_mirror_data, rec_ro_data.data(), 1, cfg_.get_tag())) {
-                                            ++data_count;
-                                        } else {
-                                            CYNG_LOG_ERROR(
+                                            "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << "/"
+                                                                << meter_ro);
+                                    //{
+                                    //    auto const data = rec_ro_data.data();
+                                    //    for (auto const &obj : data) {
+                                    //        // BOOST_ASSERT(obj); //  null values not allowed
+                                    //        if (obj) {
+                                    //            CYNG_LOG_DEBUG(logger_, "[store] transfer " << obj);
+                                    //        } else {
+                                    //            CYNG_LOG_ERROR(logger_, "[store] transfer null value: " << data);
+                                    //        }
+                                    //    }
+                                    //}
+#endif
+                                        if (meter_ro == meter) {
+                                            //
+                                            //  transfer "readoutData" => "mirrorData"
+                                            //
+                                            auto const reg = rec_ro_data.value("register", OBIS_METER_ADDRESS);
+                                            //  "meterID", "profile", "idx", "register"
+                                            auto const pk_mirror_data = cyng::extend_key(pk_mirror, reg);
+                                            BOOST_ASSERT_MSG(pk_mirror_data.size() == 4, "wrong key size for table mirrorData");
+                                            CYNG_LOG_TRACE(
                                                 logger_,
                                                 "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter
-                                                                    << ", register: " << reg << " failed");
+                                                                    << ", register: " << reg);
+                                            if (tbl_mirror_data->insert(pk_mirror_data, rec_ro_data.data(), 1, cfg_.get_tag())) {
+                                                ++data_count;
+                                            } else {
+                                                CYNG_LOG_ERROR(
+                                                    logger_,
+                                                    "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter
+                                                                        << ", register: " << reg << " failed");
+                                            }
                                         }
+                                        return true;
+                                    });
+
+                                    if (data_count == 0) {
+                                        //
+                                        //  There is an entry in table "readout" but no data in "readoutData"
+                                        //
+                                        CYNG_LOG_WARNING(
+                                            logger_,
+                                            "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter
+                                                                << " has no data");
                                     }
-                                    return true;
-                                });
 
-                                if (data_count == 0) {
-                                    //
-                                    //  There is an entry in table "readout" but no data in "readoutData"
-                                    //
-                                    CYNG_LOG_WARNING(
+                                } else {
+                                    CYNG_LOG_ERROR(
                                         logger_,
-                                        "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << " has no data");
+                                        "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << " failed");
                                 }
-
-                            } else {
+                            } else { // invalid receiving time
                                 CYNG_LOG_ERROR(
-                                    logger_, "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter << " failed");
+                                    logger_,
+                                    "[store] transfer " << obis::get_name(profile_) << ", meter: " << meter
+                                                        << " with invalid receiving time: " << received);
                             }
                         } else {
                             //  no readout data

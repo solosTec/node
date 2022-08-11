@@ -602,7 +602,7 @@ namespace smf {
 
         cyng::meta_store get_store_iec_readout() {
             return cyng::meta_store(
-                "IECreadout",
+                "IECReadout",
                 {
                     cyng::column("tag", cyng::TC_UUID),
                     //   -- body
@@ -615,7 +615,7 @@ namespace smf {
 
         cyng::meta_store get_store_iec_readout_data() {
             return cyng::meta_store(
-                "IECreadoutData",
+                "IECReadoutData",
                 {
                     cyng::column("tag", cyng::TC_UUID),
                     cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
@@ -634,6 +634,31 @@ namespace smf {
         cyng::meta_sql get_table_iec_readout_data() {
             return cyng::to_sql(get_store_iec_readout_data(), {0, 9, 0, 0, 256, 0, 0, 0});
         }
+
+        cyng::meta_store get_store_customer() {
+            return cyng::meta_store(
+                "customer",
+                {
+                    cyng::column("id", cyng::TC_STRING), //  Kundennummer: (example "11013951")
+                    //   -- body
+                    cyng::column("name", cyng::TC_STRING),       // Kundenname
+                    cyng::column("uniqueName", cyng::TC_STRING), // eindeutigeKDNr
+                },
+                1);
+        }
+        cyng::meta_sql get_table_customer() { return cyng::to_sql(get_store_customer(), {8, 64, 64}); }
+
+        cyng::meta_store get_store_meter_lpex() {
+            return cyng::meta_store(
+                "meterLpex",
+                {
+                    cyng::column("meter", cyng::TC_BUFFER), //	[string] meter number (i.e. 16000913) 4 bytes
+                    //   -- body
+                    cyng::column("id", cyng::TC_STRING), //  Kundennummer: (example "11013951")
+                },
+                1);
+        }
+        cyng::meta_sql get_table_meter_lpex() { return cyng::to_sql(get_store_meter_lpex(), {8, 8}); }
 
     } // namespace config
 } // namespace smf

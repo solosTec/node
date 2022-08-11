@@ -1,0 +1,144 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2022 Sylko Olzscher
+ *
+ */
+#ifndef SMF_LPEX_H
+#define SMF_LPEX_H
+
+#include <smf/mbus/server_id.h>
+#include <smf/report/sml_data.h>
+
+#include <cyng/db/session.h>
+#include <cyng/log/logger.h>
+
+#include <set>
+
+namespace smf {
+
+    void generate_lpex(
+        cyng::db::session,
+        cyng::obis profile,
+        std::filesystem::path,
+        std::chrono::hours backtrack,
+        std::chrono::system_clock::time_point,
+        std::string prefix);
+
+    namespace lpex {
+        /**
+         * 1 minute reports
+         */
+        void generate_report_1_minute(
+            cyng::db::session,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point);
+
+        /**
+         * Quarter hour reports.
+         * Each report can contains a full month over all meters. But since this is a lot
+         * of data the report will be split into daily reports.
+         * Each line contains all values of *one* register data for this day.
+         * So we have multiple lines for the same meter (and customer)
+         */
+        void generate_report_15_minutes(
+            cyng::db::session,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point);
+
+        std::chrono::system_clock::time_point generate_report_15_minutes(
+            cyng::db::session,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point,
+            std::chrono::hours);
+
+        /**
+         * Hourly reports
+         */
+        void generate_report_60_minutes(
+            cyng::db::session,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point);
+
+        /**
+         * Daily reports
+         */
+        void generate_report_24_hour(
+            cyng::db::session,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point);
+
+        /**
+         * Monthly reports
+         */
+        void generate_report_1_month(
+            cyng::db::session,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point);
+
+        /**
+         * Yearly reports
+         */
+        void generate_report_1_year(
+            cyng::db::session,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point);
+
+        /**
+         * Each LPEX file starts with the same header (in german)
+         */
+        std::vector<std::string> get_header();
+        std::vector<std::string> get_header_full();
+
+        /**
+         * @return 2 * 96 elements of ";"
+         */
+        std::vector<std::string> get_empty_values();
+
+        /**
+         * Each LPEX file starts with a single line that conatains the version number
+         * LPEX V2.0
+         */
+        std::string get_version();
+
+        void collect_report(
+            cyng::db::session,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point,
+            srv_id_t);
+
+        void emit_report(
+            std::filesystem::path root,
+            std::string file_name,
+            cyng::obis profile,
+            // std::set<cyng::obis> regs,
+            std::map<cyng::obis, std::map<std::uint64_t, sml_data>> const &data);
+
+    } // namespace lpex
+
+} // namespace smf
+
+#endif

@@ -25,11 +25,14 @@ int main(int argc, char **argv) {
     //	generic options
     //
     boost::program_options::options_description generic = smf::config::get_generic_options(config);
-    generic.add_options()("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit")(
-        "influxdb",
-        boost::program_options::value<std::string>()->default_value("")->implicit_value("create"),
-        "execute influxdb command (create, show, drop)")(
-        "generate,G", boost::program_options::bool_switch()->default_value(false), "generate reports and exit");
+    generic.add_options()(
+        "init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit") // --init, -I
+        ("influxdb",
+         boost::program_options::value<std::string>()->default_value("")->implicit_value("create"),
+         "execute influxdb command [create|show|drop]")                                                              // --influxdb
+        ("generate,G", boost::program_options::bool_switch()->default_value(false), "generate CSV reports and exit") // --generate
+        ("lpex,P", boost::program_options::bool_switch()->default_value(false), "generate lpex reports and exit")    // --lpex
+        ;
 
     //
     //	cmdline_options contains all generic and node specific options

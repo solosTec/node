@@ -171,13 +171,15 @@ namespace smf {
         std::map<std::string, cyng::db::session> init_storage(cyng::object const &);
         cyng::db::session init_storage(cyng::param_map_t const &);
         int create_influx_dbs(cyng::object const &, std::string const &cmd);
-        void generate_reports(cyng::object &&cfg);
+        void generate_csv_reports(cyng::object &&cfg);
+        void generate_lpex_reports(cyng::object &&cfg);
     };
 
     /**
      * Same function as in "report" app
      */
     cyng::prop_t create_report_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
+    cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
 
 } // namespace smf
 
