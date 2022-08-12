@@ -8,6 +8,9 @@
 #define SMF_OBIS_CONV_H
 
 #include <smf/obis/defs.h>
+
+#include <iomanip>
+#include <sstream>
 #include <vector>
 
 namespace smf {
@@ -17,6 +20,9 @@ namespace smf {
         std::string to_string(cyng::obis_path_t const &path, bool translate, char sep);
 
         cyng::obis_path_t to_obis_path(std::vector<std::string> const &vec);
+
+        void to_decimal(std::ostream &os, cyng::obis const &o);
+        std::string to_decimal(cyng::obis const &o);
 
     } // namespace obis
 } // namespace smf

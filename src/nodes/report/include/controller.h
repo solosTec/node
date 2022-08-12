@@ -36,19 +36,25 @@ namespace smf {
             std::string const &node_name,
             toggle::server_vec_t &&,
             cyng::param_map_t &&,
+            cyng::param_map_t &&,
             cyng::param_map_t &&);
 
         /**
-         * option --generate, -G
+         * option --generate csv, -G
          */
-        void generate_reports(cyng::object &&cfg);
+        bool generate_csv_reports(cyng::object &&cfg);
+        /**
+         * option --generate lpex, -G
+         */
+        bool generate_lpex_reports(cyng::object &&cfg);
 
       private:
         cyng::channel_ptr cluster_;
     };
 
     cyng::param_t create_cluster_spec();
-    cyng::prop_t create_report_spec(cyng::obis, std::filesystem::path, bool enabled, std::chrono::hours);
+    cyng::prop_t create_csv_spec(cyng::obis, std::filesystem::path, bool enabled, std::chrono::hours);
+    cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
 
 } // namespace smf
 

@@ -4,6 +4,7 @@
 
 #include <smf/config/schemes.h>
 #include <smf/mbus/units.h>
+#include <smf/obis/conv.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
@@ -185,15 +186,14 @@ namespace smf {
             };
         }
 
-        std::vector<std::string> get_header_full() {
-            auto h = get_header();
-            h.insert(h.end(), 2 * 96, "");
-            return h;
+        std::vector<std::string> fill_up(std::vector<std::string> &&vec) {
+            if (vec.size() < 2 * 96) {
+                vec.insert(vec.end(), (2 * 96) - vec.size(), "");
+            }
+            return vec;
         }
 
-        std::vector<std::string> get_empty_values() { return std::vector<std::string>(2 * 96, ";"); }
-
-        std::string get_version() { return "LPEX V2.0"; }
+        std::vector<std::string> get_version() { return {"LPEX V2.0"}; }
 
         void collect_report(
             cyng::db::session db,
@@ -211,12 +211,11 @@ namespace smf {
 
             //
             // collect data from this time range
-            // ToDo: LPEx needs another ordering: take one register and collect all readouts in the time span
-            //
+            // LPEx needs another ordering: take one register and collect all readouts in the time span
             //
             //  collect data from this time range ordered by register
             //
-            std::map<cyng::obis, std::map<std::uint64_t, sml_data>> const data =
+            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const data =
                 collect_data_by_register(db, profile, id, start, end);
 
             //
@@ -244,7 +243,7 @@ namespace smf {
             std::string file_name,
             cyng::obis profile,
             // std::set<cyng::obis> regs,
-            std::map<cyng::obis, std::map<std::uint64_t, sml_data>> const &data) {
+            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data) {
             auto const file_path = root / file_name;
             std::ofstream of(file_path.string(), std::ios::trunc);
 
@@ -253,25 +252,57 @@ namespace smf {
                 // header
                 // ToDo: read "print-version"
                 //
-                of << get_version() << std::endl;
+                auto const v = fill_up(get_version());
+                emit_line(of, v);
 
-                auto const h = get_header_full();
-                bool init = false;
-                for (auto const &s : h) {
-                    if (init) {
-                        of << ";";
-                    } else {
-                        init = true;
-                    }
-                    of << s;
-                }
-                of << std::endl;
+                auto const h = fill_up(get_header());
+                emit_line(of, h);
 
                 //
                 //  data
                 //
+                emit_data(of, data);
             }
         }
+
+        void emit_data(std::ostream &os, std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data) {
+
+            cyng::obis reg;
+            for (auto const &map : data) {
+                if (reg != map.first) {
+                    //  next register
+                    reg = map.first;
+                }
+                obis::to_decimal(os, reg);
+                os << ";"; // << mbus::get_name(pos->second.unit_) << ";";
+
+                bool init = false;
+                for (auto const &v : map.second) {
+                    if (init) {
+                        os << ";";
+                    } else {
+                        init = true;
+                        os << mbus::get_name(v.second.unit_) << ";";
+                    }
+                    os << v.second.reading_ << ";0";
+                }
+                os << std::endl;
+            }
+        }
+
+        void emit_line(std::ostream &os, std::vector<std::string> const vec) {
+            bool init = false;
+            for (auto const &s : vec) {
+                if (init) {
+                    os << ";";
+                } else {
+                    init = true;
+                }
+                os << s;
+            }
+            os << std::endl;
+        }
+
     } // namespace lpex
 
 } // namespace smf

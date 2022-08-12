@@ -53,5 +53,16 @@ namespace smf {
             return path;
         }
 
+        void to_decimal(std::ostream &os, cyng::obis const &o) {
+            os << std::dec << +o.get_medium() << '-' << +o.get_channel() << ':' << +o.get_indicator() << '.' << +o.get_mode() << '.'
+               << +o.get_quantity() << '*' << +o.get_storage();
+        }
+
+        std::string to_decimal(cyng::obis const &o) {
+            std::ostringstream ss;
+            to_decimal(ss, o);
+            return ss.str();
+        }
+
     } // namespace obis
 } // namespace smf

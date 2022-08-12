@@ -54,12 +54,15 @@ namespace smf {
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end);
 
-    std::map<cyng::obis, std::map<std::uint64_t, sml_data>> collect_data_by_register(
+    std::map<cyng::obis, std::map<std::int64_t, sml_data>> collect_data_by_register(
         cyng::db::session db,
         cyng::obis profile,
         cyng::buffer_t,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end);
+
+    cyng::meta_store get_store_virtual_sml_readout();
+    cyng::meta_sql get_table_virtual_sml_readout();
 
 } // namespace smf
 

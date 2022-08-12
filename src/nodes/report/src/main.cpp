@@ -21,11 +21,16 @@ int main(int argc, char **argv) {
     //	will contain the path to an optional configuration file (.cfg)
     smf::config::startup config("report");
 
+    std::string report_type;
+
     //
     //	generic options
     //
     auto generic = smf::config::get_generic_options(config);
-    generic.add_options()("generate,G", boost::program_options::bool_switch()->default_value(false), "generate reports and exit");
+    // generic.add_options()("generate,G", boost::program_options::bool_switch()->default_value(false), "generate reports and
+    // exit");
+    generic.add_options() // additional options
+        ("generate,G", boost::program_options::value<std::string>(&report_type)->default_value("csv"), "report type [csv|lpex]");
 
     //
     //	cmdline_options contains all generic and node specific options

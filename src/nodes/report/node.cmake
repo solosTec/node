@@ -28,9 +28,11 @@ endif()
 
 set (report_tasks
   include/tasks/cluster.h
-  include/tasks/report.h
+  include/tasks/csv_report.h
+  include/tasks/lpex_report.h
   src/tasks/cluster.cpp
-  src/tasks/report.cpp
+  src/tasks/csv_report.cpp
+  src/tasks/lpex_report.cpp
 )
 
 source_group("report-assets" FILES ${report_assets})

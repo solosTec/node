@@ -6,7 +6,8 @@
  */
 #include <tasks/cluster.h>
 
-#include <tasks/report.h>
+#include <tasks/csv_report.h>
+#include <tasks/lpex_report.h>
 
 #include <smf/obis/profile.h>
 
@@ -31,7 +32,8 @@ namespace smf {
         cyng::param_map_t &&cfg_db)
         : sigs_{
             std::bind(&cluster::connect, this), //  connect
-            std::bind(&cluster::start, this, std::placeholders::_1), //  start
+            std::bind(&cluster::start_csv, this, std::placeholders::_1), //  start
+            std::bind(&cluster::start_lpex, this, std::placeholders::_1), //  start
             std::bind(&cluster::stop, this, std::placeholders::_1) // stop
         }
         , channel_(wp)
@@ -44,7 +46,7 @@ namespace smf {
         , db_(cyng::db::create_db_session(cfg_db)) {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"connect", "start"});
+            sp->set_channel_names({"connect", "start.csv", "start.lpex"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
 
@@ -67,7 +69,7 @@ namespace smf {
         bus_.start();
     }
 
-    void cluster::start(cyng::param_map_t reports) {
+    void cluster::start_csv(cyng::param_map_t reports) {
 
         //
         //	start reporting
@@ -84,7 +86,7 @@ namespace smf {
                 auto const prefix = reader.get("prefix", "");
 
                 auto channel =
-                    ctl_.create_named_channel_with_ref<report>(name, ctl_, logger_, db_, profile, path, backtrack, prefix);
+                    ctl_.create_named_channel_with_ref<csv_report>(name, ctl_, logger_, db_, profile, path, backtrack, prefix);
                 BOOST_ASSERT(channel->is_open());
                 channels_.lock(channel);
 
@@ -93,8 +95,8 @@ namespace smf {
                 //
                 auto const now = std::chrono::system_clock::now();
                 auto const next = sml::floor(now + sml::interval_time(now, profile), profile);
-                CYNG_LOG_INFO(logger_, "start report " << profile << " (" << name << ") at " << next);
-                bus_.sys_msg(cyng::severity::LEVEL_INFO, "start report ", profile, " (", name, ") at ", next, " UTC");
+                CYNG_LOG_INFO(logger_, "start csv report " << profile << " (" << name << ") at " << next);
+                bus_.sys_msg(cyng::severity::LEVEL_INFO, "start csv report ", profile, " (", name, ") at ", next, " UTC");
 
                 if (next > now) {
                     channel->suspend(next - now, "run");
@@ -103,10 +105,52 @@ namespace smf {
                 }
 
             } else {
-                CYNG_LOG_TRACE(logger_, "report " << cfg.first << " is disabled");
+                CYNG_LOG_TRACE(logger_, "csv report " << cfg.first << " is disabled");
             }
         }
     }
+
+    void cluster::start_lpex(cyng::param_map_t reports) {
+
+        //
+        //	start reporting
+        //
+        for (auto const &cfg : reports) {
+            auto const reader = cyng::make_reader(cfg.second);
+            if (reader.get("enabled", false)) {
+
+                auto const profile = cyng::to_obis(cfg.first);
+                BOOST_ASSERT(sml::is_profile(profile));
+                auto const name = reader.get("name", "");
+                auto const path = reader.get("path", "");
+                auto const backtrack = std::chrono::hours(reader.get("backtrack", sml::backtrack_time(profile).count()));
+                auto const prefix = reader.get("prefix", "");
+
+                auto channel =
+                    ctl_.create_named_channel_with_ref<lpex_report>(name, ctl_, logger_, db_, profile, path, backtrack, prefix);
+                BOOST_ASSERT(channel->is_open());
+                channels_.lock(channel);
+
+                //
+                //  calculate start time
+                //
+                auto const now = std::chrono::system_clock::now();
+                auto const next = sml::floor(now + sml::interval_time(now, profile), profile);
+                CYNG_LOG_INFO(logger_, "start lpex report " << profile << " (" << name << ") at " << next);
+                bus_.sys_msg(cyng::severity::LEVEL_INFO, "start lpex report ", profile, " (", name, ") at ", next, " UTC");
+
+                if (next > now) {
+                    channel->suspend(next - now, "run");
+                } else {
+                    channel->suspend(sml::interval_time(now, profile), "run");
+                }
+
+            } else {
+                CYNG_LOG_TRACE(logger_, "lpex report " << cfg.first << " is disabled");
+            }
+        }
+    }
+
     //
     //	bus interface
     //

@@ -108,18 +108,17 @@ namespace smf {
          * Each LPEX file starts with the same header (in german)
          */
         std::vector<std::string> get_header();
-        std::vector<std::string> get_header_full();
 
         /**
-         * @return 2 * 96 elements of ";"
+         * Fill up to 2* 96 entries
          */
-        std::vector<std::string> get_empty_values();
+        std::vector<std::string> fill_up(std::vector<std::string> &&);
 
         /**
          * Each LPEX file starts with a single line that conatains the version number
          * LPEX V2.0
          */
-        std::string get_version();
+        std::vector<std::string> get_version();
 
         void collect_report(
             cyng::db::session,
@@ -135,7 +134,11 @@ namespace smf {
             std::string file_name,
             cyng::obis profile,
             // std::set<cyng::obis> regs,
-            std::map<cyng::obis, std::map<std::uint64_t, sml_data>> const &data);
+            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data);
+
+        void emit_line(std::ostream&, std::vector<std::string> const);
+
+        void emit_data(std::ostream &, std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data);
 
     } // namespace lpex
 

@@ -28,7 +28,7 @@ namespace smf {
         //  SELECT DISTINCT hex(meterID) FROM TSMLreadout WHERE profile = '8181c78611ff' AND actTime BETWEEN julianday('2022-07-19')
         //  AND julianday('2022-07-20');
         std::string const sql =
-            "SELECT DISTINCT meterID FROM TSMLreadout WHERE profile = ? AND actTime BETWEEN julianday(?) AND julianday(?)";
+            "SELECT DISTINCT meterID FROM TSMLReadout WHERE profile = ? AND actTime BETWEEN julianday(?) AND julianday(?)";
         auto stmt = db.create_statement();
         std::vector<cyng::buffer_t> meters;
         std::pair<int, bool> const r = stmt->prepare(sql);
@@ -182,14 +182,109 @@ namespace smf {
         return data;
     }
 
-    std::map<cyng::obis, std::map<std::uint64_t, sml_data>> collect_data_by_register(
+    std::map<cyng::obis, std::map<std::int64_t, sml_data>> collect_data_by_register(
         cyng::db::session db,
         cyng::obis profile,
-        cyng::buffer_t,
+        cyng::buffer_t id,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
 
-        std::map<cyng::obis, std::map<std::uint64_t, sml_data>> data;
+        std::map<cyng::obis, std::map<std::int64_t, sml_data>> data;
+
+        auto const ms = config::get_table_sml_readout();
+        std::string const sql =
+            "SELECT TSMLReadout.tag, TSMLReadoutData.register, TSMLReadoutData.gen, TSMLReadout.status, datetime(TSMLReadout.actTime), TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit "
+            "FROM TSMLReadout JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
+            "WHERE profile = ? AND meterID = ? AND received BETWEEN julianday(?) AND julianday(?) "
+            "ORDER BY TSMLReadoutData.register, TSMLReadout.actTime";
+        auto stmt = db.create_statement();
+        std::pair<int, bool> const r = stmt->prepare(sql);
+        if (r.second) {
+            stmt->push(cyng::make_object(profile), 0); //	profile
+            stmt->push(cyng::make_object(id), 9);      //	meterID
+            stmt->push(cyng::make_object(start), 0);   //	start time
+            stmt->push(cyng::make_object(end), 0);     //	end time
+
+            //
+            // all data for the specified meter in the time range ordered by
+            // 1. register
+            // 2. time stamp
+            //
+            auto const ms = get_table_virtual_sml_readout();
+            while (auto res = stmt->get_result()) {
+                // auto obj = res->get(6, cyng::TC_TIME_POINT, 0);
+                // std::cout << obj << std::endl;
+                auto const rec = cyng::to_record(ms, res);
+                std::cout << rec.to_string() << std::endl;
+
+                //
+                //  calculate the time slot
+                //
+                auto const act_time = rec.value("actTime", start);
+                auto const slot = sml::to_index(act_time, profile);
+                if (slot.second) {
+                    auto set_time = sml::to_time_point(slot.first, profile);
+
+                    auto const code = rec.value<std::uint16_t>("type", cyng::TC_STRING);
+                    auto const reading = rec.value("reading", "");
+                    auto const scaler = rec.value<std::int8_t>("scaler", 0);
+                    auto const reg = rec.value("register", OBIS_DATA_COLLECTOR_REGISTER);
+                    auto const unit = rec.value<std::uint8_t>("unit", 0u);
+
+                    auto pos = data.find(reg);
+                    if (pos == data.end()) {
+                        //
+                        //  new element
+                        //
+                        // sml_data val(code, scaler, unit, reading);
+                        // auto obj = val.restore();
+                        // std::map<std::int64_t, sml_data> tmp = {{slot.first, val}};
+                        // data.emplace(std::piecewise_construct, std::forward_as_tuple(reg), std::forward_as_tuple(tmp));
+
+                        //
+                        //  nested initialization doesn't work, so two steps are necessary
+                        //
+                        data.emplace(std::piecewise_construct, std::forward_as_tuple(reg), std::forward_as_tuple())
+                            .first->second.emplace(
+                                std::piecewise_construct,
+                                std::forward_as_tuple(slot.first),
+                                std::forward_as_tuple(code, scaler, unit, reading));
+                    } else {
+                        //
+                        //  existing element
+                        //
+                        pos->second.emplace(
+                            std::piecewise_construct,
+                            std::forward_as_tuple(slot.first),
+                            std::forward_as_tuple(code, scaler, unit, reading));
+                    }
+                }
+            }
+        }
         return data;
     }
+
+    cyng::meta_store get_store_virtual_sml_readout() {
+        return cyng::meta_store(
+            "virtualSMLReadoutData",
+            {cyng::column("tag", cyng::TC_UUID), // server/meter/sensor ID
+                                                 // cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+             cyng::column("register", cyng::TC_OBIS), // OBIS code (data type)
+             //   -- body
+             cyng::column("status", cyng::TC_UINT32),
+             cyng::column("actTime", cyng::TC_TIME_POINT),
+             cyng::column("reading", cyng::TC_STRING), // value as string
+             cyng::column("type", cyng::TC_UINT16),    // data type code
+             cyng::column("scaler", cyng::TC_INT8),    // decimal place
+             cyng::column("unit", cyng::TC_UINT8)},
+            3);
+    }
+    cyng::meta_sql get_table_virtual_sml_readout() {
+        //
+        //  SELECT hex(TSMLReadout.meterID), TSMLReadoutData.register, reading, unit from TSMLReadout INNER JOIN TSMLReadoutData
+        //  ON TSMLReadout.tag = TSMLReadoutData.tag ORDER BY actTime;
+        //
+        return cyng::to_sql(get_store_virtual_sml_readout(), {0, 0, 256, 0, 0, 0, 0, 0});
+    }
+
 } // namespace smf

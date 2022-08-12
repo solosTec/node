@@ -31,6 +31,7 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void(void)>,              // connect
             std::function<void(cyng::param_map_t)>, // start
+            std::function<void(cyng::param_map_t)>, // start
             std::function<void(cyng::eod)>          // stop
             >;
 
@@ -49,7 +50,8 @@ namespace smf {
 
       private:
         void connect();
-        void start(cyng::param_map_t);
+        void start_csv(cyng::param_map_t);
+        void start_lpex(cyng::param_map_t);
 
         void stop(cyng::eod);
 
