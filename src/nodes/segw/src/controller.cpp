@@ -188,9 +188,15 @@ namespace smf {
         auto macs = cyng::sys::get_mac48_adresses();
 
         //
-        //  remove macs with null values
+        // remove macs with null values
+        // erase_if() requires C++20
+        // @see https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1115r3.pdf
         //
+#if __cplusplus >= 202002
         std::erase_if(macs, [](cyng::mac48 const &mac) -> bool { return cyng::is_nil(mac); });
+#else
+        macs.erase(std::remove_if(macs.begin(), macs.end(), [](cyng::mac48 const &mac) -> bool { return cyng::is_nil(mac); }));
+#endif
 
         //
         //	get local link addresses
