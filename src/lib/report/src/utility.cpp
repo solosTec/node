@@ -215,7 +215,9 @@ namespace smf {
                 // auto obj = res->get(6, cyng::TC_TIME_POINT, 0);
                 // std::cout << obj << std::endl;
                 auto const rec = cyng::to_record(ms, res);
+#ifdef _DEBUG
                 std::cout << rec.to_string() << std::endl;
+#endif
 
                 //
                 //  calculate the time slot
@@ -267,8 +269,8 @@ namespace smf {
     cyng::meta_store get_store_virtual_sml_readout() {
         return cyng::meta_store(
             "virtualSMLReadoutData",
-            {cyng::column("tag", cyng::TC_UUID), // server/meter/sensor ID
-                                                 // cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+            {cyng::column("tag", cyng::TC_UUID),      // server/meter/sensor ID
+                                                      // cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
              cyng::column("register", cyng::TC_OBIS), // OBIS code (data type)
              //   -- body
              cyng::column("status", cyng::TC_UINT32),
