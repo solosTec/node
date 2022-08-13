@@ -219,20 +219,7 @@ namespace smf {
                 collect_data_by_register(db, profile, id, start, end);
 
             //
-            // collect all used profiles
-            //
-            // auto const regs = collect_profiles(data);
-
-#ifdef _DEBUG
-            // std::cout << to_string(srv_id) << " has " << regs.size() << " registers: ";
-            // for (auto const &reg : regs) {
-            //     std::cout << reg << " ";
-            // }
-            // std::cout << std::endl;
-#endif
-
-            //
-            // ToDo: print report
+            // print report
             //
             auto const file_name = get_filename(prefix, profile, srv_id, start);
             emit_report(root, file_name, profile, srv_id, data);
@@ -290,13 +277,14 @@ namespace smf {
                             //  time stamp (Datum)
                             //
                             // os << std::put_time(&tm, "%d-%m-%Y %H-%M-%S")
-                            os << time_slot << ";";
+                            cyng::sys::to_string(os, time_slot, "%y.%m.%d;");
 
                             //
                             //  start time (Zeit)
                             //
-                            os << "00:15:00"
-                               << ";";
+                            cyng::sys::to_string(os, time_slot, "%H:%M:%S;");
+                            // os << "00:15:00"
+                            //    << ";";
 
                             //
                             //  customer data
@@ -315,7 +303,8 @@ namespace smf {
                             os << mbus::get_name(pos_ro->second.unit_);
 
                             //
-                            //  values
+                            // values
+                            // ToDo: detect gaps
                             //
                             do {
                                 os << ";" << pos_ro->second.reading_ << ";0";

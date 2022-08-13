@@ -136,6 +136,10 @@ namespace smf {
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
 
+        //
+        //  ToDo: incorporate status
+        //
+
         std::map<std::uint64_t, std::map<cyng::obis, sml_data>> data;
 
         auto const ms = config::get_table_sml_readout();
@@ -237,13 +241,6 @@ namespace smf {
                     if (pos == data.end()) {
                         //
                         //  new element
-                        //
-                        // sml_data val(code, scaler, unit, reading);
-                        // auto obj = val.restore();
-                        // std::map<std::int64_t, sml_data> tmp = {{slot.first, val}};
-                        // data.emplace(std::piecewise_construct, std::forward_as_tuple(reg), std::forward_as_tuple(tmp));
-
-                        //
                         //  nested initialization doesn't work, so two steps are necessary
                         //
                         data.emplace(std::piecewise_construct, std::forward_as_tuple(reg), std::forward_as_tuple())
