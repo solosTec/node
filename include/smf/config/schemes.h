@@ -205,8 +205,8 @@ namespace smf {
         cyng::meta_sql get_table_iec_readout();
         cyng::meta_sql get_table_iec_readout_data();
 
-        cyng::meta_store get_store_customer();
-        cyng::meta_sql get_table_customer();
+        cyng::meta_store get_store_customer_lpex();
+        cyng::meta_sql get_table_customer_lpex();
         cyng::meta_store get_store_meter_lpex();
         cyng::meta_sql get_table_meter_lpex();
 

@@ -241,7 +241,7 @@ namespace smf {
         return {
             config::get_table_sml_readout(),
             config::get_table_sml_readout_data(),
-            config::get_table_customer(),
+            config::get_table_customer_lpex(),
             config::get_table_meter_lpex()};
     }
 

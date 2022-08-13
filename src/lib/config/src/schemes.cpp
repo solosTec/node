@@ -635,9 +635,9 @@ namespace smf {
             return cyng::to_sql(get_store_iec_readout_data(), {0, 9, 0, 0, 256, 0, 0, 0});
         }
 
-        cyng::meta_store get_store_customer() {
+        cyng::meta_store get_store_customer_lpex() {
             return cyng::meta_store(
-                "customer",
+                "LPExCustomer",
                 {
                     cyng::column("id", cyng::TC_STRING), //  Kundennummer: (example "11013951")
                     //   -- body
@@ -646,19 +646,24 @@ namespace smf {
                 },
                 1);
         }
-        cyng::meta_sql get_table_customer() { return cyng::to_sql(get_store_customer(), {8, 64, 64}); }
+        cyng::meta_sql get_table_customer_lpex() { return cyng::to_sql(get_store_customer_lpex(), {8, 64, 64}); }
 
         cyng::meta_store get_store_meter_lpex() {
+            //
+            //  relation table between meter and customer
+            //
             return cyng::meta_store(
-                "meterLpex",
+                "LPExMeter",
                 {
                     cyng::column("meter", cyng::TC_BUFFER), //	[string] meter number (i.e. 16000913) 4 bytes
                     //   -- body
                     cyng::column("id", cyng::TC_STRING), //  Kundennummer: (example "11013951")
+                    cyng::column("mc", cyng::TC_STRING), //  metering code: (example "CH1015201234500000000000000032418")
+                    // cyng::column("since", cyng::TC_TIME_POINT) //  install time
                 },
                 1);
         }
-        cyng::meta_sql get_table_meter_lpex() { return cyng::to_sql(get_store_meter_lpex(), {8, 8}); }
+        cyng::meta_sql get_table_meter_lpex() { return cyng::to_sql(get_store_meter_lpex(), {8, 8, 34}); }
 
     } // namespace config
 } // namespace smf

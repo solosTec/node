@@ -235,14 +235,14 @@ namespace smf {
             // ToDo: print report
             //
             auto const file_name = get_filename(prefix, profile, srv_id, start);
-            emit_report(root, file_name, profile, data);
+            emit_report(root, file_name, profile, srv_id, data);
         }
 
         void emit_report(
             std::filesystem::path root,
             std::string file_name,
             cyng::obis profile,
-            // std::set<cyng::obis> regs,
+            srv_id_t srv_id,
             std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data) {
             auto const file_path = root / file_name;
             std::ofstream of(file_path.string(), std::ios::trunc);
@@ -261,32 +261,74 @@ namespace smf {
                 //
                 //  data
                 //
-                emit_data(of, data);
+                emit_data(of, profile, srv_id, data);
             }
         }
 
-        void emit_data(std::ostream &os, std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data) {
+        void emit_data(
+            std::ostream &os,
+            cyng::obis profile,
+            srv_id_t srv_id,
+            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data) {
 
-            cyng::obis reg;
-            for (auto const &map : data) {
-                if (reg != map.first) {
-                    //  next register
-                    reg = map.first;
-                }
-                obis::to_decimal(os, reg);
-                os << ";"; // << mbus::get_name(pos->second.unit_) << ";";
+            auto pos = data.begin();
+            if (pos != data.end()) {
+                do {
+                    //
+                    //  the register in this data set
+                    //
+                    auto reg = pos->first;
+                    auto pos_ro = pos->second.begin();
+                    if (pos_ro != pos->second.end()) {
 
-                bool init = false;
-                for (auto const &v : map.second) {
-                    if (init) {
-                        os << ";";
-                    } else {
-                        init = true;
-                        os << mbus::get_name(v.second.unit_) << ";";
+                        if (pos_ro->second.unit_ != mbus::unit::UNDEFINED_) {
+                            //
+                            //   the first time stamp in this data set
+                            //
+                            auto time_slot = sml::to_time_point(pos_ro->first, profile);
+                            //
+                            //  time stamp (Datum)
+                            //
+                            // os << std::put_time(&tm, "%d-%m-%Y %H-%M-%S")
+                            os << time_slot << ";";
+
+                            //
+                            //  start time (Zeit)
+                            //
+                            os << "00:15:00"
+                               << ";";
+
+                            //
+                            //  customer data
+                            //
+                            emit_customer_data(os, srv_id);
+
+                            //
+                            //  register (Kennzahl)
+                            //
+                            obis::to_decimal(os, reg);
+                            os << ";";
+
+                            //
+                            //  unit (Einheit)
+                            //
+                            os << mbus::get_name(pos_ro->second.unit_);
+
+                            //
+                            //  values
+                            //
+                            do {
+                                os << ";" << pos_ro->second.reading_ << ";0";
+                                ++pos_ro;
+                            } while (pos_ro != pos->second.end());
+                            os << std::endl;
+                        }
                     }
-                    os << v.second.reading_ << ";0";
-                }
-                os << std::endl;
+                    //
+                    //  next register
+                    //
+                    ++pos;
+                } while (pos != data.end());
             }
         }
 
@@ -301,6 +343,27 @@ namespace smf {
                 os << s;
             }
             os << std::endl;
+        }
+
+        void emit_customer_data(std::ostream &os, srv_id_t srv_id) {
+            //
+            //  ToDo: get customer and meter data from table "meterLPEx" -> "customer"
+            //
+
+            //
+            //  (Kundennummer;Kundenname;eindeutigeKDNr)
+            //
+            os << ";;;";
+
+            //
+            // meter id (GEId)
+            //
+            os << get_id(srv_id) << ";";
+
+            //
+            // GEKANr; KALINr; Linie; eindeutigeLINr; ZPB)
+            //
+            os << ";;;;;";
         }
 
     } // namespace lpex

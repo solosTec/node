@@ -133,12 +133,18 @@ namespace smf {
             std::filesystem::path root,
             std::string file_name,
             cyng::obis profile,
-            // std::set<cyng::obis> regs,
+            srv_id_t srv_id,
             std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data);
 
-        void emit_line(std::ostream&, std::vector<std::string> const);
+        void emit_line(std::ostream &, std::vector<std::string> const);
 
-        void emit_data(std::ostream &, std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data);
+        void emit_data(
+            std::ostream &,
+            cyng::obis profile,
+            srv_id_t srv_id,
+            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data);
+
+        void emit_customer_data(std::ostream &os, srv_id_t srv_id);
 
     } // namespace lpex
 
