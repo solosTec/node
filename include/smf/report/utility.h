@@ -13,6 +13,7 @@
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
 
+#include <optional>
 #include <set>
 
 namespace smf {
@@ -61,8 +62,16 @@ namespace smf {
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end);
 
+    /**
+     *
+     */
+    std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id);
+
     cyng::meta_store get_store_virtual_sml_readout();
     cyng::meta_sql get_table_virtual_sml_readout();
+
+    cyng::meta_store get_store_virtual_customer();
+    cyng::meta_sql get_table_virtual_customer();
 
 } // namespace smf
 

@@ -23,6 +23,7 @@
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/rnd/rnd.hpp>
+#include <cyng/sys/clock.h>
 #include <cyng/sys/host.h>
 #include <cyng/sys/locale.h>
 #include <cyng/sys/mac.h>
@@ -154,6 +155,7 @@ namespace smf {
             // cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             // cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             cyng::make_param("generate-profile", false),
+            cyng::make_param("utc-offset", cyng::sys::delta_utc(now).count()),
 
             create_net(srv_mac, srv_id),
 

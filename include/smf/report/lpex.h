@@ -23,7 +23,9 @@ namespace smf {
         std::filesystem::path,
         std::chrono::hours backtrack,
         std::chrono::system_clock::time_point,
-        std::string prefix);
+        std::string prefix,
+        std::chrono::minutes utc_offset,
+        bool print_version);
 
     namespace lpex {
         /**
@@ -35,7 +37,9 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+            std::chrono::system_clock::time_point,
+            std::chrono::minutes utc_offset,
+            bool print_version);
 
         /**
          * Quarter hour reports.
@@ -50,7 +54,9 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+            std::chrono::system_clock::time_point,
+            std::chrono::minutes utc_offset,
+            bool print_version);
 
         std::chrono::system_clock::time_point generate_report_15_minutes(
             cyng::db::session,
@@ -58,7 +64,8 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
-            std::chrono::hours);
+            std::chrono::hours,
+            bool print_version);
 
         /**
          * Hourly reports
@@ -69,7 +76,9 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+            std::chrono::system_clock::time_point,
+            std::chrono::minutes utc_offset,
+            bool print_version);
 
         /**
          * Daily reports
@@ -80,7 +89,9 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+            std::chrono::system_clock::time_point,
+            std::chrono::minutes utc_offset,
+            bool print_version);
 
         /**
          * Monthly reports
@@ -91,7 +102,9 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+            std::chrono::system_clock::time_point,
+            std::chrono::minutes utc_offset,
+            bool print_version);
 
         /**
          * Yearly reports
@@ -102,7 +115,9 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+            std::chrono::system_clock::time_point,
+            std::chrono::minutes utc_offset,
+            bool print_version);
 
         /**
          * Each LPEX file starts with the same header (in german)
@@ -127,14 +142,17 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            srv_id_t);
+            srv_id_t,
+            bool print_version);
 
         void emit_report(
             std::filesystem::path root,
             std::string file_name,
             cyng::obis profile,
             srv_id_t srv_id,
-            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data);
+            bool print_version,
+            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data,
+            std::optional<lpex_customer> const &customer_data);
 
         void emit_line(std::ostream &, std::vector<std::string> const);
 
@@ -142,9 +160,16 @@ namespace smf {
             std::ostream &,
             cyng::obis profile,
             srv_id_t srv_id,
-            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data);
+            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data,
+            std::optional<lpex_customer> const &customer_data);
 
-        void emit_customer_data(std::ostream &os, srv_id_t srv_id);
+        void emit_customer_data(std::ostream &os, srv_id_t srv_id, std::optional<lpex_customer> const &customer_data);
+        void emit_values(
+            std::ostream &os,
+            cyng::obis profile,
+            srv_id_t srv_id,
+            std::chrono::system_clock::time_point,
+            std::map<std::int64_t, sml_data> const &load);
 
     } // namespace lpex
 

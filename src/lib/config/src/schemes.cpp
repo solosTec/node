@@ -646,24 +646,30 @@ namespace smf {
                 },
                 1);
         }
-        cyng::meta_sql get_table_customer_lpex() { return cyng::to_sql(get_store_customer_lpex(), {8, 64, 64}); }
+        cyng::meta_sql get_table_customer_lpex() {
+            // INSERT INTO TLPExCustomer VALUES( '16000913', 1, 'solosTec', 'Hubelstrasse');
+            return cyng::to_sql(get_store_customer_lpex(), {8, 64, 64});
+        }
 
         cyng::meta_store get_store_meter_lpex() {
             //
-            //  relation table between meter and customer
+            // relation table between meter and customer
             //
             return cyng::meta_store(
                 "LPExMeter",
                 {
                     cyng::column("meter", cyng::TC_BUFFER), //	[string] meter number (i.e. 16000913) 4 bytes
                     //   -- body
-                    cyng::column("id", cyng::TC_STRING), //  Kundennummer: (example "11013951")
+                    cyng::column("id", cyng::TC_STRING), //  customer id - Kundennummer: (example "11013951")
                     cyng::column("mc", cyng::TC_STRING), //  metering code: (example "CH1015201234500000000000000032418")
                     // cyng::column("since", cyng::TC_TIME_POINT) //  install time
                 },
                 1);
         }
-        cyng::meta_sql get_table_meter_lpex() { return cyng::to_sql(get_store_meter_lpex(), {8, 8, 34}); }
+        cyng::meta_sql get_table_meter_lpex() {
+            // INSERT INTO TLPExMeter VALUES( X'21061457', 1, '16000913', 'CH1015201234500000000000000032418');
+            return cyng::to_sql(get_store_meter_lpex(), {8, 8, 34});
+        }
 
     } // namespace config
 } // namespace smf

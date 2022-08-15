@@ -29,6 +29,14 @@ namespace smf {
     cyng::object restore_buffer(std::string const &val);
     cyng::object restore_int(std::string val, std::uint16_t code, std::int8_t);
 
+    struct lpex_customer {
+        lpex_customer(std::string, std::string, std::string, std::string);
+        std::string id_;          //  customer id - Kundennummer: (example "11013951")
+        std::string mc_;          //  metering code: (example "CH1015201234500000000000000032418")
+        std::string name_;        //  Kundenname
+        std::string unique_name_; //  unique name
+    };
+
 } // namespace smf
 
 #endif

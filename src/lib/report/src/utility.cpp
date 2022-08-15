@@ -63,8 +63,8 @@ namespace smf {
             while (auto res = stmt->get_result()) {
                 auto const rec = cyng::to_record(ms, res);
 #ifdef _DEBUG
-                using cyng::operator<<;
-                std::cout << rec.to_string() << std::endl;
+                // using cyng::operator<<;
+                // std::cout << rec.to_string() << std::endl;
 #endif
                 auto const code = rec.value<std::uint16_t>("type", cyng::TC_STRING);
                 auto const val = rec.value("reading", "");
@@ -76,8 +76,8 @@ namespace smf {
                 auto const pos = readout.emplace(
                     std::piecewise_construct, std::forward_as_tuple(reg), std::forward_as_tuple(code, scaler, unit, val));
 #ifdef _DEBUG
-                std::cout << tag << ": " << pos.first->second.restore() << ", value: " << val << ", scaler: " << +scaler
-                          << std::endl;
+                // std::cout << tag << ": " << pos.first->second.restore() << ", value: " << val << ", scaler: " << +scaler
+                //           << std::endl;
 #endif
             }
         }
@@ -137,7 +137,7 @@ namespace smf {
         std::chrono::system_clock::time_point end) {
 
         //
-        //  ToDo: incorporate status
+        //  ToDo: Incorporate the status into the return value.
         //
 
         std::map<std::uint64_t, std::map<cyng::obis, sml_data>> data;
@@ -173,10 +173,10 @@ namespace smf {
                     auto set_time = sml::to_time_point(slot.first, profile);
 
 #ifdef _DEBUG
-                    using cyng::operator<<;
-                    std::cout << cyng::to_string(id) << " - slot: #" << slot.first << " (" << set_time
-                              << "), actTime: " << rec.value("actTime", start) << " with " << readouts.size() << " readouts"
-                              << std::endl;
+                    // using cyng::operator<<;
+                    // std::cout << cyng::to_string(id) << " - slot: #" << slot.first << " (" << set_time
+                    //           << "), actTime: " << rec.value("actTime", start) << " with " << readouts.size() << " readouts"
+                    //           << std::endl;
 #endif
 
                     data.emplace(slot.first, readouts);
@@ -192,6 +192,10 @@ namespace smf {
         cyng::buffer_t id,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
+
+        //
+        //  ToDo: Incorporate the status into the return value.
+        //
 
         std::map<cyng::obis, std::map<std::int64_t, sml_data>> data;
 
@@ -220,7 +224,7 @@ namespace smf {
                 // std::cout << obj << std::endl;
                 auto const rec = cyng::to_record(ms, res);
 #ifdef _DEBUG
-                std::cout << rec.to_string() << std::endl;
+                // std::cout << rec.to_string() << std::endl;
 #endif
 
                 //
@@ -263,6 +267,27 @@ namespace smf {
         return data;
     }
 
+    std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id) {
+        std::string const sql = "SELECT TLPExMeter.id, TLPExMeter.gen, TLPExMeter.mc, TLPExCustomer.name, TLPExCustomer.uniqueName "
+                                "FROM TLPExMeter JOIN TLPExCustomer ON TLPExMeter.id = TLPExCustomer.id "
+                                "WHERE TLPExMeter.meter = ?";
+        auto stmt = db.create_statement();
+        std::pair<int, bool> const r = stmt->prepare(sql);
+        if (r.second) {
+            stmt->push(cyng::make_object(id), 9); //	meterID
+            if (auto res = stmt->get_result()) {
+                cyng::meta_sql const ms = get_table_virtual_customer();
+                auto const rec = cyng::to_record(ms, res);
+#ifdef _DEBUG
+                std::cout << rec.to_string() << std::endl;
+#endif
+                return lpex_customer(rec.value("id", ""), rec.value("mc", ""), rec.value("name", ""), rec.value("uniqueName", ""));
+            }
+        }
+
+        return std::nullopt;
+    }
+
     cyng::meta_store get_store_virtual_sml_readout() {
         return cyng::meta_store(
             "virtualSMLReadoutData",
@@ -279,11 +304,22 @@ namespace smf {
             3);
     }
     cyng::meta_sql get_table_virtual_sml_readout() {
-        //
-        //  SELECT hex(TSMLReadout.meterID), TSMLReadoutData.register, reading, unit from TSMLReadout INNER JOIN TSMLReadoutData
-        //  ON TSMLReadout.tag = TSMLReadoutData.tag ORDER BY actTime;
-        //
         return cyng::to_sql(get_store_virtual_sml_readout(), {0, 0, 256, 0, 0, 0, 0, 0});
     }
+
+    cyng::meta_store get_store_virtual_customer() {
+        //
+        // SELECT LPExMeter.id, LPExMeter.gen, LPExMeter.mc, LPExCustomer.name, LPExCustomer.uniqueName
+        //
+        return cyng::meta_store(
+            "virtualCustomer",
+            {cyng::column("id", cyng::TC_STRING), // server/meter/sensor ID
+                                                  //   -- body
+             cyng::column("mc", cyng::TC_STRING),
+             cyng::column("name", cyng::TC_STRING),
+             cyng::column("uniqueName", cyng::TC_STRING)},
+            1);
+    }
+    cyng::meta_sql get_table_virtual_customer() { return cyng::to_sql(get_store_virtual_customer(), {8, 34, 64, 64}); }
 
 } // namespace smf

@@ -41,4 +41,10 @@ namespace smf {
         return cyng::restore(val, code);
     }
 
+    lpex_customer::lpex_customer(std::string id, std::string mc, std::string name, std::string unique_name)
+        : id_(id)
+        , mc_(mc)
+        , name_(name)
+        , unique_name_(unique_name) {}
+
 } // namespace smf

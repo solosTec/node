@@ -30,6 +30,9 @@ namespace smf {
          */
         std::chrono::seconds interval_time(std::chrono::system_clock::time_point, cyng::obis profile);
 
+        /**
+         * @return a default backtrack time
+         */
         std::chrono::hours backtrack_time(cyng::obis profile);
 
         /**

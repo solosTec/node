@@ -29,6 +29,7 @@
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/parse/string.h>
+#include <cyng/sys/clock.h>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/stash.h>
@@ -59,15 +60,17 @@ namespace smf {
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            cyng::make_param("utc-offset", cyng::sys::delta_utc(now).count()),
 
             cyng::make_param(
                 "DB",
                 cyng::make_tuple(
                     cyng::make_param("connection-type", "SQLite"),
                     cyng::make_param("file-name", (cwd / "store.database").string()),
-                    cyng::make_param("busy-timeout", 12), //	seconds
-                    cyng::make_param("watchdog", 30),     //	for database connection
-                    cyng::make_param("pool-size", 1)      //	no pooling for SQLite
+                    cyng::make_param("busy-timeout", 12), // seconds
+                    cyng::make_param("watchdog", 30),     // for database connection
+                    cyng::make_param("pool-size", 1),     // no pooling for SQLite
+                    cyng::make_param("readonly", true)    // no write access required
                     )),
 
             cyng::make_param(
@@ -87,6 +90,7 @@ namespace smf {
             cyng::make_param(
                 "lpex",
                 cyng::make_tuple(
+                    cyng::make_param("print-version", true), // if true first line contains the LPEx version
                     create_lpex_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
                     create_lpex_spec(OBIS_PROFILE_60_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
                     create_lpex_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
@@ -102,7 +106,7 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "csv" / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "csv-reports" / get_prefix(profile)).string()),
                 cyng::make_param("backtrack-hours", backtrack.count()),
                 cyng::make_param("prefix", ""),
                 cyng::make_param("enabled", enabled)));
@@ -113,13 +117,11 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "lpex" / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "lpex-reports" / get_prefix(profile)).string()),
                 cyng::make_param("backtrack-hours", backtrack.count()),
                 cyng::make_param("prefix", "LPEx-"),
                 cyng::make_param("offset", 15), //  minutes
-                cyng::make_param("enabled", enabled),
-                cyng::make_param("print-version", true) // if true first line contains the LPEx version
-                ));
+                cyng::make_param("enabled", enabled)));
     }
 
     void controller::run(
@@ -267,41 +269,50 @@ namespace smf {
     bool controller::generate_lpex_reports(cyng::object &&cfg) {
 
         auto const reader = cyng::make_reader(std::move(cfg));
+
+        auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+        BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
+
         auto const db_name = reader["DB"].get<std::string>("file-name", "");
         if (std::filesystem::exists(db_name)) {
             std::cout << "***info: file-name: " << db_name << std::endl;
             auto s = cyng::db::create_db_session(reader.get("DB"));
             if (s.is_alive()) {
+                //"print-version"
                 // std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
 
+                auto const print_version = reader["lpex"].get("print-version", true);
                 for (auto const &cfg_report : reports) {
-                    auto const reader_report = cyng::make_reader(cfg_report.second);
-                    auto const name = reader_report.get("name", "no-name");
+                    if (!boost::algorithm::equals(cfg_report.first, "print-version")) {
+                        auto const reader_report = cyng::make_reader(cfg_report.second);
+                        auto const name = reader_report.get("name", "no-name");
 
-                    if (reader_report.get("enabled", false)) {
-                        auto const profile = cyng::to_obis(cfg_report.first);
-                        std::cout << "***info: generate report " << name << " (" << profile << ")" << std::endl;
-                        auto const root = reader_report.get("path", cwd.string());
+                        if (reader_report.get("enabled", false)) {
+                            auto const profile = cyng::to_obis(cfg_report.first);
+                            std::cout << "***info: generate report " << name << " (" << profile << ")" << std::endl;
+                            auto const root = reader_report.get("path", cwd.string());
 
-                        if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
-                            std::error_code ec;
-                            if (!std::filesystem::create_directories(root, ec)) {
-                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                            if (!std::filesystem::exists(root)) {
+                                std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                                std::error_code ec;
+                                if (!std::filesystem::create_directories(root, ec)) {
+                                    std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                                }
                             }
+
+                            auto const prefix = reader_report.get("prefix", "");
+                            generate_lpex(s, profile, root, std::chrono::hours(40), now, prefix, utc_offset, print_version);
+
+                        } else {
+                            std::cout << "***info: report " << name << " is disabled" << std::endl;
                         }
-
-                        auto const prefix = reader_report.get("prefix", "");
-                        generate_lpex(s, profile, root, std::chrono::hours(40), now, prefix);
-                        return true;
-
-                    } else {
-                        std::cout << "***info: report " << name << " is disabled" << std::endl;
                     }
                 }
+
+                return true;
             }
         } else {
             std::cerr << "***error: database [" << db_name << "] not found";

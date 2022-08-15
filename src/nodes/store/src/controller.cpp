@@ -45,6 +45,7 @@
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/vector_cast.hpp>
 #include <cyng/parse/string.h>
+#include <cyng/sys/clock.h>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 
@@ -73,6 +74,7 @@ namespace smf {
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            cyng::make_param("utc-offset", cyng::sys::delta_utc(now).count()),
             cyng::make_param("model", "smf.store"), //  ip-t ident
             cyng::make_param("network-delay", 6),   //  seconds to wait before starting ip-t client
 
@@ -224,6 +226,7 @@ namespace smf {
                 "lpex",
                 cyng::make_tuple(
                     cyng::make_param("db", "default"),
+                    cyng::make_param("print-version", true), // if true first line contains the LPEx version
                     create_lpex_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
                     create_lpex_spec(OBIS_PROFILE_60_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
                     create_lpex_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
@@ -237,7 +240,7 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "csv-reports" / get_prefix(profile)).string()),
                 cyng::make_param("backtrack-hours", backtrack.count()),
                 cyng::make_param("prefix", ""),
                 cyng::make_param("enabled", enabled)));
@@ -248,13 +251,11 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "lpex-reports" / get_prefix(profile)).string()),
                 cyng::make_param("backtrack-hours", backtrack.count()),
                 cyng::make_param("prefix", "LPEx-"),
                 cyng::make_param("offset", 15), //  minutes
-                cyng::make_param("enabled", enabled),
-                cyng::make_param("print-version", true) // if true first line contains the LPEx version
-                ));
+                cyng::make_param("enabled", enabled)));
     }
 
     void controller::run(
@@ -676,8 +677,12 @@ namespace smf {
         //
         auto sm = init_storage(cfg);
         auto const reader = cyng::make_reader(std::move(cfg));
-        auto const db = reader["lpex"].get("db", "default");
 
+        auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+        BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
+
+        auto const print_version = reader["lpex"].get("print-version", true);
+        auto const db = reader["lpex"].get("db", "default");
         auto const pos = sm.find(db);
         if (pos != sm.end()) {
 
@@ -705,7 +710,8 @@ namespace smf {
                         }
                         auto const backtrack = reader_report.get("backtrack-hours", 40);
                         auto const prefix = reader_report.get("prefix", "LPEx-");
-                        generate_lpex(pos->second, profile, root, std::chrono::hours(backtrack), now, prefix);
+                        generate_lpex(
+                            pos->second, profile, root, std::chrono::hours(backtrack), now, prefix, utc_offset, print_version);
 
                     } else {
                         std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
