@@ -420,11 +420,9 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         if (reader.size() == 0) {
             std::cout << "***warning: no config data" << std::endl;
-        }
-        else {
+        } else {
             std::cout << "***info   : transfer " << reader.size() << " records into database" << std::endl;
         }
-
 
         //
         //	start transaction
@@ -1453,37 +1451,44 @@ namespace smf {
             auto const def = rec.value("def", "");
             auto const type = rec.value("type", static_cast<std::uint16_t>(0));
             auto const desc = rec.value("desc", "");
-            auto const obj = cyng::restore(val, type);
+            try {
+                auto const obj = cyng::restore(val, type);
 
-            //	ToDo:
-            // auto const opath = sml::translate_obis_path(path);
-
-            //
-            //	insert split lines between sections
-            //
-            auto const this_section = get_section(path);
-            if (!boost::algorithm::equals(section, this_section)) {
+                //	ToDo:
+                // auto const opath = sml::translate_obis_path(path);
 
                 //
-                //	update
+                //	insert split lines between sections
                 //
-                section = this_section;
+                auto const this_section = get_section(path);
+                if (!boost::algorithm::equals(section, this_section)) {
 
-                std::cout << std::string(42, '-') << "  [" << section << ']' << std::endl;
+                    //
+                    //	update section name
+                    //
+                    section = this_section;
+
+                    //
+                    //  print new section name
+                    //
+                    std::cout << std::string(42, '-') << "  [" << section << ']' << std::endl;
+                }
+
+                std::cout << std::setfill('.') << std::setw(42) << std::left << path << ": ";
+
+                //
+                //	list value (optional default value)
+                //
+                if (boost::algorithm::equals(val, def)) {
+                    std::cout << val;
+                } else {
+                    std::cout << '[' << val << '/' << def << ']';
+                }
+
+                std::cout << " (" << obj << ':' << obj.rtti().type_name() << ") - " << desc;
+            } catch (std::exception const &ex) {
+                std::cout << std::setfill('.') << std::setw(42) << std::left << path << ": ***error " << ex.what();
             }
-
-            std::cout << std::setfill('.') << std::setw(42) << std::left << path << ": ";
-
-            //
-            //	list value (optional default value)
-            //
-            if (boost::algorithm::equals(val, def)) {
-                std::cout << val;
-            } else {
-                std::cout << '[' << val << '/' << def << ']';
-            }
-
-            std::cout << " (" << obj << ':' << obj.rtti().type_name() << ") - " << desc;
 
             //
             //	complete
@@ -1719,8 +1724,7 @@ namespace smf {
         if (key.empty()) {
             std::cerr << "***error  : empty key" << std::endl;
             return false;
-        }
-        else {
+        } else {
             // std::cout << "***info   : pk = " << key << std::endl;
         }
         {
@@ -1735,8 +1739,7 @@ namespace smf {
                 std::cout << std::setfill('.') << std::setw((key.size() < 42) ? (42 - key.size()) : 1) << "= ";
                 std::cout << val << " already in use" << std::endl;
                 return false;
-            }
-            else {
+            } else {
                 // std::cout << "***info   : " << key << " is not used" << std::endl;
             }
             stmt_select->clear();
