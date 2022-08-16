@@ -59,7 +59,7 @@ namespace smf {
         );
     }
     cyng::obis cfg_sml::get_default_profile() const {
-        return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "default_profile"), OBIS_PROFILE_15_MINUTE);
+        return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "default-profile"), OBIS_PROFILE_15_MINUTE);
     }
 
 } // namespace smf

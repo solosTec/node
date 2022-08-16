@@ -549,7 +549,7 @@ namespace smf {
                     true
 #endif
                     ),
-                cyng::make_param("default_profile", CODE_PROFILE_15_MINUTE) //	profile to use in auto-config mode
+                cyng::make_param("default-profile", CODE_PROFILE_15_MINUTE) //	profile to use in auto-config mode
                 ));
     }
 
