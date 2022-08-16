@@ -432,7 +432,25 @@ namespace smf {
     cyng::param_t controller::create_gpio_spec() const {
         //	available pins are
         //  OECP1: 46, 47, 50, 53, 64, 68
-        //  OECP2: (89, 119, 120) 121, 123
+        //  OECP2: 117, 118, 119, 120 - see /sbin/leds.sh
+        //  if [ ! -e /sys/class/gpio/gpio117 ] ; then
+        //      echo 117 > /sys/class/gpio/export
+        //  fi
+        //  if [ ! -e /sys/class/gpio/gpio118 ] ; then
+        //      echo 118 > /sys/class/gpio/export
+        //  fi
+        //  if [ ! -e /sys/class/gpio/gpio119 ] ; then
+        //      echo 119 > /sys/class/gpio/export
+        //  fi
+        //  if [ ! -e /sys/class/gpio/gpio120 ] ; then
+        //      echo 120 > /sys/class/gpio/export
+        //  fi
+
+        // echo "out" > /sys/class/gpio/gpio117/direction
+        // echo "out" > /sys/class/gpio/gpio118/direction
+        // echo "out" > /sys/class/gpio/gpio119/direction
+        // echo "out" > /sys/class/gpio/gpio120/direction
+
         return cyng::make_param(
             "gpio",
             cyng::param_map_factory(
@@ -444,7 +462,7 @@ namespace smf {
 #endif
                 ) // enabled/disabled
             //("path", "/sys/class/gpio")("list", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68 OECP1
-            ("path", "/sys/class/gpio")("list", cyng::make_vector({119, 120, 121, 123})) //	, 64, 68 OECP2
+            ("path", "/sys/class/gpio")("list", cyng::make_vector({117, 118, 119, 120})) //	OECP2
             ());
     }
 
