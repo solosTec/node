@@ -432,7 +432,7 @@ namespace smf {
     cyng::param_t controller::create_gpio_spec() const {
         //	available pins are
         //  OECP1: 46, 47, 50, 53, 64, 68
-        //  OECP2: 117, 118, 119, 120 - see /sbin/leds.sh
+        //  OECP2: 117, 118, 119, 120 (blue) - see /sbin/leds.sh
         //  if [ ! -e /sys/class/gpio/gpio117 ] ; then
         //      echo 117 > /sys/class/gpio/export
         //  fi

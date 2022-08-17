@@ -240,6 +240,15 @@ if(OPENSSL_FOUND)
 
     add_definitions(-D${PROJECT_NAME}_SSL_INSTALLED)
 
+if (WIN32 AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.24.0")
+    #
+    # looks like a regression in CMake 3.24.0
+    #
+    string(REPLACE "debug;" "Debug;" OPENSSL_LIBRARIES "${OPENSSL_LIBRARIES}")
+    string(REPLACE "optimized;" "Release;" OPENSSL_LIBRARIES "${OPENSSL_LIBRARIES}")
+    message(STATUS "** openSSL Libraries            : ${OPENSSL_LIBRARIES}")
+endif()
+
 #	message(STATUS "** openSSL Found                : ${OPENSSL_FOUND}")
     message(STATUS "** openSSL Version              : ${OPENSSL_VERSION}")
     message(STATUS "** openSSL Include              : ${OPENSSL_INCLUDE_DIR}")
