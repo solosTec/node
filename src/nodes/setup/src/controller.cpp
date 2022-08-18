@@ -56,7 +56,7 @@ namespace smf {
                 "DB",
                 cyng::make_tuple(
                     cyng::make_param("connection-type", "SQLite"),
-                    cyng::make_param("file-name", (cwd / "setup.sqlite").string()),
+                    cyng::make_param("file-name", (cwd / "setup.database").string()),
                     cyng::make_param("busy-timeout", 12), //	seconds
                     cyng::make_param("watchdog", 30),     //	for database connection
                     cyng::make_param("pool-size", 1)      //	no pooling for SQLite
