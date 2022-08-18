@@ -5,8 +5,8 @@ REM restart master service
 REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo restart service smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo restart service smf_main_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc start smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop smf_main_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc start smf_main_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

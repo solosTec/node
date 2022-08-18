@@ -1,3 +1,21 @@
+project(smfDash)
+                                                 
+                                                 
+message(STATUS "                                       ,---,     ")
+message(STATUS "        ,---,                        ,--.' |     ")
+message(STATUS "      ,---.'|                        |  |  :     ")
+message(STATUS "      |   | :               .--.--.  :  :  :     ")
+message(STATUS "      |   | |   ,--.--.    /  /    ' :  |  |,--. ")
+message(STATUS "    ,--.__| |  /       \\  |  :  /`./ |  :  '   | ")
+message(STATUS "   /   ,'   | .--.  .-. | |  :  ;_   |  |   /' : ")
+message(STATUS "  .   '  /  |  \\__\\/: . .  \\  \\    `.'  :  | | | ")
+message(STATUS "  '   ; |:  |  ,\" .--.; |   `----.   \\  |  ' | : ")
+message(STATUS "  |   | '/  ' /  /  ,.  |  /  /`--'  /  :  :_:,' ")
+message(STATUS "  |   :    :|;  :   .'   \\'--'.     /|  | ,'     ")
+message(STATUS "   \\   \\  /  |  ,     .-./  `--'---' `--''       ")
+message(STATUS "    `----'    `--`---'                           ")
+                                               
+                                                 
 
 include (node.cmake)
 

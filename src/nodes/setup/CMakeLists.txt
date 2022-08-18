@@ -1,4 +1,20 @@
+project(smfSetup)
+                                                                                           
 
+message(STATUS "                            ___                             ")
+message(STATUS "                          ,--.'|_                ,-.----.   ")
+message(STATUS "                          |  | :,'          ,--, \\    /  \\  ")
+message(STATUS "    .--.--.               :  : ' :        ,'_ /| |   :    | ")
+message(STATUS "   /  /    '     ,---.  .;__,'  /    .--. |  | : |   | .\\ : ")
+message(STATUS "  |  :  /`./    /     \\ |  |   |   ,'_ /| :  . | .   : |: | ")
+message(STATUS "  |  :  ;_     /    /  |:__,'| :   |  ' | |  . . |   |  \\ : ")
+message(STATUS "   \\  \\    `. .    ' / |  '  : |__ |  | ' |  | | |   : .  | ")
+message(STATUS "    `----.   \\'   ;   /|  |  | '.'|:  | : ;  ; | :     |`-' ")
+message(STATUS "   /  /`--'  /'   |  / |  ;  :    ;'  :  `--'   \\:   : :    ")
+message(STATUS "  '--'.     / |   :    |  |  ,   / :  ,      .-./|   | :    ")
+message(STATUS "    `--'---'   \\   \\  /    ---`-'   `--`----'    `---'.|    ")
+message(STATUS "                `----'                             `---`    ")
+                                                          
 include (node.cmake)
 
 add_executable(setup ${setup_node})

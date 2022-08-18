@@ -1,3 +1,20 @@
+project(smfMain)
+                                                 
+                                                 
+message(STATUS "            ____                                   ")
+message(STATUS "          ,'  , `.             ,--,                ")
+message(STATUS "       ,-+-,.' _ |           ,--.'|         ,---,  ")
+message(STATUS "    ,-+-. ;   , ||           |  |,      ,-+-. /  | ")
+message(STATUS "   ,--.'|'   |  || ,--.--.   `--'_     ,--.'|'   | ")
+message(STATUS "  |   |  ,', |  |,/       \\  ,' ,'|   |   |  ,\"' | ")
+message(STATUS "  |   | /  | |--'.--.  .-. | '  | |   |   | /  | | ")
+message(STATUS "  |   : |  | ,    \\__\\/: . . |  | :   |   | |  | | ")
+message(STATUS "  |   : |  |/     ,\" .--.; | '  : |__ |   | |  |/  ")
+message(STATUS "  |   | |`-'     /  /  ,.  | |  | '.'||   | |--'   ")
+message(STATUS "  |   ;/        ;  :   .'   \\;  :    ;|   |/       ")
+message(STATUS "  '---'         |  ,     .-./|  ,   / '---'        ")
+message(STATUS "                 `--`---'     ---`-'               ")
+                                                 
 
 include (node.cmake)
 

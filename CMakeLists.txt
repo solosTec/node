@@ -1073,6 +1073,22 @@ if(${CMAKE_CROSSCOMPILING})
 endif()
 
 #
+# local installation
+#
+if (WIN32) 
+    file(TO_NATIVE_PATH ${smfMain_BINARY_DIR} smfMain_BINARY_DIR)
+    file(TO_NATIVE_PATH ${smfMain_BINARY_DIR} smfSetup_BINARY_DIR)
+    file(TO_NATIVE_PATH ${smfIPT_BINARY_DIR} smfIPT_BINARY_DIR)
+    file(TO_NATIVE_PATH ${smfStore_BINARY_DIR} smfStore_BINARY_DIR)
+    file(TO_NATIVE_PATH ${smfDash_BINARY_DIR} smfDash_BINARY_DIR)
+    file(TO_NATIVE_PATH ${smfIECBroker_BINARY_DIR} smfIECBroker_BINARY_DIR)
+    file(TO_NATIVE_PATH ${smfwMBusBroker_BINARY_DIR} smfwMBusBroker_BINARY_DIR)
+    configure_file (
+        "${CMAKE_SOURCE_DIR}/scripts/install_local.cmd.in"
+        "${PROJECT_BINARY_DIR}/install_local_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cmd")
+endif()
+
+#
 # install
 #
 

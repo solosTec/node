@@ -1,0 +1,16 @@
+REM
+REM	Install script for developer machine
+REM	This file is generated automatically. Do not edit.
+REM	created :  ${_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM cmake --install . --prefix C:/Program Files/solosTec/SMF
+REM
+COPY /B /V ${smfMain_BINARY_DIR}\Release\main.exe "${CMAKE_INSTALL_PREFIX}/"
+COPY /B /V ${smfSetup_BINARY_DIR}\Release\setup.exe "${CMAKE_INSTALL_PREFIX}/"
+COPY /B /V ${smfIPT_BINARY_DIR}\Release\ipt.exe "${CMAKE_INSTALL_PREFIX}/"
+COPY /B /V ${smfStore_BINARY_DIR}\Release\store.exe "${CMAKE_INSTALL_PREFIX}/"
+COPY /B /V ${smfDash_BINARY_DIR}\Release\dash.exe "${CMAKE_INSTALL_PREFIX}/"
+COPY /B /V ${smfIECBroker_BINARY_DIR}\Release\broker-iec.exe "${CMAKE_INSTALL_PREFIX}/"
+COPY /B /V ${smfwMBusBroker_BINARY_DIR}\Release\broker-wmbus.exe "${CMAKE_INSTALL_PREFIX}/"
+
+REM 

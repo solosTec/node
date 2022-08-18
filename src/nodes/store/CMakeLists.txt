@@ -1,3 +1,21 @@
+project(smfStore)
+                                                 
+                                                 
+message(STATUS "                ___                               ")
+message(STATUS "              ,--.'|_                             ")
+message(STATUS "              |  | :,'   ,---.    __  ,-.         ")
+message(STATUS "    .--.--.   :  : ' :  '   ,'\\ ,' ,'/ /|         ")
+message(STATUS "   /  /    '.;__,'  /  /   /   |'  | |' | ,---.   ")
+message(STATUS "  |  :  /`./|  |   |  .   ; ,. :|  |   ,'/     \\  ")
+message(STATUS "  |  :  ;_  :__,'| :  '   | |: :'  :  / /    /  | ")
+message(STATUS "   \\  \\    `. '  : |__'   | .; :|  | ' .    ' / | ")
+message(STATUS "    `----.   \\|  | '.'|   :    |;  : | '   ;   /| ")
+message(STATUS "   /  /`--'  /;  :    ;\\   \\  / |  , ; '   |  / | ")
+message(STATUS "  '--'.     / |  ,   /  `----'   ---'  |   :    | ")
+message(STATUS "    `--'---'   ---`-'                   \\   \\  /  ")
+message(STATUS "                                         `----'   ")
+                                                
+                                                 
 
 include (node.cmake)
 

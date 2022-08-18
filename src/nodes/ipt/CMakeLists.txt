@@ -1,3 +1,22 @@
+project(smfIPT)
+                                                 
+message(STATUS "                             ,----, ")
+message(STATUS "          ,-.----.         ,/   .`| ")
+message(STATUS "     ,---,\\    /  \\      ,`   .'  : ")
+message(STATUS "  ,`--.' ||   :    \\   ;    ;     / ")
+message(STATUS "  |   :  :|   |  .\\ :.'___,/    ,'  ")
+message(STATUS "  :   |  '.   :  |: ||    :     |   ")
+message(STATUS "  |   :  ||   |   \\ :;    |.';  ;   ")
+message(STATUS "  '   '  ;|   : .   /`----'  |  |   ")
+message(STATUS "  |   |  |;   | |`-'     '   :  ;   ")
+message(STATUS "  '   :  ;|   | ;        |   |  '   ")
+message(STATUS "  |   |  ':   ' |        '   :  |   ")
+message(STATUS "  '   :  |:   : :        ;   |.'    ")
+message(STATUS "  ;   |.' |   | :        '---'      ")
+message(STATUS "  '---'   `---'.|                   ")
+message(STATUS "            `---`                   ")
+                                  
+                                                 
 
 include (node.cmake)
 

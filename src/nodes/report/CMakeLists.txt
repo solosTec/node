@@ -35,20 +35,22 @@ target_link_directories(report
         ${Boost_LIBRARY_DIRS}
 )
 
+#
+# A dependency from cyng::cyng results in including the header files.
+#
 target_link_libraries(report 
     PRIVATE
-#        Boost::program_options
+        smf::report
         smf::config
         smf::cluster
         smf::cluster_bus
-        smf::report
         smf::obis
         smf::mbus
         smf::sml
         cyng::cyng 
+        "$<$<PLATFORM_ID:Linux>:${SMFSEC_LIBRARIES}>"
         "$<$<PLATFORM_ID:Windows>:pugixml>"
-        ${SMFSEC_LIBRARIES}
-        ${OPENSSL_LIBRARIES}
+        "$<$<PLATFORM_ID:Linux>:${OPENSSL_LIBRARIES}>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

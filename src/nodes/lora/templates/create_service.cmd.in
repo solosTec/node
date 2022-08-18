@@ -14,5 +14,5 @@ REM
 REM Add a dependency to SMF master service.
 REM Modify or remove this dependency if SMF master is running on a different node.
 REM
-sc config smf_lora_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_master_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc config smf_lora_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_main_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on
