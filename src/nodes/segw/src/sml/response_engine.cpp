@@ -333,7 +333,6 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path) {
-        // auto const srv_id = cfg_.get_srv_id();
 
         cfg_hardware const hw(cfg_);
 

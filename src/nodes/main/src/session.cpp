@@ -565,16 +565,15 @@ namespace smf {
             } else if (boost::algorithm::equals(table_name, "device")) {
                 auto const pos = data.find("id");
                 if (pos != data.end()) {
-                    //
-                    //  Insert as gateway if string starts with "swf-gw:"
-                    //
                     auto const id = cyng::value_cast(pos->second, "");
 
-                    if (boost::algorithm::starts_with(id, "smf-gw:") || boost::algorithm::starts_with(id, "EMH-")) {
-                        //
-                        //  check if gateway already present
-                        //
-                        auto_insert_gateway(key, id, source);
+                    //
+                    // Insert as gateway if string starts with "swf-gw:" or any
+                    // other custom specific pattern
+                    //
+                    auto const r = is_custom_gateway(id);
+                    if (r.second) {
+                        auto_insert_gateway(key, r.first, source);
                     }
                 }
             }
@@ -583,19 +582,11 @@ namespace smf {
         }
     }
 
-    std::string detect_server_id(std::string const &id) {
-        auto const vec = cyng::split(id, ":");
-        if (vec.size() == 3 && vec.at(2).size() == 14) {
-            return vec.at(2);
-        }
-        return "05000000000000";
-    }
-
     void session::auto_insert_gateway(cyng::key_t key, std::string id, boost::uuids::uuid source) {
 
         //  28c4b783-f35d-49f1-9027-a75dbae9f5e2|1|0500153B02517E|EMH|2459307.01790509|06441734|00:00:00:00:00:00|00:00:00:00:00:00|pw|root|A815408943050131|operator|operator
 
-        auto const srv_id = detect_server_id(id);
+        //auto const srv_id = detect_server_id(id);
 
         cache_.get_store().access(
             [&](cyng::table *tbl_gw) {
@@ -603,7 +594,7 @@ namespace smf {
                     tbl_gw->insert(
                         key,
                         cyng::data_generator(
-                            srv_id,                           // server id
+                            id,                           // server id
                             "---",                            // manufacturer
                             std::chrono::system_clock::now(), // TOM
                             "0",                              // fabrik nummer
@@ -611,7 +602,7 @@ namespace smf {
                             cyng::mac48(),                    // MAC of service interface
                             "pw",                             // Default PW
                             "root",                           // root PW
-                            "",                               // W-Mbus ID
+                            "",                               // w-MBus ID
                             "operator",                       // userName
                             "operator"                        // userPwd
                             ),
@@ -1633,4 +1624,17 @@ namespace smf {
         return std::chrono::seconds(interval.count() + (300 - mod));
     }
 
+    std::pair<std::string, bool> is_custom_gateway(std::string const & id) { 
+        if (boost::algorithm::starts_with(id, "smf-gw:") || boost::algorithm::starts_with(id, "EMH-")) {
+            auto const vec = cyng::split(id, ":");
+            if (vec.size() == 3 && vec.at(2).size() == 14) {
+                return {vec.at(2), true};
+            }
+            return {"05000000000001", true};
+        } else if (id.size() == 15 && boost::algorithm::starts_with(id, "a") && boost::algorithm::ends_with(id, "en")) {
+            // example: a00153B01E5B7en
+            return {id.substr(1, 12), true};
+        }
+        return {"", false};
+    }
 } // namespace smf
