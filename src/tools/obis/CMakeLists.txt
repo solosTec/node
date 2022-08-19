@@ -34,11 +34,15 @@ target_link_directories(obis
         ${Boost_LIBRARY_DIRS}
 )
 
+#
+# FixMe: dependency from pugixml 
+#
 target_link_libraries(obis 
     PRIVATE
-#        Boost::program_options
-        ${CYNG_LIBRARIES} 
         smf_obis
+        cyng::obj
+        cyng::io
+        "$<$<PLATFORM_ID:Windows>:pugixml>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

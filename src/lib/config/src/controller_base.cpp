@@ -5,8 +5,9 @@
  *
  */
 
-#include <smf.h>
 #include <smf/controller_base.h>
+
+#include <smf.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
@@ -57,10 +58,9 @@ namespace smf {
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
             if (vars["service.enabled"].as<bool>()) {
                 //	run as service
-                //::OutputDebugString("start master node");
-                // const std::string srv_name = vm["service.name"].as< std::string >();
-                //::OutputDebugString(srv_name.c_str());
-                // return node::run_as_service(std::move(ctrl), srv_name);
+                auto const srv_name = vars["service.name"].as<std::string>();
+                ::OutputDebugString(srv_name.c_str());
+                return run_as_service<controller_base>(this, srv_name);
             }
 #endif
 
@@ -237,6 +237,17 @@ namespace smf {
                 os << "***error: " << ex.what() << std::endl;
             }
         }
+
+#if BOOST_OS_WINDOWS
+        /**
+         * Implementation of the control handler.
+         * Forward events from service controller to service.
+         */
+        void controller_base::control_handler(DWORD sig) {
+            //	forward signal to shutdown manager
+            // cyng::forward_signal(sig);
+        }
+#endif
 
         void stop_tasks(cyng::logger logger, cyng::registry &reg, std::string name) {
 

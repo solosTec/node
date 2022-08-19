@@ -5,7 +5,6 @@
  *
  */
 
-//#include <smf/obis/defs.h>
 #include <cyng/io/ostream.h>
 #include <cyng/obj/intrinsics/edis.h>
 #include <cyng/obj/intrinsics/obis.h>
@@ -709,6 +708,14 @@ int main(int argc, char **argv) {
          {"ROOT_DATA_COLLECTOR", cyng::TC_NULL, "data collector root element (Eigenschaften eines Datensammlers)"}},
         {DEFINE_OBIS(81, 81, c7, 86, 21, ff), {"DATA_COLLECTOR_ACTIVE", cyng::TC_BOOL, ""}},
         {DEFINE_OBIS(81, 81, c7, 86, 22, ff), {"DATA_COLLECTOR_SIZE", cyng::TC_NULL, "max. table size"}},
+        //  templates
+        {DEFINE_OBIS(81, 81, c7, 86, 2F, ff), {"TMPL_VERSION", cyng::TC_STRING, "Version identifier"}},
+        {DEFINE_OBIS(81, 81, c7, 86, 30, ff), {"TMPL_VERSION_FILTER", cyng::TC_STRING, "Version identifier filter"}},
+        {DEFINE_OBIS(81, 81, c7, 86, 31, ff),
+         {"TMPL_DEVICE_CLASS",
+          cyng::TC_STRING,
+          "Device class, on the basis of which associated sensors / actuators are identified"}},
+        {DEFINE_OBIS(81, 81, c7, 86, 32, ff), {"TMPL_DEVICE_CLASS_FILTER", cyng::TC_STRING, "Filter for the device class"}},
         {DEFINE_OBIS(81, 81, c7, 87, 81, ff),
          {"DATA_REGISTER_PERIOD", cyng::TC_UINT32, "register period in seconds (0 == event driven)"}},
         {DEFINE_OBIS(81, 81, c7, 88, 01, ff), {"ROOT_NTP", cyng::TC_NULL, ""}},

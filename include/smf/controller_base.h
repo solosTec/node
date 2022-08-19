@@ -13,9 +13,15 @@
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/tag.hpp>
 
+#include <filesystem>
+
+#include <boost/predef.h> //	requires Boost 1.55
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
-#include <filesystem>
+
+#if BOOST_OS_WINDOWS
+#include <cyng/scm/service.hpp>
+#endif
 
 namespace cyng {
     class controller;
@@ -35,6 +41,14 @@ namespace smf {
              * Prepare a default environment and call the derived run() method
              */
             virtual int run();
+
+#if BOOST_OS_WINDOWS
+            /**
+             * Implementation of the control handler.
+             * Forward events from service controller to service.
+             */
+            void control_handler(DWORD);
+#endif
 
           protected:
             virtual cyng::vector_t create_default_config(
@@ -61,6 +75,67 @@ namespace smf {
             [[nodiscard]] boost::uuids::uuid read_tag(cyng::object) const;
 
             [[nodiscard]] cyng::object read_config_section(std::string const &json_path, std::size_t config_index);
+
+          private:
+#if BOOST_OS_WINDOWS
+            /**
+             * run as windows service
+             */
+            template <typename CTL> int run_as_service(CTL *ctrl, std::string const &srv_name) {
+                //
+                //	define service type
+                //
+                using service_type = service<CTL>;
+
+                //
+                //	messages
+                //
+                static const std::string msg_01 = "startup service [" + srv_name + "]";
+                static const std::string msg_02 = "An instance of the [" + srv_name + "] service is already running";
+                static const std::string msg_03 =
+                    "***Error 1063: The [" + srv_name + "] service process could not connect to the service controller";
+                static const std::string msg_04 =
+                    "The [" + srv_name + "] service is configured to run in does not implement the service";
+
+                //
+                //	create service
+                //
+                ::OutputDebugString(msg_01.c_str());
+                service_type srv(ctrl, srv_name);
+
+                //
+                //	starts dispatcher and calls service main() function
+                //
+                const DWORD r = srv.run();
+                switch (r) {
+                case ERROR_SERVICE_ALREADY_RUNNING:
+                    //	An instance of the service is already running.
+                    ::OutputDebugString(msg_02.c_str());
+                    break;
+                case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
+                    //
+                    //	The service process could not connect to the service controller.
+                    //	Typical error message, when running in console mode.
+                    //
+                    ::OutputDebugString(msg_03.c_str());
+                    std::cerr << msg_03 << std::endl;
+                    break;
+                case ERROR_SERVICE_NOT_IN_EXE:
+                    //	The executable program that this service is configured to run in does not implement the service.
+                    ::OutputDebugString(msg_04.c_str());
+                    break;
+                default: {
+                    std::stringstream ss;
+                    ss << '[' << srv_name << "] service dispatcher stopped: " << r;
+                    const std::string msg = ss.str();
+                    ::OutputDebugString(msg.c_str());
+                } break;
+                }
+
+                return EXIT_SUCCESS;
+            }
+
+#endif
 
           protected:
             startup const &config_;
