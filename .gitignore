@@ -36,3 +36,5 @@
 /out/build/x64-Debug
 .vscode/settings.json
 /cmake/FindCYNG - Copy.cmake
+*.md5
+*.bz2
