@@ -1,6 +1,6 @@
 #
 #
-cmake_minimum_required (VERSION 3.20)
+cmake_minimum_required (VERSION 3.22)
 cmake_policy(SET CMP0074 NEW)
                                                      
 #	                                     
@@ -138,32 +138,45 @@ include (cmake/address_model.cmake)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 #
-# find cyng library
+# find pugixml library
+# CYNG_INCLUDE_DIRS CYNG_LIBRARIES
+#
+find_package(PUGIXML REQUIRED)
+if (PUGIXML_FOUND)
+    message(STATUS "** PugiXML          : found") 
+    message(STATUS "** PugiXML include  : ${PUGIXML_INCLUDE_DIRS}")
+    message(STATUS "** PugiXML library  : ${PUGIXML_LIBRARIES}") 
+else()
+    message(FATAL_ERROR "** PugiXML library not found")
+endif()
+
+#
+# find cyng libraries
 # CYNG_INCLUDE_DIRS CYNG_LIBRARIES
 #
 find_package(CYNG REQUIRED)
 if (CYNG_FOUND)
     message(STATUS "** CYNG_INCLUDE_DIRS        : ${CYNG_INCLUDE_DIRS}")
     message(STATUS "** CYNG_LIBRARIES           : ${CYNG_LIBRARIES}")
-    message(STATUS "** cyng::db                 : ${CYNG_DB}")
-    message(STATUS "** cyng::io                 : ${CYNG_IO}")
-    message(STATUS "** cyng::log                : ${CYNG_LOG}")
-    message(STATUS "** cyng::net                : ${CYNG_NET}")
-    message(STATUS "** cyng::obj                : ${CYNG_OBJ}")
-    message(STATUS "** cyng::parse              : ${CYNG_PARSE}")
-    message(STATUS "** cyng::rnd                : ${CYNG_RND}")
-    message(STATUS "** cyng::sql                : ${CYNG_SQL}")
-    message(STATUS "** cyng::store              : ${CYNG_STORE}")
-    message(STATUS "** cyng::sys                : ${CYNG_SYS}")
-    message(STATUS "** cyng::task               : ${CYNG_TASK}")
-    message(STATUS "** cyng::vm                 : ${CYNG_VM}")
-    message(STATUS "** cyng::sqlite3            : ${CYNG_SQLITE3}")
+    message(STATUS "** cyng::db                 : ${CYNG_DB_LIBRARY}")
+    message(STATUS "** cyng::io                 : ${CYNG_IO_LIBRARY}")
+    message(STATUS "** cyng::log                : ${CYNG_LOG_LIBRARY}")
+    message(STATUS "** cyng::net                : ${CYNG_NET_LIBRARY}")
+    message(STATUS "** cyng::obj                : ${CYNG_OBJ_LIBRARY}")
+    message(STATUS "** cyng::parse              : ${CYNG_PARSE_LIBRARY}")
+    message(STATUS "** cyng::rnd                : ${CYNG_RND_LIBRARY}")
+    message(STATUS "** cyng::sql                : ${CYNG_SQL_LIBRARY}")
+    message(STATUS "** cyng::store              : ${CYNG_STORE_LIBRARY}")
+    message(STATUS "** cyng::sys                : ${CYNG_SYS_LIBRARY}")
+    message(STATUS "** cyng::task               : ${CYNG_TASK_LIBRARY}")
+    message(STATUS "** cyng::vm                 : ${CYNG_VM_LIBRARY}")
+    message(STATUS "** cyng::sqlite3            : ${CYNG_SQLITE3_LIBRARY}")
+    message(STATUS "** cyng::xml                : ${CYNG_XML_LIBRARY}")
 	if(WIN32)
-        message(STATUS "** cyng::scm                : ${CYNG_SCM}")
+        message(STATUS "** cyng::scm                : ${CYNG_SCM_LIBRARY}")
     endif(WIN32)
-    message(STATUS "** CYNG_PUGI_XML_LIB        : ${CYNG_PUGI_XML_LIB}")
 else()
-    message(FATAL_ERROR "** CYNG library not found")
+    message(FATAL_ERROR "** CYNG libraries not found")
 endif()
 
 #

@@ -44,6 +44,7 @@ target_include_directories(broker-iec
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${Boost_INCLUDE_DIRS}
+        ${CYNG_INCLUDE_DIRS}
 )
 
 target_link_directories(broker-iec
@@ -58,20 +59,19 @@ target_link_libraries(broker-iec
         smf::iec
         smf::ipt_bus
         smf::ipt
-        cyng::obj
-        cyng::io
-        cyng::log
-        cyng::sys
-        cyng::vm
-        cyng::task
-        cyng::store
-# required for aarch64
-        cyng::db
-        cyng::rnd
-        cyng::sql
-        cyng::parse
-        cyng::net
-        cyng::sqlite3
+        "$<$<PLATFORM_ID:Linux>:${cyng_obj}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_io}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_log}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_sys}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_vm}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_task}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_store}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_db}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_rnd}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_sql}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_parse}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_net}>"
+        "$<$<PLATFORM_ID:Linux>:${cyng_sqlite3}>"
         "$<$<PLATFORM_ID:Windows>:pugixml>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
