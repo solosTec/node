@@ -27,19 +27,20 @@ install: build
 #	install -m 755 @PROJECT_BINARY_DIR@/libsmf_iec.so $(INSTALLDIR)/usr/local/lib
 #	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml_bus.so $(INSTALLDIR)/usr/local/lib
 
-	install -m 755 @CYNG_DB@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_IO@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_LOG@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_OBJ@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_PARSE@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_RND@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_NET@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_SQL@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_SQLITE3@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_STORE@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_SYS@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_TASK@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_VM@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_DB_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_IO_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_LOG_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_OBJ_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_PARSE_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_RND_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_NET_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_SQL_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_SQLITE3_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_STORE_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_SYS_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_TASK_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_VM_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_XML_LIBRARY@ $(INSTALLDIR)/usr/local/lib
 
 #	crypto lib
 	install -m 755 @smfsec@ $(INSTALLDIR)/usr/local/lib
