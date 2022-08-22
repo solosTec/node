@@ -71,6 +71,16 @@ namespace smf {
                 default: break;
                 }
             }
+        } else if (id.size() == 4) {
+            //  meter id
+            //	read this value as a hex value
+            //
+            std::stringstream ss;
+            ss.fill('0');
+            for (auto c : id) {
+                ss << std::setw(2) << std::setbase(16) << (+c & 0xFF);
+            }
+            return ss.str();
         } else {
             //	all other cases
             for (auto c : id) {
