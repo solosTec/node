@@ -59,20 +59,7 @@ target_link_libraries(broker-iec
         smf::iec
         smf::ipt_bus
         smf::ipt
-        "$<$<PLATFORM_ID:Linux>:${cyng_obj}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_io}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_log}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_sys}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_vm}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_task}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_store}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_db}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_rnd}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_sql}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_parse}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_net}>"
-        "$<$<PLATFORM_ID:Linux>:${cyng_sqlite3}>"
-        "$<$<PLATFORM_ID:Windows>:pugixml>"
+        cyng::cyng
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )
