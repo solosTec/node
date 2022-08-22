@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SMF_DIR="/usr/local/etc/smf"
+SMF_DIR="${CLS_PATH_ETC}/smf"
 DATABASE_FILE="segw.database"
 VERSION_TRIMMED_08="0.8"
 
@@ -46,9 +46,9 @@ get_installed_versions_from_opkg()
 # Before the installation a backup of the current installation is done.
 # This process consists of the creation of an individual backup folder with the version tag
 # of the installed version and the backup of the following files:
-# - /usr/local/etc/segw_vX.X.cfg
-# - /usr/local/etc/smf/segw_vX.X.json
-# - /usr/local/etc/smf/segw.database
+# - ${CLS_PATH_ETC}/segw_vX.X.cfg
+# - ${CLS_PATH_ETC}/smf/segw_vX.X.json
+# - ${CLS_PATH_ETC}/smf/segw.database
 # - for version 0.9: a human readbale and parsable database dump called database_dump.txt
 #           for version 0.8 no dump is performend at this step, because the "node" ipk is not available at this step
 #           the dumping should happen before the installation process of the ipk.
@@ -72,7 +72,7 @@ create_backups()
             # For that we do not need to provide the configuration file, this works universally
             echo "[PRE-INSTALL] ... dumping of database will be performed"
 
-            cmd_output=$(/usr/local/sbin/segw -C/usr/local/etc/segw_v"$trimmed_version".cfg -l > "$bkp_dir/database_dump.txt")
+            cmd_output=$(${CLS_PATH_SCRIPT}/segw -C"${CLS_PATH_ETC}/segw_v$trimmed_version".cfg -l > "$bkp_dir/database_dump.txt")
             if [ $? -eq 0 ]; then
                 echo "[PRE-INSTALL] ... dumped database contents successfully"
             else
@@ -117,21 +117,21 @@ create_backups()
             echo "[PRE-INSTALL] ... no saving of cfg at this step for version $trimmed_version. Should have already happened before the installation"
     else
 
-        if [ -f "/usr/local/etc/segw_v$trimmed_version.cfg" ]; then
+        if [ -f "${CLS_PATH_ETC}/segw_v$trimmed_version.cfg" ]; then
             # create backups of the configurations independently of the installed versions
             # old approach: use ls and grep to get the correct files
-            #   config_files=$(ls /usr/local/etc/ | grep cfg | grep -v bkp)
+            #   config_files=$(ls ${CLS_PATH_ETC} | grep cfg | grep -v bkp)
             mkdir -p "$bkp_dir"
             #copy the file, do not remove it!
-            cmd_output=$(cp "/usr/local/etc/segw_v$trimmed_version.cfg" "$bkp_dir")
+            cmd_output=$(cp "${CLS_PATH_ETC}/segw_v$trimmed_version.cfg" "$bkp_dir")
             if [ $? -eq 0 ]; then
-                echo "[PRE-INSTALL] ... saved /usr/local/etc/segw_v$trimmed_version.cfg successfully"
+                echo "[PRE-INSTALL] ... saved ${CLS_PATH_ETC}/segw_v$trimmed_version.cfg successfully"
             else
-                echo "[PRE-INSTALL] ... saving /usr/local/etc/segw_v$trimmed_version.cfg failed for reason: $cmd_output"
+                echo "[PRE-INSTALL] ... saving ${CLS_PATH_ETC}/segw_v$trimmed_version.cfg failed for reason: $cmd_output"
                 backup_failed_times=$(( backup_failed_times + 1 ))
             fi
         else
-            echo "[PRE-INSTALL] ... There is no such file /usr/local/etc/segw_v$trimmed_version.cfg, skipping this backup step."
+            echo "[PRE-INSTALL] ... There is no such file ${CLS_PATH_ETC}/segw_v$trimmed_version.cfg, skipping this backup step."
             backup_failed_times=$(( backup_failed_times + 1 ))
         fi
     fi

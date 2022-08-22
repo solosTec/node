@@ -9,13 +9,13 @@
 #
 #   A missing platform definition will silently ignored.
 
-if(NOT PLATFORM)
+if(NOT OECP_VERSION)
     message(STATUS "** Platform                 : default (OECP-1)")
 else()
     message(STATUS "** Platform                 : ${PLATFORM}")
 endif()
 
-if ("${PLATFORM}" STREQUAL "arm-cls") 
+if ("${OECP_VERSION}" STREQUAL "2") 
     set(CLS_PATH_ROOT "/usr")
     set(CLS_PATH_BIN "/usr/bin")
 	set(CLS_PATH_SCRIPT "/usr/sbin")

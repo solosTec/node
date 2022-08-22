@@ -1,10 +1,11 @@
 #!/bin/sh
 
-SMF_DIR="/usr/local/etc/smf"
+SMF_DIR="${CLS_PATH_ETC}/smf"
 BACKUP_DIR="$SMF_DIR/backups"
 DATABASE_FILE="segw.database"
 
 # these variables will be replaced by CMAKE
+OECP=${OECP_VERSION}
 NEW_VERSION_SHORT=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
 NEW_VERSION_LONG=${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}.${${PROJECT_NAME}_VERSION_TWEAK}
 
@@ -24,7 +25,7 @@ get_last_backed_up_version()
 
 	# use ls -v, even it is not encouraged since we do not have the options of "sort -v"
 	# redirect errors to /dev/null, as otherwise a version is tried to computed from the error msg
-	previous_version_long=$(ls -lvr /usr/local/etc/smf/backups/ 2>/dev/null | grep '^d' | awk '{print $NF}' | head -n 1)
+	previous_version_long=$(ls -lvr "${BACKUP_DIR}" 2>/dev/null | grep '^d' | awk '{print $NF}' | head -n 1)
 
 	# calculate 
 	if [ "$previous_version_long" != "" ]; then 
@@ -45,6 +46,9 @@ get_last_backed_up_version()
 update_libs()
 {
 	echo "[POST-INSTALL] Starting update of libraries ..."
+
+	# this is for oecp1 installation, where all the libraries are 
+	# installed in one package
 	echo "[POST-INSTALL] ... remove obsolete symbolic links and libraries ... "
 
 	# this line will remove both the library and its symlink
@@ -83,11 +87,12 @@ update_libs()
 	#rm -f /usr/local/lib/libboost_timer.so
 	#ln -s /usr/local/lib/libboost_timer.so.${Boost_VERSION_NUMERIC} /usr/local/lib/libboost_timer.so 
 
-    #   XML library
+	#   XML library
 	rm -f /usr/local/lib/libpugixml.so.1
 	ln -s /usr/local/lib/libpugixml.so.1.11 /usr/local/lib/libpugixml.so.1
 	rm -f /usr/local/lib/libpugixml.so
 	ln -s /usr/local/lib/libpugixml.so.1 /usr/local/lib/libpugixml.so
+	
 
 	echo "[POST-INSTALL] ... create lib links in /usr/lib/ /usr/local/lib/ ... "
 
@@ -159,7 +164,7 @@ generate_configurations()
 					restore_ok=$(( restore_ok + 1 ))
 				elif [ "$(echo "$file" | grep cfg | grep -v bkp | sort | head -n 1)" != "" ]; then 
 					echo "[POST-INSTALL]    ... restoring cfg configuration ..."
-					cp "$file" "/usr/local/etc/"
+					cp "$file" "${CLS_PATH_ETC}"
 					restore_ok=$(( restore_ok + 1 ))
 				fi
 			done
@@ -201,10 +206,9 @@ generate_configurations()
 			
 			#do not delete the cfg file. it is not created again but brought with in the installation itself
 			#if we update from 0.9 to 0.9 it is needed anyway.
-			#rm -f /usr/local/etc/*.cfg >/dev/null 2>&1
 
 			echo "[POST-INSTALL] ... Creating default configuations"
-			/usr/local/sbin/segw -D >/tmp/segw_config_creation.log 2>&1
+			${CLS_PATH_SCRIPT}/segw -D >/tmp/segw_config_creation.log 2>&1
 			if [ $? -ne 0 ]; then 
 				echo "[POST-INSTALL] ERROR: Could not create default configuration! Abort!"
 				# display the collected logs and the abort
@@ -213,7 +217,7 @@ generate_configurations()
 			fi
 
 			echo "[POST-INSTALL] ... Initialize database"
-			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -I >/tmp/segw_db_creation.log 2>&1
+			${CLS_PATH_SCRIPT}/segw -C "${CLS_PATH_ETC}"/segw_v$NEW_VERSION_SHORT.cfg -I >/tmp/segw_db_creation.log 2>&1
 			if [ $? -ne 0 ]; then 
 				echo "[POST-INSTALL] ERROR: Could not create initialize database! Abort!"
 				# display the collected logs and the abort
@@ -222,7 +226,7 @@ generate_configurations()
 			fi
 
 			echo "[POST-INSTALL] ... Load default configuration into the database"
-			/usr/local/sbin/segw -C /usr/local/etc/segw_v$NEW_VERSION_SHORT.cfg -T >/tmp/segw_db_population.log 2>&1
+			${CLS_PATH_SCRIPT}/segw -C "${CLS_PATH_ETC}"/segw_v$NEW_VERSION_SHORT.cfg -T >/tmp/segw_db_population.log 2>&1
 			if [ $? -ne 0 ]; then 
 				echo "[POST-INSTALL] ERROR: Could not create populate database from default configuration! Abort!"
 				# display the collected logs and the abort
@@ -1465,7 +1469,7 @@ import_value()
 	value=$2
 	datatype=$3
 
-	/usr/local/sbin/segw --set-val "$key" "$value" "$datatype" >/dev/null 2>&1
+	${CLS_PATH_SCRIPT}/segw --set-val "$key" "$value" "$datatype" >/dev/null 2>&1
 }
 
 ####
@@ -1629,8 +1633,10 @@ main()
 	get_last_backed_up_version
 
 	# first remove and update the libraries
-	update_libs
-
+	if [ ! "${OECP}" = "2" ]; then
+		update_libs
+	fi
+	
 	# (re)create the database and configuration file, before merging changes in the next step
 	generate_configurations "$BACKUP_DIR/$previous_version_long"
 
