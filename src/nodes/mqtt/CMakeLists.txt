@@ -35,11 +35,11 @@ target_link_directories(mqtt
 
 target_link_libraries(mqtt 
     PRIVATE
-        cyng::cyng 
-        "$<$<PLATFORM_ID:Windows>:pugixml>"
         smf::config
         smf::cluster
         smf::cluster_bus
+        cyng::cyng 
+        "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

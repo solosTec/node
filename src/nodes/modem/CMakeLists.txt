@@ -1,3 +1,20 @@
+project(smfModem)
+                                                              
+message(STATUS "            ____                                                 ")
+message(STATUS "          ,'  , `.                                        ____   ")
+message(STATUS "       ,-+-,.' _ |                ,---,                 ,'  , `. ")
+message(STATUS "    ,-+-. ;   , ||   ,---.      ,---.'|              ,-+-,.' _ | ")
+message(STATUS "   ,--.'|'   |  ;|  '   ,'\\     |   | :           ,-+-. ;   , || ")
+message(STATUS "  |   |  ,', |  ': /   /   |    |   | |   ,---.  ,--.'|'   |  || ")
+message(STATUS "  |   | /  | |  ||.   ; ,. :  ,--.__| |  /     \\|   |  ,', |  |, ")
+message(STATUS "  '   | :  | :  |,'   | |: : /   ,'   | /    /  |   | /  | |--'  ")
+message(STATUS "  ;   . |  ; |--' '   | .; :.   '  /  |.    ' / |   : |  | ,     ")
+message(STATUS "  |   : |  | ,    |   :    |'   ; |:  |'   ;   /|   : |  |/      ")
+message(STATUS "  |   : '  |/      \\   \\  / |   | '/  ''   |  / |   | |`-'       ")
+message(STATUS "  ;   | |`-'        `----'  |   :    :||   :    |   ;/           ")
+message(STATUS "  |   ;/                     \\   \\  /   \\   \\  /'---'            ")
+message(STATUS "  '---'                       `----'     `----'                  ")
+                                                               
 
 include (node.cmake)
 
@@ -35,12 +52,12 @@ target_link_directories(modem
 
 target_link_libraries(modem 
     PRIVATE
-        cyng::cyng 
-        "$<$<PLATFORM_ID:Windows>:pugixml>"
         smf::config
         smf::cluster
         smf::cluster_bus
         smf::modem
+        cyng::cyng 
+        "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
 )

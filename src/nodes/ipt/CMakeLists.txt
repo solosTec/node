@@ -54,8 +54,6 @@ target_link_directories(ipt
 
 target_link_libraries(ipt 
     PRIVATE
-        cyng::cyng 
-        "$<$<PLATFORM_ID:Windows>:pugixml>"
         smf::config
         smf::cluster
         smf::cluster_bus
@@ -64,7 +62,17 @@ target_link_libraries(ipt
         smf::sml
         smf::mbus
         smf::obis
-# required for aarch64
+        cyng::obj
+        cyng::parse
+        cyng::io
+        cyng::log
+        cyng::store
+        cyng::sys
+        cyng::rnd
+        cyng::task
+        cyng::vm
+        "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
+# required by aarch64
         OpenSSL::SSL
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>

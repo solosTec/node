@@ -1,3 +1,20 @@
+project(smfDNS)
+                                               
+message(STATUS "                        ,--.             ")
+message(STATUS "      ,---,           ,--.'|  .--.--.    ")
+message(STATUS "    .'  .' `\\     ,--,:  : | /  /    '.  ")
+message(STATUS "  ,---.'     \\ ,`--.'`|  ' :|  :  /`. /  ")
+message(STATUS "  |   |  .`\\  ||   :  :  | |;  |  |--`   ")
+message(STATUS "  :   : |  '  |:   |   \\ | :|  :  ;_     ")
+message(STATUS "  |   ' '  ;  :|   : '  '; | \\  \\    `.  ")
+message(STATUS "  '   | ;  .  |'   ' ;.    ;  `----.   \\ ")
+message(STATUS "  |   | :  |  '|   | | \\   |  __ \\  \\  | ")
+message(STATUS "  '   : | /  ; '   : |  ; .' /  /`--'  / ")
+message(STATUS "  |   | '` ,/  |   | '`--'  '--'.     /  ")
+message(STATUS "  ;   :  .'    '   : |        `--'---'   ")
+message(STATUS "  |   ,.'      ;   |.'                   ")
+message(STATUS "  '---'        '---'                     ")
+                                       
 
 include (node.cmake)
 
@@ -35,11 +52,19 @@ target_link_directories(dns
 
 target_link_libraries(dns 
     PRIVATE
-        cyng::cyng 
         smf::config
+        smf::cluster
+        smf::cluster_bus
+        cyng::obj
+        cyng::parse
+        cyng::io
+        cyng::log
+        cyng::sys
+        cyng::task
+        cyng::vm
+        "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${Boost_LOCALE_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>
-        "$<$<PLATFORM_ID:Windows>:pugixml>"
 )
 
 if(UNIX)

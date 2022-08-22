@@ -1,3 +1,17 @@
+project(smfSEGW)
+                                               
+message(STATUS "                                           .---. ")
+message(STATUS "   .--.--.               ,----._,.        /. ./| ")
+message(STATUS "  /  /    '     ,---.   /   /  ' /     .-'-. ' | ")
+message(STATUS " |  :  /`./    /     \\ |   :     |    /___/ \\: | ")
+message(STATUS " |  :  ;_     /    /  ||   | .\\  . .-'.. '   ' . ")
+message(STATUS "  \\  \\    `. .    ' / |.   ; ';  |/___/ \\:     ' ")
+message(STATUS "   `----.   \\'   ;   /|'   .   . |.   \\  ' .\\    ")
+message(STATUS "  /  /`--'  /'   |  / | `---`-'| | \\   \\   ' \\ | ")
+message(STATUS " '--'.     / |   :    | .'__/\\_: |  \\   \\  |--\"  ")
+message(STATUS "   `--'---'   \\   \\  /  |   :    :   \\   \\ |     ")
+message(STATUS "               `----'    \\   \\  /     '---\"      ")
+message(STATUS "                          `--`-'                 ")
 
 include (node.cmake)
 
@@ -39,7 +53,7 @@ target_link_directories(segw
 target_link_libraries(segw 
     PRIVATE
         cyng::cyng 
-        "$<$<PLATFORM_ID:Windows>:pugixml>"
+        "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         smfsec::smfsec
         smf::config
         smf::ipt
@@ -49,7 +63,6 @@ target_link_libraries(segw
         smf::mbus
         smf::obis
         smf::sml
-#		${OPENSSL_LIBRARIES}    # don't use quotes here
         OpenSSL::SSL
 		"$<$<PLATFORM_ID:Windows>:odbc32>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        

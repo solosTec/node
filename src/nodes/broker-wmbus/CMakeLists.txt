@@ -62,7 +62,16 @@ target_link_libraries(broker-wmbus
         smf::ipt_bus
         smf::ipt
         smf::obis
-        cyng::cyng
+        cyng::obj
+        cyng::parse
+        cyng::io
+        cyng::log
+        cyng::store
+        cyng::sys
+        cyng::rnd
+        cyng::task
+        cyng::vm
+        "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         smfsec::smfsec
         OpenSSL::SSL
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;smfsec::smfsec;${CMAKE_DL_LIBS};atomic;pthread>"        

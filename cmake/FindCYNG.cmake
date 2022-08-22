@@ -166,16 +166,24 @@ endif(UNIX)
 
 if(CYNG_FOUND AND NOT TARGET cyng::cyng)
 
+#	define a targets
     add_library(cyng::cyng INTERFACE IMPORTED)
-
-#	define a target
    	set_target_properties(cyng::cyng 
 		PROPERTIES
-			INTERFACE_INCLUDE_DIRECTORIES 
-				"${CYNG_INCLUDE_DIRS}"
-			INTERFACE_LINK_LIBRARIES 
-				"${CYNG_LIBRARIES}"
-    )
+			INTERFACE_INCLUDE_DIRECTORIES "${CYNG_INCLUDE_DIRS}"
+			INTERFACE_LINK_LIBRARIES "${CYNG_LIBRARIES}")
+
+	foreach(__CYNGLIB ${FIND_LIBS})
+		# CYNG_DB_LIBRARY
+		string(TOUPPER "CYNG_${__CYNGLIB}_LIBRARY" __CYNGLIB_UPPERCASE_NAME)
+		message(STATUS "** define target     : cyng::${__CYNGLIB} (${__CYNGLIB_UPPERCASE_NAME} = ${${__CYNGLIB_UPPERCASE_NAME}})")
+
+		add_library("cyng::${__CYNGLIB}" INTERFACE IMPORTED)
+   		set_target_properties("cyng::${__CYNGLIB}"
+			PROPERTIES
+				INTERFACE_INCLUDE_DIRECTORIES "${CYNG_INCLUDE_DIRS}"
+				INTERFACE_LINK_LIBRARIES "${${__CYNGLIB_UPPERCASE_NAME}}")
+	endforeach()
 
 endif()
 

@@ -58,7 +58,7 @@ target_link_libraries(setup
         smf::cluster
         smf::cluster_bus
         cyng::cyng 
-        "$<$<PLATFORM_ID:Windows>:pugixml>"
+        "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         ${SMFSEC_LIBRARIES}
         OpenSSL::SSL
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
