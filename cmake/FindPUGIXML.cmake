@@ -52,11 +52,17 @@ else(PC_PUGIXML_FOUND)
 	#	pugixml header files
 	#
 	file(GLOB PUGIXML_SEARCH_PATH 
+		"${CMAKE_PREFIX_PATH}/cyng*" 
+		"${PROJECT_SOURCE_DIR}/../cyng*" 
 		"${CMAKE_PREFIX_PATH}/pugixml*" 
 		"${PROJECT_SOURCE_DIR}/../pugixml*" 
 		"${PROJECT_SOURCE_DIR}/../../sysroot-target" 
         "${PROJECT_SOURCE_DIR}/../../packages/pugixml*"
 		"${PROJECT_SOURCE_DIR}/../../root")
+
+	message(STATUS "** SMF_BUILD_TREE_STEM: ${SMF_BUILD_TREE_STEM}")
+	message(STATUS "** PUGIXML_SEARCH_PATH: ${PUGIXML_SEARCH_PATH}")
+
     find_path(PUGIXML_INCLUDE_DIRS
         NAMES 
             pugixml.hpp 
@@ -64,12 +70,15 @@ else(PC_PUGIXML_FOUND)
 		PATH_SUFFIXES
 			usr/include
 			include
+			"${SMF_BUILD_TREE_STEM}/_deps/pugixml-src/src"
         PATHS
 			${PUGIXML_SEARCH_PATH}
         DOC 
             "PUGIXML headers"
 		NO_CMAKE_FIND_ROOT_PATH
     )
+
+	message(STATUS "** PUGIXML_INCLUDE_DIRS: ${PUGIXML_INCLUDE_DIRS}")
 
     #
 	#	search pugixml libraries on linux
@@ -83,7 +92,8 @@ else(PC_PUGIXML_FOUND)
 			PATH_SUFFIXES
 				usr/lib
 				lib
-				build
+				"${SMF_BUILD_TREE_STEM}/_deps/pugixml-build/Release"
+				"${SMF_BUILD_TREE_STEM}/_deps/pugixml-build/Debug"
 			DOC 
 				"PUGIXML libraries"
             NO_CMAKE_FIND_ROOT_PATH

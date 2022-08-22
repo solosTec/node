@@ -82,7 +82,7 @@ else(PC_CYNG_FOUND)
             cyng.h
         PATH_SUFFIXES
 			"include"
-			"${SMFSEC_BUILD_TREE_STEM}/include"
+			"${SMF_BUILD_TREE_STEM}/include"
 			"build/include"
         PATHS
 			${CYNG_SEARCH_PATH}
@@ -115,14 +115,13 @@ else(PC_CYNG_FOUND)
 				usr/lib
 				lib
 				build
-				"${SMFSEC_BUILD_TREE_STEM}"
-				"${SMFSEC_BUILD_TREE_STEM}/src/${__LIB}"
-                "${SMFSEC_BUILD_TREE_STEM}/src/${__LIB}/Debug"
-                "${SMFSEC_BUILD_TREE_STEM}/src/${__LIB}/Release"
-				"${SMFSEC_BUILD_TREE_STEM}/Debug"
-				"${SMFSEC_BUILD_TREE_STEM}/Release"
-				"build/Debug"
-				"build/Release"
+				"${SMF_BUILD_TREE_STEM}/src/${__LIB}"
+                "${SMF_BUILD_TREE_STEM}/src/${__LIB}/Debug"
+                "${SMF_BUILD_TREE_STEM}/src/${__LIB}/Release"
+				"${SMF_BUILD_TREE_STEM}/Debug"
+				"${SMF_BUILD_TREE_STEM}/Release"
+				"${SMF_BUILD_TREE_STEM}/build/Debug"
+				"${SMF_BUILD_TREE_STEM}/build/Release"
 			DOC 
 				"CYNG libraries"
             NO_CMAKE_FIND_ROOT_PATH
