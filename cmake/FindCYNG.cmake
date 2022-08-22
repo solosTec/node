@@ -98,14 +98,17 @@ else(PC_CYNG_FOUND)
     #
 	#	search cyng libraries on linux
 	#
-	set(FIND_LIBS "cyng_db;cyng_io;cyng_log;cyng_net;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm;cyng_sqlite3;cyng_xml")
+	# set(FIND_LIBS "cyng_db;cyng_io;cyng_log;cyng_net;cyng_obj;cyng_parse;cyng_rnd;cyng_sql;cyng_store;cyng_sys;cyng_task;cyng_vm;cyng_sqlite3;cyng_xml")
+	set(FIND_LIBS "db;io;log;net;obj;parse;rnd;sql;store;sys;task;vm;sqlite3;xml")
 
 	if(WIN32)
-        list(APPEND FIND_LIBS "cyng_scm")
+        list(APPEND FIND_LIBS "scm")
     endif(WIN32)
 
 	foreach(__LIB ${FIND_LIBS})
-		find_library("${__LIB}" ${__LIB}
+		find_library("${__LIB}" 
+			NAMES
+				"cyng_${__LIB}"
 			PATHS
 				${CYNG_SEARCH_PATH}
 			PATH_SUFFIXES
@@ -130,7 +133,7 @@ else(PC_CYNG_FOUND)
 
 		# this creates a variable with the name of the searched library, so that it can be included more easily
 		unset(__LIB_UPPERCASE_NAME)
-		string(TOUPPER ${__LIB} __LIB_UPPERCASE_NAME)
+		string(TOUPPER "CYNG_${__LIB}" __LIB_UPPERCASE_NAME)
 		set(${__LIB_UPPERCASE_NAME}_LIBRARY ${${__LIB}})
 	endforeach()
 
