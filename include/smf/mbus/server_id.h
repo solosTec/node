@@ -59,6 +59,7 @@ namespace smf {
      * @return meter id as string
      */
     std::string get_id(srv_id_t);
+    // std::string to_meter_id(std::uint8_t, std::uint8_t, std::uint8_t, std::uint8_t);
 
     /**
      * @return meter id as buffer with 6 bytes length

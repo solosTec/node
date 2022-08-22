@@ -36,27 +36,13 @@ namespace smf {
                       smf::sml::msg_type type,
                       cyng::tuple_t msg,
                       std::uint16_t crc) {
+            CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << "#" << +group_no << ": " << trx << ", " << msg);
             switch (type) {
-            case sml::msg_type::OPEN_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                open_response(trx, msg);
-                break;
-            case sml::msg_type::GET_PROFILE_LIST_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                get_profile_list_response(trx, group_no, msg);
-                break;
-            case sml::msg_type::GET_PROC_PARAMETER_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                get_proc_parameter_response(trx, group_no, msg);
-                break;
-            case sml::msg_type::GET_LIST_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] #" << +group_no << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                get_list_response(trx, group_no, msg);
-                break;
-            case sml::msg_type::CLOSE_RESPONSE:
-                CYNG_LOG_TRACE(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg);
-                close_response(trx, msg);
-                break;
+            case sml::msg_type::OPEN_RESPONSE: open_response(trx, msg); break;
+            case sml::msg_type::GET_PROFILE_LIST_RESPONSE: get_profile_list_response(trx, group_no, msg); break;
+            case sml::msg_type::GET_PROC_PARAMETER_RESPONSE: get_proc_parameter_response(trx, group_no, msg); break;
+            case sml::msg_type::GET_LIST_RESPONSE: get_list_response(trx, group_no, msg); break;
+            case sml::msg_type::CLOSE_RESPONSE: close_response(trx, msg); break;
             default: CYNG_LOG_WARNING(logger_, "[sml] " << smf::sml::get_name(type) << ": " << trx << ", " << msg); break;
             }
         }) {
@@ -76,7 +62,7 @@ namespace smf {
     void sml_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data, std::string target) {
 
         if (boost::algorithm::equals(channel_.lock()->get_name(), target)) {
-            CYNG_LOG_TRACE(logger_, "[sml] " << target << " receive " << data.size() << " bytes");
+            CYNG_LOG_TRACE(logger_, "[sml] target [" << target << "] received " << data.size() << " bytes");
             //{
             //    std::stringstream ss;
             //    cyng::io::hex_dump<8> hd;
