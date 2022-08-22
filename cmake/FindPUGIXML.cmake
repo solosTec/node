@@ -11,7 +11,7 @@
 #
 # and the following imported targets
 #
-#     PUGIXML::PUGIXML
+#     pugixml::pugixml
 #
 
 # clear the variables, in case they were set somewhere elese
@@ -124,12 +124,12 @@ if(UNIX)
 	)
 endif(UNIX)
 
-if(PUGIXML_FOUND AND NOT TARGET PUGIXML::PUGIXML)
+if(PUGIXML_FOUND AND NOT TARGET pugixml::pugixml)
 
-    add_library(PUGIXML::PUGIXML INTERFACE IMPORTED)
+    add_library(pugixml::pugixml INTERFACE IMPORTED)
 
 #	define a target
-   	set_target_properties(PUGIXML::PUGIXML 
+   	set_target_properties(pugixml::pugixml 
 		PROPERTIES
 			INTERFACE_INCLUDE_DIRECTORIES 
 				"${PUGIXML_INCLUDE_DIRS}"
