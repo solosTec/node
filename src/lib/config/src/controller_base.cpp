@@ -286,6 +286,7 @@ namespace smf {
         void controller_base::control_handler(DWORD sig) {
             //	forward signal to shutdown manager
             // cyng::forward_signal(sig);
+            std::cerr << "signal " << sig << " received" << std::endl;
         }
 #endif
 
