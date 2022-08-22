@@ -4,8 +4,9 @@
  * Copyright (c) 2021 Sylko Olzscher
  *
  */
-#include <db.h>
 #include <session.h>
+
+#include <db.h>
 #include <tasks/ping.h>
 
 #include <smf/cluster/features.h>
@@ -26,6 +27,9 @@
 
 #include <iostream>
 //#include <version>  // __cpp_lib_starts_ends_with
+
+#include <boost/predef.h> //	requires Boost 1.55
+
 
 namespace smf {
 
@@ -336,6 +340,16 @@ namespace smf {
             logger_,
             "session [" << socket_.remote_endpoint() << "] cluster login " << name << ":" << pwd << "@" << node << " #"
                         << n.get_internal_value() << " v" << v << ", tag: " << tag << ", peer: " << vm_.get_tag());
+
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+        {
+            std::stringstream ss;
+            ss << "session [" << socket_.remote_endpoint() << "] cluster login " << name << ":" << pwd << "@" << node << " #"
+               << n.get_internal_value() << " v" << v << ", tag: " << tag << ", peer: " << vm_.get_tag();
+            auto const msg = ss.str();
+            ::OutputDebugString(msg.c_str());
+        }
+#endif
 
         //
         //	ToDo: check credentials

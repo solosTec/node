@@ -106,6 +106,14 @@ namespace smf {
             //
             auto const now = std::chrono::system_clock::now();
 
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+            {
+                std::stringstream ss;
+                ss << "[" << config_.node_ << "] entry to the main programme";
+                auto const msg = ss.str();
+                ::OutputDebugString(msg.c_str());
+            }
+#endif
             //
             //	controller loop
             //
@@ -130,11 +138,19 @@ namespace smf {
                     auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
 
                     // std::cout << cfg << std::endl;
-                    BOOST_ASSERT_MSG(cfg, "no configiration data");
+                    BOOST_ASSERT_MSG(cfg, "no configuration data");
                     BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
                     shutdown = !cfg;
                     if (shutdown) {
                         std::cerr << "use option -D to generate a configuration file" << std::endl;
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                        {
+                            std::stringstream ss;
+                            ss << "[" << config_.node_ << "] - use option -D to generate a configuration file";
+                            auto const msg = ss.str();
+                            ::OutputDebugString(msg.c_str());
+                        }
+#endif
                         return EXIT_FAILURE;
                     }
 
@@ -157,6 +173,14 @@ namespace smf {
                     }
                     if (config_.log_file_ && !config_.log_file_path_.empty()) {
                         logger.start_file_logger(config_.log_file_path_, config_.log_file_size_);
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                        {
+                            std::stringstream ss;
+                            ss << "[" << config_.node_ << "] - logs to " << config_.log_file_path_;
+                            auto const msg = ss.str();
+                            ::OutputDebugString(msg.c_str());
+                        }
+#endif
                     }
 
 #if defined(BOOST_OS_LINUX_AVAILABLE)
@@ -179,6 +203,14 @@ namespace smf {
                             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - now);
 
                         CYNG_LOG_INFO(logger, "shutdown " << config_.node_ << " - uptime: " << uptime);
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                        { 
+                            std::stringstream ss;
+                            ss << "shutdown " << config_.node_ << " - uptime: " << uptime;
+                            auto const msg = ss.str();
+                            ::OutputDebugString(msg.c_str()); 
+                        }
+#endif
 
                         //	stop all running tasks
                         this->shutdown(ctl.get_registry(), channels, logger);
@@ -189,6 +221,14 @@ namespace smf {
                     });
 
                     CYNG_LOG_INFO(logger, "startup " << config_.node_);
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                    {
+                        std::stringstream ss;
+                        ss << "[" << config_.node_ << "] startup with: " << config_.config_file_ << "/" << config_.json_path_;
+                        auto const msg = ss.str();
+                        ::OutputDebugString(msg.c_str());
+                    }
+#endif
 
                     //
                     //	startup application

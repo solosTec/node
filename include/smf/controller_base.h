@@ -118,7 +118,9 @@ namespace smf {
                     //	Typical error message, when running in console mode.
                     //
                     ::OutputDebugString(msg_03.c_str());
+#ifdef _DEBUG
                     std::cerr << msg_03 << std::endl;
+#endif
                     break;
                 case ERROR_SERVICE_NOT_IN_EXE:
                     //	The executable program that this service is configured to run in does not implement the service.

@@ -12,5 +12,7 @@ COPY /B /V ${smfStore_BINARY_DIR}\Release\store.exe "${CMAKE_INSTALL_PREFIX}/"
 COPY /B /V ${smfDash_BINARY_DIR}\Release\dash.exe "${CMAKE_INSTALL_PREFIX}/"
 COPY /B /V ${smfIECBroker_BINARY_DIR}\Release\broker-iec.exe "${CMAKE_INSTALL_PREFIX}/"
 COPY /B /V ${smfwMBusBroker_BINARY_DIR}\Release\broker-wmbus.exe "${CMAKE_INSTALL_PREFIX}/"
+COPY /B /V ${smfModem_BINARY_DIR}\Release\modem.exe "${CMAKE_INSTALL_PREFIX}/"
+COPY /B /V ${smfDNS_BINARY_DIR}\Release\dns.exe "${CMAKE_INSTALL_PREFIX}/"
 
 REM 
