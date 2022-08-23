@@ -144,6 +144,8 @@ namespace smf {
 
           private:
             mutable boost::uuids::random_generator_mt19937 uidgen_;
+            std::unique_ptr<boost::asio::signal_set> signal_;
+            bool shutdown_;
         };
 
         void stop_tasks(cyng::logger, cyng::registry &, std::string);

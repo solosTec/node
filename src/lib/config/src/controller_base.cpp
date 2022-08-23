@@ -35,7 +35,10 @@ namespace smf {
 
         controller_base::controller_base(startup const &config)
             : config_(config)
-            , uidgen_() {}
+            , uidgen_()
+            , signal_() 
+            , shutdown_(false) 
+        {}
 
         bool controller_base::run_options(boost::program_options::variables_map &vars) {
 
@@ -109,7 +112,7 @@ namespace smf {
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
             {
                 std::stringstream ss;
-                ss << "[" << config_.node_ << "] entry to the main programme";
+                ss << "[" << config_.node_ << "] enter main loop";
                 auto const msg = ss.str();
                 ::OutputDebugString(msg.c_str());
             }
@@ -122,8 +125,8 @@ namespace smf {
                 //
                 //	controller loop
                 //
-                bool shutdown{false};
-                while (!shutdown) {
+                //bool shutdown{false};
+                while (!shutdown_) {
 
                     //
                     //	Create an I/O controller with specified size
@@ -140,8 +143,8 @@ namespace smf {
                     // std::cout << cfg << std::endl;
                     BOOST_ASSERT_MSG(cfg, "no configuration data");
                     BOOST_ASSERT_MSG(cyng::is_of_type<cyng::TC_PARAM_MAP>(cfg), "wrong configiration data type");
-                    shutdown = !cfg;
-                    if (shutdown) {
+                    shutdown_ = !cfg;
+                    if (shutdown_) {
                         std::cerr << "use option -D to generate a configuration file" << std::endl;
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
                         {
@@ -192,12 +195,14 @@ namespace smf {
                     cyng::stash channels(ctl.get_ctx());
 
                     // Capture SIGINT and SIGTERM to perform a clean shutdown
-                    boost::asio::signal_set signals(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
-                    signals.async_wait([&, this](boost::system::error_code const &, int sig) {
+                    BOOST_ASSERT_MSG(!signal_, "signal handler already defined");
+                    signal_ = std::make_unique<boost::asio::signal_set>(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
+                    //boost::asio::signal_set signals(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
+                    signal_->async_wait([&, this](boost::system::error_code const &, int sig) {
                         // Stop the `io_context`. This will cause `run()`
                         // to return immediately, eventually destroying the
                         // `io_context` and all of the sockets in it.
-                        shutdown = true;
+                        shutdown_ = true;
 
                         const auto uptime =
                             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - now);
@@ -249,6 +254,10 @@ namespace smf {
                     //
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                     ctl.stop();
+                    if (signal_) {
+                        signal_->clear();
+                        signal_.reset();
+                    }
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
 
@@ -262,17 +271,30 @@ namespace smf {
 #endif
                 return EXIT_SUCCESS;
             } catch (std::exception &ex) {
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                {
+                    std::stringstream ss;
+                    ss << "[" << config_.node_ << "] ***error: " << ex.what();
+                    auto const msg = ss.str();
+                    ::OutputDebugString(msg.c_str());
+                }
+#else
                 std::cerr << ex.what() << std::endl;
+#endif
             }
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
             {
                 std::stringstream ss;
-                ss << "[" << config_.node_ << "] exit (FAILURE)";
+                ss << "[" << config_.node_ << "] exit (FAILURE) " << ::GetLastError();
                 auto const msg = ss.str();
                 ::OutputDebugString(msg.c_str());
             }
 #endif
+            if (signal_) {
+                signal_->clear();
+                signal_.reset();
+            }
             return EXIT_FAILURE;
         }
 
@@ -310,22 +332,19 @@ namespace smf {
          * Forward events from service controller to service.
          */
         void controller_base::control_handler(DWORD sig) {
+
+            std::stringstream ss;
+
             //	forward signal to shutdown manager
             // cyng::forward_signal(sig);
-            //std::cerr << "signal " << sig << " received" << std::endl;
-            std::stringstream ss;
-            ss << "[" << config_.node_ << "] recived signal " << sig;
-            auto const msg = ss.str();
-            ::OutputDebugString(msg.c_str());
-
-            if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-                SetConsoleCtrlHandler(nullptr, true); 
-                ::GenerateConsoleCtrlEvent(SIGINT, 0);
-                FreeConsole();
-                SetConsoleCtrlHandler(nullptr, false); 
-            } else {
-                std::stringstream ss;
-                ss << "[" << config_.node_ << "] cannot attach to console";
+            if (signal_) {
+                ss << "[" << config_.node_ << "] received signal " << sig;
+                auto const msg = ss.str();
+                ::OutputDebugString(msg.c_str());
+                signal_->cancel();
+            }
+            else {
+                ss << "[" << config_.node_ << "] ***error: no signal handler (" << sig << ")";
                 auto const msg = ss.str();
                 ::OutputDebugString(msg.c_str());
             }
