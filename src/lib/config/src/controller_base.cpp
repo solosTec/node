@@ -206,7 +206,7 @@ namespace smf {
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
                         { 
                             std::stringstream ss;
-                            ss << "shutdown " << config_.node_ << " - uptime: " << uptime;
+                            ss << "[" << config_.node_ << "] shutdown  - uptime: " << uptime;
                             auto const msg = ss.str();
                             ::OutputDebugString(msg.c_str()); 
                         }
@@ -235,6 +235,15 @@ namespace smf {
                     //
                     run(ctl, channels, logger, cfg, config_.node_);
 
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                    {
+                        std::stringstream ss;
+                        ss << "[" << config_.node_ << "] waiting for pending requests";
+                        auto const msg = ss.str();
+                        ::OutputDebugString(msg.c_str());
+                    }
+#endif
+
                     //
                     //	wait for pending requests
                     //
@@ -243,10 +252,27 @@ namespace smf {
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
 
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                {
+                    std::stringstream ss;
+                    ss << "[" << config_.node_ << "] exit (SUCCESS)";
+                    auto const msg = ss.str();
+                    ::OutputDebugString(msg.c_str());
+                }
+#endif
                 return EXIT_SUCCESS;
             } catch (std::exception &ex) {
                 std::cerr << ex.what() << std::endl;
             }
+
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+            {
+                std::stringstream ss;
+                ss << "[" << config_.node_ << "] exit (FAILURE)";
+                auto const msg = ss.str();
+                ::OutputDebugString(msg.c_str());
+            }
+#endif
             return EXIT_FAILURE;
         }
 
@@ -286,7 +312,23 @@ namespace smf {
         void controller_base::control_handler(DWORD sig) {
             //	forward signal to shutdown manager
             // cyng::forward_signal(sig);
-            std::cerr << "signal " << sig << " received" << std::endl;
+            //std::cerr << "signal " << sig << " received" << std::endl;
+            std::stringstream ss;
+            ss << "[" << config_.node_ << "] recived signal " << sig;
+            auto const msg = ss.str();
+            ::OutputDebugString(msg.c_str());
+
+            if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+                SetConsoleCtrlHandler(nullptr, true); 
+                ::GenerateConsoleCtrlEvent(SIGINT, 0);
+                FreeConsole();
+                SetConsoleCtrlHandler(nullptr, false); 
+            } else {
+                std::stringstream ss;
+                ss << "[" << config_.node_ << "] cannot attach to console";
+                auto const msg = ss.str();
+                ::OutputDebugString(msg.c_str());
+            }
         }
 #endif
 

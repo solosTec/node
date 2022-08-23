@@ -791,7 +791,7 @@ namespace smf {
             //
             //	Annotation: Inserting a PushOp requires to start a <push> task.
             //	The task has the specified interval and collects and push data from the data collector
-            //	to the target on the IP-T master.
+            //	to the target on the IP-T primary.
             //	Therefore a data collector must exists (with the same) key. And the <push> task
             //	requires also the profile OBIS code from the data collector. So a missing data collector
             //	is a failure.

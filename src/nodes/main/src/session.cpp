@@ -344,8 +344,8 @@ namespace smf {
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
         {
             std::stringstream ss;
-            ss << "session [" << socket_.remote_endpoint() << "] cluster login " << name << ":" << pwd << "@" << node << " #"
-               << n.get_internal_value() << " v" << v << ", tag: " << tag << ", peer: " << vm_.get_tag();
+            ss << "[smf] cluster login " << socket_.remote_endpoint() << "  " << name << ":" << pwd << "@" << node << " pid "
+               << n.get_internal_value() << " v" << v;
             auto const msg = ss.str();
             ::OutputDebugString(msg.c_str());
         }

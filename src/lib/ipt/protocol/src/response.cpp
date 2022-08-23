@@ -378,7 +378,7 @@ namespace smf {
 					case DIALUP_FAILED:		return "Connection establishment failed";
 					case DIALUP_SUCCESS:	return "Connection successful established";
 					case BUSY:				return "The line is busy";
-					case NO_MASTER:			return "No connection to master";
+					case NO_MASTER:			return "No connection to primary";
 					case UNREACHABLE:		return "Remote station unreachable";
 					default:
 						break;

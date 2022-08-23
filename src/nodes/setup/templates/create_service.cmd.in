@@ -7,12 +7,12 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service smf_setup_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create smf_setup_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\setup.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF setup server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description smf_setup_v${${PROJECT_NAME}_VERSION_MAJOR} "Setup Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc create smf_setup_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\setup.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "${CAPITAL_NAME} setup server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description smf_setup_v${${PROJECT_NAME}_VERSION_MAJOR} "Setup Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (${CAPITAL_NAME} Cluster node)"
 sc failure smf_setup_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
-REM Add a dependency to SMF master service.
-REM Modify or remove this dependency if SMF master is running on a different node.
+REM Add a dependency to ${CAPITAL_NAME} primary service.
+REM Modify or remove this dependency if ${CAPITAL_NAME} primary is running on a different node.
 REM
 sc config smf_setup_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_main_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on

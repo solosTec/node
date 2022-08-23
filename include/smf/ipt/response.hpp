@@ -124,7 +124,7 @@ namespace smf {
 					RESERVED_0C,		//!<	not used yet
 
 					ACCOUNT_LOCKED,		//!<	account is blocked
-					MALFUNCTION,		//!<	faulty master
+					MALFUNCTION,		//!<	faulty primary
 				};
 
 				static bool is_success(unsigned);
@@ -218,7 +218,7 @@ namespace smf {
 					DIALUP_FAILED,		//!<	Connection establishment failed
 					DIALUP_SUCCESS,		//!<	Connection successfuly established
 					BUSY,				//!<	The line is busy
-					NO_MASTER,			//!<	No connection to master
+					NO_MASTER,			//!<	No connection to primary
 					UNREACHABLE,		//!<	Remote station unreachable
 				};
 
@@ -418,7 +418,7 @@ namespace smf {
 					RESERVED_0C,		//!<	not used yet
 
 					ACCOUNT_LOCKED,		//!<	account is blocked
-					MALFUNCTION,		//!<	faulty master
+					MALFUNCTION,		//!<	faulty primary
 				};
 
 				static bool is_success(unsigned);

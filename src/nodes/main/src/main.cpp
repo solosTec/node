@@ -18,6 +18,12 @@
  */
 int main(int argc, char **argv) {
 
+//#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+//    for (auto idx = 0; idx < argc; ++idx) {
+//        ::OutputDebugString(argv[idx]);
+//    }
+//#endif
+
     //	will contain the path to an optional configuration file (.cfg)
     smf::config::startup config("main");
 
@@ -44,8 +50,12 @@ int main(int argc, char **argv) {
             return EXIT_SUCCESS;
         }
 
-        if (smf::config::complete_generic_options(config, node_options, vm))
+        //
+        //  executes immediate options and exits the programme
+        //
+        if (smf::config::complete_generic_options(config, node_options, vm)) {
             return EXIT_SUCCESS;
+        }
 
         //
         //	RLIMIT_NOFILE (linux only)

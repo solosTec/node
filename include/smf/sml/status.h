@@ -44,8 +44,8 @@ namespace smf {
          *	20-31	always 0
          *	32	1 if time base is unsure
 
-         * 0x72202 = 0111 00[1]0 0010 0000 0010	- not authorized on IP-T master
-         * 0x70202 = 0111 00[0]0 0010 0000 0010	- authorized on IP-T master
+         * 0x72202 = 0111 00[1]0 0010 0000 0010	- not authorized on IP-T primary
+         * 0x70202 = 0111 00[0]0 0010 0000 0010	- authorized on IP-T primary
          * 0x62602 = 0111 00[1]0 0110 0000 0010
          */
         enum class status_bit : status_word_t {

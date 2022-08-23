@@ -1,3 +1,4 @@
+@echo off
 REM
 REM	This file is part of the "@PROJECT_NAME@" project.
 REM	This file is generated automatically. Do not edit.
@@ -6,8 +7,7 @@ REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service smf_main_v${${PROJECT_NAME}_VERSION_MAJOR}
-@echo off
-sc create smf_main_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\main.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\main_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF main server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description smf_main_v${${PROJECT_NAME}_VERSION_MAJOR} "${PROJECT_NAME} Primary Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc create smf_main_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\main.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\main_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "${CAPITAL_NAME} main server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description smf_main_v${${PROJECT_NAME}_VERSION_MAJOR} "${CAPITAL_NAME} Primary Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (${CAPITAL_NAME} Cluster node)"
 sc failure smf_main_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 @echo on

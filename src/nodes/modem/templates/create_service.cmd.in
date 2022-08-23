@@ -7,11 +7,11 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\modem.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF modem server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} "Modem Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (SMF Cluster node)"
+sc create ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\modem.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\modem_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "${CAPITAL_NAME} modem server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} "Modem Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (${CAPITAL_NAME} Cluster node)"
 sc failure ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
-REM Add a dependency to @cmake_project_name_toupper@ master service.
+REM Add a dependency to @cmake_project_name_toupper@ primary service.
 REM Modify or remove this dependency if @cmake_project_name_toupper@ main is running on a different node.
 REM
 sc config ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR} depend= ${cmake_project_name_tolower}_main_v${${PROJECT_NAME}_VERSION_MAJOR}

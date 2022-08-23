@@ -1,7 +1,7 @@
 REM
 REM	This file is part of the "@PROJECT_NAME@" project.
 REM	This file is generated automatically. Do not edit.
-REM restart master service
+REM restart primary service
 REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM

@@ -7,12 +7,12 @@ REM	platform: @CMAKE_SYSTEM@
 REM
 echo create service node_ipt_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc create smf_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\ipt.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "SMF IP-T server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description smf_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} "IP-T Master Server v${${PROJECT_NAME}_VERSION_MAJOR} (SMF Cluster node)"
+sc create smf_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\ipt.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "${CAPITAL_NAME} IP-T server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description smf_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} "IP-T Primary Server v${${PROJECT_NAME}_VERSION_MAJOR} (${CAPITAL_NAME} Cluster node)"
 sc failure smf_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
-REM Add a dependency to SMF master service.
-REM Modify or remove this dependency if SMF master is running on a different node.
+REM Add a dependency to ${CAPITAL_NAME} main service.
+REM Modify or remove this dependency if ${CAPITAL_NAME} primary is running on a different node.
 REM
 sc config smf_ipt_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_main_v${${PROJECT_NAME}_VERSION_MAJOR}
 @echo on
