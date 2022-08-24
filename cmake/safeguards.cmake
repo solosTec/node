@@ -16,8 +16,8 @@ endif()
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" cmake_build_type_tolower)
 string(TOUPPER "${CMAKE_BUILD_TYPE}" cmake_build_type_toupper)
-string(TOLOWER ${PROJECT_NAME} cmake_project_name_tolower)
-string(TOUPPER ${PROJECT_NAME} cmake_project_name_toupper)
+string(TOLOWER ${PROJECT_NAME} lowercase_project_name)
+string(TOUPPER ${PROJECT_NAME} uppercase_project_name)
 
 if(NOT cmake_build_type_tolower STREQUAL "debug" AND
    NOT cmake_build_type_tolower STREQUAL "release" AND

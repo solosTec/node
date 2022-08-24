@@ -1,4 +1,4 @@
-project(smfSEGW)
+project(segw)
                                                
 message(STATUS "                                           .---. ")
 message(STATUS "   .--.--.               ,----._,.        /. ./| ")
@@ -12,6 +12,13 @@ message(STATUS " '--'.     / |   :    | .'__/\\_: |  \\   \\  |--\"  ")
 message(STATUS "   `--'---'   \\   \\  /  |   :    :   \\   \\ |     ")
 message(STATUS "               `----'    \\   \\  /     '---\"      ")
 message(STATUS "                          `--`-'                 ")
+
+message(STATUS "CMAKE_PROJECT_NAME       : ${CMAKE_PROJECT_NAME}")
+message(STATUS "PROJECT_NAME             : ${PROJECT_NAME}")
+message(STATUS "CMAKE_BINARY_DIR         : ${CMAKE_BINARY_DIR}")
+message(STATUS "PROJECT_BINARY_DIR       : ${PROJECT_BINARY_DIR}")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR : ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "version                  : v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}")
 
 include (node.cmake)
 
@@ -73,42 +80,42 @@ if(UNIX)
 
     if (${${PROJECT_NAME}_CROSS_COMPILE})
 	    configure_file (
-			    "${CMAKE_CURRENT_SOURCE_DIR}/templates/segw.oecp.cgf.in"
-			    "${PROJECT_BINARY_DIR}/config/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+			    "${CMAKE_CURRENT_SOURCE_DIR}/templates/${PROJECT_NAME}.oecp.cgf.in"
+			    "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 			
 	    configure_file (
 			    "${CMAKE_CURRENT_SOURCE_DIR}/templates/oecp.service.in"
-			    "${PROJECT_BINARY_DIR}/config/segw.service")
+			    "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}.service")
     else()
 
         configure_file (
 		        "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"
-		        "${PROJECT_BINARY_DIR}/config/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		        "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 
         configure_file (
 		        "${CMAKE_CURRENT_SOURCE_DIR}/templates/unit.in"
-		        "${PROJECT_BINARY_DIR}/config/segw.service")
+		        "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}.service")
     endif()
 else()
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/windows.cgf.in"
-		    "${PROJECT_BINARY_DIR}/config/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		    "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/create_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/segw_create_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}_create_service.cmd")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/delete_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/segw_delete_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}_delete_service.cmd")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/restart_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/segw_restart_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}_restart_service.cmd")
 
 #    configure_file (
 #		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"
-#		    "${PROJECT_BINARY_DIR}/segw.rc")
+#		    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.rc")
 
 endif()
 

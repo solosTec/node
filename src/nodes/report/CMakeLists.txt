@@ -58,28 +58,28 @@ target_link_libraries(report
 if(UNIX)
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"
-		    "${PROJECT_BINARY_DIR}/config/report_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		    "${CMAKE_BINARY_DIR}/config/report_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/unit.in"
-		    "${PROJECT_BINARY_DIR}/config/report.service")
+		    "${CMAKE_BINARY_DIR}/config/report.service")
 
 else()
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/windows.cgf.in"
-		    "${PROJECT_BINARY_DIR}/config/report_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		    "${CMAKE_BINARY_DIR}/config/report_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/create_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/report_create_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/report_create_service.cmd")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/delete_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/report_delete_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/report_delete_service.cmd")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/restart_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/report_restart_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/report_restart_service.cmd")
 
 #    configure_file (
 #		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"

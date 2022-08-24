@@ -1,12 +1,13 @@
+@echo off
 REM
-REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is part of the "@CMAKE_PROJECT_NAME@/@PROJECT_NAME@" project.
 REM	This file is generated automatically. Do not edit.
 REM delete dash service
 REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo delete service smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
-@echo off
-sc stop smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc delete smf_dash_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo delete service ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc query ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc stop ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc delete ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 @echo on

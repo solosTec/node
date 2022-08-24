@@ -53,28 +53,28 @@ target_link_libraries(imega
 if(UNIX)
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"
-		    "${PROJECT_BINARY_DIR}/config/imega_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		    "${CMAKE_BINARY_DIR}/config/imega_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/unit.in"
-		    "${PROJECT_BINARY_DIR}/config/imega.service")
+		    "${CMAKE_BINARY_DIR}/config/imega.service")
 
 else()
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/windows.cgf.in"
-		    "${PROJECT_BINARY_DIR}/config/imega_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		    "${CMAKE_BINARY_DIR}/config/imega_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/create_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/imega_create_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/imega_create_service.cmd")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/delete_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/imega_delete_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/imega_delete_service.cmd")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/restart_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/imega_restart_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/imega_restart_service.cmd")
 
 #    configure_file (
 #		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"

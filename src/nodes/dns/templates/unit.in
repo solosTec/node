@@ -1,10 +1,10 @@
 [Unit]
-Description=lora server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
+Description=${PROJECT_NAME} server v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.${${CMAKE_PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/opt/smf/lora -C/opt/smf/lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/smf/${PROJECT_NAME} -C/opt/smf/${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=on-failure
 RestartSec=12
 

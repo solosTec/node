@@ -1,13 +1,19 @@
 #
-#	startup configuration for @PROJECT_NAME@ setup node
+#	startup configuration for @CMAKE_PROJECT_NAME@/@PROJECT_NAME@ setup node
 #	created : ${_NOW_UTC}
 #	platform: @CMAKE_SYSTEM@
 #
 [service]
 enabled = false
-name = smf_setup_v${${PROJECT_NAME}_VERSION_MAJOR}
+name = ${lowercase_project_name}_setup_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 
 [setup]
-json = $ENV{ProgramData}\solosTec\SMF\setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
-pool-size = ${${PROJECT_NAME}_POOL_SIZE}
+json = $ENV{ProgramData}\solosTec\${PROJECT_NAME}\setup_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.json
+pool-size = ${${CMAKE_PROJECT_NAME}_POOL_SIZE}
 config-index = 0
+
+[log]
+file = true
+file-name = $ENV{ProgramData}\solosTec\${uppercase_project_name}\logs
+
+

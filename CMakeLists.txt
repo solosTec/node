@@ -1055,7 +1055,7 @@ message(STATUS "** CMAKE_CROSSCOMPILING         : ${CMAKE_CROSSCOMPILING}")
 
 if(${CMAKE_CROSSCOMPILING})
 
- # same as ${cmake_project_name_tolower}
+ # same as ${lowercase_project_name}
 	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
     message(STATUS "** cross compile project        : ${OECP_NAME}")
 
@@ -1100,7 +1100,7 @@ if (WIN32)
     file(TO_NATIVE_PATH ${smfModem_BINARY_DIR} smfModem_BINARY_DIR)
     configure_file (
         "${CMAKE_SOURCE_DIR}/scripts/install_local.cmd.in"
-        "${PROJECT_BINARY_DIR}/install_local_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cmd")
+        "${PROJECT_BINARY_DIR}/install_local_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cmd")
 endif()
 
 #

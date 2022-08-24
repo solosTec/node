@@ -5,10 +5,10 @@
 #
 [service]
 enabled = false
-name = smf_lora_v${${PROJECT_NAME}_VERSION_MAJOR}
+name = smf_lora_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 
 [setup]
-json = $ENV{ProgramData}\solosTec\SMF\lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+json = $ENV{ProgramData}\solosTec\SMF\lora_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.json
 pool-size = ${${PROJECT_NAME}_POOL_SIZE}
 
 [x509]

@@ -1,12 +1,12 @@
+@echo off
 REM
-REM	This file is part of the "@cmake_project_name_toupper@" project.
+REM	This file is part of the "@uppercase_project_name@" project.
 REM	This file is generated automatically. Do not edit.
-REM restart @cmake_project_name_toupper@ modem service
+REM restart @uppercase_project_name@ modem service
 REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo restart service ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
-@echo off
-sc stop ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc start ${cmake_project_name_tolower}_modem_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo restart service ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc stop ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc start ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 @echo on

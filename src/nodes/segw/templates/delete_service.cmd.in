@@ -1,12 +1,12 @@
 REM
-REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is part of the "@CMAKE_PROJECT_NAME@/@PROJECT_NAME@" project.
 REM	This file is generated automatically. Do not edit.
-REM delete http service
+REM delete ${uppercase_project_name} ${PROJECT_NAME} service
 REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo delete service smf_segw_v${${PROJECT_NAME}_VERSION_MAJOR}
+echo delete service ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 @echo off
-sc stop smf_segw_v${${PROJECT_NAME}_VERSION_MAJOR}
-sc delete smf_segw_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc stop ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc delete ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 @echo on

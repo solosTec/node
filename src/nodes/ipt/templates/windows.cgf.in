@@ -5,8 +5,12 @@
 #
 [service]
 enabled = false
-name = smf_ipt_v${${PROJECT_NAME}_VERSION_MAJOR}
+name = ${lowercase_project_name}_ipt_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 
 [setup]
-json = $ENV{ProgramData}\solosTec\SMF\ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
+json = $ENV{ProgramData}\solosTec\${PROJECT_NAME}\ipt_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.json
 pool-size = ${${PROJECT_NAME}_POOL_SIZE}
+
+[log]
+file = true
+file-name = $ENV{ProgramData}\solosTec\${PROJECT_NAME}\logs

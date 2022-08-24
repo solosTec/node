@@ -1,18 +1,18 @@
+@echo off
 REM
-REM	This file is part of the "@PROJECT_NAME@" project.
+REM	This file is part of the "@CMAKE_PROJECT_NAME@/@PROJECT_NAME@" project.
 REM	This file is generated automatically. Do not edit.
-REM install DNS service
+REM install ${PROJECT_NAME} service
 REM	created : ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
 REM
-echo create service smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR}
-@echo off
-sc create smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\SMF\dns.exe --config=\"$ENV{ProgramW6432}\solosTec\SMF\dns_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "${CAPITAL_NAME} DNS server v${${PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
-sc description smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR} "DNS Server v${${PROJECT_NAME}_VERSION_MAJOR}.x (${CAPITAL_NAME} Cluster node)"
-sc failure smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+echo create service ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc create ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\${uppercase_project_name}\${PROJECT_NAME}.exe --config=\"$ENV{ProgramW6432}\solosTec\${uppercase_project_name}\${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "${uppercase_project_name} DNS server v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR} "DNS Server v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.x (${uppercase_project_name} Cluster node)"
+sc failure ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
 REM
-REM Add a dependency to ${CAPITAL_NAME} primary service.
-REM Modify or remove this dependency if ${CAPITAL_NAME} primary is running on a different node.
+REM Add a dependency to ${uppercase_project_name} primary service.
+REM Modify or remove this dependency if ${uppercase_project_name} primary is running on a different node.
 REM
-sc config smf_dns_v${${PROJECT_NAME}_VERSION_MAJOR} depend= smf_main_v${${PROJECT_NAME}_VERSION_MAJOR}
+sc config ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR} depend= ${lowercase_project_name}_main_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 @echo on

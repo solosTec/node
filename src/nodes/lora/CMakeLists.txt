@@ -45,28 +45,28 @@ target_link_libraries(lora
 if(UNIX)
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"
-		    "${PROJECT_BINARY_DIR}/config/lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		    "${CMAKE_BINARY_DIR}/config/lora_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/unit.in"
-		    "${PROJECT_BINARY_DIR}/config/lora.service")
+		    "${CMAKE_BINARY_DIR}/config/lora.service")
 
 else()
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/windows.cgf.in"
-		    "${PROJECT_BINARY_DIR}/config/lora_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg")
+		    "${CMAKE_BINARY_DIR}/config/lora_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/create_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/lora_create_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/lora_create_service.cmd")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/delete_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/lora_delete_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/lora_delete_service.cmd")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/restart_service.cmd.in"
-		    "${PROJECT_BINARY_DIR}/config/lora_restart_service.cmd")
+		    "${CMAKE_BINARY_DIR}/config/lora_restart_service.cmd")
 
 #    configure_file (
 #		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"
