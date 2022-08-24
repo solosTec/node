@@ -1,11 +1,11 @@
 [Unit]
-Description=setup server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
+Description=${PROJECT_NAME} server v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
 Wants=node-master.service
 After=network.target smf-master.service
 
 [Service]
 Type=simple
-ExecStart=/opt/smf/setup -C/opt/smf/setup_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/smf/${PROJECT_NAME} -C/opt/smf/${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=on-failure
 RestartSec=12
 

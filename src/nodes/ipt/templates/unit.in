@@ -1,11 +1,11 @@
 [Unit]
-Description=ipt server v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
+Description=ipt server v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
 Wants=smf-master.service
 After=network.target smf-master.service
 
 [Service]
 Type=simple
-ExecStart=/opt/smf/ipt -C/opt/smf/ipt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg
+ExecStart=/opt/smf/ipt -C/opt/smf/ipt_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg
 Restart=on-failure
 RestartSec=12
 

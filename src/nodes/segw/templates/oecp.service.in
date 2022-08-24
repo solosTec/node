@@ -1,10 +1,10 @@
 [Unit]
-Description=smart energy gateway v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
+Description=smart energy gateway v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/sbin/segw -C/usr/local/etc/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg --setup.pool-size=4
+ExecStart=/usr/local/sbin/segw -C/usr/local/etc/segw_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg --setup.pool-size=4
 Restart=on-failure
 RestartSec=12
 

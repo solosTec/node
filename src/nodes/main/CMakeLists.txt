@@ -65,7 +65,7 @@ target_link_libraries(main
 )
 
 if(UNIX)
-    set(SMF_UNIT_FILE_MAIN "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME.service")
+    set(SMF_UNIT_FILE_MAIN "${CMAKE_BINARY_DIR}/config/${PROJECT_NAME}.service")
 
     configure_file (
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/linux.cgf.in"

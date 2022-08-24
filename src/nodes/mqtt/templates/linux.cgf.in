@@ -4,5 +4,5 @@
 #	platform: @CMAKE_SYSTEM@
 #
 [setup]
-json = /etc/opt/smf/mqtt_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
-pool-size = ${${PROJECT_NAME}_POOL_SIZE}
+json = /etc/opt/smf/mqtt_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.json
+pool-size = ${${CMAKE_PROJECT_NAME}_POOL_SIZE}

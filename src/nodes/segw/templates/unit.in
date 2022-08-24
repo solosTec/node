@@ -1,5 +1,5 @@
 [Unit]
-Description=smart energy gateway v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
+Description=smart energy gateway v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${PROJECT_NAME})
 #
 # use this dependency when running on the same machine
 #
@@ -9,7 +9,7 @@ After=oecp.service
 
 [Service]
 Type=simple
-ExecStart=${CLS_PATH_SCRIPT}/segw -C ${CLS_PATH_ETC}/segw_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.cfg --setup.pool-size=4
+ExecStart=${CLS_PATH_SCRIPT}/${PROJECT_NAME} -C ${CLS_PATH_ETC}/${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg --setup.pool-size=4
 Restart=on-failure
 RestartSec=12
 

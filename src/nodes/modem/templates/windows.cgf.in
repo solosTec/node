@@ -9,4 +9,4 @@ name = ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSIO
 
 [setup]
 json = $ENV{ProgramData}\solosTec\SMF\modem_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.json
-pool-size = ${${PROJECT_NAME}_POOL_SIZE}
+pool-size = ${${CMAKE_PROJECT_NAME}_POOL_SIZE}

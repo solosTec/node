@@ -1,8 +1,12 @@
 #
-#	startup configuration for mbus_radio node
-#	created : ${${PROJECT_NAME}_NOW_UTC}
+#	startup configuration for ${uppercase_project_name}/${PROJECT_NAME} node
+#	created : ${_NOW_UTC}
 #	platform: @CMAKE_SYSTEM@
 #
 [setup]
-json = /etc/opt/smf/broker-mbus-radio_v${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.json
-pool-size = ${${PROJECT_NAME}_POOL_SIZE}
+json = /etc/opt/${CMAKE_PROJECT_NAME}/${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.json
+pool-size = ${${CMAKE_PROJECT_NAME}_POOL_SIZE}
+
+[log]
+file = true
+file-name = /var/log/${CMAKE_PROJECT_NAME}/${PROJECT_NAME}.log
