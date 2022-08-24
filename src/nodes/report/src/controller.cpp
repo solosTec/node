@@ -286,6 +286,9 @@ namespace smf {
 
                 auto const print_version = reader["lpex"].get("print-version", true);
                 for (auto const &cfg_report : reports) {
+                    //
+                    //  skip "print-version" entry
+                    //
                     if (!boost::algorithm::equals(cfg_report.first, "print-version")) {
                         auto const reader_report = cyng::make_reader(cfg_report.second);
                         auto const name = reader_report.get("name", "no-name");

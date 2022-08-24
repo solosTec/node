@@ -8,14 +8,12 @@ set (store_cpp
     src/controller.cpp
     src/influxdb.cpp
     src/tasks/network.cpp
-    src/tasks/report.cpp
 )
     
 set (store_h
     include/controller.h
     include/influxdb.h
     include/tasks/network.h
-    include/tasks/report.h
 )
 
 if(WIN32)
@@ -73,10 +71,18 @@ set (store_tasks_dlms
     src/tasks/dlms_influx_writer.cpp
 )
 
+set(store_tasks_report
+    include/tasks/csv_report.h
+    include/tasks/lpex_report.h
+    src/tasks/csv_report.cpp
+    src/tasks/lpex_report.cpp
+)
+
 source_group("store-assets" FILES ${store_assets})
 source_group("tasks-sml" FILES ${store_tasks_sml})
 source_group("tasks-iec" FILES ${store_tasks_iec})
 source_group("tasks-dlsm" FILES ${store_tasks_dlms})
+source_group("tasks-report" FILES ${store_tasks_report})
 
 
 set (store_node
@@ -86,5 +92,6 @@ set (store_node
   ${store_tasks_sml}
   ${store_tasks_iec}
   ${store_tasks_dlms}
+  ${store_tasks_report}
 )
 

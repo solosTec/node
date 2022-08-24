@@ -1,6 +1,7 @@
 #include <tasks/sml_db_writer.h>
 
 #include <smf/config/schemes.h>
+#include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
 
@@ -79,8 +80,8 @@ namespace smf {
             } else {
                 CYNG_LOG_WARNING(
                     logger_,
-                    "[sml.db] get_profile_list_response with unsupported profile: " << profile << " from server "
-                                                                                    << srv_id_to_str(server_id));
+                    "[sml.db] get_profile_list_response with unsupported profile: "
+                        << profile << " (" << obis::get_name(profile) << ") from server " << srv_id_to_str(server_id));
                 //#ifdef _DEBUG
                 //  assume 15 min profile
                 store(trx, to_srv_id(server_id), OBIS_PROFILE_15_MINUTE, act_time, status, values);

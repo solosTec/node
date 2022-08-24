@@ -4,8 +4,8 @@
  * Copyright (c) 2022 Sylko Olzscher
  *
  */
-#ifndef SMF_REPORT_TASK_REPORT_H
-#define SMF_REPORT_TASK_REPORT_H
+#ifndef SMF_REPORT_TASK_CSV_REPORT_H
+#define SMF_REPORT_TASK_CSV_REPORT_H
 
 #include <smf/mbus/server_id.h>
 
@@ -16,7 +16,7 @@
 
 namespace smf {
 
-    class report {
+    class csv_report {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
@@ -25,7 +25,7 @@ namespace smf {
             >;
 
       public:
-        report(
+        csv_report(
             cyng::channel_weak,
             cyng::controller &,
             cyng::logger,
@@ -35,7 +35,7 @@ namespace smf {
             std::chrono::hours backtrack,
             std::string prefix);
 
-        ~report() = default;
+        ~csv_report() = default;
 
       private:
         void stop(cyng::eod);
