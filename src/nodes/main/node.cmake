@@ -22,7 +22,14 @@ if(WIN32)
 		templates/delete_service.cmd.in
 		templates/restart_service.cmd.in
 		templates/windows.cgf.in
+		templates/rc.in
     )
+	set (main_res
+		${PROJECT_BINARY_DIR}/main.rc 
+		${CMAKE_SOURCE_DIR}/assets/logo.ico
+#		templates/master.exe.manifest
+	)
+
 else()
     set(main_assets
 		templates/unit.in
@@ -48,3 +55,7 @@ set (main_node
   ${main_tasks}
 )
 
+if(WIN32)
+	source_group("resources" FILES ${main_res})
+	list(APPEND main_node ${main_res})
+endif()

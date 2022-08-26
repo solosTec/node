@@ -22,7 +22,15 @@ if(WIN32)
 		templates/delete_service.cmd.in
 		templates/restart_service.cmd.in
 		templates/windows.cgf.in
+		templates/rc.in
     )
+
+	set (store_res
+		${PROJECT_BINARY_DIR}/store.rc 
+		${CMAKE_SOURCE_DIR}/assets/logo.ico
+#		templates/master.exe.manifest
+	)
+
 else()
     set(store_assets
 		templates/unit.in
@@ -95,3 +103,7 @@ set (store_node
   ${store_tasks_report}
 )
 
+if(WIN32)
+	source_group("resources" FILES ${store_res})
+	list(APPEND store_node ${store_res})
+endif()

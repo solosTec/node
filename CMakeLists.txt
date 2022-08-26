@@ -50,6 +50,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     math(EXPR "${PROJECT_NAME}_VERSION_NUMERAL" "${PROJECT_VERSION_MAJOR}*100000+${PROJECT_VERSION_MINOR}*1000+${PROJECT_VERSION_PATCH}" OUTPUT_FORMAT DECIMAL)
     message(STATUS "** Version numeral    : ${${PROJECT_NAME}_VERSION_NUMERAL}")
+    message(STATUS "** Tweak ID           : ${_TWEAK_ID}")
+     
 
     message(STATUS "** Compiler           : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")
 
@@ -94,6 +96,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
         #add_compile_options("/ZI") 
 
         message(STATUS "** compile definitions: ${CMAKE_CXX_FLAGS}")
+
+        #       "${PROJECT_SOURCE_DIR}\\assets\\logo.ico"
+        file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/assets/logo.ico" ASSET_LOGO_ICO_PATH)
+        STRING(REPLACE "\\" "\\\\" ASSET_LOGO_ICO_PATH ${ASSET_LOGO_ICO_PATH} )
+
 
     elseif(CMAKE_COMPILER_IS_GNUCXX)
         set(GLOBAL_LIBRARY_TYPE SHARED)
