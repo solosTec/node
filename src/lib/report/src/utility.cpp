@@ -49,7 +49,7 @@ namespace smf {
         return meters;
     }
 
-    std::map<cyng::obis, sml_data> select_readout_data(cyng::db::session db, boost::uuids::uuid tag) {
+    std::map<cyng::obis, sml_data> select_readout_data(cyng::db::session db, boost::uuids::uuid tag, std::uint32_t status) {
 
         // std::vector<sml_data> readout;
         std::map<cyng::obis, sml_data> readout;
@@ -74,7 +74,7 @@ namespace smf {
 
                 // readout.emplace_back(reg, code, scaler, unit, val);
                 auto const pos = readout.emplace(
-                    std::piecewise_construct, std::forward_as_tuple(reg), std::forward_as_tuple(code, scaler, unit, val));
+                    std::piecewise_construct, std::forward_as_tuple(reg), std::forward_as_tuple(code, scaler, unit, val, status));
 #ifdef _DEBUG
                 // std::cout << tag << ": " << pos.first->second.restore() << ", value: " << val << ", scaler: " << +scaler
                 //           << std::endl;
@@ -157,12 +157,13 @@ namespace smf {
                 auto const rec = cyng::to_record(ms, res);
                 auto const tag = rec.value("tag", boost::uuids::nil_uuid());
                 BOOST_ASSERT(!tag.is_nil());
+                auto const status = rec.value<std::uint32_t>("status", 0u);
 
                 //
                 //  select readout data
                 //
                 //  std::map<cyng::obis, sml_data>
-                auto const readouts = select_readout_data(db, tag);
+                auto const readouts = select_readout_data(db, tag, status);
 
                 //
                 //  calculate the time slot
@@ -193,13 +194,11 @@ namespace smf {
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
 
-        //
-        //  ToDo: Incorporate the status into the return value.
-        //
-
         std::map<cyng::obis, std::map<std::int64_t, sml_data>> data;
 
-        auto const ms = config::get_table_sml_readout();
+        //
+        //  "TSMLReadout" and "TSMLReadoutData" joined by "tag"
+        //
         std::string const sql =
             "SELECT TSMLReadout.tag, TSMLReadoutData.register, TSMLReadoutData.gen, TSMLReadout.status, datetime(TSMLReadout.actTime), TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit "
             "FROM TSMLReadout JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
@@ -220,12 +219,19 @@ namespace smf {
             //
             auto const ms = get_table_virtual_sml_readout();
             while (auto res = stmt->get_result()) {
-                // auto obj = res->get(6, cyng::TC_TIME_POINT, 0);
-                // std::cout << obj << std::endl;
+
+                //
+                //  get virtual data record
+                //
                 auto const rec = cyng::to_record(ms, res);
 #ifdef _DEBUG
                 // std::cout << rec.to_string() << std::endl;
 #endif
+
+                //
+                //  Incorporate the status into the return value.
+                //
+                auto const status = rec.value<std::uint32_t>("status", 0u);
 
                 //
                 //  calculate the time slot
@@ -251,7 +257,7 @@ namespace smf {
                             .first->second.emplace(
                                 std::piecewise_construct,
                                 std::forward_as_tuple(slot.first),
-                                std::forward_as_tuple(code, scaler, unit, reading));
+                                std::forward_as_tuple(code, scaler, unit, reading, status));
                     } else {
                         //
                         //  existing element
@@ -259,7 +265,7 @@ namespace smf {
                         pos->second.emplace(
                             std::piecewise_construct,
                             std::forward_as_tuple(slot.first),
-                            std::forward_as_tuple(code, scaler, unit, reading));
+                            std::forward_as_tuple(code, scaler, unit, reading, status));
                     }
                 }
             }

@@ -29,9 +29,11 @@ namespace smf {
         std::chrono::system_clock::time_point end);
 
     /**
+     * @param status comes from table "TSMLReadout"
      * @return all SML measuring data of one readout
      */
-    [[nodiscard]] std::map<cyng::obis, sml_data> select_readout_data(cyng::db::session db, boost::uuids::uuid);
+    [[nodiscard]] std::map<cyng::obis, sml_data>
+    select_readout_data(cyng::db::session db, boost::uuids::uuid, std::uint32_t status);
 
     /**
      * @return all distinct registers used in this data set

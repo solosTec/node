@@ -15,7 +15,7 @@
 namespace smf {
 
     struct sml_data {
-        sml_data(std::uint16_t code, std::int8_t scaler, std::uint8_t unit, std::string reading);
+        sml_data(std::uint16_t code, std::int8_t scaler, std::uint8_t unit, std::string reading, std::uint32_t status);
 
         [[nodiscard]] cyng::object restore() const;
 
@@ -23,6 +23,7 @@ namespace smf {
         std::int8_t scaler_;
         mbus::unit unit_;
         std::string reading_;
+        std::uint32_t status_;
     };
 
     cyng::object restore(std::uint16_t code, std::string const &val, std::int8_t);

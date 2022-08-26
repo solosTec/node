@@ -7,11 +7,12 @@
 
 namespace smf {
 
-    sml_data::sml_data(std::uint16_t code, std::int8_t scaler, std::uint8_t unit, std::string reading)
+    sml_data::sml_data(std::uint16_t code, std::int8_t scaler, std::uint8_t unit, std::string reading, std::uint32_t status)
         : code_(code)
         , scaler_(scaler)
         , unit_(mbus::to_unit(unit))
-        , reading_(reading) {}
+        , reading_(reading)
+        , status_(status) {}
 
     cyng::object sml_data::restore() const { return smf::restore(code_, reading_, scaler_); }
 

@@ -275,6 +275,11 @@ namespace smf {
             auto const id = to_buffer(srv_id);
 
             //
+            //	start transaction
+            //
+            cyng::db::transaction trx(db);
+
+            //
             // collect data from this time range
             // LPEx needs another ordering: take one register and collect all readouts in the time span
             //
@@ -284,7 +289,7 @@ namespace smf {
                 collect_data_by_register(db, profile, id, start, end);
 
             //
-            //  customer data
+            //  customer data (if any)
             //
             auto customer_data = query_customer_data_by_meter(db, get_id_as_buffer(srv_id));
 
@@ -415,38 +420,27 @@ namespace smf {
             // ToDo: calculate this number from profile and time span
             //
 
-            //#ifdef _DEBUG
             for (auto idx = idx_day.first; idx < (idx_day.first + 96); ++idx) {
                 auto const pos = load.find(idx);
                 if (pos == load.end()) {
                     //
                     //  no data for this slot
                     //
-                    //#ifdef _DEBUG
-                    //                    os << ";[" << idx << "];0";
-                    //#else
+#ifdef _DEBUG
+                    //  debug build print index number
+                    os << ";[" << idx << "];0";
+#else
                     os << ";;0";
-                    //#endif
+#endif
 
                 } else {
                     //
                     //  data exists
                     //
-                    os << ";" << pos->second.reading_ << ";0";
+                    os << ";" << pos->second.reading_ << ";" << pos->second.status_;
                 }
             }
             os << std::endl;
-
-            //#else
-            //            for (auto const &ro : load) {
-            //                os << ";" << ro.second.reading_ << ";0";
-            //#ifdef _DEBUG
-            //                auto const slot = sml::to_time_point(ro.first, profile);
-            //                os << ";[" << ro.first << "," << slot << "]";
-            //#endif
-            //            }
-            //            os << std::endl;
-            //#endif
 
 #ifdef _DEBUG
 
