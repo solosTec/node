@@ -2,6 +2,7 @@
 #include <smf/report/utility.h>
 
 #include <smf/config/schemes.h>
+#include <smf/mbus/server_id.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
 
@@ -187,10 +188,108 @@ namespace smf {
         return data;
     }
 
+    data::profile_t collect_data_by_time_range(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end) {
+
+        data::profile_t data;
+
+        //
+        //  "TSMLReadout" and "TSMLReadoutData" joined by "tag"
+        //
+        std::string const sql =
+            "SELECT TSMLReadout.tag, TSMLReadout.meterID, TSMLReadoutData.register, TSMLReadoutData.gen, TSMLReadout.status, datetime(TSMLReadout.actTime), TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit "
+            "FROM TSMLReadout JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
+            "WHERE profile = ? AND received BETWEEN julianday(?) AND julianday(?) "
+            "ORDER BY TSMLReadout.meterID, TSMLReadoutData.register, TSMLReadout.actTime";
+        auto stmt = db.create_statement();
+        std::pair<int, bool> const r = stmt->prepare(sql);
+        if (r.second) {
+            stmt->push(cyng::make_object(profile), 0); //	profile
+            // stmt->push(cyng::make_object(id), 9);      //	meterID
+            stmt->push(cyng::make_object(start), 0); //	start time
+            stmt->push(cyng::make_object(end), 0);   //	end time
+
+            //
+            // all data for the specified meter in the time range ordered by
+            // 1. meter id
+            // 2. register (OBIS)
+            // 3. time stamp
+            //
+            auto const ms = get_table_virtual_sml_readout();
+            while (auto res = stmt->get_result()) {
+
+                //
+                //  get virtual data record
+                //
+                auto const rec = cyng::to_record(ms, res);
+#ifdef _DEBUG
+                // std::cout << rec.to_string() << std::endl;
+#endif
+
+                //
+                //  Incorporate the status into the return value.
+                //
+                auto const status = rec.value<std::uint32_t>("status", 0u);
+
+                //
+                //  get meter id
+                //
+                auto const id = rec.value("meterID", cyng::make_buffer({}));
+                BOOST_ASSERT(!id.empty());
+
+                //
+                //  calculate the time slot
+                //
+                auto const act_time = rec.value("actTime", start);
+                auto const slot = sml::to_index(act_time, profile);
+                if (slot.second) {
+                    auto set_time = sml::to_time_point(slot.first, profile);
+
+                    auto const code = rec.value<std::uint16_t>("type", cyng::TC_STRING);
+                    auto const reading = rec.value("reading", "");
+                    auto const scaler = rec.value<std::int8_t>("scaler", 0);
+                    auto const reg = rec.value("register", OBIS_DATA_COLLECTOR_REGISTER);
+                    auto const unit = rec.value<std::uint8_t>("unit", 0u);
+
+                    auto pos = data.find(id);
+                    if (pos != data.end()) {
+                        //
+                        //  meter is already inserted - lookup register
+                        //
+                        auto pos_reg = pos->second.find(reg);
+                        if (pos_reg != pos->second.end()) {
+                            //
+                            //  register is already inserted - lookup time slot
+                            //
+                            pos_reg->second.insert(data::make_readout(slot.first, code, scaler, unit, reading, status));
+                        } else {
+                            //
+                            //  new register of this meter
+                            //
+                            pos->second.insert(
+                                data::make_value(reg, data::make_readout(slot.first, code, scaler, unit, reading, status)));
+                        }
+                    } else {
+                        //
+                        //  new meter
+                        //  nested initialization doesn't work, so multiple steps are necessary
+                        //
+                        data.insert(data::make_profile(
+                            id, data::make_value(reg, data::make_readout(slot.first, code, scaler, unit, reading, status))));
+                    }
+                }
+            }
+        }
+        return data;
+    }
+
     std::map<cyng::obis, std::map<std::int64_t, sml_data>> collect_data_by_register(
         cyng::db::session db,
         cyng::obis profile,
-        cyng::buffer_t id,
+        cyng::buffer_t id, // meter id
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
 
@@ -294,12 +393,15 @@ namespace smf {
         return std::nullopt;
     }
 
+    void cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point) {}
+
     cyng::meta_store get_store_virtual_sml_readout() {
         return cyng::meta_store(
             "virtualSMLReadoutData",
-            {cyng::column("tag", cyng::TC_UUID),      // server/meter/sensor ID
-                                                      // cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
-             cyng::column("register", cyng::TC_OBIS), // OBIS code (data type)
+            {cyng::column("tag", cyng::TC_UUID),       // server/meter/sensor ID
+                                                       // cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+             cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+             cyng::column("register", cyng::TC_OBIS),  // OBIS code (data type)
              //   -- body
              cyng::column("status", cyng::TC_UINT32),
              cyng::column("actTime", cyng::TC_TIME_POINT),
@@ -310,7 +412,7 @@ namespace smf {
             3);
     }
     cyng::meta_sql get_table_virtual_sml_readout() {
-        return cyng::to_sql(get_store_virtual_sml_readout(), {0, 0, 256, 0, 0, 0, 0, 0});
+        return cyng::to_sql(get_store_virtual_sml_readout(), {0, 9, 0, 256, 0, 0, 0, 0, 0});
     }
 
     cyng::meta_store get_store_virtual_customer() {
@@ -327,5 +429,22 @@ namespace smf {
             1);
     }
     cyng::meta_sql get_table_virtual_customer() { return cyng::to_sql(get_store_virtual_customer(), {8, 34, 64, 64}); }
+
+    namespace data {
+        typename readout_t::value_type make_readout(
+            std::int64_t slot,
+            std::uint16_t code,
+            std::int8_t scaler,
+            std::uint8_t unit,
+            std::string reading,
+            std::uint32_t status) {
+            return {slot, {code, scaler, unit, reading, status}};
+        }
+
+        typename values_t::value_type make_value(cyng::obis reg, readout_t::value_type value) { return {reg, {value}}; }
+
+        typename profile_t::value_type make_profile(cyng::buffer_t id, values_t::value_type value) { return {id, {value}}; }
+
+    } // namespace data
 
 } // namespace smf

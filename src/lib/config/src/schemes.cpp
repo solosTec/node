@@ -578,7 +578,11 @@ namespace smf {
                  cyng::column("received", cyng::TC_TIME_POINT)},
                 1);
         }
-        cyng::meta_sql get_table_sml_readout() { return cyng::to_sql(get_store_sml_readout(), {0, 9, 0, 21, 0, 0, 0}); }
+        cyng::meta_sql get_table_sml_readout() {
+            //  get all distinct profiles in the table
+            //  SELECT DISTINCT printf('%012X', profile) FROM TSMLReadout;
+            return cyng::to_sql(get_store_sml_readout(), {0, 9, 0, 21, 0, 0, 0});
+        }
 
         cyng::meta_store get_store_sml_readout_data() {
             return cyng::meta_store(

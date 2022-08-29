@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
 
     //	will contain the path to an optional configuration file (.cfg)
     smf::config::startup config("store");
+    std::string report_type;
 
     //
     //	generic options
@@ -29,10 +30,11 @@ int main(int argc, char **argv) {
         "init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit") // --init, -I
         ("influxdb",
          boost::program_options::value<std::string>()->default_value("")->implicit_value("create"),
-         "execute influxdb command [create|show|drop]")                                                              // --influxdb
-        ("generate,G", boost::program_options::bool_switch()->default_value(false), "generate CSV reports and exit") // --generate
-        ("lpex,P", boost::program_options::bool_switch()->default_value(false), "generate lpex reports and exit")    // --lpex
-        ;
+         "execute influxdb command [create|show|drop]") // --influxdb
+        ("generate,G", boost::program_options::value<std::string>(&report_type)->default_value("csv"), "report type [csv|lpex]");
+    //("generate,G", boost::program_options::bool_switch()->default_value(false), "generate CSV reports and exit") // --generate
+    //("lpex,P", boost::program_options::bool_switch()->default_value(false), "generate lpex reports and exit")    // --lpex
+    ;
 
     //
     //	cmdline_options contains all generic and node specific options

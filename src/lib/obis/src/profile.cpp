@@ -252,6 +252,19 @@ namespace smf {
             return {std::chrono::duration_cast<std::chrono::seconds>(start.time_since_epoch()).count(), false};
         }
 
+        std::size_t calculate_entry_count(cyng::obis profile, std::chrono::hours span) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);
+            case CODE_PROFILE_15_MINUTE: return (span.count() * 60u) / 15u;
+            case CODE_PROFILE_60_MINUTE: return span.count();
+            case CODE_PROFILE_24_HOUR: return span.count() / 24u;
+            case CODE_PROFILE_1_MONTH:
+            case CODE_PROFILE_1_YEAR:
+            default: break;
+            }
+            return 0;
+        }
+
         std::chrono::system_clock::time_point to_time_point(std::int64_t idx, cyng::obis profile) {
 
             switch (profile.to_uint64()) {

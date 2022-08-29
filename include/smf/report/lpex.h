@@ -9,6 +9,7 @@
 
 #include <smf/mbus/server_id.h>
 #include <smf/report/sml_data.h>
+#include <smf/report/utility.h>
 
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
@@ -59,12 +60,12 @@ namespace smf {
             bool print_version);
 
         std::chrono::system_clock::time_point generate_report_15_minutes(
-            cyng::db::session,
+            cyng::db::session db,
             cyng::obis profile,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::hours,
+            std::chrono::system_clock::time_point start,
+            std::chrono::hours span,
             bool print_version);
 
         /**
@@ -80,6 +81,15 @@ namespace smf {
             std::chrono::minutes utc_offset,
             bool print_version);
 
+        std::chrono::system_clock::time_point generate_report_60_minutes(
+            cyng::db::session db,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point start,
+            std::chrono::hours span,
+            bool print_version);
+
         /**
          * Daily reports
          */
@@ -91,6 +101,15 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             std::chrono::minutes utc_offset,
+            bool print_version);
+
+        std::chrono::system_clock::time_point generate_report_24_hour(
+            cyng::db::session db,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point start,
+            std::chrono::hours span,
             bool print_version);
 
         /**
@@ -142,7 +161,7 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            srv_id_t,
+            std::size_t count, //  entries in time span
             bool print_version);
 
         void emit_report(
@@ -151,7 +170,8 @@ namespace smf {
             cyng::obis profile,
             srv_id_t srv_id,
             bool print_version,
-            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data,
+            data::values_t const &,
+            std::size_t count, //  entries in time span
             std::optional<lpex_customer> const &customer_data);
 
         void emit_line(std::ostream &, std::vector<std::string> const);
@@ -160,7 +180,8 @@ namespace smf {
             std::ostream &,
             cyng::obis profile,
             srv_id_t srv_id,
-            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data,
+            data::values_t const &,
+            std::size_t count, //  entries in time span
             std::optional<lpex_customer> const &customer_data);
 
         void emit_customer_data(std::ostream &os, srv_id_t srv_id, std::optional<lpex_customer> const &customer_data);
@@ -169,6 +190,7 @@ namespace smf {
             cyng::obis profile,
             srv_id_t srv_id,
             std::chrono::system_clock::time_point,
+            std::size_t count, //  entries in time span
             std::map<std::int64_t, sml_data> const &load);
 
     } // namespace lpex

@@ -8,6 +8,7 @@
 #include <controller.h>
 
 #include <influxdb.h>
+#include <tasks/cleanup_db.h>
 #include <tasks/csv_report.h>
 #include <tasks/lpex_report.h>
 #include <tasks/network.h>
@@ -91,8 +92,14 @@ namespace smf {
                         cyng::make_param("watchdog", 30),                //	for database connection
                         cyng::make_param("pool-size", 1),                //	no pooling for SQLite
                         cyng::make_param("db-schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
-                        cyng::make_param("interval", 12)                 //	seconds
-                        ))),
+                        cyng::make_param("interval", 12),                //	seconds
+                        cyng::make_param(
+                            "cleanup",
+                            cyng::make_tuple(
+                                create_cleanup_spec(OBIS_PROFILE_1_MINUTE, 48, true),
+                                create_cleanup_spec(OBIS_PROFILE_15_MINUTE, 48, true),
+                                create_cleanup_spec(OBIS_PROFILE_60_MINUTE, 800, true),
+                                create_cleanup_spec(OBIS_PROFILE_24_HOUR, 800, true)))))),
 
             cyng::make_param("writer", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
@@ -259,6 +266,15 @@ namespace smf {
                 cyng::make_param("enabled", enabled)));
     }
 
+    cyng::prop_t create_cleanup_spec(cyng::obis profile, std::size_t hours, bool enabled) {
+        return cyng::make_prop(
+            profile,
+            cyng::make_tuple(
+                cyng::make_param("name", obis::get_name(profile)),
+                cyng::make_param("max-age-in-hours", hours),
+                cyng::make_param("enabled", enabled)));
+    }
+
     void controller::run(
         cyng::controller &ctl,
         cyng::stash &channels,
@@ -279,7 +295,37 @@ namespace smf {
         //
         //  data base connections
         //
-        auto sm = init_storage(cfg);
+        auto sm = init_storage(cfg, false);
+
+        //
+        //  start cleanup tasks
+        //
+        for (auto &s : sm) {
+            if (s.second.is_alive()) {
+                auto const cleanup_tasks = cyng::container_cast<cyng::param_map_t>(reader["db"][s.first].get("cleanup"));
+                for (auto const &tsk : cleanup_tasks) {
+                    auto const reader_cls = cyng::make_reader(tsk.second);
+
+                    auto const profile = cyng::to_obis(tsk.first);
+                    auto const enabled = reader_cls.get("enabled", false);
+                    if (enabled) {
+                        BOOST_ASSERT(sml::is_profile(profile));
+                        CYNG_LOG_INFO(
+                            logger, "start cleanup task on db \"" << s.first << "\" for profile " << obis::get_name(profile));
+                        auto const name = reader_cls.get("name", "");
+                        auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
+                        auto channel =
+                            ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, s.second, profile, age);
+                        BOOST_ASSERT(channel->is_open());
+                        channel->dispatch("run", age / 2);
+                    } else {
+                        CYNG_LOG_WARNING(
+                            logger,
+                            "cleanup task on db " << s.first << " for profile " << obis::get_name(profile) << " is disabled");
+                    }
+                }
+            }
+        }
 
         //
         // Start writer tasks.
@@ -532,18 +578,7 @@ namespace smf {
         std::set<std::string> const &writer) {
 
         auto channel = ctl.create_named_channel_with_ref<network>(
-            "network",
-            ctl,
-            tag,
-            logger,
-            node_name,
-            model,
-            std::move(tgl),
-            // config_types,
-            sml_targets,
-            iec_targets,
-            dlms_targets,
-            writer);
+            "network", ctl, tag, logger, node_name, model, std::move(tgl), sml_targets, iec_targets, dlms_targets, writer);
         BOOST_ASSERT(channel->is_open());
         channels.lock(channel);
 
@@ -562,7 +597,7 @@ namespace smf {
             //  read configuration
             //
             auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
-            auto sm = init_storage(cfg);
+            auto sm = init_storage(cfg, true);
             auto const reader = cyng::make_reader(cfg);
 
             auto writer = cyng::set_cast<std::string>(reader["writer"].get(), "ALL:BIN");
@@ -612,21 +647,17 @@ namespace smf {
         }
 
         //
-        //  generate different CSV reports
+        //  generate reports
         //
-        if (vars["generate"].as<bool>()) {
+        if (!vars["generate"].defaulted()) {
             //	generate all reports
-            generate_csv_reports(read_config_section(config_.json_path_, config_.config_index_));
-            return true;
-        }
-
-        //
-        //  generate different LPEX reports
-        //
-        if (vars["lpex"].as<bool>()) {
-            //	generate all reports
-            generate_lpex_reports(read_config_section(config_.json_path_, config_.config_index_));
-            return true;
+            auto const type = vars["generate"].as<std::string>();
+            if (boost::algorithm::equals(type, "csv")) {
+                generate_csv_reports(read_config_section(config_.json_path_, config_.config_index_));
+            } else if (boost::algorithm::equals(type, "lpex")) {
+                generate_lpex_reports(read_config_section(config_.json_path_, config_.config_index_));
+            }
+            return true; //  stop application
         }
 
         //
@@ -640,7 +671,7 @@ namespace smf {
         //
         //  data base connections
         //
-        auto sm = init_storage(cfg);
+        auto sm = init_storage(cfg, false);
         auto const reader = cyng::make_reader(std::move(cfg));
         auto const db = reader["csv-reports"].get("db", "default");
 
@@ -689,7 +720,7 @@ namespace smf {
         //
         //  data base connections
         //
-        auto sm = init_storage(cfg);
+        auto sm = init_storage(cfg, false);
         auto const reader = cyng::make_reader(std::move(cfg));
 
         auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
@@ -708,27 +739,32 @@ namespace smf {
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex-reports"));
                 for (auto const &cfg_report : reports) {
 
-                    auto const reader_report = cyng::make_reader(cfg_report.second);
-                    auto const name = reader_report.get("name", "no-name");
+                    if (!boost::algorithm::equals(cfg_report.first, "print-version") &&
+                        !boost::algorithm::equals(cfg_report.first, "db")) {
 
-                    if (reader_report.get("enabled", false)) {
-                        auto const profile = cyng::to_obis(cfg_report.first);
-                        std::cout << "***info: generate lpex report " << name << " (" << profile << ")" << std::endl;
-                        auto const root = reader_report.get("path", cwd.string());
-                        if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of lpex report " << name << " does not exists";
-                            std::error_code ec;
-                            if (!std::filesystem::create_directories(root, ec)) {
-                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                        auto const reader_report = cyng::make_reader(cfg_report.second);
+                        auto const name = reader_report.get("name", "no-name");
+
+                        if (reader_report.get("enabled", false)) {
+                            auto const profile = cyng::to_obis(cfg_report.first);
+                            std::cout << "***info: generate lpex report " << name << " (" << profile << ")" << std::endl;
+                            auto const root = reader_report.get("path", cwd.string());
+                            if (!std::filesystem::exists(root)) {
+                                std::cout << "***warning: output path [" << root << "] of lpex report " << name
+                                          << " does not exists";
+                                std::error_code ec;
+                                if (!std::filesystem::create_directories(root, ec)) {
+                                    std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                                }
                             }
-                        }
-                        auto const backtrack = reader_report.get("backtrack-hours", 40);
-                        auto const prefix = reader_report.get("prefix", "LPEx-");
-                        generate_lpex(
-                            pos->second, profile, root, std::chrono::hours(backtrack), now, prefix, utc_offset, print_version);
+                            auto const backtrack = reader_report.get("backtrack-hours", 40);
+                            auto const prefix = reader_report.get("prefix", "LPEx-");
+                            generate_lpex(
+                                pos->second, profile, root, std::chrono::hours(backtrack), now, prefix, utc_offset, print_version);
 
-                    } else {
-                        std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
+                        } else {
+                            std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
+                        }
                     }
                 }
             }
@@ -736,16 +772,21 @@ namespace smf {
             std::cerr << "***error: lpex report uses an undefined database: " << db << std::endl;
         }
     }
-    std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg) {
+
+    std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg, bool create) {
 
         std::map<std::string, cyng::db::session> sm;
         auto const reader = cyng::make_reader(cfg);
         BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
         auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
         for (auto const &param : pm) {
-            std::cout << "create database [" << param.first << "]" << std::endl;
             auto const db = cyng::container_cast<cyng::param_map_t>(param.second);
-            sm.emplace(param.first, init_storage(db));
+            if (create) {
+                std::cout << "create database [" << param.first << "]" << std::endl;
+                sm.emplace(param.first, init_storage(db));
+            } else {
+                sm.emplace(param.first, cyng::db::create_db_session(db));
+            }
         }
         return sm;
     }

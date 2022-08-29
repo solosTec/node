@@ -82,8 +82,10 @@ set (store_tasks_dlms
 set(store_tasks_report
     include/tasks/csv_report.h
     include/tasks/lpex_report.h
+    include/tasks/cleanup_db.h
     src/tasks/csv_report.cpp
     src/tasks/lpex_report.cpp
+    src/tasks/cleanup_db.cpp
 )
 
 source_group("store-assets" FILES ${store_assets})

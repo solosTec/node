@@ -1,6 +1,5 @@
 
 #include <smf/report/lpex.h>
-#include <smf/report/utility.h>
 
 #include <smf/config/schemes.h>
 #include <smf/mbus/server_id.h>
@@ -29,6 +28,11 @@ namespace smf {
         std::chrono::minutes utc_offset,
         bool print_version) {
 
+        //
+        //	start transaction
+        //
+        cyng::db::transaction trx(db);
+
         switch (profile.to_uint64()) {
         case CODE_PROFILE_1_MINUTE:
             lpex::generate_report_1_minute(
@@ -51,7 +55,7 @@ namespace smf {
                 profile,
                 root,
                 prefix,
-                cyng::sys::get_start_of_day(now - backtrack),
+                cyng::sys::get_start_of_month(now - backtrack),
                 cyng::sys::get_end_of_day(now),
                 utc_offset,
                 print_version);
@@ -123,7 +127,9 @@ namespace smf {
 #ifdef _DEBUG
             std::cout << "15 min (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
                       << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = " << utc_offset.count()
-                      << " minutes" << std::endl;
+                      << " minutes with "
+                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
+                      << " entries in total" << std::endl;
 #endif
             //
             //  generate lpex reports about the complete time range
@@ -151,27 +157,17 @@ namespace smf {
             bool print_version) {
 
             auto const end = start + span;
+            auto const count = sml::calculate_entry_count(profile, span);
 
 #ifdef _DEBUG
-            std::cout << "start ";
+            std::cout << "start 15 min report ";
             cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC)");
-            std::cout << std::endl;
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - entries: ");
+            std::cout << count << std::endl;
 #endif
 
-            //
-            //  (1) select all meters of this profile that have entries in this
-            // time range
-            //
-            auto const meters = select_meters(db, profile, start, end);
-
-            //
-            //  generate a report for each meter
-            //
-            for (auto const &meter : meters) {
-                collect_report(db, profile, root, prefix, start, end, to_srv_id(meter), print_version);
-            }
+            collect_report(db, profile, root, prefix, start, end, count, print_version);
 
             return end;
         }
@@ -180,27 +176,124 @@ namespace smf {
          * Hourly reports
          */
         void generate_report_60_minutes(
-            cyng::db::session,
+            cyng::db::session db,
             cyng::obis profile,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point start,
+            std::chrono::system_clock::time_point now,
             std::chrono::minutes utc_offset,
-            bool print_version) {}
+            bool print_version) {
+#ifdef _DEBUG
+            std::cout << "60 min (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
+                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = " << utc_offset.count()
+                      << " minutes with "
+                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
+                      << " entries in total" << std::endl;
+
+            std::cout << "start of month : " << cyng::sys::get_start_of_month(start) << std::endl;
+            std::cout << "length of month: " << cyng::sys::get_length_of_month(start) << std::endl;
+#endif
+            //
+            //  generate lpex reports about the complete time range
+            //
+            while (start < now) {
+
+                start = generate_report_60_minutes(
+                    db,
+                    profile,
+                    root,
+                    prefix,
+                    start + utc_offset,                    // compensate time difference to UTC
+                    cyng::sys::get_length_of_month(start), // time range 1 month
+                    print_version);
+            }
+        }
+
+        std::chrono::system_clock::time_point generate_report_60_minutes(
+            cyng::db::session db,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point start,
+            std::chrono::hours span,
+            bool print_version) {
+
+            auto const end = start + span;
+            auto const count = sml::calculate_entry_count(profile, span);
+
+#ifdef _DEBUG
+            std::cout << "start 60 min report ";
+            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
+            std::cout << " => ";
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - max. entries: ");
+            std::cout << count << std::endl;
+#endif
+
+            collect_report(db, profile, root, prefix, start, end, count, print_version);
+
+            return end;
+        }
 
         /**
          * Daily reports
          */
         void generate_report_24_hour(
-            cyng::db::session,
+            cyng::db::session db,
             cyng::obis profile,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
+            std::chrono::system_clock::time_point start,
+            std::chrono::system_clock::time_point now,
             std::chrono::minutes utc_offset,
-            bool print_version) {}
+            bool print_version) {
+#ifdef _DEBUG
+            std::cout << "24 h (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
+                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = " << utc_offset.count()
+                      << " minutes with "
+                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
+                      << " entries in total" << std::endl;
+#endif
+            //
+            //  generate lpex reports about the complete time range
+            //
+            while (start < now) {
+
+                start = generate_report_24_hour(
+                    db,
+                    profile,
+                    root,
+                    prefix,
+                    start + utc_offset,                    // compensate time difference to UTC
+                    cyng::sys::get_length_of_month(start), //  time range 1 month
+                    print_version);
+            }
+        }
+
+        std::chrono::system_clock::time_point generate_report_24_hour(
+            cyng::db::session db,
+            cyng::obis profile,
+            std::filesystem::path root,
+            std::string prefix,
+            std::chrono::system_clock::time_point start,
+            std::chrono::hours span,
+            bool print_version) {
+
+            auto const end = start + span;
+            auto const count = sml::calculate_entry_count(profile, span);
+
+#ifdef _DEBUG
+            std::cout << "start 24 h report ";
+            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
+            std::cout << " => ";
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - entries: ");
+            std::cout << count << std::endl;
+#endif
+
+            collect_report(db, profile, root, prefix, start, end, count, print_version);
+
+            return end;
+        }
 
         /**
          * Monthly reports
@@ -266,38 +359,34 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point end,
-            srv_id_t srv_id,
+            std::size_t count, //  entries in time span
             bool print_version) {
 
             //
-            //  server id as "octet"
+            //  collect data from this time range ordered by meter -> register -> timepoint
             //
-            auto const id = to_buffer(srv_id);
+            auto const data = collect_data_by_time_range(db, profile, start, end);
 
             //
-            //	start transaction
+            //  loop over all meters
             //
-            cyng::db::transaction trx(db);
+            for (auto const &val : data) {
+                //
+                //  server id
+                //
+                auto const srv_id = to_srv_id(val.first);
 
-            //
-            // collect data from this time range
-            // LPEx needs another ordering: take one register and collect all readouts in the time span
-            //
-            //  collect data from this time range ordered by register
-            //
-            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const ro_data =
-                collect_data_by_register(db, profile, id, start, end);
+                //
+                //  customer data (if any)
+                //
+                auto customer_data = query_customer_data_by_meter(db, val.first);
 
-            //
-            //  customer data (if any)
-            //
-            auto customer_data = query_customer_data_by_meter(db, get_id_as_buffer(srv_id));
-
-            //
-            // print report
-            //
-            auto const file_name = get_filename(prefix, profile, srv_id, start);
-            emit_report(root, file_name, profile, srv_id, print_version, ro_data, customer_data);
+                //
+                // print report
+                //
+                auto const file_name = get_filename(prefix, profile, srv_id, start);
+                emit_report(root, file_name, profile, srv_id, print_version, val.second, count, customer_data);
+            }
         }
 
         void emit_report(
@@ -306,9 +395,14 @@ namespace smf {
             cyng::obis profile,
             srv_id_t srv_id,
             bool print_version,
-            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data,
+            data::values_t const &data,
+            std::size_t count, //  entries in time span
             std::optional<lpex_customer> const &customer_data) {
+
             auto const file_path = root / file_name;
+#ifdef _DEBUG
+            std::cout << profile << ": " << file_path << std::endl;
+#endif
             std::ofstream of(file_path.string(), std::ios::trunc);
 
             if (of.is_open()) {
@@ -327,7 +421,7 @@ namespace smf {
                 //
                 //  data
                 //
-                emit_data(of, profile, srv_id, data, customer_data);
+                emit_data(of, profile, srv_id, data, count, customer_data);
             }
         }
 
@@ -335,7 +429,8 @@ namespace smf {
             std::ostream &os,
             cyng::obis profile,
             srv_id_t srv_id,
-            std::map<cyng::obis, std::map<std::int64_t, sml_data>> const &data,
+            data::values_t const &data,
+            std::size_t count, //  entries in time span
             std::optional<lpex_customer> const &customer_data) {
 
             auto pos = data.begin();
@@ -385,7 +480,7 @@ namespace smf {
                             //
                             // values
                             //
-                            emit_values(os, profile, srv_id, cyng::sys::get_start_of_day(time_slot), pos->second);
+                            emit_values(os, profile, srv_id, cyng::sys::get_start_of_day(time_slot), count, pos->second);
                         }
                     }
                     //
@@ -401,6 +496,7 @@ namespace smf {
             cyng::obis profile,
             srv_id_t srv_id,
             std::chrono::system_clock::time_point start_day, //  start of day
+            std::size_t count,                               //  entries in time span
             std::map<std::int64_t, sml_data> const &load) {
 
             BOOST_ASSERT(!load.empty());
@@ -420,7 +516,7 @@ namespace smf {
             // ToDo: calculate this number from profile and time span
             //
 
-            for (auto idx = idx_day.first; idx < (idx_day.first + 96); ++idx) {
+            for (auto idx = idx_day.first; idx < (idx_day.first + count); ++idx) {
                 auto const pos = load.find(idx);
                 if (pos == load.end()) {
                     //
@@ -450,9 +546,10 @@ namespace smf {
                 {"[DEBUG]",
                  cyng::to_string(profile),
                  std::to_string(idx_day.first),
-                 std::to_string(idx_day.first + 96),
+                 std::to_string(idx_day.first + count),
                  std::to_string(first),
                  std::to_string(last),
+                 std::to_string(count),
                  std::to_string(load.size())});
             emit_line(os, h);
 

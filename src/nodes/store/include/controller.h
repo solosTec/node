@@ -176,7 +176,10 @@ namespace smf {
             bool print_version);
 
       private:
-        std::map<std::string, cyng::db::session> init_storage(cyng::object const &);
+        /**
+         * @param create if true tables will be created
+         */
+        std::map<std::string, cyng::db::session> init_storage(cyng::object const &, bool create);
         cyng::db::session init_storage(cyng::param_map_t const &);
         int create_influx_dbs(cyng::object const &, std::string const &cmd);
         void generate_csv_reports(cyng::object &&cfg);
@@ -188,6 +191,7 @@ namespace smf {
      */
     cyng::prop_t create_report_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
     cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
+    cyng::prop_t create_cleanup_spec(cyng::obis profile, std::size_t hours, bool enabled);
 
 } // namespace smf
 

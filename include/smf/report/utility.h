@@ -19,6 +19,27 @@
 namespace smf {
 
     /**
+     * data structure to hold a complete profile readout
+     */
+    namespace data {
+        using readout_t = std::map<std::int64_t, sml_data>;   //  timepoint -> readout
+        using values_t = std::map<cyng::obis, readout_t>;     // register -> readout_t
+        using profile_t = std::map<cyng::buffer_t, values_t>; // meter -> value_t
+
+        typename readout_t::value_type make_readout(
+            std::int64_t,
+            std::uint16_t code,
+            std::int8_t scaler,
+            std::uint8_t unit,
+            std::string reading,
+            std::uint32_t status);
+
+        typename values_t::value_type make_value(cyng::obis, readout_t::value_type);
+        typename profile_t::value_type make_profile(cyng::buffer_t, values_t::value_type);
+
+    } // namespace data
+
+    /**
      * @return all meters that have data of the specified profile
      * in this time range.
      */
@@ -57,7 +78,13 @@ namespace smf {
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end);
 
-    std::map<cyng::obis, std::map<std::int64_t, sml_data>> collect_data_by_register(
+    data::profile_t collect_data_by_time_range(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end);
+
+    [[deprecated]] std::map<cyng::obis, std::map<std::int64_t, sml_data>> collect_data_by_register(
         cyng::db::session db,
         cyng::obis profile,
         cyng::buffer_t,
@@ -74,6 +101,11 @@ namespace smf {
 
     cyng::meta_store get_store_virtual_customer();
     cyng::meta_sql get_table_virtual_customer();
+
+    /**
+     * remove outdated records of the specified profile
+     */
+    void cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point);
 
 } // namespace smf
 

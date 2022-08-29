@@ -210,7 +210,6 @@ namespace smf {
         //  generate different reports
         //
         if (!vars["generate"].defaulted()) {
-            // if (vars["generate"].as<bool>()) {
             //	generate all reports
             auto const type = vars["generate"].as<std::string>();
             if (boost::algorithm::equals(type, "csv")) {

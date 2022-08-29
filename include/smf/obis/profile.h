@@ -74,6 +74,13 @@ namespace smf {
         std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point, cyng::obis profile);
 
         /**
+         * Each profile has a specific count of entries in a time span. e.g. a 15 minutes report has 96 entries
+         * a day.
+         * Doesn't work for profiles with a variable time span.
+         */
+        std::size_t calculate_entry_count(cyng::obis profile, std::chrono::hours);
+
+        /**
          * Calculate the time point of the index
          */
         std::chrono::system_clock::time_point to_time_point(std::int64_t, cyng::obis profile);
