@@ -28,7 +28,7 @@ namespace smf {
          * @param tp timepoint in the specified period of time. Only required for monthly and annual profiles
          * @return interval time for the specified profile
          */
-        std::chrono::seconds interval_time(std::chrono::system_clock::time_point, cyng::obis profile);
+        std::chrono::minutes interval_time(std::chrono::system_clock::time_point, cyng::obis profile);
 
         /**
          * @return a default backtrack time

@@ -411,8 +411,8 @@ namespace smf {
                 // "print-version"
                 //
                 if (print_version) {
-                    auto const v = fill_up(get_version());
-                    emit_line(of, v);
+                    //  only the version info, no more ';'
+                    emit_line(of, get_version());
                 }
 
                 auto const h = fill_up(get_header());
@@ -451,31 +451,35 @@ namespace smf {
                             //
                             //  time stamp (Datum)
                             //
-                            // os << std::put_time(&tm, "%d-%m-%Y %H-%M-%S")
-                            cyng::sys::to_string_utc(os, time_slot, "%y.%m.%d;");
+                            cyng::sys::to_string_utc(os, time_slot, "%d.%m.%y;");
 
                             //
                             //  start time (Zeit)
                             //
                             cyng::sys::to_string_utc(os, time_slot, "%H:%M:%S;");
-                            // os << "00:15:00"
-                            //    << ";";
 
                             //
-                            //  customer data
+                            //  [3..10] customer data
                             //
                             emit_customer_data(os, srv_id, customer_data);
 
                             //
-                            //  register (Kennzahl)
+                            //  [11] register (Kennzahl)
                             //
                             obis::to_decimal(os, reg);
                             os << ";";
 
                             //
-                            //  unit (Einheit)
+                            //  [12] unit (Einheit)
                             //
                             os << mbus::get_name(pos_ro->second.unit_);
+                            os << ";";
+
+                            //  [13] Wandlerfaktor - conversion factor
+                            os << "1;";
+
+                            //  [14] Messperiodendauer (15/60) - measuring period in minutes
+                            os << sml::interval_time(time_slot, profile).count();
 
                             //
                             // values
@@ -533,7 +537,13 @@ namespace smf {
                     //
                     //  data exists
                     //
-                    os << ";" << pos->second.reading_ << ";" << pos->second.status_;
+                    os << ";" << pos->second.reading_ << ";";
+                    //  status
+                    if (pos->second.status_ != 0) {
+                        os << std::hex << std::setfill('0') << std::setw(5) << pos->second.status_ << std::dec;
+                    } else {
+                        os << pos->second.status_;
+                    }
                 }
             }
             os << std::endl;
@@ -575,30 +585,42 @@ namespace smf {
             //
             if (customer_data) {
                 //  ;11026661;Frey Sarah;AZ Bornfeldstrasse 2;METERID;;;;;CH1015201234500000000000000032422;
-                os << ";" << customer_data->id_          // 11026661
-                   << ";" << customer_data->name_        // Frey Sarah
-                   << ";" << customer_data->unique_name_ // AZ Bornfeldstrasse 2
-                   << ";" << get_id(srv_id)              // METERID
-                   << ";;;;"                             //
-                   << ";" << customer_data->mc_ << ";";  // metering code
+                os << ";" << customer_data->id_          // [3] Kundennummer, example: 11026661
+                   << ";" << customer_data->name_        // [4] Kundenname; example: Frey Sarah
+                   << ";" << customer_data->unique_name_ // [5] eindeutigeKDNr, example: AZ Bornfeldstrasse 2
+                   << ";" << get_id(srv_id)              // [6] GEId (GeräteID), METERID
+                   << ";"                                // [7] KALINr (Kanalnummer)
+                   << ";"                                // [8] Linie (Liniennummer)
+                   << ";"                                // [9] Linienbezeichnung
+                   << ";" << customer_data->mc_          // [10] eindeutigeLINr (metering code)
+                    ;
 
             } else {
 
                 //
                 //  (Kundennummer;Kundenname;eindeutigeKDNr)
                 //
-                os << ";;;";
+                os << ";" // [3] Kundennummer
+                   << ";" // [4] Kundenname
+                   << ";" // [5] eindeutigeKDNr
+                    ;
 
                 //
-                // meter id (GEId)
+                // [6] meter id (GEId / GeräteID)
                 //
                 os << get_id(srv_id) << ";";
 
                 //
                 // GEKANr; KALINr; Linie; eindeutigeLINr; ZPB)
                 //
-                os << ";;;;;";
+                os << ";" // [7] KALINr (Kanalnummer)
+                   << ";" // [8] Linie (Liniennummer)
+                   << ";" // [9] Linienbezeichnung
+                   << ";" // [10] eindeutigeLINr (metering code)
+                    ;
             }
+            // [11] Kennzahl (OBIS)
+            // [12] Einheit
         }
 
     } // namespace lpex

@@ -25,14 +25,14 @@ namespace smf {
             return std::find(profiles.begin(), profiles.end(), code) != profiles.end();
         }
 
-        std::chrono::seconds interval_time(std::chrono::system_clock::time_point tp, cyng::obis profile) {
+        std::chrono::minutes interval_time(std::chrono::system_clock::time_point tp, cyng::obis profile) {
             switch (profile.to_uint64()) {
-            case CODE_PROFILE_1_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(1));
-            case CODE_PROFILE_15_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(15));
-            case CODE_PROFILE_60_MINUTE: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(1));
-            case CODE_PROFILE_24_HOUR: return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24));
-            case CODE_PROFILE_1_MONTH: return std::chrono::duration_cast<std::chrono::seconds>(cyng::sys::get_length_of_month(tp));
-            case CODE_PROFILE_1_YEAR: return std::chrono::duration_cast<std::chrono::seconds>(cyng::sys::get_length_of_year(tp));
+            case CODE_PROFILE_1_MINUTE: return std::chrono::minutes(1);
+            case CODE_PROFILE_15_MINUTE: return std::chrono::minutes(15);
+            case CODE_PROFILE_60_MINUTE: return std::chrono::hours(1);
+            case CODE_PROFILE_24_HOUR: return std::chrono::hours(24);
+            case CODE_PROFILE_1_MONTH: return cyng::sys::get_length_of_month(tp);
+            case CODE_PROFILE_1_YEAR: return cyng::sys::get_length_of_year(tp);
             default: BOOST_ASSERT_MSG(false, "not implemented yet"); break;
             }
 
@@ -40,7 +40,7 @@ namespace smf {
             //  this is an error
             //
             BOOST_ASSERT_MSG(false, "not a load profile");
-            return std ::chrono::minutes(1);
+            return std::chrono::minutes(1);
         }
 
         std::chrono::hours backtrack_time(cyng::obis profile) {
