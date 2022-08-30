@@ -910,4 +910,18 @@ BOOST_AUTO_TEST_CASE(crack) {
     BOOST_REQUIRE(true);
 }
 
+BOOST_AUTO_TEST_CASE(convert) {
+
+    {
+        //  04917771
+        auto id = smf::srv_id_to_str(cyng::make_buffer({0x30, 0x34, 0x39, 0x31, 0x37, 0x37, 0x37, 0x31}));
+        BOOST_REQUIRE_EQUAL(id, "04917771");
+    }
+    {
+        //  04917771
+        auto id = smf::srv_id_to_str(cyng::make_buffer({0x04, 0x91, 0x77, 0x71}));
+        BOOST_REQUIRE_EQUAL(id, "04917771");
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

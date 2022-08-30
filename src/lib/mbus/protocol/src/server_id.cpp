@@ -81,6 +81,12 @@ namespace smf {
                 ss << std::setw(2) << std::setbase(16) << (+c & 0xFF);
             }
             return ss.str();
+
+        } else if (id.size() == 8 && std::all_of(id.begin(), id.end(), [](cyng::buffer_t::value_type c) {
+                       return c >= '0' && c <= '9';
+                   })) {
+            //  example: 3034393137373731 => 04917771
+            return {id.begin(), id.end()};
         } else {
             //	all other cases
             for (auto c : id) {

@@ -111,8 +111,9 @@ namespace smf {
             if (!sml::is_profile(profile)) {
                 CYNG_LOG_WARNING(
                     logger_,
-                    "[sml] get_profile_list_response with unsupported profile: "
-                        << profile << "(" << obis::get_name(profile) << ") from server " << srv_id_to_str(srv) << ", trx: " << trx);
+                    "[sml] get_profile_list_response with unsupported profile: " << profile << " (" << obis::get_name(profile)
+                                                                                 << ") from server " << srv_id_to_str(srv)
+                                                                                 << ", trx: " << trx);
             }
         }
 
