@@ -75,17 +75,15 @@ namespace smf {
         if (path.size() == 1) {
             auto const &profile = path.front();
             if (sml::is_profile(profile)) {
-                CYNG_LOG_TRACE(logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << profile);
+                CYNG_LOG_TRACE(logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << obis::get_name(profile));
                 store(trx, to_srv_id(server_id), profile, act_time, status, values);
             } else {
                 CYNG_LOG_WARNING(
                     logger_,
                     "[sml.db] get_profile_list_response with unsupported profile: "
                         << profile << " (" << obis::get_name(profile) << ") from server " << srv_id_to_str(server_id));
-                //#ifdef _DEBUG
                 //  assume 15 min profile
                 store(trx, to_srv_id(server_id), OBIS_PROFILE_15_MINUTE, act_time, status, values);
-                //#endif
             }
 
         } else {
