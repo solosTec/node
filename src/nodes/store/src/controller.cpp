@@ -796,8 +796,11 @@ namespace smf {
                     auto const enabled = reader_cls.get("enabled", false);
                     if (enabled) {
                         auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
+
+                        std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
+                        auto const tm = cyng::sys::to_utc(tt);
                         std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
-                                  << " older than " << now - age << std::endl;
+                                  << " older than " << std::put_time(&tm, "%Y-%m-%d, %H:%M") << std::endl;
                         auto const size = smf::cleanup(s, profile, now - age);
                         if (size != 0) {
                             std::cout << size << " records removed" << std::endl;
