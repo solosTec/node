@@ -31,7 +31,14 @@ if(WIN32)
 		templates/delete_service.cmd.in
 		templates/restart_service.cmd.in
 		templates/windows.cgf.in
+		templates/rc.in
     )
+	set (ipt_res
+		${PROJECT_BINARY_DIR}/ipt.rc 
+		${CMAKE_SOURCE_DIR}/assets/logo.ico
+#		templates/master.exe.manifest
+	)
+
 else()
     set(ipt_assets
 		templates/unit.in
@@ -50,3 +57,7 @@ set (ipt_node
   ${ipt_tasks}
 )
 
+if(WIN32)
+	source_group("resources" FILES ${ipt_res})
+	list(APPEND ipt_node ${ipt_res})
+endif()

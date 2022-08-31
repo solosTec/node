@@ -104,9 +104,9 @@ else()
 		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/restart_service.cmd.in"
 		    "${CMAKE_BINARY_DIR}/config/broker-iec_restart_service.cmd")
 
-#    configure_file (
-#		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"
-#		    "${PROJECT_BINARY_DIR}/broker-iec.rc")
+    configure_file (
+		    "${CMAKE_CURRENT_SOURCE_DIR}/templates/rc.in"
+		    "${PROJECT_BINARY_DIR}/broker-iec.rc")
 
 endif()
 

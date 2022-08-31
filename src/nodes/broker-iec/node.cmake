@@ -20,7 +20,13 @@ if(WIN32)
 		templates/delete_service.cmd.in
 		templates/restart_service.cmd.in
 		templates/windows.cgf.in
+		templates/rc.in
     )
+    set (broker-iec_res
+		${PROJECT_BINARY_DIR}/broker-iec.rc 
+		${CMAKE_SOURCE_DIR}/assets/logo.ico
+	)
+
 else()
     set(broker-iec_assets
 		templates/unit.in
@@ -49,3 +55,7 @@ set (broker-iec_node
   ${broker-iec_tasks}
 )
 
+if(WIN32)
+	source_group("resources" FILES ${broker-iec_res})
+	list(APPEND broker-iec_node ${broker-iec_res})
+endif()

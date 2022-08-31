@@ -28,7 +28,14 @@ if(WIN32)
 		templates/delete_service.cmd.in
 		templates/restart_service.cmd.in
 		templates/windows.cgf.in
+		templates/rc.in
     )
+	set (dash_res
+		${PROJECT_BINARY_DIR}/dash.rc 
+		${CMAKE_SOURCE_DIR}/assets/logo.ico
+#		templates/master.exe.manifest
+	)
+
 else()
     set(dash_assets
 		templates/unit.in
@@ -53,3 +60,7 @@ set (dash_node
   ${dash_tasks}
 )
 
+if(WIN32)
+	source_group("resources" FILES ${dash_res})
+	list(APPEND dash_node ${dash_res})
+endif()
