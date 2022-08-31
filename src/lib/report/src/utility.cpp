@@ -448,7 +448,9 @@ namespace smf {
                 if (stmt->execute()) {
                     stmt->clear();
                 } else {
+#ifdef _DEBUG
                     std::cerr << "***warning: deletion of \"TSMLReadoutData\" record with tag = " << tag << "failed" << std::endl;
+#endif
                     break; //  stop
                 }
             }
