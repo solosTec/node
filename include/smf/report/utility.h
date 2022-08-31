@@ -105,7 +105,7 @@ namespace smf {
     /**
      * remove outdated records of the specified profile
      */
-    void cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point);
+    std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point);
 
 } // namespace smf
 

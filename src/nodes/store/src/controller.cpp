@@ -660,6 +660,12 @@ namespace smf {
             return true; //  stop application
         }
 
+        if (vars["cleanup"].as<bool>()) {
+            //  remove outdated records
+            cleanup_archive(read_config_section(config_.json_path_, config_.config_index_));
+            return true; //  stop application
+        }
+
         //
         //	call base classe
         //
@@ -773,6 +779,39 @@ namespace smf {
         }
     }
 
+    void controller::cleanup_archive(cyng::object &&cfg) {
+        auto const now = std::chrono::system_clock::now();
+        auto const reader = cyng::make_reader(cfg);
+        BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
+        auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
+        for (auto const &param : pm) {
+            auto const db = cyng::container_cast<cyng::param_map_t>(param.second);
+            auto s = cyng::db::create_db_session(db);
+            if (s.is_alive()) {
+                std::cout << "cleanup database [" << param.first << "]" << std::endl;
+                auto const cleanup_tasks = cyng::container_cast<cyng::param_map_t>(reader["db"][param.first].get("cleanup"));
+                for (auto const &tsk : cleanup_tasks) {
+                    auto const reader_cls = cyng::make_reader(tsk.second);
+                    auto const profile = cyng::to_obis(tsk.first);
+                    auto const enabled = reader_cls.get("enabled", false);
+                    if (enabled) {
+                        auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
+                        std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
+                                  << " older than " << now - age << std::endl;
+                        auto const size = smf::cleanup(s, profile, now - age);
+                        if (size != 0) {
+                            std::cout << size << " records removed" << std::endl;
+                        }
+                    } else {
+                        std::cout << "cleanup task on db " << param.first << " for profile " << obis::get_name(profile)
+                                  << " is disabled" << std::endl;
+                    }
+                }
+            } else {
+                std::cout << "***warning: database [" << param.first << "] is not reachable" << std::endl;
+            }
+        }
+    }
     std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg, bool create) {
 
         std::map<std::string, cyng::db::session> sm;

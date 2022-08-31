@@ -31,10 +31,11 @@ int main(int argc, char **argv) {
         ("influxdb",
          boost::program_options::value<std::string>()->default_value("")->implicit_value("create"),
          "execute influxdb command [create|show|drop]") // --influxdb
-        ("generate,G", boost::program_options::value<std::string>(&report_type)->default_value("csv"), "report type [csv|lpex]");
-    //("generate,G", boost::program_options::bool_switch()->default_value(false), "generate CSV reports and exit") // --generate
-    //("lpex,P", boost::program_options::bool_switch()->default_value(false), "generate lpex reports and exit")    // --lpex
-    ;
+        ("generate,G", boost::program_options::value<std::string>(&report_type)->default_value("csv"), "report type [csv|lpex]")(
+            "cleanup",
+            boost::program_options::bool_switch()->default_value(false),
+            "remove outdated records from database") // --cleanup
+        ;
 
     //
     //	cmdline_options contains all generic and node specific options

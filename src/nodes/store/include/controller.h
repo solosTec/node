@@ -184,6 +184,7 @@ namespace smf {
         int create_influx_dbs(cyng::object const &, std::string const &cmd);
         void generate_csv_reports(cyng::object &&cfg);
         void generate_lpex_reports(cyng::object &&cfg);
+        void cleanup_archive(cyng::object &&cfg);
     };
 
     /**

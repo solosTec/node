@@ -15,6 +15,7 @@
 #include <cyng/sql/sql.hpp>
 
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace smf {
 
@@ -393,7 +394,85 @@ namespace smf {
         return std::nullopt;
     }
 
-    void cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point) {}
+    std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point tp) {
+
+        std::set<boost::uuids::uuid> tags;
+
+        //
+        //	start transaction
+        // ToDo: Consider pragma foreign_keys = on; or a JOIN (see below)
+        //
+        cyng::db::transaction trx(db);
+
+        //
+        //  remove all records of this profile from table "TSMLReadout" and "TSMLReadoutData"
+        //
+        // 1. get all PKs of outdated readouts
+        //
+        {
+            //  DELETE FROM TSMLReadoutData
+            //  WHERE tag IN (
+            //      SELECT tag FROM TSMLReadout a
+            //      INNER JOIN TSMLReadoutData b
+            //          ON (a.tag = b.tag)
+            //      WHERE a.actTime < julianday(?)
+            //  );
+            std::string const sql = "SELECT tag "
+                                    "FROM TSMLReadout "
+                                    "WHERE profile = ? AND actTime < julianday(?)";
+            auto stmt = db.create_statement();
+            std::pair<int, bool> const r = stmt->prepare(sql);
+            if (r.second) {
+                stmt->push(cyng::make_object(profile), 0); //	profile
+                stmt->push(cyng::make_object(tp), 0);      //	actTime
+                while (auto res = stmt->get_result()) {
+                    auto const tag = cyng::value_cast(res->get(1, cyng::TC_UUID, 0), boost::uuids::nil_uuid());
+                    tags.insert(tag);
+#ifdef _DEBUG
+                    // std::cout << tag << " #" << tags.size() << std::endl;
+#endif
+                }
+            }
+        }
+
+        //
+        //  2. delete all affected records from "TSMLReadoutData"
+        //
+        {
+            std::string const sql = "DELETE FROM TSMLReadoutData "
+                                    "WHERE tag = ?";
+            auto stmt = db.create_statement();
+            std::pair<int, bool> const r = stmt->prepare(sql);
+            for (auto const tag : tags) {
+                stmt->push(cyng::make_object(tag), 0); //	tag
+                if (stmt->execute()) {
+                    stmt->clear();
+                } else {
+                    std::cerr << "***warning: deletion of \"TSMLReadoutData\" record with tag = " << tag << "failed" << std::endl;
+                    break; //  stop
+                }
+            }
+        }
+
+        //
+        // 3. delete all affected records from "TSMLReadout"
+        //
+        {
+            //
+            //  This is more effective than deleting each record separately.
+            //
+            std::string const sql = "DELETE FROM TSMLReadout "
+                                    "WHERE profile = ? AND actTime < julianday(?)";
+            auto stmt = db.create_statement();
+            std::pair<int, bool> const r = stmt->prepare(sql);
+            if (r.second) {
+                stmt->push(cyng::make_object(profile), 0); //	profile
+                stmt->push(cyng::make_object(tp), 0);      //	actTime
+                stmt->execute();
+            }
+        }
+        return tags.size();
+    }
 
     cyng::meta_store get_store_virtual_sml_readout() {
         return cyng::meta_store(
