@@ -10,6 +10,7 @@
 #include <influxdb.h>
 #include <tasks/cleanup_db.h>
 #include <tasks/csv_report.h>
+#include <tasks/gap_report.h>
 #include <tasks/lpex_report.h>
 #include <tasks/network.h>
 
@@ -32,6 +33,7 @@
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
 #include <smf/report/csv.h>
+#include <smf/report/gap.h>
 #include <smf/report/lpex.h>
 #include <smf/report/utility.h>
 
@@ -99,7 +101,16 @@ namespace smf {
                                 create_cleanup_spec(OBIS_PROFILE_1_MINUTE, 48, true),
                                 create_cleanup_spec(OBIS_PROFILE_15_MINUTE, 48, true),
                                 create_cleanup_spec(OBIS_PROFILE_60_MINUTE, 800, true),
-                                create_cleanup_spec(OBIS_PROFILE_24_HOUR, 800, true)))))),
+                                create_cleanup_spec(OBIS_PROFILE_24_HOUR, 800, true))), // cleanup
+                        cyng::make_param(
+                            "gap",
+                            cyng::make_tuple(
+                                create_gap_spec(OBIS_PROFILE_1_MINUTE, cwd, 48, true),
+                                create_gap_spec(OBIS_PROFILE_15_MINUTE, cwd, 48, true),
+                                create_gap_spec(OBIS_PROFILE_60_MINUTE, cwd, 800, true),
+                                create_gap_spec(OBIS_PROFILE_24_HOUR, cwd, 800, true))) // gap
+                        ))                                                              // default
+                ),
 
             cyng::make_param("writer", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
@@ -275,6 +286,16 @@ namespace smf {
                 cyng::make_param("enabled", enabled)));
     }
 
+    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::size_t hours, bool enabled) {
+        return cyng::make_prop(
+            profile,
+            cyng::make_tuple(
+                cyng::make_param("name", obis::get_name(profile)),
+                cyng::make_param("path", (cwd / "gap-reports" / get_prefix(profile)).string()),
+                cyng::make_param("max-age-in-hours", hours),
+                cyng::make_param("enabled", enabled)));
+    }
+
     void controller::run(
         cyng::controller &ctl,
         cyng::stash &channels,
@@ -284,6 +305,8 @@ namespace smf {
 
         auto const reader = cyng::make_reader(cfg);
         auto const tag = read_tag(reader["tag"].get());
+        auto const now = std::chrono::system_clock::now();
+        auto const utc_offset = cyng::sys::delta_utc(now);
         auto const model = cyng::value_cast(reader["model"].get(), "smf.store");
 
         auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
@@ -302,28 +325,23 @@ namespace smf {
         //
         for (auto &s : sm) {
             if (s.second.is_alive()) {
-                auto const cleanup_tasks = cyng::container_cast<cyng::param_map_t>(reader["db"][s.first].get("cleanup"));
-                for (auto const &tsk : cleanup_tasks) {
-                    auto const reader_cls = cyng::make_reader(tsk.second);
+                start_cleanup_tasks(
+                    ctl, logger, s.first, s.second, cyng::container_cast<cyng::param_map_t>(reader["db"][s.first].get("cleanup")));
+            }
+        }
 
-                    auto const profile = cyng::to_obis(tsk.first);
-                    auto const enabled = reader_cls.get("enabled", false);
-                    if (enabled) {
-                        BOOST_ASSERT(sml::is_profile(profile));
-                        CYNG_LOG_INFO(
-                            logger, "start cleanup task on db \"" << s.first << "\" for profile " << obis::get_name(profile));
-                        auto const name = reader_cls.get("name", "");
-                        auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
-                        auto channel =
-                            ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, s.second, profile, age);
-                        BOOST_ASSERT(channel->is_open());
-                        channel->dispatch("run", age / 2);
-                    } else {
-                        CYNG_LOG_WARNING(
-                            logger,
-                            "cleanup task on db " << s.first << " for profile " << obis::get_name(profile) << " is disabled");
-                    }
-                }
+        //
+        //  start gap report tasks
+        //
+        for (auto &s : sm) {
+            if (s.second.is_alive()) {
+                start_gap_reports(
+                    ctl,
+                    logger,
+                    s.first,
+                    s.second,
+                    cyng::container_cast<cyng::param_map_t>(reader["db"][s.first].get("gap")),
+                    utc_offset);
             }
         }
 
@@ -499,7 +517,7 @@ namespace smf {
         //
         auto lpex_reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex-reports"));
         if (!lpex_reports.empty()) {
-            auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+            // auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", utc_offset));
             auto const db = reader["lpex-reports"].get("db", "default");
             auto const print_version = reader["lpex-reports"].get("print-version", true);
             auto const pos = sm.find(db);
@@ -553,6 +571,70 @@ namespace smf {
             target_iec,
             target_dlms,
             writer);
+    }
+
+    void controller::start_cleanup_tasks(
+        cyng::controller &ctl,
+        cyng::logger logger,
+        std::string name,
+        cyng::db::session db,
+        cyng::param_map_t &&cleanup_tasks) {
+        for (auto const &tsk : cleanup_tasks) {
+            auto const reader_cls = cyng::make_reader(tsk.second);
+
+            auto const profile = cyng::to_obis(tsk.first);
+            auto const enabled = reader_cls.get("enabled", false);
+            if (enabled) {
+                BOOST_ASSERT(sml::is_profile(profile));
+                CYNG_LOG_INFO(logger, "start cleanup task on db \"" << name << "\" for profile " << obis::get_name(profile));
+                auto const name = reader_cls.get("name", "");
+                auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
+                auto channel = ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age);
+                BOOST_ASSERT(channel->is_open());
+                channel->dispatch("run", age / 2);
+            } else {
+                CYNG_LOG_WARNING(
+                    logger, "cleanup task on db " << name << " for profile " << obis::get_name(profile) << " is disabled");
+            }
+        }
+    }
+
+    void controller::start_gap_reports(
+        cyng::controller &ctl,
+        cyng::logger logger,
+        std::string name,
+        cyng::db::session db,
+        cyng::param_map_t &&gap_tasks,
+        std::chrono::minutes utc_offset) {
+
+        for (auto const &tsk : gap_tasks) {
+            auto const reader_cls = cyng::make_reader(tsk.second);
+
+            auto const profile = cyng::to_obis(tsk.first);
+            auto const enabled = reader_cls.get("enabled", false);
+            if (enabled) {
+                BOOST_ASSERT(sml::is_profile(profile));
+                CYNG_LOG_INFO(logger, "start gap report on db \"" << name << "\" for profile " << obis::get_name(profile));
+                auto const name = reader_cls.get("name", "");
+                auto const root = reader_cls.get("path", "");
+                if (!std::filesystem::exists(root)) {
+                    std::cout << "***warning: output path [" << root << "] of gap report " << name << " does not exists";
+                    std::error_code ec;
+                    if (!std::filesystem::create_directories(root, ec)) {
+                        std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                    }
+                }
+
+                auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
+                auto channel =
+                    ctl.create_named_channel_with_ref<gap_report>("gap-report", ctl, logger, db, profile, root, age, utc_offset);
+                BOOST_ASSERT(channel->is_open());
+                channel->dispatch("run", age / 2);
+            } else {
+                CYNG_LOG_WARNING(
+                    logger, "gap report on db " << name << " for profile " << obis::get_name(profile) << " is disabled");
+            }
+        }
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
@@ -656,6 +738,8 @@ namespace smf {
                 generate_csv_reports(read_config_section(config_.json_path_, config_.config_index_));
             } else if (boost::algorithm::equals(type, "lpex")) {
                 generate_lpex_reports(read_config_section(config_.json_path_, config_.config_index_));
+            } else if (boost::algorithm::equals(type, "gap")) {
+                generate_gap_reports(read_config_section(config_.json_path_, config_.config_index_));
             }
             return true; //  stop application
         }
@@ -779,6 +863,55 @@ namespace smf {
         }
     }
 
+    void controller::generate_gap_reports(cyng::object &&cfg) {
+        auto const now = std::chrono::system_clock::now();
+        //
+        //  data base connections
+        //
+        auto sm = init_storage(cfg, false);
+        auto const reader = cyng::make_reader(std::move(cfg));
+
+        auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+        BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
+        auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
+        for (auto const &param : pm) {
+            auto const db = cyng::container_cast<cyng::param_map_t>(param.second);
+            auto s = cyng::db::create_db_session(db);
+            if (s.is_alive()) {
+                std::cout << "generate gap report for db [" << param.first << "]" << std::endl;
+                auto const gap_tasks = cyng::container_cast<cyng::param_map_t>(reader["db"][param.first].get("gap"));
+                for (auto const &tsk : gap_tasks) {
+                    auto const reader_gap = cyng::make_reader(tsk.second);
+                    auto const profile = cyng::to_obis(tsk.first);
+                    auto const enabled = reader_gap.get("enabled", false);
+                    if (enabled) {
+                        auto const age = std::chrono::hours(reader_gap.get("max-age-in-hours", 48));
+
+                        std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
+                        auto const tm = cyng::sys::to_utc(tt);
+                        std::cout << "the gap report on db \"" << param.first << "\" for profile " << obis::get_name(profile)
+                                  << " start with " << std::put_time(&tm, "%Y-%m-%d %T") << std::endl;
+                        auto const root = reader_gap.get("path", "");
+                        if (!std::filesystem::exists(root)) {
+                            std::cout << "***warning: output path [" << root << "] of gap report " << obis::get_name(profile)
+                                      << " does not exists";
+                            std::error_code ec;
+                            if (!std::filesystem::create_directories(root, ec)) {
+                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                            }
+                        }
+                        smf::generate_gap(s, profile, root, age, now, utc_offset);
+                    } else {
+                        std::cout << "gap report on db " << param.first << " for profile " << obis::get_name(profile)
+                                  << " is disabled" << std::endl;
+                    }
+                }
+            } else {
+                std::cout << "***warning: database [" << param.first << "] is not reachable" << std::endl;
+            }
+        }
+    }
+
     void controller::cleanup_archive(cyng::object &&cfg) {
         auto const now = std::chrono::system_clock::now();
         auto const reader = cyng::make_reader(cfg);
@@ -800,7 +933,7 @@ namespace smf {
                         std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
                         auto const tm = cyng::sys::to_utc(tt);
                         std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
-                                  << " older than " << std::put_time(&tm, "%Y-%m-%d, %H:%M") << std::endl;
+                                  << " older than " << std::put_time(&tm, "%Y-%m-%d %H:%M") << std::endl;
                         auto const size = smf::cleanup(s, profile, now - age);
                         if (size != 0) {
                             std::cout << size << " records removed" << std::endl;

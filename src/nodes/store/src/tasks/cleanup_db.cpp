@@ -53,7 +53,11 @@ namespace smf {
             //
             //  cleanup
             //
-            smf::cleanup(db_, profile_, now - max_age_);
+            auto const size = smf::cleanup(db_, profile_, now - max_age_);
+            CYNG_LOG_INFO(
+                logger_,
+                "[cleanup] " << size << " records older than " << max_age_.count() << "h from " << obis::get_name(profile_)
+                             << " removed");
 
             //
             //  restart

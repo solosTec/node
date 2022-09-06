@@ -64,7 +64,7 @@ namespace smf {
             //
             //  generate report
             //
-            generate_csv(db_, profile_, root_, backtrack_, now, "");
+            smf::generate_csv(db_, profile_, root_, backtrack_, now, "");
         }
     }
 } // namespace smf

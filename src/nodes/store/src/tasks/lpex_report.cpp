@@ -68,7 +68,7 @@ namespace smf {
             //
             //  generate report
             //
-            generate_lpex(db_, profile_, root_, backtrack_, now, prefix_, utc_offset_, print_version_);
+            smf::generate_lpex(db_, profile_, root_, backtrack_, now, prefix_, utc_offset_, print_version_);
         }
     }
 } // namespace smf

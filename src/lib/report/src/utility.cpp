@@ -112,6 +112,29 @@ namespace smf {
         return ss.str();
     }
 
+    std::string get_filename(
+        std::string prefix,
+        cyng::obis profile,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end) {
+
+        auto tt_start = std::chrono::system_clock::to_time_t(start);
+        auto tt_end = std::chrono::system_clock::to_time_t(end);
+#ifdef _MSC_VER
+        struct tm tm_start, tm_end;
+        _gmtime64_s(&tm_start, &tt_start);
+        _gmtime64_s(&tm_end, &tt_end);
+#else
+        auto tm_start = *std::gmtime(&tt_start);
+        auto tm_end = *std::gmtime(&tt_end);
+#endif
+
+        std::stringstream ss;
+        ss << prefix << get_prefix(profile) << "-" << std::put_time(&tm_start, "%Y%m%dT%H%M") << "-"
+           << std::put_time(&tm_end, "%Y%m%dT%H%M") << ".csv";
+        return ss.str();
+    }
+
     std::string get_prefix(cyng::obis profile) {
         //
         //  the prefox should be a valid file name
@@ -146,7 +169,7 @@ namespace smf {
 
         auto const ms = config::get_table_sml_readout();
         std::string const sql =
-            "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) FROM TSMLreadout WHERE profile = ? AND meterID = ? AND received BETWEEN julianday(?) AND julianday(?) ORDER BY actTime";
+            "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) FROM TSMLReadout WHERE profile = ? AND meterID = ? AND received BETWEEN julianday(?) AND julianday(?) ORDER BY actTime";
         auto stmt = db.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
@@ -189,6 +212,62 @@ namespace smf {
         return data;
     }
 
+    gap::readout_t collect_readouts_by_time_range(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end) {
+
+        //
+        //  meter => slot => actTime
+        //
+        gap::readout_t data;
+
+        auto const ms = config::get_table_sml_readout();
+        std::string const sql = "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) "
+                                "FROM TSMLReadout "
+                                "WHERE profile = ? AND received BETWEEN julianday(?) AND julianday(?) "
+                                "ORDER BY meterId, actTime";
+        auto stmt = db.create_statement();
+        std::pair<int, bool> const r = stmt->prepare(sql);
+        if (r.second) {
+            stmt->push(cyng::make_object(profile), 0); //	profile
+            stmt->push(cyng::make_object(start), 0);   //	start time
+            stmt->push(cyng::make_object(end), 0);     //	end time
+
+            while (auto res = stmt->get_result()) {
+                auto const rec = cyng::to_record(ms, res);
+                auto const tag = rec.value("tag", boost::uuids::nil_uuid());
+                BOOST_ASSERT(!tag.is_nil());
+                // auto const status = rec.value<std::uint32_t>("status", 0u);
+
+                //
+                //  calculate the time slot
+                //
+                auto const act_time = rec.value("actTime", start);
+                auto const slot = sml::to_index(act_time, profile);
+                if (slot.second) {
+                    auto set_time = sml::to_time_point(slot.first, profile);
+                    auto const id = rec.value("meterID", cyng::make_buffer({}));
+
+#ifdef __DEBUG
+                    using cyng::operator<<;
+                    std::cout << cyng::to_string(id) << " - slot: #" << slot.first << " (" << set_time
+                              << "), actTime: " << rec.value("actTime", start) << std::endl;
+#endif
+
+                    auto pos = data.find(id);
+                    if (pos != data.end()) {
+                        pos->second.emplace(slot.first, act_time);
+                    } else {
+                        data.insert(gap::make_readout(id, gap::make_slot(slot.first, act_time)));
+                    }
+                }
+            }
+        }
+        return data;
+    }
+
     data::profile_t collect_data_by_time_range(
         cyng::db::session db,
         cyng::obis profile,
@@ -209,9 +288,8 @@ namespace smf {
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
             stmt->push(cyng::make_object(profile), 0); //	profile
-            // stmt->push(cyng::make_object(id), 9);      //	meterID
-            stmt->push(cyng::make_object(start), 0); //	start time
-            stmt->push(cyng::make_object(end), 0);   //	end time
+            stmt->push(cyng::make_object(start), 0);   //	start time
+            stmt->push(cyng::make_object(end), 0);     //	end time
 
             //
             // all data for the specified meter in the time range ordered by
@@ -527,5 +605,14 @@ namespace smf {
         typename profile_t::value_type make_profile(cyng::buffer_t id, values_t::value_type value) { return {id, {value}}; }
 
     } // namespace data
+
+    namespace gap {
+        typename slot_date_t::value_type make_slot(std::uint64_t slot, std::chrono::system_clock::time_point tp) {
+            return {slot, tp};
+        }
+
+        typename readout_t::value_type make_readout(cyng::buffer_t id, slot_date_t::value_type val) { return {id, {val}}; }
+
+    } // namespace gap
 
 } // namespace smf

@@ -39,6 +39,15 @@ namespace smf {
 
     } // namespace data
 
+    namespace gap {
+        using slot_date_t = std::map<std::uint64_t, std::chrono::system_clock::time_point>; //  slot => actTime
+        using readout_t = std::map<cyng::buffer_t, slot_date_t>;                            // meter => slot
+
+        typename slot_date_t::value_type make_slot(std::uint64_t, std::chrono::system_clock::time_point);
+        typename readout_t::value_type make_readout(cyng::buffer_t, slot_date_t::value_type);
+
+    } // namespace gap
+
     /**
      * @return all meters that have data of the specified profile
      * in this time range.
@@ -62,6 +71,11 @@ namespace smf {
     [[nodiscard]] std::set<cyng::obis> collect_profiles(std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &);
 
     std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t, std::chrono::system_clock::time_point);
+    std::string get_filename(
+        std::string prefix,
+        cyng::obis profile,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end);
 
     /**
      * @return a short prefix specific for the given profile.
@@ -79,6 +93,12 @@ namespace smf {
         std::chrono::system_clock::time_point end);
 
     data::profile_t collect_data_by_time_range(
+        cyng::db::session db,
+        cyng::obis profile,
+        std::chrono::system_clock::time_point start,
+        std::chrono::system_clock::time_point end);
+
+    gap::readout_t collect_readouts_by_time_range(
         cyng::db::session db,
         cyng::obis profile,
         std::chrono::system_clock::time_point start,

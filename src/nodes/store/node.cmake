@@ -83,9 +83,11 @@ set(store_tasks_report
     include/tasks/csv_report.h
     include/tasks/lpex_report.h
     include/tasks/cleanup_db.h
+    include/tasks/gap_report.h
     src/tasks/csv_report.cpp
     src/tasks/lpex_report.cpp
     src/tasks/cleanup_db.cpp
+    src/tasks/gap_report.cpp
 )
 
 source_group("store-assets" FILES ${store_assets})

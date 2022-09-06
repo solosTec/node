@@ -184,7 +184,17 @@ namespace smf {
         int create_influx_dbs(cyng::object const &, std::string const &cmd);
         void generate_csv_reports(cyng::object &&cfg);
         void generate_lpex_reports(cyng::object &&cfg);
+        void generate_gap_reports(cyng::object &&cfg);
         void cleanup_archive(cyng::object &&cfg);
+
+        void start_cleanup_tasks(cyng::controller &ctl, cyng::logger, std::string, cyng::db::session, cyng::param_map_t &&);
+        void start_gap_reports(
+            cyng::controller &ctl,
+            cyng::logger,
+            std::string,
+            cyng::db::session,
+            cyng::param_map_t &&,
+            std::chrono::minutes utc_offset);
     };
 
     /**
@@ -193,6 +203,7 @@ namespace smf {
     cyng::prop_t create_report_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
     cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
     cyng::prop_t create_cleanup_spec(cyng::obis profile, std::size_t hours, bool enabled);
+    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::size_t hours, bool enabled);
 
 } // namespace smf
 
