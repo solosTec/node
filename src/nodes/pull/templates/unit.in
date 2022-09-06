@@ -1,0 +1,13 @@
+[Unit]
+Description=${PROJECT_NAME} server v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} (project ${CMAKE_PROJECT_NAME})
+Wants=node-ipt.service
+After=network.target node-ipt.service
+
+[Service]
+Type=simple
+ExecStart=/opt/smf/${PROJECT_NAME} -C/opt/smf/${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg
+Restart=on-failure
+RestartSec=12
+
+[Install]
+WantedBy=multi-user.target

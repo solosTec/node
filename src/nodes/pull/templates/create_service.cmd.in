@@ -1,0 +1,19 @@
+@echo off
+REM
+REM	This file is part of the "@CMAKE_PROJECT_NAME@/@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM install ${PROJECT_NAME} service
+REM	created : ${_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo create service ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc create ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR} binpath= "$ENV{ProgramW6432}\solosTec\${uppercase_project_name}\${PROJECT_NAME}.exe --config=\"$ENV{ProgramW6432}\solosTec\${uppercase_project_name}\${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cfg\" --service.enabled=true" DisplayName= "${uppercase_project_name} ${PROJECT_NAME} server v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.x" type= share start= auto 
+sc description ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR} "Store Server v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.x (${uppercase_project_name} Cluster node)"
+sc failure ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR} actions= restart/60000/restart/60000/restart/60000 reset= 86400
+REM
+REM Add a dependency to IP-T primary service.
+REM Modify or remove this dependency if IP-T primary is running on a different node.
+REM
+echo configure dependency on service ${lowercase_project_name}_ipt_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc config ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR} depend= ${lowercase_project_name}_ipt_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+@echo on

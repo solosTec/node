@@ -1,0 +1,12 @@
+REM
+REM	This file is part of the "@CMAKE_PROJECT_NAME@/@PROJECT_NAME@" project.
+REM	This file is generated automatically. Do not edit.
+REM restart ${PROJECT_NAME} service
+REM	created : ${_NOW_UTC}
+REM	platform: @CMAKE_SYSTEM@
+REM
+echo restart service ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+@echo off
+sc stop ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc start ${lowercase_project_name}_${PROJECT_NAME}_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+@echo on

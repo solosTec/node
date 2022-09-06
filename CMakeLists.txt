@@ -1012,6 +1012,7 @@ add_subdirectory(src/nodes/report)
 add_subdirectory(src/nodes/segw)
 add_subdirectory(src/nodes/setup)
 add_subdirectory(src/nodes/store)
+add_subdirectory(src/nodes/pull)
 
 #
 # tools

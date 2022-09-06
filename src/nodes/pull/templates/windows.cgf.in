@@ -1,0 +1,16 @@
+#
+#	startup configuration for @PROJECT_NAME@ store node
+#	created : ${_NOW_UTC}
+#	platform: @CMAKE_SYSTEM@
+#
+[service]
+enabled = false
+name = ${lowercase_project_name}_store_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+
+[setup]
+json = $ENV{ProgramData}\solosTec\${PROJECT_NAME}\store_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.json
+pool-size = ${${CMAKE_PROJECT_NAME}_POOL_SIZE}
+
+[log]
+file = true
+file-name = $ENV{ProgramData}\solosTec\${PROJECT_NAME}\logs
