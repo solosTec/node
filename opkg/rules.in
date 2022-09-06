@@ -14,57 +14,56 @@ clean:
 	rm -rf $(INSTALLDIR)
 
 install: build
-	install -d $(INSTALLDIR)/usr/local/lib
-#	install -m 755 @PROJECT_BINARY_DIR@/lib*.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/libsmf_config.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/libsmf_ipt.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/libsmf_ipt_bus.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/libsmf_serial_bus.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/libsmf_hci.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/libsmf_mbus.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml.so $(INSTALLDIR)/usr/local/lib
-	install -m 755 @PROJECT_BINARY_DIR@/libsmf_obis.so $(INSTALLDIR)/usr/local/lib
-#	install -m 755 @PROJECT_BINARY_DIR@/libsmf_iec.so $(INSTALLDIR)/usr/local/lib
-#	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml_bus.so $(INSTALLDIR)/usr/local/lib
+	install -d $(INSTALLDIR)/usr/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_config.so $(INSTALLDIR)/usr/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_ipt.so $(INSTALLDIR)/usr/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_ipt_bus.so $(INSTALLDIR)/usr/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_serial_bus.so $(INSTALLDIR)/usr/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_hci.so $(INSTALLDIR)/usr/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_mbus.so $(INSTALLDIR)/usr/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml.so $(INSTALLDIR)/usr/lib
+	install -m 755 @PROJECT_BINARY_DIR@/libsmf_obis.so $(INSTALLDIR)/usr/lib
+#	install -m 755 @PROJECT_BINARY_DIR@/libsmf_iec.so $(INSTALLDIR)/usr/lib
+#	install -m 755 @PROJECT_BINARY_DIR@/libsmf_sml_bus.so $(INSTALLDIR)/usr/lib
 
-	install -m 755 @CYNG_DB_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_IO_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_LOG_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_OBJ_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_PARSE_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_RND_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_NET_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_SQL_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_SQLITE3_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_STORE_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_SYS_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_TASK_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_VM_LIBRARY@ $(INSTALLDIR)/usr/local/lib
-	install -m 755 @CYNG_XML_LIBRARY@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @CYNG_DB_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_IO_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_LOG_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_OBJ_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_PARSE_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_RND_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_NET_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_SQL_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_SQLITE3_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_STORE_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_SYS_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_TASK_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_VM_LIBRARY@ $(INSTALLDIR)/usr/lib
+	install -m 755 @CYNG_XML_LIBRARY@ $(INSTALLDIR)/usr/lib
 
 #	crypto lib
-	install -m 755 @smfsec@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @smfsec@ $(INSTALLDIR)/usr/lib
 
 #	pugixml lib
-	install -m 755 @PUGIXML_LIBRARIES@ $(INSTALLDIR)/usr/local/lib
+	install -m 755 @PUGIXML_LIBRARIES@ $(INSTALLDIR)/usr/lib
 
 	# maybe another path is required to build in a docker environment
-	install -m 755 @Boost_LIBRARY_DIRS@/libboost_filesystem.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/local/lib/libboost_filesystem.so.${Boost_VERSION_NUMERIC}
-	install -m 755 @Boost_LIBRARY_DIRS@/libboost_program_options.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/local/lib/libboost_program_options.so.${Boost_VERSION_NUMERIC}
-	install -m 755 @Boost_LIBRARY_DIRS@/libboost_random.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/local/lib/libboost_random.so.${Boost_VERSION_NUMERIC}
-	install -m 755 @Boost_LIBRARY_DIRS@/libboost_system.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/local/lib/libboost_system.so.${Boost_VERSION_NUMERIC}
-	install -m 755 @Boost_LIBRARY_DIRS@/libboost_thread.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/local/lib/libboost_thread.so.${Boost_VERSION_NUMERIC}
+	install -m 755 @Boost_LIBRARY_DIRS@/libboost_filesystem.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/lib/libboost_filesystem.so.${Boost_VERSION_NUMERIC}
+	install -m 755 @Boost_LIBRARY_DIRS@/libboost_program_options.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/lib/libboost_program_options.so.${Boost_VERSION_NUMERIC}
+	install -m 755 @Boost_LIBRARY_DIRS@/libboost_random.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/lib/libboost_random.so.${Boost_VERSION_NUMERIC}
+	install -m 755 @Boost_LIBRARY_DIRS@/libboost_system.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/lib/libboost_system.so.${Boost_VERSION_NUMERIC}
+	install -m 755 @Boost_LIBRARY_DIRS@/libboost_thread.so.${Boost_VERSION_NUMERIC} $(INSTALLDIR)/usr/lib/libboost_thread.so.${Boost_VERSION_NUMERIC}
 
-	install -d $(INSTALLDIR)/usr/local/sbin
-	install -m 755 @PROJECT_BINARY_DIR@/src/nodes/segw/segw $(INSTALLDIR)/usr/local/sbin
+	install -d $(INSTALLDIR)/usr/sbin
+	install -m 755 @PROJECT_BINARY_DIR@/src/nodes/segw/segw $(INSTALLDIR)/usr/sbin
 #	install -m 755 @CYNG_ROOT_DEV@/@CYNG_ROOT_BUILD_SUBDIR@/sqlite3 $(INSTALLDIR)/usr/local/sbin
 
-	install -d $(INSTALLDIR)/usr/local/etc/smf
-	install -m 644 @PROJECT_BINARY_DIR@/config/segw_v${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.cfg $(INSTALLDIR)/usr/local/etc
+	install -d $(INSTALLDIR)/usr/etc/smf
+	install -m 644 @PROJECT_BINARY_DIR@/config/segw_v${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.cfg $(INSTALLDIR)/usr/etc
 	
 
-#Any .service file found in /usr/local/lib/systemd/system is hooked into the systemd infrastructure on startup and will be executed.
-	install -d $(INSTALLDIR)/usr/local/lib/systemd/system
-	install -m 644 @PROJECT_BINARY_DIR@/config/segw.service $(INSTALLDIR)/usr/local/lib/systemd/system
+#Any .service file found in /usr/lib/systemd/system is hooked into the systemd infrastructure on startup and will be executed.
+	install -d $(INSTALLDIR)/usr/lib/systemd/system
+	install -m 644 @PROJECT_BINARY_DIR@/config/segw.service $(INSTALLDIR)/usr/lib/systemd/system
 
 .PHONY: build clean install
