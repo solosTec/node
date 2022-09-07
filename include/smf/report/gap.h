@@ -131,6 +131,7 @@ namespace smf {
             std::filesystem::path root,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
+            std::chrono::minutes utc_offset,
             std::size_t count);
 
         void emit_data(

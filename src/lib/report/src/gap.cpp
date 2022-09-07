@@ -149,13 +149,13 @@ namespace smf {
             auto const end = start + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
-            auto const data = collect_report(db, initial_data, profile, root, start + utc_offset, end + utc_offset, count);
+            auto const data = collect_report(db, initial_data, profile, root, start, end, utc_offset, count);
 #ifdef _DEBUG
             std::cout << "start 15 min gap report ";
-            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
+            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M (UTC) - ");
-            std::cout << count << " expected entries, " << data.size() << " meter(s)" << std::endl;
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - ");
+            std::cout << count << " expected entries for " << data.size() << " meter(s)" << std::endl;
 #endif
             return {end, data};
         }
@@ -210,7 +210,7 @@ namespace smf {
             auto const end = start + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
-            auto const data = collect_report(db, initial_data, profile, root, start + utc_offset, end + utc_offset, count);
+            auto const data = collect_report(db, initial_data, profile, root, start, end, utc_offset, count);
 #ifdef _DEBUG
             std::cout << "start 60 min report ";
             cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
@@ -269,7 +269,7 @@ namespace smf {
             auto const end = start + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
-            auto const data = collect_report(db, initial_data, profile, root, start + utc_offset, end + utc_offset, count);
+            auto const data = collect_report(db, initial_data, profile, root, start, end, utc_offset, count);
 #ifdef _DEBUG
             std::cout << "start 24 h report ";
             cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
@@ -310,16 +310,20 @@ namespace smf {
             std::filesystem::path root,
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point end,
+            std::chrono::minutes utc_offset,
             std::size_t count) //  expected number of entries in time span
         {
 
-            auto const slot = sml::to_index(start, profile); //  start slot
+            auto const first = start; // +utc_offset;
+            auto const last = end;    // +utc_offset;
+
+            auto const slot = sml::to_index(first, profile); //  start slot
             BOOST_ASSERT(slot.second);
 
             //
             //  collect data from this time range ordered by meter -> register -> timepoint
             //
-            auto const data = collect_readouts_by_time_range(db, initial_data, profile, start, end);
+            auto const data = collect_readouts_by_time_range(db, initial_data, profile, first, last);
 
             auto const file_name = get_filename("", profile, start, end);
             auto const file_path = root / file_name;
@@ -370,12 +374,13 @@ namespace smf {
                 os << ',';
                 auto const pos = data.find(slot);
                 if (pos != data.end()) {
+                    os << "[set@";
                     cyng::sys::to_string_utc(os, pos->second, "%FT%T");
                     // cyng::sys::to_string_utc(os, pos->second, "%FT%T%z");
-                    os << '#' << slot;
+                    os << '#' << slot << ']';
                 } else {
                     //  missing time point
-                    os << '[';
+                    os << "[pull@";
                     auto const tp = sml::to_time_point(slot, profile);
                     cyng::sys::to_string_utc(os, tp, "%FT%T");
                     os << ']';

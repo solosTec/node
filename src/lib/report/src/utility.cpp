@@ -118,20 +118,24 @@ namespace smf {
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
 
+        BOOST_ASSERT(start < end);
+
         auto tt_start = std::chrono::system_clock::to_time_t(start);
-        auto tt_end = std::chrono::system_clock::to_time_t(end);
+        // auto tt_end = std::chrono::system_clock::to_time_t(end);
 #ifdef _MSC_VER
         struct tm tm_start, tm_end;
         _gmtime64_s(&tm_start, &tt_start);
-        _gmtime64_s(&tm_end, &tt_end);
+        //_gmtime64_s(&tm_end, &tt_end);
 #else
         auto tm_start = *std::gmtime(&tt_start);
-        auto tm_end = *std::gmtime(&tt_end);
+        // auto tm_end = *std::gmtime(&tt_end);
 #endif
-
+        auto const hours = std::chrono::duration_cast<std::chrono::hours>(start - end);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << std::put_time(&tm_start, "%Y%m%dT%H%M") << "-"
-           << std::put_time(&tm_end, "%Y%m%dT%H%M") << ".csv";
+        ss << prefix << get_prefix(profile) << std::put_time(&tm_start, "-%Y%m%dT%H%M-") << hours.count()
+           << 'h'
+           //<< std::put_time(&tm_end, "%Y%m%dT%H%M")
+           << ".csv";
         return ss.str();
     }
 
@@ -266,7 +270,18 @@ namespace smf {
 
                     auto pos = data.find(id);
                     if (pos != data.end()) {
-                        pos->second.emplace(slot.first, act_time);
+                        auto const res = pos->second.emplace(slot.first, act_time);
+                        // BOOST_ASSERT(res.second); - duplicates possible
+#ifdef __DEBUG
+                        if (res.second) {
+                            using cyng::operator<<;
+                            std::cout << cyng::to_string(id) << " has " << pos->second.size() << " entries (" << act_time << ")"
+                                      << std::endl;
+                            //} else {
+                            //    using cyng::operator<<;
+                            //    std::cout << cyng::to_string(id) << " duplicate at " << act_time << std::endl;
+                        }
+#endif
                     } else {
                         data.insert(gap::make_readout(id, gap::make_slot(slot.first, act_time)));
                     }
