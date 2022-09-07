@@ -105,7 +105,7 @@ namespace smf {
                         cyng::make_param(
                             "gap",
                             cyng::make_tuple(
-                                create_gap_spec(OBIS_PROFILE_1_MINUTE, cwd, 48, true),
+                                create_gap_spec(OBIS_PROFILE_1_MINUTE, cwd, 48, false),
                                 create_gap_spec(OBIS_PROFILE_15_MINUTE, cwd, 48, true),
                                 create_gap_spec(OBIS_PROFILE_60_MINUTE, cwd, 800, true),
                                 create_gap_spec(OBIS_PROFILE_24_HOUR, cwd, 800, true))) // gap
@@ -246,6 +246,15 @@ namespace smf {
                 cyng::make_tuple(
                     cyng::make_param("db", "default"),
                     cyng::make_param("print-version", true), // if true first line contains the LPEx version
+                    // 1-0:1.8.0*255    (01 00 01 08 00 FF)
+                    // 1-0:1.8.1*255    (01 00 01 08 01 FF)
+                    // 1-0:1.8.2*255    (01 00 01 08 02 FF)
+                    // 1-0:16.7.0*255   (01 00 10 07 00 FF)
+                    // 1-0:2.0.0*255    (01 00 02 00 00 FF)
+                    // 7-0:3.0.0*255    (07 00 03 00 00 FF) // Volume (meter), temperature converted (Vtc), forward, absolute,
+                    // current value 7-0:3.1.0*1      (07 00 03 01 00 01)
+                    // only this obis codes will be accepted
+                    cyng::make_param("filter", cyng::obis_path_t{OBIS_REG_POS_ACT_E, OBIS_REG_POS_ACT_E_T1, OBIS_REG_GAS_MC_0_0}),
                     create_lpex_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
                     create_lpex_spec(OBIS_PROFILE_60_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
                     create_lpex_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
@@ -283,6 +292,7 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
                 cyng::make_param("max-age-in-hours", hours),
+                cyng::make_param("limit", 256),
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -292,7 +302,7 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
                 cyng::make_param("path", (cwd / "gap-reports" / get_prefix(profile)).string()),
-                cyng::make_param("max-age-in-hours", hours),
+                cyng::make_param("backtrack-hours", hours),
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -520,9 +530,10 @@ namespace smf {
             // auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", utc_offset));
             auto const db = reader["lpex-reports"].get("db", "default");
             auto const print_version = reader["lpex-reports"].get("print-version", true);
+            auto const filter = cyng::to_obis_path(reader["lpex-reports"].get("filter", ""));
             auto const pos = sm.find(db);
             if (pos != sm.end()) {
-                start_lpex_reports(ctl, channels, logger, pos->second, lpex_reports, utc_offset, print_version);
+                start_lpex_reports(ctl, channels, logger, pos->second, lpex_reports, filter, utc_offset, print_version);
             } else {
                 CYNG_LOG_FATAL(logger, "no database [" << db << "] for LPEx reports configured");
             }
@@ -589,9 +600,11 @@ namespace smf {
                 CYNG_LOG_INFO(logger, "start cleanup task on db \"" << name << "\" for profile " << obis::get_name(profile));
                 auto const name = reader_cls.get("name", "");
                 auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
-                auto channel = ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age);
+                auto const limit = reader_cls.get("limit", 256u);
+                auto channel = ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age, limit);
                 BOOST_ASSERT(channel->is_open());
-                channel->dispatch("run", age / 2);
+                // channel->dispatch("run", age / 2);
+                channel->suspend(age / 2, "run", age / 4);
             } else {
                 CYNG_LOG_WARNING(
                     logger, "cleanup task on db " << name << " for profile " << obis::get_name(profile) << " is disabled");
@@ -791,9 +804,9 @@ namespace smf {
                                 std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
                             }
                         }
-                        auto const backtrack = reader_report.get("backtrack-hours", 40);
+                        auto const backtrack = std::chrono::hours(reader_report.get("backtrack-hours", 40));
                         auto const prefix = reader_report.get("prefix", "");
-                        generate_csv(pos->second, profile, root, std::chrono::hours(backtrack), now, prefix);
+                        generate_csv(pos->second, profile, root, backtrack, now, prefix);
 
                     } else {
                         std::cout << "***info: csv report " << name << " is disabled" << std::endl;
@@ -817,6 +830,7 @@ namespace smf {
         BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
 
         auto const print_version = reader["lpex-reports"].get("print-version", true);
+        auto const filter = cyng::to_obis_path(reader["lpex-reports"].get("filter", ""));
         auto const db = reader["lpex-reports"].get("db", "default");
         auto const pos = sm.find(db);
         if (pos != sm.end()) {
@@ -830,7 +844,8 @@ namespace smf {
                 for (auto const &cfg_report : reports) {
 
                     if (!boost::algorithm::equals(cfg_report.first, "print-version") &&
-                        !boost::algorithm::equals(cfg_report.first, "db")) {
+                        !boost::algorithm::equals(cfg_report.first, "db") &&
+                        !boost::algorithm::starts_with(cfg_report.first, "filter")) {
 
                         auto const reader_report = cyng::make_reader(cfg_report.second);
                         auto const name = reader_report.get("name", "no-name");
@@ -850,7 +865,15 @@ namespace smf {
                             auto const backtrack = reader_report.get("backtrack-hours", 40);
                             auto const prefix = reader_report.get("prefix", "LPEx-");
                             generate_lpex(
-                                pos->second, profile, root, std::chrono::hours(backtrack), now, prefix, utc_offset, print_version);
+                                pos->second,
+                                profile,
+                                filter,
+                                root,
+                                std::chrono::hours(backtrack),
+                                now,
+                                prefix,
+                                utc_offset,
+                                print_version);
 
                         } else {
                             std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
@@ -885,7 +908,7 @@ namespace smf {
                     auto const profile = cyng::to_obis(tsk.first);
                     auto const enabled = reader_gap.get("enabled", false);
                     if (enabled) {
-                        auto const age = std::chrono::hours(reader_gap.get("max-age-in-hours", 48));
+                        auto const age = std::chrono::hours(reader_gap.get("backtrack-hours", 48));
 
                         std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
                         auto const tm = cyng::sys::to_utc(tt);
@@ -934,7 +957,8 @@ namespace smf {
                         auto const tm = cyng::sys::to_utc(tt);
                         std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
                                   << " older than " << std::put_time(&tm, "%Y-%m-%d %H:%M") << std::endl;
-                        auto const size = smf::cleanup(s, profile, now - age);
+                        auto const limit = reader_cls.get("limit", 256u);
+                        auto const size = smf::cleanup(s, profile, now - age, limit);
                         if (size != 0) {
                             std::cout << size << " records removed" << std::endl;
                         }
@@ -1365,6 +1389,7 @@ namespace smf {
         cyng::logger logger,
         cyng::db::session db,
         cyng::param_map_t reports,
+        cyng::obis_path_t filter,
         std::chrono::minutes utc_offset,
         bool print_version) {
 
@@ -1375,7 +1400,8 @@ namespace smf {
             //
             //  skip "print-version" and "db" entry
             //
-            if (!boost::algorithm::equals(cfg.first, "print-version") && !boost::algorithm::equals(cfg.first, "db")) {
+            if (!boost::algorithm::equals(cfg.first, "print-version") && !boost::algorithm::equals(cfg.first, "db") &&
+                !boost::algorithm::starts_with(cfg.first, "filter")) {
                 auto const reader = cyng::make_reader(cfg.second);
                 if (reader.get("enabled", false)) {
 
@@ -1395,7 +1421,7 @@ namespace smf {
                     }
 
                     auto channel = ctl.create_named_channel_with_ref<lpex_report>(
-                        name, ctl, logger, db, profile, path, backtrack, prefix, utc_offset, print_version);
+                        name, ctl, logger, db, profile, filter, path, backtrack, prefix, utc_offset, print_version);
                     BOOST_ASSERT(channel->is_open());
                     channels.lock(channel);
 

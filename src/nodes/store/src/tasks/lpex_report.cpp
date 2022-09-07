@@ -21,7 +21,8 @@ namespace smf {
         cyng::controller &ctl,
         cyng::logger logger, 
         cyng::db::session db, 
-        cyng::obis profile, 
+        cyng::obis profile,
+        cyng::obis_path_t filter,
         std::string path,
         std::chrono::hours backtrack,
         std::string prefix,
@@ -36,6 +37,7 @@ namespace smf {
         , logger_(logger)
         , db_(db)
         , profile_(profile)
+        , filter_(filter)
         , root_(path)
         , backtrack_(backtrack)
         , prefix_(prefix)
@@ -68,7 +70,7 @@ namespace smf {
             //
             //  generate report
             //
-            smf::generate_lpex(db_, profile_, root_, backtrack_, now, prefix_, utc_offset_, print_version_);
+            smf::generate_lpex(db_, profile_, filter_, root_, backtrack_, now, prefix_, utc_offset_, print_version_);
         }
     }
 } // namespace smf

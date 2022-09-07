@@ -30,7 +30,9 @@ int main(int argc, char **argv) {
     // generic.add_options()("generate,G", boost::program_options::bool_switch()->default_value(false), "generate reports and
     // exit");
     generic.add_options() // additional options
-        ("generate,G", boost::program_options::value<std::string>(&report_type)->default_value("csv"), "report type [csv|lpex]");
+        ("generate,G",
+         boost::program_options::value<std::string>(&report_type)->default_value("csv"),
+         "report type [csv|lpex|gap]");
 
     //
     //	cmdline_options contains all generic and node specific options

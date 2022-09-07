@@ -18,9 +18,13 @@
 
 namespace smf {
 
+    /**
+     * Generate a LPEx report of the specified profile
+     */
     void generate_lpex(
         cyng::db::session,
         cyng::obis profile,
+        cyng::obis_path_t filter,
         std::filesystem::path,
         std::chrono::hours backtrack,
         std::chrono::system_clock::time_point,
@@ -35,6 +39,7 @@ namespace smf {
         void generate_report_1_minute(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
@@ -52,6 +57,7 @@ namespace smf {
         void generate_report_15_minutes(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
@@ -62,9 +68,11 @@ namespace smf {
         std::chrono::system_clock::time_point generate_report_15_minutes(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span,
             bool print_version);
 
@@ -74,6 +82,7 @@ namespace smf {
         void generate_report_60_minutes(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
@@ -84,9 +93,11 @@ namespace smf {
         std::chrono::system_clock::time_point generate_report_60_minutes(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span,
             bool print_version);
 
@@ -96,6 +107,7 @@ namespace smf {
         void generate_report_24_hour(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
@@ -106,9 +118,11 @@ namespace smf {
         std::chrono::system_clock::time_point generate_report_24_hour(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span,
             bool print_version);
 
@@ -118,6 +132,7 @@ namespace smf {
         void generate_report_1_month(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
@@ -131,6 +146,7 @@ namespace smf {
         void generate_report_1_year(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
@@ -157,6 +173,7 @@ namespace smf {
         void collect_report(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,

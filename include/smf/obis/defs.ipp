@@ -1,5 +1,5 @@
-	// generated at 2022-07-13 13:25:05
-	// 579 OBIS codes (3474 Bytes)
+	// generated at 2022-09-07 12:48:46
+	// 600 OBIS codes (3600 Bytes)
 
 	// #1
 	// Abstract objects
@@ -112,7 +112,7 @@
 	OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, 62, EDL21_LAST_30d);	// Consumption over the last 30 days
 	OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, 63, EDL21_LAST_365d);	// Consumption over the last 365 days
 	OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, 64, EDL21_LAST_RESET);	// Consumption since last reset
-	OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, ff, REG_POS_ACT_E);	// Positive active energy(A+)
+	OBIS_CODE_DEFINITION(01, 00, 01, 08, 00, ff, REG_POS_ACT_E);	// Positive active energy(A+), current value
 	OBIS_CODE_DEFINITION(01, 00, 01, 08, 01, ff, REG_POS_ACT_E_T1);	// Positive active energy(A+) in tariff T1
 	OBIS_CODE_DEFINITION(01, 00, 01, 08, 02, ff, REG_POS_ACT_E_T2);	// Positive active energy(A+) in tariff T2
 	OBIS_CODE_DEFINITION(01, 00, 01, 08, 03, ff, REG_POS_ACT_E_T3);	// Positive active energy(A+) in tariff T3
@@ -280,11 +280,33 @@
 	OBIS_CODE_DEFINITION(01, 00, 60, 60, 09, ff, REG_FRAUD_FLAG);	// Fraud flag
 	OBIS_CODE_DEFINITION(01, 01, 62, 17, 00, ff, REG_SM_POWER_THRESHOLD);	// Power threshold (D.23.0)
 	// #275
+	// Heat Cost Allocators
+	OBIS_CODE_DEFINITION(04, 00, 00, 01, 0a, ff, REG_HCA_10);	// Local date at set date
+	OBIS_CODE_DEFINITION(04, 00, 00, 09, 01, ff, REG_HCA_F);	// Current time at time of transmission
+	OBIS_CODE_DEFINITION(04, 00, 00, 09, 02, ff, REG_HCA_G);	// Current date at time of transmission
+	OBIS_CODE_DEFINITION(04, 00, 01, 00, 01, ff, REG_HCA_0);	// Unrated integral, current value
+	OBIS_CODE_DEFINITION(04, 00, 01, 02, 00, ff, REG_HCA_2);	// Unrated integral, set date value
+	// #280
+	// Heat
+	OBIS_CODE_DEFINITION(06, 00, 00, 08, 00, ff, REG_HEAT_AED);	// Power (energy flow) (P ), average, current value
+	OBIS_CODE_DEFINITION(06, 00, 01, 00, 00, ff, REG_HEAT_CURRENT);	// Energy (A), total, current value
+	OBIS_CODE_DEFINITION(06, 00, 01, 02, 00, ff, REG_HEAT_SET_DATE);	// Energy (A), total, set date value
+	// #283
+	// Gas
+	OBIS_CODE_DEFINITION(07, 00, 00, 08, 1c, ff, REG_GAS_INT);	// Averaging duration for actual flow rate value
+	OBIS_CODE_DEFINITION(07, 00, 00, 2a, 02, ff, REG_GAS_BP);	// defined Pressure, absolute, at base conditions
+	OBIS_CODE_DEFINITION(07, 00, 03, 00, 00, ff, REG_GAS_MC_0_0);	// Volume (meter), 
+	OBIS_CODE_DEFINITION(07, 00, 03, 01, 00, ff, REG_GAS_MC_1_0);	// Volume (meter), temperature converted (Vtc), forward, absolute, current value
+	OBIS_CODE_DEFINITION(07, 00, 03, 02, 00, ff, REG_GAS_MC_2_0);	// Volume (meter), base conditions (Vb), forward, absolute, current value
+	OBIS_CODE_DEFINITION(07, 00, 2b, 0f, 00, ff, REG_GAS_FR_15);	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
+	OBIS_CODE_DEFINITION(07, 00, 2b, 10, 00, ff, REG_GAS_FR_16);	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
+	OBIS_CODE_DEFINITION(07, 00, 2b, 11, 00, ff, REG_GAS_FR_17);	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
+	// #291
 	// Water (cold)
 	OBIS_CODE_DEFINITION(08, 00, 01, 00, 00, ff, WATER_CURRENT);	// Volume (V), accumulated, total, current value
 	OBIS_CODE_DEFINITION(08, 00, 01, 02, 00, ff, WATER_DATE);	// Volume (V), accumulated, total, due date value
 	OBIS_CODE_DEFINITION(08, 00, 02, 00, 00, ff, WATER_FLOW_RATE);	// Flow rate, average (Va/t), current value 
-	// #278
+	// #294
 	// next group
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 00, ACT_SENSOR_TIME);	// actSensorTime - current UTC time
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 01, TZ_OFFSET);	// u16 - offset to actual time zone in minutes (-720 .. +720)
@@ -367,6 +389,7 @@
 	OBIS_CODE_DEFINITION(81, 48, 00, 00, 00, 03, LOG_SOURCE_WAN_PPPoE);
 	OBIS_CODE_DEFINITION(81, 48, 00, 32, 01, 01, LAN_PPPoE_ENABLED);	// bool
 	OBIS_CODE_DEFINITION(81, 48, 00, 32, 02, 01, LAN_DHCP_ENABLED);	// bool
+	OBIS_CODE_DEFINITION(81, 48, 00, 32, 03, 01, LAN_DSL_ENABLED);	// bool - true = DLS, false = LAN
 	OBIS_CODE_DEFINITION(81, 48, 0d, 06, 00, ff, ROOT_LAN_DSL);	// see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
 	OBIS_CODE_DEFINITION(81, 48, 17, 07, 00, 00, CODE_IF_LAN_ADDRESS);	// ip:address - IPv4 or IPv6 address
 	OBIS_CODE_DEFINITION(81, 48, 17, 07, 00, 01, CODE_IF_DSL_ADDRESS);	// ip:address - IPv4 or IPv6 address
@@ -381,7 +404,7 @@
 	OBIS_CODE_DEFINITION(81, 48, 17, 07, 06, 01, CODE_IF_LAN_DLS_TERTIARY);	// ip:address - set/get OBIS_IF_LAN_DSL
 	OBIS_CODE_DEFINITION(81, 48, 27, 32, 06, 01, TCP_WAIT_TO_RECONNECT);	// u8
 	OBIS_CODE_DEFINITION(81, 48, 31, 32, 02, 01, TCP_CONNECT_RETRIES);	// u32
-	OBIS_CODE_DEFINITION(81, 48, 31, 32, 07, 01, TCP_REPLY_ICMP);	// bool - reply tp received ICMP packages
+	OBIS_CODE_DEFINITION(81, 48, 31, 32, 07, 01, TCP_REPLY_ICMP);	// bool - reply to received ICMP packages
 	OBIS_CODE_DEFINITION(81, 49, 00, 00, 00, 01, LOG_SOURCE_WAN_IPT_CONTROLLER);
 	OBIS_CODE_DEFINITION(81, 49, 00, 00, 00, 02, LOG_SOURCE_WAN_IPT);
 	OBIS_CODE_DEFINITION(81, 49, 00, 00, 10, ff, PUSH_SERVICE);	// options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
@@ -490,6 +513,10 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, 86, 20, ff, ROOT_DATA_COLLECTOR);	// data collector root element (Eigenschaften eines Datensammlers)
 	OBIS_CODE_DEFINITION(81, 81, c7, 86, 21, ff, DATA_COLLECTOR_ACTIVE);	// bool
 	OBIS_CODE_DEFINITION(81, 81, c7, 86, 22, ff, DATA_COLLECTOR_SIZE);	// max. table size
+	OBIS_CODE_DEFINITION(81, 81, c7, 86, 2f, ff, TMPL_VERSION);	// s - Version identifier
+	OBIS_CODE_DEFINITION(81, 81, c7, 86, 30, ff, TMPL_VERSION_FILTER);	// s - Version identifier filter
+	OBIS_CODE_DEFINITION(81, 81, c7, 86, 31, ff, TMPL_DEVICE_CLASS);	// s - Device class, on the basis of which associated sensors / actuators are identified
+	OBIS_CODE_DEFINITION(81, 81, c7, 86, 32, ff, TMPL_DEVICE_CLASS_FILTER);	// s - Filter for the device class
 	OBIS_CODE_DEFINITION(81, 81, c7, 87, 81, ff, DATA_REGISTER_PERIOD);	// u32 - register period in seconds (0 == event driven)
 	OBIS_CODE_DEFINITION(81, 81, c7, 88, 01, ff, ROOT_NTP);
 	OBIS_CODE_DEFINITION(81, 81, c7, 88, 02, ff, NTP_SERVER);	// List of NTP servers
@@ -557,7 +584,7 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 12, ATTENTION_END_LIMIT_BEFORE_START);	// attention: end limit before start
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	// attention: range is empty - not the profile
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 14, ATTENTION_MISSING_CLOSE_MSG);	// attention: missing close message
-	// #549
+	// #570
 	// next group
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 00, ff, ROOT_BROKER);	// 90 00 00 00 00 NN - broker list
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 01, ff, BROKER_LOGIN);
@@ -567,7 +594,7 @@
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 05, ff, BROKER_PWD);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 06, ff, BROKER_TIMEOUT);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, a0, ff, BROKER_BLOCKLIST);
-	// #557
+	// #578
 	// next group
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 00, ff, ROOT_SERIAL);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 01, ff, SERIAL_NAME);	// example: /dev/ttyAPP0
@@ -577,7 +604,7 @@
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 05, ff, SERIAL_STOPBITS);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 06, ff, SERIAL_SPEED);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 07, ff, SERIAL_TASK);	// LMN port task
-	// #565
+	// #586
 	// next group
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 00, ff, ROOT_NMS);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 01, ff, NMS_ADDRESS);
@@ -585,7 +612,7 @@
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 03, ff, NMS_USER);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 04, ff, NMS_PWD);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 05, ff, NMS_ENABLED);
-	// #571
+	// #592
 	// next group
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 00, ff, ROOT_REDIRECTOR);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 01, ff, REDIRECTOR_LOGIN);
@@ -593,7 +620,7 @@
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 03, ff, REDIRECTOR_SERVICE);	// u16 - port
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 04, ff, REDIRECTOR_USER);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 05, ff, REDIRECTOR_PWD);
-	// #577
+	// #598
 	// next group
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	// current data set
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 04, LIST_SERVICES);

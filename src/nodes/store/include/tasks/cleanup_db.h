@@ -7,7 +7,6 @@
 #ifndef SMF_REPORT_TASK_CLEANUP_DB_H
 #define SMF_REPORT_TASK_CLEANUP_DB_H
 
-
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/eod.h>
@@ -27,13 +26,14 @@ namespace smf {
             >;
 
       public:
-          cleanup_db(
+        cleanup_db(
             cyng::channel_weak wp,
             cyng::controller &ctl,
             cyng::logger logger,
             cyng::db::session db,
             cyng::obis profile,
-            std::chrono::hours max_age);
+            std::chrono::hours max_age,
+            std::size_t limit);
 
         ~cleanup_db() = default;
 
@@ -49,6 +49,7 @@ namespace smf {
         cyng::db::session db_;
         cyng::obis const profile_;
         std::chrono::hours const max_age_;
+        std::size_t const limit_;
     };
 
 } // namespace smf

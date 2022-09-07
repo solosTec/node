@@ -95,11 +95,13 @@ namespace smf {
     data::profile_t collect_data_by_time_range(
         cyng::db::session db,
         cyng::obis profile,
+        cyng::obis_path_t const &filter,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end);
 
     gap::readout_t collect_readouts_by_time_range(
         cyng::db::session db,
+        gap::readout_t const &initial_data,
         cyng::obis profile,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end);
@@ -124,8 +126,10 @@ namespace smf {
 
     /**
      * remove outdated records of the specified profile
+     *
+     * @param limit max number of records to delete
      */
-    std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point);
+    std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point, std::size_t limit);
 
 } // namespace smf
 

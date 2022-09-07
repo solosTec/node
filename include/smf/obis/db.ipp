@@ -105,7 +105,7 @@ case 0x10001080061: return "EDL21_LAST_7d";	// Consumption over the last 7 days
 case 0x10001080062: return "EDL21_LAST_30d";	// Consumption over the last 30 days
 case 0x10001080063: return "EDL21_LAST_365d";	// Consumption over the last 365 days
 case 0x10001080064: return "EDL21_LAST_RESET";	// Consumption since last reset
-case 0x100010800ff: return "REG_POS_ACT_E";	// Positive active energy(A+)
+case 0x100010800ff: return "REG_POS_ACT_E";	// Positive active energy(A+), current value
 case 0x100010801ff: return "REG_POS_ACT_E_T1";	// Positive active energy(A+) in tariff T1
 case 0x100010802ff: return "REG_POS_ACT_E_T2";	// Positive active energy(A+) in tariff T2
 case 0x100010803ff: return "REG_POS_ACT_E_T3";	// Positive active energy(A+) in tariff T3
@@ -272,6 +272,22 @@ case 0x10060350bff: return "REG_TAMPER_ENERGY_5";	// Tamper 5 energy
 case 0x100605700ff: return "REG_ACTIVE_TARFIFF";	// Active tariff
 case 0x100606009ff: return "REG_FRAUD_FLAG";	// Fraud flag
 case 0x101621700ff: return "REG_SM_POWER_THRESHOLD";	// Power threshold (D.23.0)
+case 0x40000010aff: return "REG_HCA_10";	// Local date at set date
+case 0x400000901ff: return "REG_HCA_F";	// Current time at time of transmission
+case 0x400000902ff: return "REG_HCA_G";	// Current date at time of transmission
+case 0x400010001ff: return "REG_HCA_0";	// Unrated integral, current value
+case 0x400010200ff: return "REG_HCA_2";	// Unrated integral, set date value
+case 0x600000800ff: return "REG_HEAT_AED";	// Power (energy flow) (P ), average, current value
+case 0x600010000ff: return "REG_HEAT_CURRENT";	// Energy (A), total, current value
+case 0x600010200ff: return "REG_HEAT_SET_DATE";	// Energy (A), total, set date value
+case 0x70000081cff: return "REG_GAS_INT";	// Averaging duration for actual flow rate value
+case 0x700002a02ff: return "REG_GAS_BP";	// defined Pressure, absolute, at base conditions
+case 0x700030000ff: return "REG_GAS_MC_0_0";	// Volume (meter), 
+case 0x700030100ff: return "REG_GAS_MC_1_0";	// Volume (meter), temperature converted (Vtc), forward, absolute, current value
+case 0x700030200ff: return "REG_GAS_MC_2_0";	// Volume (meter), base conditions (Vb), forward, absolute, current value
+case 0x7002b0f00ff: return "REG_GAS_FR_15";	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
+case 0x7002b1000ff: return "REG_GAS_FR_16";	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
+case 0x7002b1100ff: return "REG_GAS_FR_17";	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
 case 0x800010000ff: return "WATER_CURRENT";	// Volume (V), accumulated, total, current value
 case 0x800010200ff: return "WATER_DATE";	// Volume (V), accumulated, total, due date value
 case 0x800020000ff: return "WATER_FLOW_RATE";	// Flow rate, average (Va/t), current value 
@@ -356,6 +372,7 @@ case 0x814800000002: return "LOG_SOURCE_WAN_IP";
 case 0x814800000003: return "LOG_SOURCE_WAN_PPPoE";
 case 0x814800320101: return "LAN_PPPoE_ENABLED";
 case 0x814800320201: return "LAN_DHCP_ENABLED";
+case 0x814800320301: return "LAN_DSL_ENABLED";	// true = DLS, false = LAN
 case 0x81480d0600ff: return "ROOT_LAN_DSL";	// see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
 case 0x814817070000: return "CODE_IF_LAN_ADDRESS";	// IPv4 or IPv6 address
 case 0x814817070001: return "CODE_IF_DSL_ADDRESS";	// IPv4 or IPv6 address
@@ -370,7 +387,7 @@ case 0x814817070600: return "CODE_IF_LAN_DNS_TERTIARY";
 case 0x814817070601: return "CODE_IF_LAN_DLS_TERTIARY";	// set/get OBIS_IF_LAN_DSL
 case 0x814827320601: return "TCP_WAIT_TO_RECONNECT";
 case 0x814831320201: return "TCP_CONNECT_RETRIES";
-case 0x814831320701: return "TCP_REPLY_ICMP";	// reply tp received ICMP packages
+case 0x814831320701: return "TCP_REPLY_ICMP";	// reply to received ICMP packages
 case 0x814900000001: return "LOG_SOURCE_WAN_IPT_CONTROLLER";
 case 0x814900000002: return "LOG_SOURCE_WAN_IPT";
 case 0x8149000010ff: return "PUSH_SERVICE";	// options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
@@ -479,6 +496,10 @@ case 0x8181c78618ff: return "PROFILE_INITIAL";	// 81, 81, C7, 86, 18, NN with NN
 case 0x8181c78620ff: return "ROOT_DATA_COLLECTOR";	// data collector root element (Eigenschaften eines Datensammlers)
 case 0x8181c78621ff: return "DATA_COLLECTOR_ACTIVE";
 case 0x8181c78622ff: return "DATA_COLLECTOR_SIZE";	// max. table size
+case 0x8181c7862fff: return "TMPL_VERSION";	// Version identifier
+case 0x8181c78630ff: return "TMPL_VERSION_FILTER";	// Version identifier filter
+case 0x8181c78631ff: return "TMPL_DEVICE_CLASS";	// Device class, on the basis of which associated sensors / actuators are identified
+case 0x8181c78632ff: return "TMPL_DEVICE_CLASS_FILTER";	// Filter for the device class
 case 0x8181c78781ff: return "DATA_REGISTER_PERIOD";	// register period in seconds (0 == event driven)
 case 0x8181c78801ff: return "ROOT_NTP";
 case 0x8181c78802ff: return "NTP_SERVER";	// List of NTP servers

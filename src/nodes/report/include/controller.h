@@ -43,10 +43,16 @@ namespace smf {
          * option --generate csv, -G
          */
         bool generate_csv_reports(cyng::object &&cfg);
+
         /**
          * option --generate lpex, -G
          */
         bool generate_lpex_reports(cyng::object &&cfg);
+
+        /**
+         * option --generate gap, -G
+         */
+        bool generate_gap_reports(cyng::object &&cfg);
 
       private:
         cyng::channel_ptr cluster_;
@@ -55,6 +61,7 @@ namespace smf {
     cyng::param_t create_cluster_spec();
     cyng::prop_t create_csv_spec(cyng::obis, std::filesystem::path, bool enabled, std::chrono::hours);
     cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
+    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::size_t hours, bool enabled);
 
 } // namespace smf
 

@@ -21,6 +21,7 @@ namespace smf {
     void generate_lpex(
         cyng::db::session db,
         cyng::obis profile,
+        cyng::obis_path_t filter,
         std::filesystem::path root,
         std::chrono::hours backtrack,
         std::chrono::system_clock::time_point now,
@@ -36,12 +37,21 @@ namespace smf {
         switch (profile.to_uint64()) {
         case CODE_PROFILE_1_MINUTE:
             lpex::generate_report_1_minute(
-                db, profile, root, prefix, cyng::sys::get_start_of_day(now - backtrack), now, utc_offset, print_version);
+                db,
+                profile,
+                filter,
+                root,
+                prefix,
+                cyng::sys::get_start_of_day(now - backtrack), //  start
+                now,
+                utc_offset,
+                print_version);
             break;
         case CODE_PROFILE_15_MINUTE:
             lpex::generate_report_15_minutes(
                 db,
                 profile,
+                filter,
                 root,
                 prefix,
                 cyng::sys::get_start_of_day(now - backtrack), //  start
@@ -53,6 +63,7 @@ namespace smf {
             lpex::generate_report_60_minutes(
                 db,
                 profile,
+                filter,
                 root,
                 prefix,
                 cyng::sys::get_start_of_month(now - backtrack),
@@ -64,6 +75,7 @@ namespace smf {
             lpex::generate_report_24_hour(
                 db,
                 profile,
+                filter,
                 root,
                 prefix,
                 cyng::sys::get_start_of_month(now - backtrack),
@@ -75,6 +87,7 @@ namespace smf {
             lpex::generate_report_1_month(
                 db,
                 profile,
+                filter,
                 root,
                 prefix,
                 cyng::sys::get_start_of_year(now - backtrack),
@@ -86,6 +99,7 @@ namespace smf {
             lpex::generate_report_1_year(
                 db,
                 profile,
+                filter,
                 root,
                 prefix,
                 cyng::sys::get_start_of_year(now - backtrack),
@@ -105,6 +119,7 @@ namespace smf {
         void generate_report_1_minute(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
@@ -118,6 +133,7 @@ namespace smf {
         void generate_report_15_minutes(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
@@ -139,9 +155,11 @@ namespace smf {
                 start = generate_report_15_minutes(
                     db,
                     profile,
+                    filter,
                     root,
                     prefix,
-                    start + utc_offset, // compensate time difference to UTC
+                    start, // compensate time difference to UTC
+                    utc_offset,
                     std::chrono::hours(24),
                     print_version);
             }
@@ -150,9 +168,11 @@ namespace smf {
         std::chrono::system_clock::time_point generate_report_15_minutes(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span,
             bool print_version) {
 
@@ -161,14 +181,13 @@ namespace smf {
 
 #ifdef _DEBUG
             std::cout << "start 15 min report ";
-            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
+            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - entries: ");
+            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M (UTC) - entries: ");
             std::cout << count << std::endl;
 #endif
 
-            collect_report(db, profile, root, prefix, start, end, count, print_version);
-
+            collect_report(db, profile, filter, root, prefix, start + utc_offset, end + utc_offset, count, print_version);
             return end;
         }
 
@@ -178,6 +197,7 @@ namespace smf {
         void generate_report_60_minutes(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
@@ -202,9 +222,11 @@ namespace smf {
                 start = generate_report_60_minutes(
                     db,
                     profile,
+                    filter,
                     root,
                     prefix,
-                    start + utc_offset,                    // compensate time difference to UTC
+                    start, // compensate time difference to UTC
+                    utc_offset,
                     cyng::sys::get_length_of_month(start), // time range 1 month
                     print_version);
             }
@@ -213,9 +235,11 @@ namespace smf {
         std::chrono::system_clock::time_point generate_report_60_minutes(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span,
             bool print_version) {
 
@@ -224,14 +248,13 @@ namespace smf {
 
 #ifdef _DEBUG
             std::cout << "start 60 min report ";
-            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
+            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - max. entries: ");
+            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M (UTC) - max. entries: ");
             std::cout << count << std::endl;
 #endif
 
-            collect_report(db, profile, root, prefix, start, end, count, print_version);
-
+            collect_report(db, profile, filter, root, prefix, start + utc_offset, end + utc_offset, count, print_version);
             return end;
         }
 
@@ -241,6 +264,7 @@ namespace smf {
         void generate_report_24_hour(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
@@ -262,9 +286,11 @@ namespace smf {
                 start = generate_report_24_hour(
                     db,
                     profile,
+                    filter,
                     root,
                     prefix,
-                    start + utc_offset,                    // compensate time difference to UTC
+                    start, // compensate time difference to UTC
+                    utc_offset,
                     cyng::sys::get_length_of_month(start), //  time range 1 month
                     print_version);
             }
@@ -273,9 +299,11 @@ namespace smf {
         std::chrono::system_clock::time_point generate_report_24_hour(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span,
             bool print_version) {
 
@@ -284,14 +312,13 @@ namespace smf {
 
 #ifdef _DEBUG
             std::cout << "start 24 h report ";
-            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
+            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - entries: ");
+            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M (UTC) - entries: ");
             std::cout << count << std::endl;
 #endif
 
-            collect_report(db, profile, root, prefix, start, end, count, print_version);
-
+            collect_report(db, profile, filter, root, prefix, start + utc_offset, end + utc_offset, count, print_version);
             return end;
         }
 
@@ -301,6 +328,7 @@ namespace smf {
         void generate_report_1_month(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
@@ -314,6 +342,7 @@ namespace smf {
         void generate_report_1_year(
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point,
@@ -355,6 +384,7 @@ namespace smf {
         void collect_report(
             cyng::db::session db,
             cyng::obis profile,
+            cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
@@ -365,7 +395,7 @@ namespace smf {
             //
             //  collect data from this time range ordered by meter -> register -> timepoint
             //
-            auto const data = collect_data_by_time_range(db, profile, start, end);
+            auto const data = collect_data_by_time_range(db, profile, filter, start, end);
 
             //
             //  loop over all meters

@@ -53,11 +53,13 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::minutes utc_offset);
 
-        std::chrono::system_clock::time_point generate_report_15_minutes(
+        std::pair<std::chrono::system_clock::time_point, gap::readout_t> generate_report_15_minutes(
             cyng::db::session db,
+            gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span);
 
         /**
@@ -71,11 +73,13 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::minutes utc_offset);
 
-        std::chrono::system_clock::time_point generate_report_60_minutes(
+        std::pair<std::chrono::system_clock::time_point, gap::readout_t> generate_report_60_minutes(
             cyng::db::session db,
+            gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span);
 
         /**
@@ -89,11 +93,13 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::minutes utc_offset);
 
-        std::chrono::system_clock::time_point generate_report_24_hour(
+        std::pair<std::chrono::system_clock::time_point, gap::readout_t> generate_report_24_hour(
             cyng::db::session db,
+            gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point start,
+            std::chrono::minutes utc_offset,
             std::chrono::hours span);
 
         /**
@@ -118,8 +124,9 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::minutes utc_offset);
 
-        void collect_report(
+        gap::readout_t collect_report(
             cyng::db::session,
+            gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point,

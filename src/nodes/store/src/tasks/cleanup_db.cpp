@@ -22,7 +22,8 @@ namespace smf {
         cyng::logger logger, 
         cyng::db::session db, 
         cyng::obis profile, 
-        std::chrono::hours max_age)
+        std::chrono::hours max_age,
+        std::size_t limit)
         : sigs_{
             std::bind(&cleanup_db::run, this, std::placeholders::_1), // start
             std::bind(&cleanup_db::stop, this, std::placeholders::_1) // stop
@@ -32,7 +33,8 @@ namespace smf {
         , logger_(logger)
         , db_(db)
         , profile_(profile)
-        , max_age_(max_age) {
+        , max_age_(max_age)
+        , limit_(limit < 64 ? 64 : limit) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -53,7 +55,7 @@ namespace smf {
             //
             //  cleanup
             //
-            auto const size = smf::cleanup(db_, profile_, now - max_age_);
+            auto const size = smf::cleanup(db_, profile_, now - max_age_, limit_);
             CYNG_LOG_INFO(
                 logger_,
                 "[cleanup] " << size << " records older than " << max_age_.count() << "h from " << obis::get_name(profile_)

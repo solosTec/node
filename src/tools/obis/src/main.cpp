@@ -59,10 +59,13 @@ int main(int argc, char **argv) {
 
     using edis_map_t = std::map<cyng::edis, edis_ctx>;
 
-    static edis_map_t edis_map{
+    /**
+     * electricity
+     */
+    static edis_map_t edis_map_electricity{
 
         // Active energy registers (german - Wirkarbeit):
-        {cyng::edis(1, 8, 0), {"REG_POS_ACT_E", "Positive active energy(A+)", "kWh"}},
+        {cyng::edis(1, 8, 0), {"REG_POS_ACT_E", "Positive active energy(A+), current value", "kWh"}},
         {cyng::edis(1, 8, 1), {"REG_POS_ACT_E_T1", "Positive active energy(A+) in tariff T1", "kWh"}},
         {cyng::edis(1, 8, 2), {"REG_POS_ACT_E_T2", "Positive active energy(A+) in tariff T2", "kWh"}},
         {cyng::edis(1, 8, 3), {"REG_POS_ACT_E_T3", "Positive active energy(A+) in tariff T3", "kWh"}},
@@ -339,6 +342,54 @@ int main(int argc, char **argv) {
         {cyng::edis(1, 1, 9), {"REG_TEMPERATURE", "Temperature", ""}},
 
         {cyng::edis(61, 0x61, 0), {"REG_FATAL_ERROR_METER_STATUS", "Fatal error meter status", ""}}};
+
+    /**
+     * heat cost allocation (4)
+     */
+    static edis_map_t edis_map_hca{
+
+        {cyng::edis(1, 0, 1), {"REG_HCA_0", "Unrated integral, current value", ""}},      // meter count
+        {cyng::edis(1, 2, 0), {"REG_HCA_2", "Unrated integral, set date value", ""}},     // meter count
+        {cyng::edis(0, 9, 1), {"REG_HCA_F", "Current time at time of transmission", ""}}, // time of count
+        {cyng::edis(0, 9, 2), {"REG_HCA_G", "Current date at time of transmission", ""}}, // time of count
+        {cyng::edis(0, 1, 10), {"REG_HCA_10", "Local date at set date", ""}}              // time of count
+    };
+
+    /**
+     * heat (6)
+     */
+    static edis_map_t edis_map_heat{
+
+        {cyng::edis(1, 0, 0), {"REG_HEAT_CURRENT", "Energy (A), total, current value", "kWh"}},          // meter count
+        {cyng::edis(1, 2, 0), {"REG_HEAT_SET_DATE", "Energy (A), total, set date value", "kWh"}},        // meter count
+        {cyng::edis(0, 8, 0), {"REG_HEAT_AED", "Power (energy flow) (P ), average, current value", "W"}} // power
+    };
+
+    /**
+     * gas (7)
+     */
+    static edis_map_t edis_map_gas{
+
+        {cyng::edis(3, 0, 0), {"REG_GAS_MC_0_0", "Volume (meter), ", "m3"}}, // meter count
+        {cyng::edis(3, 1, 0),
+         {"REG_GAS_MC_1_0", "Volume (meter), temperature converted (Vtc), forward, absolute, current value", "m3"}}, // meter count
+        {cyng::edis(3, 2, 0),
+         {"REG_GAS_MC_2_0", "Volume (meter), base conditions (Vb), forward, absolute, current value", "m3"}}, // meter count
+        {cyng::edis(43, 15, 0),
+         {"REG_GAS_FR_15",
+          "Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval ",
+          "m3/h"}}, // flow rate
+        {cyng::edis(43, 16, 0),
+         {"REG_GAS_FR_16",
+          "Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval",
+          "m3/h"}}, // flow rate
+        {cyng::edis(43, 17, 0),
+         {"REG_GAS_FR_17",
+          "Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval",
+          "m3/h"}},                                                                                      // flow rate
+        {cyng::edis(0, 42, 2), {"REG_GAS_BP", "defined Pressure, absolute, at base conditions", "bar"}}, // Base pressure
+        {cyng::edis(0, 8, 28), {"REG_GAS_INT", "Averaging duration for actual flow rate value", "hour"}} // Time integral
+    };
 
     using obis_map_t = std::map<cyng::obis, obis_ctx>;
     obis_map_t obis_map{
@@ -828,12 +879,66 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(99, 00, 00, 00, 00, 05), {"FTP_UPDATE", cyng::TC_NULL, ""}}};
 
     //
-    //	add EDIS codes
+    //	add EDIS codes electricity
     //
-    for (auto const &edx : edis_map) {
+    for (auto const &edx : edis_map_electricity) {
         //{ DEFINE_OBIS(00, 00, 00, 00, 00, ff), { "METER_ADDRESS", cyng::TC_NULL, "" }}
         cyng::obis const o(
             1,
+            0,
+            edx.first[cyng::edis::value_group::VG_INDICATOR],
+            edx.first[cyng::edis::value_group::VG_MODE],
+            edx.first[cyng::edis::value_group::VG_QUANTITY],
+            0xff);
+        auto const r = obis_map.emplace(o, obis_ctx(edx.second.get_short(), cyng::TC_NULL, edx.second.get_name()));
+        if (r.second) {
+            std::cout << "edis " << edx.second.get_short() << ": " << edx.second.get_name() << std::endl;
+        } else {
+            using cyng::operator<<;
+            std::cout << "edis " << edx.first << " failed" << std::endl;
+        }
+    }
+
+    for (auto const &edx : edis_map_hca) {
+        //{ DEFINE_OBIS(04, 00, 00, 00, 00, ff), { "NAME", cyng::TC_NULL, "" }}
+        cyng::obis const o(
+            4,
+            0,
+            edx.first[cyng::edis::value_group::VG_INDICATOR],
+            edx.first[cyng::edis::value_group::VG_MODE],
+            edx.first[cyng::edis::value_group::VG_QUANTITY],
+            0xff);
+        auto const r = obis_map.emplace(o, obis_ctx(edx.second.get_short(), cyng::TC_NULL, edx.second.get_name()));
+        if (r.second) {
+            std::cout << "edis " << edx.second.get_short() << ": " << edx.second.get_name() << std::endl;
+        } else {
+            using cyng::operator<<;
+            std::cout << "edis " << edx.first << " failed" << std::endl;
+        }
+    }
+
+    for (auto const &edx : edis_map_heat) {
+        //{ DEFINE_OBIS(06, 00, 00, 00, 00, ff), { "NAME", cyng::TC_NULL, "" }}
+        cyng::obis const o(
+            6,
+            0,
+            edx.first[cyng::edis::value_group::VG_INDICATOR],
+            edx.first[cyng::edis::value_group::VG_MODE],
+            edx.first[cyng::edis::value_group::VG_QUANTITY],
+            0xff);
+        auto const r = obis_map.emplace(o, obis_ctx(edx.second.get_short(), cyng::TC_NULL, edx.second.get_name()));
+        if (r.second) {
+            std::cout << "edis " << edx.second.get_short() << ": " << edx.second.get_name() << std::endl;
+        } else {
+            using cyng::operator<<;
+            std::cout << "edis " << edx.first << " failed" << std::endl;
+        }
+    }
+
+    for (auto const &edx : edis_map_gas) {
+        //{ DEFINE_OBIS(07, 00, 00, 00, 00, ff), { "NAME", cyng::TC_NULL, "" }}
+        cyng::obis const o(
+            7,
             0,
             edx.first[cyng::edis::value_group::VG_INDICATOR],
             edx.first[cyng::edis::value_group::VG_MODE],

@@ -300,12 +300,18 @@ namespace smf {
                     CYNG_LOG_DEBUG(logger_, "[ipt] write #" << buffer_write_.size() << ":\n" << dmp);
                 }
 #endif
-
-                // Start an asynchronous operation to send a heartbeat message.
-                boost::asio::async_write(
-                    socket_,
-                    boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-                    dispatcher_.wrap(std::bind(&bus::handle_write, this, sp, std::placeholders::_1)));
+                try {
+                    // Start an asynchronous operation to send a heartbeat message.
+                    boost::asio::async_write(
+                        socket_,
+                        boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
+                        dispatcher_.wrap(std::bind(&bus::handle_write, this, sp, std::placeholders::_1)));
+                } catch (std::exception const &ex) {
+                    CYNG_LOG_FATAL(logger_, "[ipt] write #" << buffer_write_.size() << ": " << ex.what());
+                    socket_.close();
+                    //  restart
+                    start();
+                }
             }
         }
 

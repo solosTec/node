@@ -105,7 +105,7 @@ case 0x10001080061: return "Consumption over the last 7 days";	// Consumption ov
 case 0x10001080062: return "Consumption over the last 30 days";	// Consumption over the last 30 days
 case 0x10001080063: return "Consumption over the last 365 days";	// Consumption over the last 365 days
 case 0x10001080064: return "Consumption since last reset";	// Consumption since last reset
-case 0x100010800ff: return "Positive active energy(A+)";	// Positive active energy(A+)
+case 0x100010800ff: return "Positive active energy(A+), current value";	// Positive active energy(A+), current value
 case 0x100010801ff: return "Positive active energy(A+) in tariff T1";	// Positive active energy(A+) in tariff T1
 case 0x100010802ff: return "Positive active energy(A+) in tariff T2";	// Positive active energy(A+) in tariff T2
 case 0x100010803ff: return "Positive active energy(A+) in tariff T3";	// Positive active energy(A+) in tariff T3
@@ -272,6 +272,22 @@ case 0x10060350bff: return "Tamper 5 energy";	// Tamper 5 energy
 case 0x100605700ff: return "Active tariff";	// Active tariff
 case 0x100606009ff: return "Fraud flag";	// Fraud flag
 case 0x101621700ff: return "Power threshold (D.23.0)";	// Power threshold (D.23.0)
+case 0x40000010aff: return "Local date at set date";	// Local date at set date
+case 0x400000901ff: return "Current time at time of transmission";	// Current time at time of transmission
+case 0x400000902ff: return "Current date at time of transmission";	// Current date at time of transmission
+case 0x400010001ff: return "Unrated integral, current value";	// Unrated integral, current value
+case 0x400010200ff: return "Unrated integral, set date value";	// Unrated integral, set date value
+case 0x600000800ff: return "Power (energy flow) (P ), average, current value";	// Power (energy flow) (P ), average, current value
+case 0x600010000ff: return "Energy (A), total, current value";	// Energy (A), total, current value
+case 0x600010200ff: return "Energy (A), total, set date value";	// Energy (A), total, set date value
+case 0x70000081cff: return "Averaging duration for actual flow rate value";	// Averaging duration for actual flow rate value
+case 0x700002a02ff: return "defined Pressure, absolute, at base conditions";	// defined Pressure, absolute, at base conditions
+case 0x700030000ff: return "Volume (meter), ";	// Volume (meter), 
+case 0x700030100ff: return "Volume (meter), temperature converted (Vtc), forward, absolute, current value";	// Volume (meter), temperature converted (Vtc), forward, absolute, current value
+case 0x700030200ff: return "Volume (meter), base conditions (Vb), forward, absolute, current value";	// Volume (meter), base conditions (Vb), forward, absolute, current value
+case 0x7002b0f00ff: return "Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval ";	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
+case 0x7002b1000ff: return "Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval";	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
+case 0x7002b1100ff: return "Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval";	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
 case 0x800010000ff: return "Volume (V), accumulated, total, current value";	// Volume (V), accumulated, total, current value
 case 0x800010200ff: return "Volume (V), accumulated, total, due date value";	// Volume (V), accumulated, total, due date value
 case 0x800020000ff: return "Flow rate, average (Va/t), current value ";	// Flow rate, average (Va/t), current value 
@@ -356,6 +372,7 @@ case 0x814800000002: return "";
 case 0x814800000003: return "";
 case 0x814800320101: return "";
 case 0x814800320201: return "";
+case 0x814800320301: return "true = DLS, false = LAN";	// true = DLS, false = LAN
 case 0x81480d0600ff: return "see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter";	// see: 7.3.1.19 Datenstruktur zur Abfrage dynamischer LAN/DSL- Betriebsparameter
 case 0x814817070000: return "IPv4 or IPv6 address";	// IPv4 or IPv6 address
 case 0x814817070001: return "IPv4 or IPv6 address";	// IPv4 or IPv6 address
@@ -370,7 +387,7 @@ case 0x814817070600: return "";
 case 0x814817070601: return "set/get OBIS_IF_LAN_DSL";	// set/get OBIS_IF_LAN_DSL
 case 0x814827320601: return "";
 case 0x814831320201: return "";
-case 0x814831320701: return "reply tp received ICMP packages";	// reply tp received ICMP packages
+case 0x814831320701: return "reply to received ICMP packages";	// reply to received ICMP packages
 case 0x814900000001: return "";
 case 0x814900000002: return "";
 case 0x8149000010ff: return "options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX";	// options are PUSH_SERVICE_IPT, PUSH_SERVICE_SML or PUSH_SERVICE_KNX
@@ -479,6 +496,10 @@ case 0x8181c78618ff: return "81, 81, C7, 86, 18, NN with NN = 01 .. 0A for open 
 case 0x8181c78620ff: return "data collector root element (Eigenschaften eines Datensammlers)";	// data collector root element (Eigenschaften eines Datensammlers)
 case 0x8181c78621ff: return "";
 case 0x8181c78622ff: return "max. table size";	// max. table size
+case 0x8181c7862fff: return "Version identifier";	// Version identifier
+case 0x8181c78630ff: return "Version identifier filter";	// Version identifier filter
+case 0x8181c78631ff: return "Device class, on the basis of which associated sensors / actuators are identified";	// Device class, on the basis of which associated sensors / actuators are identified
+case 0x8181c78632ff: return "Filter for the device class";	// Filter for the device class
 case 0x8181c78781ff: return "register period in seconds (0 == event driven)";	// register period in seconds (0 == event driven)
 case 0x8181c78801ff: return "";
 case 0x8181c78802ff: return "List of NTP servers";	// List of NTP servers

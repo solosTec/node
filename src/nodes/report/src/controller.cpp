@@ -16,6 +16,7 @@
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
 #include <smf/report/csv.h>
+#include <smf/report/gap.h>
 #include <smf/report/lpex.h>
 #include <smf/report/utility.h>
 
@@ -91,11 +92,31 @@ namespace smf {
                 "lpex",
                 cyng::make_tuple(
                     cyng::make_param("print-version", true), // if true first line contains the LPEx version
+                    // 1-0:1.8.0*255    (01 00 01 08 00 FF)
+                    // 1-0:1.8.1*255    (01 00 01 08 01 FF)
+                    // 1-0:1.8.2*255    (01 00 01 08 02 FF)
+                    // 1-0:16.7.0*255   (01 00 10 07 00 FF)
+                    // 1-0:2.0.0*255    (01 00 02 00 00 FF)
+                    // 7-0:3.0.0*255    (07 00 03 00 00 FF) // Volume (meter), temperature converted (Vtc), forward, absolute,
+                    // current value 7-0:3.1.0*1      (07 00 03 01 00 01)
+                    cyng::make_param(
+                        "filter",
+                        cyng::obis_path_t{OBIS_REG_POS_ACT_E, OBIS_REG_POS_ACT_E_T1, OBIS_REG_GAS_MC_0_0}), // only this obis codes
+                                                                                                            // will be accepted
                     create_lpex_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
                     create_lpex_spec(OBIS_PROFILE_60_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
                     create_lpex_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
                     create_lpex_spec(OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH)) // one month
                     )                                                                                             // LPEx reports
+                ),
+
+            cyng::make_param(
+                "gap",
+                cyng::make_tuple(
+                    create_gap_spec(OBIS_PROFILE_1_MINUTE, cwd, 48, false),
+                    create_gap_spec(OBIS_PROFILE_15_MINUTE, cwd, 48, true),
+                    create_gap_spec(OBIS_PROFILE_60_MINUTE, cwd, 800, true),
+                    create_gap_spec(OBIS_PROFILE_24_HOUR, cwd, 800, true)) // gap reports
                 ),
 
             create_cluster_spec())});
@@ -121,6 +142,16 @@ namespace smf {
                 cyng::make_param("backtrack-hours", backtrack.count()),
                 cyng::make_param("prefix", "LPEx-"),
                 cyng::make_param("offset", 15), //  minutes
+                cyng::make_param("enabled", enabled)));
+    }
+
+    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::size_t hours, bool enabled) {
+        return cyng::make_prop(
+            profile,
+            cyng::make_tuple(
+                cyng::make_param("name", obis::get_name(profile)),
+                cyng::make_param("path", (cwd / "gap-reports" / get_prefix(profile)).string()),
+                cyng::make_param("backtrack-hours", hours),
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -216,6 +247,8 @@ namespace smf {
                 generate_csv_reports(read_config_section(config_.json_path_, config_.config_index_));
             } else if (boost::algorithm::equals(type, "lpex")) {
                 generate_lpex_reports(read_config_section(config_.json_path_, config_.config_index_));
+            } else if (boost::algorithm::equals(type, "gap")) {
+                generate_gap_reports(read_config_section(config_.json_path_, config_.config_index_));
             }
             return true; //  stop application
         }
@@ -284,6 +317,7 @@ namespace smf {
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
 
                 auto const print_version = reader["lpex"].get("print-version", true);
+                auto const filter = cyng::to_obis_path(reader["lpex"].get("filter", ""));
                 for (auto const &cfg_report : reports) {
                     //
                     //  skip "print-version" entry
@@ -304,9 +338,19 @@ namespace smf {
                                     std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
                                 }
                             }
+                            auto const backtrack = std::chrono::hours(reader_report.get("backtrack-hours", 40));
 
                             auto const prefix = reader_report.get("prefix", "");
-                            generate_lpex(s, profile, root, std::chrono::hours(40), now, prefix, utc_offset, print_version);
+                            generate_lpex(
+                                s,
+                                profile,
+                                filter,
+                                root,
+                                backtrack, //  backtrack hours
+                                now,
+                                prefix,
+                                utc_offset,
+                                print_version);
 
                         } else {
                             std::cout << "***info: report " << name << " is disabled" << std::endl;
@@ -321,4 +365,67 @@ namespace smf {
         }
         return false;
     }
+
+    bool controller::generate_gap_reports(cyng::object &&cfg) {
+        auto const reader = cyng::make_reader(std::move(cfg));
+
+        auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+        BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
+
+        auto const db_name = reader["DB"].get<std::string>("file-name", "");
+        if (std::filesystem::exists(db_name)) {
+            std::cout << "***info: file-name: " << db_name << std::endl;
+            auto s = cyng::db::create_db_session(reader.get("DB"));
+            if (s.is_alive()) {
+                auto const cwd = std::filesystem::current_path();
+                auto const now = std::chrono::system_clock::now();
+                auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("gap"));
+
+                // auto const print_version = reader["gap"].get("print-version", true);
+                // auto const filter = cyng::to_obis_path(reader["gap"].get("filter", ""));
+                for (auto const &cfg_report : reports) {
+                    //
+                    //  skip "print-version" and "filter" entry
+                    //
+                    if (!boost::algorithm::equals(cfg_report.first, "print-version") &&
+                        !boost::algorithm::starts_with(cfg_report.first, "filter")) {
+                        auto const reader_report = cyng::make_reader(cfg_report.second);
+                        auto const name = reader_report.get("name", "no-name");
+
+                        if (reader_report.get("enabled", false)) {
+                            auto const profile = cyng::to_obis(cfg_report.first);
+                            std::cout << "***info: gap generate report " << name << " (" << profile << ")" << std::endl;
+                            auto const root = reader_report.get("path", cwd.string());
+
+                            if (!std::filesystem::exists(root)) {
+                                std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                                std::error_code ec;
+                                if (!std::filesystem::create_directories(root, ec)) {
+                                    std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                                }
+                            }
+                            auto const backtrack = std::chrono::hours(reader_report.get("backtrack-hours", 40));
+
+                            generate_gap(
+                                s,
+                                profile,
+                                root,
+                                backtrack, //  backtrack hours
+                                now,
+                                utc_offset);
+
+                        } else {
+                            std::cout << "***info: gap report " << name << " is disabled" << std::endl;
+                        }
+                    }
+                }
+
+                return true;
+            }
+        } else {
+            std::cerr << "***error: database [" << db_name << "] not found";
+        }
+        return false;
+    }
+
 } // namespace smf

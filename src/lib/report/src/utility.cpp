@@ -214,6 +214,7 @@ namespace smf {
 
     gap::readout_t collect_readouts_by_time_range(
         cyng::db::session db,
+        gap::readout_t const &initial_data,
         cyng::obis profile,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
@@ -222,6 +223,13 @@ namespace smf {
         //  meter => slot => actTime
         //
         gap::readout_t data;
+
+        //
+        //  copy only meter IDs
+        //
+        for (auto const &init : initial_data) {
+            data.insert({init.first, {}});
+        }
 
         auto const ms = config::get_table_sml_readout();
         std::string const sql = "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) "
@@ -271,6 +279,7 @@ namespace smf {
     data::profile_t collect_data_by_time_range(
         cyng::db::session db,
         cyng::obis profile,
+        cyng::obis_path_t const &filter,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end) {
 
@@ -333,32 +342,37 @@ namespace smf {
                     auto const reg = rec.value("register", OBIS_DATA_COLLECTOR_REGISTER);
                     auto const unit = rec.value<std::uint8_t>("unit", 0u);
 
-                    auto pos = data.find(id);
-                    if (pos != data.end()) {
-                        //
-                        //  meter is already inserted - lookup register
-                        //
-                        auto pos_reg = pos->second.find(reg);
-                        if (pos_reg != pos->second.end()) {
+                    //
+                    //  apply filter if not empty
+                    //
+                    if (filter.empty() || std::find(filter.begin(), filter.end(), reg) != filter.end()) {
+                        auto pos = data.find(id);
+                        if (pos != data.end()) {
                             //
-                            //  register is already inserted - lookup time slot
+                            //  meter is already inserted - lookup register
                             //
-                            pos_reg->second.insert(data::make_readout(slot.first, code, scaler, unit, reading, status));
+                            auto pos_reg = pos->second.find(reg);
+                            if (pos_reg != pos->second.end()) {
+                                //
+                                //  register is already inserted - lookup time slot
+                                //
+                                pos_reg->second.insert(data::make_readout(slot.first, code, scaler, unit, reading, status));
+                            } else {
+                                //
+                                //  new register of this meter
+                                //
+                                pos->second.insert(
+                                    data::make_value(reg, data::make_readout(slot.first, code, scaler, unit, reading, status)));
+                            }
                         } else {
                             //
-                            //  new register of this meter
+                            //  new meter
+                            //  nested initialization doesn't work, so multiple steps are necessary
                             //
-                            pos->second.insert(
-                                data::make_value(reg, data::make_readout(slot.first, code, scaler, unit, reading, status)));
+                            data.insert(data::make_profile(
+                                id, data::make_value(reg, data::make_readout(slot.first, code, scaler, unit, reading, status))));
                         }
-                    } else {
-                        //
-                        //  new meter
-                        //  nested initialization doesn't work, so multiple steps are necessary
-                        //
-                        data.insert(data::make_profile(
-                            id, data::make_value(reg, data::make_readout(slot.first, code, scaler, unit, reading, status))));
-                    }
+                    } // filter
                 }
             }
         }
@@ -472,7 +486,7 @@ namespace smf {
         return std::nullopt;
     }
 
-    std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point tp) {
+    std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point tp, std::size_t limit) {
 
         std::set<boost::uuids::uuid> tags;
 
@@ -506,6 +520,10 @@ namespace smf {
                 while (auto res = stmt->get_result()) {
                     auto const tag = cyng::value_cast(res->get(1, cyng::TC_UUID, 0), boost::uuids::nil_uuid());
                     tags.insert(tag);
+                    --limit;
+                    if (limit == 0) {
+                        break;
+                    }
 #ifdef _DEBUG
                     // std::cout << tag << " #" << tags.size() << std::endl;
 #endif
