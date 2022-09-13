@@ -46,6 +46,7 @@ set (segw_tasks
     include/tasks/nms.h
     include/tasks/rdr.h
     include/tasks/en13757.h
+#    include/tasks/readout_cache.h
     include/tasks/counter.h
     include/tasks/push.h
     include/tasks/store.h
@@ -60,6 +61,7 @@ set (segw_tasks
     src/tasks/nms.cpp
     src/tasks/rdr.cpp
     src/tasks/en13757.cpp
+#    src/tasks/readout_cache.cpp
     src/tasks/counter.cpp
     src/tasks/push.cpp
     src/tasks/store.cpp
@@ -72,6 +74,7 @@ set (segw_config
     include/config/cfg_broker.h
     include/config/cfg_listener.h
     include/config/cfg_blocklist.h
+    include/config/cfg_cache.h
     include/config/cfg_gpio.h
     include/config/cfg_nms.h
     include/config/cfg_sml.h
@@ -83,6 +86,7 @@ set (segw_config
     src/config/cfg_broker.cpp
     src/config/cfg_listener.cpp
     src/config/cfg_blocklist.cpp
+    src/config/cfg_cache.cpp
     src/config/cfg_gpio.cpp
     src/config/cfg_nms.cpp
     src/config/cfg_sml.cpp

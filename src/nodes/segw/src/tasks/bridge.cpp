@@ -786,7 +786,8 @@ namespace smf {
             cfg_broker broker_cfg(cfg_, type);
             channel_filter->dispatch("reset-data-sinks"); //  clear listeners
             channel_filter->dispatch("add-data-sink", broker_cfg.get_task_name());
-            channel_filter->dispatch("add-data-sink", "EN-13757");
+            //  ToDo: configure "load profile", "readout cache"
+            channel_filter->dispatch("add-data-sink", "EN-13757");  //  load profile
 
         } else {
             CYNG_LOG_ERROR(logger_, "[filter] LMN type " << get_name(type) << " doesn't support filters");

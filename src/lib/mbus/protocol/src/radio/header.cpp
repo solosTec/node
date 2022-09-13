@@ -35,7 +35,7 @@ namespace smf {
                     static_cast<char>(data_.at(6)),
                     static_cast<char>(data_.at(7)),
 
-                    static_cast<char>(data_.at(8)),
+                    static_cast<char>(data_.at(8)), //  medium
                     static_cast<char>(data_.at(9))};
             }
             cyng::buffer_t restore_data(header const &h, tplayer const &t, cyng::buffer_t const &payload) {

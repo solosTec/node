@@ -5,8 +5,9 @@
  *
  */
 
-#include <smf/mbus/field_definitions.h>
 #include <smf/mbus/radio/parser.h>
+
+#include <smf/mbus/field_definitions.h>
 
 #include <boost/assert.hpp>
 

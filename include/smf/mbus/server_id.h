@@ -80,6 +80,7 @@ namespace smf {
      * @endcode
      */
     std::pair<char, char> get_manufacturer_code(srv_id_t);
+    std::uint16_t get_manufacturer_flag(srv_id_t);
 
     constexpr std::uint8_t get_medium(srv_id_t address) noexcept { return address.at(8); }
     const char *get_medium_name(srv_id_t address) noexcept;

@@ -1,2 +1,2 @@
-#define BOOST_TEST_MODULE DemoTests
+#define BOOST_TEST_MODULE SMF
 #include <boost/test/unit_test.hpp>

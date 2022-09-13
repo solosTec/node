@@ -156,10 +156,16 @@ namespace smf {
         return mbus::get_medium_name(static_cast<mbus::device_type>(get_medium(address)));
     }
 
-    std::pair<char, char> get_manufacturer_code(srv_id_t address) {
+    std::pair<char, char> get_manufacturer_code(srv_id_t id) {
 
-        return {static_cast<char>(address.at(1)), static_cast<char>(address.at(2))};
+        return {static_cast<char>(id.at(1)), static_cast<char>(id.at(2))};
     }
+
+    std::uint16_t get_manufacturer_flag(srv_id_t id) { 
+        auto const [c1, c2] = get_manufacturer_code(id);
+        return static_cast<unsigned char>(c1) + (static_cast<unsigned char>(c2) << 8);
+    }
+
 
     std::string gen_metering_code(std::string const &country_code, boost::uuids::uuid tag) {
 

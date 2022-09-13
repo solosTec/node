@@ -304,6 +304,13 @@ namespace smf {
             cyng::make_param("broker-login", false),
             // cyng::make_param("broker-timeout", 12), //	seconds
             cyng::make_param("hex-dump", false),
+            cyng::make_param(
+                "cache",
+                cyng::make_tuple(
+                    cyng::make_param("enabled", true),         // active
+                    cyng::make_param("push", "segw.ch::2002"), // TCP/IP server
+                    cyng::make_param("delay", 30)              // seconds
+                    )),
             create_wireless_broker(hostname),
             create_wireless_block_list(),
             create_wireless_virtual_meter_spec()

@@ -329,6 +329,23 @@ namespace smf {
         return cyng::to_sql(get_store_mirror_data(), {9, 0, 0, 0, 256, 0, 0, 0, 0});
     }
 
+    cyng::meta_store get_store_mbus_cache() {
+        return cyng::meta_store(
+            "mbusCache",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                //   -- body
+                cyng::column("payload", cyng::TC_BUFFER),     // raw (encrypted)
+                cyng::column("ci", cyng::TC_UINT8),           // frame type (CI field - paket type)
+                cyng::column("flag", cyng::TC_UINT16),        // manufacturer code
+                cyng::column("version", cyng::TC_UINT8),      // version
+                cyng::column("medium", cyng::TC_UINT8),       // medium
+                cyng::column("received", cyng::TC_TIME_POINT) // receiving time
+            },
+            1);
+    }
+    cyng::meta_sql get_table_mbus_cache() { return cyng::to_sql(get_store_mbus_cache(), {9, 512, 0, 0, 0, 0, 0}); }
+
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
             get_store_cfg(),            // cfg
@@ -342,7 +359,8 @@ namespace smf {
             get_store_readout(),        // readout - ephemeral
             get_store_readout_data(),   // readoutData - ephemeral
             get_store_mirror(),         // mirror
-            get_store_mirror_data()     // mirrorData
+            get_store_mirror_data(),    // mirrorData
+            get_store_mbus_cache()      // mbusCache
         };
     }
 
@@ -358,7 +376,8 @@ namespace smf {
             get_table_push_ops(),       // TPushOps
             get_table_push_register(),  // TPushRegister
             get_table_mirror(),         // Tmirror
-            get_table_mirror_data()     // TMirrorData
+            get_table_mirror_data(),    // TMirrorData
+            get_table_mbus_cache()      // TMbusCache
         };
     }
 
