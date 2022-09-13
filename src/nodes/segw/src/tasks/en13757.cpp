@@ -124,17 +124,17 @@ namespace smf {
             },
             cyng::access::write("mbusCache"));
 
-        auto proxy = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-            [](std::size_t) -> std::pair<std::chrono::seconds, bool> {
-                //
-                //  connect failed
-                //
-                return {std::chrono::seconds(30), true};
-            },                                     // connect failed
-            [](boost::asio::ip::tcp::endpoint) {}, // connect
-            [](boost::system::error_code ec) {},   // reconnect
-            [](cyng::buffer_t) {}                  // received
-        );
+        // auto proxy = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+        //     [](std::size_t) -> std::pair<std::chrono::seconds, bool> {
+        //         //
+        //         //  connect failed
+        //         //
+        //         return {std::chrono::seconds(30), true};
+        //     },                                     // connect failed
+        //     [](boost::asio::ip::tcp::endpoint) {}, // connect
+        //     [](boost::system::error_code ec) {},   // reconnect
+        //     [](cyng::buffer_t) {}                  // received
+        // );
     }
 
     void en13757::update_load_profile(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data) {
