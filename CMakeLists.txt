@@ -1064,7 +1064,7 @@ if(${CMAKE_CROSSCOMPILING})
 
  # same as ${lowercase_project_name}
 	string(TOLOWER ${PROJECT_NAME} OECP_NAME)
-    message(STATUS "** cross compile project        : ${OECP_NAME}")
+    message(STATUS "** cross compile project        : ${OECP_NAME} v${OECP_VERSION}")
 
 	configure_file (
           "opkg/control.in"

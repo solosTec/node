@@ -1633,7 +1633,8 @@ main()
 	get_last_backed_up_version
 
 	# first remove and update the libraries
-	if [ ! "${OECP}" = "2" ]; then
+	echo "OECP version: v$OECP"
+	if [ ! "$OECP" = "2" ]; then
 		update_libs
 	fi
 	
