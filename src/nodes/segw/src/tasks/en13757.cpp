@@ -12,6 +12,7 @@
 
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
+#include <cyng/net/client.hpp>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/obj/util.hpp>
@@ -34,13 +35,17 @@ namespace smf {
     }
 		, channel_(wp)
 		, ctl_(ctl)
+        , client_factory_(ctl)
 		, logger_(logger)
         , cfg_(config)
         , cfg_sml_(config)
+        , cfg_cache_(config, lmn_type::WIRELESS)
         , parser_([this](mbus::radio::header const& h, mbus::radio::tplayer const& t, cyng::buffer_t const& data) {
 
+            //
+            // process wireless data header
+            //
             this->decode(h, t, data);
-            //   auto const res = smf::mbus::radio::decode(h.get_server_id(), t.get_access_no(), aes, payload);
         })
     {
 
@@ -53,7 +58,6 @@ namespace smf {
 
     void en13757::stop(cyng::eod) {
         CYNG_LOG_INFO(logger_, "[EN-13757] stopped");
-        boost::system::error_code ec;
     }
 
     void en13757::receive(cyng::buffer_t data) {
@@ -71,8 +75,69 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[EN-13757] add target channel: " << name);
     }
 
-    void en13757::decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data) {
+    void en13757::decode(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data) {
 
+        //
+        //  update cache
+        //
+        if (cfg_cache_.is_enabled()) {
+            update_cache(h, tpl, data);
+        }
+
+        //
+        //  update load profile
+        //
+        update_load_profile(h, tpl, data);
+    }
+
+    void en13757::update_cache(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data) {
+
+        //
+        //  complete payload with header
+        //
+        auto payload = mbus::radio::restore_data(h, tpl, data);
+
+        //
+        //  write into cache
+        //
+        cfg_.get_cache().access(
+            [&](cyng::table *tbl) {
+                auto const address = h.get_server_id_as_buffer();
+                auto const srv_id = h.get_server_id();
+
+                if (tbl->merge(
+                        cyng::key_generator(address),
+                        cyng::data_generator(
+                            payload, // payload
+                            h.get_frame_type(),
+                            get_manufacturer_flag(srv_id), // flag
+                            h.get_version(),
+                            get_medium(srv_id),
+                            std::chrono::system_clock::now()),
+                        1u,
+                        cfg_.get_tag())) {
+                    CYNG_LOG_TRACE(logger_, "[roCache] data of meter " << to_string(srv_id) << " inserted");
+
+                } else {
+                    CYNG_LOG_TRACE(logger_, "[roCache] data of meter " << to_string(srv_id) << " updated");
+                }
+            },
+            cyng::access::write("mbusCache"));
+
+        // auto proxy = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+        //     [](std::size_t) -> std::pair<std::chrono::seconds, bool> {
+        //         //
+        //         //  connect failed
+        //         //
+        //         return {std::chrono::seconds(30), true};
+        //     },                                     // connect failed
+        //     [](boost::asio::ip::tcp::endpoint) {}, // connect
+        //     [](boost::system::error_code ec) {},   // reconnect
+        //     [](cyng::buffer_t) {}                  // received
+        // );
+    }
+
+    void en13757::update_load_profile(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data) {
         auto const auto_cfg = cfg_sml_.is_auto_config();
         auto const def_profile = cfg_sml_.get_default_profile();
 
@@ -155,13 +220,13 @@ namespace smf {
                     //
                     //  working with secondary address
                     //
-                    auto const meter = to_buffer(t.get_secondary_address());
+                    auto const meter = to_buffer(tpl.get_secondary_address());
                     BOOST_ASSERT(meter.size() == 9);
                     auto const key2 = cyng::key_generator(meter);
                     auto const rec2 = tbl->lookup(key2);
                     if (rec2.empty()) {
                         CYNG_LOG_INFO(
-                            logger_, "[EN-13757] insert meter: " << to_string(t.get_secondary_address()) << " (secondary)");
+                            logger_, "[EN-13757] insert meter: " << to_string(tpl.get_secondary_address()) << " (secondary)");
                         tbl->insert(
                             key2,
                             cyng::data_generator(
@@ -188,8 +253,8 @@ namespace smf {
                         tbl_data,
                         tbl_collector,
                         tbl_mirror,
-                        t.get_secondary_address(),
-                        t.get_access_no(),
+                        tpl.get_secondary_address(),
+                        tpl.get_access_no(),
                         h.get_frame_type(),
                         data,
                         aes_key,
@@ -206,7 +271,7 @@ namespace smf {
                         tbl_collector,
                         tbl_mirror,
                         h.get_server_id(),
-                        t.get_access_no(),
+                        tpl.get_access_no(),
                         h.get_frame_type(),
                         data,
                         aes_key,

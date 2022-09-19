@@ -59,7 +59,7 @@ namespace smf {
                 cb_t cb_;
                 std::size_t pos_;
                 header header_;
-                tplayer tpl_;
+                tplayer tpl_;   //!< Transport Layer
                 cyng::buffer_t payload_;
             };
         } // namespace radio

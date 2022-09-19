@@ -149,7 +149,8 @@ namespace smf {
                 ASSYMETRIC = 13,
             };
 
-            /**
+            /** @brief Transport Layer
+             *  
              * Context data required to decrypt wireless mBus data.
              * Part of the mBus wireless header.
              * Same for short and long TPL headers

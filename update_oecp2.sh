@@ -16,7 +16,7 @@ if [ ! -d ${OECPDIR} ]; then
 fi
 
 OECPDIR=$(readlink -f ${OECPDIR})
-TARGETDIR="${OECPDIR}/Software/PPC/Firmware/external_src"
+TARGETDIR="${OECPDIR}/Software/PPC/Firmware/src"
 
 echo "Using OECP directory ${OECPDIR}"
 
