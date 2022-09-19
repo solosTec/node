@@ -242,7 +242,6 @@ namespace smf {
                 //
                 auto const cannel_count = tbl_channel->erase_if(
                     [&](cyng::record &&rec) -> bool {
-                        auto const target = rec.value("target_tag", boost::uuids::nil_uuid());
                         auto const owner = rec.value("owner", boost::uuids::nil_uuid());
                         if (owner == dev) {
 
@@ -253,12 +252,19 @@ namespace smf {
                             auto const key_target = cyng::key_generator(target);
                             auto const rec_target = tbl_target->lookup(key_target);
                             if (!rec_target.empty()) {
-                                auto const channels = rec_target.value<std::uint64_t>("channels", 0);
-                                tbl_target->modify(key_target, cyng::param_map_factory("channels", channels - 1), cfg_.get_tag());
+                                tbl_target->compute<std::uint64_t>(
+                                    key_target,
+                                    "channels",
+                                    [](std::uint64_t channel) -> std::uint64_t { return (channel == 0) ? 0 : channel - 1; },
+                                    cfg_.get_tag());
+                            } else {
+                                //  target should exist since a session should not open a channel
+                                //  to it's own target
+                                CYNG_LOG_WARNING(logger_, "[db] target #" << target << " not found");
                             }
+                            return true;
                         }
-
-                        return target == tag;
+                        return false;
                     },
                     cfg_.get_tag());
 
@@ -1651,14 +1657,17 @@ namespace smf {
                         tbl_channel->insert(
                             cyng::key_generator(channel, target_id),
                             cyng::data_generator(target_tag, target_peer, packet_size, timeout, dev),
-                            1,
+                            1, // generation
                             cfg_.get_tag());
 
                         //
                         //  increase channel counter in table "target"
                         //
-                        auto const channels = rec_target.value<std::uint64_t>("channels", 0);
-                        tbl_target->modify(rec_target.key(), cyng::param_map_factory("channels", channels + 1), cfg_.get_tag());
+                        tbl_target->compute<std::uint64_t>(
+                            key_target,
+                            "channels",
+                            [](std::uint64_t channel) -> std::uint64_t { return channel + 1; },
+                            cfg_.get_tag());
                     }
 
                 } else {
@@ -1792,8 +1801,11 @@ namespace smf {
                         auto const key_target = cyng::key_generator(target);
                         auto const rec_target = tbl_target->lookup(key_target);
                         if (!rec_target.empty()) {
-                            auto const channels = rec_target.value<std::uint64_t>("channels", 0);
-                            tbl_target->modify(key_target, cyng::param_map_factory("channels", channels - 1), cfg_.get_tag());
+                            tbl_target->compute<std::uint64_t>(
+                                key_target,
+                                "channels",
+                                [](std::uint64_t channel) -> std::uint64_t { return (channel == 0) ? 0 : channel - 1; },
+                                cfg_.get_tag());
                         } else {
                             CYNG_LOG_WARNING(logger_, "[db] target: #" << target << " not found");
                         }

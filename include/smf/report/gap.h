@@ -140,6 +140,7 @@ namespace smf {
             srv_id_t srv_id,
             std::int64_t start_slot,
             gap::slot_date_t const &,
+            std::chrono::minutes utc_offset,
             std::size_t count);
 
     } // namespace gap

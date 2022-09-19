@@ -353,7 +353,7 @@ namespace smf {
                         //
                         // print report
                         //
-                        emit_data(of, profile, srv_id, slot.first, val.second, count);
+                        emit_data(of, profile, srv_id, slot.first, val.second, utc_offset, count);
                     }
                 }
             }
@@ -366,9 +366,11 @@ namespace smf {
             srv_id_t srv_id,
             std::int64_t start_slot,
             gap::slot_date_t const &data,
+            std::chrono::minutes utc_offset,
             std::size_t count) //  expected number of entries in time span
         {
-            os << to_string(srv_id) << ',' << data.size() << ',' << count << ',' << ((data.size() * 100.0) / count) << '%';
+            os << to_string(srv_id) << ',' << utc_offset << ',' << '#' << start_slot << ',' << data.size() << ',' << count << ','
+               << ((data.size() * 100.0) / count) << '%';
             for (auto slot = start_slot; slot < start_slot + count; ++slot) {
 
                 os << ',';
@@ -383,7 +385,7 @@ namespace smf {
                     os << "[pull@";
                     auto const tp = sml::to_time_point(slot, profile);
                     cyng::sys::to_string_utc(os, tp, "%FT%T");
-                    os << ']';
+                    os << '#' << slot << ']';
                 }
             }
             os << std::endl;
