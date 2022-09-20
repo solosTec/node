@@ -138,6 +138,7 @@ generate_configurations()
 	fi
 
 	backup_dir=$1
+	echo "[POST-INSTALL] Backup directory is $backup_dir"
 
 	# reuse the existing configurations
 	if [ "$NEW_VERSION_SHORT" = "$previous_version_short" ] && [ -d "$backup_dir" ]; then
@@ -207,8 +208,8 @@ generate_configurations()
 			#do not delete the cfg file. it is not created again but brought with in the installation itself
 			#if we update from 0.9 to 0.9 it is needed anyway.
 
-			echo "[POST-INSTALL] ... Creating default configuations"
-			${CLS_PATH_SCRIPT}/segw -D >/tmp/segw_config_creation.log 2>&1
+			echo "[POST-INSTALL] ... Creating default configuation from ${CLS_PATH_ETC}/segw_v$NEW_VERSION_SHORT.cfg"
+			${CLS_PATH_SCRIPT}/segw -C "${CLS_PATH_ETC}"/segw_v$NEW_VERSION_SHORT.cfg -D >/tmp/segw_config_creation.log 2>&1
 			if [ $? -ne 0 ]; then 
 				echo "[POST-INSTALL] ERROR: Could not create default configuration! Abort!"
 				# display the collected logs and the abort

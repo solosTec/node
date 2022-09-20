@@ -176,6 +176,9 @@ main ()
     # create the install dir, if it is not present yet
     mkdir -p "$SMF_DIR"
 
+    # create the log dir, if it is not present yet
+    mkdir -p /var/log/smf
+
     # anyways, backups shall be created before every installation anyways
     # only skip this, if no version at all is intalled at the moment
     if [ "$trimmed_version" != "" ]; then 

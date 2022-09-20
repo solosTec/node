@@ -148,12 +148,14 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
+//            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("opcounter", 0), //  operation time counter
             //  This makes trouble on OECP-1 hardware
-            // cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-            // cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+#if !defined(OECP_VERSION)
+            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+#endif
             cyng::make_param("generate-profile", false),
             cyng::make_param("utc-offset", cyng::sys::delta_utc(now).count()),
 
@@ -258,15 +260,6 @@ namespace smf {
 
     cyng::tuple_t controller::create_wireless_spec(std::string const &hostname) const {
 
-        //	wireless M-Bus OECP1
-        //	stty -F /dev/ttyAPP0 raw
-        //	stty -F /dev/ttyAPP0  -echo -echoe -echok
-        //	stty -F /dev/ttyAPP0 115200
-        //	cat /dev/ttyAPP0 | hexdump
-
-        //  OECP2
-        //  i2cset -y 2 0x8 0xf4 0x1f
-        //  hexdump -C /dev/ttymxc0
 
         return cyng::make_tuple(
 
@@ -288,14 +281,33 @@ namespace smf {
 #else
 
             cyng::make_param("enabled", true),
-            // cyng::make_param("port", "/dev/ttyAPP0"),
-            cyng::make_param("port", "/dev/ttymxc0"),
             cyng::make_param("HCI", "none"),
+#if (OECP_VERSION == 1)
+            
+        //  OECP-1
+        //	wireless M-Bus OECP1
+        //	stty -F /dev/ttyAPP0 raw
+        //	stty -F /dev/ttyAPP0  -echo -echoe -echok
+        //	stty -F /dev/ttyAPP0 115200
+        //	cat /dev/ttyAPP0 | hexdump
+
+            cyng::make_param("port", "/dev/ttyAPP0"),
             cyng::make_param("databits", 8),
             cyng::make_param("parity", "none"),       //	none, odd, even
             cyng::make_param("flow-control", "none"), //	none, software, hardware
             cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
             cyng::make_param("speed", 115200),
+#else
+        //  OECP-2
+        //  i2cset -y 2 0x8 0xf4 0x1f
+        //  hexdump -C /dev/ttymxc0
+            cyng::make_param("port", "/dev/ttymxc0"),
+            cyng::make_param("databits", 8),
+            cyng::make_param("parity", "none"),       //	none, odd, even
+            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
+            cyng::make_param("speed", 115200),
+#endif
 
 #endif
             //  wM-Bus-EN13757-4"
@@ -397,6 +409,9 @@ namespace smf {
             cyng::make_param("type", "RS-485"),
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
+            //
+            //  windows
+            //
             cyng::make_param("enabled", false),
             cyng::make_param("port", "COM6"),
             cyng::make_param("parity", "even"), //	none, odd, even
@@ -408,11 +423,25 @@ namespace smf {
             cyng::make_param("speed", 2400),          //	initial
 
 #else
+            //
+            //  any kind of Linux (start...)
+            //
+#if (OECP_VERSION == 1)            
             cyng::make_param("enabled", true),
             cyng::make_param("port", "/dev/ttyAPP1"),
+#elif (OECP_VERSION == 2)            
+            cyng::make_param("enabled", true),
+            cyng::make_param("port", "/dev/ttymxc1"),
+#else 
+            cyng::make_param("enabled", false),
+            cyng::make_param("port", "/dev/ttyS0"),
+#endif        
 
         //	8N1
 #if defined(__ARMEL__)
+            //
+            //  ARM architecture
+            //
             cyng::make_param("databits", 7),
             cyng::make_param("stopbits", "two"),      //	one, onepointfive, two
             cyng::make_param("parity", "even"),       //	none, odd, even
@@ -423,6 +452,10 @@ namespace smf {
 #endif
             cyng::make_param("flow-control", "none"), //	none, software, hardware
             cyng::make_param("speed", 9600),          //	initial
+
+            //
+            //  any kind of Linux (...end)
+            //
 
 #endif
             cyng::make_param("protocol", "raw"), //	raw, mbus, iec, sml
@@ -468,8 +501,12 @@ namespace smf {
                 false
 #endif
                 ) // enabled/disabled
-            //("path", "/sys/class/gpio")("list", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68 OECP1
+
+#if (OECP_VERSION == 1)                
+            ("path", "/sys/class/gpio")("list", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68 OECP1
+#else
             ("path", "/sys/class/gpio")("list", cyng::make_vector({117, 118, 119, 120})) //	OECP2
+#endif
             ());
     }
 
@@ -582,8 +619,8 @@ namespace smf {
         return cyng::make_param(
             "DB",
             cyng::make_tuple(
-#if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
-#if OECP_VERSION == 2
+#if defined(OECP_VERSION)
+#if (OECP_VERSION == 2)
                 //  OECP 2
                 cyng::make_param("file-name", "/usr/etc/smf/segw.database"),
 #else

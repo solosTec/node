@@ -18,7 +18,10 @@ message(STATUS "PROJECT_NAME             : ${PROJECT_NAME}")
 message(STATUS "CMAKE_BINARY_DIR         : ${CMAKE_BINARY_DIR}")
 message(STATUS "PROJECT_BINARY_DIR       : ${PROJECT_BINARY_DIR}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR : ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "version                  : v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}")
+message(STATUS "project version          : v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}")
+if (DEFINED PTX_BUILD)
+message(STATUS "OECP version             : v${OECP_VERSION}")
+endif()
 
 include (node.cmake)
 
@@ -30,7 +33,7 @@ target_compile_definitions(segw
     PRIVATE 
         $<$<CONFIG:Debug>:_DEBUG_SEGW>
         $<IF:$<BOOL:${CMAKE_CROSSCOMPILING}>,__CROSS_PLATFORM,__NATIVE_PLATFORM>
-        $<IF:$<BOOL:${PTX_BUILD}>,"OECP_VERSION=${OECP_VERSION}">
+        $<IF:$<BOOL:${PTX_BUILD}>,OECP_VERSION=${OECP_VERSION},__NO_OECP>
 )
 
 #
