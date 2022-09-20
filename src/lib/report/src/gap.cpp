@@ -369,7 +369,7 @@ namespace smf {
             std::chrono::minutes utc_offset,
             std::size_t count) //  expected number of entries in time span
         {
-            os << to_string(srv_id) << ',' << utc_offset << ',' << '#' << start_slot << ',' << data.size() << ',' << count << ','
+            os << to_string(srv_id) << ',' << utc_offset.count() << ',' << '#' << start_slot << ',' << data.size() << ',' << count << ','
                << ((data.size() * 100.0) / count) << '%';
             for (auto slot = start_slot; slot < start_slot + count; ++slot) {
 

@@ -30,11 +30,17 @@
 *.exe
 *.out
 *.app
-/.vs
-/test/unit-test/src/samples/mbus-005.bin
-/build
-/out/build/x64-Debug
-.vscode/settings.json
-/cmake/FindCYNG - Copy.cmake
 *.md5
 *.bz2
+
+# Build
+test/unit-test/src/samples/mbus-005.bin
+build
+x64
+aarch64-v8
+out/build/x64-Debug
+
+# IDE
+.vs
+.vscode
+CMakeSettings.json
