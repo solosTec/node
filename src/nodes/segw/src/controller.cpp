@@ -583,7 +583,13 @@ namespace smf {
             "DB",
             cyng::make_tuple(
 #if defined(__CROSS_PLATFORM) && defined(BOOST_OS_LINUX_AVAILABLE)
+#if OECP_VERSION == 2
+                //  OECP 2
+                cyng::make_param("file-name", "/usr/etc/smf/segw.database"),
+#else
+                //  OECP 1
                 cyng::make_param("file-name", "/usr/local/etc/smf/segw.database"),
+#endif
 #else
                 cyng::make_param("file-name", (cwd / "segw.database").string()),
 #endif

@@ -30,6 +30,7 @@ target_compile_definitions(segw
     PRIVATE 
         $<$<CONFIG:Debug>:_DEBUG_SEGW>
         $<IF:$<BOOL:${CMAKE_CROSSCOMPILING}>,__CROSS_PLATFORM,__NATIVE_PLATFORM>
+        $<IF:$<BOOL:${PTX_BUILD}>,"OECP_VERSION=${OECP_VERSION}">
 )
 
 #

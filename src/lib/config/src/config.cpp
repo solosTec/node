@@ -282,6 +282,10 @@ namespace smf {
 
                << "cross compiled : " << (cyng::sys::is_crosscompiled() ? "yes" : "no") << std::endl
 
+#if defined(OECP_VERSION)
+               << "OECP version   : " << OECP_VERSION << std::endl
+#endif
+
                << "logical cores  : " << cyng::sys::get_host_number_of_logical_cores() << std::endl
 
                << "physical cores : " << cyng::sys::get_host_number_of_physical_cores() << std::endl

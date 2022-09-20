@@ -66,4 +66,7 @@ install: build
 	install -d $(INSTALLDIR)/usr/lib/systemd/system
 	install -m 644 @PROJECT_BINARY_DIR@/config/segw.service $(INSTALLDIR)/usr/lib/systemd/system
 
+# create log directory
+	install -d /var/log/smf
+
 .PHONY: build clean install
