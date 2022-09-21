@@ -155,9 +155,9 @@ namespace smf {
             cyng::make_param(
                 "cache",
                 cyng::make_tuple(
-                    cyng::make_param("enabled", true),        // active
-                    cyng::make_param("push", "segw.ch:2002"), // TCP/IP server
-                    cyng::make_param("period-minutes", 60)    // minutes
+                    cyng::make_param("enabled", true),                   // active
+                    cyng::make_param("push", "segw.ch:2002"),            // TCP/IP server
+                    cyng::make_param("period", std::chrono::minutes(60)) // minutes - "00:60:00.000000"
                     )),
             create_wireless_broker(hostname),
             create_wireless_block_list(),
@@ -171,9 +171,11 @@ namespace smf {
             "blocklist",
             cyng::param_map_factory
 #ifdef _DEBUG
-            ("enabled", true)("list", cyng::make_vector({"00684279", "12345678"}))
+            ("enabled", true) // blocklist enabled
+            ("list", cyng::make_vector({"00684279", "12345678"}))
 #else
-            ("enabled", false)("list", cyng::make_vector({}))
+            ("enabled", false)                         // blocklist disabled
+            ("list", cyng::make_vector({}))            // no entries
 #endif
                 ("mode", "drop") //	or accept
             ("period", 30)       //	seconds
@@ -197,8 +199,8 @@ namespace smf {
                         ("account", hostname)       //  login name
                         ("pwd", "wM-Bus")           //  password
                         ("connect-on-demand", true) //  broker algorithm (connect on demand, otherwise connect at start)
-                        ("write-timeout", 2)        //	seconds - only for on-demand
-                        ("watchdog", 12)            //	seconds - only for on-start
+                        ("write-timeout", std::chrono::seconds(2)) //	seconds - only for on-demand
+                        ("watchdog", std::chrono::seconds(12))     //	seconds - only for on-start
                             .
                             operator cyng::param_map_t()
                 }));

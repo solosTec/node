@@ -30,9 +30,10 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(cyng::buffer_t)>,
-            std::function<void(void)>,        //    reset_target_channels
-            std::function<void(std::string)>, //	add_target_channel
-            std::function<void(cyng::eod)>    //    stop()
+            std::function<void(void)>,        // reset_target_channels
+            std::function<void(std::string)>, // add_target_channel
+            std::function<void()>,            // push
+            std::function<void(cyng::eod)>    // stop()
             >;
 
       public:
@@ -100,13 +101,18 @@ namespace smf {
         void update_cache(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
         void update_load_profile(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
 
+        /**
+         * send data and clear cache
+         */
+        void push();
+        void push_data(cyng::channel_ptr);
+
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
 
         cyng::controller &ctl_;
         cyng::net::client_factory client_factory_;
-
 
         /**
          * global logger

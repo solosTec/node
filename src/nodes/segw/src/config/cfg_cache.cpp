@@ -60,7 +60,7 @@ namespace smf {
     }
 
     std::chrono::minutes cfg_cache::get_period() const {
-        return std::chrono::minutes(cfg_.get_value(delay_path(get_index()), 60u));
+        return cfg_.get_value(delay_path(get_index()), std::chrono::minutes(60u));
     }
 
     bool cfg_cache::set_enabled(bool b) { return cfg_.set_value(enabled_path(get_index()), b); }

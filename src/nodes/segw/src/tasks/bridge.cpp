@@ -20,6 +20,7 @@
 
 #include <config/cfg_blocklist.h>
 #include <config/cfg_broker.h>
+#include <config/cfg_cache.h>
 #include <config/cfg_gpio.h>
 #include <config/cfg_listener.h>
 #include <config/cfg_nms.h>
@@ -786,8 +787,12 @@ namespace smf {
             cfg_broker broker_cfg(cfg_, type);
             channel_filter->dispatch("reset-data-sinks"); //  clear listeners
             channel_filter->dispatch("add-data-sink", broker_cfg.get_task_name());
-            //  ToDo: configure "load profile", "readout cache"
-            channel_filter->dispatch("add-data-sink", "EN-13757");  //  load profile
+            channel_filter->dispatch("add-data-sink", "EN-13757"); //  load profile
+
+            //  send data periodically
+            cfg_cache cache_cfg(cfg_, type);
+            CYNG_LOG_TRACE(logger_, "[cache] push cycle " << cache_cfg.get_period());
+            channel_proc->suspend(cache_cfg.get_period(), "push");
 
         } else {
             CYNG_LOG_ERROR(logger_, "[filter] LMN type " << get_name(type) << " doesn't support filters");

@@ -1055,6 +1055,13 @@ namespace smf {
                     //
                     transfer_listener(stmt_insert, stmt_select, counter, cyng::container_cast<cyng::param_map_t>(param.second));
 
+                } else if (boost::algorithm::equals(param.first, "cache")) {
+
+                    //
+                    //	readout cache
+                    //
+                    transfer_cache(stmt_insert, stmt_select, counter, cyng::container_cast<cyng::param_map_t>(param.second));
+
                 } else if (boost::algorithm::equals(param.first, "virtual-meter")) {
                     //
                     //  virtual meter
@@ -1210,6 +1217,33 @@ namespace smf {
         }
     }
 
+    void transfer_cache(
+        cyng::db::statement_ptr stmt_insert,
+        cyng::db::statement_ptr stmt_select,
+        std::size_t counter,
+        cyng::param_map_t &&pmap) {
+        for (auto const &cache : pmap) {
+
+            if (boost::algorithm::equals(cache.first, "period")) {
+                auto const inp = cyng::value_cast(cache.second, "00:30:00.000000");
+                auto const period = cyng::to_minutes(inp);
+                insert_config_record(
+                    stmt_insert,
+                    stmt_select,
+                    cyng::to_path(cfg::sep, "cache", std::to_string(counter), "period-minutes"),
+                    cyng::make_object(period),
+                    "default period is 60 minutes");
+            } else {
+                insert_config_record(
+                    stmt_insert,
+                    stmt_select,
+                    cyng::to_path(cfg::sep, "cache", std::to_string(counter), cache.first),
+                    cache.second,
+                    "cache: " + cache.first);
+            }
+        }
+    }
+
     void transfer_virtual_meter(
         cyng::db::statement_ptr stmt_insert,
         cyng::db::statement_ptr stmt_select,
@@ -1318,6 +1352,28 @@ namespace smf {
                         cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), broker.first),
                         cyng::make_object(broker_port),
                         "broker port " + std::to_string(broker_port));
+                } else if (boost::algorithm::equals(broker.first, "write-timeout")) {
+                    //  at least 1 second
+                    auto const inp = cyng::value_cast(broker.second, "00:00:02.000000");
+                    auto const timeout = cyng::to_seconds(inp);
+                    insert_config_record(
+                        stmt_insert,
+                        stmt_select,
+                        cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "write-timeout"),
+                        cyng::make_object(timeout > std::chrono::seconds(1) ? timeout : std::chrono::seconds(2)),
+                        "write timeout in seconds (for [connect-on-demand] only)");
+
+                } else if (boost::algorithm::equals(broker.first, "watchdog")) {
+                    //  at least 5 seconds
+                    auto const inp = cyng::value_cast(broker.second, "00:00:12.000000");
+                    auto const watchdog = cyng::to_seconds(inp);
+                    insert_config_record(
+                        stmt_insert,
+                        stmt_select,
+                        cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "watchdog"),
+                        cyng::make_object(watchdog > std::chrono::seconds(5) ? watchdog : std::chrono::seconds(5)),
+                        "watchdog in seconds (for [connect-on-start] only)");
+
                 } else {
                     insert_config_record(
                         stmt_insert,
@@ -1349,7 +1405,7 @@ namespace smf {
                     stmt_insert,
                     stmt_select,
                     cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "write-timeout"),
-                    cyng::make_object(1),
+                    cyng::make_object(std::chrono::seconds(1)),
                     "write timeout in seconds (for [connect-on-demand] only)");
             }
             //
@@ -1361,7 +1417,7 @@ namespace smf {
                     stmt_insert,
                     stmt_select,
                     cyng::to_path(cfg::sep, "broker", std::to_string(counter), std::to_string(broker_index), "watchdog"),
-                    cyng::make_object(12),
+                    cyng::make_object(std::chrono::seconds(12)),
                     "watchdog in seconds (for [connect-on-start] only)");
             }
 

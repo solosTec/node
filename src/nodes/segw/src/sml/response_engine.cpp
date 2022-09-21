@@ -597,7 +597,7 @@ namespace smf {
 
                     auto const reader = cyng::make_reader(pm);
                     auto const profile = reader.get(OBIS_PROFILE, cyng::make_obis({}));
-                    auto const server = reader.get(OBIS_SERVER_ID, cyng::make_buffer({}));
+                    auto const server = reader.get(OBIS_SERVER_ID, cyng::make_buffer());
 
                     //
                     //  clear data collector
@@ -610,7 +610,7 @@ namespace smf {
                     // cyng::key_t pk;
                     tbl_dc->erase_if(
                         [&](cyng::record &&rec) -> bool {
-                            auto const server_rec = rec.value("meterID", cyng::make_buffer({}));
+                            auto const server_rec = rec.value("meterID", cyng::make_buffer());
                             auto const profile_rec = rec.value("profile", OBIS_PROFILE);
                             if (server_rec == server && profile_rec == profile) {
 
@@ -629,7 +629,7 @@ namespace smf {
 
                                 tbl_mirror->erase_if(
                                     [&](cyng::record &&rec) -> bool {
-                                        auto const server_mirror = rec.value("meterID", cyng::make_buffer({}));
+                                        auto const server_mirror = rec.value("meterID", cyng::make_buffer());
                                         auto const nr_mirror = rec.value<std::uint8_t>("nr", 0u);
                                         // delete record from "dataMirror" if true
                                         return (server_rec == server_mirror) && (nr == nr_mirror);
@@ -1676,7 +1676,7 @@ namespace smf {
         cfg_.get_cache().access(
             [&](cyng::table const *tbl_push, cyng::table const *tbl_reg) {
                 tbl_push->loop([&](cyng::record &&rec, std::size_t) -> bool {
-                    auto const id = rec.value("meterID", cyng::make_buffer({}));
+                    auto const id = rec.value("meterID", cyng::make_buffer());
                     CYNG_LOG_DEBUG(logger_, "server/id " << server << "/" << id);
                     if (id == server) {
                         //   record id

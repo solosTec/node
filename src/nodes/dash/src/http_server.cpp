@@ -1043,7 +1043,7 @@ namespace smf {
                         //
                         //  get meter id (short)
                         //
-                        auto const serial = reader.get("serial", cyng::make_buffer({}));
+                        auto const serial = reader.get("serial", cyng::make_buffer());
                         auto const meter = cyng::io::to_hex(serial);
 
                         //

@@ -82,6 +82,11 @@ namespace smf {
         cyng::db::statement_ptr stmt_select,
         std::size_t counter,
         cyng::param_map_t &&pmap);
+    void transfer_cache(
+        cyng::db::statement_ptr stmt_insert,
+        cyng::db::statement_ptr stmt_select,
+        std::size_t counter,
+        cyng::param_map_t &&pmap);
     void transfer_blocklist(
         cyng::db::statement_ptr stmt_insert,
         cyng::db::statement_ptr stmt_select,

@@ -260,7 +260,7 @@ namespace smf {
                 auto const slot = sml::to_index(act_time, profile);
                 if (slot.second) {
                     auto set_time = sml::to_time_point(slot.first, profile);
-                    auto const id = rec.value("meterID", cyng::make_buffer({}));
+                    auto const id = rec.value("meterID", cyng::make_buffer());
 
 #ifdef __DEBUG
                     using cyng::operator<<;
@@ -340,7 +340,7 @@ namespace smf {
                 //
                 //  get meter id
                 //
-                auto const id = rec.value("meterID", cyng::make_buffer({}));
+                auto const id = rec.value("meterID", cyng::make_buffer());
                 BOOST_ASSERT(!id.empty());
 
                 //

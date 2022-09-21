@@ -70,15 +70,11 @@ namespace smf {
     bool cfg_broker::is_connect_on_demand(std::size_t idx) const { return cfg_.get_value(connect_path(get_index(), idx), true); }
 
     std::chrono::seconds cfg_broker::get_timeout(std::size_t idx) const {
-        auto const to = cfg_.get_value(timeout_path(get_index(), idx), 1);
-        //  at least 1 second
-        return std::chrono::seconds((to < 1) ? 1 : to);
+        return cfg_.get_value(timeout_path(get_index(), idx), std::chrono::seconds(1));
     }
 
     std::chrono::seconds cfg_broker::get_watchdog(std::size_t idx) const {
-        auto const wd = cfg_.get_value(watchdog_path(get_index(), idx), 12);
-        //  at least 5 seconds
-        return std::chrono::seconds((wd < 5) ? 5 : wd);
+        return cfg_.get_value(watchdog_path(get_index(), idx), std::chrono::seconds(12));
     }
 
     std::string cfg_broker::get_login_sequence(std::size_t idx) const { return get_account(idx) + ":" + get_pwd(idx); }

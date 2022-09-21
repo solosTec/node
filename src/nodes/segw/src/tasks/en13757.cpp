@@ -31,6 +31,7 @@ namespace smf {
             std::bind(&en13757::receive, this, std::placeholders::_1),	//	0
             std::bind(&en13757::reset_target_channels, this),	//	1 - "reset-data-sinks"
             std::bind(&en13757::add_target_channel, this, std::placeholders::_1),	//	2 - "add-data-sink"
+            std::bind(&en13757::push, this),	//	3 - "push"
             std::bind(&en13757::stop, this, std::placeholders::_1)		//	4
     }
 		, channel_(wp)
@@ -50,15 +51,13 @@ namespace smf {
     {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"receive", "reset-data-sinks", "add-data-sink"});
+            sp->set_channel_names({"receive", "reset-data-sinks", "add-data-sink", "push"});
 
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
     }
 
-    void en13757::stop(cyng::eod) {
-        CYNG_LOG_INFO(logger_, "[EN-13757] stopped");
-    }
+    void en13757::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[EN-13757] stopped"); }
 
     void en13757::receive(cyng::buffer_t data) {
         CYNG_LOG_TRACE(logger_, "[EN-13757] received " << data.size() << " bytes");
@@ -123,18 +122,6 @@ namespace smf {
                 }
             },
             cyng::access::write("mbusCache"));
-
-        // auto proxy = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-        //     [](std::size_t) -> std::pair<std::chrono::seconds, bool> {
-        //         //
-        //         //  connect failed
-        //         //
-        //         return {std::chrono::seconds(30), true};
-        //     },                                     // connect failed
-        //     [](boost::asio::ip::tcp::endpoint) {}, // connect
-        //     [](boost::system::error_code ec) {},   // reconnect
-        //     [](cyng::buffer_t) {}                  // received
-        // );
     }
 
     void en13757::update_load_profile(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data) {
@@ -597,5 +584,64 @@ namespace smf {
         }
         CYNG_LOG_INFO(
             logger_, "[EN-13757] wmbus " << to_string(address) << ": " << +idx << "/" << tbl_data->size() << " records merged");
+    }
+
+    void en13757::push() {
+
+        if (auto sp = channel_.lock(); sp) {
+            //
+            //  restart push
+            //
+            auto const period = cfg_cache_.get_period();
+            sp->suspend(period, "push");
+
+            //
+            //  send data
+            //
+            auto proxy = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+                [](std::size_t) -> std::pair<std::chrono::seconds, bool> {
+                    return {std::chrono::seconds(0), false};
+                },
+                [&](boost::asio::ip::tcp::endpoint ep, cyng::channel_ptr cp) {
+                    CYNG_LOG_TRACE(logger_, "[EN-13757] successful connected to " << ep);
+
+                    //
+                    //  send data
+                    //
+                    // cp->dispatch("send", cyng::make_buffer("hello"));
+                    push_data(cp);
+                },
+                [&](cyng::buffer_t data) {
+                    //  should not receive anything - send only
+                    CYNG_LOG_INFO(logger_, "[EN-13757] received " << data.size() << " bytes");
+                },
+                [&](boost::system::error_code ec) {
+                    //	fill async
+                    CYNG_LOG_WARNING(logger_, "[EN-13757] connection lost " << ec.message());
+                });
+
+            auto const host = cfg_cache_.get_push_host();
+            auto const service = cfg_cache_.get_push_service();
+            CYNG_LOG_INFO(logger_, "[EN-13757] open connection to " << host << ":" << service);
+            proxy.connect(host, service);
+        }
+    }
+
+    void en13757::push_data(cyng::channel_ptr cp) {
+        cfg_.get_cache().access(
+            [&](cyng::table *tbl) {
+                tbl->loop([=, this](cyng::record &&rec, std::size_t) -> bool {
+                    auto const id = rec.value("meterID", cyng::make_buffer());
+                    auto const payload = rec.value("payload", cyng::make_buffer());
+                    CYNG_LOG_TRACE(logger_, "[roCache] send data of meter " << id);
+                    cp->dispatch("send");
+                    return true;
+                });
+                //
+                //  remove all data
+                //
+                tbl->clear(cfg_.get_tag());
+            },
+            cyng::access::write("mbusCache"));
     }
 } // namespace smf

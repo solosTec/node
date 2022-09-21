@@ -29,7 +29,7 @@ namespace smf {
     cyng::object restore_buffer(std::string const &val) {
         if (val.size() % 2 != 0) {
             //  skip
-            return cyng::make_object(cyng::make_buffer({}));
+            return cyng::make_object(cyng::make_buffer());
         }
         return cyng::restore(val, cyng::TC_BUFFER);
     }
