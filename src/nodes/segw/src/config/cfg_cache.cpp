@@ -1,8 +1,7 @@
-#include <config/cfg_broker.h>
 #include <config/cfg_cache.h>
-#include <config/cfg_lmn.h>
 
-//#include <smf/mbus/radio/header.h>
+#include <config/cfg_broker.h>
+#include <config/cfg_lmn.h>
 
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/parse/string.h>
@@ -60,12 +59,14 @@ namespace smf {
         ;
     }
 
-    std::chrono::seconds cfg_cache::get_delay() const { return std::chrono::seconds(cfg_.get_value(delay_path(get_index()), 30u)); }
+    std::chrono::minutes cfg_cache::get_period() const {
+        return std::chrono::minutes(cfg_.get_value(delay_path(get_index()), 60u));
+    }
 
     bool cfg_cache::set_enabled(bool b) { return cfg_.set_value(enabled_path(get_index()), b); }
 
     bool cfg_cache::set_push_server(std::string server) { return cfg_.set_value(push_server_path(get_index()), server); }
 
-    bool cfg_cache::set_delay(std::chrono::seconds d) { return cfg_.set_value(delay_path(get_index()), d); }
+    bool cfg_cache::set_period(std::chrono::minutes d) { return cfg_.set_value(delay_path(get_index()), d); }
 
 } // namespace smf

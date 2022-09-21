@@ -80,6 +80,7 @@ set (segw_config
     include/config/cfg_sml.h
     include/config/cfg_vmeter.h
     include/config/cfg_hardware.h
+    include/config/generator.h
     src/cfg.cpp
     src/config/cfg_ipt.cpp
     src/config/cfg_lmn.cpp
@@ -92,6 +93,7 @@ set (segw_config
     src/config/cfg_sml.cpp
     src/config/cfg_vmeter.cpp
     src/config/cfg_hardware.cpp
+    src/config/generator.cpp
 )
 
 set (segw_sml

@@ -36,26 +36,6 @@ namespace smf {
         virtual void shutdown(cyng::registry &, cyng::stash &, cyng::logger) override;
 
       private:
-        cyng::tuple_t create_wireless_spec(std::string const &hostname) const;
-        cyng::tuple_t create_rs485_spec(std::string const &hostname) const;
-        cyng::param_t create_wireless_broker(std::string const &hostname) const;
-        cyng::param_t create_wireless_block_list() const;
-        cyng::param_t create_rs485_broker(std::string const &hostname) const;
-        cyng::param_t create_rs485_listener() const;
-        cyng::param_t create_rs485_block_list() const;
-        cyng::param_t create_gpio_spec() const;
-        cyng::param_t create_hardware_spec(std::string const &) const;
-        cyng::param_t create_nms_server_spec(std::filesystem::path const &) const;
-        cyng::param_t create_sml_server_spec() const;
-        cyng::param_t create_db_spec(std::filesystem::path const &) const;
-        cyng::param_t create_ipt_spec(std::string const &hostname) const;
-        cyng::param_t create_ipt_config(std::string const &hostname) const;
-        cyng::param_t create_ipt_params() const;
-        cyng::param_t create_wireless_virtual_meter_spec() const;
-        cyng::param_t create_wired_virtual_meter_spec() const;
-        cyng::param_t create_lmn_spec(std::string const &hostname) const;
-        cyng::param_t create_net(cyng::mac48 const &, std::string const &) const;
-
         std::tuple<cyng::mac48, std::string> get_server_id() const;
 
         void init_storage(cyng::object &&);
@@ -81,13 +61,6 @@ namespace smf {
 
     void print_nms_defaults(std::ostream &);
     void print_tty_options(std::ostream &, std::string tty);
-
-    /**
-     * Examine hardware to generate the model name.
-     * Since the model name contains the server id, it's possible to
-     * generate a proper configuration automatically.
-     */
-    std::string detect_model(std::string const &srv_id);
 
 } // namespace smf
 
