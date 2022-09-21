@@ -858,27 +858,34 @@ namespace smf {
 
         //
         //	convert special values
-        //  OECP2: 117, 118, 119, 120 (blue)
+        //  OECP1: 46,  47, 5 0,  53, 64, 68
+        //  OECP2: 117, 118, 119, 120 (blue), 121 (A2)
         //
         auto const number = [](std::string const &str) -> std::string {
+#if (OECP_VERSION == 1)            
             if (boost::algorithm::equals(str, "mbus") || boost::algorithm::equals(str, "wmbus"))
-#if (OECP_VERSION == 1)            
                 return "50";
-#else 
-                return "117";
-#endif
             else if (boost::algorithm::equals(str, "rs485") || boost::algorithm::equals(str, "RS-485"))
-#if (OECP_VERSION == 1)            
                 return "53";
-#else 
-                return "118";
-#endif             
             else if (boost::algorithm::equals(str, "ether"))
-#if (OECP_VERSION == 1)            
                 return "46";
+            else if (boost::algorithm::equals(str, "blue"))
+            //  the blue one
+                return "64";
 #else 
+            if (boost::algorithm::equals(str, "mbus") || boost::algorithm::equals(str, "wmbus"))
+                return "117";
+            else if (boost::algorithm::equals(str, "rs485") || boost::algorithm::equals(str, "RS-485"))
+                return "118";
+            else if (boost::algorithm::equals(str, "ether"))
                 return "119";
-#endif              
+            else if (boost::algorithm::equals(str, "a4") || boost::algorithm::equals(str, "blue"))
+                return "120";
+            else if (boost::algorithm::equals(str, "a2"))
+                return "121";
+            else if (boost::algorithm::equals(str, "a3"))
+                return "123";
+#endif
             else
                 return str;
         };
@@ -904,7 +911,8 @@ namespace smf {
         auto const md = get_store_meta_data();
         bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, md);
         BOOST_ASSERT(bridge_->is_open());
-        bridge_->dispatch("start", cyng::make_tuple());
+        bridge_->dispatch("start");
+
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {

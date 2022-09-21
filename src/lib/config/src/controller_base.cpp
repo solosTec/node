@@ -175,6 +175,16 @@ namespace smf {
                         logger.start_console_logger();
                     }
                     if (config_.log_file_ && !config_.log_file_path_.empty()) {
+
+                        //
+                        //  check logging directory
+                        //
+                        std::error_code ec;
+                        if (!std::filesystem::exists(config_.log_file_path_, ec)) {
+                             CYNG_LOG_WARNING(logger, "log directory " << config_.log_file_path_ << " not found");
+                            std::filesystem::create_directories(config_.log_file_path_, ec);
+                        }
+
                         logger.start_file_logger(config_.log_file_path_, config_.log_file_size_);
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
                         {
