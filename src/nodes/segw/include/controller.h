@@ -80,6 +80,7 @@ namespace smf {
     // std::string get_nms_address(std::string nic);
 
     void print_nms_defaults(std::ostream &);
+    void print_tty_options(std::ostream &, std::string tty);
 
     /**
      * Examine hardware to generate the model name.

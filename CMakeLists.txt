@@ -51,6 +51,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     math(EXPR "${PROJECT_NAME}_VERSION_NUMERAL" "${PROJECT_VERSION_MAJOR}*100000+${PROJECT_VERSION_MINOR}*1000+${PROJECT_VERSION_PATCH}" OUTPUT_FORMAT DECIMAL)
     message(STATUS "** Version numeral    : ${${PROJECT_NAME}_VERSION_NUMERAL}")
     message(STATUS "** Tweak ID           : ${_TWEAK_ID}")
+
+    if( DEFINED OECP_VERSION)
+        message(STATUS "** OECP               : v${OECP_VERSION}")
+    endif()
      
 
     message(STATUS "** Compiler           : ${CMAKE_CXX_COMPILER_ID} v${CMAKE_CXX_COMPILER_VERSION}")

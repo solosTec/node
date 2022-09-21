@@ -34,6 +34,7 @@
 #include <locale>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/asio/serial_port.hpp>
 #include <boost/predef.h>
 
 namespace smf {
@@ -126,6 +127,13 @@ namespace smf {
             alter_table(read_config_section(config_.json_path_, config_.config_index_), table);
             return true;
         }
+        if (!vars["tty"].defaulted()) {
+            auto const tty = vars["tty"].as<std::string>();
+            BOOST_ASSERT(!tty.empty());
+            //	show options of serial port
+            print_tty_options(std::cout, tty);
+            return true;
+        }
 
         //
         //	call base classe
@@ -148,7 +156,6 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-//            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("opcounter", 0), //  operation time counter
             //  This makes trouble on OECP-1 hardware
@@ -851,16 +858,27 @@ namespace smf {
 
         //
         //	convert special values
+        //  OECP2: 117, 118, 119, 120 (blue)
         //
         auto const number = [](std::string const &str) -> std::string {
-            if (boost::algorithm::equals(str, "mbus"))
+            if (boost::algorithm::equals(str, "mbus") || boost::algorithm::equals(str, "wmbus"))
+#if (OECP_VERSION == 1)            
                 return "50";
-            else if (boost::algorithm::equals(str, "wmbus"))
-                return "50";
+#else 
+                return "117";
+#endif
             else if (boost::algorithm::equals(str, "rs485") || boost::algorithm::equals(str, "RS-485"))
+#if (OECP_VERSION == 1)            
                 return "53";
+#else 
+                return "118";
+#endif             
             else if (boost::algorithm::equals(str, "ether"))
+#if (OECP_VERSION == 1)            
                 return "46";
+#else 
+                return "119";
+#endif              
             else
                 return str;
         };
@@ -918,6 +936,39 @@ namespace smf {
         std::cout << "link-local endpoint  : "
                   << boost::asio::ip::tcp::endpoint(cyng::sys::make_link_local_address(r.first, r.second), port) << std::endl;
     }
+
+    void print_tty_options(std::ostream & os, std::string tty) {
+        boost::system::error_code ec;
+        boost::asio::io_service io_service;
+        boost::asio::serial_port port(io_service);
+        port.open(tty, ec);
+        if (!ec) {
+            boost::asio::serial_port_base::baud_rate baud_rate;
+            port.get_option(baud_rate);
+            os << "baud-rate: " << baud_rate.value() << std::endl;
+
+            boost::asio::serial_port_base::parity parity;
+            port.get_option(parity); 
+            os << "parity: " << serial::to_string(parity);
+
+            boost::asio::serial_port_base::character_size databits;
+            port.get_option(databits); 
+            os << "databits: " << +databits.value();
+
+            boost::asio::serial_port_base::stop_bits stop_bits;
+            port.get_option(stop_bits); 
+            os << "stopbits: " << serial::to_string(stop_bits);
+
+            boost::asio::serial_port_base::flow_control flow_control;
+            port.get_option(flow_control); 
+            os << "flow-control: " << serial::to_string(flow_control);
+
+        }
+        else {
+            os << "[" << tty << "] cannot open: " << ec.message() << std::endl;
+        }
+    }
+
 
     std::string detect_model(std::string const &srv_id) {
         auto const nics = cyng::sys::get_nic_names();

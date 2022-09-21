@@ -21,6 +21,18 @@ int main(int argc, char **argv) {
     //	will contain the path to an optional configuration file (.cfg)
     smf::config::startup config("segw");
     std::string table_name; //  empty
+#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+    std::string port_name = "COM3";
+#else
+    #if (OECP_VERSION == 1)            
+        std::string port_name = "/dev/ttyAPP1",
+    #elif (OECP_VERSION == 2)            
+        std::string port_name = "/dev/ttymxc1";
+    #else 
+        std::string port_name = "/dev/ttyS0";
+    #endif 
+#endif 
+
 
     //
     //	generic options
@@ -50,6 +62,9 @@ int main(int argc, char **argv) {
         ("alter,A",
          boost::program_options::value<std::string>()->default_value(table_name),
          "drop and re-create table") //	alter DB
+        ("tty",
+         boost::program_options::value<std::string>()->implicit_value(port_name)->default_value(""),
+         "show configuration of specified port") //	tty 
         ;
 
     //
