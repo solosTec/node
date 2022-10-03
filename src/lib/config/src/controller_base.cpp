@@ -36,9 +36,8 @@ namespace smf {
         controller_base::controller_base(startup const &config)
             : config_(config)
             , uidgen_()
-            , signal_() 
-            , shutdown_(false) 
-        {}
+            , signal_()
+            , shutdown_(false) {}
 
         bool controller_base::run_options(boost::program_options::variables_map &vars) {
 
@@ -125,7 +124,7 @@ namespace smf {
                 //
                 //	controller loop
                 //
-                //bool shutdown{false};
+                // bool shutdown{false};
                 while (!shutdown_) {
 
                     //
@@ -180,9 +179,10 @@ namespace smf {
                         //  check logging directory
                         //
                         std::error_code ec;
-                        if (!std::filesystem::exists(config_.log_file_path_, ec)) {
-                             CYNG_LOG_WARNING(logger, "log directory " << config_.log_file_path_ << " not found");
-                            std::filesystem::create_directories(config_.log_file_path_, ec);
+                        auto const pp = std::filesystem::path(config_.log_file_path_).parent_path();
+                        if (!std::filesystem::exists(pp, ec)) {
+                            CYNG_LOG_WARNING(logger, "log directory " << pp << " not found");
+                            std::filesystem::create_directories(pp, ec);
                         }
 
                         logger.start_file_logger(config_.log_file_path_, config_.log_file_size_);
@@ -207,7 +207,7 @@ namespace smf {
                     // Capture SIGINT and SIGTERM to perform a clean shutdown
                     BOOST_ASSERT_MSG(!signal_, "signal handler already defined");
                     signal_ = std::make_unique<boost::asio::signal_set>(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
-                    //boost::asio::signal_set signals(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
+                    // boost::asio::signal_set signals(ctl.get_ctx().get_executor().context(), SIGINT, SIGTERM);
                     signal_->async_wait([&, this](boost::system::error_code const &, int sig) {
                         // Stop the `io_context`. This will cause `run()`
                         // to return immediately, eventually destroying the
@@ -219,11 +219,11 @@ namespace smf {
 
                         CYNG_LOG_INFO(logger, "shutdown " << config_.node_ << " - uptime: " << uptime);
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
-                        { 
+                        {
                             std::stringstream ss;
                             ss << "[" << config_.node_ << "] shutdown  - uptime: " << uptime;
                             auto const msg = ss.str();
-                            ::OutputDebugString(msg.c_str()); 
+                            ::OutputDebugString(msg.c_str());
                         }
 #endif
 
@@ -352,8 +352,7 @@ namespace smf {
                 auto const msg = ss.str();
                 ::OutputDebugString(msg.c_str());
                 signal_->cancel();
-            }
-            else {
+            } else {
                 ss << "[" << config_.node_ << "] ***error: no signal handler (" << sig << ")";
                 auto const msg = ss.str();
                 ::OutputDebugString(msg.c_str());
