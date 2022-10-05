@@ -20,19 +20,19 @@ int main(int argc, char **argv) {
 
     //	will contain the path to an optional configuration file (.cfg)
     smf::config::startup config("segw");
-    std::string table_name; //  empty
+    std::string table_name;      //  empty
+    std::string transfer = "in"; //  in/out
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
     std::string port_name = "COM3";
 #else
-    #if (OECP_VERSION == 1)            
-        std::string port_name = "/dev/ttyAPP1",
-    #elif (OECP_VERSION == 2)            
-        std::string port_name = "/dev/ttymxc1";
-    #else 
-        std::string port_name = "/dev/ttyS0";
-    #endif 
-#endif 
-
+#if (OECP_VERSION == 1)
+    std::string port_name = "/dev/ttyAPP1",
+#elif (OECP_VERSION == 2)
+    std::string port_name = "/dev/ttymxc1";
+#else
+    std::string port_name = "/dev/ttyS0";
+#endif
+#endif
 
     //
     //	generic options
@@ -41,8 +41,9 @@ int main(int argc, char **argv) {
     generic.add_options()(
         "init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit") //  --init
         ("transfer,T",
-         boost::program_options::bool_switch()->default_value(false),
-         "transfer JSON configuration into database")                                                                // --transfer
+         // boost::program_options::bool_switch()->default_value(false),
+         boost::program_options::value<std::string>()->implicit_value(transfer)->default_value(""),
+         "transfer JSON configuration [in|out] database")                                                            // --transfer
         ("clear", boost::program_options::bool_switch()->default_value(false), "delete configuration from database") //  --clear
         ("list,l", boost::program_options::bool_switch()->default_value(false), "list configuration from database")  //  --list
         ("set-value",
@@ -64,7 +65,7 @@ int main(int argc, char **argv) {
          "drop and re-create table") //	alter DB
         ("tty",
          boost::program_options::value<std::string>()->implicit_value(port_name)->default_value(""),
-         "show configuration of specified port") //	tty 
+         "show configuration of specified port") //	tty
         ;
 
     //

@@ -46,11 +46,10 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", tag),
-            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
-            // cyng::make_param("network-delay", 10), //  seconds to wait before starting ip-t client
+            cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            // cyng::make_param("network.delay", 10), //  seconds to wait before starting ip-t client
             create_client_spec(),
             create_cluster_spec(),
             create_ipt_spec(tag),
@@ -76,15 +75,15 @@ namespace smf {
         }
 
         auto const client_login = cyng::value_cast(reader["client"]["login"].get(), false);
-        //#if defined(BOOST_OS_WINDOWS_AVAILABLE)
-        //        std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(),
-        //        "D:\\projects\\data\\csv");
-        //#else
-        //        std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "/data/csv");
-        //#endif
-        // if (!std::filesystem::exists(client_out)) {
-        //     CYNG_LOG_FATAL(logger, "output path not found: [" << client_out << "]");
-        // }
+        // #if defined(BOOST_OS_WINDOWS_AVAILABLE)
+        //         std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(),
+        //         "D:\\projects\\data\\csv");
+        // #else
+        //         std::filesystem::path const client_out = cyng::value_cast(reader["client"]["out"].get(), "/data/csv");
+        // #endif
+        //  if (!std::filesystem::exists(client_out)) {
+        //      CYNG_LOG_FATAL(logger, "output path not found: [" << client_out << "]");
+        //  }
         auto const reconnect_timeout = cyng::numeric_cast<std::size_t>(reader["client"]["reconnect.timeout"].get(), 40);
         auto const filter_enabled = cyng::numeric_cast<std::size_t>(reader["client"]["filter.enabled"].get(), false);
         // cyng::make_param("filter.enabled", false), //	use filter
@@ -126,7 +125,7 @@ namespace smf {
         //
         //  seconds to wait before starting ip-t client
         //
-        // auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 10);
+        // auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network.delay"].get(), 10);
         // CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
 
         //
@@ -205,11 +204,11 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param("login", false),
                 cyng::make_param("verbose", false), //	parser
-                                                    //#if defined(BOOST_OS_WINDOWS_AVAILABLE)
+                                                    // #if defined(BOOST_OS_WINDOWS_AVAILABLE)
                 //                cyng::make_param("out", "D:\\projects\\data\\csv"), //	output path
-                //#else
+                // #else
                 //                cyng::make_param("out", "/data/csv"), //	output path
-                //#endif
+                // #endif
                 cyng::make_param("reconnect.timeout", 40), //	delay between reconnects in seconds
                 cyng::make_param("filter.enabled", false), //	use filter
                 cyng::make_param("filter", cyng::make_vector({"12345678"}))

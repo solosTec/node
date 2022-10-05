@@ -47,8 +47,8 @@ namespace smf {
         auto const tag = read_tag(reader["tag"].get());
 
         auto const country_code =
-            cyng::value_cast(reader["country-code"].get(), cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY));
-        auto const lang_code = cyng::value_cast(reader["language-code"].get(), "en-GB");
+            cyng::value_cast(reader["country.code"].get(), cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY));
+        auto const lang_code = cyng::value_cast(reader["language.code"].get(), "en-GB");
 
         auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
         BOOST_ASSERT(!tgl.empty());
@@ -59,8 +59,8 @@ namespace smf {
         auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
         auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 8080);
         auto const document_root = cyng::value_cast(reader["server"]["document-root"].get(), "");
-        auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(reader["server"]["max-upload-size"].get(), 10485760);
-        auto const nickname = cyng::value_cast(reader["server"]["server-nickname"].get(), "");
+        auto const max_upload_size = cyng::numeric_cast<std::uint64_t>(reader["server"]["max.upload.size"].get(), 10485760);
+        auto const nickname = cyng::value_cast(reader["server"]["server.nickname"].get(), "");
         auto const timeout = std::chrono::seconds(cyng::numeric_cast<std::uint64_t>(reader["server"]["timeout"].get(), 15));
 
         //
@@ -168,10 +168,9 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             create_server_spec(root),
             create_cluster_spec())});
     }
@@ -183,10 +182,10 @@ namespace smf {
                 cyng::make_param("address", "0.0.0.0"),
                 cyng::make_param("port", 8080),
                 cyng::make_param("timeout", 15),                       //	seconds
-                cyng::make_param("max-upload-size", 1024 * 1024 * 10), //	10 MB
+                cyng::make_param("max.upload.size", 1024 * 1024 * 10), //	10 MB
                 cyng::make_param("document-root", root.string()),
-                cyng::make_param("server-nickname", "P@ladin"), //	x-servernickname
-                cyng::make_param("auth-type", "Basic"),         //	none, cookie
+                cyng::make_param("server.nickname", "P@ladin"), //	x-servernickname
+                cyng::make_param("auth.type", "Basic"),         //	none, cookie
                 create_auth_spec(),
                 create_block_list(),
                 create_redirects() //	intrinsic redirections
@@ -248,7 +247,7 @@ namespace smf {
             cyng::make_tuple(
                 create_intrinsic_redirects(),
                 cyng::make_param("permanent", cyng::tuple_factory()),
-                cyng::make_param("see-other", cyng::tuple_factory()),
+                cyng::make_param("see.other", cyng::tuple_factory()),
                 cyng::make_param("temporary", cyng::tuple_factory())));
     }
 

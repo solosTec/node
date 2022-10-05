@@ -73,8 +73,8 @@ namespace smf {
         cfg_.set_value("ssl-version", SMF_OPEN_SSL_VERSION);
         cfg_.set_value("compiler-version", SMF_COMPILER_VERSION);
 
-        cfg_.set_value("country-code", country_code);
-        cfg_.set_value("language-code", lang_code);
+        cfg_.set_value("country.code", country_code);
+        cfg_.set_value("language.code", lang_code);
 
         //
         //	load session configuration from config file
@@ -638,7 +638,7 @@ namespace smf {
     }
 
     void db::init_sys_msg() {
-        auto const max_msg = cfg_.get_value<std::size_t>("max-messages", 1000);
+        auto const max_msg = cfg_.get_value<std::size_t>("max.messages", 1000);
         auto const tag = get_cfg().get_tag();
 
         auto const ms = config::get_store_sys_msg();
@@ -662,7 +662,7 @@ namespace smf {
     }
 
     void db::init_LoRa_uplink() {
-        auto const max_msg = cfg_.get_value<std::int64_t>("max-LoRa-records", 500);
+        auto const max_msg = cfg_.get_value<std::int64_t>("max.LoRa.records", 500);
         auto const tag = get_cfg().get_tag();
 
         auto const ms = config::get_store_uplink_lora();
@@ -686,7 +686,7 @@ namespace smf {
     }
 
     void db::init_iec_uplink() {
-        auto const max_msg = cfg_.get_value<std::int64_t>("max-IEC-records", 600);
+        auto const max_msg = cfg_.get_value<std::int64_t>("max.IEC.records", 600);
         auto const tag = get_cfg().get_tag();
 
         auto const ms = config::get_store_uplink_iec();
@@ -710,7 +710,7 @@ namespace smf {
     }
 
     void db::init_wmbus_uplink() {
-        auto const max_msg = cfg_.get_value<std::int64_t>("max-wMBus-records", 500);
+        auto const max_msg = cfg_.get_value<std::int64_t>("max.wMBus.records", 500);
         auto const tag = get_cfg().get_tag();
 
         auto const ms = config::get_store_uplink_wmbus();

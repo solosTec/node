@@ -39,7 +39,8 @@ namespace smf {
         std::tuple<cyng::mac48, std::string> get_server_id() const;
 
         void init_storage(cyng::object &&);
-        void transfer_config(cyng::object &&);
+        void read_config(cyng::object &&);
+        void write_config(cyng::object &&, std::string);
         void clear_config(cyng::object &&);
         void list_config(cyng::object &&);
         void set_config_value(cyng::object &&, std::string const &path, std::string const &value, std::string const &type);

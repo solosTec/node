@@ -57,20 +57,19 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
-            cyng::make_param("utc-offset", cyng::sys::delta_utc(now).count()),
+            cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            cyng::make_param("utc.offset", cyng::sys::delta_utc(now).count()),
 
             cyng::make_param(
                 "DB",
                 cyng::make_tuple(
-                    cyng::make_param("connection-type", "SQLite"),
-                    cyng::make_param("file-name", (cwd / "store.database").string()),
-                    cyng::make_param("busy-timeout", 12), // seconds
+                    cyng::make_param("connection.type", "SQLite"),
+                    cyng::make_param("file.name", (cwd / "store.database").string()),
+                    cyng::make_param("busy.timeout", 12), // seconds
                     cyng::make_param("watchdog", 30),     // for database connection
-                    cyng::make_param("pool-size", 1),     // no pooling for SQLite
+                    cyng::make_param("pool.size", 1),     // no pooling for SQLite
                     cyng::make_param("readonly", true)    // no write access required
                     )),
 
@@ -264,7 +263,7 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             auto const cwd = std::filesystem::current_path();
             auto const now = std::chrono::system_clock::now();
             auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("csv"));
@@ -302,16 +301,16 @@ namespace smf {
 
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+        auto const utc_offset = std::chrono::minutes(reader.get("utc.offset", 60));
         BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
 
-        auto const db_name = reader["DB"].get<std::string>("file-name", "");
+        auto const db_name = reader["DB"].get<std::string>("file.name", "");
         if (std::filesystem::exists(db_name)) {
             std::cout << "***info: file-name: " << db_name << std::endl;
             auto s = cyng::db::create_db_session(reader.get("DB"));
             if (s.is_alive()) {
                 //"print-version"
-                // std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+                // std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
@@ -369,10 +368,10 @@ namespace smf {
     bool controller::generate_gap_reports(cyng::object &&cfg) {
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+        auto const utc_offset = std::chrono::minutes(reader.get("utc.offset", 60));
         BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
 
-        auto const db_name = reader["DB"].get<std::string>("file-name", "");
+        auto const db_name = reader["DB"].get<std::string>("file.name", "");
         if (std::filesystem::exists(db_name)) {
             std::cout << "***info: file-name: " << db_name << std::endl;
             auto s = cyng::db::create_db_session(reader.get("DB"));

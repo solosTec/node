@@ -63,12 +63,12 @@ namespace smf {
     boost::uuids::uuid kv_store::get_tag() const { return tag_; }
 
     cyng::object tidy_config(std::string key, cyng::object &value) {
-        if (boost::algorithm::equals(key, "max-messages") || boost::algorithm::equals(key, "max-events") ||
-            boost::algorithm::equals(key, "max-LoRa-records") || boost::algorithm::equals(key, "max-wMBus-records") ||
-            boost::algorithm::equals(key, "max-IEC-records") || boost::algorithm::equals(key, "max-bridges")) {
+        if (boost::algorithm::equals(key, "max.messages") || boost::algorithm::equals(key, "max.events") ||
+            boost::algorithm::equals(key, "max.LoRa.records") || boost::algorithm::equals(key, "max.wMBus.records") ||
+            boost::algorithm::equals(key, "max.IEC.records") || boost::algorithm::equals(key, "max.bridges")) {
             //  convert to std::uint64_t
             return (value.tag() == cyng::TC_UINT64) ? value : cyng::make_object(cyng::numeric_cast<std::uint64_t>(value, 100));
-        } else if (boost::algorithm::equals(key, "def-IEC-interval")) {
+        } else if (boost::algorithm::equals(key, "def.IEC.interval")) {
             //  convert to std::chrono::minutes
             return (value.tag() == cyng::TC_MINUTE)
                        ? value

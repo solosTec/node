@@ -74,13 +74,12 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
-            cyng::make_param("utc-offset", cyng::sys::delta_utc(now).count()),
+            cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            cyng::make_param("utc.offset", cyng::sys::delta_utc(now).count()),
             cyng::make_param("model", "smf.store"), //  ip-t ident
-            cyng::make_param("network-delay", 6),   //  seconds to wait before starting ip-t client
+            cyng::make_param("network.delay", 6),   //  seconds to wait before starting ip-t client
 
             //  list of database(s)
             cyng::make_param(
@@ -88,12 +87,12 @@ namespace smf {
                 cyng::make_param(
                     "default",
                     cyng::tuple_factory(
-                        cyng::make_param("connection-type", "SQLite"),
-                        cyng::make_param("file-name", (cwd / "store.database").string()),
-                        cyng::make_param("busy-timeout", 12),            //	seconds
+                        cyng::make_param("connection.type", "SQLite"),
+                        cyng::make_param("file.name", (cwd / "store.database").string()),
+                        cyng::make_param("busy.timeout", 12),            //	seconds
                         cyng::make_param("watchdog", 30),                //	for database connection
-                        cyng::make_param("pool-size", 1),                //	no pooling for SQLite
-                        cyng::make_param("db-schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
+                        cyng::make_param("pool.size", 1),                //	no pooling for SQLite
+                        cyng::make_param("db.schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
                         cyng::make_param("interval", 12),                //	seconds
                         cyng::make_param(
                             "cleanup",
@@ -527,7 +526,7 @@ namespace smf {
         //
         auto lpex_reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex-reports"));
         if (!lpex_reports.empty()) {
-            // auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", utc_offset));
+            // auto const utc_offset = std::chrono::minutes(reader.get("utc.offset", utc_offset));
             auto const db = reader["lpex-reports"].get("db", "default");
             auto const print_version = reader["lpex-reports"].get("print-version", true);
             auto const filter = cyng::to_obis_path(reader["lpex-reports"].get("filter", ""));
@@ -563,7 +562,7 @@ namespace smf {
         //
         //  seconds to wait before starting ip-t client
         //
-        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 6);
+        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network.delay"].get(), 6);
         CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
 
         //
@@ -782,7 +781,7 @@ namespace smf {
         if (pos != sm.end()) {
 
             if (pos->second.is_alive()) {
-                std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file-name", "") << std::endl;
+                std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
 
@@ -826,7 +825,7 @@ namespace smf {
         auto sm = init_storage(cfg, false);
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+        auto const utc_offset = std::chrono::minutes(reader.get("utc.offset", 60));
         BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
 
         auto const print_version = reader["lpex-reports"].get("print-version", true);
@@ -836,7 +835,7 @@ namespace smf {
         if (pos != sm.end()) {
 
             if (pos->second.is_alive()) {
-                std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file-name", "") << std::endl;
+                std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
 
@@ -894,7 +893,7 @@ namespace smf {
         auto sm = init_storage(cfg, false);
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        auto const utc_offset = std::chrono::minutes(reader.get("utc-offset", 60));
+        auto const utc_offset = std::chrono::minutes(reader.get("utc.offset", 60));
         BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
         auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
         for (auto const &param : pm) {
@@ -1335,7 +1334,7 @@ namespace smf {
         cyng::db::session db,
         cyng::param_map_t reports) {
 
-        // "utc-offset"
+        // "utc.offset"
         //
         //	start reporting
         //

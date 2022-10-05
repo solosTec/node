@@ -37,6 +37,7 @@ namespace smf {
 		, channel_(wp)
 		, ctl_(ctl)
         , client_factory_(ctl)
+        , proxy_()
 		, logger_(logger)
         , cfg_(config)
         , cfg_sml_(config)
@@ -595,11 +596,15 @@ namespace smf {
             auto const period = cfg_cache_.get_period();
             sp->suspend(period, "push");
 
+            auto const host = cfg_cache_.get_push_host();
+            auto const service = cfg_cache_.get_push_service();
+
             //
             //  send data
             //
-            auto proxy = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-                [](std::size_t) -> std::pair<std::chrono::seconds, bool> {
+            proxy_ = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+                [=, this](std::size_t) -> std::pair<std::chrono::seconds, bool> {
+                    CYNG_LOG_WARNING(logger_, "[EN-13757] cannot connect to " << host << ':' << service);
                     return {std::chrono::seconds(0), false};
                 },
                 [&](boost::asio::ip::tcp::endpoint ep, cyng::channel_ptr cp) {
@@ -620,10 +625,8 @@ namespace smf {
                     CYNG_LOG_WARNING(logger_, "[EN-13757] connection lost " << ec.message());
                 });
 
-            auto const host = cfg_cache_.get_push_host();
-            auto const service = cfg_cache_.get_push_service();
             CYNG_LOG_INFO(logger_, "[EN-13757] open connection to " << host << ":" << service);
-            proxy.connect(host, service);
+            proxy_.connect(host, service);
         }
     }
 

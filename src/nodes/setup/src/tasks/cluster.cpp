@@ -96,7 +96,7 @@ namespace smf {
 
         store_.access(
             [&](cyng::table *tbl) {
-                if (tbl->exist(key)) {
+                if (tbl->exists(key)) {
 
                     CYNG_LOG_INFO(logger_, "[cluster] remove duplicate: " << table_name << " <" << key << ">");
                     tbl->erase(key, tag);

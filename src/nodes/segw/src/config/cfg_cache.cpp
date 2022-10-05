@@ -17,9 +17,11 @@ namespace smf {
             return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "enabled");
         }
         std::string push_server_path(std::uint8_t type) {
-            return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "push-server");
+            return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "push.server");
         }
-        std::string delay_path(std::size_t type) { return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "delay"); }
+        std::string delay_path(std::size_t type) {
+            return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "period.minutes");
+        }
     } // namespace
 
     bool cfg_cache::is_enabled() const {
@@ -60,7 +62,15 @@ namespace smf {
     }
 
     std::chrono::minutes cfg_cache::get_period() const {
-        return cfg_.get_value(delay_path(get_index()), std::chrono::minutes(60u));
+        return cfg_.get_value(
+            delay_path(get_index()),
+            std::chrono::minutes(
+#ifdef _DEBUG
+                2u
+#else
+                60u
+#endif
+                ));
     }
 
     bool cfg_cache::set_enabled(bool b) { return cfg_.set_value(enabled_path(get_index()), b); }

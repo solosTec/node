@@ -38,9 +38,9 @@ namespace smf {
 
         //
         //  collect some default values
-        //  * "def-IEC-interval"
+        //  * "def.IEC.interval"
         //
-        // db_.cfg_.get_value<>("def-IEC-interval");
+        // db_.cfg_.get_value<>("def.IEC.interval");
 
         // std::size_t counter{0};
         cyng::csv::parser_named p(
@@ -196,7 +196,7 @@ namespace smf {
         auto const tag = uidgen_();
         auto const key = cyng::key_generator(tag);
 
-        // auto country_code = db_.cfg_.get_value("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY));
+        // auto country_code = db_.cfg_.get_value("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY));
         // auto const mc = gen_metering_code(country_code, tag);
 
         //

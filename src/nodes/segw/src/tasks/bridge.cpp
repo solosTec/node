@@ -264,7 +264,7 @@ namespace smf {
                 //
                 auto const nic = get_nic();
                 auto const key = cyng::key_generator("nms/nic");
-                if (!cfg->exist(key)) {
+                if (!cfg->exists(key)) {
                     CYNG_LOG_INFO(logger_, "insert nms/nic: " << nic);
                     cfg->insert(
                         key,
@@ -278,7 +278,7 @@ namespace smf {
                     //
                     auto const r = get_ipv6_linklocal(nic);
                     auto const key_index = cyng::key_generator("nms/nic-index");
-                    if (!cfg->exist(key_index)) {
+                    if (!cfg->exists(key_index)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-index: " << r.second);
                         cfg->insert(
                             key_index,
@@ -290,7 +290,7 @@ namespace smf {
                     //  nms/nic-linklocal
                     //
                     auto const key_linklocal = cyng::key_generator("nms/nic-linklocal");
-                    if (!cfg->exist(key_linklocal)) {
+                    if (!cfg->exists(key_linklocal)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-linklocal: " << r.first);
                         cfg->insert(
                             key_linklocal,
@@ -305,7 +305,7 @@ namespace smf {
                     //
                     auto const ipv4 = get_ipv4_address(nic);
                     auto const key = cyng::key_generator("nms/nic-ipv4");
-                    if (!cfg->exist(key)) {
+                    if (!cfg->exists(key)) {
                         CYNG_LOG_INFO(logger_, "insert nms/nic-ipv4: " << ipv4);
                         cfg->insert(
                             key,
@@ -320,7 +320,7 @@ namespace smf {
                     //
                     auto const delay = std::chrono::seconds(12);
                     auto const key = cyng::key_generator("nms/delay");
-                    if (!cfg->exist(key)) {
+                    if (!cfg->exists(key)) {
                         CYNG_LOG_INFO(logger_, "insert nms/delay: " << delay << " seconds");
                         cfg->insert(
                             key,
@@ -334,7 +334,7 @@ namespace smf {
                     //  nms/mode
                     //
                     auto const key = cyng::key_generator("nms/mode");
-                    if (!cfg->exist(key)) {
+                    if (!cfg->exists(key)) {
                         std::string const mode("production");
                         CYNG_LOG_INFO(logger_, "insert nms/mode: \"" << mode << "\"");
                         cfg->insert(
@@ -351,7 +351,7 @@ namespace smf {
                     // an element in the database.
                     //
                     auto const key = cyng::key_generator("opcounter");
-                    if (!cfg->exist(key)) {
+                    if (!cfg->exists(key)) {
                         CYNG_LOG_INFO(logger_, "initialize opcounter");
                         cfg->insert(
                             key,

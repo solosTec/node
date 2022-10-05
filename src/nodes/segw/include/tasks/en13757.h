@@ -113,6 +113,7 @@ namespace smf {
 
         cyng::controller &ctl_;
         cyng::net::client_factory client_factory_;
+        cyng::net::client_proxy proxy_; //!< holds reference
 
         /**
          * global logger

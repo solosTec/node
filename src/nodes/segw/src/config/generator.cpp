@@ -34,11 +34,11 @@ namespace smf {
                 cyng::make_param("opcounter", 0), //  operation time counter
 #if !defined(OECP_VERSION)
                 //  This makes trouble on OECP-1 hardware
-                cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-                cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+                cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+                cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
 #endif
                 cyng::make_param("generate-profile", false),
-                cyng::make_param("utc-offset", cyng::sys::delta_utc(now).count()),
+                cyng::make_param("utc.offset", cyng::sys::delta_utc(now).count()),
 
                 create_net(srv_mac, srv_id),
 
@@ -155,9 +155,9 @@ namespace smf {
             cyng::make_param(
                 "cache",
                 cyng::make_tuple(
-                    cyng::make_param("enabled", true),                   // active
-                    cyng::make_param("push", "segw.ch:2002"),            // TCP/IP server
-                    cyng::make_param("period", std::chrono::minutes(60)) // minutes - "00:60:00.000000"
+                    cyng::make_param("enabled", true),                           // active
+                    cyng::make_param("push.server", "segw.ch:2002"),             // TCP/IP server
+                    cyng::make_param("period.minutes", std::chrono::minutes(60)) // minutes - "00:60:00.000000"
                     )),
             create_wireless_broker(hostname),
             create_wireless_block_list(),
@@ -462,17 +462,17 @@ namespace smf {
 #if defined(OECP_VERSION)
 #if (OECP_VERSION == 2)
                 //  OECP 2
-                cyng::make_param("file-name", "/usr/etc/smf/segw.database"),
+                cyng::make_param("file.name", "/usr/etc/smf/segw.database"),
 #else
                 //  OECP 1
-                cyng::make_param("file-name", "/usr/local/etc/smf/segw.database"),
+                cyng::make_param("file.name", "/usr/local/etc/smf/segw.database"),
 #endif
 #else
-                cyng::make_param("file-name", (cwd / "segw.database").string()),
+                cyng::make_param("file.name", (cwd / "segw.database").string()),
 #endif
-                cyng::make_param("busy-timeout", 12),         //	seconds
+                cyng::make_param("busy.timeout", 12),         //	seconds
                 cyng::make_param("watchdog", 30),             //	for database connection
-                cyng::make_param("connection-type", "SQLite") //	file based
+                cyng::make_param("connection.type", "SQLite") //	file based
                 ));
     }
 

@@ -48,11 +48,10 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", tag),
-            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
-            cyng::make_param("network-delay", 20), //  seconds to wait before starting ip-t client
+            cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            cyng::make_param("network.delay", 20), //  seconds to wait before starting ip-t client
             create_server_spec(cwd),
             create_push_spec(),
             create_client_spec(),
@@ -125,7 +124,7 @@ namespace smf {
         //
         //  seconds to wait before starting ip-t client
         //
-        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network-delay"].get(), 20);
+        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network.delay"].get(), 20);
         CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
 
         //

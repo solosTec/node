@@ -10,9 +10,9 @@
 #include <config/cfg_nms.h>
 #include <config/generator.h>
 #include <smf.h>
-// #include <smf/config/protocols.h>
 #include <smf/obis/defs.h>
-#include <storage_functions.h>
+// #include <storage_functions.h>
+#include <config/transfer.h>
 #include <tasks/bridge.h>
 #include <tasks/gpio.h>
 
@@ -23,10 +23,8 @@
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
-// #include <cyng/rnd/rnd.hpp>
 #include <cyng/sys/clock.h>
 #include <cyng/sys/host.h>
-// #include <cyng/sys/locale.h>
 #include <cyng/sys/mac.h>
 #include <cyng/sys/net.h>
 #include <cyng/task/controller.h>
@@ -37,6 +35,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/asio/serial_port.hpp>
 #include <boost/predef.h>
+#include <boost/uuid/nil_generator.hpp>
 
 namespace smf {
 
@@ -54,10 +53,19 @@ namespace smf {
             init_storage(read_config_section(config_.json_path_, config_.config_index_));
             return true;
         }
-        if (vars["transfer"].as<bool>()) {
-            //	transfer JSON configuration into database
-            std::cout << "config file [" << config_.json_path_ << "]#" << config_.config_index_ << std::endl;
-            transfer_config(read_config_section(config_.json_path_, config_.config_index_));
+        if (!vars["transfer"].defaulted()) {
+            auto const transfer = vars["transfer"].as<std::string>();
+            BOOST_ASSERT(!transfer.empty());
+            if (boost::algorithm::equals(transfer, "in")) {
+                std::cout << "read config file [" << config_.json_path_ << "]#" << config_.config_index_ << " into database"
+                          << std::endl;
+                read_config(read_config_section(config_.json_path_, config_.config_index_));
+            } else if (boost::algorithm::equals(transfer, "out")) {
+                std::cout << "write config file [" << config_.json_path_ << "]#" << config_.config_index_ << std::endl;
+                write_config(read_config_section(config_.json_path_, config_.config_index_), config_.json_path_);
+            } else {
+                std::cerr << "**error: Valid transfer options are \"in\" or \"out\"." << std::endl;
+            }
             return true;
         }
         if (vars["clear"].as<bool>()) {
@@ -202,21 +210,33 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             smf::init_storage(s);
         } else {
-            std::cout << "**error: no configuration found" << std::endl;
+            std::cerr << "**error: no configuration found" << std::endl;
         }
     }
 
-    void controller::transfer_config(cyng::object &&cfg) {
+    void controller::read_config(cyng::object &&cfg) {
         auto const reader = cyng::make_reader(cfg);
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file-name", "") << std::endl;
-            smf::transfer_config(s, std::move(cfg));
+            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file.name", "") << std::endl;
+            smf::read_json_config(s, std::move(cfg));
         } else {
-            std::cout << "**error: no configuration found" << std::endl;
+            std::cerr << "**error: no configuration found" << std::endl;
+        }
+    }
+
+    void controller::write_config(cyng::object &&cfg, std::string file_name) {
+        auto const reader = cyng::make_reader(cfg);
+        auto s = cyng::db::create_db_session(reader.get("DB"));
+        if (s.is_alive()) {
+            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file.name", "") << std::endl;
+            auto const db = cyng::container_cast<cyng::param_map_t>(reader.get("DB"));
+            smf::write_json_config(s, std::move(cfg), file_name, db);
+        } else {
+            std::cerr << "**error: no configuration found" << std::endl;
         }
     }
 
@@ -224,23 +244,23 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "***info   : database file is " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             smf::clear_config(s);
         } else {
-            std::cout << "**error: no configuration found" << std::endl;
+            std::cerr << "**error: no configuration found" << std::endl;
         }
     }
 
     void controller::list_config(cyng::object &&cfg) {
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
+        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file.name"].get(), "") << "]" << std::endl;
 
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
             smf::list_config(s);
         } else {
-            std::cout << "**error: no configuration found" << std::endl;
+            std::cerr << "**error: no configuration found" << std::endl;
         }
     }
 
@@ -249,7 +269,7 @@ namespace smf {
 
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
+        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file.name"].get(), "") << "]" << std::endl;
 
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
@@ -278,7 +298,7 @@ namespace smf {
 
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
+        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file.name"].get(), "") << "]" << std::endl;
 
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
@@ -286,14 +306,14 @@ namespace smf {
                 std::cout << path << " := " << value << " (" << type << ")" << std::endl;
             }
         } else {
-            std::cout << "**error: no configuration found" << std::endl;
+            std::cerr << "**error: no configuration found" << std::endl;
         }
     }
 
     void controller::del_config_value(cyng::object &&cfg, std::string const &path) {
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
+        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file.name"].get(), "") << "]" << std::endl;
 
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
@@ -301,7 +321,7 @@ namespace smf {
                 std::cout << path << " removed" << std::endl;
             }
         } else {
-            std::cout << "**error: no configuration found" << std::endl;
+            std::cerr << "**error: no configuration found" << std::endl;
         }
     }
 
@@ -309,17 +329,17 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             smf::alter_table(s, table); //
         } else {
-            std::cout << "**error: no configuration found" << std::endl;
+            std::cerr << "**error: no configuration found" << std::endl;
         }
     }
 
     void controller::set_nms_mode(cyng::object &&cfg, std::string mode) {
         auto const reader = cyng::make_reader(std::move(cfg));
 
-        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file-name"].get(), "") << "]" << std::endl;
+        std::cout << "open database file [" << cyng::value_cast(reader["DB"]["file.name"].get(), "") << "]" << std::endl;
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
             if (boost::algorithm::equals(mode, "production") || boost::algorithm::equals(mode, "test") ||
@@ -439,19 +459,19 @@ namespace smf {
 
             boost::asio::serial_port_base::parity parity;
             port.get_option(parity);
-            os << "parity: " << serial::to_string(parity);
+            os << "parity: " << serial::to_string(parity) << std::endl;
 
             boost::asio::serial_port_base::character_size databits;
             port.get_option(databits);
-            os << "databits: " << +databits.value();
+            os << "databits: " << +databits.value() << std::endl;
 
             boost::asio::serial_port_base::stop_bits stop_bits;
             port.get_option(stop_bits);
-            os << "stopbits: " << serial::to_string(stop_bits);
+            os << "stopbits: " << serial::to_string(stop_bits) << std::endl;
 
             boost::asio::serial_port_base::flow_control flow_control;
             port.get_option(flow_control);
-            os << "flow-control: " << serial::to_string(flow_control);
+            os << "flow-control: " << serial::to_string(flow_control) << std::endl;
 
         } else {
             os << "[" << tty << "] cannot open: " << ec.message() << std::endl;

@@ -45,29 +45,28 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
 
             cyng::make_param("storage", "DB"), //	options are XML, JSON, DB
 
             cyng::make_param(
                 "DB",
                 cyng::make_tuple(
-                    cyng::make_param("connection-type", "SQLite"),
-                    cyng::make_param("file-name", (cwd / "setup.database").string()),
-                    cyng::make_param("busy-timeout", 12), //	seconds
+                    cyng::make_param("connection.type", "SQLite"),
+                    cyng::make_param("file.name", (cwd / "setup.database").string()),
+                    cyng::make_param("busy.timeout", 12), //	seconds
                     cyng::make_param("watchdog", 30),     //	for database connection
-                    cyng::make_param("pool-size", 1)      //	no pooling for SQLite
+                    cyng::make_param("pool.size", 1)      //	no pooling for SQLite
                     )),
 
             cyng::make_param(
                 "XML",
                 cyng::make_tuple(
-                    cyng::make_param("file-name", (cwd / "setup.config.xml").string()), cyng::make_param("endcoding", "UTF-8"))),
+                    cyng::make_param("file.name", (cwd / "setup.config.xml").string()), cyng::make_param("endcoding", "UTF-8"))),
 
-            cyng::make_param("JSON", cyng::tuple_factory(cyng::make_param("file-name", (cwd / "setup.config.json").string()))),
+            cyng::make_param("JSON", cyng::tuple_factory(cyng::make_param("file.name", (cwd / "setup.config.json").string()))),
 
             create_cluster_spec())});
     }
@@ -188,7 +187,7 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             smf::generate_access_rights(s, user); //	see task/storage_db.h
         }
     }
@@ -197,7 +196,7 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             smf::init_storage(s); //	see task/storage_db.h
         }
     }
@@ -205,7 +204,7 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             smf::alter_table(s, table); //	see task/storage_db.h
         }
     }
@@ -214,7 +213,7 @@ namespace smf {
         auto const reader = cyng::make_reader(std::move(cfg));
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            std::cout << "file-name: " << reader["DB"].get<std::string>("file-name", "") << std::endl;
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             smf::generate_random_devs(s, count); //	see task/storage_db.h
         }
     }

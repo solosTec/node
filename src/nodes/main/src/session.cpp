@@ -564,7 +564,7 @@ namespace smf {
                 auto const pos = data.find("value");
                 if (pos != data.end()) {
                     auto const name = cyng::value_cast<std::string>(key.at(0), "");
-                    if (boost::algorithm::equals(name, "def-IEC-interval")) {
+                    if (boost::algorithm::equals(name, "def.IEC.interval")) {
                         BOOST_ASSERT_MSG(pos->second.tag() == cyng::TC_MINUTE, "data type TC_MINUTE expected");
                         if (pos->second.tag() == cyng::TC_MINUTE) {
                             auto const interval = cyng::value_cast(pos->second, std::chrono::minutes(20));
@@ -604,7 +604,7 @@ namespace smf {
 
         cache_.get_store().access(
             [&](cyng::table *tbl_gw) {
-                if (!tbl_gw->exist(key)) {
+                if (!tbl_gw->exists(key)) {
                     tbl_gw->insert(
                         key,
                         cyng::data_generator(
@@ -1026,10 +1026,10 @@ namespace smf {
                                                                                                                // device
 
             //	check auto insert
-            auto const auto_login = cache_.get_cfg().get_value("auto-login", false);
+            auto const auto_login = cache_.get_cfg().get_value("auto.login", false);
             if (auto_login) {
                 CYNG_LOG_INFO(logger_, "auto-login is ON - insert [" << name << "] into device table");
-                auto const auto_enabled = cache_.get_cfg().get_value("auto-enabled", true);
+                auto const auto_enabled = cache_.get_cfg().get_value("auto.enabled", true);
                 cache_.insert_device(rtag, name, pwd, auto_enabled);
             }
         }

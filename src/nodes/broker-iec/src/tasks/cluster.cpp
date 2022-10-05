@@ -232,7 +232,7 @@ namespace smf {
                 //  precondition is that gateway is already configured
                 //
                 auto const key_gw = dep_key_(host, port);
-                if (tbl_gw->exist(key_gw)) {
+                if (tbl_gw->exists(key_gw)) {
 
                     //
                     //  look meter record

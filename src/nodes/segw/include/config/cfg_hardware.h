@@ -29,7 +29,7 @@ namespace smf {
         std::string get_adapter_firmware_version() const;
         std::string get_adapter_hardware_version() const;
 
-        constexpr static char root[] = "hw";
+        constexpr static char root[] = "hardware";
 
       private:
         cfg &cfg_;

@@ -40,10 +40,9 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
-            cyng::make_param("country-code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
-            cyng::make_param("language-code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
+            cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
+            cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             create_server_spec(),
             create_session_spec(tmp),
             create_cluster_spec())});
@@ -69,22 +68,22 @@ namespace smf {
         return cyng::make_param(
             "session",
             cyng::make_tuple(
-                cyng::make_param("auto-login", false),
-                cyng::make_param("auto-enabled", true),
+                cyng::make_param("auto.login", false),
+                cyng::make_param("auto.enabled", true),
                 cyng::make_param("superseede", true),
-                cyng::make_param("gw-cache", true),       //  no longer used
-                cyng::make_param("auto-insert-gw", true), //  not active used yet
+                cyng::make_param("gw.cache", true),       //  no longer used
+                cyng::make_param("auto.insert.gw", true), //  not active used yet
                 cyng::make_param("generate-time-series", false),
-                cyng::make_param("catch-meters", false),
-                cyng::make_param("catch-lora", true),
-                cyng::make_param("stat-dir", tmp.string()), //	store statistics
-                cyng::make_param("max-messages", 1000),     //	system log
-                cyng::make_param("max-events", 2000),       //	time series events
-                cyng::make_param("max-LoRa-records", 500),  //	LoRa uplink records
-                cyng::make_param("max-wMBus-records", 500), //	wireless M-Bus uplink records
-                cyng::make_param("max-IEC-records", 600),   //	IECs uplink records
-                cyng::make_param("max-bridges", 300),       //	max. entries in TBridge
-                cyng::make_param("def-IEC-interval", 20)    //  IEC default readout interval in minutes
+                cyng::make_param("catch.meters", false),
+                cyng::make_param("catch.lora", true),
+                cyng::make_param("stat.dir", tmp.string()), //	store statistics
+                cyng::make_param("max.messages", 1000),     //	system log
+                cyng::make_param("max.events", 2000),       //	time series events
+                cyng::make_param("max.LoRa.records", 500),  //	LoRa uplink records
+                cyng::make_param("max.wMBus.records", 500), //	wireless M-Bus uplink records
+                cyng::make_param("max.IEC.records", 600),   //	IECs uplink records
+                cyng::make_param("max.bridges", 300),       //	max. entries in TBridge
+                cyng::make_param("def.IEC.interval", 20)    //  IEC default readout interval in minutes
                 ));
     }
 
@@ -102,8 +101,8 @@ namespace smf {
         auto const tag = read_tag(reader["tag"].get());
 
         auto const country_code =
-            cyng::value_cast(reader["country-code"].get(), cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY));
-        auto const lang_code = cyng::value_cast(reader["language-code"].get(), "en-GB");
+            cyng::value_cast(reader["country.code"].get(), cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY));
+        auto const lang_code = cyng::value_cast(reader["language.code"].get(), "en-GB");
 
         auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
         auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 7701);

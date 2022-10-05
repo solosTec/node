@@ -13,7 +13,7 @@
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
-//#include <cyng/sys/locale.h>
+// #include <cyng/sys/locale.h>
 #include <cyng/task/registry.h>
 
 #include <iostream>
@@ -32,7 +32,6 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-            cyng::make_param("log-dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
             create_server_spec(cwd),
             create_cluster_spec())});

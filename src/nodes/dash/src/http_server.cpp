@@ -787,7 +787,7 @@ namespace smf {
                     //
                     // get online state
                     //
-                    auto const online = tbl_session->exist(rec.key());
+                    auto const online = tbl_session->exists(rec.key());
 
                     //
                     // get additional data from meter
@@ -845,7 +845,7 @@ namespace smf {
                     //
                     // get online state
                     //
-                    auto const online = tbl_session->exist(rec.key());
+                    auto const online = tbl_session->exists(rec.key());
 
                     //
                     //  append online state

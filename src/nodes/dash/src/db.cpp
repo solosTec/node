@@ -63,8 +63,8 @@ namespace smf {
         cfg_.set_value("http-max-upload-size", max_upload_size); //	10.485.760 bytes
         cfg_.set_value("http-server-nickname", nickname);        //	X-ServerNickName
         cfg_.set_value("https-redirect", false);                 //	redirect HTTP traffic to HTTPS port
-        cfg_.set_value("country-code", country_code);
-        cfg_.set_value("language-code", lang_code);
+        cfg_.set_value("country.code", country_code);
+        cfg_.set_value("language.code", lang_code);
     }
 
     db::rel db::by_table(std::string const &name) const {
