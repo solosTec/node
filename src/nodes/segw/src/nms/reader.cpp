@@ -203,7 +203,7 @@ namespace smf {
                         auto const databits = cyng::numeric_cast<std::uint8_t>(param.second, 8);
                         cfg.set_databits(databits);
                         cyng::merge(pm, {"serial-port", port.first, param.first}, cyng::make_object("ok"));
-                    } else if (boost::algorithm::equals(param.first, "flow-control")) {
+                    } else if (boost::algorithm::equals(param.first, "flow.control")) {
                         auto const flow_control = cyng::value_cast(param.second, "none");
                         cfg.set_flow_control(flow_control);
                         cyng::merge(pm, {"serial-port", port.first, param.first}, cyng::make_object("ok"));
@@ -379,7 +379,7 @@ namespace smf {
                         rs485.get_port(),
                         cyng::param_map_factory("enabled", rs485.is_enabled())("index", rs485.get_index())(
                             "parity", serial::to_string(rs485.get_parity()))("databits", rs485.get_databits().value())(
-                            "flow-control", serial::to_string(rs485.get_flow_control()))(
+                            "flow.control", serial::to_string(rs485.get_flow_control()))(
                             "stopbits", serial::to_string(rs485.get_stopbits()))("baudrate", rs485.get_baud_rate().value())(
                             "protocol", rs485.get_protocol())("broker", rs485_broker.get_target_vector())(
                             "listener",
@@ -391,7 +391,7 @@ namespace smf {
                         wmbus.get_port(),
                         cyng::param_map_factory("enabled", wmbus.is_enabled())("index", wmbus.get_index())(
                             "parity", serial::to_string(wmbus.get_parity()))("databits", wmbus.get_databits().value())(
-                            "flow-control", serial::to_string(wmbus.get_flow_control()))(
+                            "flow.control", serial::to_string(wmbus.get_flow_control()))(
                             "stopbits", serial::to_string(wmbus.get_stopbits()))("baudrate", wmbus.get_baud_rate().value())(
                             "protocol", wmbus.get_protocol())("broker", wmbus_broker.get_target_vector())(
                             "max-readout-frequency", wmbus_blocklist.get_max_frequency())(

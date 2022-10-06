@@ -22,11 +22,11 @@ namespace smf {
         std::string pwd_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "pwd"); }
         std::string enabled_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "enabled"); }
         std::string debug_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "debug"); }
-        std::string script_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "script-path"); }
+        std::string script_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "script.path"); }
         std::string nic_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic"); }
-        std::string nic_v4_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-ipv4"); }
-        std::string nic_linklocal_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-linklocal"); }
-        std::string nic_index_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic-index"); }
+        std::string nic_v4_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic.ipv4"); }
+        std::string nic_linklocal_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic.linklocal"); }
+        std::string nic_index_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "nic.index"); }
         std::string delay_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "delay"); }
         std::string mode_path() { return cyng::to_path(cfg::sep, cfg_nms::root, "mode"); }
     } // namespace

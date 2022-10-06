@@ -1639,7 +1639,7 @@ namespace smf {
     }
 
     std::pair<std::string, bool> is_custom_gateway(std::string const & id) { 
-        if (boost::algorithm::starts_with(id, "smf-gw:") || boost::algorithm::starts_with(id, "EMH-")) {
+        if (boost::algorithm::starts_with(id, "smf.gw:") || boost::algorithm::starts_with(id, "EMH-")) {
             auto const vec = cyng::split(id, ":");
             if (vec.size() == 3 && vec.at(2).size() == 14) {
                 return {vec.at(2), true};

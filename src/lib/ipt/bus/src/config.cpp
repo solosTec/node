@@ -53,7 +53,7 @@ namespace smf {
                 cyng::find_value(pmap, std::string("account"), std::string()),
                 cyng::find_value(pmap, std::string("pwd"), std::string()),
                 to_sk(cyng::find_value(
-                    pmap, std::string("def-sk"), std::string("0102030405060708090001020304050607080900010203040506070809000001"))),
+                    pmap, std::string("def.sk"), std::string("0102030405060708090001020304050607080900010203040506070809000001"))),
                 cyng::find_value(pmap, std::string("scrambled"), true),
                 cyng::find_value(pmap, std::string("monitor"), 12));
         }

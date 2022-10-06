@@ -46,11 +46,11 @@ namespace smf {
 
     bool cfg_sml::is_enabled() const { return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "enabled"), false); }
 
-    bool cfg_sml::accept_all_ids() const { return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "accept-all-ids"), false); }
+    bool cfg_sml::accept_all_ids() const { return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "accept.all.ids"), false); }
 
     bool cfg_sml::is_auto_config() const {
         return cfg_.get_value(
-            cyng::to_path(cfg::sep, "sml", "auto-config"),
+            cyng::to_path(cfg::sep, "sml", "auto.config"),
 #ifdef _DEBUG
             true
 #else
@@ -59,7 +59,7 @@ namespace smf {
         );
     }
     cyng::obis cfg_sml::get_default_profile() const {
-        return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "default-profile"), OBIS_PROFILE_15_MINUTE);
+        return cfg_.get_value(cyng::to_path(cfg::sep, "sml", "default.profile"), OBIS_PROFILE_15_MINUTE);
     }
 
 } // namespace smf

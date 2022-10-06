@@ -8,7 +8,6 @@
 #include <storage.h>
 #include <storage_functions.h>
 
-//#include <cyng/db/details/statement_interface.h>
 #include <cyng/db/storage.h>
 #include <cyng/sql/sql.hpp>
 #include <cyng/task/controller.h>

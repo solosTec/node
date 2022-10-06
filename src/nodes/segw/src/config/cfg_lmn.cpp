@@ -21,7 +21,7 @@ namespace smf {
         return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "parity");
     }
     std::string cfg_lmn::flow_control_path(std::uint8_t idx) {
-        return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "flow-control");
+        return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "flow.control");
     }
     std::string cfg_lmn::stopbits_path(std::uint8_t idx) {
         return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "stopbits");
@@ -30,10 +30,10 @@ namespace smf {
         return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "databits");
     }
     std::string cfg_lmn::broker_enabled_path(std::uint8_t idx) {
-        return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-enabled");
+        return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker.enabled");
     }
     std::string cfg_lmn::broker_login_path(std::uint8_t idx) {
-        return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-login");
+        return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker.login");
     }
     // std::string cfg_lmn::broker_timeout_path(std::uint8_t idx) {
     //	return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "broker-timeout");
@@ -45,7 +45,7 @@ namespace smf {
     }
     std::string cfg_lmn::HCI_path(std::uint8_t idx) { return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "HCI"); }
     std::string cfg_lmn::hex_dump_path(std::uint8_t idx) {
-        return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "hex-dump");
+        return cyng::to_path(cfg::sep, cfg_lmn::root, std::to_string(idx), "hex.dump");
     }
 
     lmn_type lookup_by_name(cfg &c, std::string const &name) {

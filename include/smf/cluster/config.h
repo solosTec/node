@@ -31,7 +31,7 @@ namespace smf
 
 	/**
 	 * read a configuration map with "service", "host", "account", "pwd",
-	 * "def-sk", scrambled" and "monitor"
+	 * "def.sk", scrambled" and "monitor"
 	 */
 	server read_config(cyng::param_map_t const& pmap);
 

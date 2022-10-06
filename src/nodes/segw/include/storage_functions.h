@@ -81,6 +81,13 @@ namespace smf {
     bool update_config_record(cyng::db::statement_ptr stmt, cyng::object const &key, cyng::object obj);
     bool remove_config_record(cyng::db::statement_ptr stmt, cyng::object const &key);
     cyng::object read_config_record(cyng::db::statement_ptr stmt, cyng::object const &key);
+
+    /**
+     * do some basic conversions
+     */
+    std::string sanitize_key(std::string);
+    bool is_to_sanitize(std::string);
+
 } // namespace smf
 
 #endif

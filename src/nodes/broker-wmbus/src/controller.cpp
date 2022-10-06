@@ -274,14 +274,14 @@ namespace smf {
                      cyng::make_param("service", "26862"),
                      cyng::make_param("account", "broker-wmbus"),
                      cyng::make_param("pwd", pwd),
-                     cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                     cyng::make_param("def.sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                      cyng::make_param("scrambled", true)),
                  cyng::make_tuple(
                      cyng::make_param("host", "ipt"),
                      cyng::make_param("service", "26862"),
                      cyng::make_param("account", "broker-wmbus"),
                      cyng::make_param("pwd", pwd),
-                     cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                     cyng::make_param("def.sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                      cyng::make_param("scrambled", false))}));
     }
 

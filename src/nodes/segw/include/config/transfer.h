@@ -68,12 +68,9 @@ namespace smf {
     void write_json_config(cyng::db::session &db, cyng::object &&cfg, std::filesystem::path file_name, cyng::param_map_t const &s);
     void write_json_config(cyng::db::session &db, std::ofstream &, cyng::param_map_t const &s);
     cyng::param_map_t read_config(cyng::db::session &db, cyng::param_map_t const &s);
-    void insert_value(std::vector<std::string> const &, cyng::param_map_t &cfg, cyng::object);
-
-    /**
-     * so some basic conversions
-     */
-    std::string sanitize_key(std::string);
+    void insert_value(std::vector<std::string> const &, cyng::param_map_t *, cyng::object);
+    cyng::param_map_t transform_config(cyng::param_map_t &&);
+    cyng::vector_t transform_pin_numbers(cyng::param_map_t &&);
 
 } // namespace smf
 

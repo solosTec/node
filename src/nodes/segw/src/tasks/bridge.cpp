@@ -274,12 +274,12 @@ namespace smf {
                 }
                 {
                     //
-                    //  nms/nic-index
+                    //  nms/nic.index
                     //
                     auto const r = get_ipv6_linklocal(nic);
-                    auto const key_index = cyng::key_generator("nms/nic-index");
+                    auto const key_index = cyng::key_generator("nms/nic.index");
                     if (!cfg->exists(key_index)) {
-                        CYNG_LOG_INFO(logger_, "insert nms/nic-index: " << r.second);
+                        CYNG_LOG_INFO(logger_, "insert nms/nic.index: " << r.second);
                         cfg->insert(
                             key_index,
                             cyng::data_generator(r.second),
@@ -289,9 +289,9 @@ namespace smf {
                     //
                     //  nms/nic-linklocal
                     //
-                    auto const key_linklocal = cyng::key_generator("nms/nic-linklocal");
+                    auto const key_linklocal = cyng::key_generator("nms/nic.linklocal");
                     if (!cfg->exists(key_linklocal)) {
-                        CYNG_LOG_INFO(logger_, "insert nms/nic-linklocal: " << r.first);
+                        CYNG_LOG_INFO(logger_, "insert nms/nic.linklocal: " << r.first);
                         cfg->insert(
                             key_linklocal,
                             cyng::data_generator(r.first),
@@ -301,12 +301,12 @@ namespace smf {
                 }
                 {
                     //
-                    //  nms/nic-ipv4
+                    //  nms/nic.ipv4
                     //
                     auto const ipv4 = get_ipv4_address(nic);
-                    auto const key = cyng::key_generator("nms/nic-ipv4");
+                    auto const key = cyng::key_generator("nms/nic.ipv4");
                     if (!cfg->exists(key)) {
-                        CYNG_LOG_INFO(logger_, "insert nms/nic-ipv4: " << ipv4);
+                        CYNG_LOG_INFO(logger_, "insert nms/nic.ipv4: " << ipv4);
                         cfg->insert(
                             key,
                             cyng::data_generator(ipv4),
@@ -387,6 +387,11 @@ namespace smf {
     std::tuple<boost::uuids::uuid, cyng::buffer_t, std::uint32_t>
     load_configuration(cyng::logger logger, cyng::db::session db, cyng::store &cache) {
 
+        //
+        //  a list of keys that are outdated
+        //
+        std::set<std::string> keys_to_remove;
+
         boost::uuids::uuid tag = boost::uuids::nil_uuid();
         cyng::buffer_t id = cyng::make_buffer({0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
         std::uint32_t opcounter{0};
@@ -399,9 +404,14 @@ namespace smf {
 #ifdef _DEBUG_SEGW
                     CYNG_LOG_DEBUG(logger, rec.to_tuple());
 #endif
-                    auto const path = rec.value("path", "");
+                    auto const path = sanitize_key(rec.value("path", ""));
+                    auto const key = sanitize_key(path);
                     auto const type = rec.value<std::uint16_t>("type", 15u);
                     auto const val = rec.value("value", "");
+
+                    if (!boost::algorithm::equals(path, key)) {
+                        keys_to_remove.emplace(path);
+                    }
 
                     try {
 
@@ -411,27 +421,30 @@ namespace smf {
                         auto obj = cyng::restore(val, type);
 
 #ifdef _DEBUG_SEGW
-                    // CYNG_LOG_DEBUG(logger, "load - " << path << " = " << obj);
+                    // CYNG_LOG_DEBUG(logger, "load - " << key << " = " << obj);
 #endif
-                        if (boost::algorithm::equals(path, "tag") && (obj.tag() == cyng::TC_STRING)) {
+                        if (boost::algorithm::equals(key, "tag") && (obj.tag() == cyng::TC_STRING)) {
                             //	set system tag
                             auto const stag = cyng::value_cast(obj, "");
                             BOOST_ASSERT_MSG(stag.size() == 36, "invalid tag string");
                             tag = cyng::to_uuid(stag, boost::uuids::nil_uuid());
                             CYNG_LOG_INFO(logger, "source tag: " << tag);
                             BOOST_ASSERT_MSG(!tag.is_nil(), "invalid tag value");
-                        } else if (boost::algorithm::equals(path, cyng::to_string(OBIS_SERVER_ID))) {
+                        } else if (boost::algorithm::equals(key, cyng::to_string(OBIS_SERVER_ID))) {
                             //	init server ID in cache
                             id = cyng::hex_to_buffer(val);
                             CYNG_LOG_INFO(logger, "server id: " << cyng::to_string(id));
-                        } else if (boost::algorithm::equals(path, "nms/nic-index")) {
+                        } else if (boost::algorithm::equals(key, "nms/nic.index")) {
                             //  enforce u32
                             auto const nicidx = cyng::numeric_cast<std::uint32_t>(obj, 0u);
                             auto const index = validate_nic_index(nicidx);
                             if (nicidx != index) {
                                 CYNG_LOG_ERROR(logger, "[" << nicidx << "] is an invalid nic index - use [" << index << "]");
-                                cfg->insert(rec.key(), cyng::data_generator(index), 1,
-                                            tag); //	tag maybe not initialized yet
+                                cfg->insert(
+                                    cyng::key_generator(key),
+                                    cyng::data_generator(index),
+                                    1,
+                                    tag); //	tag maybe not initialized yet
 
                                 //
                                 //  list possible values
@@ -441,12 +454,12 @@ namespace smf {
                                     CYNG_LOG_TRACE(logger, "[" << cfg.index_ << "]: " << cfg.device_);
                                 }
                             }
-                        } else if (boost::algorithm::equals(path, "opcounter")) {
+                        } else if (boost::algorithm::equals(key, "opcounter")) {
 
                             opcounter = cyng::numeric_cast<std::uint32_t>(obj, 0u);
                             CYNG_LOG_INFO(logger, "initial operation timer: " << opcounter << " seconds");
                             cfg->merge(
-                                rec.key(),
+                                cyng::key_generator(key),
                                 cyng::data_generator(opcounter),
                                 1u,   //	only needed for insert operations
                                 tag); //	tag maybe not initialized yet
@@ -457,22 +470,30 @@ namespace smf {
                             //	insert value
                             //
                             if (!cfg->merge(
-                                    rec.key(),
+                                    cyng::key_generator(key),
+                                    // rec.key(),
                                     cyng::data_generator(obj),
                                     1u,     //	only needed for insert operations
                                     tag)) { //	tag maybe not initialized yet
 
-                                CYNG_LOG_ERROR(logger, "cannot merge config key " << path << ": " << val << '#' << type);
+                                CYNG_LOG_ERROR(logger, "cannot merge config key " << key << ": " << val << '#' << type);
                             }
                         }
                     } catch (std::exception const &ex) {
-                        CYNG_LOG_ERROR(logger, "cannot load " << path << ": " << ex.what());
+                        CYNG_LOG_ERROR(logger, "cannot load " << key << ": " << ex.what());
                     }
 
                     return true;
                 });
             },
             cyng::access::write("cfg"));
+
+        //
+        //  remove outdated keys
+        //
+        for (auto const &key : keys_to_remove) {
+            del_config_value(db, key);
+        }
 
         return std::make_tuple(tag, id, opcounter);
     }

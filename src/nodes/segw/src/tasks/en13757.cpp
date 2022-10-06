@@ -58,7 +58,10 @@ namespace smf {
         }
     }
 
-    void en13757::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[EN-13757] stopped"); }
+    void en13757::stop(cyng::eod) {
+        proxy_.stop();
+        CYNG_LOG_INFO(logger_, "[EN-13757] stopped");
+    }
 
     void en13757::receive(cyng::buffer_t data) {
         CYNG_LOG_TRACE(logger_, "[EN-13757] received " << data.size() << " bytes");

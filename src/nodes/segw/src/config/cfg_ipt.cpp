@@ -79,8 +79,8 @@ namespace smf {
 
         std::string reconnect_timeout_path() { return cyng::to_path(cfg::sep, OBIS_ROOT_IPT_PARAM, OBIS_TCP_WAIT_TO_RECONNECT); }
 
-        std::string local_ep_path() { return cyng::to_path(cfg::sep, cfg_ipt::root, "local-ep"); }
-        std::string remote_ep_path() { return cyng::to_path(cfg::sep, cfg_ipt::root, "remote-ep"); }
+        std::string local_ep_path() { return cyng::to_path(cfg::sep, cfg_ipt::root, "local.ep"); }
+        std::string remote_ep_path() { return cyng::to_path(cfg::sep, cfg_ipt::root, "remote.ep"); }
 
     } // namespace
 

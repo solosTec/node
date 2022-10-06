@@ -37,7 +37,7 @@ namespace smf {
                 cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
                 cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
 #endif
-                cyng::make_param("generate-profile", false),
+                cyng::make_param("generate.profile", false),
                 cyng::make_param("utc.offset", cyng::sys::delta_utc(now).count()),
 
                 create_net(srv_mac, srv_id),
@@ -110,7 +110,7 @@ namespace smf {
             cyng::make_param("HCI", "CP210x"), //	iM871A mbus-USB converter
             cyng::make_param("databits", 8),
             cyng::make_param("parity", "none"),       //	none, odd, even
-            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("flow.control", "none"), //	none, software, hardware
             cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
             cyng::make_param("speed", 57600),         //	0xE100
 
@@ -130,7 +130,7 @@ namespace smf {
             cyng::make_param("port", "/dev/ttyAPP0"),
             cyng::make_param("databits", 8),
             cyng::make_param("parity", "none"),       //	none, odd, even
-            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("flow.control", "none"), //	none, software, hardware
             cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
             cyng::make_param("speed", 115200),
 #else
@@ -140,7 +140,7 @@ namespace smf {
             cyng::make_param("port", "/dev/ttymxc0"),
             cyng::make_param("databits", 8),
             cyng::make_param("parity", "none"),       //	none, odd, even
-            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("flow.control", "none"), //	none, software, hardware
             cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
             cyng::make_param("speed", 115200),
 #endif
@@ -148,10 +148,9 @@ namespace smf {
 #endif
             //  wM-Bus-EN13757-4"
             cyng::make_param("protocol", config::get_name(config::protocol::WIRELESS_MBUS)), //	raw, mbus, iec, sml
-            cyng::make_param("broker-enabled", true),
-            cyng::make_param("broker-login", false),
-            // cyng::make_param("broker-timeout", 12), //	seconds
-            cyng::make_param("hex-dump", false),
+            cyng::make_param("broker.enabled", true),
+            cyng::make_param("broker.login", false),
+            cyng::make_param("hex.dump", false),
             cyng::make_param(
                 "cache",
                 cyng::make_tuple(
@@ -198,8 +197,8 @@ namespace smf {
 #endif
                         ("account", hostname)       //  login name
                         ("pwd", "wM-Bus")           //  password
-                        ("connect-on-demand", true) //  broker algorithm (connect on demand, otherwise connect at start)
-                        ("write-timeout", std::chrono::seconds(2)) //	seconds - only for on-demand
+                        ("connect.on.demand", true) //  broker algorithm (connect on demand, otherwise connect at start)
+                        ("write.timeout", std::chrono::seconds(2)) //	seconds - only for on-demand
                         ("watchdog", std::chrono::seconds(12))     //	seconds - only for on-start
                             .
                             operator cyng::param_map_t()
@@ -215,8 +214,8 @@ namespace smf {
                  ("port", 12002)                               // port
                  ("account", hostname)                         // login name
                  ("pwd", "rs485")                              // password
-                 ("connect-on-demand", true)                   // broker algorithm (connect on demand, otherwise connect at start)
-                 ("write-timeout", 2)                          // seconds - only for on-demand
+                 ("connect.on.demand", true)                   // broker algorithm (connect on demand, otherwise connect at start)
+                 ("write.timeout", 2)                          // seconds - only for on-demand
                  ("watchdog", 12)                              // seconds - only for on-start
                      .
                      operator cyng::param_map_t()}));
@@ -227,7 +226,6 @@ namespace smf {
             "listener",
             cyng::tuple_factory(
                 cyng::make_param("address", "0.0.0.0"),
-                // cyng::make_param("link-local", get_nms_address("br0")),
                 cyng::make_param("port", 6006),
                 cyng::make_param("login", false),                     //	request login
                 cyng::make_param("enabled", true),                    //	start rs485 server
@@ -258,7 +256,7 @@ namespace smf {
 
             //	8N1
             cyng::make_param("databits", 8),
-            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("flow.control", "none"), //	none, software, hardware
             cyng::make_param("stopbits", "one"),      //	one, onepointfive, two
             cyng::make_param("speed", 2400),          //	initial
 
@@ -290,7 +288,7 @@ namespace smf {
             cyng::make_param("stopbits", "one"), //	one, onepointfive, two
             cyng::make_param("parity", "none"),  //	none, odd, even
 #endif
-            cyng::make_param("flow-control", "none"), //	none, software, hardware
+            cyng::make_param("flow.control", "none"), //	none, software, hardware
             cyng::make_param("speed", 9600),          //	initial
 
         //
@@ -299,10 +297,10 @@ namespace smf {
 
 #endif
             cyng::make_param("protocol", "raw"), //	raw, mbus, iec, sml
-            cyng::make_param("broker-enabled", false),
-            cyng::make_param("broker-login", false),
-            cyng::make_param("broker-reconnect", 12), //	seconds
-            cyng::make_param("hex-dump", false),
+            cyng::make_param("broker.enabled", false),
+            cyng::make_param("broker.login", false),
+            cyng::make_param("broker.reconnect", 12), //	seconds
+            cyng::make_param("hex.dump", false),
             create_rs485_broker(hostname),
             create_rs485_listener(),
             create_rs485_block_list(),
@@ -343,9 +341,9 @@ namespace smf {
                 ) // enabled/disabled
 
 #if (OECP_VERSION == 1)
-            ("path", "/sys/class/gpio")("list", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68 OECP1
+            ("path", "/sys/class/gpio")("pin", cyng::make_vector({46, 47, 50, 53})) //	, 64, 68 OECP1
 #else
-            ("path", "/sys/class/gpio")("list", cyng::make_vector({117, 118, 119, 120})) //	OECP2
+            ("path", "/sys/class/gpio")("pin", cyng::make_vector({117, 118, 119, 120})) //	OECP2
 #endif
             ());
     }
@@ -400,16 +398,16 @@ namespace smf {
                 cyng::make_param("account", "operator"),
                 cyng::make_param("pwd", "operator"),
                 cyng::make_param("nic", nic),
-                cyng::make_param("nic-ipv4", get_ipv4_address(nic)),
-                cyng::make_param("nic-linklocal", link_local.first),
-                cyng::make_param("nic-index", link_local.second),
+                cyng::make_param("nic.ipv4", get_ipv4_address(nic)),
+                cyng::make_param("nic.linklocal", link_local.first),
+                cyng::make_param("nic.index", link_local.second),
 #if defined(BOOST_OS_LINUX_AVAILABLE)
                 cyng::make_param("enabled", true),
 #else
                 cyng::make_param("enabled", false),
 #endif
                 cyng::make_param(
-                    "script-path",
+                    "script.path",
 #if defined(BOOST_OS_LINUX_AVAILABLE)
                     (tmp / "update-script.sh").string()
 #else
@@ -442,7 +440,7 @@ namespace smf {
                     true
 #endif
                     ),
-                cyng::make_param("accept-all-ids", false), //	accept only the specified MAC id
+                cyng::make_param("accept.all.ids", false), //	accept only the specified MAC id
                 cyng::make_param(
                     "auto-config", //  create a data mirror for each new wireless M-Bus device
 #ifdef _DEBUG
@@ -451,7 +449,7 @@ namespace smf {
                     true
 #endif
                     ),
-                cyng::make_param("default-profile", CODE_PROFILE_15_MINUTE) //	profile to use in auto-config mode
+                cyng::make_param("default.profile", CODE_PROFILE_15_MINUTE) //	profile to use in auto-config mode
                 ));
     }
 
@@ -499,7 +497,7 @@ namespace smf {
                     cyng::make_param("account", hostname),
                     cyng::make_param("service", "26862"),
                     cyng::make_param("pwd", std::to_string(pwd)),
-                    cyng::make_param("def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                    cyng::make_param("def.sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                     cyng::make_param("scrambled", true)
 
                         ),
@@ -520,7 +518,7 @@ namespace smf {
 #endif
                         cyng::make_param("pwd", std::to_string(pwd)),
                         cyng::make_param(
-                            "def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                            "def.sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                         cyng::make_param("scrambled", true)
 
                     )
@@ -551,16 +549,16 @@ namespace smf {
         auto const nics = cyng::sys::get_nic_names();
 
         if (std::find(std::begin(nics), std::end(nics), "br0") != nics.end()) {
-            return "smf-gw:plc:" + srv_id;
+            return "smf.gw:plc:" + srv_id;
         } else if (std::find(std::begin(nics), std::end(nics), "eth0") != nics.end()) {
-            return "smf-gw:eth:" + srv_id;
+            return "smf.gw:eth:" + srv_id;
         } else if (std::find(std::begin(nics), std::end(nics), "ens33") != nics.end()) {
-            return "smf-gw:virt:" + srv_id; //  linux on VMware
+            return "smf.gw:virt:" + srv_id; //  linux on VMware
         } else if (std::find(std::begin(nics), std::end(nics), "Ethernet") != nics.end()) {
-            return "smf-gw:win:" + srv_id; //  Windows
+            return "smf.gw:win:" + srv_id; //  Windows
         }
 
-        return "smf-gw:virtual";
+        return "smf.gw:virtual";
     }
 
 } // namespace smf

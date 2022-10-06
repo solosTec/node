@@ -210,7 +210,7 @@ namespace smf {
                          cyng::make_param("account", "data-store"),
                          cyng::make_param("pwd", "to-define"),
                          cyng::make_param(
-                             "def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                             "def.sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                          cyng::make_param("scrambled", true)),
                      cyng::make_tuple(
                          cyng::make_param("host", "localhost"),
@@ -218,7 +218,7 @@ namespace smf {
                          cyng::make_param("account", "data-store"),
                          cyng::make_param("pwd", "to-define"),
                          cyng::make_param(
-                             "def-sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
+                             "def.sk", "0102030405060708090001020304050607080900010203040506070809000001"), //	scramble key
                          cyng::make_param("scrambled", false))})),
             cyng::make_param(
                 "targets",

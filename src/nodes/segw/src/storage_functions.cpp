@@ -455,7 +455,7 @@ namespace smf {
         while (auto res = stmt->get_result()) {
             auto const rec = cyng::to_record(ms, res);
             // std::cout << rec.to_tuple() << std::endl;
-            auto const path = rec.value("path", "");
+            auto const path = sanitize_key(rec.value("path", ""));
             auto const val = rec.value("value", "");
             auto const def = rec.value("def", "");
             auto const type = rec.value("type", static_cast<std::uint16_t>(0));
@@ -658,8 +658,8 @@ namespace smf {
         storage store(db);
 
         //  nms/nic..............: Ethernet (Ethernet:s) - NMS: nic
-        //  nms/nic-index........: 9 (9:i64) - NMS: nic-index
-        //  nms/nic-ipv4.........: 192.168.1.82 (192.168.1.82:ip:address) - IPv4 address of NMS adapter
+        //  nms/nic.index........: 9 (9:i64) - NMS: nic.index
+        //  nms/nic.ipv4.........: 192.168.1.82 (192.168.1.82:ip:address) - IPv4 address of NMS adapter
         //  nms/nic-linklocal....: fe80::1566:fadd:d93e:2576 (fe80::1566:fadd:d93e:2576:ip:address) - link-local address
         //  nms/port.............: 1d8a (1d8a:u16) - default NMS listener port (7562)
         if (boost::algorithm::starts_with(mode, "prod")) {
@@ -668,9 +668,9 @@ namespace smf {
             auto const linklocal = get_ipv6_linklocal(nic); //  std::pair<boost::asio::ip::address, std::uint32_t>
 
             //
-            //  read "nms/nic-linklocal" and "nms/nic-index"
+            //  read "nms/nic.linklocal" and "nms/nic.index"
             //
-            auto obj = store.cfg_read(cyng::make_object("nms/nic-linklocal"), cyng::make_object(linklocal.first));
+            auto obj = store.cfg_read(cyng::make_object("nms/nic.linklocal"), cyng::make_object(linklocal.first));
             auto const address = cyng::value_cast<boost::asio::ip::address>(obj, linklocal.first);
             BOOST_ASSERT_MSG(address.is_v6(), "not an IPv6 address");
 
@@ -683,9 +683,9 @@ namespace smf {
 #endif
 
             //
-            //  set "nms/nic-index" to new index
+            //  set "nms/nic.index" to new index
             //
-            store.cfg_update(cyng::make_object("nms/nic-index"), cyng::make_object(linklocal.second));
+            store.cfg_update(cyng::make_object("nms/nic.index"), cyng::make_object(linklocal.second));
 
             //
             //  set "nms/address" to link local address
@@ -832,6 +832,20 @@ namespace smf {
             return cyng::restore(val, type);
         }
         return cyng::make_object();
+    }
+
+    std::string sanitize_key(std::string key) {
+        std::transform(key.begin(), key.end(), key.begin(), [](std::string::value_type c) { return (c == '-') ? '.' : c; });
+        // if (boost::algorithm::equals(key, cyng::to_string(OBIS_ROOT_IPT_PARAM))) {
+        //     return "ipt";
+        if (boost::algorithm::equals(key, "hw")) {
+            return "hardware";
+        }
+        return key;
+    }
+
+    bool is_to_sanitize(std::string key) {
+        return std::any_of(key.begin(), key.end(), [](std::string::value_type c) { return c == '-'; });
     }
 
 } // namespace smf
