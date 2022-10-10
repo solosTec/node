@@ -61,7 +61,10 @@ for archive in *.bz2; do
 			echo "Variable for suffix not found, skipping"
 			continue
 		fi
-
+		
+		echo "Remove old copies"
+		find ${TARGETDIR}/.. -type f -name "smf_v*" -delete		
+		
 		echo "Copying ${archive} to ${TARGETDIR}"
 		cp ${archive} ${TARGETDIR}
 
