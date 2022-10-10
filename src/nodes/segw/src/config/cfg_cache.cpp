@@ -20,7 +20,7 @@ namespace smf {
             return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "push.server");
         }
         std::string delay_path(std::size_t type) {
-            return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "period.minutes");
+            return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "period");
         }
     } // namespace
 

@@ -611,7 +611,7 @@ namespace smf {
                     return {std::chrono::seconds(0), false};
                 },
                 [&](boost::asio::ip::tcp::endpoint ep, cyng::channel_ptr cp) {
-                    CYNG_LOG_TRACE(logger_, "[EN-13757] successful connected to " << ep);
+                    CYNG_LOG_TRACE(logger_, "[EN-13757]  successfully connected to " << ep);
 
                     //
                     //  send data
@@ -621,7 +621,7 @@ namespace smf {
                 },
                 [&](cyng::buffer_t data) {
                     //  should not receive anything - send only
-                    CYNG_LOG_INFO(logger_, "[EN-13757] received " << data.size() << " bytes");
+                    CYNG_LOG_WARNING(logger_, "[EN-13757] received " << data.size() << " bytes");
                 },
                 [&](boost::system::error_code ec) {
                     //	fill async

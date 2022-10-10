@@ -155,7 +155,7 @@ namespace smf {
                 cyng::make_tuple(
                     cyng::make_param("enabled", true),                           // active
                     cyng::make_param("push.server", "segw.ch:2002"),             // TCP/IP server
-                    cyng::make_param("period.minutes", std::chrono::minutes(60)) // minutes - "00:60:00.000000"
+                    cyng::make_param("period", std::chrono::minutes(60)) // minutes - "00:60:00.000000"
                     )),
             create_wireless_broker(hostname),
             create_wireless_block_list(),

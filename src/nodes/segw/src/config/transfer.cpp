@@ -845,7 +845,7 @@ namespace smf {
 
             auto const key = sanitize_key(param.first);
 
-            if (boost::algorithm::equals(key, "period.minutes")) {
+            if (boost::algorithm::equals(key, "period")) {
                 auto const inp = cyng::value_cast(param.second, "00:30:00.000000");
                 auto const period = cyng::to_minutes(inp);
                 insert_config_record(
