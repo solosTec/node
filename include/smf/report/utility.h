@@ -131,6 +131,49 @@ namespace smf {
      */
     std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point, std::size_t limit);
 
+    /**
+     * Helper class to calculate time zone offset.
+     * This is required since date library is not available prior to C++20
+     */
+    template <typename R, typename P> class tz_offset {
+      public:
+        tz_offset(std::chrono::system_clock::time_point tp, std::chrono::duration<R, P> diff)
+            : tp_(tp)
+            , diff_(diff) {}
+
+        tz_offset(tz_offset const &) = default;
+
+        tz_offset &operator=(std::chrono::system_clock::time_point tp) {
+            tp_ = tp;
+            return *this;
+        }
+
+        tz_offset &operator=(std::chrono::duration<R, P> const &diff) {
+            diff_ = diff;
+            return *this;
+        }
+
+        /** @brief conversion operator
+         *
+         * @return specified timepoint minus offset (localtime)
+         */
+        operator std::chrono::system_clock::time_point() { return utc_time(); }
+
+        /**
+         * @return specified timepoint (unmodified).
+         */
+        std::chrono::system_clock::time_point local_time() { return tp_; }
+
+        /**
+         * @return specified timepoint minus offset.
+         */
+        std::chrono::system_clock::time_point utc_time() { return tp_ - diff_; }
+
+      private:
+        std::chrono::system_clock::time_point tp_;
+        std::chrono::duration<R, P> diff_;
+    };
+
 } // namespace smf
 
 #endif

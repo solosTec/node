@@ -438,7 +438,7 @@ namespace smf {
             if (of.is_open()) {
                 //
                 // header
-                // "print-version"
+                // "print.version"
                 //
                 if (print_version) {
                     //  only the version info, no more ';'

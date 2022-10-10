@@ -579,8 +579,18 @@ namespace smf {
                 1);
         }
         cyng::meta_sql get_table_sml_readout() {
-            //  get all distinct profiles in the table
+            //
+            //  get all distinct profiles in the table:
             //  SELECT DISTINCT printf('%012X', profile) FROM TSMLReadout;
+            //
+            //  dump all data
+            //  SELECT tag, hex(meterId), printf('%012X', profile), trx, status, datetime(actTime), datetime(received) FROM
+            //  TSMLReadout ORDER BY actTime;
+            //
+            //  dump only new data
+            //  SELECT tag, hex(meterId), printf('%012X', profile), trx, status, datetime(actTime), datetime(received) FROM
+            //  TSMLReadout WHERE actTime > julianday('2022-10-09') ORDER BY actTime;
+
             return cyng::to_sql(get_store_sml_readout(), {0, 9, 0, 21, 0, 0, 0});
         }
 

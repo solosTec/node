@@ -13,6 +13,7 @@
 #include <cyng/sql/dsl.h>
 #include <cyng/sql/dsl/placeholder.h>
 #include <cyng/sql/sql.hpp>
+#include <cyng/sys/clock.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -258,14 +259,22 @@ namespace smf {
                 //
                 auto const act_time = rec.value("actTime", start);
                 auto const slot = sml::to_index(act_time, profile);
+#ifdef _DEBUG
+                // std::cout << "start: " << cyng::sys::to_string_utc(start, "%Y-%m-%dT%H:%M%z")
+                //           << ", actTime: " << cyng::sys::to_string_utc(act_time, "%Y-%m-%dT%H:%M%z") << ", slot: " << slot.first
+                //           << std::endl;
+#endif
+
                 if (slot.second) {
                     auto set_time = sml::to_time_point(slot.first, profile);
                     auto const id = rec.value("meterID", cyng::make_buffer());
 
-#ifdef __DEBUG
+#ifdef _DEBUG
+                    //  example: actTime '2022-10-07 11:00:00' from table translates to '2022-10-07T12:00:00+0200'
                     using cyng::operator<<;
-                    std::cout << cyng::to_string(id) << " - slot: #" << slot.first << " (" << set_time
-                              << "), actTime: " << rec.value("actTime", start) << std::endl;
+                    std::cout << "\tstart: " << cyng::sys::to_string_utc(start, "%Y-%m-%dT%H:%M%z") << " - " << cyng::to_string(id)
+                              << " - slot: #" << slot.first << " (" << set_time << "), actTime: " << rec.value("actTime", start)
+                              << ", tag: " << tag << std::endl;
 #endif
 
                     auto pos = data.find(id);

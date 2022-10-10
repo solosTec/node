@@ -886,11 +886,33 @@ BOOST_AUTO_TEST_CASE(get_profile_list_response) {
     // BOOST_REQUIRE(p.get_parser().is_closed());
 }
 
+//
+// LSMTest4 hardware is broken
+//
+// BOOST_AUTO_TEST_CASE(test192_168_1_17) {
+//
+//    //  Problem is value 0xcc at position #4
+//    //[0000]  a2 32 10 a8 cc 05 94 01  f3 e5 f2 14 18 8f 3a 55  .2...... ......:U
+//    //[0010]  ef 6f 82 55 8d 08 1c 0c  7f 76 62 b1 49 7b 1e c7  .o.U.... .vb.I{..
+//    //[0020]  97 a3 53 4e 64 b9 7d e5  9a 79 b7 b5 94 1e 10 32  ..SNd.}. .y.....2
+//    //[0030]  8f 89 03 aa 09 e8 95 2c  93 43                    ......., .C
+//
+//    auto const inp = cyng::make_buffer({0xa2, 0x32, 0x10, 0xa8, 0xcc, 0x05, 0x94, 0x01, 0xf3, 0xe5, 0xf2, 0x14, 0x18, 0x8f, 0x3a,
+//                                        0x55, 0xef, 0x6f, 0x82, 0x55, 0x8d, 0x08, 0x1c, 0x0c, 0x7f, 0x76, 0x62, 0xb1, 0x49, 0x7b,
+//                                        0x1e, 0xc7, 0x97, 0xa3, 0x53, 0x4e, 0x64, 0xb9, 0x7d, 0xe5, 0x9a, 0x79, 0xb7, 0xb5, 0x94,
+//                                        0x1e, 0x10, 0x32, 0x8f, 0x89, 0x03, 0xaa, 0x09, 0xe8, 0x95, 0x2c, 0x93, 0x43});
+//    smf::sml::unpack p(
+//        [](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+//            std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
+//        });
+//    p.read(std::begin(inp), std::end(inp));
+//}
+
 BOOST_AUTO_TEST_CASE(get_proc_param_response) {
 
     //  contains a long octet: 06e55b633481f7bb072957eabcf110c972e86691c3cfedabe088024bffe42f23
     // and a sequence of length "F104" == 20dec
-    //### Message ###
+    // ### Message ###
     // 76                                                SML_Message(Sequence):
     //  0A323639353535302D34                            transactionId: 2695550-4
     //  6203                                            groupNo: 3

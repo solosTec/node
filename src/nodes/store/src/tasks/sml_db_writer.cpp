@@ -152,6 +152,10 @@ namespace smf {
                 stmt->push(cyng::make_object(now), 0);      //	received
                 if (stmt->execute()) {
                     stmt->clear();
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[sml.db] data record of " << to_string(srv) << " successful stored in table " << m.get_name()
+                                                   << " by key: " << tag);
                 } else {
                     CYNG_LOG_WARNING(logger_, "[sml.db] insert into " << m.get_name() << " failed");
                 }
@@ -223,6 +227,7 @@ namespace smf {
                 stmt->push(cyng::make_object(unit), 0);   //	unit
                 if (stmt->execute()) {
                     stmt->clear();
+                    CYNG_LOG_TRACE(logger_, "[sml.db] data record " << tag << " successful stored in table " << m.get_name());
                 } else {
                     CYNG_LOG_WARNING(logger_, "[sml.db] insert into " << m.get_name() << " failed");
                 }

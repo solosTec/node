@@ -20,21 +20,11 @@ namespace smf {
         void tokenizer::put(char c) {
 
             switch (state_) {
-            case state::START:
-                state_ = start(c);
-                break;
-            case state::LENGTH:
-                state_ = state_length(c);
-                break;
-            case state::LIST:
-                state_ = state_list(c);
-                break;
-            case state::DATA:
-                state_ = state_data(c);
-                break;
-            default:
-                BOOST_ASSERT_MSG(false, "illegal parser state");
-                break;
+            case state::START: state_ = start(c); break;
+            case state::LENGTH: state_ = state_length(c); break;
+            case state::LIST: state_ = state_list(c); break;
+            case state::DATA: state_ = state_data(c); break;
+            default: BOOST_ASSERT_MSG(false, "illegal parser state"); break;
             }
             crc_ = crc_update(crc_, c);
         }
@@ -45,18 +35,14 @@ namespace smf {
             data_.clear();
 
             switch (c) {
-            case 0:
-                crc_ = crc_finalize(crc_);
+            case 0: crc_ = crc_finalize(crc_);
 #ifdef _DEBUG_SML
                 std::cout << "EOM: " << crc_ << std::endl;
 #endif
                 cb_(sml_type::EOM, data_.size(), data_);
                 return state::START;
-            case 1:
-                cb_(sml_type::OPTIONAL, data_.size(), data_);
-                return state_;
-            default:
-                return start_data(c);
+            case 1: cb_(sml_type::OPTIONAL, data_.size(), data_); return state_;
+            default: return start_data(c);
             }
 
             return state_;
@@ -77,15 +63,15 @@ namespace smf {
                 type_ = sml_type::BINARY;
                 return ((c & 0x80) == 0x80) ? state::LENGTH : state::DATA;
             case sml_type::BOOLEAN:
-                BOOST_ASSERT(length_ - 1 == 1);
+                BOOST_ASSERT_MSG(length_ - 1 == 1, "boolean with length 1 expected");
                 type_ = sml_type::BOOLEAN;
                 return state::DATA;
             case sml_type::INTEGER:
-                BOOST_ASSERT(length_ - 1 < 9);
+                BOOST_ASSERT_MSG(length_ - 1 < 9, "length if signed integer data type exeeded");
                 type_ = sml_type::INTEGER;
                 return state::DATA;
             case sml_type::UNSIGNED:
-                BOOST_ASSERT(length_ - 1 < 9);
+                BOOST_ASSERT_MSG(length_ - 1 < 9, "length if unsigned integer data type exeeded");
                 type_ = sml_type::UNSIGNED;
                 return state::DATA;
             case sml_type::LIST:
@@ -106,15 +92,10 @@ namespace smf {
                 // data_.push_back(c);
                 cb_(sml_type::LIST, length_, data_);
                 break;
-            case sml_type::OPTIONAL:
-                BOOST_ASSERT_MSG(false, "invalid type");
-                break;
-            case sml_type::EOM:
-                BOOST_ASSERT_MSG(false, "unexpected EOM");
-                break;
+            case sml_type::OPTIONAL: BOOST_ASSERT_MSG(false, "invalid type"); break;
+            case sml_type::EOM: BOOST_ASSERT_MSG(false, "unexpected EOM"); break;
 
-            default:
-                break;
+            default: BOOST_ASSERT_MSG(false, "unknown data type"); break;
             }
 
             return state_;

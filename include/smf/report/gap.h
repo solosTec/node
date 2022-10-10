@@ -53,7 +53,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::minutes utc_offset);
 
-        std::pair<std::chrono::system_clock::time_point, gap::readout_t> generate_report_15_minutes(
+        gap::readout_t generate_report_15_minutes(
             cyng::db::session db,
             gap::readout_t const &initial_data,
             cyng::obis profile,
@@ -73,7 +73,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::minutes utc_offset);
 
-        std::pair<std::chrono::system_clock::time_point, gap::readout_t> generate_report_60_minutes(
+        gap::readout_t generate_report_60_minutes(
             cyng::db::session db,
             gap::readout_t const &initial_data,
             cyng::obis profile,
@@ -93,7 +93,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::minutes utc_offset);
 
-        std::pair<std::chrono::system_clock::time_point, gap::readout_t> generate_report_24_hour(
+        gap::readout_t generate_report_24_hour(
             cyng::db::session db,
             gap::readout_t const &initial_data,
             cyng::obis profile,

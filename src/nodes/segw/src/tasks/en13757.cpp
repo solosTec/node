@@ -640,7 +640,7 @@ namespace smf {
                     auto const id = rec.value("meterID", cyng::make_buffer());
                     auto const payload = rec.value("payload", cyng::make_buffer());
                     CYNG_LOG_TRACE(logger_, "[roCache] send data of meter " << id);
-                    cp->dispatch("send");
+                    cp->dispatch("send", payload);
                     return true;
                 });
                 //

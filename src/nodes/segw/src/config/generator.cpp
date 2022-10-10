@@ -38,7 +38,6 @@ namespace smf {
                 cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
 #endif
                 cyng::make_param("generate.profile", false),
-                cyng::make_param("utc.offset", cyng::sys::delta_utc(now).count()),
 
                 create_net(srv_mac, srv_id),
 
