@@ -13,6 +13,7 @@
 
 #include <smf/mbus/radio/parser.h>
 
+#include <cyng/db/session.h>
 #include <cyng/log/logger.h>
 #include <cyng/net/client_factory.hpp>
 #include <cyng/task/task_fwd.h>
@@ -33,11 +34,12 @@ namespace smf {
             std::function<void(void)>,        // reset_target_channels
             std::function<void(std::string)>, // add_target_channel
             std::function<void()>,            // push
+            std::function<void()>,            // backup
             std::function<void(cyng::eod)>    // stop()
             >;
 
       public:
-        en13757(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cfg &);
+        en13757(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cyng::db::session, cfg &);
 
       private:
         void stop(cyng::eod);
@@ -107,6 +109,8 @@ namespace smf {
         void push();
         void push_data(cyng::channel_ptr);
 
+        void backup();
+
       private:
         signatures_t sigs_;
         cyng::channel_weak channel_;
@@ -119,6 +123,11 @@ namespace smf {
          * global logger
          */
         cyng::logger logger_;
+
+        /**
+         * sql database
+         */
+        cyng::db::session db_;
 
         /**
          * config/data cache

@@ -1,5 +1,8 @@
 ﻿#include <tasks/en13757.h>
 
+#include <storage_functions.h>
+
+#include <smf/config/persistence.h>
 #include <smf/mbus/field_definitions.h>
 #include <smf/mbus/flag_id.h>
 #include <smf/mbus/radio/decode.h>
@@ -10,12 +13,14 @@
 #include <smf/sml/readout.h>
 #include <smf/sml/unpack.h>
 
+#include <cyng/db/storage.h>
 #include <cyng/io/serialize.h>
 #include <cyng/log/record.h>
 #include <cyng/net/client.hpp>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/obj/util.hpp>
+#include <cyng/sql/sql.hpp>
 #include <cyng/task/controller.h>
 
 #ifdef _DEBUG_SEGW
@@ -26,12 +31,14 @@ namespace smf {
     en13757::en13757(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, cyng::logger logger
+        , cyng::db::session db
 		, cfg& config)
 	: sigs_{
             std::bind(&en13757::receive, this, std::placeholders::_1),	//	0
             std::bind(&en13757::reset_target_channels, this),	//	1 - "reset-data-sinks"
             std::bind(&en13757::add_target_channel, this, std::placeholders::_1),	//	2 - "add-data-sink"
             std::bind(&en13757::push, this),	//	3 - "push"
+            std::bind(&en13757::backup, this),	//	4 - "backup"
             std::bind(&en13757::stop, this, std::placeholders::_1)		//	4
     }
 		, channel_(wp)
@@ -39,6 +46,7 @@ namespace smf {
         , client_factory_(ctl)
         , proxy_()
 		, logger_(logger)
+        , db_(db)
         , cfg_(config)
         , cfg_sml_(config)
         , cfg_cache_(config, lmn_type::WIRELESS)
@@ -52,7 +60,7 @@ namespace smf {
     {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"receive", "reset-data-sinks", "add-data-sink", "push"});
+            sp->set_channel_names({"receive", "reset-data-sinks", "add-data-sink", "push", "backup"});
 
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -608,6 +616,11 @@ namespace smf {
             proxy_ = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
                 [=, this](std::size_t) -> std::pair<std::chrono::seconds, bool> {
                     CYNG_LOG_WARNING(logger_, "[EN-13757] cannot connect to " << host << ':' << service);
+
+                    //
+                    //  write cache to database
+                    //
+                    sp->dispatch("backup");
                     return {std::chrono::seconds(0), false};
                 },
                 [&](boost::asio::ip::tcp::endpoint ep, cyng::channel_ptr cp) {
@@ -634,6 +647,10 @@ namespace smf {
     }
 
     void en13757::push_data(cyng::channel_ptr cp) {
+
+        //
+        //  read data from cache and clear the cache
+        //
         cfg_.get_cache().access(
             [&](cyng::table *tbl) {
                 tbl->loop([=, this](cyng::record &&rec, std::size_t) -> bool {
@@ -649,5 +666,42 @@ namespace smf {
                 tbl->clear(cfg_.get_tag());
             },
             cyng::access::write("mbusCache"));
+
+        //
+        // Remove records from database
+        // "DELETE FROM TMusCache;"
+        //
+        auto const m = get_table_mbus_cache();
+        config::persistent_clear(m, db_);
     }
+
+    void en13757::backup() {
+
+        //
+        //	start transaction
+        //
+        cyng::db::transaction trx(db_);
+
+        //
+        //  remove old data
+        //
+        auto const m = get_table_mbus_cache();
+        config::persistent_clear(m, db_);
+
+        //
+        //  transfer data from cache to database
+        //
+        cfg_.get_cache().access(
+            [&](cyng::table const *tbl) {
+                tbl->loop([=, this](cyng::record &&rec, std::size_t) -> bool {
+                    auto const id = rec.value("meterID", cyng::make_buffer());
+
+                    CYNG_LOG_TRACE(logger_, "[roCache] backup data of meter " << id);
+                    config::persistent_insert(m, db_, rec.key(), rec.data(), 0u);
+                    return true;
+                });
+            },
+            cyng::access::read("mbusCache"));
+    }
+
 } // namespace smf

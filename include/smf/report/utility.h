@@ -15,6 +15,7 @@
 
 #include <optional>
 #include <set>
+#include <utility>
 
 namespace smf {
 
@@ -157,22 +158,29 @@ namespace smf {
          *
          * @return specified timepoint minus offset (localtime)
          */
-        operator std::chrono::system_clock::time_point() { return utc_time(); }
+        operator std::chrono::system_clock::time_point() const { return utc_time(); }
+        operator std::chrono::duration<R, P>() const { return duration(); }
 
         /**
          * @return specified timepoint (unmodified).
          */
-        std::chrono::system_clock::time_point local_time() { return tp_; }
+        std::chrono::system_clock::time_point local_time() const { return tp_; }
 
         /**
          * @return specified timepoint minus offset.
          */
-        std::chrono::system_clock::time_point utc_time() { return tp_ - diff_; }
+        std::chrono::system_clock::time_point utc_time() const { return tp_ - diff_; }
+
+        std::chrono::duration<R, P> duration() const { return diff_; }
 
       private:
         std::chrono::system_clock::time_point tp_;
         std::chrono::duration<R, P> diff_;
     };
+
+    inline decltype(auto) make_tz_offset(std::chrono::system_clock::time_point tp) {
+        return tz_offset(tp, cyng::sys::delta_utc(tp));
+    }
 
 } // namespace smf
 

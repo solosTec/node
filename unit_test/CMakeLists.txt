@@ -18,6 +18,7 @@ add_executable(unit_test
     src/test_ipt.cpp
     src/test_mbus.cpp
     src/test_obis.cpp
+    src/test_report.cpp
     ${test_assets}
 )
 

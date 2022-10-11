@@ -238,6 +238,11 @@ namespace smf {
         load_table(get_table_push_ops());
         load_table(get_table_push_register());
         // ToDo: load_privileges();
+
+        /**
+         * load readout data from database
+         */
+        load_table(get_table_mbus_cache());
     }
 
     void bridge::init_cache_persistence() {
@@ -782,7 +787,7 @@ namespace smf {
             //
             //  start wireless M-Bus processor
             //
-            auto channel_proc = ctl_.create_named_channel_with_ref<en13757>("EN-13757", ctl_, logger_, cfg_);
+            auto channel_proc = ctl_.create_named_channel_with_ref<en13757>("EN-13757", ctl_, logger_, db_, cfg_);
             stash_.lock(channel_proc);
 
             //
