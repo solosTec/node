@@ -13,7 +13,6 @@
 #include <cyng/sql/dsl.h>
 #include <cyng/sql/dsl/placeholder.h>
 #include <cyng/sql/sql.hpp>
-#include <cyng/sys/clock.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
