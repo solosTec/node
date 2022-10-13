@@ -7,14 +7,14 @@ REM	platform: @CMAKE_SYSTEM@
 REM cmake --install . --prefix C:/Program Files/solosTec/SMF
 REM
 ECHO copy executables to "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfMain_BINARY_DIR}\Release\main.exe "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfSetup_BINARY_DIR}\Release\setup.exe "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfIPT_BINARY_DIR}\Release\ipt.exe "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfStore_BINARY_DIR}\Release\store.exe "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfDash_BINARY_DIR}\Release\dash.exe "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfIECBroker_BINARY_DIR}\Release\broker-iec.exe "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfwMBusBroker_BINARY_DIR}\Release\broker-wmbus.exe "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfModem_BINARY_DIR}\Release\modem.exe "$ENV{ProgramW6432}\solosTec\SMF\"
-COPY /B /V ${smfDNS_BINARY_DIR}\Release\dns.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${main_BINARY_DIR}\Release\main.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${setup_BINARY_DIR}\Release\setup.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${ipt_BINARY_DIR}\Release\ipt.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${store_BINARY_DIR}\Release\store.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${dash_BINARY_DIR}\Release\dash.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${broker_iec_BINARY_DIR}\Release\broker-iec.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${broker_wmbus_BINARY_DIR}\Release\broker-wmbus.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${modem_BINARY_DIR}\Release\modem.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+COPY /B /V ${dns_BINARY_DIR}\Release\dns.exe "$ENV{ProgramW6432}\solosTec\SMF\"
 REM 
 @ECHO ON
