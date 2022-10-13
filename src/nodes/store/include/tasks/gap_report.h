@@ -33,8 +33,7 @@ namespace smf {
             cyng::db::session db,
             cyng::obis profile,
             std::string path,
-            std::chrono::hours max_age,
-            std::chrono::minutes utc_offset);
+            std::chrono::hours max_age);
 
         ~gap_report() = default;
 
@@ -51,7 +50,6 @@ namespace smf {
         cyng::obis const profile_;
         std::filesystem::path root_;
         std::chrono::hours const max_age_;
-        std::chrono::minutes const utc_offset_;
     };
 
 } // namespace smf

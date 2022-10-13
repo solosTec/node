@@ -23,8 +23,7 @@ namespace smf {
         cyng::obis profile,
         std::filesystem::path root,
         std::chrono::hours backtrack,
-        std::chrono::system_clock::time_point now,
-        std::chrono::minutes utc_offset) {
+        std::chrono::system_clock::time_point now) {
 
         //
         //	start transaction
@@ -38,8 +37,8 @@ namespace smf {
                 profile,
                 root,
                 cyng::sys::get_start_of_day(now - backtrack), //  start
-                now,                                          //  now
-                utc_offset);
+                now                                           // end
+            );
             break;
         case CODE_PROFILE_15_MINUTE:
             gap::generate_report_15_minutes(
@@ -47,8 +46,8 @@ namespace smf {
                 profile,
                 root,
                 cyng::sys::get_start_of_day(now - backtrack), //  start
-                cyng::sys::get_end_of_day(now),               //  now
-                utc_offset);
+                cyng::sys::get_end_of_day(now)                //  now
+            );
             break;
         case CODE_PROFILE_60_MINUTE:
             gap::generate_report_60_minutes(
@@ -56,8 +55,8 @@ namespace smf {
                 profile,
                 root,
                 cyng::sys::get_start_of_month(now - backtrack), //  start
-                cyng::sys::get_end_of_day(now),                 //  now
-                utc_offset);
+                cyng::sys::get_end_of_day(now)                  //  now
+            );
             break;
         case CODE_PROFILE_24_HOUR:
             gap::generate_report_24_hour(
@@ -65,8 +64,8 @@ namespace smf {
                 profile,
                 root,
                 cyng::sys::get_start_of_month(now - backtrack), //  start
-                cyng::sys::get_end_of_month(now),               //  now
-                utc_offset);
+                cyng::sys::get_end_of_month(now)                //  now
+            );
             break;
         case CODE_PROFILE_1_MONTH:
             gap::generate_report_1_month(
@@ -74,8 +73,8 @@ namespace smf {
                 profile,
                 root,
                 cyng::sys::get_start_of_year(now - backtrack), //  start
-                cyng::sys::get_end_of_year(now),               //  now
-                utc_offset);
+                cyng::sys::get_end_of_year(now)                //  now
+            );
             break;
         case CODE_PROFILE_1_YEAR:
             gap::generate_report_1_year(
@@ -83,8 +82,8 @@ namespace smf {
                 profile,
                 root,
                 cyng::sys::get_start_of_year(now - backtrack), //  start
-                cyng::sys::get_end_of_year(now),               //  now
-                utc_offset);
+                cyng::sys::get_end_of_year(now)                //  now
+            );
             break;
 
         default: break;
@@ -100,8 +99,7 @@ namespace smf {
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point now,
-            std::chrono::minutes utc_offset) {}
+            std::chrono::system_clock::time_point end) {}
 
         /**
          * Quarter hour reports
@@ -111,36 +109,33 @@ namespace smf {
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point now,
-            std::chrono::minutes utc_offset) {
+            std::chrono::system_clock::time_point end) {
 #ifdef _DEBUG
             std::cout << "15 min (" << profile << ") reporting period spans "
-                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << " from "
-                      << cyng::sys::to_string(start, "%F %T%z") << " to " << cyng::sys::to_string(now, "%F %T%z")
-                      << ", offset = " << utc_offset.count() << " minutes with "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
+                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << " from "
+                      << cyng::sys::to_string(start, "%F %T%z") << " to " << cyng::sys::to_string(end, "%F %T%z")
+                      << ", offset = " << start << " with "
+                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
                       << " expected entries/meter in total" << std::endl;
 #endif
             //
             //  The specified time of (i.e  2022-10-07 00:00:00+0200 - during Daylight Saving Time) has to be adjusted back by 2
             //  hours to get the UTC time.
             //
-            tz_offset adj_start(start, utc_offset);
 
             //
             //  generate gap reports about the complete time range
             //
             gap::readout_t data;
             auto const range = std::chrono::hours(24);
-            for (; start < now; start += range) {
+            for (auto idx = start; idx < end; idx += range) {
 
                 data = generate_report_15_minutes(
                     db,
                     data, // initial data
                     profile,
                     root,
-                    adj_start, // adjusted time
-                    utc_offset,
+                    make_tz_offset(idx), // start (UTC)
                     range);
             }
         }
@@ -150,14 +145,13 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            std::chrono::system_clock::time_point start, // UTC adjusted
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span) {
 
-            auto const end = start + span;
+            auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
-            auto const data = collect_report(db, initial_data, profile, root, start, end, utc_offset, count);
+            auto const data = collect_report(db, initial_data, profile, root, start, end, start.deviation(), count);
 #ifdef _DEBUG
             std::cout << "start 15 min gap report ";
             cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
@@ -176,36 +170,33 @@ namespace smf {
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point now,
-            std::chrono::minutes utc_offset) {
+            std::chrono::system_clock::time_point end) {
 #ifdef _DEBUG
-            std::cout << "60 min (" << profile << ") gap report period spans from " << start << " to " << now << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = " << utc_offset.count()
+            std::cout << "60 min (" << profile << ") gap report period spans from " << start << " to " << end << " ("
+                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), offset = ?"
                       << " minutes with "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
+                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
                       << " entries in total" << std::endl;
 
             std::cout << "\tmonth starts at " << cyng::sys::get_start_of_month(start) << " with a length of "
                       << cyng::sys::get_length_of_month(start) << std::endl;
 #endif
 
-            tz_offset adj_start(start, utc_offset);
+            // tz_offset adj_start(start, utc_offset);
 
             //
             //  generate gap reports about the complete time range
             //
             gap::readout_t data;
-            while (start < now) {
-
+            for (auto idx = start; idx < end;) {
                 auto const range = cyng::sys::get_length_of_month(start);
                 data = generate_report_60_minutes(
                     db,
                     data,
                     profile,
                     root,
-                    adj_start, // adjusted time
-                    utc_offset,
-                    range // time range 1 month
+                    make_tz_offset(idx), // start (UTC)
+                    range                // time range 1 month
                 );
 
                 start += range;
@@ -217,19 +208,17 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span) {
 
-            auto const end = start + span;
+            auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
-            auto const data = collect_report(db, initial_data, profile, root, start, end, utc_offset, count);
+            auto const data = collect_report(db, initial_data, profile, root, start, end, start.deviation(), count);
 #ifdef _DEBUG
-            std::cout << "start 60 min report ";
-            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
+            std::cout << "start 60 min report " << start;
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M (UTC) - ");
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - ");
             std::cout << count << " expected entries, " << data.size() << " meter(s) each" << std::endl;
 #endif
             return data;
@@ -242,18 +231,16 @@ namespace smf {
             cyng::db::session db,
             cyng::obis profile,
             std::filesystem::path root,
-
             std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point now,
-            std::chrono::minutes utc_offset) {
+            std::chrono::system_clock::time_point now) {
 #ifdef _DEBUG
             std::cout << "24 h (" << profile << ") gap report period spans from " << start << " to " << now << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = " << utc_offset.count()
+                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = ? "
                       << " minutes with "
                       << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
                       << " entries in total" << std::endl;
 #endif
-            tz_offset adj_start(start, utc_offset);
+            // tz_offset adj_start(start, utc_offset);
 
             //
             //  generate gap reports about the complete time range
@@ -267,9 +254,8 @@ namespace smf {
                     data, // initial data
                     profile,
                     root,
-                    adj_start, // adjusted time
-                    utc_offset,
-                    range //  time range 1 month
+                    make_tz_offset(start), // start
+                    range                  //  time range 1 month
                 );
 
                 start += range;
@@ -281,19 +267,17 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span) {
 
-            auto const end = start + span;
+            auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
-            auto const data = collect_report(db, initial_data, profile, root, start, end, utc_offset, count);
+            auto const data = collect_report(db, initial_data, profile, root, start, end, start.deviation(), count);
 #ifdef _DEBUG
-            std::cout << "start 24 h report ";
-            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M%z (UTC)");
+            std::cout << "start 24 h report " << start;
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M%z (UTC) - ");
+            cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z (UTC) - ");
             std::cout << count << " expected entries, " << data.size() << " meter(s)" << std::endl;
 #endif
             return data;
@@ -307,8 +291,7 @@ namespace smf {
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset) {}
+            std::chrono::system_clock::time_point) {}
 
         /**
          * Yearly reports
@@ -319,8 +302,7 @@ namespace smf {
             std::filesystem::path root,
 
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset) {}
+            std::chrono::system_clock::time_point) {}
 
         gap::readout_t collect_report(
             cyng::db::session db,

@@ -14,7 +14,9 @@
 #include <cyng/log/logger.h>
 #include <cyng/sys/clock.h>
 
+#include <iostream>
 #include <optional>
+#include <ostream>
 #include <set>
 #include <utility>
 
@@ -139,6 +141,12 @@ namespace smf {
      */
     template <typename R, typename P> class tz_offset {
       public:
+        using this_type = tz_offset<R, P>;
+
+        tz_offset()
+            : tp_()
+            , diff_() {}
+        
         tz_offset(std::chrono::system_clock::time_point tp, std::chrono::duration<R, P> diff)
             : tp_(tp)
             , diff_(diff) {}
@@ -160,7 +168,7 @@ namespace smf {
          * @return specified timepoint minus offset (localtime)
          */
         operator std::chrono::system_clock::time_point() const { return utc_time(); }
-        operator std::chrono::duration<R, P>() const { return duration(); }
+        operator std::chrono::duration<R, P>() const { return deviation(); }
 
         /**
          * @return specified timepoint (unmodified).
@@ -170,13 +178,37 @@ namespace smf {
         /**
          * @return specified timepoint minus offset.
          */
-        std::chrono::system_clock::time_point utc_time() const { return tp_ - diff_; }
+        std::chrono::system_clock::time_point utc_time() const { return tp_ + diff_; }
 
-        std::chrono::duration<R, P> duration() const { return diff_; }
+        /**
+         * @return deviation of local tiem from UTC.
+         */
+        std::chrono::duration<R, P> deviation() const { return diff_; }
+
+        /**
+         * output formatter
+         */
+        template <typename CharT, typename Traits>
+        friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, this_type const &adj) {
+            os << cyng::sys::to_string(adj.local_time(), "%F %T%z ") << adj.deviation() << " "
+               << cyng::sys::to_string(adj.utc_time(), "%F %T%z UTC");
+            return os;
+        }
 
       private:
         std::chrono::system_clock::time_point tp_;
         std::chrono::duration<R, P> diff_;
+    };
+
+    //
+    //  type deduction support (the old way)
+    //
+    template <typename T> struct tz_offset_t {
+        using type = void;
+    };
+
+    template <typename R, typename P> struct tz_offset_t<std::chrono::duration<R, P>> {
+        using type = tz_offset<R, P>;
     };
 
     inline decltype(auto) make_tz_offset(std::chrono::system_clock::time_point tp) {

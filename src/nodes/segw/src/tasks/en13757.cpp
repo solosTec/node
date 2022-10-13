@@ -623,7 +623,7 @@ namespace smf {
                     sp->dispatch("backup");
                     return {std::chrono::seconds(0), false};
                 },
-                [&](boost::asio::ip::tcp::endpoint ep, cyng::channel_ptr cp) {
+                [this](boost::asio::ip::tcp::endpoint ep, cyng::channel_ptr cp) {
                     CYNG_LOG_TRACE(logger_, "[EN-13757]  successfully connected to " << ep);
 
                     //
@@ -632,11 +632,11 @@ namespace smf {
                     // cp->dispatch("send", cyng::make_buffer("hello"));
                     push_data(cp);
                 },
-                [&](cyng::buffer_t data) {
+                [this](cyng::buffer_t data) {
                     //  should not receive anything - send only
                     CYNG_LOG_WARNING(logger_, "[EN-13757] received " << data.size() << " bytes");
                 },
-                [&](boost::system::error_code ec) {
+                [this](boost::system::error_code ec) {
                     //	fill async
                     CYNG_LOG_WARNING(logger_, "[EN-13757] connection lost " << ec.message());
                 });

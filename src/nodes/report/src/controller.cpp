@@ -310,9 +310,9 @@ namespace smf {
                 // std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
-                auto const utc_offset = cyng::sys::delta_utc(now); //  minutes
-                std::cout << "***info: utc-offset: " << utc_offset.count() << " minutes" << std::endl;
-                BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
+                // auto const utc_offset = cyng::sys::delta_utc(now); //  minutes
+                // std::cout << "***info: utc-offset: " << utc_offset.count() << " minutes" << std::endl;
+                // BOOST_ASSERT(utc_offset.count() < 720 && utc_offset.count() > -720);
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
 
                 auto const print_version = reader["lpex"].get("print.version", true);
@@ -348,7 +348,6 @@ namespace smf {
                                 backtrack, //  backtrack hours
                                 now,
                                 prefix,
-                                utc_offset,
                                 print_version);
 
                         } else {
@@ -375,8 +374,8 @@ namespace smf {
             if (s.is_alive()) {
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
-                auto const utc_offset = cyng::sys::delta_utc(now); //  minutes
-                std::cout << "***info: utc-offset: " << utc_offset.count() << " minutes" << std::endl;
+                // auto const utc_offset = cyng::sys::delta_utc(now); //  minutes
+                // std::cout << "***info: utc-offset: " << utc_offset.count() << " minutes" << std::endl;
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("gap"));
 
                 // auto const print_version = reader["gap"].get("print.version", true);
@@ -409,8 +408,7 @@ namespace smf {
                                 profile,
                                 root,
                                 backtrack, //  backtrack hours
-                                now,
-                                utc_offset);
+                                now);
 
                         } else {
                             std::cout << "***info: gap report " << name << " is disabled" << std::endl;

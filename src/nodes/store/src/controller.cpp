@@ -315,7 +315,7 @@ namespace smf {
         auto const reader = cyng::make_reader(cfg);
         auto const tag = read_tag(reader["tag"].get());
         auto const now = std::chrono::system_clock::now();
-        auto const utc_offset = cyng::sys::delta_utc(now);
+        // auto const utc_offset = cyng::sys::delta_utc(now);
         auto const model = cyng::value_cast(reader["model"].get(), "smf.store");
 
         auto const ipt_vec = cyng::container_cast<cyng::vector_t>(reader["ipt"].get());
@@ -345,12 +345,7 @@ namespace smf {
         for (auto &s : sm) {
             if (s.second.is_alive()) {
                 start_gap_reports(
-                    ctl,
-                    logger,
-                    s.first,
-                    s.second,
-                    cyng::container_cast<cyng::param_map_t>(reader["db"][s.first].get("gap")),
-                    utc_offset);
+                    ctl, logger, s.first, s.second, cyng::container_cast<cyng::param_map_t>(reader["db"][s.first].get("gap")));
             }
         }
 
@@ -531,7 +526,7 @@ namespace smf {
             auto const filter = cyng::to_obis_path(reader["lpex-reports"].get("filter", ""));
             auto const pos = sm.find(db);
             if (pos != sm.end()) {
-                start_lpex_reports(ctl, channels, logger, pos->second, lpex_reports, filter, utc_offset, print_version);
+                start_lpex_reports(ctl, channels, logger, pos->second, lpex_reports, filter, /*utc_offset, */ print_version);
             } else {
                 CYNG_LOG_FATAL(logger, "no database [" << db << "] for LPEx reports configured");
             }
@@ -618,8 +613,7 @@ namespace smf {
         cyng::logger logger,
         std::string name,
         cyng::db::session db,
-        cyng::param_map_t &&gap_tasks,
-        std::chrono::minutes utc_offset) {
+        cyng::param_map_t &&gap_tasks) {
 
         for (auto const &tsk : gap_tasks) {
             auto const reader_cls = cyng::make_reader(tsk.second);
@@ -640,8 +634,7 @@ namespace smf {
                 }
 
                 auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
-                auto channel =
-                    ctl.create_named_channel_with_ref<gap_report>("gap-report", ctl, logger, db, profile, root, age, utc_offset);
+                auto channel = ctl.create_named_channel_with_ref<gap_report>("gap-report", ctl, logger, db, profile, root, age);
                 BOOST_ASSERT(channel->is_open());
                 channel->dispatch("run", age / 2);
             } else {
@@ -837,7 +830,6 @@ namespace smf {
                 std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
-                auto const utc_offset = cyng::sys::delta_utc(now); //  minutes
 
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex-reports"));
                 for (auto const &cfg_report : reports) {
@@ -864,15 +856,7 @@ namespace smf {
                             auto const backtrack = reader_report.get("backtrack.hours", 40);
                             auto const prefix = reader_report.get("prefix", "LPEx-");
                             generate_lpex(
-                                pos->second,
-                                profile,
-                                filter,
-                                root,
-                                std::chrono::hours(backtrack),
-                                now,
-                                prefix,
-                                utc_offset,
-                                print_version);
+                                pos->second, profile, filter, root, std::chrono::hours(backtrack), now, prefix, print_version);
 
                         } else {
                             std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
@@ -887,7 +871,6 @@ namespace smf {
 
     void controller::generate_gap_reports(cyng::object &&cfg) {
         auto const now = std::chrono::system_clock::now();
-        auto const utc_offset = cyng::sys::delta_utc(now); //  minutes
 
         //
         //  data base connections
@@ -922,7 +905,7 @@ namespace smf {
                                 std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
                             }
                         }
-                        smf::generate_gap(s, profile, root, age, now, utc_offset);
+                        smf::generate_gap(s, profile, root, age, now);
                     } else {
                         std::cout << "gap report on db " << param.first << " for profile " << obis::get_name(profile)
                                   << " is disabled" << std::endl;
@@ -1389,7 +1372,7 @@ namespace smf {
         cyng::db::session db,
         cyng::param_map_t reports,
         cyng::obis_path_t filter,
-        std::chrono::minutes utc_offset,
+        // std::chrono::minutes utc_offset,
         bool print_version) {
 
         //
@@ -1420,7 +1403,7 @@ namespace smf {
                     }
 
                     auto channel = ctl.create_named_channel_with_ref<lpex_report>(
-                        name, ctl, logger, db, profile, filter, path, backtrack, prefix, utc_offset, print_version);
+                        name, ctl, logger, db, profile, filter, path, backtrack, prefix, /*utc_offset, */ print_version);
                     BOOST_ASSERT(channel->is_open());
                     channels.lock(channel);
 

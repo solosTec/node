@@ -29,10 +29,12 @@ namespace smf {
         std::chrono::hours backtrack,
         std::chrono::system_clock::time_point,
         std::string prefix,
-        std::chrono::minutes utc_offset,
         bool print_version);
 
     namespace lpex {
+
+        using tz_type = smf::tz_offset_t<std::chrono::minutes>::type;
+
         /**
          * 1 minute reports
          */
@@ -44,7 +46,6 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
             bool print_version);
 
         /**
@@ -62,17 +63,15 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
             bool print_version);
 
-        std::chrono::system_clock::time_point generate_report_15_minutes(
+        void generate_report_15_minutes(
             cyng::db::session db,
             cyng::obis profile,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span,
             bool print_version);
 
@@ -87,17 +86,15 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
             bool print_version);
 
-        std::chrono::system_clock::time_point generate_report_60_minutes(
+        void generate_report_60_minutes(
             cyng::db::session db,
             cyng::obis profile,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span,
             bool print_version);
 
@@ -112,17 +109,15 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
             bool print_version);
 
-        std::chrono::system_clock::time_point generate_report_24_hour(
+        void generate_report_24_hour(
             cyng::db::session db,
             cyng::obis profile,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span,
             bool print_version);
 
@@ -137,7 +132,6 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
             bool print_version);
 
         /**
@@ -151,7 +145,6 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
             bool print_version);
 
         /**

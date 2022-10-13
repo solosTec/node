@@ -26,7 +26,6 @@ namespace smf {
         std::string path,
         std::chrono::hours backtrack,
         std::string prefix,
-        std::chrono::minutes utc_offset,
         bool print_version)
         : sigs_{
             std::bind(&lpex_report::run, this), // start
@@ -41,7 +40,6 @@ namespace smf {
         , root_(path)
         , backtrack_(backtrack)
         , prefix_(prefix)
-        , utc_offset_(utc_offset)
         , print_version_(print_version) {
 
         if (auto sp = channel_.lock(); sp) {
@@ -70,7 +68,7 @@ namespace smf {
             //
             //  generate report
             //
-            smf::generate_lpex(db_, profile_, filter_, root_, backtrack_, now, prefix_, utc_offset_, print_version_);
+            smf::generate_lpex(db_, profile_, filter_, root_, backtrack_, now, prefix_, print_version_);
         }
     }
 } // namespace smf

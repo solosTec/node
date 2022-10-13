@@ -23,10 +23,12 @@ namespace smf {
         cyng::obis profile,
         std::filesystem::path,
         std::chrono::hours backtrack,
-        std::chrono::system_clock::time_point,
-        std::chrono::minutes utc_offset);
+        std::chrono::system_clock::time_point);
 
     namespace gap {
+
+        using tz_type = smf::tz_offset_t<std::chrono::minutes>::type;
+
         /**
          * 1 minute reports
          */
@@ -34,9 +36,8 @@ namespace smf {
             cyng::db::session,
             cyng::obis profile,
             std::filesystem::path root,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset);
+            std::chrono::system_clock::time_point start,
+            std::chrono::system_clock::time_point end);
 
         /**
          * Quarter hour reports.
@@ -49,17 +50,15 @@ namespace smf {
             cyng::db::session,
             cyng::obis profile,
             std::filesystem::path root,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset);
+            std::chrono::system_clock::time_point start,
+            std::chrono::system_clock::time_point end);
 
         gap::readout_t generate_report_15_minutes(
             cyng::db::session db,
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span);
 
         /**
@@ -70,16 +69,14 @@ namespace smf {
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset);
+            std::chrono::system_clock::time_point);
 
         gap::readout_t generate_report_60_minutes(
             cyng::db::session db,
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span);
 
         /**
@@ -90,16 +87,14 @@ namespace smf {
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset);
+            std::chrono::system_clock::time_point);
 
         gap::readout_t generate_report_24_hour(
             cyng::db::session db,
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span);
 
         /**
@@ -110,8 +105,7 @@ namespace smf {
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset);
+            std::chrono::system_clock::time_point);
 
         /**
          * Yearly reports
@@ -121,8 +115,7 @@ namespace smf {
             cyng::obis profile,
             std::filesystem::path root,
             std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset);
+            std::chrono::system_clock::time_point);
 
         gap::readout_t collect_report(
             cyng::db::session,

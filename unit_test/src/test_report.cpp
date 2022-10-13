@@ -24,19 +24,28 @@ BOOST_AUTO_TEST_CASE(offset) {
     std::tm tm = {};
     std::istringstream ss("2022-Oktober-21 23:12:34");
     ss.imbue(std::locale("de_DE.utf-8"));
+    // std::istringstream ss("2022-Oct-21 23:12:34");
+    // ss.imbue(std::locale("en_US.UTF-8"));
     ss >> std::get_time(&tm, "%Y-%b-%d %H:%M:%S");
 
     auto const t = std::mktime(&tm);
     auto tp = std::chrono::system_clock::from_time_t(t);
 
+    //   2022-10-22 00:12:34+0200 - de_DE.utf-8
+    std::cout << "start time: " << cyng::sys::to_string(tp, "%F %T%z") << std::endl;
+
     for (auto idx = 0u; idx < 14; ++idx) {
-        auto const delta = cyng::sys::delta_utc(tp);
-        // cyng::sys::to_string(tp, "%F %T%z");
-        std::cout << cyng::sys::to_string(tp, "%F %T%z") << ", delta: " << delta << std::endl;
-        // auto const adj = smf::make_tz_offset(tp);
+        // auto const delta = cyng::sys::delta_utc(tp);
+        //  cyng::sys::to_string(tp, "%F %T%z");
+        //  std::cout << cyng::sys::to_string(tp, "%F %T%z") << ", delta: " << delta << std::endl;
+        auto const adj = smf::make_tz_offset(tp);
         // std::cout << adj.duration() << ", " << cyng::sys::to_string(adj.local_time(), "%F %T%z") << std::endl;
+        std::cout << adj << std::endl;
         tp += std::chrono::hours(24);
     }
+
+    // template <typename D> using tz_offset_t = tz_offset<typename D::rep, typename D::period>;
+    typename smf::tz_offset_t<std::chrono::minutes>::type tz;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

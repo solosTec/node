@@ -23,8 +23,7 @@ namespace smf {
         cyng::db::session db,
         cyng::obis profile,
         std::string path,
-        std::chrono::hours max_age,
-        std::chrono::minutes utc_offset)
+        std::chrono::hours max_age)
         : sigs_{
             std::bind(&gap_report::run, this, std::placeholders::_1), // start
             std::bind(&gap_report::stop, this, std::placeholders::_1) // stop
@@ -35,8 +34,7 @@ namespace smf {
         , db_(db)
         , profile_(profile)
         , root_(path)
-        , max_age_(max_age)
-        , utc_offset_(utc_offset) {
+        , max_age_(max_age) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -63,8 +61,7 @@ namespace smf {
             //
             //  report
             //
-            smf::generate_gap(db_, profile_, root_, std::chrono::hours(1), now - max_age_, utc_offset_);
-            // generate_lpex(db_, profile_, root_, backtrack_, now, prefix_, utc_offset_, print_version_);
+            smf::generate_gap(db_, profile_, root_, std::chrono::hours(1), now - max_age_);
         }
     }
 } // namespace smf

@@ -26,7 +26,6 @@ namespace smf {
         std::chrono::hours backtrack,
         std::chrono::system_clock::time_point now,
         std::string prefix,
-        std::chrono::minutes utc_offset,
         bool print_version) {
 
         //
@@ -44,7 +43,6 @@ namespace smf {
                 prefix,
                 cyng::sys::get_start_of_day(now - backtrack), //  start
                 now,
-                utc_offset,
                 print_version);
             break;
         case CODE_PROFILE_15_MINUTE:
@@ -56,7 +54,6 @@ namespace smf {
                 prefix,
                 cyng::sys::get_start_of_day(now - backtrack), //  start
                 cyng::sys::get_end_of_day(now),               //  now
-                utc_offset,
                 print_version);
             break;
         case CODE_PROFILE_60_MINUTE:
@@ -68,7 +65,6 @@ namespace smf {
                 prefix,
                 cyng::sys::get_start_of_month(now - backtrack),
                 cyng::sys::get_end_of_day(now),
-                utc_offset,
                 print_version);
             break;
         case CODE_PROFILE_24_HOUR:
@@ -80,7 +76,6 @@ namespace smf {
                 prefix,
                 cyng::sys::get_start_of_month(now - backtrack),
                 cyng::sys::get_end_of_month(now),
-                utc_offset,
                 print_version);
             break;
         case CODE_PROFILE_1_MONTH:
@@ -92,7 +87,6 @@ namespace smf {
                 prefix,
                 cyng::sys::get_start_of_year(now - backtrack),
                 cyng::sys::get_end_of_year(now),
-                utc_offset,
                 print_version);
             break;
         case CODE_PROFILE_1_YEAR:
@@ -104,7 +98,6 @@ namespace smf {
                 prefix,
                 cyng::sys::get_start_of_year(now - backtrack),
                 cyng::sys::get_end_of_year(now),
-                utc_offset,
                 print_version);
             break;
 
@@ -124,8 +117,9 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point now,
-            std::chrono::minutes utc_offset,
-            bool print_version) {}
+            bool print_version) {
+            ;
+        }
 
         /**
          * Quarter hour reports
@@ -137,58 +131,55 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point now,
-            std::chrono::minutes utc_offset,
+            std::chrono::system_clock::time_point end,
             bool print_version) {
 #ifdef _DEBUG
-            std::cout << "15 min (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = " << utc_offset.count()
+            std::cout << "15 min (" << profile << ") lpex report period spans from " << start << " to " << end << " ("
+                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), offset = ?"
                       << " minutes with "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
+                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
                       << " entries in total" << std::endl;
 #endif
             //
             //  generate lpex reports about the complete time range
             //
-            while (start < now) {
+            auto const range = std::chrono::hours(24);
+            for (auto idx = start; idx < end; idx += range) {
 
-                start = generate_report_15_minutes(
+                generate_report_15_minutes(
                     db,
                     profile,
                     filter,
                     root,
                     prefix,
-                    start, // compensate time difference to UTC
-                    utc_offset,
-                    std::chrono::hours(24),
+                    make_tz_offset(idx), // compensate time difference to UTC
+                    range,
                     print_version);
             }
         }
 
-        std::chrono::system_clock::time_point generate_report_15_minutes(
+        void generate_report_15_minutes(
             cyng::db::session db,
             cyng::obis profile,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span,
             bool print_version) {
 
-            auto const end = start + span;
+            auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
 #ifdef _DEBUG
             std::cout << "start 15 min report ";
-            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
+            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M (UTC) - entries: ");
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - entries: ");
             std::cout << count << std::endl;
 #endif
 
-            collect_report(db, profile, filter, root, prefix, start + utc_offset, end + utc_offset, count, print_version);
-            return end;
+            collect_report(db, profile, filter, root, prefix, start, end, count, print_version);
         }
 
         /**
@@ -201,14 +192,13 @@ namespace smf {
             std::filesystem::path root,
             std::string prefix,
             std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point now,
-            std::chrono::minutes utc_offset,
+            std::chrono::system_clock::time_point end,
             bool print_version) {
 #ifdef _DEBUG
-            std::cout << "60 min (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = " << utc_offset.count()
+            std::cout << "60 min (" << profile << ") lpex report period spans from " << start << " to " << end << " ("
+                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), offset = ?"
                       << " minutes with "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
+                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
                       << " entries in total" << std::endl;
 
             std::cout << "start of month : " << cyng::sys::get_start_of_month(start) << std::endl;
@@ -217,45 +207,45 @@ namespace smf {
             //
             //  generate lpex reports about the complete time range
             //
-            while (start < now) {
+            while (start < end) {
 
-                start = generate_report_60_minutes(
+                auto const range = cyng::sys::get_length_of_month(start);
+                generate_report_60_minutes(
                     db,
                     profile,
                     filter,
                     root,
                     prefix,
-                    start, // compensate time difference to UTC
-                    utc_offset,
-                    cyng::sys::get_length_of_month(start), // time range 1 month
+                    make_tz_offset(start), // compensate time difference to UTC
+                    range,                 // time range 1 month
                     print_version);
+
+                start += range;
             }
         }
 
-        std::chrono::system_clock::time_point generate_report_60_minutes(
+        void generate_report_60_minutes(
             cyng::db::session db,
             cyng::obis profile,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span,
             bool print_version) {
 
-            auto const end = start + span;
+            auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
 #ifdef _DEBUG
             std::cout << "start 60 min report ";
-            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
+            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M (UTC) - max. entries: ");
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - max. entries: ");
             std::cout << count << std::endl;
 #endif
 
-            collect_report(db, profile, filter, root, prefix, start + utc_offset, end + utc_offset, count, print_version);
-            return end;
+            collect_report(db, profile, filter, root, prefix, start, end, count, print_version);
         }
 
         /**
@@ -269,11 +259,10 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point now,
-            std::chrono::minutes utc_offset,
             bool print_version) {
 #ifdef _DEBUG
             std::cout << "24 h (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = " << utc_offset.count()
+                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = ?"
                       << " minutes with "
                       << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
                       << " entries in total" << std::endl;
@@ -283,43 +272,43 @@ namespace smf {
             //
             while (start < now) {
 
-                start = generate_report_24_hour(
+                auto const range = cyng::sys::get_length_of_month(start); //  time range 1 month
+                generate_report_24_hour(
                     db,
                     profile,
                     filter,
                     root,
                     prefix,
-                    start, // compensate time difference to UTC
-                    utc_offset,
-                    cyng::sys::get_length_of_month(start), //  time range 1 month
+                    make_tz_offset(start), // compensate time difference to UTC
+                    range,                 //  time range 1 month
                     print_version);
+
+                start += range;
             }
         }
 
-        std::chrono::system_clock::time_point generate_report_24_hour(
+        void generate_report_24_hour(
             cyng::db::session db,
             cyng::obis profile,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point start,
-            std::chrono::minutes utc_offset,
+            tz_type start,
             std::chrono::hours span,
             bool print_version) {
 
-            auto const end = start + span;
+            auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
 #ifdef _DEBUG
             std::cout << "start 24 h report ";
-            cyng::sys::to_string_utc(std::cout, start + utc_offset, "%Y-%m-%dT%H:%M (UTC)");
+            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end + utc_offset, "%Y-%m-%dT%H:%M (UTC) - entries: ");
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - entries: ");
             std::cout << count << std::endl;
 #endif
 
-            collect_report(db, profile, filter, root, prefix, start + utc_offset, end + utc_offset, count, print_version);
-            return end;
+            collect_report(db, profile, filter, root, prefix, start, end, count, print_version);
         }
 
         /**
@@ -333,7 +322,6 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
             bool print_version) {}
 
         /**
@@ -347,7 +335,6 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
             bool print_version) {}
 
         std::vector<std::string> get_header() {

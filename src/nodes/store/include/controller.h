@@ -173,7 +173,7 @@ namespace smf {
             cyng::db::session,
             cyng::param_map_t reports,
             cyng::obis_path_t filter,
-            std::chrono::minutes utc_offset,
+            // std::chrono::minutes utc_offset,
             bool print_version);
 
       private:
@@ -189,13 +189,7 @@ namespace smf {
         void cleanup_archive(cyng::object &&cfg);
 
         void start_cleanup_tasks(cyng::controller &ctl, cyng::logger, std::string, cyng::db::session, cyng::param_map_t &&);
-        void start_gap_reports(
-            cyng::controller &ctl,
-            cyng::logger,
-            std::string,
-            cyng::db::session,
-            cyng::param_map_t &&,
-            std::chrono::minutes utc_offset);
+        void start_gap_reports(cyng::controller &ctl, cyng::logger, std::string, cyng::db::session, cyng::param_map_t &&);
     };
 
     /**
