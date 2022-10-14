@@ -48,6 +48,7 @@
 #include <cyng/obj/set_cast.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/obj/vector_cast.hpp>
+#include <cyng/parse/duration.h>
 #include <cyng/parse/string.h>
 #include <cyng/sys/clock.h>
 #include <cyng/sys/locale.h>
@@ -97,17 +98,17 @@ namespace smf {
                         cyng::make_param(
                             "cleanup",
                             cyng::make_tuple(
-                                create_cleanup_spec(OBIS_PROFILE_1_MINUTE, 48, true),
-                                create_cleanup_spec(OBIS_PROFILE_15_MINUTE, 48, true),
-                                create_cleanup_spec(OBIS_PROFILE_60_MINUTE, 800, true),
-                                create_cleanup_spec(OBIS_PROFILE_24_HOUR, 800, true))), // cleanup
+                                create_cleanup_spec(OBIS_PROFILE_1_MINUTE, std::chrono::hours(48), true),
+                                create_cleanup_spec(OBIS_PROFILE_15_MINUTE, std::chrono::hours(48), true),
+                                create_cleanup_spec(OBIS_PROFILE_60_MINUTE, std::chrono::hours(800), true),
+                                create_cleanup_spec(OBIS_PROFILE_24_HOUR, std::chrono::hours(800), true))), // cleanup
                         cyng::make_param(
                             "gap",
                             cyng::make_tuple(
-                                create_gap_spec(OBIS_PROFILE_1_MINUTE, cwd, 48, false),
-                                create_gap_spec(OBIS_PROFILE_15_MINUTE, cwd, 48, true),
-                                create_gap_spec(OBIS_PROFILE_60_MINUTE, cwd, 800, true),
-                                create_gap_spec(OBIS_PROFILE_24_HOUR, cwd, 800, true))) // gap
+                                create_gap_spec(OBIS_PROFILE_1_MINUTE, cwd, std::chrono::hours(48), false),
+                                create_gap_spec(OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(48), true),
+                                create_gap_spec(OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(800), true),
+                                create_gap_spec(OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(800), true))) // gap
                         ))                                                              // default
                 ),
 
@@ -268,7 +269,7 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
                 cyng::make_param("path", (cwd / "csv-reports" / get_prefix(profile)).string()),
-                cyng::make_param("backtrack.hours", backtrack.count()),
+                cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", ""),
                 cyng::make_param("enabled", enabled)));
     }
@@ -279,29 +280,29 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
                 cyng::make_param("path", (cwd / "lpex-reports" / get_prefix(profile)).string()),
-                cyng::make_param("backtrack.hours", backtrack.count()),
+                cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", ""),
                 cyng::make_param("offset", 15), //  minutes
                 cyng::make_param("enabled", enabled)));
     }
 
-    cyng::prop_t create_cleanup_spec(cyng::obis profile, std::size_t hours, bool enabled) {
+    cyng::prop_t create_cleanup_spec(cyng::obis profile, std::chrono::hours hours, bool enabled) {
         return cyng::make_prop(
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("max-age-in-hours", hours),
+                cyng::make_param("max-age", hours),
                 cyng::make_param("limit", 256),
                 cyng::make_param("enabled", enabled)));
     }
 
-    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::size_t hours, bool enabled) {
+    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::chrono::hours hours, bool enabled) {
         return cyng::make_prop(
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
                 cyng::make_param("path", (cwd / "gap-reports" / get_prefix(profile)).string()),
-                cyng::make_param("backtrack.hours", hours),
+                cyng::make_param("backtrack", hours),
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -592,7 +593,7 @@ namespace smf {
                 BOOST_ASSERT(sml::is_profile(profile));
                 CYNG_LOG_INFO(logger, "start cleanup task on db \"" << name << "\" for profile " << obis::get_name(profile));
                 auto const name = reader_cls.get("name", "");
-                auto const age = std::chrono::hours(reader_cls.get("max-age-in-hours", 48));
+                auto const age = cyng::to_hours(reader_cls.get("max-age", "120:00:00"));
                 auto const limit = reader_cls.get("limit", 256u);
 #ifndef _DEBUG
                 auto channel = ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age, limit);
@@ -798,7 +799,7 @@ namespace smf {
                                 std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
                             }
                         }
-                        auto const backtrack = std::chrono::hours(reader_report.get("backtrack.hours", 40));
+                        auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
                         auto const prefix = reader_report.get("prefix", "");
                         generate_csv(pos->second, profile, root, backtrack, now, prefix);
 
@@ -853,10 +854,10 @@ namespace smf {
                                     std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
                                 }
                             }
-                            auto const backtrack = reader_report.get("backtrack.hours", 40);
+                            auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
                             auto const prefix = reader_report.get("prefix", "LPEx-");
                             generate_lpex(
-                                pos->second, profile, filter, root, std::chrono::hours(backtrack), now, prefix, print_version);
+                                pos->second, profile, filter, root, backtrack, now, prefix, print_version);
 
                         } else {
                             std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
@@ -890,7 +891,7 @@ namespace smf {
                     auto const profile = cyng::to_obis(tsk.first);
                     auto const enabled = reader_gap.get("enabled", false);
                     if (enabled) {
-                        auto const age = std::chrono::hours(reader_gap.get("backtrack.hours", 48));
+                        auto const age = cyng::to_hours(reader_gap.get("backtrack", "48:00:00"));
 
                         std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
                         auto const tm = cyng::sys::to_utc(tt);
@@ -1329,7 +1330,7 @@ namespace smf {
                 BOOST_ASSERT(sml::is_profile(profile));
                 auto const name = reader.get("name", "");
                 auto const path = reader.get("path", "");
-                auto const backtrack = std::chrono::hours(reader.get("backtrack.hours", sml::backtrack_time(profile).count()));
+                auto const backtrack = cyng::to_hours(reader.get("backtrack", "10:00:00"));
                 auto const prefix = reader.get("prefix", "");
 
                 if (!std::filesystem::exists(path)) {
@@ -1391,7 +1392,7 @@ namespace smf {
                     BOOST_ASSERT(sml::is_profile(profile));
                     auto const name = reader.get("name", "");
                     auto const path = reader.get("path", "");
-                    auto const backtrack = std::chrono::hours(reader.get("backtrack.hours", sml::backtrack_time(profile).count()));
+                    auto const backtrack = cyng::to_hours(reader.get("backtrack", "10:00:00"));
                     auto const prefix = reader.get("prefix", "");
 
                     if (!std::filesystem::exists(path)) {

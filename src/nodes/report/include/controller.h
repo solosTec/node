@@ -61,7 +61,7 @@ namespace smf {
     cyng::param_t create_cluster_spec();
     cyng::prop_t create_csv_spec(cyng::obis, std::filesystem::path, bool enabled, std::chrono::hours);
     cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
-    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::size_t hours, bool enabled);
+    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::chrono::hours backtrack, bool enabled);
 
 } // namespace smf
 

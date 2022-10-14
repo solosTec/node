@@ -163,7 +163,7 @@ namespace smf {
          */
         std::vector<std::string> get_version();
 
-        void collect_report(
+        std::size_t collect_report(
             cyng::db::session,
             cyng::obis profile,
             cyng::obis_path_t const &filter,
@@ -171,7 +171,8 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
-            std::size_t count, //  entries in time span
+            std::chrono::minutes offset, // UTC offset
+            std::size_t count,           //  entries in time span
             bool print_version);
 
         void emit_report(
@@ -181,7 +182,8 @@ namespace smf {
             srv_id_t srv_id,
             bool print_version,
             data::values_t const &,
-            std::size_t count, //  entries in time span
+            std::chrono::minutes offset, // UTC offset
+            std::size_t count,           //  entries in time span
             std::optional<lpex_customer> const &customer_data);
 
         void emit_line(std::ostream &, std::vector<std::string> const);
@@ -191,7 +193,8 @@ namespace smf {
             cyng::obis profile,
             srv_id_t srv_id,
             data::values_t const &,
-            std::size_t count, //  entries in time span
+            std::chrono::minutes offset, // UTC offset
+            std::size_t count,           //  entries in time span
             std::optional<lpex_customer> const &customer_data);
 
         void emit_customer_data(std::ostream &os, srv_id_t srv_id, std::optional<lpex_customer> const &customer_data);

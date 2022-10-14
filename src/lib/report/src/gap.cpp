@@ -153,11 +153,11 @@ namespace smf {
 
             auto const data = collect_report(db, initial_data, profile, root, start, end, start.deviation(), count);
 #ifdef _DEBUG
-            std::cout << "start 15 min gap report ";
-            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
+            std::cout << "gap report (15 min) ";
+            cyng::sys::to_string(std::cout, start, "%Y-%m-%dT%H:%M%z");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - ");
-            std::cout << count << " expected entries for " << data.size() << " meter(s) each" << std::endl;
+            cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z - ");
+            std::cout << data.size() << "/" << count << " entries for " << data.size() << " meter(s) each" << std::endl;
 #endif
             return data;
         }
@@ -182,8 +182,6 @@ namespace smf {
                       << cyng::sys::get_length_of_month(start) << std::endl;
 #endif
 
-            // tz_offset adj_start(start, utc_offset);
-
             //
             //  generate gap reports about the complete time range
             //
@@ -199,7 +197,7 @@ namespace smf {
                     range                // time range 1 month
                 );
 
-                start += range;
+                idx += range;
             }
         }
 
@@ -240,8 +238,6 @@ namespace smf {
                       << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
                       << " entries in total" << std::endl;
 #endif
-            // tz_offset adj_start(start, utc_offset);
-
             //
             //  generate gap reports about the complete time range
             //
@@ -315,8 +311,8 @@ namespace smf {
             std::size_t count) //  expected number of entries in time span
         {
 
-            auto const first = start; // +utc_offset;
-            auto const last = end;    // +utc_offset;
+            auto const first = start;
+            auto const last = end;   
 
             auto const slot = sml::to_index(first, profile); //  start slot
             BOOST_ASSERT(slot.second);
@@ -326,35 +322,38 @@ namespace smf {
             //
             auto const data = collect_readouts_by_time_range(db, initial_data, profile, first, last);
 
-            auto const file_name = get_filename("", profile, start, end);
-            auto const file_path = root / file_name;
+            //
+            //  generate report only if data available (don't spamming)
+            //
+            if (!data.empty()) {
+
+                auto const file_name = get_filename("", profile, start, end);
+                auto const file_path = root / file_name;
+                std::ofstream of(file_path.string(), std::ios::trunc);
+
+                if (of.is_open()) {
+
+                    //
+                    //  loop over all meters
+                    //
+                    if (data.empty()) {
+                        of << count << std::endl;
+                    } else {
+                        for (auto const &val : data) {
+                            //
+                            //  server id
+                            //
+                            auto const srv_id = to_srv_id(val.first);
+
 #ifdef _DEBUG
-            // std::cout << profile << ": " << file_path << std::endl;
+                            std::cout << srv_id_to_str(val.first) << " has " << val.second.size() << "/" << count << " entries => "
+                                      << ((val.second.size() * 100.0) / count) << "%" << std::endl;
 #endif
-            std::ofstream of(file_path.string(), std::ios::trunc);
-
-            if (of.is_open()) {
-
-                //
-                //  loop over all meters
-                //
-                if (data.empty()) {
-                    of << count << std::endl;
-                } else {
-                    for (auto const &val : data) {
-                        //
-                        //  server id
-                        //
-                        auto const srv_id = to_srv_id(val.first);
-
-#ifdef _DEBUG
-                        std::cout << srv_id_to_str(val.first) << " has " << val.second.size() << "/" << count << " entries => "
-                                  << ((val.second.size() * 100.0) / count) << "%" << std::endl;
-#endif
-                        //
-                        // print report
-                        //
-                        emit_data(of, profile, srv_id, slot.first, val.second, utc_offset, count);
+                            //
+                            // print report
+                            //
+                            emit_data(of, profile, srv_id, slot.first, val.second, utc_offset, count);
+                        }
                     }
                 }
             }
@@ -376,16 +375,17 @@ namespace smf {
 
                 os << ',';
                 auto const pos = data.find(slot);
+                // "%Y-%m-%dT%H:%M%z" / "%FT%T%z"
                 if (pos != data.end()) {
                     os << "[set@";
-                    cyng::sys::to_string_utc(os, pos->second, "%FT%T%z");
+                    cyng::sys::to_string(os, pos->second + utc_offset, "%Y-%m-%dT%H:%M%z");
                     // cyng::sys::to_string_utc(os, pos->second, "%FT%T%z");
                     os << '#' << slot << ']';
                 } else {
                     //  missing time point
                     os << "[pull@";
-                    auto const tp = sml::to_time_point(slot, profile);
-                    cyng::sys::to_string_utc(os, tp, "%FT%T%z");
+                    auto const tp = sml::to_time_point(slot, profile) + utc_offset;
+                    cyng::sys::to_string_utc(os, tp, "%Y-%m-%dT%H:%M%z");
                     os << '#' << slot << ']';
                 }
             }

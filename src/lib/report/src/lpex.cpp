@@ -135,8 +135,7 @@ namespace smf {
             bool print_version) {
 #ifdef _DEBUG
             std::cout << "15 min (" << profile << ") lpex report period spans from " << start << " to " << end << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), offset = ?"
-                      << " minutes with "
+                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), with "
                       << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
                       << " entries in total" << std::endl;
 #endif
@@ -171,15 +170,17 @@ namespace smf {
             auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
 
+            auto const size = collect_report(db, profile, filter, root, prefix, start, end, start, count, print_version);
+
 #ifdef _DEBUG
             std::cout << "start 15 min report ";
-            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
+            cyng::sys::to_string(std::cout, start, "%Y-%m-%dT%H:%M%z");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - entries: ");
-            std::cout << count << std::endl;
+            cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z)");
+            std::cout << ", offset to UTC is " << start.deviation().count() << " minutes - entries: " << size << "/" << count
+                      << std::endl;
 #endif
 
-            collect_report(db, profile, filter, root, prefix, start, end, count, print_version);
         }
 
         /**
@@ -196,8 +197,7 @@ namespace smf {
             bool print_version) {
 #ifdef _DEBUG
             std::cout << "60 min (" << profile << ") lpex report period spans from " << start << " to " << end << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), offset = ?"
-                      << " minutes with "
+                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << ") "
                       << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
                       << " entries in total" << std::endl;
 
@@ -236,16 +236,17 @@ namespace smf {
 
             auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
+            auto const size = collect_report(db, profile, filter, root, prefix, start, end, start, count, print_version);
 
 #ifdef _DEBUG
             std::cout << "start 60 min report ";
             cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - max. entries: ");
-            std::cout << count << std::endl;
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC)");
+            std::cout << ", offset to UTC is " << start.deviation().count() << " minutes - entries: " << size << "/" << count
+                      << std::endl;
 #endif
 
-            collect_report(db, profile, filter, root, prefix, start, end, count, print_version);
         }
 
         /**
@@ -262,8 +263,7 @@ namespace smf {
             bool print_version) {
 #ifdef _DEBUG
             std::cout << "24 h (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = ?"
-                      << " minutes with "
+                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << ") "
                       << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
                       << " entries in total" << std::endl;
 #endif
@@ -299,16 +299,17 @@ namespace smf {
 
             auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
+            auto const size = collect_report(db, profile, filter, root, prefix, start, end, start, count, print_version);
 
 #ifdef _DEBUG
             std::cout << "start 24 h report ";
             cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
             std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - entries: ");
-            std::cout << count << std::endl;
+            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC)");
+            std::cout << ", offset to UTC is " << start.deviation().count() << " minutes - entries: " << size << "/" << count
+                      << std::endl;
 #endif
 
-            collect_report(db, profile, filter, root, prefix, start, end, count, print_version);
         }
 
         /**
@@ -368,7 +369,7 @@ namespace smf {
 
         std::vector<std::string> get_version() { return {"LPEX V2.0"}; }
 
-        void collect_report(
+        std::size_t collect_report(
             cyng::db::session db,
             cyng::obis profile,
             cyng::obis_path_t const &filter,
@@ -376,6 +377,7 @@ namespace smf {
             std::string prefix,
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point end,
+            std::chrono::minutes offset,
             std::size_t count, //  entries in time span
             bool print_version) {
 
@@ -402,8 +404,10 @@ namespace smf {
                 // print report
                 //
                 auto const file_name = get_filename(prefix, profile, srv_id, start);
-                emit_report(root, file_name, profile, srv_id, print_version, val.second, count, customer_data);
+                emit_report(root, file_name, profile, srv_id, print_version, val.second, offset, count, customer_data);
             }
+
+            return data.size();
         }
 
         void emit_report(
@@ -413,7 +417,8 @@ namespace smf {
             srv_id_t srv_id,
             bool print_version,
             data::values_t const &data,
-            std::size_t count, //  entries in time span
+            std::chrono::minutes offset, // UTC offset
+            std::size_t count,           //  entries in time span
             std::optional<lpex_customer> const &customer_data) {
 
             auto const file_path = root / file_name;
@@ -438,7 +443,7 @@ namespace smf {
                 //
                 //  data
                 //
-                emit_data(of, profile, srv_id, data, count, customer_data);
+                emit_data(of, profile, srv_id, data, offset, count, customer_data);
             }
         }
 
@@ -447,7 +452,8 @@ namespace smf {
             cyng::obis profile,
             srv_id_t srv_id,
             data::values_t const &data,
-            std::size_t count, //  entries in time span
+            std::chrono::minutes offset, // UTC offset
+            std::size_t count,           //  entries in time span
             std::optional<lpex_customer> const &customer_data) {
 
             auto pos = data.begin();
@@ -464,16 +470,15 @@ namespace smf {
                             //
                             //   the first time stamp in this data set
                             //
-                            auto const time_slot = sml::to_time_point(pos_ro->first, profile);
+                            auto const time_slot = sml::to_time_point(pos_ro->first, profile) + offset;
                             //
-                            //  time stamp (Datum)
+                            //  time stamp (Datum, Zeit)
                             //
-                            cyng::sys::to_string_utc(os, time_slot, "%d.%m.%y;");
-
-                            //
-                            //  start time (Zeit)
-                            //
-                            cyng::sys::to_string_utc(os, time_slot, "%H:%M:%S;");
+                            cyng::sys::to_string(os, time_slot, "%d.%m.%y;%H:%M:%S;");
+#ifdef _DEBUG
+                            //cyng::sys::to_string_utc(std::cout, time_slot, "%Y-%m-%dT%H:%M (UTC)\n");
+                            //cyng::sys::to_string(std::cout, time_slot, "%Y-%m-%dT%H:%M (local)\n");
+#endif
 
                             //
                             //  [3..10] customer data

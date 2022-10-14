@@ -199,7 +199,7 @@ namespace smf {
                 // time then the timeout handler must have run first.
                 if (!socket_.is_open()) {
 
-                    CYNG_LOG_WARNING(logger_, "ipt [" << tgl_.get() << "] connect timed out");
+                    CYNG_LOG_WARNING(logger_, "[ipt/" << tgl_.get() << "] connect timed out");
 
                     // Try the next available endpoint.
                     start_connect(sp, ++endpoint_iter);
@@ -207,7 +207,7 @@ namespace smf {
 
                 // Check if the connect operation failed before the deadline expired.
                 else if (ec) {
-                    CYNG_LOG_WARNING(logger_, "ipt [" << tgl_.get() << "] connect error: " << ec.message());
+                    CYNG_LOG_WARNING(logger_, "[ipt/" << tgl_.get() << " connect error: " << ec.message());
 
                     // We need to close the socket used in the previous connection attempt
                     // before starting a new one.
@@ -219,7 +219,7 @@ namespace smf {
 
                 // Otherwise we have successfully established a connection.
                 else {
-                    CYNG_LOG_INFO(logger_, "ipt [" << tgl_.get() << "] connected to " << endpoint_iter->endpoint());
+                    CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] connected to " << endpoint_iter->endpoint());
                     sp->value_ = state_value::CONNECTED;
 
                     //
@@ -233,7 +233,7 @@ namespace smf {
                         //
                         auto const sk = gen_random_sk();
 
-                        CYNG_LOG_INFO(logger_, "ipt [" << tgl_.get() << "] sk = " << ipt::to_string(sk));
+                        CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] sk = " << ipt::to_string(sk));
                         parser_.set_sk(sk);
                         send(sp, std::bind(&serializer::req_login_scrambled, &serializer_, srv.account_, srv.pwd_, sk));
                     } else {
@@ -281,12 +281,12 @@ namespace smf {
 #ifdef _DEBUG
                 CYNG_LOG_TRACE(
                     logger_,
-                    "ipt [" << tgl_.get() << "] send #" << buffer_write_.size() << ": " << buffer_write_.front().size()
+                    "[ipt/" << tgl_.get() << "] send #" << buffer_write_.size() << ": " << buffer_write_.front().size()
                             << " bytes to " << socket_.remote_endpoint());
 #else
                 CYNG_LOG_TRACE(
                     logger_,
-                    "ipt [" << tgl_.get() << "] send #" << buffer_write_.size() << ": " << buffer_write_.front().size()
+                    "[ipt/" << tgl_.get() << "] send #" << buffer_write_.size() << ": " << buffer_write_.front().size()
                             << " bytes");
 #endif
 
@@ -322,7 +322,7 @@ namespace smf {
             if (!sp->is_stopped()) {
 
                 if (!ec) {
-                    CYNG_LOG_DEBUG(logger_, "ipt [" << tgl_.get() << "] received " << n << " bytes " << socket_.remote_endpoint());
+                    CYNG_LOG_DEBUG(logger_, "[ipt/" << tgl_.get() << "] received " << n << " bytes " << socket_.remote_endpoint());
 
                     //
                     //  get de-obfuscated data
@@ -349,7 +349,7 @@ namespace smf {
                     do_read(sp);
 
                 } else {
-                    CYNG_LOG_ERROR(logger_, "ipt [" << tgl_.get() << "] on receive " << ec.value() << ": " << ec.message());
+                    CYNG_LOG_ERROR(logger_, "[ipt/" << tgl_.get() << "] on receive " << ec.value() << ": " << ec.message());
 
                     //
                     //  cleanup
@@ -382,7 +382,7 @@ namespace smf {
 
                 if (!ec) {
 
-                    CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] write buffer #" << buffer_write_.size());
+                    CYNG_LOG_TRACE(logger_, "[ipt/" << tgl_.get() << "] write buffer #" << buffer_write_.size());
                     if (buffer_write_.empty()) {
                         CYNG_LOG_FATAL(logger_, "ipt write empty buffer");
                     }
@@ -421,7 +421,7 @@ namespace smf {
             BOOST_ASSERT(state_holder_);
             BOOST_ASSERT(!state_holder_->is_stopped());
 
-            CYNG_LOG_TRACE(logger_, "ipt [" << tgl_.get() << "] cmd " << command_name(h.command_));
+            CYNG_LOG_TRACE(logger_, "[ipt/" << tgl_.get() << "] cmd " << command_name(h.command_));
 
             switch (to_code(h.command_)) {
             case code::TP_RES_OPEN_PUSH_CHANNEL: res_open_push_channel(h, std::move(body)); break;
@@ -498,7 +498,7 @@ namespace smf {
                 auto r = make_login_response(res);
                 if (r.is_success()) {
 
-                    CYNG_LOG_INFO(logger_, "ipt [" << tgl_.get() << "] " << r.get_response_name());
+                    CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] " << r.get_response_name());
 
                     //
                     //	update state
@@ -509,7 +509,7 @@ namespace smf {
                     //	set watchdog
                     //
                     if (watchdog != 0) {
-                        CYNG_LOG_INFO(logger_, "ipt [" << tgl_.get() << "] set watchdog: " << watchdog << " minutes");
+                        CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] set watchdog: " << watchdog << " minutes");
 
                         //
                         //	ToDo: start watchdog
@@ -521,7 +521,7 @@ namespace smf {
                     //
                     cb_auth_(true, socket_.local_endpoint(), socket_.remote_endpoint());
                 } else {
-                    CYNG_LOG_WARNING(logger_, "ipt [" << tgl_.get() << "] login failed: " << r.get_response_name());
+                    CYNG_LOG_WARNING(logger_, "[ipt/" << tgl_.get() << "] login failed: " << r.get_response_name());
                     boost::system::error_code ignored_ec;
                     //
                     //  This triggers a reconnect.

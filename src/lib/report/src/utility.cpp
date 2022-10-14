@@ -256,7 +256,7 @@ namespace smf {
                 //
                 //  calculate the time slot
                 //
-                auto const act_time = rec.value("actTime", start);
+                auto const act_time = rec.value("actTime", start); // + offset
                 auto const slot = sml::to_index(act_time, profile);
 #ifdef _DEBUG
                 // std::cout << "start: " << cyng::sys::to_string_utc(start, "%Y-%m-%dT%H:%M%z")
@@ -270,10 +270,10 @@ namespace smf {
 
 #ifdef _DEBUG
                     //  example: actTime '2022-10-07 11:00:00' from table translates to '2022-10-07T12:00:00+0200'
-                    using cyng::operator<<;
-                    std::cout << "\tstart: " << cyng::sys::to_string_utc(start, "%Y-%m-%dT%H:%M%z") << " - " << cyng::to_string(id)
-                              << " - slot: #" << slot.first << " (" << set_time << "), actTime: " << rec.value("actTime", start)
-                              << ", tag: " << tag << std::endl;
+                    //using cyng::operator<<;
+                    //std::cout << "=>start: " << cyng::sys::to_string(start, "%Y-%m-%dT%H:%M%z") << " - " << cyng::to_string(id)
+                    //          << " - slot: #" << slot.first << " (" << set_time << "), actTime: " << rec.value("actTime", start)
+                    //          << ", tag: " << tag << std::endl;
 #endif
 
                     auto pos = data.find(id);
