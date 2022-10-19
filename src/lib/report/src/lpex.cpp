@@ -598,8 +598,9 @@ namespace smf {
             if (debug_mode) {
                 //  example: 2022-08-13 00:00:00.0000000/2022-08-13 07:30:00.0000000
 
-                std::cout << to_string(srv_id) << ": " << start_day << "/" << start_data << " - " << idx_day.first << "/"
-                          << load.begin()->first << " - " << load.size() << " entries" << std::endl;
+                std::cout << to_string(srv_id) << ": " << start_day << "/" << cyng::sys::to_string_utc(start_data, "%Y-%m-%dT%H:%M")
+                          << " - " << idx_day.first << "/" << load.begin()->first << " - " << load.size() << " entries"
+                          << std::endl;
             }
 
             //
