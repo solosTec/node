@@ -37,6 +37,7 @@ namespace smf {
             toggle::server_vec_t &&,
             cyng::param_map_t &&,
             cyng::param_map_t &&,
+            cyng::param_map_t &&,
             cyng::param_map_t &&);
 
         /**

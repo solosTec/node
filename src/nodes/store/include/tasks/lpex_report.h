@@ -35,7 +35,8 @@ namespace smf {
             std::string path,
             std::chrono::hours backtrack,
             std::string prefix,
-            bool print_version);
+            bool print_version,
+            bool debug_mode);
 
         ~lpex_report() = default;
 
@@ -55,6 +56,7 @@ namespace smf {
         std::chrono::hours const backtrack_;
         std::string const prefix_;
         bool const print_version_;
+        bool const debug_mode_;
     };
 
 } // namespace smf

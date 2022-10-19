@@ -405,7 +405,7 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(00, 00, 60, 01, 00, ff),
          {"SERIAL_NR", cyng::TC_NULL, "(C.1.0) Serial number I (assigned by the manufacturer)"}},
         {DEFINE_OBIS(00, 00, 60, 01, 01, ff),
-         {"SERIAL_NR_SECOND", cyng::TC_NULL, "Serial number II (assigned by the manufacturer)."}},
+         {"SERIAL_NR_SECOND", cyng::TC_NULL, "Serial number II (customer ID, assigned by the manufacturer)."}},
         {DEFINE_OBIS(00, 00, 60, 01, 02, ff), {"PARAMETERS_FILE_CODE", cyng::TC_NULL, "Parameters file code (C.1.2)"}},
         {DEFINE_OBIS(00, 00, 60, 01, 03, ff), {"PRODUCTION_DATE", cyng::TC_NULL, "date of manufacture (C.1.3)"}},
         {DEFINE_OBIS(00, 00, 60, 01, 04, ff), {"PARAMETERS_CHECK_SUM", cyng::TC_NULL, "Parameters check sum (C.1.4)"}},
@@ -435,6 +435,13 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(00, 00, 61, 61, 01, ff), {"MBUS_STATE_1", cyng::TC_NULL, "not relevant under calibration law"}},
         {DEFINE_OBIS(00, 00, 61, 61, 02, ff), {"MBUS_STATE_2", cyng::TC_NULL, "not relevant under calibration law"}},
         {DEFINE_OBIS(00, 00, 61, 61, 03, ff), {"MBUS_STATE_3", cyng::TC_NULL, "not relevant under calibration law"}},
+
+        {DEFINE_OBIS(00, 01, 60, 02, 05, FF), {"LAST_CALIBRATION", cyng::TC_NULL, "Date and time of last calibration (L&G)"}},
+
+        {DEFINE_OBIS(00, 02, 60, f0, 08, ff), {"HARDWARE_ID_EXT", cyng::TC_NULL, "Hardware ID of extension board (L&G)"}},
+        {DEFINE_OBIS(00, 02, 60, f0, 09, ff),
+         {"HARDWARE_REF_EXT", cyng::TC_NULL, "Reference hardware ID of extension board (L&G)"}},
+
         {DEFINE_OBIS(00, 80, 80, 00, 00, ff), {"STORAGE_TIME_SHIFT", cyng::TC_NULL, "root push operations"}},
         {DEFINE_OBIS(00, 80, 80, 00, 01, 01), {"HAS_WAN", cyng::TC_NULL, "WAN on customer interface"}},
         {DEFINE_OBIS(00, 80, 80, 00, 03, 01), {"HAS_SSL_CONFIG", cyng::TC_NULL, "SSL/TSL configuration available"}},
@@ -490,6 +497,9 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(01, 00, 01, 08, 00, 62), {"EDL21_LAST_30d", cyng::TC_NULL, "Consumption over the last 30 days"}},
         {DEFINE_OBIS(01, 00, 01, 08, 00, 63), {"EDL21_LAST_365d", cyng::TC_NULL, "Consumption over the last 365 days"}},
         {DEFINE_OBIS(01, 00, 01, 08, 00, 64), {"EDL21_LAST_RESET", cyng::TC_NULL, "Consumption since last reset"}},
+
+        {DEFINE_OBIS(01, 01, 00, 04, 02, ff), {"CURRENT_TRANSFORMER_RATIO", cyng::TC_NULL, "Current transformer ratio (L&G)"}},
+        {DEFINE_OBIS(01, 01, 00, 04, 03, ff), {"VOLTAGE_TRANSFORMER_RATIO", cyng::TC_NULL, "Voltage transformer ratio (L&G)"}},
 
         //	-- Group 4 Heat COst Allocator
         //	-- Group 5 Cooling

@@ -7,6 +7,7 @@
 #include <tasks/cluster.h>
 
 #include <tasks/csv_report.h>
+#include <tasks/gap_report.h>
 #include <tasks/lpex_report.h>
 
 #include <smf/obis/profile.h>
@@ -14,6 +15,7 @@
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/util.hpp>
+#include <cyng/parse/duration.h>
 #include <cyng/parse/string.h>
 #include <cyng/task/channel.h>
 
@@ -34,6 +36,7 @@ namespace smf {
             std::bind(&cluster::connect, this), //  connect
             std::bind(&cluster::start_csv, this, std::placeholders::_1), //  start
             std::bind(&cluster::start_lpex, this, std::placeholders::_1), //  start
+            std::bind(&cluster::start_gap, this, std::placeholders::_1), //  start
             std::bind(&cluster::stop, this, std::placeholders::_1) // stop
         }
         , channel_(wp)
@@ -46,7 +49,7 @@ namespace smf {
         , db_(cyng::db::create_db_session(cfg_db)) {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"connect", "start.csv", "start.lpex"});
+            sp->set_channel_names({"connect", "start.csv", "start.lpex", "start.gap"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
 
@@ -135,18 +138,72 @@ namespace smf {
                 //  calculate start time
                 //
                 auto const now = std::chrono::system_clock::now();
-                auto const next = sml::floor(now + sml::interval_time(now, profile), profile);
+                auto const interval = sml::interval_time(now, profile);
+                auto const next = sml::floor(now + interval, profile);
                 CYNG_LOG_INFO(logger_, "start lpex report " << profile << " (" << name << ") at " << next);
-                bus_.sys_msg(cyng::severity::LEVEL_INFO, "start lpex report ", profile, " (", name, ") at ", next, " UTC");
 
                 if (next > now) {
+                    bus_.sys_msg(cyng::severity::LEVEL_INFO, "start lpex report ", profile, " (", name, ") at ", next, " UTC");
                     channel->suspend(next - now, "run");
                 } else {
-                    channel->suspend(sml::interval_time(now, profile), "run");
+                    bus_.sys_msg(
+                        cyng::severity::LEVEL_INFO, "start lpex report ", profile, " (", name, ") at ", now + interval, " UTC");
+                    channel->suspend(interval, "run");
                 }
 
             } else {
                 CYNG_LOG_TRACE(logger_, "lpex report " << cfg.first << " is disabled");
+            }
+        }
+    }
+
+    void cluster::start_gap(cyng::param_map_t reports) {
+
+        //
+        //	start reporting
+        //
+        for (auto const &cfg : reports) {
+            auto const reader = cyng::make_reader(cfg.second);
+            if (reader.get("enabled", false)) {
+
+                auto const profile = cyng::to_obis(cfg.first);
+                BOOST_ASSERT(sml::is_profile(profile));
+                auto const name = reader.get("name", "");
+                auto const root = reader.get("path", "");
+                auto const backtrack = cyng::to_hours(reader.get("max.age", "120:00:00"));
+                // auto const prefix = reader.get("prefix", "");
+
+                if (!std::filesystem::exists(root)) {
+                    std::cout << "***warning: output path [" << root << "] of gap report " << name << " does not exists";
+                    std::error_code ec;
+                    if (!std::filesystem::create_directories(root, ec)) {
+                        std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                    }
+                }
+
+                auto channel = ctl_.create_named_channel_with_ref<gap_report>(name, ctl_, logger_, db_, profile, root, backtrack);
+                BOOST_ASSERT(channel->is_open());
+                channels_.lock(channel);
+
+                //
+                //  calculate start time
+                //
+                auto const now = std::chrono::system_clock::now();
+                auto const interval = sml::interval_time(now, profile);
+                auto const next = sml::floor(now + interval, profile);
+                CYNG_LOG_INFO(logger_, "start gap report " << profile << " (" << name << ") at " << next);
+
+                if (next > now) {
+                    bus_.sys_msg(cyng::severity::LEVEL_INFO, "start gap report ", profile, " (", name, ") at ", next, " UTC");
+                    channel->suspend(next - now, "run");
+                } else {
+                    bus_.sys_msg(
+                        cyng::severity::LEVEL_INFO, "start gap report ", profile, " (", name, ") at ", now + interval, " UTC");
+                    channel->suspend(sml::interval_time(now, profile), "run");
+                }
+
+            } else {
+                CYNG_LOG_TRACE(logger_, "gap report " << cfg.first << " is disabled");
             }
         }
     }

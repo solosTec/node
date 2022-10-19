@@ -26,7 +26,8 @@ namespace smf {
         std::string path,
         std::chrono::hours backtrack,
         std::string prefix,
-        bool print_version)
+        bool print_version,
+        bool debug_mode)
         : sigs_{
             std::bind(&lpex_report::run, this), // start
             std::bind(&lpex_report::stop, this, std::placeholders::_1) // stop
@@ -40,7 +41,8 @@ namespace smf {
         , root_(path)
         , backtrack_(backtrack)
         , prefix_(prefix)
-        , print_version_(print_version) {
+        , print_version_(print_version)
+        , debug_mode_(debug_mode){
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -63,12 +65,29 @@ namespace smf {
             //
             auto const span = std::chrono::duration_cast<std::chrono::seconds>(next - now);
             sp->suspend(span, "run");
-            CYNG_LOG_TRACE(logger_, "[LPEx report] run " << obis::get_name(profile_) << " at " << next);
+            CYNG_LOG_TRACE(
+                logger_, "[LPEx report] run " << obis::get_name(profile_) << " at " << cyng::sys::to_string(next, "%F %T%z"));
 
             //
             //  generate report
             //
-            smf::generate_lpex(db_, profile_, filter_, root_, backtrack_, now, prefix_, print_version_);
+            smf::generate_lpex(
+                db_,
+                profile_,
+                filter_,
+                root_,
+                backtrack_,
+                now,
+                prefix_,
+                print_version_,
+                debug_mode_,
+                [=, this](
+                    std::chrono::system_clock::time_point start, std::chrono::minutes range, std::size_t count, std::size_t size) {
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[LPEx report] scan " << obis::get_name(profile_) << " from " << cyng::sys::to_string(start, "%F %T%z")
+                                              << " + " << range.count() << " minutes and found " << count << " meters");
+                });
         }
     }
 } // namespace smf

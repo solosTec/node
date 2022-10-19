@@ -146,12 +146,13 @@ namespace smf {
         tz_offset()
             : tp_()
             , diff_() {}
-        
+
         tz_offset(std::chrono::system_clock::time_point tp, std::chrono::duration<R, P> diff)
             : tp_(tp)
             , diff_(diff) {}
 
         tz_offset(tz_offset const &) = default;
+        tz_offset(tz_offset &&) = default;
 
         tz_offset &operator=(std::chrono::system_clock::time_point tp) {
             tp_ = tp;
@@ -211,6 +212,9 @@ namespace smf {
         using type = tz_offset<R, P>;
     };
 
+    /**
+     * Factory function for tz_offset
+     */
     inline decltype(auto) make_tz_offset(std::chrono::system_clock::time_point tp) {
         return tz_offset(tp, cyng::sys::delta_utc(tp));
     }

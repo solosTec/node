@@ -6,7 +6,7 @@ case 0x100ff: return "0.1.0";	// 0.1.0
 case 0x200ff: return "COSEM class id 1";	// COSEM class id 1
 case 0x10000ff: return "current time";	// current time
 case 0x600100ff: return "(C.1.0) Serial number I (assigned by the manufacturer)";	// (C.1.0) Serial number I (assigned by the manufacturer)
-case 0x600101ff: return "Serial number II (assigned by the manufacturer).";	// Serial number II (assigned by the manufacturer).
+case 0x600101ff: return "Serial number II (costumer ID, assigned by the manufacturer).";	// Serial number II (costumer ID, assigned by the manufacturer).
 case 0x600102ff: return "Parameters file code (C.1.2)";	// Parameters file code (C.1.2)
 case 0x600103ff: return "date of manufacture (C.1.3)";	// date of manufacture (C.1.3)
 case 0x600104ff: return "Parameters check sum (C.1.4)";	// Parameters check sum (C.1.4)
@@ -31,6 +31,9 @@ case 0x616100ff: return "Status according to EN13757-3 (error register)";	// Sta
 case 0x616101ff: return "not relevant under calibration law";	// not relevant under calibration law
 case 0x616102ff: return "not relevant under calibration law";	// not relevant under calibration law
 case 0x616103ff: return "not relevant under calibration law";	// not relevant under calibration law
+case 0x1600205ff: return "Date and time of last calibration (L&G)";	// Date and time of last calibration (L&G)
+case 0x260f008ff: return "Hardware ID of extension board (L&G)";	// Hardware ID of extension board (L&G)
+case 0x260f009ff: return "Reference hardware ID of extension board (L&G)";	// Reference hardware ID of extension board (L&G)
 case 0x80800000ff: return "root push operations";	// root push operations
 case 0x8080000101: return "WAN on customer interface";	// WAN on customer interface
 case 0x8080000301: return "SSL/TSL configuration available";	// SSL/TSL configuration available
@@ -271,6 +274,8 @@ case 0x10060350aff: return "Tamper 5 time counter register";	// Tamper 5 time co
 case 0x10060350bff: return "Tamper 5 energy";	// Tamper 5 energy
 case 0x100605700ff: return "Active tariff";	// Active tariff
 case 0x100606009ff: return "Fraud flag";	// Fraud flag
+case 0x101000402ff: return "Current transformer ratio (L&G)";	// Current transformer ratio (L&G)
+case 0x101000403ff: return "Voltage transformer ratio (L&G)";	// Voltage transformer ratio (L&G)
 case 0x101621700ff: return "Power threshold (D.23.0)";	// Power threshold (D.23.0)
 case 0x40000010aff: return "Local date at set date";	// Local date at set date
 case 0x400000901ff: return "Current time at time of transmission";	// Current time at time of transmission

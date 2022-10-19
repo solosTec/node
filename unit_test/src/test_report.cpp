@@ -21,18 +21,24 @@ BOOST_AUTO_TEST_CASE(offset) {
     //
     //   generate a time stamp
     //
-    std::tm tm = {};
-    std::istringstream ss("2022-Oktober-21 23:12:34");
-    ss.imbue(std::locale("de_DE.utf-8"));
-    // std::istringstream ss("2022-Oct-21 23:12:34");
-    // ss.imbue(std::locale("en_US.UTF-8"));
-    ss >> std::get_time(&tm, "%Y-%b-%d %H:%M:%S");
+    // std::tm tm = {};
+    // std::istringstream ss("2022-Oktober-21 23:12:34");
+    // ss.imbue(std::locale("de_DE.utf-8"));
+    //// std::istringstream ss("2022-Oct-21 23:12:34");
+    //// ss.imbue(std::locale("en_US.UTF-8"));
+    // ss >> std::get_time(&tm, "%Y-%b-%d %H:%M:%S");
+    // tm.tm_isdst = 1; //  DST is in effect
 
-    auto const t = std::mktime(&tm);
-    auto tp = std::chrono::system_clock::from_time_t(t);
+    // auto const t = std::mktime(&tm);
+    // auto tp = std::chrono::system_clock::from_time_t(t);
+
+    std::string const inp = "2022-10-21 23:12:34";
+    std::string const fmt = "%Y-%m-%d %H:%M:%S";
+    auto tp = cyng::sys::to_time_point(inp, fmt);
 
     //   2022-10-22 00:12:34+0200 - de_DE.utf-8
-    std::cout << "start time: " << cyng::sys::to_string(tp, "%F %T%z") << std::endl;
+    std::cout << "start time: " << cyng::sys::to_string_utc(tp, "%F %T%z (UTC), ") << cyng::sys::to_string(tp, "%F %T%z (local)")
+              << std::endl;
 
     for (auto idx = 0u; idx < 14; ++idx) {
         // auto const delta = cyng::sys::delta_utc(tp);

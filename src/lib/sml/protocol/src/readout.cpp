@@ -94,7 +94,7 @@ namespace smf {
                 // SML time
                 //
                 return read_time(obj);
-            } else if (OBIS_SERIAL_NR == code) {
+            } else if (OBIS_SERIAL_NR == code || OBIS_SERIAL_NR_SECOND == code) {
                 //
                 // buffer => hex
                 //

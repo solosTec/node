@@ -4,10 +4,8 @@
  * Copyright (c) 2022 Sylko Olzscher
  *
  */
-#ifndef SMF_REPORT_TASK_LPEX_H
-#define SMF_REPORT_TASK_LPEX_H
-
-#include <smf/mbus/server_id.h>
+#ifndef SMF_REPORT_TASK_GAP_H
+#define SMF_REPORT_TASK_GAP_H
 
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
@@ -16,30 +14,32 @@
 
 namespace smf {
 
-    class lpex_report {
+    /**
+     * Remove all outdated data records.
+     */
+    class gap_report {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>,     // start
-            std::function<void(cyng::eod)> // stop
+            std::function<void(std::chrono::hours)>, // start
+            std::function<void(cyng::eod)>           // stop
             >;
 
       public:
-        lpex_report(
-            cyng::channel_weak,
-            cyng::controller &,
-            cyng::logger,
-            cyng::db::session,
+        gap_report(
+            cyng::channel_weak wp,
+            cyng::controller &ctl,
+            cyng::logger logger,
+            cyng::db::session db,
             cyng::obis profile,
             std::string path,
-            std::chrono::hours backtrack,
-            std::string prefix);
+            std::chrono::hours max_age);
 
-        ~lpex_report() = default;
+        ~gap_report() = default;
 
       private:
         void stop(cyng::eod);
-        void run();
+        void run(std::chrono::hours);
 
       private:
         signatures_t sigs_;
@@ -48,9 +48,8 @@ namespace smf {
         cyng::logger logger_;
         cyng::db::session db_;
         cyng::obis const profile_;
-        std::filesystem::path const root_;
-        std::chrono::hours const backtrack_;
-        std::string const prefix_;
+        std::filesystem::path root_;
+        std::chrono::hours const max_age_;
     };
 
 } // namespace smf

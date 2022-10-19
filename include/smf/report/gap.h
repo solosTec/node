@@ -58,7 +58,7 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            tz_type start,
+            tz_type &&start,
             std::chrono::hours span);
 
         /**
@@ -76,7 +76,7 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            tz_type start,
+            tz_type &&start,
             std::chrono::hours span);
 
         /**
@@ -94,7 +94,7 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            tz_type start,
+            tz_type &&start,
             std::chrono::hours span);
 
         /**

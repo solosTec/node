@@ -1227,7 +1227,14 @@ namespace smf {
 
     cyng::param_map_t transform_config(cyng::param_map_t &&cfg) {
 
+        //
+        //  dump original data
+        //
         cyng::io::serialize_json_pretty(std::cout, cfg);
+
+        //
+        //  transform structure
+        //
         cyng::transform(
             cfg, [=](cyng::object const &obj, std::vector<std::string> const &path) -> std::pair<cyng::object, cyng::action> {
                 if (path.size() == 2 && boost::algorithm::equals(path.at(0), "gpio") &&
@@ -1239,9 +1246,20 @@ namespace smf {
                     auto vec = transform_pin_numbers(cyng::container_cast<cyng::param_map_t>(obj));
                     return {cyng::make_object(vec), cyng::action::REPLACE};
                 }
+                if (!path.empty() && boost::algorithm::equals(path.at(0), "81490d0700ff")) {
+                    //  => ipt/param/008080000301
+                    return {cyng::make_object("ipt"), cyng::action::NONE};
+                }
                 return {obj, cyng::action::NONE};
             });
+
+        //
+        //  rename elements
+        //
+        cyng::rename(cfg, {"81490d0700ff"}, {"ipt"});
+
         cyng::io::serialize_json_pretty(std::cout, cfg);
+
         return cfg;
     }
 

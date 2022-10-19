@@ -113,16 +113,11 @@ namespace smf {
 #ifdef _DEBUG
             std::cout << "15 min (" << profile << ") reporting period spans "
                       << std::chrono::duration_cast<std::chrono::hours>(end - start) << " from "
-                      << cyng::sys::to_string(start, "%F %T%z") << " to " << cyng::sys::to_string(end, "%F %T%z")
+                      << cyng::sys::to_string_utc(start, "%F %T%z") << " to " << cyng::sys::to_string_utc(end, "%F %T%z")
                       << ", offset = " << start << " with "
                       << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
                       << " expected entries/meter in total" << std::endl;
 #endif
-            //
-            //  The specified time of (i.e  2022-10-07 00:00:00+0200 - during Daylight Saving Time) has to be adjusted back by 2
-            //  hours to get the UTC time.
-            //
-
             //
             //  generate gap reports about the complete time range
             //
@@ -135,7 +130,7 @@ namespace smf {
                     data, // initial data
                     profile,
                     root,
-                    make_tz_offset(idx), // start (UTC)
+                    make_tz_offset(idx), // compensate time difference to UTC
                     range);
             }
         }
@@ -145,12 +140,11 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            tz_type start,
+            tz_type &&start,
             std::chrono::hours span) {
 
             auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
-
             auto const data = collect_report(db, initial_data, profile, root, start, end, start.deviation(), count);
 #ifdef _DEBUG
             std::cout << "gap report (15 min) ";
@@ -206,7 +200,7 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            tz_type start,
+            tz_type &&start,
             std::chrono::hours span) {
 
             auto const end = start.utc_time() + span;
@@ -263,7 +257,7 @@ namespace smf {
             gap::readout_t const &initial_data,
             cyng::obis profile,
             std::filesystem::path root,
-            tz_type start,
+            tz_type &&start,
             std::chrono::hours span) {
 
             auto const end = start.utc_time() + span;
@@ -312,7 +306,7 @@ namespace smf {
         {
 
             auto const first = start;
-            auto const last = end;   
+            auto const last = end;
 
             auto const slot = sml::to_index(first, profile); //  start slot
             BOOST_ASSERT(slot.second);
@@ -327,7 +321,7 @@ namespace smf {
             //
             if (!data.empty()) {
 
-                auto const file_name = get_filename("", profile, start, end);
+                auto const file_name = get_filename("", profile, start - utc_offset, end - utc_offset);
                 auto const file_path = root / file_name;
                 std::ofstream of(file_path.string(), std::ios::trunc);
 
@@ -375,18 +369,22 @@ namespace smf {
 
                 os << ',';
                 auto const pos = data.find(slot);
-                // "%Y-%m-%dT%H:%M%z" / "%FT%T%z"
                 if (pos != data.end()) {
                     os << "[set@";
-                    cyng::sys::to_string(os, pos->second + utc_offset, "%Y-%m-%dT%H:%M%z");
-                    // cyng::sys::to_string_utc(os, pos->second, "%FT%T%z");
-                    os << '#' << slot << ']';
+                    cyng::sys::to_string(os, pos->second, "%Y-%m-%dT%H:%M");
+#ifdef _DEBUG
+                    os << '#' << slot;
+#endif
+                    os << ']';
                 } else {
                     //  missing time point
                     os << "[pull@";
-                    auto const tp = sml::to_time_point(slot, profile) + utc_offset;
-                    cyng::sys::to_string_utc(os, tp, "%Y-%m-%dT%H:%M%z");
-                    os << '#' << slot << ']';
+                    auto const tp = sml::to_time_point(slot, profile);
+                    cyng::sys::to_string(os, tp, "%Y-%m-%dT%H:%M");
+#ifdef _DEBUG
+                    os << '#' << slot;
+#endif
+                    os << ']';
                 }
             }
             os << std::endl;

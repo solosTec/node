@@ -6,7 +6,7 @@ case 0x100ff: return "RESET_COUNTER";	// 0.1.0
 case 0x200ff: return "FIRMWARE_VERSION";	// COSEM class id 1
 case 0x10000ff: return "REAL_TIME_CLOCK";	// current time
 case 0x600100ff: return "SERIAL_NR";	// (C.1.0) Serial number I (assigned by the manufacturer)
-case 0x600101ff: return "SERIAL_NR_SECOND";	// Serial number II (assigned by the manufacturer).
+case 0x600101ff: return "SERIAL_NR_SECOND";	// Serial number II (costumer ID, assigned by the manufacturer).
 case 0x600102ff: return "PARAMETERS_FILE_CODE";	// Parameters file code (C.1.2)
 case 0x600103ff: return "PRODUCTION_DATE";	// date of manufacture (C.1.3)
 case 0x600104ff: return "PARAMETERS_CHECK_SUM";	// Parameters check sum (C.1.4)
@@ -31,6 +31,9 @@ case 0x616100ff: return "MBUS_STATE";	// Status according to EN13757-3 (error re
 case 0x616101ff: return "MBUS_STATE_1";	// not relevant under calibration law
 case 0x616102ff: return "MBUS_STATE_2";	// not relevant under calibration law
 case 0x616103ff: return "MBUS_STATE_3";	// not relevant under calibration law
+case 0x1600205ff: return "LAST_CALIBRATION";	// Date and time of last calibration (L&G)
+case 0x260f008ff: return "HARDWARE_ID_EXT";	// Hardware ID of extension board (L&G)
+case 0x260f009ff: return "HARDWARE_REF_EXT";	// Reference hardware ID of extension board (L&G)
 case 0x80800000ff: return "STORAGE_TIME_SHIFT";	// root push operations
 case 0x8080000101: return "HAS_WAN";	// WAN on customer interface
 case 0x8080000301: return "HAS_SSL_CONFIG";	// SSL/TSL configuration available
@@ -271,6 +274,8 @@ case 0x10060350aff: return "REG_TAMPER_TIME_5";	// Tamper 5 time counter registe
 case 0x10060350bff: return "REG_TAMPER_ENERGY_5";	// Tamper 5 energy
 case 0x100605700ff: return "REG_ACTIVE_TARFIFF";	// Active tariff
 case 0x100606009ff: return "REG_FRAUD_FLAG";	// Fraud flag
+case 0x101000402ff: return "CURRENT_TRANSFORMER_RATIO";	// Current transformer ratio (L&G)
+case 0x101000403ff: return "VOLTAGE_TRANSFORMER_RATIO";	// Voltage transformer ratio (L&G)
 case 0x101621700ff: return "REG_SM_POWER_THRESHOLD";	// Power threshold (D.23.0)
 case 0x40000010aff: return "REG_HCA_10";	// Local date at set date
 case 0x400000901ff: return "REG_HCA_F";	// Current time at time of transmission

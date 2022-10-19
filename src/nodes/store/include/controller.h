@@ -173,8 +173,8 @@ namespace smf {
             cyng::db::session,
             cyng::param_map_t reports,
             cyng::obis_path_t filter,
-            // std::chrono::minutes utc_offset,
-            bool print_version);
+            bool print_version,
+            bool debug_mode);
 
       private:
         /**

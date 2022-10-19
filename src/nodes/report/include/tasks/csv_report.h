@@ -4,8 +4,8 @@
  * Copyright (c) 2022 Sylko Olzscher
  *
  */
-#ifndef SMF_REPORT_TASK_CSV_REPORT_H
-#define SMF_REPORT_TASK_CSV_REPORT_H
+#ifndef SMF_REPORT_TASK_CSV_H
+#define SMF_REPORT_TASK_CSV_H
 
 #include <smf/mbus/server_id.h>
 

@@ -32,6 +32,7 @@ namespace smf {
             std::function<void(void)>,              // connect
             std::function<void(cyng::param_map_t)>, // start
             std::function<void(cyng::param_map_t)>, // start
+            std::function<void(cyng::param_map_t)>, // start
             std::function<void(cyng::eod)>          // stop
             >;
 
@@ -52,6 +53,7 @@ namespace smf {
         void connect();
         void start_csv(cyng::param_map_t);
         void start_lpex(cyng::param_map_t);
+        void start_gap(cyng::param_map_t);
 
         void stop(cyng::eod);
 

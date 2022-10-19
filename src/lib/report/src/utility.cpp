@@ -17,6 +17,13 @@
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#ifdef _DEBUG
+#include <fstream>
+#include <iostream>
+#endif
+
+#include <cmath>
+
 namespace smf {
 
     std::vector<cyng::buffer_t> select_meters(
@@ -27,8 +34,10 @@ namespace smf {
 
         BOOST_ASSERT_MSG(start < end, "invalid time range");
 
-        //  SELECT DISTINCT hex(meterID) FROM TSMLreadout WHERE profile = '8181c78611ff' AND actTime BETWEEN julianday('2022-07-19')
+        //  SELECT DISTINCT hex(meterID) FROM TSMLreadout WHERE profile = '8181c78611ff' AND actTime BETWEEN
+        // julianday('2022-07-19')
         //  AND julianday('2022-07-20');
+        //  Profile "8181c78611ff" translates to 142394398216703 in database
         std::string const sql =
             "SELECT DISTINCT meterID FROM TSMLReadout WHERE profile = ? AND actTime BETWEEN julianday(?) AND julianday(?)";
         auto stmt = db.create_statement();
@@ -37,9 +46,9 @@ namespace smf {
         BOOST_ASSERT_MSG(r.second, "prepare SQL statement failed");
         if (r.second) {
             //  Without meta data the "real" data type is to be used
-            stmt->push(cyng::make_object(profile.to_uint64()), 0); //	profile
-            stmt->push(cyng::make_object(start), 0);               //	start time
-            stmt->push(cyng::make_object(end), 0);                 //	end time
+            stmt->push(cyng::make_object(profile), 0); //	profile
+            stmt->push(cyng::make_object(start), 0);   //	start time
+            stmt->push(cyng::make_object(end), 0);     //	end time
             while (auto res = stmt->get_result()) {
                 auto const meter = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
                 BOOST_ASSERT(!meter.empty());
@@ -132,9 +141,7 @@ namespace smf {
 #endif
         auto const hours = std::chrono::duration_cast<std::chrono::hours>(start - end);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << std::put_time(&tm_start, "-%Y%m%dT%H%M-") << hours.count()
-           << 'h'
-           //<< std::put_time(&tm_end, "%Y%m%dT%H%M")
+        ss << prefix << get_prefix(profile) << std::put_time(&tm_start, "-%Y%m%dT%H%M-") << std::abs(hours.count()) << 'h'
            << ".csv";
         return ss.str();
     }
@@ -270,8 +277,8 @@ namespace smf {
 
 #ifdef _DEBUG
                     //  example: actTime '2022-10-07 11:00:00' from table translates to '2022-10-07T12:00:00+0200'
-                    //using cyng::operator<<;
-                    //std::cout << "=>start: " << cyng::sys::to_string(start, "%Y-%m-%dT%H:%M%z") << " - " << cyng::to_string(id)
+                    // using cyng::operator<<;
+                    // std::cout << "=>start: " << cyng::sys::to_string(start, "%Y-%m-%dT%H:%M%z") << " - " << cyng::to_string(id)
                     //          << " - slot: #" << slot.first << " (" << set_time << "), actTime: " << rec.value("actTime", start)
                     //          << ", tag: " << tag << std::endl;
 #endif
@@ -319,6 +326,15 @@ namespace smf {
         auto stmt = db.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
+#ifdef _DEBUG
+            std::ofstream ofdbg("LPExdebug.log", std::ios::app);
+            ofdbg << cyng::to_string(profile) << ": ";
+            cyng::sys::to_string(ofdbg, start, "%Y-%m-%dT%H:%M%z");
+            ofdbg << " -> ";
+            cyng::sys::to_string(ofdbg, end, "%Y-%m-%dT%H:%M%z");
+            ofdbg << std::endl;
+
+#endif
             stmt->push(cyng::make_object(profile), 0); //	profile
             stmt->push(cyng::make_object(start), 0);   //	start time
             stmt->push(cyng::make_object(end), 0);     //	end time
@@ -337,7 +353,7 @@ namespace smf {
                 //
                 auto const rec = cyng::to_record(ms, res);
 #ifdef _DEBUG
-                // std::cout << rec.to_string() << std::endl;
+                ofdbg << rec.to_string() << std::endl;
 #endif
 
                 //
@@ -366,9 +382,10 @@ namespace smf {
                     auto const unit = rec.value<std::uint8_t>("unit", 0u);
 
                     //
-                    //  apply filter if not empty
+                    // apply filter only if not empty
+                    // The filter contains allowed registers (OBIS)
                     //
-                    if (filter.empty() || std::find(filter.begin(), filter.end(), reg) != filter.end()) {
+                    if (!filter.empty() && std::find(filter.begin(), filter.end(), reg) != filter.end()) {
                         auto pos = data.find(id);
                         if (pos != data.end()) {
                             //
