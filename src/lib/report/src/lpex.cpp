@@ -676,6 +676,7 @@ namespace smf {
                    << ";" << customer_data->name_        // [4] Kundenname; example: Frey Sarah
                    << ";" << customer_data->unique_name_ // [5] eindeutigeKDNr, example: AZ Bornfeldstrasse 2
                    << ";" << get_id(srv_id)              // [6] GEId (GeräteID), METERID
+                   << ";"                                // [7] GEKANr
                    << ";"                                // [7] KALINr (Kanalnummer)
                    << ";"                                // [8] Linie (Liniennummer)
                    << ";"                                // [9] Linienbezeichnung
@@ -700,14 +701,15 @@ namespace smf {
                 //
                 // GEKANr; KALINr; Linie; eindeutigeLINr; ZPB)
                 //
-                os << ";" // [7] KALINr (Kanalnummer)
-                   << ";" // [8] Linie (Liniennummer)
-                   << ";" // [9] Linienbezeichnung
-                   << ";" // [10] eindeutigeLINr (metering code)
+                os << ";" // [7] GEKANr
+                   << ";" // [8] KALINr (Kanalnummer)
+                   << ";" // [9] Linie (Liniennummer)
+                   << ";" // [10] Linienbezeichnung
+                   << ";" // [11] eindeutigeLINr (metering code)
                     ;
             }
-            // [11] Kennzahl (OBIS)
-            // [12] Einheit
+            // [12] Kennzahl (OBIS)
+            // [13] Einheit
         }
 
     } // namespace lpex
