@@ -126,11 +126,27 @@ namespace smf {
                 BOOST_ASSERT(sml::is_profile(profile));
                 auto const name = reader.get("name", "");
                 auto const path = reader.get("path", "");
-                auto const backtrack = std::chrono::hours(reader.get("backtrack", sml::backtrack_time(profile).count()));
+                //                auto const backtrack = std::chrono::hours(reader.get("backtrack",
+                //                sml::backtrack_time(profile).count()));
                 auto const prefix = reader.get("prefix", "");
+                auto const backtrack = cyng::to_hours(reader.get("backtrack", "40:00:00"));
+                auto const separated = reader.get("separated.by.devices", false);
 
-                auto channel =
-                    ctl_.create_named_channel_with_ref<lpex_report>(name, ctl_, logger_, db_, profile, path, backtrack, prefix);
+                cyng::obis_path_t filter;
+                auto channel = ctl_.create_named_channel_with_ref<lpex_report>(
+                    name,
+                    ctl_,
+                    logger_,
+                    db_,
+                    profile,
+                    filter, // filter
+                    path,
+                    backtrack,
+                    prefix,
+                    true,      // print version
+                    separated, // separated
+                    false      // debug mode
+                );
                 BOOST_ASSERT(channel->is_open());
                 channels_.lock(channel);
 

@@ -70,7 +70,6 @@ namespace smf {
     cyng::param_map_t read_config(cyng::db::session &db, cyng::param_map_t const &s);
     void insert_value(std::vector<std::string> const &, cyng::param_map_t *, cyng::object);
     cyng::param_map_t transform_config(cyng::param_map_t &&);
-    cyng::vector_t transform_pin_numbers(cyng::param_map_t &&);
 
 } // namespace smf
 

@@ -25,6 +25,10 @@ namespace smf {
             >;
 
       public:
+        /**
+         *
+         * @param separated generated for each device individually
+         */
         lpex_report(
             cyng::channel_weak,
             cyng::controller &,
@@ -36,6 +40,7 @@ namespace smf {
             std::chrono::hours backtrack,
             std::string prefix,
             bool print_version,
+            bool separated,
             bool debug_mode);
 
         ~lpex_report() = default;
@@ -56,6 +61,7 @@ namespace smf {
         std::chrono::hours const backtrack_;
         std::string const prefix_;
         bool const print_version_;
+        bool const separated_;
         bool const debug_mode_;
     };
 

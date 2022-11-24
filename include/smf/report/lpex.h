@@ -25,6 +25,8 @@ namespace smf {
 
     /**
      * Generate a LPEx report of the specified profile
+     *
+     * @param separated generated for each device individually
      */
     void generate_lpex(
         cyng::db::session,
@@ -35,6 +37,7 @@ namespace smf {
         std::chrono::system_clock::time_point,
         std::string prefix,
         bool print_version,
+        bool separated,
         bool debug_mode,
         lpex_cb);
 
@@ -54,6 +57,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -73,6 +77,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -85,6 +90,7 @@ namespace smf {
             tz_type &&start,
             std::chrono::hours span,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -100,6 +106,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -112,6 +119,7 @@ namespace smf {
             tz_type &&start,
             std::chrono::hours span,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -127,6 +135,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -139,6 +148,7 @@ namespace smf {
             tz_type &&start,
             std::chrono::hours span,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -154,6 +164,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -169,6 +180,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb);
 
@@ -199,14 +211,13 @@ namespace smf {
             std::chrono::minutes offset, // UTC offset
             std::size_t count,           //  entries in time span
             bool print_version,
+            bool separated,
             bool debug_mode);
 
         void emit_report(
-            std::filesystem::path root,
-            std::string file_name,
+            std::ofstream &ofs,
             cyng::obis profile,
             srv_id_t srv_id,
-            bool print_version,
             bool debug_mode,
             data::values_t const &,
             std::chrono::minutes offset, // UTC offset
@@ -234,6 +245,8 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::size_t count, //  entries in time span
             std::map<std::int64_t, sml_data> const &load);
+
+        std::ofstream open_report(std::filesystem::path root, std::string file_name, bool print_version);
 
     } // namespace lpex
 

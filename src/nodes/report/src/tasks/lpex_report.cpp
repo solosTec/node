@@ -3,7 +3,8 @@
 
 #include <smf/obis/db.h>
 #include <smf/obis/profile.h>
-#include <smf/report/csv.h>
+// #include <smf/report/csv.h>
+#include <smf/report/lpex.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -22,9 +23,13 @@ namespace smf {
         cyng::logger logger, 
         cyng::db::session db, 
         cyng::obis profile, 
+        cyng::obis_path_t filter,
         std::string path,
         std::chrono::hours backtrack,
-        std::string prefix)
+        std::string prefix,
+        bool print_version,
+        bool separated,
+        bool debug_mode)
         : sigs_{
             std::bind(&lpex_report::run, this), // start
             std::bind(&lpex_report::stop, this, std::placeholders::_1) // stop
@@ -34,9 +39,13 @@ namespace smf {
         , logger_(logger)
         , db_(db)
         , profile_(profile)
+        , filter_(filter)
         , root_(path)
         , backtrack_(backtrack)
-        , prefix_(prefix) {
+        , prefix_(prefix)
+        , print_version_(print_version)
+        , separated_(separated)
+        , debug_mode_(debug_mode) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -59,12 +68,30 @@ namespace smf {
             //
             auto const span = std::chrono::duration_cast<std::chrono::seconds>(next - now);
             sp->suspend(span, "run");
-            CYNG_LOG_TRACE(logger_, "[report] run " << obis::get_name(profile_) << " at " << next);
+            CYNG_LOG_TRACE(logger_, "[report LPex] run " << obis::get_name(profile_) << " at " << next);
 
             //
             //  generate report
             //
-            generate_csv(db_, profile_, root_, backtrack_, now, prefix_);
+            // generate_csv(db_, profile_, root_, backtrack_, now, prefix_);
+            generate_lpex(
+                db_,
+                profile_,
+                filter_,
+                root_,
+                backtrack_,
+                now,
+                prefix_,
+                print_version_,
+                separated_,
+                debug_mode_,
+                [=, this](
+                    std::chrono::system_clock::time_point start, std::chrono::minutes range, std::size_t count, std::size_t size) {
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[LPEx report] scan " << obis::get_name(profile_) << " from " << cyng::sys::to_string(start, "%F %T%z")
+                                              << " + " << range.count() << " minutes and found " << count << " meters");
+                });
         }
     }
 } // namespace smf

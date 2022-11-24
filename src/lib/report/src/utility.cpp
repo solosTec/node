@@ -13,6 +13,7 @@
 #include <cyng/sql/dsl.h>
 #include <cyng/sql/dsl/placeholder.h>
 #include <cyng/sql/sql.hpp>
+#include <cyng/sys/clock.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -108,16 +109,21 @@ namespace smf {
 
     std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t srv_id, std::chrono::system_clock::time_point start) {
 
-        auto tt = std::chrono::system_clock::to_time_t(start);
-#ifdef _MSC_VER
-        struct tm tm;
-        _gmtime64_s(&tm, &tt);
-#else
-        auto tm = *std::gmtime(&tt);
-#endif
+        auto const tt = std::chrono::system_clock::to_time_t(start);
+        auto const tm = cyng::sys::to_localtime(tt);
 
         std::stringstream ss;
         ss << prefix << get_prefix(profile) << "-" << to_string(srv_id) << '_' << std::put_time(&tm, "%Y%m%dT%H%M") << ".csv";
+        return ss.str();
+    }
+
+    std::string get_filename(std::string prefix, cyng::obis profile, std::chrono::system_clock::time_point start) {
+
+        auto const tt = std::chrono::system_clock::to_time_t(start);
+        auto const tm = cyng::sys::to_localtime(tt);
+
+        std::stringstream ss;
+        ss << prefix << get_prefix(profile) << "-" << std::put_time(&tm, "%Y%m%dT%H%M") << ".csv";
         return ss.str();
     }
 
@@ -130,15 +136,8 @@ namespace smf {
         BOOST_ASSERT(start < end);
 
         auto tt_start = std::chrono::system_clock::to_time_t(start);
-        // auto tt_end = std::chrono::system_clock::to_time_t(end);
-#ifdef _MSC_VER
-        struct tm tm_start, tm_end;
-        _gmtime64_s(&tm_start, &tt_start);
-        //_gmtime64_s(&tm_end, &tt_end);
-#else
-        auto tm_start = *std::gmtime(&tt_start);
-        // auto tm_end = *std::gmtime(&tt_end);
-#endif
+        auto const tm_start = cyng::sys::to_localtime(tt_start);
+
         auto const hours = std::chrono::duration_cast<std::chrono::hours>(start - end);
         std::stringstream ss;
         ss << prefix << get_prefix(profile) << std::put_time(&tm_start, "-%Y%m%dT%H%M-") << std::abs(hours.count()) << 'h'

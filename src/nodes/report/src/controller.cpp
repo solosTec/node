@@ -68,10 +68,10 @@ namespace smf {
                 cyng::make_tuple(
                     cyng::make_param("connection.type", "SQLite"),
                     cyng::make_param("file.name", (cwd / "store.database").string()),
-                    cyng::make_param("busy.timeout", 12), // seconds
-                    cyng::make_param("watchdog", 30),     // for database connection
-                    cyng::make_param("pool.size", 1),     // no pooling for SQLite
-                    cyng::make_param("readonly", true)    // no write access required
+                    cyng::make_param("busy.timeout", std::chrono::milliseconds(12)), // seconds
+                    cyng::make_param("watchdog", std::chrono::seconds(30)),          // for database connection
+                    cyng::make_param("pool.size", 1),                                // no pooling for SQLite
+                    cyng::make_param("readonly", true)                               // no write access required
                     )),
 
             cyng::make_param(
@@ -149,7 +149,7 @@ namespace smf {
                 cyng::make_param("path", (cwd / "lpex.reports" / get_prefix(profile)).string()),
                 cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", "LPEx-"),
-                cyng::make_param("offset", 15), //  minutes
+                cyng::make_param("separated.by.devices", false), // individual reports for each device
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -336,10 +336,11 @@ namespace smf {
                 auto const filter = cyng::to_obis_path(reader["lpex"].get("filter", ""));
                 for (auto const &cfg_report : reports) {
                     //
-                    //  skip "print.version" entry
+                    //  skip "print.version" entry "separated.by.devices"
                     //
                     if (!boost::algorithm::equals(cfg_report.first, "print.version") &&
-                        !boost::algorithm::equals(cfg_report.first, "debug")) {
+                        !boost::algorithm::equals(cfg_report.first, "debug") &&
+                        !boost::algorithm::equals(cfg_report.first, "filter")) {
                         auto const reader_report = cyng::make_reader(cfg_report.second);
                         auto const name = reader_report.get("name", "no-name");
 
@@ -357,6 +358,7 @@ namespace smf {
                             }
 
                             auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
+                            auto const separated = reader_report.get("separated.by.devices", false);
 
                             auto const prefix = reader_report.get("prefix", "");
                             generate_lpex(
@@ -368,6 +370,7 @@ namespace smf {
                                 now,
                                 prefix,
                                 print_version,
+                                separated,
                                 debug_mode,
                                 [=](std::chrono::system_clock::time_point start,
                                     std::chrono::minutes range,

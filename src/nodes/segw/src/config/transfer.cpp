@@ -1233,22 +1233,151 @@ namespace smf {
         cyng::io::serialize_json_pretty(std::cout, cfg);
 
         //
+        // ipt config
+        //
+        cyng::vector_t cfg_ipt;
+        { 
+            auto r = cyng::extract(cfg, {"81490d0700ff", "81490d070001"}); 
+            if (r.second) {
+                cfg_ipt.push_back(r.first.second);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"81490d0700ff", "81490d070002"});
+            if (r.second) {
+                cfg_ipt.push_back(r.first.second);
+            }
+        }
+
+        //
+        // LMN config
+        //
+        cyng::vector_t cfg_lmn;
+        {
+            auto r = cyng::extract(cfg, {"lmn", "0"});
+            if (r.second) {
+                cfg_lmn.push_back(r.first.second);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"lmn", "1"});
+            if (r.second) {
+                cfg_lmn.push_back(r.first.second);
+            }
+        }
+
+        //
+        // blocklist config
+        //
+        {
+            auto r = cyng::extract(cfg, {"blocklist", "0"});
+            if (r.second && cfg_lmn.size() > 0) {
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(0));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("blocklist", r.first.second);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"blocklist", "1"});
+            if (r.second && cfg_lmn.size() > 1) {
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(1));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("blocklist", r.first.second);
+            }
+        }
+
+        //
+        // cache config
+        //
+        {
+            auto r = cyng::extract(cfg, {"cache", "0"});
+            if (r.second && cfg_lmn.size() > 0) {
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(0));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("cache", r.first.second);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"cache", "1"});
+            if (r.second && cfg_lmn.size() > 1) {
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(1));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("cache", r.first.second);
+            }
+        }
+
+        //
+        // listener config
+        //
+        {
+            auto r = cyng::extract(cfg, {"listener", "0"});
+            if (r.second && cfg_lmn.size() > 0) {
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(0));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("listener", r.first.second);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"listener", "1"});
+            if (r.second && cfg_lmn.size() > 1) {
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(1));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("listener", r.first.second);
+            }
+        }
+
+        //
         //  transform structure
         //
         cyng::transform(
             cfg, [=](cyng::object const &obj, std::vector<std::string> const &path) -> std::pair<cyng::object, cyng::action> {
+#ifdef _DEBUG
+                std::cout << '>';
+                for (auto const &p : path) {
+                    std::cout << "/" << p;
+                }
+                std::cout << '=' << cyng::io::to_typed(obj) << std::endl;
+#endif
+
                 if (path.size() == 2 && boost::algorithm::equals(path.at(0), "gpio") &&
                     boost::algorithm::equals(path.at(1), "pin")) {
                     //
                     //  collect pin numbers:
                     //
+                    auto vec = cyng::extract_vector(cyng::container_cast<cyng::param_map_t>(obj));
+                    return {cyng::make_object(vec), cyng::action::REPLACE};
+                }
+                if (path.size() == 2 && boost::algorithm::equals(path.at(0), "lmn") &&
+                    boost::algorithm::equals(path.at(1), "meter")) {
                     //
-                    auto vec = transform_pin_numbers(cyng::container_cast<cyng::param_map_t>(obj));
+                    //  collect meters:
+                    //
+                    auto vec = cyng::extract_vector(cyng::container_cast<cyng::param_map_t>(obj));
                     return {cyng::make_object(vec), cyng::action::REPLACE};
                 }
                 if (!path.empty() && boost::algorithm::equals(path.at(0), "81490d0700ff")) {
-                    //  => ipt/param/008080000301
+                    //  => add ipt configuration (cfg_ipt)
+                    if (obj.tag() == cyng::TC_PARAM_MAP) {
+                        auto pmap = cyng::container_cast<cyng::param_map_t>(obj);
+                        pmap.emplace("config", cyng::make_object(cfg_ipt));
+                        return {cyng::make_object(pmap), cyng::action::REPLACE};
+                    }
                     return {cyng::make_object("ipt"), cyng::action::NONE};
+                }
+                if (!path.empty() && boost::algorithm::equals(path.at(0), "lmn")) {
+                    return {cyng::make_object(cfg_lmn), cyng::action::REPLACE};
+                }
+                if (!path.empty() && boost::algorithm::equals(path.at(0), "blocklist")) {
+                    //  no longer used
+                    return {obj, cyng::action::REMOVE};
+                }
+                if (!path.empty() && boost::algorithm::equals(path.at(0), "cache")) {
+                    //  no longer used
+                    return {obj, cyng::action::REMOVE};
+                }
+                if (!path.empty() && boost::algorithm::equals(path.at(0), "listener")) {
+                    //  no longer used
+                    return {obj, cyng::action::REMOVE};
                 }
                 return {obj, cyng::action::NONE};
             });
@@ -1261,19 +1390,6 @@ namespace smf {
         cyng::io::serialize_json_pretty(std::cout, cfg);
 
         return cfg;
-    }
-
-    cyng::vector_t transform_pin_numbers(cyng::param_map_t &&pmap) {
-        //  "pin": {
-        //  "1": 46,
-        //  "2": 47,
-        //  "3": 50,
-        //  "4": 53
-        //}
-        cyng::vector_t vec;
-        std::transform(
-            pmap.begin(), pmap.end(), std::back_inserter(vec), [](cyng::param_map_t::value_type const &val) { return val.second; });
-        return vec;
     }
 
 } // namespace smf

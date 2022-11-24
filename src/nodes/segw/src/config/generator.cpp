@@ -467,8 +467,8 @@ namespace smf {
 #else
                 cyng::make_param("file.name", (cwd / "segw.database").string()),
 #endif
-                cyng::make_param("busy.timeout", 12),         //	seconds
-                cyng::make_param("watchdog", 30),             //	for database connection
+                cyng::make_param("busy.timeout", std::chrono::milliseconds(12)),         //	seconds
+                cyng::make_param("watchdog", std::chrono::seconds(30)),             //	for database connection
                 cyng::make_param("connection.type", "SQLite") //	file based
                 ));
     }

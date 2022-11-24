@@ -59,7 +59,7 @@ namespace smf {
             //
             auto const span = std::chrono::duration_cast<std::chrono::seconds>(next - now);
             sp->suspend(span, "run");
-            CYNG_LOG_TRACE(logger_, "[report] run " << obis::get_name(profile_) << " at " << next);
+            CYNG_LOG_TRACE(logger_, "[report csv] run " << obis::get_name(profile_) << " at " << next);
 
             //
             //  generate report

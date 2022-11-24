@@ -27,6 +27,7 @@ namespace smf {
         std::chrono::hours backtrack,
         std::string prefix,
         bool print_version,
+        bool separated,
         bool debug_mode)
         : sigs_{
             std::bind(&lpex_report::run, this), // start
@@ -42,7 +43,8 @@ namespace smf {
         , backtrack_(backtrack)
         , prefix_(prefix)
         , print_version_(print_version)
-        , debug_mode_(debug_mode){
+        , separated_(separated)
+        , debug_mode_(debug_mode) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -80,6 +82,7 @@ namespace smf {
                 now,
                 prefix_,
                 print_version_,
+                separated_,
                 debug_mode_,
                 [=, this](
                     std::chrono::system_clock::time_point start, std::chrono::minutes range, std::size_t count, std::size_t size) {

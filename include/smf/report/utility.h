@@ -75,6 +75,7 @@ namespace smf {
     [[nodiscard]] std::set<cyng::obis> collect_profiles(std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &);
 
     std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t, std::chrono::system_clock::time_point);
+    std::string get_filename(std::string prefix, cyng::obis profile, std::chrono::system_clock::time_point);
     std::string get_filename(
         std::string prefix,
         cyng::obis profile,

@@ -31,9 +31,13 @@ namespace smf {
             cyng::logger,
             cyng::db::session,
             cyng::obis profile,
+            cyng::obis_path_t filter,
             std::string path,
             std::chrono::hours backtrack,
-            std::string prefix);
+            std::string prefix,
+            bool print_version,
+            bool separated,
+            bool debug_mode);
 
         ~lpex_report() = default;
 
@@ -48,9 +52,13 @@ namespace smf {
         cyng::logger logger_;
         cyng::db::session db_;
         cyng::obis const profile_;
+        cyng::obis_path_t const filter_;
         std::filesystem::path const root_;
         std::chrono::hours const backtrack_;
         std::string const prefix_;
+        bool const print_version_;
+        bool const separated_;
+        bool const debug_mode_;
     };
 
 } // namespace smf

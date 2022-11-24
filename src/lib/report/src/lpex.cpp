@@ -27,6 +27,7 @@ namespace smf {
         std::chrono::system_clock::time_point now,
         std::string prefix,
         bool print_version,
+        bool separated,
         bool debug_mode,
         lpex_cb cb) {
 
@@ -46,6 +47,7 @@ namespace smf {
                 cyng::sys::get_start_of_day(now - backtrack), //  start
                 now,
                 print_version,
+                separated,
                 debug_mode,
                 cb);
             break;
@@ -59,6 +61,7 @@ namespace smf {
                 cyng::sys::get_start_of_day(now - backtrack), //  start
                 cyng::sys::get_end_of_day(now),               //  now
                 print_version,
+                separated,
                 debug_mode,
                 cb);
             break;
@@ -72,6 +75,7 @@ namespace smf {
                 cyng::sys::get_start_of_month(now - backtrack),
                 cyng::sys::get_end_of_day(now),
                 print_version,
+                separated,
                 debug_mode,
                 cb);
             break;
@@ -85,6 +89,7 @@ namespace smf {
                 cyng::sys::get_start_of_month(now - backtrack),
                 cyng::sys::get_end_of_month(now),
                 print_version,
+                separated,
                 debug_mode,
                 cb);
             break;
@@ -98,6 +103,7 @@ namespace smf {
                 cyng::sys::get_start_of_year(now - backtrack),
                 cyng::sys::get_end_of_year(now),
                 print_version,
+                separated,
                 debug_mode,
                 cb);
             break;
@@ -111,6 +117,7 @@ namespace smf {
                 cyng::sys::get_start_of_year(now - backtrack),
                 cyng::sys::get_end_of_year(now),
                 print_version,
+                separated,
                 debug_mode,
                 cb);
             break;
@@ -132,6 +139,7 @@ namespace smf {
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point now,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {
             ;
@@ -149,6 +157,7 @@ namespace smf {
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point end,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {
 #ifdef _DEBUG
@@ -173,6 +182,7 @@ namespace smf {
                     make_tz_offset(idx), // compensate time difference to UTC
                     range,
                     print_version,
+                    separated,
                     debug_mode,
                     cb);
             }
@@ -187,6 +197,7 @@ namespace smf {
             tz_type &&start,
             std::chrono::hours span,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {
 
@@ -211,6 +222,7 @@ namespace smf {
                 start, // will be converted into time difference between local and UTC
                 count,
                 print_version,
+                separated,
                 debug_mode);
             cb(start.utc_time(), span, size, count);
 
@@ -236,6 +248,7 @@ namespace smf {
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point end,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {
 #ifdef _DEBUG
@@ -263,6 +276,7 @@ namespace smf {
                     range,                 // time range 1 month
                     print_version,
                     debug_mode,
+                    separated,
                     cb);
 
                 start += range;
@@ -278,13 +292,14 @@ namespace smf {
             tz_type &&start,
             std::chrono::hours span,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {
 
             auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
             auto const size =
-                collect_report(db, profile, filter, root, prefix, start, end, start, count, print_version, debug_mode);
+                collect_report(db, profile, filter, root, prefix, start, end, start, count, print_version, separated, debug_mode);
             cb(start.utc_time(), span, size, count);
 
 #ifdef __DEBUG
@@ -309,6 +324,7 @@ namespace smf {
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point now,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {
 #ifdef _DEBUG
@@ -332,6 +348,7 @@ namespace smf {
                     make_tz_offset(start), // compensate time difference to UTC
                     range,                 //  time range 1 month
                     print_version,
+                    separated,
                     debug_mode,
                     cb);
 
@@ -348,13 +365,14 @@ namespace smf {
             tz_type &&start,
             std::chrono::hours span,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {
 
             auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
             auto const size =
-                collect_report(db, profile, filter, root, prefix, start, end, start, count, print_version, debug_mode);
+                collect_report(db, profile, filter, root, prefix, start, end, start, count, print_version, separated, debug_mode);
             cb(start.utc_time(), span, size, count);
 
 #ifdef __DEBUG
@@ -379,6 +397,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {}
 
@@ -394,6 +413,7 @@ namespace smf {
             std::chrono::system_clock::time_point,
             std::chrono::system_clock::time_point,
             bool print_version,
+            bool separated,
             bool debug_mode,
             lpex_cb cb) {}
 
@@ -439,6 +459,7 @@ namespace smf {
             std::chrono::minutes offset,
             std::size_t count, //  expected number of entries in time span
             bool print_version,
+            bool separated,
             bool debug_mode) {
 
             //
@@ -446,65 +467,111 @@ namespace smf {
             //
             auto const data = collect_data_by_time_range(db, profile, filter, start, end);
 
-            //
-            //  loop over all meters
-            //
-            for (auto const &val : data) {
+            if (separated) {
                 //
-                //  server id
+                // Generate reports for every device individually
+                // loop over all meters
                 //
-                auto const srv_id = to_srv_id(val.first);
+                for (auto const &val : data) {
+                    //
+                    //  server id
+                    //
+                    auto const srv_id = to_srv_id(val.first);
+
+                    //
+                    //  customer data (if any)
+                    //
+                    auto customer_data = query_customer_data_by_meter(db, val.first);
+
+                    //
+                    // print report (add offset to get the local time)
+                    //
+                    auto const file_name = get_filename(prefix, profile, srv_id, start - offset);
+
+                    //
+                    //  open stream
+                    //
+                    std::ofstream of = open_report(root, file_name, print_version);
+
+                    //
+                    //  write report
+                    //
+                    emit_report(of, profile, srv_id, debug_mode, val.second, offset, count, customer_data);
+                }
+            } else {
+                //
+                // Generate a report for *all* devices in one file.
+                // loop over all meters
+                //
+                auto const file_name = get_filename(prefix, profile, start - offset);
 
                 //
-                //  customer data (if any)
+                //  open stream
                 //
-                auto customer_data = query_customer_data_by_meter(db, val.first);
+                std::ofstream ofs = open_report(root, file_name, print_version);
 
-                //
-                // print report (add offset to get the local time)
-                //
-                auto const file_name = get_filename(prefix, profile, srv_id, start - offset);
-                emit_report(root, file_name, profile, srv_id, print_version, debug_mode, val.second, offset, count, customer_data);
+                for (auto const &val : data) {
+                    //
+                    //  server id
+                    //
+                    auto const srv_id = to_srv_id(val.first);
+
+                    //
+                    //  customer data (if any)
+                    //
+                    auto customer_data = query_customer_data_by_meter(db, val.first);
+
+                    //
+                    // print report (add offset to get the local time)
+                    //
+                    emit_report(ofs, profile, srv_id, debug_mode, val.second, offset, count, customer_data);
+                }
             }
 
             return data.size();
         }
 
+        std::ofstream open_report(std::filesystem::path root, std::string file_name, bool print_version) {
+            auto const file_path = root / file_name;
+            std::ofstream ofs(file_path.string(), std::ios::trunc);
+
+            if (ofs.is_open()) {
+
+                //
+                // "print.version"
+                // LPEX V2.0
+                //
+                if (print_version) {
+                    //  only the version info, no more ';'
+                    emit_line(ofs, get_version());
+                }
+
+                //
+                // header
+                //
+                auto const h = fill_up(get_header());
+                emit_line(ofs, h);
+            }
+
+            return ofs; // move
+        }
+
         void emit_report(
-            std::filesystem::path root,
-            std::string file_name,
+            std::ofstream &ofs,
             cyng::obis profile,
             srv_id_t srv_id,
-            bool print_version,
             bool debug_mode,
             data::values_t const &data,
             std::chrono::minutes offset, // UTC offset
             std::size_t count,           //  entries in time span
             std::optional<lpex_customer> const &customer_data) {
 
-            auto const file_path = root / file_name;
-#ifdef _DEBUG
-            std::cout << profile << ": " << file_path << std::endl;
-#endif
-            std::ofstream of(file_path.string(), std::ios::trunc);
-
-            if (of.is_open()) {
-                //
-                // header
-                // "print.version"
-                //
-                if (print_version) {
-                    //  only the version info, no more ';'
-                    emit_line(of, get_version());
-                }
-
-                auto const h = fill_up(get_header());
-                emit_line(of, h);
+            if (ofs.is_open()) {
 
                 //
                 //  data
                 //
-                emit_data(of, profile, srv_id, debug_mode, data, offset, count, customer_data);
+                emit_data(ofs, profile, srv_id, debug_mode, data, offset, count, customer_data);
             }
         }
 
@@ -705,6 +772,9 @@ namespace smf {
                    << ";" // [8] KALINr (Kanalnummer)
                    << ";" // [9] Linie (Liniennummer)
                    << ";" // [10] Linienbezeichnung
+#ifdef _DEBUG
+                   << "CH" // MC followed by area id and location id
+#endif
                    << ";" // [11] eindeutigeLINr (metering code)
                     ;
             }

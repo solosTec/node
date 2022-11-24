@@ -90,9 +90,9 @@ namespace smf {
                     cyng::tuple_factory(
                         cyng::make_param("connection.type", "SQLite"),
                         cyng::make_param("file.name", (cwd / "store.database").string()),
-                        cyng::make_param("busy.timeout", 12),            //	seconds
-                        cyng::make_param("watchdog", 30),                //	for database connection
-                        cyng::make_param("pool.size", 1),                //	no pooling for SQLite
+                        cyng::make_param("busy.timeout", std::chrono::milliseconds(12)), //	seconds
+                        cyng::make_param("watchdog", std::chrono::seconds(30)),          //	for database connection
+                        cyng::make_param("pool.size", 1),                                //	no pooling for SQLite
                         cyng::make_param("db.schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
                         cyng::make_param("interval", 12),                //	seconds
                         cyng::make_param(
@@ -290,7 +290,7 @@ namespace smf {
                 cyng::make_param("path", (cwd / "lpex.reports" / get_prefix(profile)).string()),
                 cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", ""),
-                cyng::make_param("offset", 15), //  minutes
+                cyng::make_param("separated.by.devices", false), // individual reports for each device
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -865,7 +865,8 @@ namespace smf {
 
                     if (!boost::algorithm::equals(cfg_report.first, "print.version") &&
                         !boost::algorithm::equals(cfg_report.first, "db") && !boost::algorithm::equals(cfg_report.first, "debug") &&
-                        !boost::algorithm::starts_with(cfg_report.first, "filter")) {
+                        !boost::algorithm::starts_with(cfg_report.first, "filter") &&
+                        !boost::algorithm::starts_with(cfg_report.first, "separated.by.devices")) {
 
                         auto const reader_report = cyng::make_reader(cfg_report.second);
                         auto const name = reader_report.get("name", "no-name");
@@ -883,6 +884,8 @@ namespace smf {
                                 }
                             }
                             auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
+                            auto const separated = reader_report.get("separated.by.devices", false);
+
                             auto const prefix = reader_report.get("prefix", "LPEx-");
                             generate_lpex(
                                 pos->second,
@@ -893,6 +896,7 @@ namespace smf {
                                 now,
                                 prefix,
                                 print_version,
+                                separated,
                                 debug_mode,
                                 [=](std::chrono::system_clock::time_point start,
                                     std::chrono::minutes range,
@@ -1438,6 +1442,7 @@ namespace smf {
                     auto const path = reader.get("path", "");
                     auto const backtrack = cyng::to_hours(reader.get("backtrack", "10:00:00"));
                     auto const prefix = reader.get("prefix", "");
+                    auto const separated = reader.get("separated.by.devices", false);
 
                     if (!std::filesystem::exists(path)) {
                         CYNG_LOG_WARNING(logger, "output path [" << path << "] of LPEx report " << name << " does not exists");
@@ -1448,7 +1453,7 @@ namespace smf {
                     }
 
                     auto channel = ctl.create_named_channel_with_ref<lpex_report>(
-                        name, ctl, logger, db, profile, filter, path, backtrack, prefix, print_version, debug_mode);
+                        name, ctl, logger, db, profile, filter, path, backtrack, prefix, print_version, separated, debug_mode);
                     BOOST_ASSERT(channel->is_open());
                     channels.lock(channel);
 
