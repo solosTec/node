@@ -154,8 +154,8 @@ namespace smf {
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point end,
+            std::chrono::system_clock::time_point start, // UTC
+            std::chrono::system_clock::time_point end,   // UTC
             bool print_version,
             bool separated,
             bool debug_mode,
@@ -205,10 +205,10 @@ namespace smf {
             auto const count = sml::calculate_entry_count(profile, span);
 #ifdef _DEBUG
             cyng::sys::to_string(std::cout, start.local_time(), "%Y-%m-%dT%H:%M%z");
-            std::cout << ", ";
+            std::cout << " (localtime), ";
             cyng::sys::to_string(std::cout, start.utc_time(), "%Y-%m-%dT%H:%M%z");
-            std::cout << " => ";
-            cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z)");
+            std::cout << " (UTC) => ";
+            cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z (UTC)");
             std::cout << std::endl;
 #endif
             auto const size = collect_report(
@@ -599,7 +599,7 @@ namespace smf {
                             //
                             //   the first time stamp in this data set
                             //
-                            auto const time_slot = sml::to_time_point(pos_ro->first, profile); // + offset;
+                            auto const time_slot = sml::to_time_point(pos_ro->first, profile) - offset;
 
                             //
                             //  local time stamp (Datum, Zeit)

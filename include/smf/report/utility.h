@@ -136,6 +136,17 @@ namespace smf {
      */
     std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point, std::size_t limit);
 
+    void update_data(
+        data::profile_t &data,
+        cyng::buffer_t id,
+        cyng::obis reg,
+        std::int64_t slot,
+        std::uint16_t code,
+        std::int8_t scaler,
+        std::uint8_t unit,
+        std::string const &reading,
+        std::uint32_t status);
+
     /**
      * Helper class to calculate time zone offset.
      * This is required since date library is not available prior to C++20

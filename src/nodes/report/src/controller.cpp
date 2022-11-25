@@ -322,6 +322,8 @@ namespace smf {
                 // std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
+                std::cout << "***info: start reporting at " << cyng::sys::to_string(now, "%Y-%m-%dT%H:%M%z") << " (local time)"
+                          << std::endl;
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
 
                 auto const print_version = reader["lpex"].get("print.version", true);
@@ -340,7 +342,8 @@ namespace smf {
                     //
                     if (!boost::algorithm::equals(cfg_report.first, "print.version") &&
                         !boost::algorithm::equals(cfg_report.first, "debug") &&
-                        !boost::algorithm::equals(cfg_report.first, "filter")) {
+                        !boost::algorithm::equals(cfg_report.first, "filter") &&
+                        !boost::algorithm::equals(cfg_report.first, "filter.obsolete")) {
                         auto const reader_report = cyng::make_reader(cfg_report.second);
                         auto const name = reader_report.get("name", "no-name");
 

@@ -327,10 +327,10 @@ namespace smf {
         if (r.second) {
 #ifdef _DEBUG
             std::ofstream ofdbg("LPExdebug.log", std::ios::app);
-            ofdbg << cyng::to_string(profile) << ": ";
-            cyng::sys::to_string(ofdbg, start, "%Y-%m-%dT%H:%M%z");
+            ofdbg << "> query " << cyng::to_string(profile) << ": ";
+            cyng::sys::to_string(ofdbg, start, "%Y-%m-%dT%H:%M%z (UTC)");
             ofdbg << " -> ";
-            cyng::sys::to_string(ofdbg, end, "%Y-%m-%dT%H:%M%z");
+            cyng::sys::to_string(ofdbg, end, "%Y-%m-%dT%H:%M%z (UTC)");
             ofdbg << std::endl;
 
 #endif
@@ -384,38 +384,57 @@ namespace smf {
                     // apply filter only if not empty
                     // The filter contains allowed registers (OBIS)
                     //
-                    if (!filter.empty() && std::find(filter.begin(), filter.end(), reg) != filter.end()) {
-                        auto pos = data.find(id);
-                        if (pos != data.end()) {
-                            //
-                            //  meter is already inserted - lookup register
-                            //
-                            auto pos_reg = pos->second.find(reg);
-                            if (pos_reg != pos->second.end()) {
-                                //
-                                //  register is already inserted - lookup time slot
-                                //
-                                pos_reg->second.insert(data::make_readout(slot.first, code, scaler, unit, reading, status));
-                            } else {
-                                //
-                                //  new register of this meter
-                                //
-                                pos->second.insert(
-                                    data::make_value(reg, data::make_readout(slot.first, code, scaler, unit, reading, status)));
-                            }
-                        } else {
-                            //
-                            //  new meter
-                            //  nested initialization doesn't work, so multiple steps are necessary
-                            //
-                            data.insert(data::make_profile(
-                                id, data::make_value(reg, data::make_readout(slot.first, code, scaler, unit, reading, status))));
-                        }
-                    } // filter
+                    if (!filter.empty()) {
+                        if (std::find(filter.begin(), filter.end(), reg) != filter.end()) {
+                            update_data(data, id, reg, slot.first, code, scaler, unit, reading, status);
+                        } // filter
+                    } else {
+                        //
+                        //  filter is empty - ignore it
+                        //
+                        update_data(data, id, reg, slot.first, code, scaler, unit, reading, status);
+                    }
                 }
             }
         }
         return data;
+    }
+
+    void update_data(
+        data::profile_t &data,
+        cyng::buffer_t id,
+        cyng::obis reg,
+        std::int64_t slot,
+        std::uint16_t code,
+        std::int8_t scaler,
+        std::uint8_t unit,
+        std::string const &reading,
+        std::uint32_t status) {
+        auto pos = data.find(id);
+        if (pos != data.end()) {
+            //
+            //  meter is already inserted - lookup register
+            //
+            auto pos_reg = pos->second.find(reg);
+            if (pos_reg != pos->second.end()) {
+                //
+                //  register is already inserted - lookup time slot
+                //
+                pos_reg->second.insert(data::make_readout(slot, code, scaler, unit, reading, status));
+            } else {
+                //
+                //  new register of this meter
+                //
+                pos->second.insert(data::make_value(reg, data::make_readout(slot, code, scaler, unit, reading, status)));
+            }
+        } else {
+            //
+            //  new meter
+            //  nested initialization doesn't work, so multiple steps are necessary
+            //
+            data.insert(
+                data::make_profile(id, data::make_value(reg, data::make_readout(slot, code, scaler, unit, reading, status))));
+        }
     }
 
     std::map<cyng::obis, std::map<std::int64_t, sml_data>> collect_data_by_register(
