@@ -583,6 +583,9 @@ namespace smf {
             //  get all distinct profiles in the table:
             //  SELECT DISTINCT printf('%012X', profile) FROM TSMLReadout;
             //
+            //  get all distinct meters in the table:
+            //  SELECT DISTINCT hex(meterId) FROM TSMLReadout;
+            //
             //  dump all data
             //  SELECT tag, hex(meterId), printf('%012X', profile), trx, status, datetime(actTime), datetime(received) FROM
             //  TSMLReadout ORDER BY actTime;
@@ -610,6 +613,11 @@ namespace smf {
             //
             //  SELECT hex(TSMLReadout.meterID), TSMLReadoutData.register, reading, unit from TSMLReadout INNER JOIN TSMLReadoutData
             //  ON TSMLReadout.tag = TSMLReadoutData.tag ORDER BY actTime;
+            //
+            //  SELECT hex(TSMLReadout.meterID), TSMLReadoutData.register, reading, unit, datetime(actTime) from TSMLReadout INNER
+            //  JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag WHERE TSMLReadout.actTime > julianday('2022-11-26')
+            //  ORDER BY actTime;
+            //
             //
             return cyng::to_sql(get_store_sml_readout_data(), {0, 0, 256, 0, 0, 0});
         }

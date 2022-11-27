@@ -140,16 +140,37 @@ namespace smf {
             auto stmt = db_.create_statement();
             auto const r = stmt->prepare(sql);
             if (r.second) {
+
                 stmt->push(cyng::make_object(tag), 0); //	tag
 
                 stmt->push(cyng::make_object(0), 0); //	gen
 
-                stmt->push(cyng::make_object(meter), 9);    //	meterID
-                stmt->push(cyng::make_object(profile), 0);  //	profile
-                stmt->push(cyng::make_object(trx), 21);     //	trx
-                stmt->push(cyng::make_object(status), 0);   //	status
-                stmt->push(cyng::make_object(act_time), 0); //	actTime
-                stmt->push(cyng::make_object(now), 0);      //	received
+                stmt->push(cyng::make_object(meter), 9);   //	meterID
+                stmt->push(cyng::make_object(profile), 0); //	profile
+                stmt->push(cyng::make_object(trx), 21);    //	trx
+                stmt->push(cyng::make_object(status), 0);  //	status
+                //
+                //  overwrite actTime (01 00 00 09 0b 00)
+                //  OBIS_CURRENT_UTC
+                auto const pos = values.find("010000090b00");
+                if (pos != values.end()) {
+                    auto const c = cyng::container_cast<cyng::param_map_t>(pos->second);
+                    auto const idx = c.find("value");
+                    if (idx != c.end()) {
+                        auto const prev = act_time.clone();
+                        act_time = idx->second.clone();
+                        stmt->push(idx->second, 0);            //	actTime
+                        stmt->push(cyng::make_object(now), 0); //	received
+                        CYNG_LOG_TRACE(
+                            logger_, "[sml.db] update actTime of data record " << tag << " from " << prev << " to " << act_time);
+                    } else {
+                        CYNG_LOG_ERROR(logger_, "[sml.db] missing column \"value\" in data record " << tag);
+                    }
+                } else {
+                    stmt->push(act_time, 0);               //	received
+                    stmt->push(cyng::make_object(now), 0); //	actTime
+                }
+
                 if (stmt->execute()) {
                     stmt->clear();
                     CYNG_LOG_TRACE(
