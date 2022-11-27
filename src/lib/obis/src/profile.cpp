@@ -2,7 +2,7 @@
 
 #include <smf/obis/defs.h>
 
-#include <cyng/sys/clock.h>
+#include <cyng/obj/intrinsics/date.h>
 
 namespace smf {
     namespace sml {
@@ -31,8 +31,8 @@ namespace smf {
             case CODE_PROFILE_15_MINUTE: return std::chrono::minutes(15);
             case CODE_PROFILE_60_MINUTE: return std::chrono::hours(1);
             case CODE_PROFILE_24_HOUR: return std::chrono::hours(24);
-            case CODE_PROFILE_1_MONTH: return cyng::sys::get_length_of_month(tp);
-            case CODE_PROFILE_1_YEAR: return cyng::sys::get_length_of_year(tp);
+            case CODE_PROFILE_1_MONTH: return std::chrono::hours(cyng::make_date_from_local_time(tp).days_in_month() * 24);
+            case CODE_PROFILE_1_YEAR: return std::chrono::hours(cyng::make_date_from_local_time(tp).days_in_year() * 24);
             default: BOOST_ASSERT_MSG(false, "not implemented yet"); break;
             }
 
@@ -67,12 +67,12 @@ namespace smf {
             case CODE_PROFILE_60_MINUTE: return epoch + hours_since_epoch(tp);
             case CODE_PROFILE_24_HOUR: return epoch + (hours_since_epoch(tp) / 24) * 24;
             case CODE_PROFILE_1_MONTH: {
-                auto const h = cyng::sys::get_length_of_month(tp); //  hours
-                return epoch + (hours_since_epoch(tp) / h.count()) * h.count();
+                auto const days = cyng::make_date_from_local_time(tp).days_in_month();
+                return epoch + (hours_since_epoch(tp) / days) * days;
             }
             case CODE_PROFILE_1_YEAR: {
-                auto const h = cyng::sys::get_length_of_year(tp); //  hours
-                return epoch + (hours_since_epoch(tp) / h.count()) * h.count();
+                auto const days = cyng::make_date_from_local_time(tp).days_in_year();
+                return epoch + (hours_since_epoch(tp) / days) * days;
             }
             default: break;
             }
@@ -201,14 +201,14 @@ namespace smf {
 
             case CODE_PROFILE_1_MONTH: {
                 //  use a calendar to get the length of the months
-                auto const end = cyng::sys::get_end_of_month(now); // last day
-                return end + std::chrono::hours(24);
+                auto const d = cyng::make_date_from_local_time(now).get_end_of_month();
+                return d.to_time_point() + std::chrono::hours(24);
             }
 
             case CODE_PROFILE_1_YEAR: {
                 //  use a calendar to get the length of the year
-                auto const end = cyng::sys::get_end_of_year(now); //  last day
-                return end + std::chrono::hours(24);
+                auto const d = cyng::make_date_from_local_time(now).get_end_of_year();
+                return d.to_time_point() + std::chrono::hours(24);
             }
 
             default: break;
@@ -226,9 +226,9 @@ namespace smf {
             }
 
             auto const start = calculate_offset(now);
-            //#ifdef _DEBUG
-            //            std::cout << "start: " << start << std::endl;
-            //#endif
+            // #ifdef _DEBUG
+            //             std::cout << "start: " << start << std::endl;
+            // #endif
 
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return {minutes_since_epoch(start).count(), true};
@@ -237,13 +237,13 @@ namespace smf {
             case CODE_PROFILE_24_HOUR: return {hours_since_epoch(start).count() / 24u, true};
             case CODE_PROFILE_1_MONTH: {
                 //  calculate the exact count of months
-                auto const h = cyng::sys::get_length_of_month(now); //  hours
-                return {hours_since_epoch(start).count() / h.count(), true};
+                auto const days = cyng::make_date_from_local_time(now).days_in_month();
+                return {hours_since_epoch(start).count() / days, true};
             }
             case CODE_PROFILE_1_YEAR: {
                 //  calculate the exact count of years
-                auto const h = cyng::sys::get_length_of_year(now); //  hours
-                return {hours_since_epoch(start).count() / h.count(), true};
+                auto const days = cyng::make_date_from_local_time(now).days_in_year();
+                return {hours_since_epoch(start).count() / days, true};
             }
             default: break;
             }

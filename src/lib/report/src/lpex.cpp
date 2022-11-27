@@ -11,7 +11,7 @@
 
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
-#include <cyng/sys/clock.h>
+#include <cyng/obj/intrinsics/date.h>
 
 #include <fstream>
 #include <iostream>
@@ -37,90 +37,106 @@ namespace smf {
         cyng::db::transaction trx(db);
 
         switch (profile.to_uint64()) {
-        case CODE_PROFILE_1_MINUTE:
+        case CODE_PROFILE_1_MINUTE: {
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_day().to_time_point();
+
             lpex::generate_report_1_minute(
                 db,
                 profile,
                 filter,
                 root,
                 prefix,
-                cyng::sys::get_start_of_day(now - backtrack), //  start
+                start, //  start
                 now,
                 print_version,
                 separated,
                 debug_mode,
                 cb);
-            break;
-        case CODE_PROFILE_15_MINUTE:
+        } break;
+        case CODE_PROFILE_15_MINUTE: {
+
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_day().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_day().to_time_point();
             lpex::generate_report_15_minutes(
                 db,
                 profile,
                 filter,
                 root,
                 prefix,
-                cyng::sys::get_start_of_day(now - backtrack), //  start
-                cyng::sys::get_end_of_day(now),               //  now
+                start, //  start
+                end,   //  now
                 print_version,
                 separated,
                 debug_mode,
                 cb);
-            break;
-        case CODE_PROFILE_60_MINUTE:
+        } break;
+        case CODE_PROFILE_60_MINUTE: {
+
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_month().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_day().to_time_point();
+
             lpex::generate_report_60_minutes(
                 db,
                 profile,
                 filter,
                 root,
                 prefix,
-                cyng::sys::get_start_of_month(now - backtrack),
-                cyng::sys::get_end_of_day(now),
+                start, //  start
+                end,   //  now
                 print_version,
                 separated,
                 debug_mode,
                 cb);
-            break;
-        case CODE_PROFILE_24_HOUR:
+        } break;
+        case CODE_PROFILE_24_HOUR: {
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_month().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_month().to_time_point();
+
             lpex::generate_report_24_hour(
                 db,
                 profile,
                 filter,
                 root,
                 prefix,
-                cyng::sys::get_start_of_month(now - backtrack),
-                cyng::sys::get_end_of_month(now),
+                start, //  start
+                end,   //  now
                 print_version,
                 separated,
                 debug_mode,
                 cb);
-            break;
-        case CODE_PROFILE_1_MONTH:
+        } break;
+        case CODE_PROFILE_1_MONTH: {
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_year().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_month().to_time_point();
             lpex::generate_report_1_month(
                 db,
                 profile,
                 filter,
                 root,
                 prefix,
-                cyng::sys::get_start_of_year(now - backtrack),
-                cyng::sys::get_end_of_year(now),
+                start, //  start
+                end,   //  now
                 print_version,
                 separated,
                 debug_mode,
                 cb);
-            break;
-        case CODE_PROFILE_1_YEAR:
+        } break;
+        case CODE_PROFILE_1_YEAR: {
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_year().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_year().to_time_point();
             lpex::generate_report_1_year(
                 db,
                 profile,
                 filter,
                 root,
                 prefix,
-                cyng::sys::get_start_of_year(now - backtrack),
-                cyng::sys::get_end_of_year(now),
+                start, //  start
+                end,   //  now
                 print_version,
                 separated,
                 debug_mode,
                 cb);
-            break;
+        } break;
 
         default: break;
         }
@@ -161,11 +177,12 @@ namespace smf {
             bool debug_mode,
             lpex_cb cb) {
 #ifdef _DEBUG
-            std::cout << "15 min (" << profile << ") lpex report period spans from "
-                      << cyng::sys::to_string(start, "%Y-%m-%dT%H:%M%z") << " to " << cyng::sys::to_string(end, "%Y-%m-%dT%H:%M%z")
-                      << " (" << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), with "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
-                      << " entries in total" << std::endl;
+            // std::cout << "15 min (" << profile << ") lpex report period spans from "
+            //           << cyng::sys::to_string(start, "%Y-%m-%dT%H:%M%z") << " to " << cyng::sys::to_string(end,
+            //           "%Y-%m-%dT%H:%M%z")
+            //           << " (" << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), with "
+            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
+            //           << " entries in total" << std::endl;
 #endif
             //
             //  generate lpex reports about the complete time range
@@ -204,12 +221,12 @@ namespace smf {
             auto const end = start.utc_time() + span;
             auto const count = sml::calculate_entry_count(profile, span);
 #ifdef _DEBUG
-            cyng::sys::to_string(std::cout, start.local_time(), "%Y-%m-%dT%H:%M%z");
-            std::cout << " (localtime), ";
-            cyng::sys::to_string(std::cout, start.utc_time(), "%Y-%m-%dT%H:%M%z");
-            std::cout << " (UTC) => ";
-            cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z (UTC)");
-            std::cout << std::endl;
+            // cyng::sys::to_string(std::cout, start.local_time(), "%Y-%m-%dT%H:%M%z");
+            // std::cout << " (localtime), ";
+            // cyng::sys::to_string(std::cout, start.utc_time(), "%Y-%m-%dT%H:%M%z");
+            // std::cout << " (UTC) => ";
+            // cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z (UTC)");
+            // std::cout << std::endl;
 #endif
             auto const size = collect_report(
                 db,
@@ -252,20 +269,20 @@ namespace smf {
             bool debug_mode,
             lpex_cb cb) {
 #ifdef _DEBUG
-            std::cout << "60 min (" << profile << ") lpex report period spans from " << start << " to " << end << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << ") "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
-                      << " entries in total" << std::endl;
+            // std::cout << "60 min (" << profile << ") lpex report period spans from " << start << " to " << end << " ("
+            //           << std::chrono::duration_cast<std::chrono::hours>(end - start) << ") "
+            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
+            //           << " entries in total" << std::endl;
 
-            std::cout << "start of month : " << cyng::sys::get_start_of_month(start) << std::endl;
-            std::cout << "length of month: " << cyng::sys::get_length_of_month(start) << std::endl;
+            // std::cout << "start of month : " << cyng::sys::get_start_of_month(start) << std::endl;
+            // std::cout << "length of month: " << cyng::sys::get_length_of_month(start) << std::endl;
 #endif
             //
             //  generate lpex reports about the complete time range
             //
             while (start < end) {
 
-                auto const range = cyng::sys::get_length_of_month(start);
+                auto const range = cyng::make_date_from_local_time(start).hours_in_month();
                 generate_report_60_minutes(
                     db,
                     profile,
@@ -328,17 +345,18 @@ namespace smf {
             bool debug_mode,
             lpex_cb cb) {
 #ifdef _DEBUG
-            std::cout << "24 h (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(now - start) << ") "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
-                      << " entries in total" << std::endl;
+            // std::cout << "24 h (" << profile << ") lpex report period spans from " << start << " to " << now << " ("
+            //           << std::chrono::duration_cast<std::chrono::hours>(now - start) << ") "
+            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
+            //           << " entries in total" << std::endl;
 #endif
             //
             //  generate lpex reports about the complete time range
             //
             while (start < now) {
 
-                auto const range = cyng::sys::get_length_of_month(start); //  time range 1 month
+                auto const range = cyng::make_date_from_local_time(start).hours_in_month();
+                // auto const range = cyng::sys::get_length_of_month(start); //  time range 1 month
                 generate_report_24_hour(
                     db,
                     profile,
@@ -604,7 +622,9 @@ namespace smf {
                             //
                             //  local time stamp (Datum, Zeit)
                             //
-                            cyng::sys::to_string(os, time_slot, "%d.%m.%y;%H:%M:%S;");
+                            auto const d = cyng::make_date_from_local_time(time_slot);
+                            cyng::as_string(os, d, "%d.%m.%y;%H:%M:%S;");
+                            // cyng::sys::to_string(os, time_slot, "%d.%m.%y;%H:%M:%S;");
 #ifdef _DEBUG
                             // cyng::sys::to_string_utc(std::cout, time_slot, "%Y-%m-%dT%H:%M (UTC)\n");
                             // cyng::sys::to_string(std::cout, time_slot, "%Y-%m-%dT%H:%M (local)\n");
@@ -636,8 +656,7 @@ namespace smf {
                             //
                             // values
                             //
-                            emit_values(
-                                os, profile, srv_id, debug_mode, cyng::sys::get_start_of_day(time_slot), count, pos->second);
+                            emit_values(os, profile, srv_id, debug_mode, d.get_start_of_day().to_time_point(), count, pos->second);
                         }
                     }
                     //
@@ -665,9 +684,9 @@ namespace smf {
             if (debug_mode) {
                 //  example: 2022-08-13 00:00:00.0000000/2022-08-13 07:30:00.0000000
 
-                std::cout << to_string(srv_id) << ": " << cyng::sys::to_string_utc(start_day, "%Y-%m-%dT%H:%M") << "/"
-                          << cyng::sys::to_string_utc(start_data, "%Y-%m-%dT%H:%M") << " - " << idx_day.first << "/"
-                          << load.begin()->first << " - " << load.size() << " entries" << std::endl;
+                // std::cout << to_string(srv_id) << ": " << cyng::sys::to_string_utc(start_day, "%Y-%m-%dT%H:%M") << "/"
+                //           << cyng::sys::to_string_utc(start_data, "%Y-%m-%dT%H:%M") << " - " << idx_day.first << "/"
+                //           << load.begin()->first << " - " << load.size() << " entries" << std::endl;
             }
 
             //

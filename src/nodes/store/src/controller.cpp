@@ -43,6 +43,7 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/obj/set_cast.hpp>
@@ -50,7 +51,6 @@
 #include <cyng/obj/vector_cast.hpp>
 #include <cyng/parse/duration.h>
 #include <cyng/parse/string.h>
-#include <cyng/sys/clock.h>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 
@@ -902,9 +902,10 @@ namespace smf {
                                     std::chrono::minutes range,
                                     std::size_t count,
                                     std::size_t size) {
-                                    std::cout << "scan " << obis::get_name(profile) << " from "
-                                              << cyng::sys::to_string(start, "%F %T%z") << " + " << range.count()
-                                              << " minutes and found " << count << " meters";
+                                    auto const d = cyng::make_date_from_local_time(start);
+
+                                    std::cout << "scan " << obis::get_name(profile) << " from " << cyng::as_string(d, "%F %T")
+                                              << " + " << range.count() << " minutes and found " << count << " meters";
                                 });
 
                         } else {
@@ -941,10 +942,9 @@ namespace smf {
                     if (enabled) {
                         auto const age = cyng::to_hours(reader_gap.get("backtrack", "48:00:00"));
 
-                        std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
-                        auto const tm = cyng::sys::to_utc(tt);
+                        auto const d = cyng::make_date_from_local_time(now - age);
                         std::cout << "the gap report on db \"" << param.first << "\" for profile " << obis::get_name(profile)
-                                  << " start with " << std::put_time(&tm, "%Y-%m-%d %T") << std::endl;
+                                  << " start with " << cyng::as_string(d, "%Y-%m-%d %T") << std::endl;
                         auto const root = reader_gap.get("path", "");
                         if (!std::filesystem::exists(root)) {
                             std::cout << "***warning: output path [" << root << "] of gap report " << obis::get_name(profile)
@@ -984,10 +984,11 @@ namespace smf {
                     if (enabled) {
                         auto const age = cyng::to_hours(reader_cls.get("max.age", "48:00:00"));
 
-                        std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
-                        auto const tm = cyng::sys::to_utc(tt);
+                        auto const d = cyng::make_date_from_local_time(now - age);
+                        // std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
+                        // auto const tm = cyng::sys::to_utc(tt);
                         std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
-                                  << " older than " << std::put_time(&tm, "%Y-%m-%d %H:%M") << std::endl;
+                                  << " older than " << cyng::as_string(d, "%Y-%m-%d %H:%M") << std::endl;
                         auto const limit = reader_cls.get("limit", 256u);
                         auto const size = smf::cleanup(s, profile, now - age, limit);
                         if (size != 0) {
@@ -1465,15 +1466,14 @@ namespace smf {
                     auto const next = sml::floor(now + interval, profile);
 
                     if (next > now) {
+                        auto const d = cyng::make_date_from_local_time(next);
                         CYNG_LOG_INFO(
-                            logger,
-                            "start LPEx report " << profile << " (" << name << ") at " << cyng::sys::to_string(next, "%F %T%z"));
+                            logger, "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(d, "%F %T%z"));
                         channel->suspend(next - now, "run");
                     } else {
+                        auto const d = cyng::make_date_from_local_time(now + interval);
                         CYNG_LOG_INFO(
-                            logger,
-                            "start LPEx report " << profile << " (" << name << ") at "
-                                                 << cyng::sys::to_string(now + interval, "%F %T%z"));
+                            logger, "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(d, "%F %T%z"));
                         channel->suspend(interval, "run");
                     }
                 } else {

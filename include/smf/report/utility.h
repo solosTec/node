@@ -12,7 +12,7 @@
 
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
-#include <cyng/sys/clock.h>
+#include <cyng/obj/intrinsics/date.h>
 
 #include <iostream>
 #include <optional>
@@ -203,8 +203,10 @@ namespace smf {
          */
         template <typename CharT, typename Traits>
         friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, this_type const &adj) {
-            os << cyng::sys::to_string(adj.local_time(), "%F %T%z ") << adj.deviation() << " "
-               << cyng::sys::to_string(adj.utc_time(), "%F %T%z UTC");
+            auto const d = cyng::make_date_from_local_time(adj.local_time());
+            cyng::as_string(os, d, "%F %T");
+            // os << cyng::sys::to_string(adj.local_time(), "%F %T%z ") << adj.deviation() << " "
+            //    << cyng::sys::to_string(adj.utc_time(), "%F %T%z UTC");
             return os;
         }
 
@@ -228,7 +230,9 @@ namespace smf {
      * Factory function for tz_offset
      */
     inline decltype(auto) make_tz_offset(std::chrono::system_clock::time_point tp) {
-        return tz_offset(tp, cyng::sys::delta_utc(tp));
+
+        auto const d = cyng::make_date_from_local_time(tp);
+        return tz_offset(tp, d.delta_utc());
     }
 
 } // namespace smf

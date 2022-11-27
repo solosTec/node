@@ -10,10 +10,10 @@
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
 #include <cyng/obj/buffer_cast.hpp>
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/sql/dsl.h>
 #include <cyng/sql/dsl/placeholder.h>
 #include <cyng/sql/sql.hpp>
-#include <cyng/sys/clock.h>
 
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -109,21 +109,17 @@ namespace smf {
 
     std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t srv_id, std::chrono::system_clock::time_point start) {
 
-        auto const tt = std::chrono::system_clock::to_time_t(start);
-        auto const tm = cyng::sys::to_localtime(tt);
-
+        auto const d = cyng::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << to_string(srv_id) << '_' << std::put_time(&tm, "%Y%m%dT%H%M") << ".csv";
+        ss << prefix << get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(d, "%Y%m%dT%H%M") << ".csv";
         return ss.str();
     }
 
     std::string get_filename(std::string prefix, cyng::obis profile, std::chrono::system_clock::time_point start) {
 
-        auto const tt = std::chrono::system_clock::to_time_t(start);
-        auto const tm = cyng::sys::to_localtime(tt);
-
+        auto const d = cyng::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << std::put_time(&tm, "%Y%m%dT%H%M") << ".csv";
+        ss << prefix << get_prefix(profile) << "-" << cyng::as_string(d, "%Y%m%dT%H%M") << ".csv";
         return ss.str();
     }
 
@@ -135,13 +131,10 @@ namespace smf {
 
         BOOST_ASSERT(start < end);
 
-        auto tt_start = std::chrono::system_clock::to_time_t(start);
-        auto const tm_start = cyng::sys::to_localtime(tt_start);
-
+        auto const d = cyng::make_date_from_local_time(start);
         auto const hours = std::chrono::duration_cast<std::chrono::hours>(start - end);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << std::put_time(&tm_start, "-%Y%m%dT%H%M-") << std::abs(hours.count()) << 'h'
-           << ".csv";
+        ss << prefix << get_prefix(profile) << cyng::as_string(d, "-%Y%m%dT%H%M-") << std::abs(hours.count()) << 'h' << ".csv";
         return ss.str();
     }
 
@@ -326,13 +319,12 @@ namespace smf {
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
 #ifdef _DEBUG
-            std::ofstream ofdbg("LPExdebug.log", std::ios::app);
-            ofdbg << "> query " << cyng::to_string(profile) << ": ";
-            cyng::sys::to_string(ofdbg, start, "%Y-%m-%dT%H:%M%z (UTC)");
-            ofdbg << " -> ";
-            cyng::sys::to_string(ofdbg, end, "%Y-%m-%dT%H:%M%z (UTC)");
-            ofdbg << std::endl;
-
+            // std::ofstream ofdbg("LPExdebug.log", std::ios::app);
+            // ofdbg << "> query " << cyng::to_string(profile) << ": ";
+            // cyng::sys::to_string(ofdbg, start, "%Y-%m-%dT%H:%M%z (UTC)");
+            // ofdbg << " -> ";
+            // cyng::sys::to_string(ofdbg, end, "%Y-%m-%dT%H:%M%z (UTC)");
+            // ofdbg << std::endl;
 #endif
             stmt->push(cyng::make_object(profile), 0); //	profile
             stmt->push(cyng::make_object(start), 0);   //	start time
@@ -352,7 +344,7 @@ namespace smf {
                 //
                 auto const rec = cyng::to_record(ms, res);
 #ifdef _DEBUG
-                ofdbg << rec.to_string() << std::endl;
+                // ofdbg << rec.to_string() << std::endl;
 #endif
 
                 //

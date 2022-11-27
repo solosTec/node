@@ -11,7 +11,7 @@
 
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
-#include <cyng/sys/clock.h>
+#include <cyng/obj/intrinsics/date.h>
 
 #include <fstream>
 #include <iostream>
@@ -31,60 +31,79 @@ namespace smf {
         cyng::db::transaction trx(db);
 
         switch (profile.to_uint64()) {
-        case CODE_PROFILE_1_MINUTE:
+        case CODE_PROFILE_1_MINUTE: {
+
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_day().to_time_point();
             gap::generate_report_1_minute(
                 db,
                 profile,
                 root,
-                cyng::sys::get_start_of_day(now - backtrack), //  start
-                now                                           // end
+                start, //  start
+                now    // end
             );
-            break;
-        case CODE_PROFILE_15_MINUTE:
+        } break;
+        case CODE_PROFILE_15_MINUTE: {
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_day().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_day().to_time_point();
+
             gap::generate_report_15_minutes(
                 db,
                 profile,
                 root,
-                cyng::sys::get_start_of_day(now - backtrack), //  start
-                cyng::sys::get_end_of_day(now)                //  now
+                start, //  start
+                end    //  now
             );
-            break;
-        case CODE_PROFILE_60_MINUTE:
+        } break;
+        case CODE_PROFILE_60_MINUTE: {
+
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_month().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_day().to_time_point();
             gap::generate_report_60_minutes(
                 db,
                 profile,
                 root,
-                cyng::sys::get_start_of_month(now - backtrack), //  start
-                cyng::sys::get_end_of_day(now)                  //  now
+                start, //  start
+                end    //  now
             );
-            break;
-        case CODE_PROFILE_24_HOUR:
+        } break;
+        case CODE_PROFILE_24_HOUR: {
+
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_month().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_month().to_time_point();
             gap::generate_report_24_hour(
                 db,
                 profile,
                 root,
-                cyng::sys::get_start_of_month(now - backtrack), //  start
-                cyng::sys::get_end_of_month(now)                //  now
+                start, //  start
+                end    //  now
             );
-            break;
-        case CODE_PROFILE_1_MONTH:
+        } break;
+        case CODE_PROFILE_1_MONTH: {
+
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_year().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_month().to_time_point();
             gap::generate_report_1_month(
                 db,
                 profile,
                 root,
-                cyng::sys::get_start_of_year(now - backtrack), //  start
-                cyng::sys::get_end_of_year(now)                //  now
+                start, //  start
+                end    //  now
             );
-            break;
-        case CODE_PROFILE_1_YEAR:
+        } break;
+        case CODE_PROFILE_1_YEAR: {
+
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_year().to_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_year().to_time_point();
             gap::generate_report_1_year(
                 db,
                 profile,
                 root,
-                cyng::sys::get_start_of_year(now - backtrack), //  start
-                cyng::sys::get_end_of_year(now)                //  now
+                start, //  start
+                end    //  now
             );
-            break;
+        }
+
+        break;
 
         default: break;
         }
@@ -111,12 +130,12 @@ namespace smf {
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point end) {
 #ifdef _DEBUG
-            std::cout << "15 min (" << profile << ") reporting period spans "
-                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << " from "
-                      << cyng::sys::to_string_utc(start, "%F %T%z") << " to " << cyng::sys::to_string_utc(end, "%F %T%z")
-                      << ", offset = " << start << " with "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
-                      << " expected entries/meter in total" << std::endl;
+            // std::cout << "15 min (" << profile << ") reporting period spans "
+            //           << std::chrono::duration_cast<std::chrono::hours>(end - start) << " from "
+            //           << cyng::sys::to_string_utc(start, "%F %T%z") << " to " << cyng::sys::to_string_utc(end, "%F %T%z")
+            //           << ", offset = " << start << " with "
+            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
+            //           << " expected entries/meter in total" << std::endl;
 #endif
             //
             //  generate gap reports about the complete time range
@@ -147,11 +166,11 @@ namespace smf {
             auto const count = sml::calculate_entry_count(profile, span);
             auto const data = collect_report(db, initial_data, profile, root, start, end, start.deviation(), count);
 #ifdef _DEBUG
-            std::cout << "gap report (15 min) ";
-            cyng::sys::to_string(std::cout, start, "%Y-%m-%dT%H:%M%z");
-            std::cout << " => ";
-            cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z - ");
-            std::cout << data.size() << "/" << count << " entries for " << data.size() << " meter(s) each" << std::endl;
+            // std::cout << "gap report (15 min) ";
+            // cyng::sys::to_string(std::cout, start, "%Y-%m-%dT%H:%M%z");
+            // std::cout << " => ";
+            // cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z - ");
+            // std::cout << data.size() << "/" << count << " entries for " << data.size() << " meter(s) each" << std::endl;
 #endif
             return data;
         }
@@ -166,14 +185,14 @@ namespace smf {
             std::chrono::system_clock::time_point start,
             std::chrono::system_clock::time_point end) {
 #ifdef _DEBUG
-            std::cout << "60 min (" << profile << ") gap report period spans from " << start << " to " << end << " ("
-                      << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), offset = ?"
-                      << " minutes with "
-                      << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
-                      << " entries in total" << std::endl;
+            // std::cout << "60 min (" << profile << ") gap report period spans from " << start << " to " << end << " ("
+            //           << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), offset = ?"
+            //           << " minutes with "
+            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
+            //           << " entries in total" << std::endl;
 
-            std::cout << "\tmonth starts at " << cyng::sys::get_start_of_month(start) << " with a length of "
-                      << cyng::sys::get_length_of_month(start) << std::endl;
+            // std::cout << "\tmonth starts at " << cyng::sys::get_start_of_month(start) << " with a length of "
+            //           << cyng::sys::get_length_of_month(start) << std::endl;
 #endif
 
             //
@@ -181,7 +200,8 @@ namespace smf {
             //
             gap::readout_t data;
             for (auto idx = start; idx < end;) {
-                auto const range = cyng::sys::get_length_of_month(start);
+                std::chrono::hours range(cyng::make_date_from_local_time(start).days_in_month() * 24);
+                // auto const range = cyng::sys::get_length_of_month(start);
                 data = generate_report_60_minutes(
                     db,
                     data,
@@ -208,10 +228,10 @@ namespace smf {
 
             auto const data = collect_report(db, initial_data, profile, root, start, end, start.deviation(), count);
 #ifdef _DEBUG
-            std::cout << "start 60 min report " << start;
-            std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - ");
-            std::cout << count << " expected entries, " << data.size() << " meter(s) each" << std::endl;
+            // std::cout << "start 60 min report " << start;
+            // std::cout << " => ";
+            // cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - ");
+            // std::cout << count << " expected entries, " << data.size() << " meter(s) each" << std::endl;
 #endif
             return data;
         }
@@ -238,7 +258,8 @@ namespace smf {
             gap::readout_t data;
             while (start < now) {
 
-                auto const range = cyng::sys::get_length_of_month(start);
+                std::chrono::hours range(cyng::make_date_from_local_time(start).days_in_month() * 24);
+
                 data = generate_report_24_hour(
                     db,
                     data, // initial data
@@ -265,10 +286,10 @@ namespace smf {
 
             auto const data = collect_report(db, initial_data, profile, root, start, end, start.deviation(), count);
 #ifdef _DEBUG
-            std::cout << "start 24 h report " << start;
-            std::cout << " => ";
-            cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z (UTC) - ");
-            std::cout << count << " expected entries, " << data.size() << " meter(s)" << std::endl;
+            // std::cout << "start 24 h report " << start;
+            // std::cout << " => ";
+            // cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z (UTC) - ");
+            // std::cout << count << " expected entries, " << data.size() << " meter(s)" << std::endl;
 #endif
             return data;
         }
@@ -371,7 +392,10 @@ namespace smf {
                 auto const pos = data.find(slot);
                 if (pos != data.end()) {
                     os << "[set@";
-                    cyng::sys::to_string(os, pos->second, "%Y-%m-%dT%H:%M");
+
+                    auto const d = cyng::make_date_from_local_time(pos->second);
+                    cyng::as_string(os, d, "%Y-%m-%dT%H:%M");
+                    // cyng::sys::to_string(os, pos->second, "%Y-%m-%dT%H:%M");
 #ifdef _DEBUG
                     os << '#' << slot;
 #endif
@@ -380,7 +404,8 @@ namespace smf {
                     //  missing time point
                     os << "[pull@";
                     auto const tp = sml::to_time_point(slot, profile);
-                    cyng::sys::to_string(os, tp, "%Y-%m-%dT%H:%M");
+                    auto const d = cyng::make_date_from_local_time(pos->second);
+                    cyng::as_string(os, d, "%Y-%m-%dT%H:%M");
 #ifdef _DEBUG
                     os << '#' << slot;
 #endif

@@ -87,10 +87,12 @@ namespace smf {
                 debug_mode_,
                 [=, this](
                     std::chrono::system_clock::time_point start, std::chrono::minutes range, std::size_t count, std::size_t size) {
+                    auto const d = cyng::make_date_from_local_time(start);
+
                     CYNG_LOG_TRACE(
                         logger_,
-                        "[LPEx report] scan " << obis::get_name(profile_) << " from " << cyng::sys::to_string(start, "%F %T%z")
-                                              << " + " << range.count() << " minutes and found " << count << " meters");
+                        "[LPEx report] scan " << obis::get_name(profile_) << " from " << cyng::as_string(d, "%F %T") << " + "
+                                              << range.count() << " minutes and found " << count << " meters");
                 });
         }
     }

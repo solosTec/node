@@ -7,7 +7,7 @@
 
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/rnd/rnd.hpp>
-#include <cyng/sys/clock.h>
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/sys/host.h>
 #include <cyng/sys/locale.h>
 #include <cyng/sys/net.h>

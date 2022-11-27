@@ -26,12 +26,12 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
 #include <cyng/parse/duration.h>
 #include <cyng/parse/string.h>
-#include <cyng/sys/clock.h>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/stash.h>
@@ -322,8 +322,8 @@ namespace smf {
                 // std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
-                std::cout << "***info: start reporting at " << cyng::sys::to_string(now, "%Y-%m-%dT%H:%M%z") << " (local time)"
-                          << std::endl;
+                // std::cout << "***info: start reporting at " << cyng::sys::to_string(now, "%Y-%m-%dT%H:%M%z") << " (local time)"
+                //           << std::endl;
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
 
                 auto const print_version = reader["lpex"].get("print.version", true);
@@ -379,9 +379,10 @@ namespace smf {
                                     std::chrono::minutes range,
                                     std::size_t count,
                                     std::size_t size) {
-                                    std::cout << "scan " << obis::get_name(profile) << " from "
-                                              << cyng::sys::to_string(start, "%F %T%z") << " + " << range.count()
-                                              << " minutes and found " << count << " meters";
+                                    auto const d = cyng::make_date_from_local_time(start);
+
+                                    std::cout << "scan " << obis::get_name(profile) << " from " << cyng::as_string(d, "%F %T")
+                                              << " + " << range.count() << " minutes and found " << count << " meters";
                                 });
 
                         } else {
