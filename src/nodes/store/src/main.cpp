@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
     //	will contain the path to an optional configuration file (.cfg)
     smf::config::startup config("store");
     std::string report_type;
+    int time_span = 1;
 
     //
     //	generic options
@@ -37,6 +38,9 @@ int main(int argc, char **argv) {
         ("cleanup",
          boost::program_options::bool_switch()->default_value(false),
          "remove outdated records from database") // --cleanup
+        ("dump",
+         boost::program_options::value<int>(&time_span)->default_value(1),
+         "dump readout data of the last N days") // --dump
         ;
 
     //

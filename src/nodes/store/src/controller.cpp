@@ -779,6 +779,16 @@ namespace smf {
         }
 
         //
+        //  dump readout data
+        //
+        if (!vars["dump"].defaulted()) {
+            //	generate all reports
+            auto const hours = std::chrono::hours(vars["dump"].as<int>() * 24);
+            dump_readout(read_config_section(config_.json_path_, config_.config_index_), hours);
+            return true; //  stop application
+        }
+
+        //
         //	call base classe
         //
         return controller_base::run_options(vars);
@@ -985,8 +995,6 @@ namespace smf {
                         auto const age = cyng::to_hours(reader_cls.get("max.age", "48:00:00"));
 
                         auto const d = cyng::make_date_from_local_time(now - age);
-                        // std::time_t const tt = std::chrono::system_clock::to_time_t(now - age);
-                        // auto const tm = cyng::sys::to_utc(tt);
                         std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
                                   << " older than " << cyng::as_string(d, "%Y-%m-%d %H:%M") << std::endl;
                         auto const limit = reader_cls.get("limit", 256u);
@@ -1004,6 +1012,23 @@ namespace smf {
             }
         }
     }
+
+    void controller::dump_readout(cyng::object &&cfg, std::chrono::hours backlog) {
+        auto const now = std::chrono::system_clock::now();
+        auto const reader = cyng::make_reader(cfg);
+        BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
+        auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
+        for (auto const &param : pm) {
+            auto const db = cyng::container_cast<cyng::param_map_t>(param.second);
+            auto s = cyng::db::create_db_session(db);
+            if (s.is_alive()) {
+                smf::dump_readout(s, now, backlog);
+            } else {
+                std::cout << "***warning: database [" << param.first << "] is not reachable" << std::endl;
+            }
+        }
+    }
+
     std::map<std::string, cyng::db::session> controller::init_storage(cyng::object const &cfg, bool create) {
 
         std::map<std::string, cyng::db::session> sm;

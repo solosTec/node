@@ -187,6 +187,7 @@ namespace smf {
         void generate_lpex_reports(cyng::object &&cfg);
         void generate_gap_reports(cyng::object &&cfg);
         void cleanup_archive(cyng::object &&cfg);
+        void dump_readout(cyng::object &&cfg, std::chrono::hours);
 
         void start_cleanup_tasks(cyng::controller &ctl, cyng::logger, std::string, cyng::db::session, cyng::param_map_t &&);
         void start_gap_reports(cyng::controller &ctl, cyng::logger, std::string, cyng::db::session, cyng::param_map_t &&);

@@ -31,32 +31,37 @@ namespace smf {
 
         switch (profile.to_uint64()) {
         case CODE_PROFILE_1_MINUTE: {
-            auto const tp = cyng::make_date_from_local_time(now - backtrack).get_start_of_day().to_time_point();
+            auto const tp = cyng::utc_cast<std::chrono::system_clock::time_point>(
+                cyng::make_date_from_local_time(now - backtrack).get_start_of_day());
             csv::generate_report_1_minute(db, profile, root, prefix, tp, now);
         } break;
         case CODE_PROFILE_15_MINUTE: {
-            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_day().to_time_point();
-            auto const end = cyng::make_date_from_local_time(now).get_end_of_day().to_time_point();
+            auto const start = cyng::utc_cast<std::chrono::system_clock::time_point>(
+                cyng::make_date_from_local_time(now - backtrack).get_start_of_day());
+            auto const end =
+                cyng::utc_cast<std::chrono::system_clock::time_point>(cyng::make_date_from_local_time(now).get_end_of_day());
             csv::generate_report_15_minutes(db, profile, root, prefix, start, end);
         } break;
         case CODE_PROFILE_60_MINUTE: {
-            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_day().to_time_point();
-            auto const end = cyng::make_date_from_local_time(now).get_end_of_day().to_time_point();
+            auto const start = cyng::utc_cast<std::chrono::system_clock::time_point>(
+                cyng::make_date_from_local_time(now - backtrack).get_start_of_day());
+            auto const end =
+                cyng::utc_cast<std::chrono::system_clock::time_point>(cyng::make_date_from_local_time(now).get_end_of_day());
             csv::generate_report_60_minutes(db, profile, root, prefix, start, end);
         } break;
         case CODE_PROFILE_24_HOUR: {
-            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_month().to_time_point();
-            auto const end = cyng::make_date_from_local_time(now).get_end_of_month().to_time_point();
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_month().to_utc_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_month().to_utc_time_point();
             csv::generate_report_24_hour(db, profile, root, prefix, start, end);
         } break;
         case CODE_PROFILE_1_MONTH: {
-            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_year().to_time_point();
-            auto const end = cyng::make_date_from_local_time(now).get_end_of_year().to_time_point();
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_year().to_utc_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_year().to_utc_time_point();
             csv::generate_report_1_month(db, profile, root, prefix, start, end);
         } break;
         case CODE_PROFILE_1_YEAR: {
-            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_year().to_time_point();
-            auto const end = cyng::make_date_from_local_time(now).get_end_of_year().to_time_point();
+            auto const start = cyng::make_date_from_local_time(now - backtrack).get_start_of_year().to_utc_time_point();
+            auto const end = cyng::make_date_from_local_time(now).get_end_of_year().to_utc_time_point();
             csv::generate_report_1_year(db, profile, root, prefix, start, end);
         } break;
 

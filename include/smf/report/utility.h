@@ -235,6 +235,8 @@ namespace smf {
         return tz_offset(tp, d.delta_utc());
     }
 
+    void dump_readout(cyng::db::session db, std::chrono::system_clock::time_point, std::chrono::hours);
+
 } // namespace smf
 
 #endif

@@ -202,13 +202,13 @@ namespace smf {
             case CODE_PROFILE_1_MONTH: {
                 //  use a calendar to get the length of the months
                 auto const d = cyng::make_date_from_local_time(now).get_end_of_month();
-                return d.to_time_point() + std::chrono::hours(24);
+                return d.to_utc_time_point() + std::chrono::hours(24);
             }
 
             case CODE_PROFILE_1_YEAR: {
                 //  use a calendar to get the length of the year
                 auto const d = cyng::make_date_from_local_time(now).get_end_of_year();
-                return d.to_time_point() + std::chrono::hours(24);
+                return d.to_utc_time_point() + std::chrono::hours(24);
             }
 
             default: break;
