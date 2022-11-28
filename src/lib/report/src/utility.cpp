@@ -21,10 +21,10 @@
 
 #ifdef _DEBUG
 #include <fstream>
-#include <iostream>
 #endif
 
 #include <cmath>
+#include <iostream>
 
 namespace smf {
 
