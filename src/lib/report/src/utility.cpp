@@ -746,13 +746,13 @@ namespace smf {
             auto ro_range = ro_end.sub<std::chrono::minutes>(ro_start);
 
             std::cout << "UTC time  : " << cyng::as_string(start_utc) << std::endl;
-            std::cout << "time span : " << cyng::as_string(start) << " to " << cyng::as_string(end) << " = " << backlog
-                      << std::endl;
+            std::cout << "time span : " << cyng::as_string(start) << " to " << cyng::as_string(end) << " = " << backlog.count()
+                      << "h" << std::endl;
             std::cout << "readouts  : " << idx_readout << std::endl;
             std::cout << "frequency : " << idx_readout / backlog.count() << " readout(s) per hour" << std::endl;
             std::cout << "first ro  : " << cyng::as_string(ro_start) << std::endl;
             std::cout << "last ro   : " << cyng::as_string(ro_end) << std::endl;
-            std::cout << "ro span   : " << ro_range << std::endl;
+            std::cout << "ro span   : " << ro_range.count() << "min" << std::endl;
             std::cout << "ro freq.  : " << (idx_readout * 60) / ro_range.count() << " readout(s) per hour" << std::endl;
             std::cout << "server    : " << server.size() << std::endl;
         }
