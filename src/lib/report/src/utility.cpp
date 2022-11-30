@@ -324,7 +324,8 @@ namespace smf {
             auto [start, end] = subrr.get_range();
 
 #ifdef _DEBUG
-            std::cout << start.to_utc_time_point() << " -> " << end.to_utc_time_point() << std::endl;
+            std::cout << subrr << std::endl;
+            // std::cout << start.to_utc_time_point() << " -> " << end.to_utc_time_point() << std::endl;
 #endif
 
             stmt->push(cyng::make_object(subrr.get_profile()), 0); //	profile
@@ -363,8 +364,12 @@ namespace smf {
                 //
                 //  calculate the time slot
                 //
-                auto const act_time = rec.value("actTime", start);
-                auto const slot = sml::to_index(act_time.to_utc_time_point(), subrr.get_profile());
+                auto const act_time = rec.value("actTime", start.to_utc_time_point());
+#ifdef _DEBUG
+                std::cout << "act_time: " << act_time << " (" << start.to_utc_time_point() << ")" << std::endl;
+                std::cout << rec.to_string() << std::endl;
+#endif
+                auto const slot = sml::to_index(act_time, subrr.get_profile());
                 if (slot.second) {
                     auto set_time = sml::restore_time_point(slot.first, subrr.get_profile());
 
@@ -771,10 +776,10 @@ namespace smf {
     cyng::obis const &report_range::get_profile() const noexcept { return profile_; }
 
     std::pair<cyng::date, cyng::date> report_range::get_range() const noexcept { return {start_, end_}; }
-    // std::pair<cyng::date, cyng::date> report_range::get_range_utc() const noexcept {
 
-    //    return {cyng::utc_cast<cyng::date>(start_), cyng::utc_cast<cyng::date>(end_)};
-    //}
+    std::pair<std::uint64_t, std::uint64_t> report_range::get_slots() const noexcept {
+        return {sml::to_index(start_.to_utc_time_point(), profile_).first, sml::to_index(end_.to_utc_time_point(), profile_).first};
+    }
 
     std::chrono::hours report_range::get_span() const { return end_.sub<std::chrono::hours>(start_); }
 

@@ -74,7 +74,7 @@ namespace smf {
          * both values as pair
          */
         std::pair<cyng::date, cyng::date> get_range() const noexcept;
-        // std::pair<cyng::date, cyng::date> get_range_utc() const noexcept;
+        std::pair<std::uint64_t, std::uint64_t> get_slots() const noexcept;
 
         cyng::obis const &get_profile() const noexcept;
 

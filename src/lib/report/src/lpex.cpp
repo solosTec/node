@@ -184,7 +184,7 @@ namespace smf {
             //
             //  logging callback
             //
-            cb(subrr.get_start().to_utc_time_point(), subrr.get_span(), size, subrr.max_readout_count());
+            cb(subrr.get_start().to_local_time_point(), subrr.get_span(), size, subrr.max_readout_count());
         }
 
         /**
@@ -503,8 +503,6 @@ namespace smf {
             srv_id_t srv_id,
             bool debug_mode,
             data::values_t const &data,
-            // std::chrono::minutes offset, // UTC offset
-            // std::size_t count,           //  entries in time span
             std::optional<lpex_customer> const &customer_data) {
 
             auto pos = data.begin();
@@ -522,19 +520,16 @@ namespace smf {
                             //
                             //   the first time stamp in this data set (UTC)
                             //
-                            auto const time_slot = sml::restore_time_point(pos_ro->first, subrr.get_profile()); // - UTC offset;
+                            auto const time_slot = sml::restore_time_point(pos_ro->first, subrr.get_profile());
 
                             //
                             //  local time stamp (Datum, Zeit)
                             //
-                            auto const d = cyng::date::make_date_from_local_time(time_slot);
-                            cyng::as_string(os, d, "%d.%m.%y;%H:%M:%S;");
-                            // cyng::sys::to_string(os, time_slot, "%d.%m.%y;%H:%M:%S;");
+                            auto const first = cyng::date::make_date_from_local_time(time_slot);
+                            cyng::as_string(os, first, "%d.%m.%y;%H:%M:%S;");
 #ifdef _DEBUG
-                            // cyng::sys::to_string_utc(std::cout, time_slot, "%Y-%m-%dT%H:%M (UTC)\n");
-                            // cyng::sys::to_string(std::cout, time_slot, "%Y-%m-%dT%H:%M (local)\n");
+                            std::cout << "start at " << cyng::as_string(first, "%d.%m.%y;%H:%M:%S;") << std::endl;
 #endif
-
                             //
                             //  [3..10] customer data
                             //
@@ -558,16 +553,18 @@ namespace smf {
                             //  [14] Messperiodendauer (15/60) - measuring period in minutes
                             os << sml::interval_time(time_slot, subrr.get_profile()).count();
 
+                            // std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point now, cyng::obis profile)
+                            auto const last = sml::to_index(subrr.get_end().to_utc_time_point(), subrr.get_profile());
                             //
                             // values
+                            // Emit only values that are after "first"
                             //
                             emit_values(
                                 os,
-                                subrr.get_profile(),
+                                subrr,
                                 srv_id,
                                 debug_mode,
-                                d.get_start_of_day().to_utc_time_point(),
-                                subrr.max_readout_count(),
+                                pos_ro->first, //   first time slot
                                 pos->second);
                         }
                     }
@@ -581,24 +578,22 @@ namespace smf {
 
         void emit_values(
             std::ostream &os,
-            cyng::obis profile,
+            report_range const &subrr,
             srv_id_t srv_id,
             bool debug_mode,
-            std::chrono::system_clock::time_point start_day, //  start of day
-            std::size_t count,                               //  entries in time span
+            // std::chrono::system_clock::time_point start_day, //  start of day
+            // std::size_t count,                               //  entries in time span
+            std::uint64_t first_slot,
             std::map<std::int64_t, sml_data> const &load) {
 
             BOOST_ASSERT(!load.empty());
 
             // detect gaps
-            auto const start_data = sml::restore_time_point(load.begin()->first, profile);
-            auto const idx_day = sml::to_index(start_day, profile);
+            // auto const start_data = sml::restore_time_point(load.begin()->first, subrr.get_profile());
+            // auto const idx_day = sml::to_index(start_day, profile);
+            auto const [slot_start, slot_end] = subrr.get_slots();
             if (debug_mode) {
-                //  example: 2022-08-13 00:00:00.0000000/2022-08-13 07:30:00.0000000
-
-                // std::cout << to_string(srv_id) << ": " << cyng::sys::to_string_utc(start_day, "%Y-%m-%dT%H:%M") << "/"
-                //           << cyng::sys::to_string_utc(start_data, "%Y-%m-%dT%H:%M") << " - " << idx_day.first << "/"
-                //           << load.begin()->first << " - " << load.size() << " entries" << std::endl;
+                // ;
             }
 
             //
@@ -606,7 +601,7 @@ namespace smf {
             // ToDo: calculate this number from profile and time span
             //
 
-            for (auto idx = idx_day.first; idx < (idx_day.first + count); ++idx) {
+            for (auto idx = first_slot; idx < slot_end; ++idx) {
                 auto const pos = load.find(idx);
                 if (pos == load.end()) {
                     //
@@ -640,12 +635,12 @@ namespace smf {
                 auto const last = (--load.end())->first;
                 auto const h = fill_up(
                     {"[DEBUG]",
-                     cyng::to_string(profile),
-                     std::to_string(idx_day.first),
-                     std::to_string(idx_day.first + count),
+                     cyng::to_string(subrr.get_profile()),
+                     std::to_string(slot_start),
+                     std::to_string(first_slot),
+                     std::to_string(slot_end),
                      std::to_string(first),
                      std::to_string(last),
-                     std::to_string(count),
                      std::to_string(load.size())});
                 emit_line(os, h);
             }

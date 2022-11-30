@@ -215,11 +215,10 @@ namespace smf {
         void emit_customer_data(std::ostream &os, srv_id_t srv_id, std::optional<lpex_customer> const &customer_data);
         void emit_values(
             std::ostream &os,
-            cyng::obis profile,
+            report_range const &subrr,
             srv_id_t srv_id,
             bool debug_mode,
-            std::chrono::system_clock::time_point,
-            std::size_t count, //  entries in time span
+            std::uint64_t first_slot, // first slot with data
             std::map<std::int64_t, sml_data> const &load);
 
         std::ofstream open_report(std::filesystem::path root, std::string file_name, bool print_version);
