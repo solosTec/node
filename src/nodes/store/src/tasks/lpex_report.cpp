@@ -67,7 +67,7 @@ namespace smf {
             //
             auto const span = std::chrono::duration_cast<std::chrono::seconds>(next - now);
             sp->suspend(span, "run");
-            auto const d = cyng::make_date_from_local_time(next);
+            auto const d = cyng::date::make_date_from_local_time(next);
             CYNG_LOG_TRACE(logger_, "[LPEx report] run " << obis::get_name(profile_) << " at " << cyng::as_string(d, "%F %T"));
 
             //
@@ -86,7 +86,7 @@ namespace smf {
                 debug_mode_,
                 [=, this](
                     std::chrono::system_clock::time_point start, std::chrono::minutes range, std::size_t count, std::size_t size) {
-                    auto const d = cyng::make_date_from_local_time(start);
+                    auto const d = cyng::date::make_date_from_local_time(start);
 
                     CYNG_LOG_TRACE(
                         logger_,

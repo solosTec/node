@@ -27,8 +27,6 @@ namespace smf {
 
     namespace gap {
 
-        using tz_type = smf::tz_offset_t<std::chrono::minutes>::type;
-
         /**
          * 1 minute reports
          */
@@ -46,95 +44,51 @@ namespace smf {
          * Each line contains all values of *one* register data for this day.
          * So we have multiple lines for the same meter (and customer)
          */
-        void generate_report_15_minutes(
-            cyng::db::session,
-            cyng::obis profile,
-            std::filesystem::path root,
-            std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point end);
+        void generate_report_15_minutes(cyng::db::session, report_range const &rr, std::filesystem::path root);
 
         gap::readout_t generate_report_15_minutes(
             cyng::db::session db,
             gap::readout_t const &initial_data,
-            cyng::obis profile,
-            std::filesystem::path root,
-            tz_type &&start,
-            std::chrono::hours span);
+            report_range const &rr,
+            std::filesystem::path root);
 
         /**
          * Hourly reports
          */
-        void generate_report_60_minutes(
-            cyng::db::session,
-            cyng::obis profile,
-            std::filesystem::path root,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+        void generate_report_60_minutes(cyng::db::session, report_range const &rr, std::filesystem::path root);
 
         gap::readout_t generate_report_60_minutes(
             cyng::db::session db,
             gap::readout_t const &initial_data,
-            cyng::obis profile,
-            std::filesystem::path root,
-            tz_type &&start,
-            std::chrono::hours span);
+            report_range const &rr,
+            std::filesystem::path root);
 
         /**
          * Daily reports
          */
-        void generate_report_24_hour(
-            cyng::db::session,
-            cyng::obis profile,
-            std::filesystem::path root,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+        void generate_report_24_hour(cyng::db::session, report_range const &rr, std::filesystem::path root);
 
         gap::readout_t generate_report_24_hour(
             cyng::db::session db,
             gap::readout_t const &initial_data,
-            cyng::obis profile,
-            std::filesystem::path root,
-            tz_type &&start,
-            std::chrono::hours span);
+            report_range const &rr,
+            std::filesystem::path root);
 
         /**
          * Monthly reports
          */
-        void generate_report_1_month(
-            cyng::db::session,
-            cyng::obis profile,
-            std::filesystem::path root,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+        void generate_report_1_month(cyng::db::session, report_range const &rr, std::filesystem::path root);
 
         /**
          * Yearly reports
          */
-        void generate_report_1_year(
-            cyng::db::session,
-            cyng::obis profile,
-            std::filesystem::path root,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point);
+        void generate_report_1_year(cyng::db::session, report_range const &rr, std::filesystem::path root);
 
-        gap::readout_t collect_report(
-            cyng::db::session,
-            gap::readout_t const &initial_data,
-            cyng::obis profile,
-            std::filesystem::path root,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes utc_offset,
-            std::size_t count);
+        gap::readout_t
+        collect_report(cyng::db::session, gap::readout_t const &initial_data, report_range const &rr, std::filesystem::path root);
 
-        void emit_data(
-            std::ostream &,
-            cyng::obis profile,
-            srv_id_t srv_id,
-            std::int64_t start_slot,
-            gap::slot_date_t const &,
-            std::chrono::minutes utc_offset,
-            std::size_t count);
+        void
+        emit_data(std::ostream &, report_range const &subrr, srv_id_t srv_id, std::int64_t start_slot, gap::slot_date_t const &);
 
     } // namespace gap
 

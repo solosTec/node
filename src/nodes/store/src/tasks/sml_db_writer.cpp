@@ -100,6 +100,7 @@ namespace smf {
         cyng::param_map_t const &values) {
 
         auto const now = std::chrono::system_clock::now();
+        // auto const now = cyng::make_utc_date();
 
         //
         //  check act_time

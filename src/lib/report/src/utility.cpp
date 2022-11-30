@@ -28,13 +28,10 @@
 
 namespace smf {
 
-    std::vector<cyng::buffer_t> select_meters(
-        cyng::db::session db,
-        cyng::obis profile,
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end) {
+    std::vector<cyng::buffer_t> select_meters(cyng::db::session db, report_range const &rr) {
 
-        BOOST_ASSERT_MSG(start < end, "invalid time range");
+        // BOOST_ASSERT_MSG(start < end, "invalid time range");
+        auto const [start, end] = rr.get_range();
 
         //  SELECT DISTINCT hex(meterID) FROM TSMLreadout WHERE profile = '8181c78611ff' AND actTime BETWEEN
         // julianday('2022-07-19')
@@ -48,9 +45,9 @@ namespace smf {
         BOOST_ASSERT_MSG(r.second, "prepare SQL statement failed");
         if (r.second) {
             //  Without meta data the "real" data type is to be used
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            stmt->push(cyng::make_object(start), 0);   //	start time
-            stmt->push(cyng::make_object(end), 0);     //	end time
+            stmt->push(cyng::make_object(rr.get_profile()), 0); //	profile
+            stmt->push(cyng::make_object(start), 0);            //	start time
+            stmt->push(cyng::make_object(end), 0);              //	end time
             while (auto res = stmt->get_result()) {
                 auto const meter = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
                 BOOST_ASSERT(!meter.empty());
@@ -108,19 +105,19 @@ namespace smf {
         return regs;
     }
 
-    std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t srv_id, std::chrono::system_clock::time_point start) {
+    std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t srv_id, cyng::date const &start) {
 
-        auto const d = cyng::make_date_from_local_time(start);
+        // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(d, "%Y%m%dT%H%M") << ".csv";
+        ss << prefix << get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(start, "%Y%m%dT%H%M") << ".csv";
         return ss.str();
     }
 
-    std::string get_filename(std::string prefix, cyng::obis profile, std::chrono::system_clock::time_point start) {
+    std::string get_filename(std::string prefix, cyng::obis profile, cyng::date const &start) {
 
-        auto const d = cyng::make_date_from_local_time(start);
+        // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << cyng::as_string(d, "%Y%m%dT%H%M") << ".csv";
+        ss << prefix << get_prefix(profile) << "-" << cyng::as_string(start, "%Y%m%dT%H%M") << ".csv";
         return ss.str();
     }
 
@@ -132,7 +129,7 @@ namespace smf {
 
         BOOST_ASSERT(start < end);
 
-        auto const d = cyng::make_date_from_local_time(start);
+        auto const d = cyng::date::make_date_from_local_time(start);
         auto const hours = std::chrono::duration_cast<std::chrono::hours>(start - end);
         std::stringstream ss;
         ss << prefix << get_prefix(profile) << cyng::as_string(d, "-%Y%m%dT%H%M-") << std::abs(hours.count()) << 'h' << ".csv";
@@ -158,12 +155,8 @@ namespace smf {
         return to_string(profile);
     }
 
-    std::map<std::uint64_t, std::map<cyng::obis, sml_data>> collect_data_by_timestamp(
-        cyng::db::session db,
-        cyng::obis profile,
-        cyng::buffer_t id,
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end) {
+    std::map<std::uint64_t, std::map<cyng::obis, sml_data>>
+    collect_data_by_timestamp(cyng::db::session db, report_range const &subrr, cyng::buffer_t id) {
 
         //
         //  ToDo: Incorporate the status into the return value.
@@ -171,16 +164,19 @@ namespace smf {
 
         std::map<std::uint64_t, std::map<cyng::obis, sml_data>> data;
 
+        //  get timestamps
+        auto [start, end] = subrr.get_range();
+
         auto const ms = config::get_table_sml_readout();
         std::string const sql =
             "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) FROM TSMLReadout WHERE profile = ? AND meterID = ? AND received BETWEEN julianday(?) AND julianday(?) ORDER BY actTime";
         auto stmt = db.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            stmt->push(cyng::make_object(id), 9);      //	meterID
-            stmt->push(cyng::make_object(start), 0);   //	start time
-            stmt->push(cyng::make_object(end), 0);     //	end time
+            stmt->push(cyng::make_object(subrr.get_profile()), 0);         //	profile
+            stmt->push(cyng::make_object(id), 9);                          //	meterID
+            stmt->push(cyng::make_object(start.to_local_time_point()), 0); //	start time
+            stmt->push(cyng::make_object(end.to_local_time_point()), 0);   //	end time
 
             while (auto res = stmt->get_result()) {
                 auto const rec = cyng::to_record(ms, res);
@@ -198,9 +194,9 @@ namespace smf {
                 //  calculate the time slot
                 //
                 auto const act_time = rec.value("actTime", start);
-                auto const slot = sml::to_index(act_time, profile);
+                auto const slot = sml::to_index(act_time.to_utc_time_point(), subrr.get_profile());
                 if (slot.second) {
-                    auto set_time = sml::to_time_point(slot.first, profile);
+                    auto set_time = sml::restore_time_point(slot.first, subrr.get_profile());
 
 #ifdef _DEBUG
                     // using cyng::operator<<;
@@ -216,12 +212,8 @@ namespace smf {
         return data;
     }
 
-    gap::readout_t collect_readouts_by_time_range(
-        cyng::db::session db,
-        gap::readout_t const &initial_data,
-        cyng::obis profile,
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end) {
+    gap::readout_t
+    collect_readouts_by_time_range(cyng::db::session db, gap::readout_t const &initial_data, report_range const &subrr) {
 
         //
         //  meter => slot => actTime
@@ -243,9 +235,17 @@ namespace smf {
         auto stmt = db.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            stmt->push(cyng::make_object(start), 0);   //	start time
-            stmt->push(cyng::make_object(end), 0);     //	end time
+
+            auto const [start, end] = subrr.get_range();
+
+#ifdef _DEBUG
+            std::cout << "select ro from " << cyng::as_string(start) << " to " << cyng::as_string(end) << " ("
+                      << start.to_utc_time_point() << " to " << end.to_utc_time_point() << ")" << std::endl;
+#endif
+
+            stmt->push(cyng::make_object(subrr.get_profile()), 0);       //	profile
+            stmt->push(cyng::make_object(start.to_utc_time_point()), 0); //	start time
+            stmt->push(cyng::make_object(end.to_utc_time_point()), 0);   //	end time
 
             while (auto res = stmt->get_result()) {
                 auto const rec = cyng::to_record(ms, res);
@@ -256,8 +256,8 @@ namespace smf {
                 //
                 //  calculate the time slot
                 //
-                auto const act_time = rec.value("actTime", start); // + offset
-                auto const slot = sml::to_index(act_time, profile);
+                auto const act_time = rec.value("actTime", start.to_utc_time_point()); // + offset
+                auto const slot = sml::to_index(act_time, subrr.get_profile());
 #ifdef _DEBUG
                 // std::cout << "start: " << cyng::sys::to_string_utc(start, "%Y-%m-%dT%H:%M%z")
                 //           << ", actTime: " << cyng::sys::to_string_utc(act_time, "%Y-%m-%dT%H:%M%z") << ", slot: " << slot.first
@@ -265,7 +265,7 @@ namespace smf {
 #endif
 
                 if (slot.second) {
-                    auto set_time = sml::to_time_point(slot.first, profile);
+                    auto set_time = sml::restore_time_point(slot.first, subrr.get_profile());
                     auto const id = rec.value("meterID", cyng::make_buffer());
 
 #ifdef _DEBUG
@@ -299,12 +299,7 @@ namespace smf {
         return data;
     }
 
-    data::profile_t collect_data_by_time_range(
-        cyng::db::session db,
-        cyng::obis profile,
-        cyng::obis_path_t const &filter,
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end) {
+    data::profile_t collect_data_by_time_range(cyng::db::session db, cyng::obis_path_t const &filter, report_range const &subrr) {
 
         data::profile_t data;
 
@@ -319,17 +314,23 @@ namespace smf {
         auto stmt = db.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
+
 #ifdef _DEBUG
-            // std::ofstream ofdbg("LPExdebug.log", std::ios::app);
-            // ofdbg << "> query " << cyng::to_string(profile) << ": ";
-            // cyng::sys::to_string(ofdbg, start, "%Y-%m-%dT%H:%M%z (UTC)");
-            // ofdbg << " -> ";
-            // cyng::sys::to_string(ofdbg, end, "%Y-%m-%dT%H:%M%z (UTC)");
-            // ofdbg << std::endl;
+            std::ofstream ofdbg("LPExdebug.log", std::ios::app);
+            ofdbg << subrr << std::endl;
 #endif
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            stmt->push(cyng::make_object(start), 0);   //	start time
-            stmt->push(cyng::make_object(end), 0);     //	end time
+
+            //  get timestamps in local time
+            auto [start, end] = subrr.get_range();
+
+#ifdef _DEBUG
+            std::cout << start.to_utc_time_point() << " -> " << end.to_utc_time_point() << std::endl;
+#endif
+
+            stmt->push(cyng::make_object(subrr.get_profile()), 0); //	profile
+            //  date and
+            stmt->push(cyng::make_object(start), 0); //	start time
+            stmt->push(cyng::make_object(end), 0);   //	end time
 
             //
             // all data for the specified meter in the time range ordered by
@@ -345,7 +346,7 @@ namespace smf {
                 //
                 auto const rec = cyng::to_record(ms, res);
 #ifdef _DEBUG
-                // ofdbg << rec.to_string() << std::endl;
+                ofdbg << rec.to_string() << std::endl;
 #endif
 
                 //
@@ -363,9 +364,9 @@ namespace smf {
                 //  calculate the time slot
                 //
                 auto const act_time = rec.value("actTime", start);
-                auto const slot = sml::to_index(act_time, profile);
+                auto const slot = sml::to_index(act_time.to_utc_time_point(), subrr.get_profile());
                 if (slot.second) {
-                    auto set_time = sml::to_time_point(slot.first, profile);
+                    auto set_time = sml::restore_time_point(slot.first, subrr.get_profile());
 
                     auto const code = rec.value<std::uint16_t>("type", cyng::TC_STRING);
                     auto const reading = rec.value("reading", "");
@@ -482,7 +483,7 @@ namespace smf {
                 auto const act_time = rec.value("actTime", start);
                 auto const slot = sml::to_index(act_time, profile);
                 if (slot.second) {
-                    auto set_time = sml::to_time_point(slot.first, profile);
+                    auto set_time = sml::restore_time_point(slot.first, profile);
 
                     auto const code = rec.value<std::uint16_t>("type", cyng::TC_STRING);
                     auto const reading = rec.value("reading", "");
@@ -704,7 +705,7 @@ namespace smf {
             std::size_t idx_readout = 0;
             std::size_t idx_value = 0;
             cyng::date ro_start = cyng::make_local_date();
-            cyng::date ro_end = ro_start;
+            cyng::date ro_end = cyng::date::make_date_from_local_time(now - backlog);
             boost::uuids::uuid prev_tag = boost::uuids::nil_uuid();
             while (auto res = stmt->get_result()) {
                 auto const tag = cyng::value_cast(res->get(1, cyng::TC_UUID, 0), prev_tag);
@@ -721,7 +722,7 @@ namespace smf {
                 server.insert(id);
 
                 auto const act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), now);
-                auto const d = cyng::make_date_from_local_time(act_time);
+                auto const d = cyng::date::make_date_from_local_time(act_time);
                 if (ro_start > d) {
                     ro_start = d;
                 }
@@ -740,9 +741,9 @@ namespace smf {
 
             std::cout << "statistics:" << std::endl;
 
-            auto const start_utc = cyng::make_date_from_utc_time(now);
-            auto const start = cyng::make_date_from_local_time(now - backlog);
-            auto const end = cyng::make_date_from_local_time(now);
+            auto const start_utc = cyng::date::make_date_from_utc_time(now);
+            auto const start = cyng::date::make_date_from_local_time(now - backlog);
+            auto const end = cyng::date::make_date_from_local_time(now);
             auto ro_range = ro_end.sub<std::chrono::minutes>(ro_start);
 
             std::cout << "UTC time  : " << cyng::as_string(start_utc) << std::endl;
@@ -757,5 +758,26 @@ namespace smf {
             std::cout << "server    : " << server.size() << std::endl;
         }
     }
+
+    report_range::report_range(cyng::obis profile, cyng::date const &start, cyng::date const &end)
+        : profile_(profile)
+        , start_(start)
+        , end_(end) {
+        BOOST_ASSERT_MSG(start_ < end_, "invalid range");
+    }
+
+    cyng::date const &report_range::get_start() const noexcept { return start_; }
+    cyng::date const &report_range::get_end() const noexcept { return end_; }
+    cyng::obis const &report_range::get_profile() const noexcept { return profile_; }
+
+    std::pair<cyng::date, cyng::date> report_range::get_range() const noexcept { return {start_, end_}; }
+    // std::pair<cyng::date, cyng::date> report_range::get_range_utc() const noexcept {
+
+    //    return {cyng::utc_cast<cyng::date>(start_), cyng::utc_cast<cyng::date>(end_)};
+    //}
+
+    std::chrono::hours report_range::get_span() const { return end_.sub<std::chrono::hours>(start_); }
+
+    std::size_t report_range::max_readout_count() const { return sml::calculate_entry_count(profile_, get_span()); }
 
 } // namespace smf

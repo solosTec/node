@@ -87,7 +87,7 @@ namespace smf {
                 debug_mode_,
                 [=, this](
                     std::chrono::system_clock::time_point start, std::chrono::minutes range, std::size_t count, std::size_t size) {
-                    auto const d = cyng::make_date_from_local_time(start);
+                    auto const d = cyng::date::make_date_from_local_time(start);
 
                     CYNG_LOG_TRACE(
                         logger_,

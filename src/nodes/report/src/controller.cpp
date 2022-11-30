@@ -322,8 +322,8 @@ namespace smf {
                 // std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
                 auto const now = std::chrono::system_clock::now();
-                // std::cout << "***info: start reporting at " << cyng::sys::to_string(now, "%Y-%m-%dT%H:%M%z") << " (local time)"
-                //           << std::endl;
+                using cyng::operator<<;
+                std::cout << "***info: start reporting at " << now << " (local time)" << std::endl;
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
 
                 auto const print_version = reader["lpex"].get("print.version", true);
@@ -379,10 +379,10 @@ namespace smf {
                                     std::chrono::minutes range,
                                     std::size_t count,
                                     std::size_t size) {
-                                    auto const d = cyng::make_date_from_local_time(start);
+                                    auto const d = cyng::date::make_date_from_local_time(start);
 
                                     std::cout << "scan " << obis::get_name(profile) << " from " << cyng::as_string(d, "%F %T")
-                                              << " + " << range.count() << " minutes and found " << count << " meters";
+                                              << " + " << range.count() << " minutes and found " << count << " meters" << std::endl;
                                 });
 
                         } else {

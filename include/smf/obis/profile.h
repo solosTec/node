@@ -83,7 +83,7 @@ namespace smf {
         /**
          * Calculate the time point of the index
          */
-        std::chrono::system_clock::time_point to_time_point(std::int64_t, cyng::obis profile);
+        std::chrono::system_clock::time_point restore_time_point(std::int64_t, cyng::obis profile);
 
         //  2022-01-01 00:00:00
         constexpr static std::chrono::time_point<std::chrono::system_clock> offset_ =

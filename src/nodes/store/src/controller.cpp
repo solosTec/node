@@ -912,10 +912,10 @@ namespace smf {
                                     std::chrono::minutes range,
                                     std::size_t count,
                                     std::size_t size) {
-                                    auto const d = cyng::make_date_from_local_time(start);
+                                    auto const d = cyng::date::make_date_from_local_time(start);
 
                                     std::cout << "scan " << obis::get_name(profile) << " from " << cyng::as_string(d, "%F %T")
-                                              << " + " << range.count() << " minutes and found " << count << " meters";
+                                              << " + " << range.count() << " minutes and found " << count << " meters" << std::endl;
                                 });
 
                         } else {
@@ -952,7 +952,7 @@ namespace smf {
                     if (enabled) {
                         auto const age = cyng::to_hours(reader_gap.get("backtrack", "48:00:00"));
 
-                        auto const d = cyng::make_date_from_local_time(now - age);
+                        auto const d = cyng::date::make_date_from_local_time(now - age);
                         std::cout << "the gap report on db \"" << param.first << "\" for profile " << obis::get_name(profile)
                                   << " start with " << cyng::as_string(d, "%Y-%m-%d %T") << std::endl;
                         auto const root = reader_gap.get("path", "");
@@ -994,7 +994,7 @@ namespace smf {
                     if (enabled) {
                         auto const age = cyng::to_hours(reader_cls.get("max.age", "48:00:00"));
 
-                        auto const d = cyng::make_date_from_local_time(now - age);
+                        auto const d = cyng::date::make_date_from_local_time(now - age);
                         std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
                                   << " older than " << cyng::as_string(d, "%Y-%m-%d %H:%M") << std::endl;
                         auto const limit = reader_cls.get("limit", 256u);
@@ -1491,12 +1491,12 @@ namespace smf {
                     auto const next = sml::floor(now + interval, profile);
 
                     if (next > now) {
-                        auto const d = cyng::make_date_from_local_time(next);
+                        auto const d = cyng::date::make_date_from_local_time(next);
                         CYNG_LOG_INFO(
                             logger, "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(d, "%F %T%z"));
                         channel->suspend(next - now, "run");
                     } else {
-                        auto const d = cyng::make_date_from_local_time(now + interval);
+                        auto const d = cyng::date::make_date_from_local_time(now + interval);
                         CYNG_LOG_INFO(
                             logger, "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(d, "%F %T%z"));
                         channel->suspend(interval, "run");

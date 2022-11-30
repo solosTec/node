@@ -43,7 +43,7 @@ namespace smf {
 
     namespace lpex {
 
-        using tz_type = smf::tz_offset_t<std::chrono::minutes>::type;
+        // using tz_type = smf::tz_offset_t<std::chrono::minutes>::type;
 
         /**
          * 1 minute reports
@@ -70,25 +70,21 @@ namespace smf {
          */
         void generate_report_15_minutes(
             cyng::db::session,
-            cyng::obis profile,
+            report_range const &rr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
             bool print_version,
             bool separated,
             bool debug_mode,
             lpex_cb);
 
-        void generate_report_15_minutes(
+        void generate_report_15_minutes_part(
             cyng::db::session db,
-            cyng::obis profile,
+            report_range const &rr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            tz_type &&start,
-            std::chrono::hours span,
             bool print_version,
             bool separated,
             bool debug_mode,
@@ -99,25 +95,21 @@ namespace smf {
          */
         void generate_report_60_minutes(
             cyng::db::session,
-            cyng::obis profile,
+            report_range const &rr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
             bool print_version,
             bool separated,
             bool debug_mode,
             lpex_cb);
 
-        void generate_report_60_minutes(
+        void generate_report_60_minutes_part(
             cyng::db::session db,
-            cyng::obis profile,
+            report_range const &subrr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            tz_type &&start,
-            std::chrono::hours span,
             bool print_version,
             bool separated,
             bool debug_mode,
@@ -128,25 +120,21 @@ namespace smf {
          */
         void generate_report_24_hour(
             cyng::db::session,
-            cyng::obis profile,
+            report_range const &rr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
             bool print_version,
             bool separated,
             bool debug_mode,
             lpex_cb);
 
-        void generate_report_24_hour(
+        void generate_report_24_hour_part(
             cyng::db::session db,
-            cyng::obis profile,
+            report_range const &subrr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            tz_type &&start,
-            std::chrono::hours span,
             bool print_version,
             bool separated,
             bool debug_mode,
@@ -157,12 +145,10 @@ namespace smf {
          */
         void generate_report_1_month(
             cyng::db::session,
-            cyng::obis profile,
+            report_range const &rr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
             bool print_version,
             bool separated,
             bool debug_mode,
@@ -173,12 +159,10 @@ namespace smf {
          */
         void generate_report_1_year(
             cyng::db::session,
-            cyng::obis profile,
+            report_range const &rr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
             bool print_version,
             bool separated,
             bool debug_mode,
@@ -202,38 +186,30 @@ namespace smf {
 
         std::size_t collect_report(
             cyng::db::session,
-            cyng::obis profile,
+            report_range const &subrr,
             cyng::obis_path_t const &filter,
             std::filesystem::path root,
             std::string prefix,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
-            std::chrono::minutes offset, // UTC offset
-            std::size_t count,           //  entries in time span
             bool print_version,
             bool separated,
             bool debug_mode);
 
         void emit_report(
             std::ofstream &ofs,
-            cyng::obis profile,
+            report_range const &subrr,
             srv_id_t srv_id,
             bool debug_mode,
             data::values_t const &,
-            std::chrono::minutes offset, // UTC offset
-            std::size_t count,           //  entries in time span
             std::optional<lpex_customer> const &customer_data);
 
         void emit_line(std::ostream &, std::vector<std::string> const);
 
         void emit_data(
             std::ostream &,
-            cyng::obis profile,
+            report_range const &subrr,
             srv_id_t srv_id,
             bool debug_mode,
             data::values_t const &,
-            std::chrono::minutes offset, // UTC offset
-            std::size_t count,           //  entries in time span
             std::optional<lpex_customer> const &customer_data);
 
         void emit_customer_data(std::ostream &os, srv_id_t srv_id, std::optional<lpex_customer> const &customer_data);

@@ -31,8 +31,8 @@ namespace smf {
             case CODE_PROFILE_15_MINUTE: return std::chrono::minutes(15);
             case CODE_PROFILE_60_MINUTE: return std::chrono::hours(1);
             case CODE_PROFILE_24_HOUR: return std::chrono::hours(24);
-            case CODE_PROFILE_1_MONTH: return std::chrono::hours(cyng::make_date_from_local_time(tp).days_in_month() * 24);
-            case CODE_PROFILE_1_YEAR: return std::chrono::hours(cyng::make_date_from_local_time(tp).days_in_year() * 24);
+            case CODE_PROFILE_1_MONTH: return std::chrono::hours(cyng::date::make_date_from_local_time(tp).days_in_month() * 24);
+            case CODE_PROFILE_1_YEAR: return std::chrono::hours(cyng::date::make_date_from_local_time(tp).days_in_year() * 24);
             default: BOOST_ASSERT_MSG(false, "not implemented yet"); break;
             }
 
@@ -67,11 +67,11 @@ namespace smf {
             case CODE_PROFILE_60_MINUTE: return epoch + hours_since_epoch(tp);
             case CODE_PROFILE_24_HOUR: return epoch + (hours_since_epoch(tp) / 24) * 24;
             case CODE_PROFILE_1_MONTH: {
-                auto const days = cyng::make_date_from_local_time(tp).days_in_month();
+                auto const days = cyng::date::make_date_from_local_time(tp).days_in_month();
                 return epoch + (hours_since_epoch(tp) / days) * days;
             }
             case CODE_PROFILE_1_YEAR: {
-                auto const days = cyng::make_date_from_local_time(tp).days_in_year();
+                auto const days = cyng::date::make_date_from_local_time(tp).days_in_year();
                 return epoch + (hours_since_epoch(tp) / days) * days;
             }
             default: break;
@@ -201,13 +201,13 @@ namespace smf {
 
             case CODE_PROFILE_1_MONTH: {
                 //  use a calendar to get the length of the months
-                auto const d = cyng::make_date_from_local_time(now).get_end_of_month();
+                auto const d = cyng::date::make_date_from_local_time(now).get_end_of_month();
                 return d.to_utc_time_point() + std::chrono::hours(24);
             }
 
             case CODE_PROFILE_1_YEAR: {
                 //  use a calendar to get the length of the year
-                auto const d = cyng::make_date_from_local_time(now).get_end_of_year();
+                auto const d = cyng::date::make_date_from_local_time(now).get_end_of_year();
                 return d.to_utc_time_point() + std::chrono::hours(24);
             }
 
@@ -237,12 +237,12 @@ namespace smf {
             case CODE_PROFILE_24_HOUR: return {hours_since_epoch(start).count() / 24u, true};
             case CODE_PROFILE_1_MONTH: {
                 //  calculate the exact count of months
-                auto const days = cyng::make_date_from_local_time(now).days_in_month();
+                auto const days = cyng::date::make_date_from_local_time(now).days_in_month();
                 return {hours_since_epoch(start).count() / days, true};
             }
             case CODE_PROFILE_1_YEAR: {
                 //  calculate the exact count of years
-                auto const days = cyng::make_date_from_local_time(now).days_in_year();
+                auto const days = cyng::date::make_date_from_local_time(now).days_in_year();
                 return {hours_since_epoch(start).count() / days, true};
             }
             default: break;
@@ -265,7 +265,7 @@ namespace smf {
             return 0;
         }
 
-        std::chrono::system_clock::time_point to_time_point(std::int64_t idx, cyng::obis profile) {
+        std::chrono::system_clock::time_point restore_time_point(std::int64_t idx, cyng::obis profile) {
 
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return offset_ + std::chrono::minutes(idx);
