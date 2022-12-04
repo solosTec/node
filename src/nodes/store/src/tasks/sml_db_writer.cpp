@@ -20,7 +20,13 @@
 namespace smf {
 
     sml_db_writer::sml_db_writer(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cyng::db::session db)
-        : sigs_{std::bind(&sml_db_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), std::bind(&sml_db_writer::close_response, this), std::bind(&sml_db_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6), std::bind(&sml_db_writer::get_proc_parameter_response, this), std::bind(&sml_db_writer::stop, this, std::placeholders::_1)}
+        : sigs_{
+        std::bind(&sml_db_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), // open_response
+        std::bind(&sml_db_writer::close_response, this), // close_response
+        std::bind(&sml_db_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6), //
+        std::bind(&sml_db_writer::get_proc_parameter_response, this), // get_proc_parameter_response
+        std::bind(&sml_db_writer::stop, this, std::placeholders::_1)
+        }
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger)
@@ -153,6 +159,7 @@ namespace smf {
                 //
                 //  overwrite actTime (01 00 00 09 0b 00)
                 //  OBIS_CURRENT_UTC
+                //  The actTime is stored as TC_TIME but will be read as TC_DATE
                 auto const pos = values.find("010000090b00");
                 if (pos != values.end()) {
                     auto const c = cyng::container_cast<cyng::param_map_t>(pos->second);
@@ -160,10 +167,15 @@ namespace smf {
                     if (idx != c.end()) {
                         auto const prev = act_time.clone();
                         act_time = idx->second.clone();
-                        stmt->push(idx->second, 0);            //	actTime
-                        stmt->push(cyng::make_object(now), 0); //	received
+                        stmt->push(idx->second, 0); // actTime
+                        stmt->push(prev, 0);        // original actTime
+
+                        auto const unboxed = cyng::value_cast(act_time, now);
                         CYNG_LOG_TRACE(
-                            logger_, "[sml.db] update actTime of data record " << tag << " from " << prev << " to " << act_time);
+                            logger_,
+                            "[sml.db] update actTime of data record "
+                                << tag << " from " << prev << " to " << act_time
+                                << ", UNIX time: " << std::chrono::system_clock::to_time_t(unboxed));
                     } else {
                         CYNG_LOG_ERROR(logger_, "[sml.db] missing column \"value\" in data record " << tag);
                     }

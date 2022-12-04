@@ -62,7 +62,7 @@ namespace smf {
 
 #ifdef _DEBUG
             //  PROFILE_15_MINUTE:2022-11-26 00:00:00 ==120h=> 2022-11-31 00:00:00
-            std::cout << rr << std::endl;
+            std::cout << "rr   : " << rr << std::endl;
 #endif
 
             lpex::generate_report_15_minutes(db, rr, filter, root, prefix, print_version, separated, debug_mode, cb);
@@ -178,6 +178,11 @@ namespace smf {
             bool separated,
             bool debug_mode,
             lpex_cb cb) {
+
+#ifdef _DEBUG
+            //  PROFILE_15_MINUTE:2022-11-26 00:00:00 ==120h=> 2022-11-31 00:00:00
+            std::cout << "subrr: " << subrr << std::endl;
+#endif
 
             auto const size = collect_report(db, subrr, filter, root, prefix, print_version, separated, debug_mode);
 
@@ -505,74 +510,78 @@ namespace smf {
             data::values_t const &data,
             std::optional<lpex_customer> const &customer_data) {
 
-            auto pos = data.begin();
-            if (pos != data.end()) {
-                do {
-                    //
-                    //  the register in this data set
-                    //
-                    auto reg = pos->first;
-                    auto pos_ro = pos->second.begin();
-                    if (pos_ro != pos->second.end()) {
+            //
+            //  iterate over all registers
+            //
+            for (auto pos = data.begin(); pos != data.end(); ++pos) {
 
-                        if (pos_ro->second.unit_ != mbus::unit::UNDEFINED_) {
+                //
+                //  the register in this data set
+                //
+                auto reg = pos->first;
 
-                            //
-                            //   the first time stamp in this data set (UTC)
-                            //
-                            auto const time_slot = sml::restore_time_point(pos_ro->first, subrr.get_profile());
+                auto pos_ro = pos->second.begin();
+                if (pos_ro != pos->second.end()) {
 
-                            //
-                            //  local time stamp (Datum, Zeit)
-                            //
-                            auto const first = cyng::date::make_date_from_local_time(time_slot);
-                            cyng::as_string(os, first, "%d.%m.%y;%H:%M:%S;");
+                    if (pos_ro->second.unit_ != mbus::unit::UNDEFINED_) {
+
+                        //
+                        //   the first time stamp in this data set (UTC)
+                        //
+                        auto const time_slot = sml::restore_time_point(pos_ro->first, subrr.get_profile());
+
+                        //
+                        //  local time stamp (Datum, Zeit)
+                        //
+                        auto const first = cyng::date::make_date_from_utc_time(time_slot);
+                        cyng::as_string(os, first, "%d.%m.%y;%H:%M:%S;");
 #ifdef _DEBUG
-                            std::cout << "start at " << cyng::as_string(first, "%d.%m.%y;%H:%M:%S;") << std::endl;
+                        auto pos_ro_last = (--pos->second.end());
+                        auto const time_slot_last = sml::restore_time_point(pos_ro_last->first, subrr.get_profile());
+                        auto const last = cyng::date::make_date_from_utc_time(time_slot_last);
+
+                        std::cout << "start at " << cyng::as_string(first, "%d.%m.%y;%H:%M:%S;")
+                                  << ", last: " << cyng::as_string(last, "%d.%m.%y;%H:%M:%S;") << std::endl;
 #endif
-                            //
-                            //  [3..10] customer data
-                            //
-                            emit_customer_data(os, srv_id, customer_data);
+                        //
+                        //  [3..10] customer data
+                        //
+                        emit_customer_data(os, srv_id, customer_data);
 
-                            //
-                            //  [11] register (Kennzahl)
-                            //
-                            obis::to_decimal(os, reg);
-                            os << ";";
+                        //
+                        //  [11] register (Kennzahl)
+                        //
+                        obis::to_decimal(os, reg);
+                        os << ";";
 
-                            //
-                            //  [12] unit (Einheit)
-                            //
-                            os << mbus::get_name(pos_ro->second.unit_);
-                            os << ";";
+                        //
+                        //  [12] unit (Einheit)
+                        //
+                        os << mbus::get_name(pos_ro->second.unit_);
+                        os << ";";
 
-                            //  [13] Wandlerfaktor - conversion factor
-                            os << "1;";
+                        //  [13] Wandlerfaktor - conversion factor
+                        os << "1;";
 
-                            //  [14] Messperiodendauer (15/60) - measuring period in minutes
-                            os << sml::interval_time(time_slot, subrr.get_profile()).count();
+                        //  [14] Messperiodendauer (15/60) - measuring period in minutes
+                        os << sml::interval_time(time_slot, subrr.get_profile()).count();
 
-                            // std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point now, cyng::obis profile)
-                            auto const last = sml::to_index(subrr.get_end().to_utc_time_point(), subrr.get_profile());
-                            //
-                            // values
-                            // Emit only values that are after "first"
-                            //
-                            emit_values(
-                                os,
-                                subrr,
-                                srv_id,
-                                debug_mode,
-                                pos_ro->first, //   first time slot
-                                pos->second);
-                        }
+                        // std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point now, cyng::obis profile)
+                        // auto const last = sml::to_index(subrr.get_end().to_utc_time_point(), subrr.get_profile());
+                        //
+                        // values
+                        // Emit only values that are after "first"
+                        //
+                        emit_values(
+                            os,
+                            subrr,
+                            srv_id,
+                            debug_mode,
+                            pos_ro->first, // first time slot
+                            pos->second    // readout data
+                        );
                     }
-                    //
-                    //  next register
-                    //
-                    ++pos;
-                } while (pos != data.end());
+                }
             }
         }
 
@@ -581,24 +590,17 @@ namespace smf {
             report_range const &subrr,
             srv_id_t srv_id,
             bool debug_mode,
-            // std::chrono::system_clock::time_point start_day, //  start of day
-            // std::size_t count,                               //  entries in time span
             std::uint64_t first_slot,
             std::map<std::int64_t, sml_data> const &load) {
 
             BOOST_ASSERT(!load.empty());
 
-            // detect gaps
-            // auto const start_data = sml::restore_time_point(load.begin()->first, subrr.get_profile());
-            // auto const idx_day = sml::to_index(start_day, profile);
             auto const [slot_start, slot_end] = subrr.get_slots();
-            if (debug_mode) {
-                // ;
-            }
+            BOOST_ASSERT(slot_start < slot_end);
+            BOOST_ASSERT(slot_start <= first_slot);
 
             //
-            // 96 entries per day
-            // ToDo: calculate this number from profile and time span
+            // N entries per day
             //
 
             for (auto idx = first_slot; idx < slot_end; ++idx) {
@@ -636,9 +638,12 @@ namespace smf {
                 auto const h = fill_up(
                     {"[DEBUG]",
                      cyng::to_string(subrr.get_profile()),
-                     std::to_string(slot_start),
+                     cyng::as_string(subrr.get_start(), "%d-%m-%yT%H:%M:%S"),
+                     cyng::as_string(subrr.get_end(), "%d-%m-%yT%H:%M:%S"),
                      std::to_string(first_slot),
                      std::to_string(slot_end),
+                     std::to_string(slot_end - first_slot),
+                     std::to_string(slot_start),
                      std::to_string(first),
                      std::to_string(last),
                      std::to_string(load.size())});

@@ -21,6 +21,7 @@
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
+#include <cyng/parse/duration.h>
 #include <cyng/sys/locale.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/stash.h>
@@ -51,7 +52,7 @@ namespace smf {
             cyng::make_param("tag", tag),
             cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
-            cyng::make_param("network.delay", 20), //  seconds to wait before starting ip-t client
+            cyng::make_param("network.delay", std::chrono::seconds(20)), //  seconds to wait before starting ip-t client
             create_server_spec(cwd),
             create_push_spec(),
             create_client_spec(),
@@ -124,8 +125,8 @@ namespace smf {
         //
         //  seconds to wait before starting ip-t client
         //
-        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network.delay"].get(), 20);
-        CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
+        auto const delay = cyng::to_seconds(reader.get("network.delay", "00:00:20"));
+        CYNG_LOG_INFO(logger, "start ipt bus in " << delay.count() << " seconds");
 
         //
         //	connect to ip-t server
@@ -137,7 +138,7 @@ namespace smf {
             tag,
             node_name,
             std::move(tgl_ipt),
-            std::chrono::seconds(delay),
+            delay,
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["SML"].get())),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["IEC"].get())),
             ipt::read_push_channel_config(cyng::container_cast<cyng::param_map_t>(reader["push-channel"]["DLMS"].get())));

@@ -146,7 +146,7 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "lpex.reports" / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "lpex-reports" / get_prefix(profile)).string()),
                 cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", "LPEx-"),
                 cyng::make_param("separated.by.devices", false), // individual reports for each device

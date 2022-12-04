@@ -95,15 +95,6 @@ namespace smf {
     void sml_target::get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
         // CYNG_LOG_DEBUG(logger_, "get_profile_list_response: " << msg);
         auto const [srv, path, act, reg, val, stat, list] = sml::read_get_profile_list_response(msg);
-        for (auto const &ro : list) {
-            //  there is a problem with OBIS code "01 00 00 09 0b 00" which contains an invalid data type of
-            //  std::chrono::duration< ... ratio<1,10000000> >
-            //  CURRENT_UTC
-            // if (ro.first == cyng::make_obis({0x01, 0x00, 0x00, 0x09, 0x0b, 0x00})) {
-            //    CYNG_LOG_DEBUG(logger_, "get_profile_list_response: " << msg);
-            //}
-            CYNG_LOG_DEBUG(logger_, path << " - " << ro.first << ": " << ro.second);
-        }
 
         BOOST_ASSERT(path.size() == 1);
         if (!path.empty()) {

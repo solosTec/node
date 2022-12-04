@@ -123,12 +123,6 @@ namespace smf {
         }
 
         //
-        //  seconds to wait before starting ip-t client
-        //
-        // auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network.delay"].get(), 10);
-        // CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
-
-        //
         //	connect to cluster
         //
         join_cluster(
@@ -139,7 +133,6 @@ namespace smf {
             node_name,
             std::move(tgl_cluster),
             client_login,
-            // client_out,
             (reconnect_timeout < 10) ? 10 : reconnect_timeout,
             std::move(tgl_ipt),
             // std::chrono::seconds(delay),

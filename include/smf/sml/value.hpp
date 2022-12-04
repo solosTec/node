@@ -38,7 +38,9 @@ namespace smf {
         namespace detail {
             template <typename T> struct factory_policy {};
 
-            template <> struct factory_policy<bool> { static cyng::attr_t create(bool b); };
+            template <> struct factory_policy<bool> {
+                static cyng::attr_t create(bool b);
+            };
 
             template <> struct factory_policy<std::uint8_t> {
                 template <typename U> static cyng::attr_t create(U v) {
@@ -85,25 +87,39 @@ namespace smf {
                 static cyng::attr_t create(std::chrono::system_clock::time_point &&v);
                 static cyng::attr_t create(std::chrono::system_clock::time_point const &v);
             };
+            template <> struct factory_policy<cyng::date> {
+                static cyng::attr_t create(cyng::date &&v);
+                static cyng::attr_t create(cyng::date const &v);
+            };
             template <> struct factory_policy<std::chrono::milliseconds> {
                 static cyng::attr_t create(std::chrono::milliseconds v);
             };
-            template <> struct factory_policy<std::chrono::seconds> { static cyng::attr_t create(std::chrono::seconds v); };
-            template <> struct factory_policy<std::chrono::minutes> { static cyng::attr_t create(std::chrono::minutes v); };
+            template <> struct factory_policy<std::chrono::seconds> {
+                static cyng::attr_t create(std::chrono::seconds v);
+            };
+            template <> struct factory_policy<std::chrono::minutes> {
+                static cyng::attr_t create(std::chrono::minutes v);
+            };
 
             template <> struct factory_policy<cyng::buffer_t> {
                 static cyng::attr_t create(cyng::buffer_t &&v);
                 static cyng::attr_t create(cyng::buffer_t const &v);
             };
-            template <> struct factory_policy<std::string> { static cyng::attr_t create(std::string v); };
+            template <> struct factory_policy<std::string> {
+                static cyng::attr_t create(std::string v);
+            };
 
             template <> struct factory_policy<char const *> {
                 static cyng::attr_t create(char const *p) { return factory_policy<std::string>::create(std::string(p)); }
             };
 
-            template <> struct factory_policy<cyng::obis> { static cyng::attr_t create(cyng::obis v); };
+            template <> struct factory_policy<cyng::obis> {
+                static cyng::attr_t create(cyng::obis v);
+            };
 
-            template <> struct factory_policy<boost::asio::ip::address> { static cyng::attr_t create(boost::asio::ip::address v); };
+            template <> struct factory_policy<boost::asio::ip::address> {
+                static cyng::attr_t create(boost::asio::ip::address v);
+            };
             template <> struct factory_policy<boost::asio::ip::address_v4> {
                 static cyng::attr_t create(boost::asio::ip::address_v4 v);
             };
@@ -168,6 +184,11 @@ namespace smf {
         cyng::tuple_t make_timestamp();
         cyng::attr_t make_timestamp_attr(std::chrono::system_clock::time_point);
         cyng::attr_t make_timestamp_attr();
+
+        cyng::attr_t make_date_attr(std::chrono::system_clock::time_point);
+        cyng::attr_t make_date_attr();
+        cyng::tuple_t make_date(cyng::date);
+        cyng::tuple_t make_date();
 
         /**
          * Make a timestamp as type TIME_SECINDEX (1)

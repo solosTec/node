@@ -154,7 +154,8 @@ namespace smf {
             //  encoded as simple unix time stamp
             //
             if (obj.tag() == cyng::TC_UINT32) {
-                return cyng::make_object(std::chrono::system_clock::from_time_t(cyng::value_cast<std::uint32_t>(obj, 0u)));
+                auto const tt = cyng::numeric_cast<std::uint32_t>(obj, 0u);
+                return cyng::make_object(std::chrono::system_clock::from_time_t(tt));
             }
 
             //
@@ -178,7 +179,39 @@ namespace smf {
                 }
             }
             return cyng::make_object(std::chrono::system_clock::from_time_t(0u));
-            // return cyng::make_object(std::chrono::system_clock::now());
+        }
+
+        cyng::object read_date(cyng::object obj) {
+            //
+            //  encoded as simple unix time stamp in UTC
+            //
+            if (obj.tag() == cyng::TC_UINT32) {
+                return cyng::make_object(cyng::date::make_date_from_utc_time(cyng::numeric_cast<std::uint32_t>(obj, 0u)));
+            }
+
+            //
+            //  could be unix time stamp or second index
+            //
+            else if (obj.tag() == cyng::TC_TUPLE) {
+                auto const choice = cyng::container_cast<cyng::tuple_t>(obj);
+                BOOST_ASSERT_MSG(choice.size() == 2, "TIME");
+                if (choice.size() == 2) {
+
+                    auto code = cyng::value_cast<std::uint8_t>(choice.front(), 0);
+                    switch (code) {
+                    case TIME_TIMESTAMP: {
+                        //	unix time
+                        std::time_t const tt = cyng::numeric_cast<std::uint32_t>(choice.back(), 0);
+                        return cyng::make_object(cyng::date::make_date_from_utc_time(tt));
+                    } break;
+                    case TIME_SECINDEX: return choice.back();
+                    default: break;
+                    }
+                }
+            }
+
+            //  1970-1-1
+            return cyng::make_object(cyng::make_epoch_date());
         }
 
         std::string to_string(cyng::object obj) {

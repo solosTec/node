@@ -253,6 +253,10 @@ namespace cyng {
             return serializer<cyng::tuple_t, SML>::write(os, smf::sml::make_timestamp(tp));
         }
 
+        std::size_t serializer<cyng::date, SML>::write(std::ostream &os, cyng::date v) {
+            return serializer<cyng::tuple_t, SML>::write(os, smf::sml::make_date(v));
+        }
+
         std::size_t serializer<cyng::tuple_t, SML>::write(std::ostream &os, cyng::tuple_t const &v) {
             calc_size const cs(os);
 

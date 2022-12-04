@@ -79,8 +79,8 @@ namespace smf {
             cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
             // cyng::make_param("utc.offset", cyng::sys::delta_utc(now).count()),
-            cyng::make_param("model", "smf.store"), //  ip-t ident
-            cyng::make_param("network.delay", 6),   //  seconds to wait before starting ip-t client
+            cyng::make_param("model", "smf.store"),                     //  ip-t ident
+            cyng::make_param("network.delay", std::chrono::seconds(6)), //  seconds to wait before starting ip-t client
 
             //  list of database(s)
             cyng::make_param(
@@ -576,25 +576,16 @@ namespace smf {
         //
         //  seconds to wait before starting ip-t client
         //
-        auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network.delay"].get(), 6);
+        // auto const delay = cyng::numeric_cast<std::uint32_t>(reader["network.delay"].get(), 6);
+        auto const delay = cyng::to_seconds(reader.get("network.delay", "00:00:06"));
+
         CYNG_LOG_INFO(logger, "start ipt bus in " << delay << " seconds");
 
         //
         //  connect to ip-t server
         //
         join_network(
-            ctl,
-            channels,
-            logger,
-            tag,
-            node_name,
-            model,
-            std::move(tgl),
-            std::chrono::seconds(delay),
-            target_sml,
-            target_iec,
-            target_dlms,
-            writer);
+            ctl, channels, logger, tag, node_name, model, std::move(tgl), delay, target_sml, target_iec, target_dlms, writer);
     }
 
     void controller::start_cleanup_tasks(

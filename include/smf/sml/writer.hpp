@@ -59,7 +59,13 @@ namespace cyng {
             static std::size_t write(std::ostream &os, std::chrono::system_clock::time_point v);
         };
 
-        template <> struct serializer<cyng::tuple_t, SML> { static std::size_t write(std::ostream &os, cyng::tuple_t const &v); };
+        template <> struct serializer<cyng::date, SML> {
+            static std::size_t write(std::ostream &os, cyng::date v);
+        };
+
+        template <> struct serializer<cyng::tuple_t, SML> {
+            static std::size_t write(std::ostream &os, cyng::tuple_t const &v);
+        };
 
         /**
          * serialize as a tuple with two elements, the index (u8) and the value itself.

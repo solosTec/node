@@ -34,8 +34,15 @@ namespace smf {
          * Otherwise the value is an u32 value.
          *
          * Precondition is that the object contains a list/tuple with the a size of 2.
+         *
+         * @return contains a std::chrono::system_clock::time_point
          */
         cyng::object read_time(cyng::object obj);
+
+        /**
+         * Same a read_time() but contains a date object.
+         */
+        cyng::object read_date(cyng::object obj);
 
         /**
          * Convert the binary buffer into a string

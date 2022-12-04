@@ -309,7 +309,7 @@ namespace smf {
         std::string const sql =
             "SELECT TSMLReadout.tag, TSMLReadout.meterID, TSMLReadoutData.register, TSMLReadoutData.gen, TSMLReadout.status, datetime(TSMLReadout.actTime), TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit "
             "FROM TSMLReadout JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
-            "WHERE profile = ? AND received BETWEEN julianday(?) AND julianday(?) "
+            "WHERE profile = ? AND TSMLReadout.actTime BETWEEN julianday(?) AND julianday(?) "
             "ORDER BY TSMLReadout.meterID, TSMLReadoutData.register, TSMLReadout.actTime";
         auto stmt = db.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);
@@ -322,6 +322,7 @@ namespace smf {
 
             //  get timestamps in local time
             auto [start, end] = subrr.get_range();
+            BOOST_ASSERT(start < end);
 
 #ifdef _DEBUG
             std::cout << subrr << std::endl;
@@ -366,9 +367,13 @@ namespace smf {
                 //
                 auto const act_time = rec.value("actTime", start.to_utc_time_point());
 #ifdef _DEBUG
-                std::cout << "act_time: " << act_time << " (" << start.to_utc_time_point() << ")" << std::endl;
-                std::cout << rec.to_string() << std::endl;
+                std::cout << start.to_utc_time_point() << ", act_time: " << act_time << ", " << end.to_utc_time_point()
+                          << std::endl;
+                // std::cout << rec.to_string() << std::endl;
 #endif
+                BOOST_ASSERT(start.to_utc_time_point() <= act_time);
+                BOOST_ASSERT(act_time <= end.to_utc_time_point());
+
                 auto const slot = sml::to_index(act_time, subrr.get_profile());
                 if (slot.second) {
                     auto set_time = sml::restore_time_point(slot.first, subrr.get_profile());

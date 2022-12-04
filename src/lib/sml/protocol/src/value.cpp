@@ -22,6 +22,13 @@ namespace smf {
                 return cyng::make_attr(PROC_PAR_TIME, make_timestamp(v));
             }
 
+            cyng::attr_t factory_policy<cyng::date>::create(cyng::date &&v) {
+                return cyng::make_attr(PROC_PAR_TIME, make_date(std::move(v)));
+            }
+            cyng::attr_t factory_policy<cyng::date>::create(cyng::date const &v) {
+                return cyng::make_attr(PROC_PAR_TIME, make_date(v));
+            }
+
             cyng::attr_t factory_policy<std::chrono::milliseconds>::create(std::chrono::milliseconds v) {
                 return cyng::make_attr(PROC_PAR_VALUE, static_cast<std::uint32_t>(v.count()));
             }
@@ -91,6 +98,18 @@ namespace smf {
             return cyng::make_tuple(static_cast<std::uint8_t>(attr.first), std::move(attr.second));
         }
         cyng::tuple_t make_timestamp() { return make_timestamp(std::chrono::system_clock::now()); }
+
+        cyng::attr_t make_date_attr(cyng::date d) {
+            std::time_t const ut = d.to_utc_time();
+            return cyng::make_attr(TIME_TIMESTAMP, static_cast<std::uint32_t>(ut));
+        }
+        cyng::attr_t make_date_attr() { return make_date_attr(cyng::make_utc_date()); }
+
+        cyng::tuple_t make_date(cyng::date d) {
+            auto attr = make_date_attr(d);
+            return cyng::make_tuple(static_cast<std::uint8_t>(attr.first), std::move(attr.second));
+        }
+        cyng::tuple_t make_date() { return make_date(cyng::make_utc_date()); }
 
         cyng::tuple_t make_sec_index(std::chrono::system_clock::time_point tp) {
             //	1. UNIX timestamp - Y2K38 problem.
