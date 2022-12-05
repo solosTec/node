@@ -19,8 +19,8 @@ namespace smf {
         std::string push_server_path(std::uint8_t type) {
             return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "push.server");
         }
-        std::string delay_path(std::size_t type) {
-            return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "period");
+        std::string interval_path(std::size_t type) {
+            return cyng::to_path(cfg::sep, cfg_cache::root, std::to_string(type), "interval");
         }
     } // namespace
 
@@ -61,9 +61,9 @@ namespace smf {
         ;
     }
 
-    std::chrono::minutes cfg_cache::get_period() const {
+    std::chrono::minutes cfg_cache::get_interval() const {
         return cfg_.get_value(
-            delay_path(get_index()),
+            interval_path(get_index()),
             std::chrono::minutes(
 #ifdef _DEBUG
                 2u
@@ -75,8 +75,11 @@ namespace smf {
 
     bool cfg_cache::set_enabled(bool b) { return cfg_.set_value(enabled_path(get_index()), b); }
 
-    bool cfg_cache::set_push_server(std::string server) { return cfg_.set_value(push_server_path(get_index()), server); }
+    bool cfg_cache::set_push_server(std::string server) {
+        auto const vec = cyng::split(server, ":");
+        return (vec.size() == 2) ? cfg_.set_value(push_server_path(get_index()), server) : false;
+    }
 
-    bool cfg_cache::set_period(std::chrono::minutes d) { return cfg_.set_value(delay_path(get_index()), d); }
+    bool cfg_cache::set_period(std::chrono::minutes d) { return cfg_.set_value(interval_path(get_index()), d); }
 
 } // namespace smf

@@ -97,12 +97,6 @@ namespace smf {
         bool is_lmn_enabled() const;
 
         /**
-         * When connection to target got lost
-         * wait for this specified time to reconnect.
-         */
-        // std::chrono::seconds get_timeout() const;
-
-        /**
          * Duplicate from cfg_lmn class
          *
          * @return name of serial port

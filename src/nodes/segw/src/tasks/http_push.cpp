@@ -1,4 +1,4 @@
-﻿#include <tasks/push.h>
+﻿#include <tasks/http_push.h>
 
 #include <smf/ipt/bus.h>
 #include <smf/obis/db.h>
@@ -12,17 +12,17 @@
 #include <iostream>
 
 namespace smf {
-    push::push(cyng::channel_weak wp
+    http_push::http_push(cyng::channel_weak wp
 		, cyng::logger logger
         , ipt::bus& bus
         , cfg& config
         , cyng::buffer_t meter
         , std::uint8_t nr)
 		: sigs_{
-            std::bind(&push::init, this),	//	0
-            std::bind(&push::run, this),	//	1
+            std::bind(&http_push::init, this),	//	0
+            std::bind(&http_push::run, this),	//	1
             std::bind(
-                &push::on_channel_open,
+                &http_push::on_channel_open,
                 this,
                 std::placeholders::_1,
                 std::placeholders::_2,
@@ -30,11 +30,11 @@ namespace smf {
                 std::placeholders::_4,
                 std::placeholders::_5),// "on.channel.open"
             std::bind(
-                &push::on_channel_close,
+                &http_push::on_channel_close,
                 this,
                 std::placeholders::_1,
                 std::placeholders::_2), // "on.channel.close"
-                std::bind(&push::stop, this, std::placeholders::_1)	
+                std::bind(&http_push::stop, this, std::placeholders::_1)	
 		}	
 		, channel_(wp)
 		, logger_(logger)
@@ -50,9 +50,9 @@ namespace smf {
         }
     }
 
-    void push::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[push] stopped"); }
+    void http_push::stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[push] stopped"); }
 
-    void push::init() {
+    void http_push::init() {
 
         auto const now = std::chrono::system_clock::now();
 
@@ -93,7 +93,7 @@ namespace smf {
         }
     }
 
-    void push::run() {
+    void http_push::run() {
 
         std::string target;
 
@@ -137,9 +137,10 @@ namespace smf {
         }
     }
 
-    bool push::open_channel(ipt::push_channel &&pc) { return bus_.open_channel(pc, channel_); }
+    bool http_push::open_channel(ipt::push_channel &&pc) { return bus_.open_channel(pc, channel_); }
 
-    void push::on_channel_open(bool success, std::uint32_t channel, std::uint32_t source, std::uint32_t count, std::string target) {
+    void
+    http_push::on_channel_open(bool success, std::uint32_t channel, std::uint32_t source, std::uint32_t count, std::string target) {
         if (success) {
             CYNG_LOG_INFO(
                 logger_,
@@ -161,7 +162,7 @@ namespace smf {
         }
     }
 
-    void push::collect_data(std::uint32_t channel, std::uint32_t source) {
+    void http_push::collect_data(std::uint32_t channel, std::uint32_t source) {
 
         trx_.reset();
 
@@ -253,7 +254,7 @@ namespace smf {
         bus_.transmit(std::make_pair(channel, source), buffer);
     }
 
-    cyng::tuple_t push::convert_to_payload(
+    cyng::tuple_t http_push::convert_to_payload(
         cyng::table const *tbl_mirror_data,
         cyng::key_t const &pk,
         std::uint32_t ops,
@@ -333,7 +334,8 @@ namespace smf {
 
         // return payload;
     }
-    cyng::obis_path_t push::get_registers(cyng::table const *tbl) {
+
+    cyng::obis_path_t http_push::get_registers(cyng::table const *tbl) {
         BOOST_ASSERT(boost::algorithm::equals(tbl->meta().get_name(), "pushRegister"));
 
         cyng::obis_path_t regs;
@@ -360,7 +362,7 @@ namespace smf {
         return regs;
     }
 
-    void push::on_channel_close(bool success, std::uint32_t channel) {
+    void http_push::on_channel_close(bool success, std::uint32_t channel) {
         if (success) {
             CYNG_LOG_INFO(logger_, "[push] channel " << channel << " is closed");
         } else {

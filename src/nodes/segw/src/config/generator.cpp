@@ -5,9 +5,10 @@
 #include <smf/config/protocols.h>
 #include <smf/obis/defs.h>
 
+#include <cyng/io/io_buffer.h>
 #include <cyng/obj/container_factory.hpp>
-#include <cyng/rnd/rnd.hpp>
 #include <cyng/obj/intrinsics/date.h>
+#include <cyng/rnd/rnd.hpp>
 #include <cyng/sys/host.h>
 #include <cyng/sys/locale.h>
 #include <cyng/sys/net.h>
@@ -55,7 +56,7 @@ namespace smf {
 
                 //	array of all available serial ports
                 //	with broker
-                create_lmn_spec(hostname),
+                create_lmn_spec(hostname, srv_mac),
 
                 //	GPIO
                 create_gpio_spec(),
@@ -74,7 +75,7 @@ namespace smf {
 
     cyng::param_t create_wireless_virtual_meter_spec() {
         return cyng::make_param(
-            "virtual-meter",
+            "virtual.meter",
             cyng::tuple_factory(
                 cyng::make_param("enabled", false),
                 cyng::make_param("server", "01-d81c-10000001-3c-02"),                            //	1CD8
@@ -83,9 +84,27 @@ namespace smf {
                 ));
     }
 
+    cyng::param_t create_http_post(cyng::mac48 const &srv_mac) {
+        //
+        //  Build the server ID from the first MAC
+        //
+        auto const tmp = cyng::to_buffer(srv_mac);
+        auto const id = cyng::io::to_hex(tmp);
+        BOOST_ASSERT_MSG(id.size() == 12, "invalid serial number");
+
+        return cyng::make_param(
+            "http.post",
+            cyng::tuple_factory(
+                cyng::make_param("enabled", false),
+                cyng::make_param("server", "localhost:4455"),          // HTTP server
+                cyng::make_param("serial", id),                        // serial number
+                cyng::make_param("interval", std::chrono::minutes(30)) // minutes - "00:30:00.000000"
+                ));
+    }
+
     cyng::param_t create_wired_virtual_meter_spec() {
         return cyng::make_param(
-            "virtual-meter",
+            "virtual.meter",
             cyng::tuple_factory(
                 cyng::make_param("enabled", false),
                 cyng::make_param("server", "51540472"),
@@ -94,7 +113,7 @@ namespace smf {
                 ));
     }
 
-    cyng::tuple_t create_wireless_spec(std::string const &hostname) {
+    cyng::tuple_t create_wireless_spec(std::string const &hostname, cyng::mac48 const &srv_mac) {
 
         return cyng::make_tuple(
 
@@ -153,13 +172,14 @@ namespace smf {
             cyng::make_param(
                 "cache",
                 cyng::make_tuple(
-                    cyng::make_param("enabled", true),                           // active
-                    cyng::make_param("push.server", "segw.ch:2002"),             // TCP/IP server
-                    cyng::make_param("period", std::chrono::minutes(60)) // minutes - "00:60:00.000000"
+                    cyng::make_param("enabled", true),                     // active
+                    cyng::make_param("push.server", "segw.ch:2002"),       // TCP/IP server
+                    cyng::make_param("interval", std::chrono::minutes(60)) // minutes - "00:60:00.000000"
                     )),
             create_wireless_broker(hostname),
             create_wireless_block_list(),
-            create_wireless_virtual_meter_spec()
+            create_wireless_virtual_meter_spec(),
+            create_http_post(srv_mac)
 
         );
     }
@@ -467,9 +487,9 @@ namespace smf {
 #else
                 cyng::make_param("file.name", (cwd / "segw.database").string()),
 #endif
-                cyng::make_param("busy.timeout", std::chrono::milliseconds(12)),         //	seconds
-                cyng::make_param("watchdog", std::chrono::seconds(30)),             //	for database connection
-                cyng::make_param("connection.type", "SQLite") //	file based
+                cyng::make_param("busy.timeout", std::chrono::milliseconds(12)), //	seconds
+                cyng::make_param("watchdog", std::chrono::seconds(30)),          //	for database connection
+                cyng::make_param("connection.type", "SQLite")                    //	file based
                 ));
     }
 
@@ -539,9 +559,9 @@ namespace smf {
                     ));
     }
 
-    cyng::param_t create_lmn_spec(std::string const &hostname) {
+    cyng::param_t create_lmn_spec(std::string const &hostname, cyng::mac48 const &srv_mac) {
         //	list of all serial ports
-        return cyng::make_param("lmn", cyng::make_vector({create_wireless_spec(hostname), create_rs485_spec(hostname)}));
+        return cyng::make_param("lmn", cyng::make_vector({create_wireless_spec(hostname, srv_mac), create_rs485_spec(hostname)}));
     }
 
     std::string detect_model(std::string const &srv_id) {

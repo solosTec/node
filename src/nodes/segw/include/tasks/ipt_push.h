@@ -4,8 +4,8 @@
  * Copyright (c) 2022 Sylko Olzscher
  *
  */
-#ifndef SMF_SEGW_TASK_PUSH_H
-#define SMF_SEGW_TASK_PUSH_H
+#ifndef SMF_SEGW_TASK_IPT_PUSH_H
+#define SMF_SEGW_TASK_IPT_PUSH_H
 
 #include <cfg.h>
 
@@ -25,7 +25,7 @@ namespace smf {
     /**
      * control push operations
      */
-    class push {
+    class ipt_push {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
@@ -36,7 +36,7 @@ namespace smf {
             std::function<void(cyng::eod)>>;
 
       public:
-        push(cyng::channel_weak, cyng::logger, ipt::bus &, cfg &config, cyng::buffer_t, std::uint8_t nr);
+        ipt_push(cyng::channel_weak, cyng::logger, ipt::bus &, cfg &config, cyng::buffer_t, std::uint8_t nr);
 
       private:
         void stop(cyng::eod);

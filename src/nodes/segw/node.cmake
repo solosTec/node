@@ -46,10 +46,11 @@ set (segw_tasks
     include/tasks/nms.h
     include/tasks/rdr.h
     include/tasks/en13757.h
-#    include/tasks/readout_cache.h
     include/tasks/counter.h
-    include/tasks/push.h
+    include/tasks/ipt_push.h
+    include/tasks/http_push.h
     include/tasks/store.h
+    include/tasks/emt.h
     src/tasks/bridge.cpp
     src/tasks/lmn.cpp
     src/tasks/gpio.cpp
@@ -61,10 +62,11 @@ set (segw_tasks
     src/tasks/nms.cpp
     src/tasks/rdr.cpp
     src/tasks/en13757.cpp
-#    src/tasks/readout_cache.cpp
     src/tasks/counter.cpp
-    src/tasks/push.cpp
+    src/tasks/ipt_push.cpp
+    src/tasks/http_push.cpp
     src/tasks/store.cpp
+    src/tasks/emt.cpp
 )
 
 set (segw_config
@@ -82,6 +84,7 @@ set (segw_config
     include/config/cfg_hardware.h
     include/config/generator.h
     include/config/transfer.h
+    include/config/cfg_http_post.h
     src/cfg.cpp
     src/config/cfg_ipt.cpp
     src/config/cfg_lmn.cpp
@@ -96,6 +99,7 @@ set (segw_config
     src/config/cfg_hardware.cpp
     src/config/generator.cpp
     src/config/transfer.cpp
+    src/config/cfg_http_post.cpp
 )
 
 set (segw_sml

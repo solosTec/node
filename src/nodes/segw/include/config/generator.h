@@ -19,10 +19,11 @@ namespace smf {
         cyng::mac48 srv_mac,
         std::string srv_id,
         boost::uuids::uuid tag);
-    cyng::tuple_t create_wireless_spec(std::string const &hostname);
+    cyng::tuple_t create_wireless_spec(std::string const &hostname, cyng::mac48 const &srv_mac);
     cyng::tuple_t create_rs485_spec(std::string const &hostname);
     cyng::param_t create_wireless_broker(std::string const &hostname);
     cyng::param_t create_wireless_block_list();
+    cyng::param_t create_http_post(cyng::mac48 const &srv_mac);
     cyng::param_t create_rs485_broker(std::string const &hostname);
     cyng::param_t create_rs485_listener();
     cyng::param_t create_rs485_block_list();
@@ -36,7 +37,7 @@ namespace smf {
     cyng::param_t create_ipt_params();
     cyng::param_t create_wireless_virtual_meter_spec();
     cyng::param_t create_wired_virtual_meter_spec();
-    cyng::param_t create_lmn_spec(std::string const &hostname);
+    cyng::param_t create_lmn_spec(std::string const &hostname, cyng::mac48 const &srv_mac);
     cyng::param_t create_net(cyng::mac48 const &, std::string const &);
 
     /**

@@ -8,7 +8,7 @@
 #include <router.h>
 
 #include <storage.h>
-#include <tasks/push.h>
+#include <tasks/ipt_push.h>
 #include <tasks/store.h>
 
 #include <config/cfg_sml.h>
@@ -274,7 +274,7 @@ namespace smf {
                         logger_,
                         "[ipt] initialize: \"push\" task [" << meter << " => " << target << "], " << obis::get_name(profile));
 
-                    auto channel = ctl_.create_named_channel_with_ref<push>("push", logger_, bus_, cfg_, meter, nr);
+                    auto channel = ctl_.create_named_channel_with_ref<ipt_push>("push", logger_, bus_, cfg_, meter, nr);
                     BOOST_ASSERT(channel->is_open());
                     channel->dispatch("init");
                     task_ids.emplace(key, channel->get_id());

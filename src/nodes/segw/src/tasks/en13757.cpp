@@ -312,7 +312,7 @@ namespace smf {
 
         auto const payload = mbus::radio::decode(address, access_no, key, data);
         if (mbus::radio::is_decoded(payload)) {
-            CYNG_LOG_DEBUG(logger_, "[EN-13757] " << to_string(address) << " payload: " << payload);
+            CYNG_LOG_DEBUG(logger_, "[EN-13757] " << to_string(address) << " payload size " << payload.size() << ": " << payload);
 
             //
             //  update table "readout" with latest readout meta data
@@ -604,7 +604,7 @@ namespace smf {
             //
             //  restart push
             //
-            auto const period = cfg_cache_.get_period();
+            auto const period = cfg_cache_.get_interval();
             sp->suspend(period, "push");
 
             auto const host = cfg_cache_.get_push_host();

@@ -61,6 +61,11 @@ namespace smf {
         cyng::db::statement_ptr stmt_select,
         std::size_t counter,
         cyng::param_map_t &&pmap);
+    void read_http_post(
+        cyng::db::statement_ptr stmt_insert,
+        cyng::db::statement_ptr stmt_select,
+        std::size_t counter,
+        cyng::param_map_t &&pmap);
 
     /**
      * write a JSON configuration with the content of the config database.

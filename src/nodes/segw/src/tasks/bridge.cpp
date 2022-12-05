@@ -10,6 +10,7 @@
 #include <tasks/CP210x.h>
 #include <tasks/broker.h>
 #include <tasks/counter.h>
+#include <tasks/emt.h>
 #include <tasks/en13757.h>
 #include <tasks/filter.h>
 #include <tasks/gpio.h>
@@ -22,6 +23,7 @@
 #include <config/cfg_broker.h>
 #include <config/cfg_cache.h>
 #include <config/cfg_gpio.h>
+#include <config/cfg_http_post.h>
 #include <config/cfg_listener.h>
 #include <config/cfg_nms.h>
 #include <config/cfg_sml.h>
@@ -779,20 +781,15 @@ namespace smf {
     void bridge::init_filter(lmn_type type) {
         cfg_blocklist cfg(cfg_, type);
 
-        //  "filter@" + port name
-        auto const task_name = cfg.get_task_name();
-        CYNG_LOG_INFO(logger_, "create filter [" << task_name << "]");
-
         if (type == lmn_type::WIRELESS) {
-            //
-            //  start wireless M-Bus processor
-            //
-            auto channel_proc = ctl_.create_named_channel_with_ref<en13757>("EN-13757", ctl_, logger_, db_, cfg_);
-            stash_.lock(channel_proc);
 
             //
             //  start filter for wireless M-Bus data (EN-13757)
             //
+            //  "filter@" + port name
+            auto const task_name = cfg.get_task_name();
+            CYNG_LOG_INFO(logger_, "create filter task [" << task_name << "]");
+
             auto channel_filter = ctl_.create_named_channel_with_ref<filter>(task_name, ctl_, logger_, cfg_, type);
             BOOST_ASSERT(channel_filter->is_open());
             stash_.lock(channel_filter);
@@ -803,22 +800,46 @@ namespace smf {
             channel_filter->suspend(std::chrono::seconds(1), "update-statistics");
 
             //
+            //  start wireless M-Bus processor (protocol EN-13757)
+            //
+            auto channel_en13757 = ctl_.create_named_channel_with_ref<en13757>("EN-13757", ctl_, logger_, db_, cfg_);
+            stash_.lock(channel_en13757);
+            auto const en13757_task_name = channel_en13757->get_name();
+            BOOST_ASSERT_MSG(en13757_task_name == "EN-13757", "invalid task name");
+
+            //
+            //  start wireless M-Bus reader to generate HTTP POST messages
+            //
+            cfg_http_post http_post_cfg(cfg_, type);
+            auto const emt_task_name = http_post_cfg.get_emt_task_name();
+            CYNG_LOG_INFO(logger_, "create emt task [" << emt_task_name << "]");
+            auto channel_emt = ctl_.create_named_channel_with_ref<emt>(emt_task_name, ctl_, logger_, db_, cfg_);
+            stash_.lock(channel_emt);
+            if (!http_post_cfg.is_enabled()) {
+                CYNG_LOG_WARNING(logger_, "task [" << emt_task_name << "] is diabled");
+            }
+
+            //
+            //  clear listeners
+            //
+            channel_filter->dispatch("reset-data-sinks");
+
+            //
             //	broker tasks are target channels
             //  examples:
             //  broker@COM3
             //  broker@/dev/ttyAPP0
             //
-            //  Task "EN-13757" will be added automatically
-            //
             cfg_broker broker_cfg(cfg_, type);
-            channel_filter->dispatch("reset-data-sinks"); //  clear listeners
-            channel_filter->dispatch("add-data-sink", broker_cfg.get_task_name());
-            channel_filter->dispatch("add-data-sink", "EN-13757"); //  load profile
+            auto const broker_task_name = broker_cfg.get_task_name();
+            channel_filter->dispatch("add-data-sink", broker_task_name);
+            channel_filter->dispatch("add-data-sink", en13757_task_name); //  load profile
+            channel_filter->dispatch("add-data-sink", emt_task_name);     //  HTTP POST
 
             //  send data periodically
             cfg_cache cache_cfg(cfg_, type);
-            CYNG_LOG_TRACE(logger_, "[cache] push cycle " << cache_cfg.get_period());
-            channel_proc->suspend(cache_cfg.get_period(), "push");
+            CYNG_LOG_TRACE(logger_, "[cache] push cycle " << cache_cfg.get_interval());
+            channel_en13757->suspend(cache_cfg.get_interval(), "push");
 
         } else {
             CYNG_LOG_ERROR(logger_, "[filter] LMN type " << get_name(type) << " doesn't support filters");

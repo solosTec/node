@@ -670,6 +670,11 @@ namespace smf {
                     //  virtual meter
                     //
                     read_virtual_meter(stmt_insert, stmt_select, counter, cyng::container_cast<cyng::param_map_t>(param.second));
+                } else if (boost::algorithm::equals(key, "http.post")) {
+                    //
+                    //  HTTP post
+                    //
+                    read_http_post(stmt_insert, stmt_select, counter, cyng::container_cast<cyng::param_map_t>(param.second));
                 } else {
                     insert_config_record(
                         stmt_insert,
@@ -845,7 +850,7 @@ namespace smf {
 
             auto const key = sanitize_key(param.first);
 
-            if (boost::algorithm::equals(key, "period")) {
+            if (boost::algorithm::equals(key, "interval")) {
                 auto const inp = cyng::value_cast(param.second, "00:30:00.000000");
                 auto const period = cyng::to_minutes(inp);
                 insert_config_record(
@@ -949,6 +954,43 @@ namespace smf {
                     cyng::to_path(cfg::sep, "virtual.meter", std::to_string(counter), key),
                     param.second,
                     "virtual meter: " + key);
+            }
+        }
+    }
+
+    void read_http_post(
+        cyng::db::statement_ptr stmt_insert,
+        cyng::db::statement_ptr stmt_select,
+        std::size_t counter,
+        cyng::param_map_t &&pmap) {
+
+        //
+        //  reference to parent node
+        //
+        insert_config_record(
+            stmt_insert, stmt_select, cyng::to_path(cfg::sep, "cache", "parent"), cyng::make_object("lmn"), "parent node");
+
+        for (auto const &param : pmap) {
+
+            auto const key = sanitize_key(param.first);
+
+            if (boost::algorithm::equals(key, "interval")) {
+                auto const inp = cyng::value_cast(param.second, "00:30:00.000000");
+                auto const period = cyng::to_minutes(inp);
+                insert_config_record(
+                    stmt_insert,
+                    stmt_select,
+                    cyng::to_path(cfg::sep, "http.post", std::to_string(counter), key),
+                    cyng::make_object(period),
+                    "default period is 30 minutes");
+            } else {
+
+                insert_config_record(
+                    stmt_insert,
+                    stmt_select,
+                    cyng::to_path(cfg::sep, "http.post", std::to_string(counter), key),
+                    param.second,
+                    "http.post: " + key);
             }
         }
     }
@@ -1236,8 +1278,8 @@ namespace smf {
         // ipt config
         //
         cyng::vector_t cfg_ipt;
-        { 
-            auto r = cyng::extract(cfg, {"81490d0700ff", "81490d070001"}); 
+        {
+            auto r = cyng::extract(cfg, {"81490d0700ff", "81490d070001"});
             if (r.second) {
                 cfg_ipt.push_back(r.first.second);
             }

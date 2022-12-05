@@ -643,9 +643,9 @@ namespace smf {
                      std::to_string(first_slot),
                      std::to_string(slot_end),
                      std::to_string(slot_end - first_slot),
-                     std::to_string(slot_start),
-                     std::to_string(first),
-                     std::to_string(last),
+                     // std::to_string(slot_start),
+                     // std::to_string(first),
+                     // std::to_string(last),
                      std::to_string(load.size())});
                 emit_line(os, h);
             }

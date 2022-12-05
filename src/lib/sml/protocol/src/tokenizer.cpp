@@ -1,6 +1,6 @@
 #include <smf/sml/tokenizer.h>
 
-#ifdef _DEBUG_SML
+#if defined _DEBUG_SML || defined _DEBUG
 #include <iostream>
 #endif
 
@@ -42,6 +42,11 @@ namespace smf {
                 cb_(sml_type::EOM, data_.size(), data_);
                 return state::START;
             case 1: cb_(sml_type::OPTIONAL, data_.size(), data_); return state_;
+            case 0x2f:
+#ifdef _DEBUG
+                // std::cout << std::endl;
+#endif
+                return state::START;
             default: return start_data(c);
             }
 

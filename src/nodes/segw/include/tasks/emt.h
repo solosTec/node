@@ -4,29 +4,28 @@
  * Copyright (c) 2022 Sylko Olzscher
  *
  */
-#ifndef SMF_SMGW_TASK_EN13757_H
-#define SMF_SMGW_TASK_EN13757_H
+#ifndef SMF_SMGW_TASK_EMT_H
+#define SMF_SMGW_TASK_EMT_H
 
 #include <cfg.h>
-#include <config/cfg_cache.h>
+// #include <config/cfg_cache.h>
+// #include <config/cfg_sml.h>
+#include <config/cfg_http_post.h>
 #include <config/cfg_sml.h>
 
 #include <smf/mbus/radio/parser.h>
 
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
-#include <cyng/net/client_factory.hpp>
+// #include <cyng/net/client_factory.hpp>
 #include <cyng/task/task_fwd.h>
 
 namespace smf {
     /**
-     * Processor for wireless M-Bus data (EN 13757-4).
+     * Processor for wireless M-Bus data (EMT).
      *
-     * - decode data - if AES key available
-     * - build up load profile
-     * - update "meter" table
      */
-    class en13757 {
+    class emt {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
@@ -39,7 +38,7 @@ namespace smf {
             >;
 
       public:
-        en13757(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cyng::db::session, cfg &);
+        emt(cyng::channel_weak, cyng::controller &ctl, cyng::logger, cyng::db::session, cfg &);
 
       private:
         void stop(cyng::eod);
@@ -63,45 +62,10 @@ namespace smf {
          */
         void add_target_channel(std::string);
 
-        /**
-         * Check if an AES key is available and if that is the case, decode the data.
-         */
-        void decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data);
-        void decode(
-            cyng::table *tbl_readout,
-            cyng::table *tbl_data,
-            cyng::table *tbl_collector,
-            cyng::table *tbl_mirror,
-            srv_id_t address,
-            std::uint8_t access_no,
-            std::uint8_t frame_type,
-            cyng::buffer_t const &data,
-            cyng::crypto::aes_128_key const &,
-            bool auto_cfg,
-            cyng::obis def_profile);
-
-        void read_sml(
-            cyng::table *tbl_data,
-            cyng::table *tbl_mirror,
-            srv_id_t const &address,
-            std::string const &id,
-            cyng::buffer_t const &payload,
-            bool auto_cfg,
-            cyng::obis def_profile);
-        void read_mbus(
-            cyng::table *tbl_data,
-            cyng::table *tbl_mirror,
-            srv_id_t const &address,
-            std::string const &id,
-            std::uint8_t medium,
-            std::string const &manufacturer,
-            std::uint8_t frame_type,
-            cyng::buffer_t const &payload,
-            bool auto_cfg,
-            cyng::obis def_profile);
-
         void update_cache(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
-        void update_load_profile(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
+        // void update_load_profile(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
+
+        void decode(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
 
         /**
          * send data and clear cache
@@ -116,8 +80,8 @@ namespace smf {
         cyng::channel_weak channel_;
 
         cyng::controller &ctl_;
-        cyng::net::client_factory client_factory_;
-        cyng::net::client_proxy proxy_; //!< holds reference
+        // cyng::net::client_factory client_factory_;
+        // cyng::net::client_proxy proxy_; //!< holds reference
 
         /**
          * global logger
@@ -133,8 +97,7 @@ namespace smf {
          * config/data cache
          */
         cfg &cfg_;
-        cfg_sml const cfg_sml_;
-        cfg_cache const cfg_cache_;
+        cfg_http_post const cfg_http_post_;
 
         /**
          * parser for wireless M-Bus data

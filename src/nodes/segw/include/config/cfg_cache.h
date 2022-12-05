@@ -40,10 +40,22 @@ namespace smf {
          * @return the service/port
          */
         std::string get_push_service() const;
-        std::chrono::minutes get_period() const;
+
+        /**
+         * @return cycle time in minutes
+         */
+        std::chrono::minutes get_interval() const;
 
         bool set_enabled(bool b);
+
+        /**
+         * @param server must be formatted as "host:port"
+         */
         bool set_push_server(std::string server);
+
+        /**
+         * Set cycle time
+         */
         bool set_period(std::chrono::minutes);
 
         constexpr static char root[] = "cache";
