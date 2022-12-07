@@ -8,8 +8,6 @@
 #define SMF_SMGW_TASK_EMT_H
 
 #include <cfg.h>
-// #include <config/cfg_cache.h>
-// #include <config/cfg_sml.h>
 #include <config/cfg_http_post.h>
 #include <config/cfg_sml.h>
 
@@ -17,7 +15,7 @@
 
 #include <cyng/db/session.h>
 #include <cyng/log/logger.h>
-// #include <cyng/net/client_factory.hpp>
+#include <cyng/net/http_client_factory.h>
 #include <cyng/task/task_fwd.h>
 
 namespace smf {
@@ -80,8 +78,8 @@ namespace smf {
         cyng::channel_weak channel_;
 
         cyng::controller &ctl_;
-        // cyng::net::client_factory client_factory_;
-        // cyng::net::client_proxy proxy_; //!< holds reference
+        cyng::net::http_client_factory client_factory_;
+        cyng::net::http_client_proxy proxy_; //!< holds reference
 
         /**
          * global logger

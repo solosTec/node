@@ -9,10 +9,9 @@
 
 #include <config/cfg_nms.h>
 #include <config/generator.h>
+#include <config/transfer.h>
 #include <smf.h>
 #include <smf/obis/defs.h>
-// #include <storage_functions.h>
-#include <config/transfer.h>
 #include <tasks/bridge.h>
 #include <tasks/gpio.h>
 
@@ -21,9 +20,9 @@
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
-#include <cyng/obj/intrinsics/date.h>
 #include <cyng/sys/host.h>
 #include <cyng/sys/mac.h>
 #include <cyng/sys/net.h>

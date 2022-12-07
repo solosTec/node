@@ -590,7 +590,7 @@ namespace smf {
             auto val = read_value(code, scaler, raw);
             return std::make_pair(
                 code,
-                cyng::param_map_factory("unit", unit)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
+                cyng::param_map_factory("unit", unit)("unit.name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
                     "valTime", val_time)("status", status));
         }
 
@@ -654,7 +654,7 @@ namespace smf {
             //
             return std::make_pair(
                 code,
-                cyng::param_map_factory("unit", u)("unit-name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
+                cyng::param_map_factory("unit", u)("unit.name", unit_name)("scaler", scaler)("value", val)("raw", raw)(
                     "value", val));
         }
 

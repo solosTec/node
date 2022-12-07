@@ -47,6 +47,7 @@ namespace smf {
     cyng::meta_sql get_table_push_ops();
     cyng::meta_sql get_table_push_register();
     cyng::meta_sql get_table_mbus_cache();
+    cyng::meta_sql get_table_http_cache();
 
     /**
      * create all tables defined in get_sql_meta_data()

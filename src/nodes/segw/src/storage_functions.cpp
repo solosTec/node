@@ -338,6 +338,19 @@ namespace smf {
     }
     cyng::meta_sql get_table_mbus_cache() { return cyng::to_sql(get_store_mbus_cache(), {9, 512, 0, 0, 0, 0, 0}); }
 
+    cyng::meta_store get_store_http_cache() {
+        return cyng::meta_store(
+            "httpCache",
+            {
+                cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                //   -- body
+                cyng::column("payload", cyng::TC_BUFFER), // raw (encrypted)
+                cyng::column("received", cyng::TC_DATE)   // receiving time
+            },
+            1);
+    }
+    cyng::meta_sql get_table_http_cache() { return cyng::to_sql(get_store_http_cache(), {9, 512, 0}); }
+
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
             get_store_cfg(),            // cfg
@@ -352,7 +365,8 @@ namespace smf {
             get_store_readout_data(),   // readoutData - ephemeral
             get_store_mirror(),         // mirror
             get_store_mirror_data(),    // mirrorData
-            get_store_mbus_cache()      // mbusCache
+            get_store_mbus_cache(),     // mbusCache
+            get_store_http_cache()      // httpCache
         };
     }
 
@@ -361,7 +375,7 @@ namespace smf {
         return {
             get_table_cfg(),            // TCfg
             get_table_oplog(),          // TOpLog
-            get_table_meter_mbus(),     //  TMeterMBus
+            get_table_meter_mbus(),     // TMeterMBus
             get_table_meter_iec(),      // TMeterIEC
             get_table_data_collector(), // TDataCollector
             get_table_data_mirror(),    // TDataMirror
@@ -369,7 +383,8 @@ namespace smf {
             get_table_push_register(),  // TPushRegister
             get_table_mirror(),         // Tmirror
             get_table_mirror_data(),    // TMirrorData
-            get_table_mbus_cache()      // TMbusCache
+            get_table_mbus_cache(),     // TMbusCache
+            get_table_http_cache()      // THttpCache
         };
     }
 
@@ -392,6 +407,10 @@ namespace smf {
             return get_table_mirror();
         } else if (boost::algorithm::equals(name, "mirrorData")) {
             return get_table_mirror_data();
+        } else if (boost::algorithm::equals(name, "mbusCache")) {
+            return get_table_mbus_cache();
+        } else if (boost::algorithm::equals(name, "httpCache")) {
+            return get_table_http_cache();
         }
         BOOST_ASSERT_MSG(false, "table not found");
         return cyng::meta_sql(name, {}, 0);

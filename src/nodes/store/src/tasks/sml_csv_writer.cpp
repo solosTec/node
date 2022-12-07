@@ -82,7 +82,7 @@ namespace smf {
 
             for (auto const &value : values) {
                 auto const reader = cyng::make_reader(cyng::container_cast<cyng::param_map_t>(value.second));
-                auto const unit = reader.get("unit-name", "");
+                auto const unit = reader.get("unit.name", "");
                 auto const reading = reader.get("value", "0");
                 auto const scaler = reader.get<std::int8_t>("scaler", 0);
                 auto const descr = reader.get("descr", "");

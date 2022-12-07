@@ -87,7 +87,7 @@ namespace smf {
                     auto const value = reader.get("value");
                     auto const unit = mbus::to_unit(reader.get<std::uint8_t>("unit", 0));
                     if (unit != smf::mbus::unit::COUNT) {
-                        auto const unit_name = reader.get("unit-name", "");
+                        auto const unit_name = reader.get("unit.name", "");
                         emit_abl_value(of, code, value, "*" + unit_name, eol_);
                     } else {
                         emit_abl_value(of, code, value, "", eol_);

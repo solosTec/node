@@ -405,7 +405,7 @@ namespace smf {
                     //
                     auto const reader = cyng::make_reader(m.second);
                     auto const value = cyng::io::to_plain(reader.get("value"));
-                    auto const unit_name = cyng::value_cast(reader.get("unit-name"), "");
+                    auto const unit_name = cyng::value_cast(reader.get("unit.name"), "");
 
                     //
                     //	store data to csv file

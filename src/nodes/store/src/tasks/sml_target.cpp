@@ -156,10 +156,10 @@ namespace smf {
         }
 
         //  list response from 01-e61e-57140621-36-03
-        // 0000600601ff: %(("raw":3715),("scaler":0),("status":0),("unit":4),("unit-name":day),("valTime":1970-...,("value":3715))
-        // 0100000102ff: %(("raw":525),("scaler":0),("status":0),("unit":7),("unit-name":second),("valTime":1970-...),("value":525))
+        // 0000600601ff: %(("raw":3715),("scaler":0),("status":0),("unit":4),("unit.name":day),("valTime":1970-...,("value":3715))
+        // 0100000102ff: %(("raw":525),("scaler":0),("status":0),("unit":7),("unit.name":second),("valTime":1970-...),("value":525))
         // 0100020000ff:
-        // %(("raw":1632093),("scaler":-2),("status":0),("unit":d),("unit-name":m3),("valTime":1970-...),("value":16320.93))
+        // %(("raw":1632093),("scaler":-2),("status":0),("unit":d),("unit.name":m3),("valTime":1970-...),("value":16320.93))
 
         auto const pmap = convert_to_param_map(std::get<5>(r));
         //

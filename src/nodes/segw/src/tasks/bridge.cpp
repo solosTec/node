@@ -838,8 +838,11 @@ namespace smf {
 
             //  send data periodically
             cfg_cache cache_cfg(cfg_, type);
-            CYNG_LOG_TRACE(logger_, "[cache] push cycle " << cache_cfg.get_interval());
+            CYNG_LOG_TRACE(logger_, "[" << en13757_task_name << "] push cycle " << cache_cfg.get_interval());
             channel_en13757->suspend(cache_cfg.get_interval(), "push");
+
+            CYNG_LOG_TRACE(logger_, "[" << emt_task_name << "] push cycle " << http_post_cfg.get_interval());
+            channel_emt->suspend(http_post_cfg.get_interval(), "push");
 
         } else {
             CYNG_LOG_ERROR(logger_, "[filter] LMN type " << get_name(type) << " doesn't support filters");
