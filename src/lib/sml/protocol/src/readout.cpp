@@ -155,7 +155,6 @@ namespace smf {
             //
             if (obj.tag() == cyng::TC_UINT32) {
                 auto const tt = cyng::numeric_cast<std::uint32_t>(obj, 0u);
-                std::cerr << std::endl << std::endl << "unix time: " << tt << std::endl << std::endl;
                 return cyng::make_object(std::chrono::system_clock::from_time_t(tt));
             }
 
