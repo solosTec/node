@@ -358,7 +358,7 @@ namespace smf {
                     //  missing time point
                     os << "[pull@";
                     auto const tp = sml::restore_time_point(slot, subrr.get_profile());
-                    auto const d = cyng::date::make_date_from_local_time(pos->second);
+                    auto const d = cyng::date::make_date_from_local_time(tp);
                     cyng::as_string(os, d, "%Y-%m-%dT%H:%M");
 #ifdef _DEBUG
                     os << '#' << slot;
