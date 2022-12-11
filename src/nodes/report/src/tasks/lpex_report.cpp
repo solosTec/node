@@ -73,8 +73,7 @@ namespace smf {
             //
             //  generate report
             //
-            // generate_csv(db_, profile_, root_, backtrack_, now, prefix_);
-            generate_lpex(
+            generate_lpex_backup(
                 db_,
                 profile_,
                 filter_,

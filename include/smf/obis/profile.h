@@ -7,6 +7,7 @@
 #ifndef SMF_OBIS_PROFILE_H
 #define SMF_OBIS_PROFILE_H
 
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/obj/intrinsics/obis.h>
 
 #include <chrono>
@@ -72,6 +73,7 @@ namespace smf {
          * Calculate an index of the time stamp with an offset to 1. january 2022.
          */
         std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point, cyng::obis profile);
+        std::pair<std::int64_t, bool> to_index(cyng::date, cyng::obis profile);
 
         /**
          * Each profile has a specific count of entries in a time span. e.g. a 15 minutes report has 96 entries
@@ -85,9 +87,14 @@ namespace smf {
          */
         std::chrono::system_clock::time_point restore_time_point(std::int64_t, cyng::obis profile);
 
-        //  2022-01-01 00:00:00
+        /**
+         * @return the offset date (2022-01-01 00:00:00) as UTC.
+         */
+        cyng::date get_offset();
+
+        //  2022-01-01 00:00:00 (UTC)
         constexpr static std::chrono::time_point<std::chrono::system_clock> offset_ =
-            std::chrono::time_point<std::chrono::system_clock>(std::chrono::seconds(1640991600));
+            std::chrono::time_point<std::chrono::system_clock>(std::chrono::seconds(1640995200));
     } // namespace sml
 
     /**

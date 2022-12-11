@@ -186,7 +186,7 @@ namespace smf {
         cyng::tuple_t response_generator::get_profile_list(
             std::string const &trx,
             cyng::buffer_t const &server,
-            std::chrono::system_clock::time_point act_time, //  ToDo: use seconds index
+            cyng::date act_time, //  ToDo: use seconds index
             std::uint32_t reg_period,
             cyng::obis code,
             std::uint32_t val_time,

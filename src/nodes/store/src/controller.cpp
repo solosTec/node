@@ -1005,7 +1005,7 @@ namespace smf {
     }
 
     void controller::dump_readout(cyng::object &&cfg, std::chrono::hours backlog) {
-        auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
         auto const reader = cyng::make_reader(cfg);
         BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
         auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
@@ -1013,7 +1013,7 @@ namespace smf {
             auto const db = cyng::container_cast<cyng::param_map_t>(param.second);
             auto s = cyng::db::create_db_session(db);
             if (s.is_alive()) {
-                smf::dump_readout(s, now, backlog);
+                smf::dump_readout(s, now.get_end_of_day(), backlog);
             } else {
                 std::cout << "***warning: database [" << param.first << "] is not reachable" << std::endl;
             }

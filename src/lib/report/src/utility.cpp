@@ -28,6 +28,14 @@
 
 namespace smf {
 
+    // cyng::date calculate_start_time(cyng::date now, cyng::obis profile) {
+    //     switch (profile.to_uint64()) {
+    //     case CODE_PROFILE_1_MINUTE: return now.get_start_of_day();
+    //     default: break;
+    //     }
+    //     return now;
+    // }
+
     std::vector<cyng::buffer_t> select_meters(cyng::db::session db, report_range const &rr) {
 
         // BOOST_ASSERT_MSG(start < end, "invalid time range");
@@ -93,6 +101,75 @@ namespace smf {
         }
 
         return readout;
+    }
+
+    std::size_t loop_readout_data(cyng::db::session db, cyng::obis profile, cyng::date start, loop_cb cb) {
+
+        std::size_t counter = 0;
+        //"SELECT TSMLReadout.tag, TSMLReadout.meterID, TSMLReadoutData.register, TSMLReadoutData.gen, TSMLReadout.status,
+        // datetime(TSMLReadout.actTime), TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler,
+        // TSMLReadoutData.unit
+        //"
+
+        std::string const sql =
+            "SELECT TSMLReadout.tag, TSMLReadout.meterID, datetime(actTime), TSMLReadout.status, "
+            "TSMLReadoutData.register, TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit FROM "
+            "TSMLReadout INNER JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
+            "WHERE TSMLReadout.actTime > julianday(?) AND TSMLReadout.profile = ? ORDER BY actTime";
+        auto stmt = db.create_statement();
+        std::pair<int, bool> const r = stmt->prepare(sql);
+        if (r.second) {
+            stmt->push(cyng::make_object(start), 0);   //	start time
+            stmt->push(cyng::make_object(profile), 0); //	select one profile at a time
+
+            boost::uuids::uuid prev_tag = boost::uuids::nil_uuid();
+            while (auto res = stmt->get_result()) {
+                //  [1] tag,
+                //  [2] meterID,
+                //  [3] actTime,
+                //  [4] status,
+                //  [5] register,
+                //  [6] reading,
+                //  [7] type,
+                //  [8] scaler,
+                //  [9] unit
+                auto const tag = cyng::value_cast(res->get(1, cyng::TC_UUID, 0), prev_tag);
+                BOOST_ASSERT(!tag.is_nil());
+
+                //
+                //  true if one record is complete
+                //
+                bool next_record = false;
+                if (tag != prev_tag) {
+                    prev_tag = tag;
+                    next_record = true;
+                }
+                ++counter;
+
+                //  [2] meterID
+                auto const meter = cyng::to_buffer(res->get(2, cyng::TC_BUFFER, 0));
+                auto const id = to_srv_id(meter);
+                //  [3] actTime
+                auto const act_time = cyng::value_cast(res->get(3, cyng::TC_DATE, 0), start);
+                //  [4] status
+                auto const status = cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), 0u);
+                //  [5] register
+                auto const reg = cyng::value_cast(res->get(5, cyng::TC_OBIS, 0), OBIS_DATA_COLLECTOR_REGISTER);
+                //  [6] reading
+                auto const value = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "?");
+                //  [7] type
+                auto const code = cyng::value_cast<std::uint16_t>(res->get(7, cyng::TC_UINT16, 0), cyng::TC_STRING);
+                //  [8] scaler
+                auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
+                //  [9] unit
+                auto const unit = mbus::to_unit(cyng::numeric_cast<std::uint8_t>(res->get(9, cyng::TC_UINT8, 0), 0u));
+
+                if (!cb(next_record, tag, id, act_time, status, reg, value, code, scaler, unit)) {
+                    break;
+                }
+            }
+        }
+        return counter;
     }
 
     std::set<cyng::obis> collect_profiles(std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &data) {
@@ -695,13 +772,14 @@ namespace smf {
 
     } // namespace gap
 
-    void dump_readout(cyng::db::session db, std::chrono::system_clock::time_point now, std::chrono::hours backlog) {
+    void dump_readout(cyng::db::session db, cyng::date now, std::chrono::hours backlog) {
         // SELECT TSMLReadout.tag, hex(TSMLReadout.meterID), datetime(actTime), TSMLReadoutData.register, reading, unit from
         // TSMLReadout INNER JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag WHERE TSMLReadout.actTime >
         // julianday('2022-11-26') ORDER BY actTime;
 
         //  statistics
         std::set<srv_id_t> server;
+        int day = 0;
 
         std::string const sql =
             "SELECT TSMLReadout.tag, TSMLReadout.meterID, datetime(actTime), TSMLReadoutData.register, reading, unit from "
@@ -714,8 +792,8 @@ namespace smf {
 
             std::size_t idx_readout = 0;
             std::size_t idx_value = 0;
-            cyng::date ro_start = cyng::make_local_date();
-            cyng::date ro_end = cyng::date::make_date_from_local_time(now - backlog);
+            cyng::date ro_start = cyng::make_utc_date();
+            cyng::date ro_end = now - backlog;
             boost::uuids::uuid prev_tag = boost::uuids::nil_uuid();
             while (auto res = stmt->get_result()) {
                 auto const tag = cyng::value_cast(res->get(1, cyng::TC_UUID, 0), prev_tag);
@@ -731,13 +809,18 @@ namespace smf {
                 auto const id = to_srv_id(meter);
                 server.insert(id);
 
-                auto const act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), now);
-                auto const d = cyng::date::make_date_from_local_time(act_time);
-                if (ro_start > d) {
-                    ro_start = d;
+                auto const act_time = cyng::value_cast(res->get(3, cyng::TC_DATE, 0), now);
+                if (ro_start > act_time) {
+                    ro_start = act_time;
                 }
-                if (ro_end < d) {
-                    ro_end = d;
+                if (ro_end < act_time) {
+                    ro_end = act_time;
+                }
+
+                int const dom = cyng::day(act_time);
+                if (dom != day) {
+                    day = dom;
+                    std::cout << "day   : " << cyng::day(act_time) << std::endl;
                 }
 
                 auto const reg = cyng::value_cast(res->get(4, cyng::TC_OBIS, 0), OBIS_DATA_COLLECTOR_REGISTER);
@@ -745,26 +828,29 @@ namespace smf {
                 auto const unit = mbus::to_unit(cyng::numeric_cast<std::uint8_t>(res->get(6, cyng::TC_UINT8, 0), 0u));
 
                 std::cout << std::setw(4) << idx_readout << '#' << idx_value << ": " << tag << ", " << to_string(id) << ", "
-                          << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << ", " << reg << ": " << value << ' ' << mbus::get_name(unit)
-                          << std::endl;
+                          << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", " << reg << ": " << value << ' '
+                          << mbus::get_name(unit) << std::endl;
             }
 
+            std::cout << std::endl;
             std::cout << "statistics:" << std::endl;
 
-            auto const start_utc = cyng::date::make_date_from_utc_time(now);
-            auto const start = cyng::date::make_date_from_local_time(now - backlog);
-            auto const end = cyng::date::make_date_from_local_time(now);
+            auto const start_utc = now;
+            auto const start = now - backlog;
+            auto const end = now;
             auto ro_range = ro_end.sub<std::chrono::minutes>(ro_start);
 
+            std::cout << std::fixed << std::setprecision(2);
             std::cout << "UTC time  : " << cyng::as_string(start_utc) << std::endl;
             std::cout << "time span : " << cyng::as_string(start) << " to " << cyng::as_string(end) << " = " << backlog.count()
                       << "h" << std::endl;
             std::cout << "readouts  : " << idx_readout << std::endl;
-            std::cout << "frequency : " << idx_readout / backlog.count() << " readout(s) per hour" << std::endl;
+            std::cout << "frequency : " << static_cast<float>(idx_readout) / backlog.count() << " readout(s) per hour" << std::endl;
             std::cout << "first ro  : " << cyng::as_string(ro_start) << std::endl;
             std::cout << "last ro   : " << cyng::as_string(ro_end) << std::endl;
             std::cout << "ro span   : " << ro_range.count() << "min" << std::endl;
-            std::cout << "ro freq.  : " << (idx_readout * 60) / ro_range.count() << " readout(s) per hour" << std::endl;
+            std::cout << "ro freq.  : " << static_cast<float>(idx_readout * 60) / ro_range.count() << " readout(s) per hour"
+                      << std::endl;
             std::cout << "server    : " << server.size() << std::endl;
         }
     }

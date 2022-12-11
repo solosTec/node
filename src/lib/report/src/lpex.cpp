@@ -16,9 +16,67 @@
 #include <fstream>
 #include <iostream>
 
+#include <boost/uuid/uuid_io.hpp>
+
 namespace smf {
 
     void generate_lpex(
+        cyng::db::session db,
+        cyng::obis profile,
+        cyng::obis_path_t filter,
+        std::filesystem::path root,
+        cyng::date now,
+        std::chrono::hours backtrack,
+        std::string prefix,
+        bool print_version,
+        bool separated,
+        bool debug_mode) {
+
+        //
+        //	start transaction
+        //
+        cyng::db::transaction trx(db);
+
+        //
+        //  loop
+        //
+        auto const start = (now - backtrack).get_start_of_day();
+#ifdef _DEBUG
+        std::cout << "start at: " << cyng::as_string(start) << std::endl;
+#endif
+
+        int day = 0;
+        loop_readout_data(
+            db,
+            profile,
+            start,
+            [&](bool next_record,
+                boost::uuids::uuid tag,
+                smf::srv_id_t id,
+                cyng::date act_time,
+                std::uint32_t status,
+                cyng::obis reg,
+                std::string value,
+                std::uint16_t code,
+                std::int8_t scaler,
+                mbus::unit unit) -> bool {
+                if (next_record) {
+
+                    int const dom = cyng::day(act_time);
+                    if (dom != day) {
+                        day = dom;
+                        std::cout << "> next day   : " << cyng::day(act_time) << std::endl;
+                    }
+
+                    std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
+                              << ", day: " << day << std::endl;
+                }
+                std::cout << reg << ": " << value << std::endl;
+                return true;
+            });
+    }
+
+    void generate_lpex_backup(
         cyng::db::session db,
         cyng::obis profile,
         cyng::obis_path_t filter,

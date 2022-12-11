@@ -127,10 +127,7 @@ namespace smf {
         }
     }
 
-    void storage::loop_oplog(
-        std::chrono::system_clock::time_point const &begin,
-        std::chrono::system_clock::time_point const &end,
-        std::function<bool(cyng::record &&)> cb) {
+    void storage::loop_oplog(cyng::date const &begin, cyng::date const &end, std::function<bool(cyng::record &&)> cb) {
 
         //
         //	start transaction
@@ -167,15 +164,6 @@ namespace smf {
                     break;
             }
         }
-
-        // cyng::db::storage s(db_);
-        // s.loop(get_table_oplog(), [&](cyng::record const &rec) -> bool {
-        //   [ROWID: 00000000000005bd][actTime: 1969-12-31T23:59:59+0100][age: 2022-05-10T05:53:33+0100][regPeriod:
-        //   00000000][valTime: 1969-12-31T23:59:59+0100][status: 0000000000022202][event: 00100023][peer: null][utc:
-        //   2022-05-10T05:53:33+0100][serverId: 0500155d85dcfb][target: ][pushNr: 0][details: power return]
-        //  std::cout << rec.to_string() << std::endl;
-        //    return true;
-        //});
     }
 
 } // namespace smf

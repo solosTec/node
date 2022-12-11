@@ -33,6 +33,18 @@ namespace smf {
         cyng::obis profile,
         cyng::obis_path_t filter,
         std::filesystem::path,
+        cyng::date now,
+        std::chrono::hours backtrack,
+        std::string prefix,
+        bool print_version,
+        bool separated,
+        bool debug_mode);
+
+    void generate_lpex_backup(
+        cyng::db::session,
+        cyng::obis profile,
+        cyng::obis_path_t filter,
+        std::filesystem::path,
         std::chrono::hours backtrack,
         std::chrono::system_clock::time_point,
         std::string prefix,

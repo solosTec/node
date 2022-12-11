@@ -21,7 +21,7 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void(cyng::buffer_t, cyng::buffer_t)>,
             std::function<void()>,
-            std::function<void(std::string, cyng::buffer_t, cyng::object, std::uint32_t, cyng::obis_path_t, cyng::param_map_t)>,
+            std::function<void(std::string, cyng::buffer_t, cyng::object, std::uint32_t, cyng::obis_path_t, cyng::prop_map_t)>,
             std::function<void()>,
             std::function<void(cyng::eod)>>;
 
@@ -47,7 +47,7 @@ namespace smf {
             cyng::object,
             std::uint32_t,
             cyng::obis_path_t,
-            cyng::param_map_t);
+            cyng::prop_map_t);
         void get_proc_parameter_response();
 
       private:

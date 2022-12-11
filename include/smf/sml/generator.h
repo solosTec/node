@@ -10,6 +10,7 @@
 #include <smf/sml/attention.h>
 #include <smf/sml/msg.h>
 
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/obj/intrinsics/mac.h>
 #include <cyng/obj/intrinsics/obis.h>
 #include <cyng/rnd/rnd.hpp>
@@ -145,7 +146,7 @@ namespace smf {
             [[nodiscard]] cyng::tuple_t get_profile_list(
                 std::string const &trx,
                 cyng::buffer_t const &server,
-                std::chrono::system_clock::time_point act_time,
+                cyng::date act_time,
                 std::uint32_t reg_period,
                 cyng::obis,
                 std::uint32_t val_time,

@@ -27,7 +27,7 @@ namespace smf {
      * data structure to hold a complete profile readout
      */
     namespace data {
-        using readout_t = std::map<std::int64_t, sml_data>;   //  timepoint -> readout
+        using readout_t = std::map<std::int64_t, sml_data>;   // timepoint -> readout
         using values_t = std::map<cyng::obis, readout_t>;     // register -> readout_t
         using profile_t = std::map<cyng::buffer_t, values_t>; // meter -> value_t
 
@@ -108,10 +108,15 @@ namespace smf {
     };
 
     /**
+     * @return start time for a reporting period.
+     */
+    // cyng::date calculate_start_time(cyng::date now, cyng::obis profile);
+
+    /**
      * @return all meters that have data of the specified profile
      * in this time range.
      */
-    [[nodiscard]] std::vector<cyng::buffer_t> select_meters(cyng::db::session db, report_range const &rr);
+    [[nodiscard, deprecated]] std::vector<cyng::buffer_t> select_meters(cyng::db::session db, report_range const &rr);
 
     /**
      * @param status comes from table "TSMLReadout"
@@ -119,6 +124,22 @@ namespace smf {
      */
     [[nodiscard]] std::map<cyng::obis, sml_data>
     select_readout_data(cyng::db::session db, boost::uuids::uuid, std::uint32_t status);
+
+    using loop_cb = std::function<bool(
+        bool,
+        boost::uuids::uuid,
+        smf::srv_id_t,
+        cyng::date,
+        std::uint32_t,
+        cyng::obis,
+        std::string,
+        std::uint16_t,
+        std::int8_t,
+        mbus::unit)>;
+    /**
+     * loop over result set
+     */
+    std::size_t loop_readout_data(cyng::db::session db, cyng::obis profile, cyng::date start, loop_cb);
 
     /**
      * @return all distinct registers used in this data set
@@ -185,95 +206,7 @@ namespace smf {
         std::string const &reading,
         std::uint32_t status);
 
-    /**
-     * Helper class to calculate time zone offset.
-     * This is required since date library is not available prior to C++20
-     */
-    // template <typename R, typename P> class tz_offset {
-    //   public:
-    //     using this_type = tz_offset<R, P>;
-
-    //    tz_offset()
-    //        : tp_()
-    //        , diff_() {}
-
-    //    tz_offset(std::chrono::system_clock::time_point tp, std::chrono::duration<R, P> diff)
-    //        : tp_(tp)
-    //        , diff_(diff) {}
-
-    //    tz_offset(tz_offset const &) = default;
-    //    tz_offset(tz_offset &&) = default;
-
-    //    tz_offset &operator=(std::chrono::system_clock::time_point tp) {
-    //        tp_ = tp;
-    //        return *this;
-    //    }
-
-    //    tz_offset &operator=(std::chrono::duration<R, P> const &diff) {
-    //        diff_ = diff;
-    //        return *this;
-    //    }
-
-    //    /** @brief conversion operator
-    //     *
-    //     * @return specified timepoint minus offset (localtime)
-    //     */
-    //    operator std::chrono::system_clock::time_point() const { return utc_time(); }
-    //    operator std::chrono::duration<R, P>() const { return deviation(); }
-
-    //    /**
-    //     * @return specified timepoint (unmodified).
-    //     */
-    //    std::chrono::system_clock::time_point local_time() const { return tp_; }
-
-    //    /**
-    //     * @return specified timepoint minus offset.
-    //     */
-    //    std::chrono::system_clock::time_point utc_time() const { return tp_ + diff_; }
-
-    //    /**
-    //     * @return deviation of local tiem from UTC.
-    //     */
-    //    std::chrono::duration<R, P> deviation() const { return diff_; }
-
-    //    /**
-    //     * output formatter
-    //     */
-    //    template <typename CharT, typename Traits>
-    //    friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, this_type const &adj) {
-    //        auto const d = cyng::date::make_date_from_local_time(adj.local_time());
-    //        cyng::as_string(os, d, "%F %T");
-    //        // os << cyng::sys::to_string(adj.local_time(), "%F %T%z ") << adj.deviation() << " "
-    //        //    << cyng::sys::to_string(adj.utc_time(), "%F %T%z UTC");
-    //        return os;
-    //    }
-
-    //  private:
-    //    std::chrono::system_clock::time_point tp_;
-    //    std::chrono::duration<R, P> diff_;
-    //};
-
-    //
-    //  type deduction support (the old way)
-    //
-    // template <typename T> struct tz_offset_t {
-    //    using type = void;
-    //};
-
-    // template <typename R, typename P> struct tz_offset_t<std::chrono::duration<R, P>> {
-    //     using type = tz_offset<R, P>;
-    // };
-
-    /**
-     * Factory function for tz_offset
-     */
-    // inline decltype(auto) make_tz_offset(std::chrono::system_clock::time_point tp) {
-
-    //    auto const d = cyng::date::make_date_from_local_time(tp);
-    //    return tz_offset(tp, d.delta_utc());
-    //}
-
-    void dump_readout(cyng::db::session db, std::chrono::system_clock::time_point, std::chrono::hours);
+    void dump_readout(cyng::db::session db, cyng::date, std::chrono::hours);
 
 } // namespace smf
 

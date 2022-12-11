@@ -73,10 +73,10 @@ namespace smf {
     void sml_db_writer::get_profile_list_response(
         std::string trx,
         cyng::buffer_t server_id,
-        cyng::object act_time,
+        cyng::object act_time, // cyng::date
         std::uint32_t status,
         cyng::obis_path_t path,
-        cyng::param_map_t values) {
+        cyng::prop_map_t values) {
 
         if (path.size() == 1) {
             auto const &profile = path.front();
@@ -103,16 +103,15 @@ namespace smf {
         cyng::obis profile,
         cyng::object act_time,
         std::uint32_t status,
-        cyng::param_map_t const &values) {
+        cyng::prop_map_t const &values) {
 
-        auto const now = std::chrono::system_clock::now();
-        // auto const now = cyng::make_utc_date();
+        auto const now = cyng::make_utc_date();
 
         //
         //  check act_time
         //
-        BOOST_ASSERT(now > sml::offset_);
-        if (now < sml::offset_) {
+        BOOST_ASSERT(now > sml::get_offset());
+        if (now < sml::get_offset()) {
             CYNG_LOG_WARNING(logger_, "[sml.db] invalid \"act_time\" " << act_time << " at transaction " << trx);
             return;
         }
@@ -160,7 +159,7 @@ namespace smf {
                 //  overwrite actTime (01 00 00 09 0b 00)
                 //  OBIS_CURRENT_UTC
                 //  The actTime is stored as TC_TIME but will be read as TC_DATE
-                auto const pos = values.find("010000090b00");
+                auto const pos = values.find(OBIS_CURRENT_UTC);
                 if (pos != values.end()) {
                     auto const c = cyng::container_cast<cyng::param_map_t>(pos->second);
                     auto const idx = c.find("value");
@@ -172,10 +171,7 @@ namespace smf {
 
                         auto const unboxed = cyng::value_cast(act_time, now);
                         CYNG_LOG_TRACE(
-                            logger_,
-                            "[sml.db] update actTime of data record "
-                                << tag << " from " << prev << " to " << act_time
-                                << ", UNIX time: " << std::chrono::system_clock::to_time_t(unboxed));
+                            logger_, "[sml.db] update actTime of data record " << tag << " from " << prev << " to " << act_time);
                     } else {
                         CYNG_LOG_ERROR(logger_, "[sml.db] missing column \"value\" in data record " << tag);
                     }
@@ -208,7 +204,7 @@ namespace smf {
         }
     }
 
-    void sml_db_writer::store(boost::uuids::uuid tag, cyng::param_map_t const &data) {
+    void sml_db_writer::store(boost::uuids::uuid tag, cyng::prop_map_t const &data) {
         auto const m = config::get_table_sml_readout_data();
         auto const sql = cyng::sql::insert(db_.get_dialect(), m).bind_values(m)();
 
@@ -240,7 +236,7 @@ namespace smf {
 
                 stmt->push(cyng::make_object(tag), 0); //	tag
 
-                auto const reg = cyng::to_obis(value.first);
+                auto const reg = value.first;
                 stmt->push(cyng::make_object(reg), 0); //	register
                 CYNG_LOG_DEBUG(logger_, "[sml.db] store reg    : " << reg);
                 stmt->push(cyng::make_object(0), 0); //	gen

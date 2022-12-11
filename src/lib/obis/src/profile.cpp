@@ -252,6 +252,19 @@ namespace smf {
             return {std::chrono::duration_cast<std::chrono::seconds>(start.time_since_epoch()).count(), false};
         }
 
+        std::pair<std::int64_t, bool> to_index(cyng::date ts, cyng::obis profile) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return {ts.calculate_slot(std::chrono::minutes(1)), true};
+            case CODE_PROFILE_15_MINUTE: return {ts.add(std::chrono::minutes(5)).calculate_slot(std::chrono::minutes(15)), true};
+            case CODE_PROFILE_60_MINUTE: return {ts.add(std::chrono::minutes(15)).calculate_slot(std::chrono::hours(1)), true};
+            case CODE_PROFILE_24_HOUR: return {ts.add(std::chrono::hours(1)).calculate_slot(std::chrono::hours(24)), true};
+            case CODE_PROFILE_1_MONTH: break;
+            case CODE_PROFILE_1_YEAR: break;
+            default: break;
+            }
+            return {ts.calculate_slot(std::chrono::minutes(15)), false};
+        }
+
         std::size_t calculate_entry_count(cyng::obis profile, std::chrono::hours span) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);
@@ -283,6 +296,8 @@ namespace smf {
 
             return offset_ + std::chrono::minutes(idx);
         }
+
+        cyng::date get_offset() { return cyng::date::make_date_from_utc_time(offset_); }
 
     } // namespace sml
 

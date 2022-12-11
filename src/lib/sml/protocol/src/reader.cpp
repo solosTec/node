@@ -213,7 +213,7 @@ namespace smf {
                 //
                 //	read act. sensor time - optional
                 //
-                auto const sensor_tp = read_time(*pos++);
+                auto const sensor_tp = read_date(*pos++);
 
                 //
                 //	valList
@@ -229,7 +229,7 @@ namespace smf {
                 //
                 //	SML_Time - OPTIONAL
                 //
-                auto const gw_tp = read_time(*pos++);
+                auto const gw_tp = read_date(*pos++);
 
                 return std::make_tuple(client, server, code, sensor_tp, gw_tp, r);
             }
@@ -371,8 +371,8 @@ namespace smf {
             std::string,
             std::string,
             bool,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
+            cyng::date,
+            cyng::date,
             cyng::obis_path_t,
             cyng::object,
             cyng::object>
@@ -404,13 +404,13 @@ namespace smf {
                 //
                 //	beginTime
                 //
-                auto const now = std::chrono::system_clock::now();
-                auto const begin_tp = cyng::value_cast(read_time(*pos++), now - std::chrono::hours(24));
+                auto const now = cyng::make_utc_date();
+                auto const begin_tp = cyng::value_cast(read_date(*pos++), now);
 
                 //
                 //	endTime
                 //
-                auto const end_tp = cyng::value_cast(read_time(*pos++), now);
+                auto const end_tp = cyng::value_cast(read_date(*pos++), now);
 
                 //
                 //	parameterTreePath == parameter address
@@ -445,7 +445,7 @@ namespace smf {
                 //
                 //	actTime
                 //
-                auto const sensor_tp = read_time(*pos++);
+                auto const sensor_tp = read_date(*pos++);
 
                 //
                 //	regPeriod (u32 => seconds)
@@ -460,7 +460,7 @@ namespace smf {
                 //
                 //	valTime
                 //
-                auto const val_tp = read_time(*pos++);
+                auto const val_tp = read_date(*pos++);
 
                 //
                 //	M-bus status
@@ -570,7 +570,7 @@ namespace smf {
             //
             //	valTime - optional
             //
-            auto const val_time = read_time(*pos++);
+            auto const val_time = read_date(*pos++);
 
             //
             //	unit (see sml_unit_enum) - optional

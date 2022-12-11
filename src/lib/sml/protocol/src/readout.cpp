@@ -1,5 +1,6 @@
-#include <smf/obis/defs.h>
 #include <smf/sml/readout.h>
+
+#include <smf/obis/defs.h>
 #include <smf/sml/value.hpp>
 
 #include <cyng/io/io_buffer.h>
@@ -93,7 +94,8 @@ namespace smf {
                 //
                 // SML time
                 //
-                return read_time(obj);
+                // return read_time(obj);
+                return read_date(obj);
             } else if (OBIS_SERIAL_NR == code || OBIS_SERIAL_NR_SECOND == code) {
                 //
                 // buffer => hex
@@ -155,7 +157,6 @@ namespace smf {
             //
             if (obj.tag() == cyng::TC_UINT32) {
                 auto const tt = cyng::numeric_cast<std::uint32_t>(obj, 0u);
-                std::cerr << std::endl << std::endl << "unix time: " << tt << std::endl << std::endl;
                 return cyng::make_object(std::chrono::system_clock::from_time_t(tt));
             }
 
@@ -263,7 +264,8 @@ namespace smf {
                 case PROC_PAR_VALUE: return {type, customize_value(code, tpl.back())};
                 case PROC_PAR_PERIODENTRY: return {type, customize_value(code, tpl.back())};
                 case PROC_PAR_TUPELENTRY: return {type, customize_value(code, tpl.back())};
-                case PROC_PAR_TIME: return {type, read_time(tpl.back())};
+                case PROC_PAR_TIME: return {type, read_date(tpl.back())};
+                // case PROC_PAR_TIME: return {type, read_time(tpl.back())};
                 default: break;
                 }
             }
