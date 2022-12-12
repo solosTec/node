@@ -235,6 +235,9 @@ namespace smf {
 
         std::ofstream open_report(std::filesystem::path root, std::string file_name, bool print_version);
 
+        void generate_report(cyng::obis profile, data::data_set_t const &data);
+        void clear_data(data::data_set_t &data);
+
     } // namespace lpex
 
 } // namespace smf

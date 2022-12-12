@@ -760,6 +760,7 @@ namespace smf {
         typename values_t::value_type make_value(cyng::obis reg, readout_t::value_type value) { return {reg, {value}}; }
 
         typename profile_t::value_type make_profile(cyng::buffer_t id, values_t::value_type value) { return {id, {value}}; }
+        typename data_set_t::value_type make_set(smf::srv_id_t id, values_t::value_type value) { return {id, {value}}; }
 
     } // namespace data
 

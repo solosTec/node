@@ -45,7 +45,16 @@ namespace smf {
         std::cout << "start at: " << cyng::as_string(start) << std::endl;
 #endif
 
+        //
+        //  data set of specific time period
+        //
+        data::data_set_t data_set;
+
+        //
+        //  day of month
+        //
         int day = 0;
+
         loop_readout_data(
             db,
             profile,
@@ -60,20 +69,82 @@ namespace smf {
                 std::uint16_t code,
                 std::int8_t scaler,
                 mbus::unit unit) -> bool {
+                //
+                //  calculate slot
+                //
+                auto const sr = sml::to_index(act_time, profile);
+                BOOST_ASSERT(sr.second);
+                auto const d = smf::sml::from_index_to_date(sr.first, profile);
+
                 if (next_record) {
 
+                    //  day of month
                     int const dom = cyng::day(act_time);
                     if (dom != day) {
+                        std::cout << "> next day  : " << dom << std::endl;
+
+                        //
+                        //  new day - generate report and clear data set
+                        //
+                        if (!data_set.empty()) {
+                            lpex::generate_report(profile, data_set);
+                            lpex::clear_data(data_set);
+                        }
+
                         day = dom;
-                        std::cout << "> next day   : " << cyng::day(act_time) << std::endl;
                     }
 
                     std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
-                              << ", day: " << day << std::endl;
+                              << ", " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << ", day: " << day << std::endl;
                 }
-                std::cout << reg << ": " << value << std::endl;
+                std::cout << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+
+                //
+                //  update data set
+                //
+                auto pos = data_set.find(id);
+                if (pos != data_set.end()) {
+                    //
+                    // meter has already entries
+                    // lookup for register
+                    //
+                    auto pos_reg = pos->second.find(reg);
+                    if (pos_reg != pos->second.end()) {
+                        //
+                        //  register has already entries
+                        //
+                        pos_reg->second.insert(data::make_readout(sr.first, code, scaler, mbus::to_u8(unit), value, status));
+                    } else {
+                        //
+                        //  new register
+                        //
+                        std::cout << "> new register #" << pos->second.size() << ": " << reg << " of meter " << to_string(id)
+                                  << std::endl;
+                        pos->second.insert(
+                            data::make_value(reg, data::make_readout(sr.first, code, scaler, mbus::to_u8(unit), value, status)));
+                    }
+
+                } else {
+                    //
+                    //  new meter found
+                    //
+                    std::cout << "> new meter #" << data_set.size() << ": " << to_string(id) << std::endl;
+                    std::cout << "> new register #0: " << reg << " of meter " << to_string(id) << std::endl;
+
+                    //
+                    //  create a record of readout data
+                    //
+                    data_set.insert(data::make_set(
+                        id, data::make_value(reg, data::make_readout(sr.first, code, scaler, mbus::to_u8(unit), value, status))));
+                }
                 return true;
             });
+
+        //
+        //  generate report for last data set
+        //
+        lpex::generate_report(profile, data_set);
+        lpex::clear_data(data_set);
     }
 
     void generate_lpex_backup(
@@ -183,6 +254,50 @@ namespace smf {
     }
 
     namespace lpex {
+
+        void generate_report(cyng::obis profile, data::data_set_t const &data_set) {
+            std::cout << "> generate report for " << data_set.size() << " meters" << std::endl;
+            for (auto const &data : data_set) {
+                for (auto const &[reg, values] : data.second) {
+                    // std::cout << reg << std::endl;
+                    if (!values.empty()) {
+                        //
+                        //  first time point
+                        //
+                        auto const first = values.begin()->first;
+                        auto const d = sml::from_index_to_date(first, profile);
+                        auto const [start, end] = sml::to_index_range(d, profile);
+                        BOOST_ASSERT(start <= first);
+                        std::cout << cyng::as_string(d, "%d.%m.%y;%H:%M:%S;") << get_id(data.first) << ';' << obis::to_decimal(reg)
+                                  << ';' << mbus::get_name(values.begin()->second.unit_);
+#ifdef _DEBUG
+                        std::cout << ';' << '[' << start << ']' << ';' << '[' << first << ']' << ';' << '[' << end << ']';
+#endif
+                        auto idx = start;
+                        for (auto const [slot, ro] : values) {
+                            // auto const d = sml::from_index_to_date(slot, profile);
+                            std::cout << ';' << ro.reading_;
+                            idx = slot;
+                        }
+                        for (; idx < end; ++idx) {
+                            std::cout << ';';
+#ifdef _DEBUG
+                            std::cout << '[' << idx - start << ']';
+#endif
+                        }
+                        std::cout << std::endl;
+                    }
+                }
+            }
+        }
+
+        void clear_data(data::data_set_t &data_set) {
+            for (auto &data : data_set) {
+                std::cout << "> clear " << data.second.size() << " data records of meter " << to_string(data.first) << std::endl;
+                data.second.clear();
+            }
+        }
+
         /**
          * 1 minute reports
          */

@@ -265,6 +265,38 @@ namespace smf {
             return {ts.calculate_slot(std::chrono::minutes(15)), false};
         }
 
+        std::pair<std::int64_t, std::int64_t> to_index_range(cyng::date ts, cyng::obis profile) {
+            //
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: break;
+            case CODE_PROFILE_15_MINUTE: break;
+            case CODE_PROFILE_60_MINUTE: break;
+            case CODE_PROFILE_24_HOUR:
+                //  full month
+                break;
+            case CODE_PROFILE_1_MONTH:
+                //  full year
+                break;
+            case CODE_PROFILE_1_YEAR: break;
+            default: break;
+            }
+            //  full day
+            return {to_index(ts.get_start_of_day(), profile).first, to_index(ts.get_end_of_day(), profile).first};
+        }
+
+        cyng::date from_index_to_date(std::int64_t idx, cyng::obis profile) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return cyng::make_epoch_date() + std::chrono::minutes(idx);
+            case CODE_PROFILE_15_MINUTE: return cyng::make_epoch_date() + std::chrono::minutes(idx * 15);
+            case CODE_PROFILE_60_MINUTE: return cyng::make_epoch_date() + std::chrono::hours(idx);
+            case CODE_PROFILE_24_HOUR: return cyng::make_epoch_date() + std::chrono::hours(idx * 24);
+            case CODE_PROFILE_1_MONTH: break;
+            case CODE_PROFILE_1_YEAR: break;
+            default: break;
+            }
+            return cyng::make_epoch_date();
+        }
+
         std::size_t calculate_entry_count(cyng::obis profile, std::chrono::hours span) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);

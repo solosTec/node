@@ -27,12 +27,22 @@ namespace smf {
      * data structure to hold a complete profile readout
      */
     namespace data {
+
+        //
+        //  meter -> register -> slot -> data
+        //
+
         using readout_t = std::map<std::int64_t, sml_data>;   // timepoint -> readout
         using values_t = std::map<cyng::obis, readout_t>;     // register -> readout_t
         using profile_t = std::map<cyng::buffer_t, values_t>; // meter -> value_t
 
+        //
+        //  data set of the full period
+        //
+        using data_set_t = std::map<smf::srv_id_t, values_t>; // meter -> value_t
+
         typename readout_t::value_type make_readout(
-            std::int64_t,
+            std::int64_t slot,
             std::uint16_t code,
             std::int8_t scaler,
             std::uint8_t unit,
@@ -41,6 +51,7 @@ namespace smf {
 
         typename values_t::value_type make_value(cyng::obis, readout_t::value_type);
         typename profile_t::value_type make_profile(cyng::buffer_t, values_t::value_type);
+        typename data_set_t::value_type make_set(smf::srv_id_t, values_t::value_type);
 
     } // namespace data
 

@@ -76,6 +76,17 @@ namespace smf {
         std::pair<std::int64_t, bool> to_index(cyng::date, cyng::obis profile);
 
         /**
+         * Produce a pair of time slots that represents the beginning and the and of a readout period
+         * of the given profile for this time stamp
+         */
+        std::pair<std::int64_t, std::int64_t> to_index_range(cyng::date, cyng::obis profile);
+
+        /**
+         * Reverse function of std::pair<std::int64_t, bool> to_index(cyng::date, cyng::obis profile);
+         */
+        cyng::date from_index_to_date(std::int64_t, cyng::obis profile);
+
+        /**
          * Each profile has a specific count of entries in a time span. e.g. a 15 minutes report has 96 entries
          * a day.
          * Doesn't work for profiles with a variable time span.
