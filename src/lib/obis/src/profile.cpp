@@ -43,6 +43,24 @@ namespace smf {
             return std::chrono::minutes(1);
         }
 
+        std::chrono::minutes interval_time(cyng::date const &d, cyng::obis profile) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return std::chrono::minutes(1);
+            case CODE_PROFILE_15_MINUTE: return std::chrono::minutes(15);
+            case CODE_PROFILE_60_MINUTE: return std::chrono::hours(1);
+            case CODE_PROFILE_24_HOUR: return std::chrono::hours(24);
+            case CODE_PROFILE_1_MONTH: return std::chrono::hours(d.days_in_month() * 24);
+            case CODE_PROFILE_1_YEAR: return std::chrono::hours(d.days_in_year() * 24);
+            default: BOOST_ASSERT_MSG(false, "not implemented yet"); break;
+            }
+
+            //
+            //  this is an error
+            //
+            BOOST_ASSERT_MSG(false, "not a load profile");
+            return std::chrono::minutes(1);
+        }
+
         std::chrono::hours backtrack_time(cyng::obis profile) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return std::chrono::hours(2); ;
@@ -295,6 +313,28 @@ namespace smf {
             default: break;
             }
             return cyng::make_epoch_date();
+        }
+
+        bool is_new_reporting_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next) {
+
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE:
+            case CODE_PROFILE_15_MINUTE:
+            case CODE_PROFILE_60_MINUTE:
+                // every day
+                return cyng::day(prev) != cyng::day(next);
+            case CODE_PROFILE_24_HOUR:
+            case CODE_PROFILE_1_MONTH:
+                // every month
+                return cyng::month(prev) != cyng::month(next);
+            case CODE_PROFILE_1_YEAR:
+                // every year
+                return cyng::year(prev) != cyng::year(next);
+
+            default: break;
+            }
+            //
+            return prev != next;
         }
 
         std::size_t calculate_entry_count(cyng::obis profile, std::chrono::hours span) {

@@ -106,10 +106,6 @@ namespace smf {
     std::size_t loop_readout_data(cyng::db::session db, cyng::obis profile, cyng::date start, loop_cb cb) {
 
         std::size_t counter = 0;
-        //"SELECT TSMLReadout.tag, TSMLReadout.meterID, TSMLReadoutData.register, TSMLReadoutData.gen, TSMLReadout.status,
-        // datetime(TSMLReadout.actTime), TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler,
-        // TSMLReadoutData.unit
-        //"
 
         std::string const sql =
             "SELECT TSMLReadout.tag, TSMLReadout.meterID, datetime(actTime), TSMLReadout.status, "
@@ -172,6 +168,17 @@ namespace smf {
         return counter;
     }
 
+    bool has_passed(cyng::obis reg, cyng::obis_path_t const &filter) {
+        //
+        // apply filter only if not empty
+        // The filter contains allowed registers (OBIS)
+        //
+        if (!filter.empty()) {
+            return std::find(filter.begin(), filter.end(), reg) != filter.end();
+        }
+        return true;
+    }
+
     std::set<cyng::obis> collect_profiles(std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &data) {
         std::set<cyng::obis> regs;
         for (auto const d : data) {
@@ -194,7 +201,7 @@ namespace smf {
 
         // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << cyng::as_string(start, "%Y%m%dT%H%M") << ".csv";
+        ss << prefix << get_prefix(profile) << "-" << cyng::as_string(start, "%Y-%m-%d") << ".csv";
         return ss.str();
     }
 
@@ -337,7 +344,8 @@ namespace smf {
                 auto const slot = sml::to_index(act_time, subrr.get_profile());
 #ifdef _DEBUG
                 // std::cout << "start: " << cyng::sys::to_string_utc(start, "%Y-%m-%dT%H:%M%z")
-                //           << ", actTime: " << cyng::sys::to_string_utc(act_time, "%Y-%m-%dT%H:%M%z") << ", slot: " << slot.first
+                //           << ", actTime: " << cyng::sys::to_string_utc(act_time, "%Y-%m-%dT%H:%M%z") << ", slot: " <<
+                //           slot.first
                 //           << std::endl;
 #endif
 
@@ -348,8 +356,10 @@ namespace smf {
 #ifdef _DEBUG
                     //  example: actTime '2022-10-07 11:00:00' from table translates to '2022-10-07T12:00:00+0200'
                     // using cyng::operator<<;
-                    // std::cout << "=>start: " << cyng::sys::to_string(start, "%Y-%m-%dT%H:%M%z") << " - " << cyng::to_string(id)
-                    //          << " - slot: #" << slot.first << " (" << set_time << "), actTime: " << rec.value("actTime", start)
+                    // std::cout << "=>start: " << cyng::sys::to_string(start, "%Y-%m-%dT%H:%M%z") << " - " <<
+                    // cyng::to_string(id)
+                    //          << " - slot: #" << slot.first << " (" << set_time << "), actTime: " << rec.value("actTime",
+                    //          start)
                     //          << ", tag: " << tag << std::endl;
 #endif
 

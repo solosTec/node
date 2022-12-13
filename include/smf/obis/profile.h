@@ -30,6 +30,7 @@ namespace smf {
          * @return interval time for the specified profile
          */
         std::chrono::minutes interval_time(std::chrono::system_clock::time_point, cyng::obis profile);
+        std::chrono::minutes interval_time(cyng::date const &, cyng::obis profile);
 
         /**
          * @return a default backtrack time
@@ -85,6 +86,11 @@ namespace smf {
          * Reverse function of std::pair<std::int64_t, bool> to_index(cyng::date, cyng::obis profile);
          */
         cyng::date from_index_to_date(std::int64_t, cyng::obis profile);
+
+        /**
+         * @return if true a new report has to be generated
+         */
+        bool is_new_reporting_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next);
 
         /**
          * Each profile has a specific count of entries in a time span. e.g. a 15 minutes report has 96 entries

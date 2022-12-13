@@ -153,6 +153,11 @@ namespace smf {
     std::size_t loop_readout_data(cyng::db::session db, cyng::obis profile, cyng::date start, loop_cb);
 
     /**
+     * @return true if reg is an element of the filter or filter is empty
+     */
+    bool has_passed(cyng::obis reg, cyng::obis_path_t const &filter);
+
+    /**
      * @return all distinct registers used in this data set
      */
     [[nodiscard]] std::set<cyng::obis> collect_profiles(std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &);
