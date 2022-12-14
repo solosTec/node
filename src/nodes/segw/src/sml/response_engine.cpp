@@ -244,15 +244,15 @@ namespace smf {
     void response_engine::generate_get_profile_list_response(
         sml::messages_t &msgs,
         std::string trx,
-        cyng::buffer_t server,                       // server id
-        std::string user,                            // username
-        std::string pwd,                             // password
-        bool,                                        // has raw data
-        std::chrono::system_clock::time_point begin, // begin
-        std::chrono::system_clock::time_point end,   // end
-        cyng::obis_path_t path,                      // parameter tree path
-        cyng::object,                                // object list
-        cyng::object                                 // das details
+        cyng::buffer_t server,  // server id
+        std::string user,       // username
+        std::string pwd,        // password
+        bool,                   // has raw data
+        cyng::date begin,       // begin
+        cyng::date end,         // end
+        cyng::obis_path_t path, // parameter tree path
+        cyng::object,           // object list
+        cyng::object            // das details
     ) {
         if (!path.empty()) {
             CYNG_LOG_INFO(
@@ -1837,8 +1837,8 @@ namespace smf {
         std::string const &trx,
         cyng::buffer_t const &server,
         cyng::obis_path_t const &path,
-        std::chrono::system_clock::time_point const &begin,
-        std::chrono::system_clock::time_point const &end) {
+        cyng::date const &begin,
+        cyng::date const &end) {
         BOOST_ASSERT_MSG(begin < end, "invalid time range");
 
         CYNG_LOG_INFO(logger_, "op log from " << begin << " to " << end);
@@ -1855,10 +1855,11 @@ namespace smf {
             //  1969-12-31T23:59:59+0100][serverId: 30][target: power return][pushNr: 0][details: null]
             CYNG_LOG_TRACE(logger_, "op record: " << rec.to_string());
 
-            auto const now = std::chrono::system_clock::now();
+            // auto const now = std::chrono::system_clock::now();
+            auto const now = cyng::make_utc_date();
             auto const age = rec.value("age", now);
             auto const act_time = rec.value("actTime", now);
-            auto const val_time = rec.value<std::uint32_t>("valTime", now.time_since_epoch().count());
+            auto const val_time = rec.value<std::uint32_t>("valTime", now.to_utc_time());
             auto const reg_period = rec.value<std::uint32_t>("regPeriod", 900u);
             auto const status = rec.value<std::uint64_t>("status", 0u);
 
@@ -1911,7 +1912,7 @@ namespace smf {
                  //  6207                                    unit: 7
                  //  5200                                    scaler: 0
                  //  655B8E3F04                              value: 1536048900 (not a sml value!)
-                 sml::period_entry(OBIS_CURRENT_UTC, 0xFF, std::chrono::system_clock::to_time_t(age)),
+                 sml::period_entry(OBIS_CURRENT_UTC, 0xFF, age.to_utc_time()),
                  //  81 81 C7 82 04 FF - SERVER_ID
                  //  62FF                                    unit: 255
                  //  5200                                    scaler: 0

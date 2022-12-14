@@ -45,7 +45,7 @@ namespace smf {
     void gap_report::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop gap report task"); }
     void gap_report::run(std::chrono::hours span) {
 
-        auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "gap report task already stopped");
         if (sp) {
@@ -61,7 +61,7 @@ namespace smf {
             //
             //  report
             //
-            smf::generate_gap(db_, profile_, root_, std::chrono::hours(1), now - max_age_);
+            smf::generate_gap(db_, profile_, root_, now, max_age_);
         }
     }
 } // namespace smf

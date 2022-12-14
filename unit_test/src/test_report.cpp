@@ -4,8 +4,11 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <cyng/sys/clock.h>
+#include <smf/obis/defs.h>
+#include <smf/obis/profile.h>
 #include <smf/report/utility.h>
+
+#include <cyng/sys/clock.h>
 
 #ifdef _DEBUG
 #include <cyng/io/hex_dump.hpp>
@@ -15,43 +18,47 @@
 
 BOOST_AUTO_TEST_SUITE(report_suite)
 
-BOOST_AUTO_TEST_CASE(offset) {
-
-    // auto const now = std::chrono::system_clock::now();
-    //
-    //   generate a time stamp
-    //
-    // std::tm tm = {};
-    // std::istringstream ss("2022-Oktober-21 23:12:34");
-    // ss.imbue(std::locale("de_DE.utf-8"));
-    //// std::istringstream ss("2022-Oct-21 23:12:34");
-    //// ss.imbue(std::locale("en_US.UTF-8"));
-    // ss >> std::get_time(&tm, "%Y-%b-%d %H:%M:%S");
-    // tm.tm_isdst = 1; //  DST is in effect
-
-    // auto const t = std::mktime(&tm);
-    // auto tp = std::chrono::system_clock::from_time_t(t);
-
-    std::string const inp = "2022-10-21 23:12:34";
+BOOST_AUTO_TEST_CASE(slot) {
+    std::string const inp = "2022-07-10 14:56:32";
     std::string const fmt = "%Y-%m-%d %H:%M:%S";
-    auto tp = cyng::sys::to_time_point(inp, fmt);
+    auto const d = cyng::make_date(inp, fmt);
 
-    //   2022-10-22 00:12:34+0200 - de_DE.utf-8
-    std::cout << "start time: " << cyng::sys::to_string_utc(tp, "%F %T%z (UTC), ") << cyng::sys::to_string(tp, "%F %T%z (local)")
-              << std::endl;
+    auto const r1 = smf::sml::to_index(d, smf::OBIS_PROFILE_15_MINUTE);
+    BOOST_CHECK(r1.second);
 
-    for (auto idx = 0u; idx < 14; ++idx) {
-        // auto const delta = cyng::sys::delta_utc(tp);
-        //  cyng::sys::to_string(tp, "%F %T%z");
-        //  std::cout << cyng::sys::to_string(tp, "%F %T%z") << ", delta: " << delta << std::endl;
-        auto const adj = smf::make_tz_offset(tp);
-        // std::cout << adj.duration() << ", " << cyng::sys::to_string(adj.local_time(), "%F %T%z") << std::endl;
-        std::cout << adj << std::endl;
-        tp += std::chrono::hours(24);
+    auto const d2 = smf::sml::from_index_to_date(r1.first, smf::OBIS_PROFILE_15_MINUTE);
+    cyng::as_string(std::cout, d2, fmt);
+    std::cout << std::endl;
+    auto const s2 = cyng::as_string(d2, fmt);
+    BOOST_REQUIRE_EQUAL(s2, "2022-07-10 15:00:00");
+
+    // for (std::size_t idx = 0u; idx < 16u; ++idx) {
+    //     auto const d = smf::sml::from_index_to_date(idx, smf::OBIS_PROFILE_15_MINUTE);
+    //     cyng::as_string(std::cout, d, fmt);
+    //     std::cout << std::endl;
+    // }
+    // std::cout << std::endl;
+
+    // for (std::size_t idx = 1841628u; idx < 1841628u + 16u; ++idx) {
+    //     auto const d = smf::sml::from_index_to_date(idx, smf::OBIS_PROFILE_15_MINUTE);
+    //     cyng::as_string(std::cout, d, fmt);
+    //     std::cout << std::endl;
+    // }
+    // std::cout << std::endl;
+
+    // for (std::size_t idx = 0u; idx < 16u; ++idx) {
+    //     auto const d = smf::sml::from_index_to_date(idx, smf::OBIS_PROFILE_60_MINUTE);
+    //     cyng::as_string(std::cout, d, fmt);
+    //     std::cout << std::endl;
+    // }
+    // std::cout << std::endl;
+
+    for (std::size_t idx = 0u; idx < 16u; ++idx) {
+        auto const d = smf::sml::from_index_to_date(idx, smf::OBIS_PROFILE_24_HOUR);
+        cyng::as_string(std::cout, d, fmt);
+        std::cout << std::endl;
     }
-
-    // template <typename D> using tz_offset_t = tz_offset<typename D::rep, typename D::period>;
-    typename smf::tz_offset_t<std::chrono::minutes>::type tz;
+    std::cout << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -43,6 +43,24 @@ namespace smf {
             return std::chrono::minutes(1);
         }
 
+        std::chrono::minutes interval_time(cyng::date const &d, cyng::obis profile) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return std::chrono::minutes(1);
+            case CODE_PROFILE_15_MINUTE: return std::chrono::minutes(15);
+            case CODE_PROFILE_60_MINUTE: return std::chrono::hours(1);
+            case CODE_PROFILE_24_HOUR: return std::chrono::hours(24);
+            case CODE_PROFILE_1_MONTH: return std::chrono::hours(d.days_in_month() * 24);
+            case CODE_PROFILE_1_YEAR: return std::chrono::hours(d.days_in_year() * 24);
+            default: BOOST_ASSERT_MSG(false, "not implemented yet"); break;
+            }
+
+            //
+            //  this is an error
+            //
+            BOOST_ASSERT_MSG(false, "not a load profile");
+            return std::chrono::hours(1);
+        }
+
         std::chrono::hours backtrack_time(cyng::obis profile) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return std::chrono::hours(2); ;
@@ -252,7 +270,94 @@ namespace smf {
             return {std::chrono::duration_cast<std::chrono::seconds>(start.time_since_epoch()).count(), false};
         }
 
-        std::size_t calculate_entry_count(cyng::obis profile, std::chrono::hours span) {
+        std::pair<std::int64_t, bool> to_index(cyng::date ts, cyng::obis profile) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return {ts.calculate_slot(std::chrono::minutes(1)), true};
+            case CODE_PROFILE_15_MINUTE: return {ts.add(std::chrono::minutes(5)).calculate_slot(std::chrono::minutes(15)), true};
+            case CODE_PROFILE_60_MINUTE: return {ts.add(std::chrono::minutes(15)).calculate_slot(std::chrono::hours(1)), true};
+            case CODE_PROFILE_24_HOUR: return {ts.add(std::chrono::hours(1)).calculate_slot(std::chrono::hours(24)), true};
+            case CODE_PROFILE_1_MONTH: break;
+            case CODE_PROFILE_1_YEAR: break;
+            default: break;
+            }
+            return {ts.calculate_slot(std::chrono::minutes(15)), false};
+        }
+
+        std::pair<std::int64_t, std::int64_t> to_index_range(cyng::date ts, cyng::obis profile) {
+            //
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: break;
+            case CODE_PROFILE_15_MINUTE: break;
+            case CODE_PROFILE_60_MINUTE: break;
+            case CODE_PROFILE_24_HOUR:
+                //  full month
+                break;
+            case CODE_PROFILE_1_MONTH:
+                //  full year
+                break;
+            case CODE_PROFILE_1_YEAR: break;
+            default: break;
+            }
+            //  full day
+            return {to_index(ts.get_start_of_day(), profile).first, to_index(ts.get_end_of_day(), profile).first};
+        }
+
+        cyng::date from_index_to_date(std::int64_t idx, cyng::obis profile) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return cyng::make_epoch_date() + std::chrono::minutes(idx);
+            case CODE_PROFILE_15_MINUTE: return cyng::make_epoch_date() + std::chrono::minutes(idx * 15);
+            case CODE_PROFILE_60_MINUTE: return cyng::make_epoch_date() + std::chrono::hours(idx);
+            case CODE_PROFILE_24_HOUR: return cyng::make_epoch_date() + std::chrono::hours(idx * 24);
+            case CODE_PROFILE_1_MONTH: break;
+            case CODE_PROFILE_1_YEAR: break;
+            default: break;
+            }
+            return cyng::make_epoch_date();
+        }
+
+        std::chrono::hours reporting_period(cyng::obis profile, cyng::date const &ref) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE:
+            case CODE_PROFILE_15_MINUTE:
+            case CODE_PROFILE_60_MINUTE:
+                // one day
+                return std::chrono::hours(24);
+            case CODE_PROFILE_24_HOUR:
+            case CODE_PROFILE_1_MONTH:
+                // one month
+                return std::chrono::hours(24 * ref.days_in_month());
+            case CODE_PROFILE_1_YEAR:
+                // one year
+                return std::chrono::hours(24 * ref.days_in_year());
+            default: break;
+            }
+            //
+            return std::chrono::hours(24);
+        }
+
+        bool is_new_reporting_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next) {
+
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE:
+            case CODE_PROFILE_15_MINUTE:
+            case CODE_PROFILE_60_MINUTE:
+                // every day
+                return cyng::day(prev) != cyng::day(next);
+            case CODE_PROFILE_24_HOUR:
+            case CODE_PROFILE_1_MONTH:
+                // every month
+                return cyng::month(prev) != cyng::month(next);
+            case CODE_PROFILE_1_YEAR:
+                // every year
+                return cyng::year(prev) != cyng::year(next);
+
+            default: break;
+            }
+            //
+            return prev != next;
+        }
+
+        std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours span) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);
             case CODE_PROFILE_15_MINUTE: return (span.count() * 60u) / 15u;
@@ -283,6 +388,8 @@ namespace smf {
 
             return offset_ + std::chrono::minutes(idx);
         }
+
+        cyng::date get_offset() { return cyng::date::make_date_from_utc_time(offset_); }
 
     } // namespace sml
 

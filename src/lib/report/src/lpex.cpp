@@ -16,6 +16,8 @@
 #include <fstream>
 #include <iostream>
 
+#include <boost/uuid/uuid_io.hpp>
+
 namespace smf {
 
     void generate_lpex(
@@ -23,330 +25,258 @@ namespace smf {
         cyng::obis profile,
         cyng::obis_path_t filter,
         std::filesystem::path root,
+        cyng::date now,
         std::chrono::hours backtrack,
-        std::chrono::system_clock::time_point now, // local time
         std::string prefix,
         bool print_version,
         bool separated,
-        bool debug_mode,
-        lpex_cb cb) {
+        bool debug_mode) {
 
         //
         //	start transaction
         //
         cyng::db::transaction trx(db);
 
-        switch (profile.to_uint64()) {
-        case CODE_PROFILE_1_MINUTE: {
-            auto const start = cyng::date::make_date_from_utc_time(now - backtrack).get_start_of_day().to_utc_time_point();
-
-            lpex::generate_report_1_minute(
-                db,
-                profile,
-                filter,
-                root,
-                prefix,
-                start, //  start
-                now,
-                print_version,
-                separated,
-                debug_mode,
-                cb);
-        } break;
-        case CODE_PROFILE_15_MINUTE: {
-
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_day(),
-                cyng::date::make_date_from_local_time(now).get_end_of_day());
-
+        //
+        //  loop
+        //
+        auto const start = (now - backtrack).get_start_of_day();
 #ifdef _DEBUG
-            //  PROFILE_15_MINUTE:2022-11-26 00:00:00 ==120h=> 2022-11-31 00:00:00
-            std::cout << "rr   : " << rr << std::endl;
+        std::cout << "start at: " << cyng::as_string(start) << std::endl;
 #endif
 
-            lpex::generate_report_15_minutes(db, rr, filter, root, prefix, print_version, separated, debug_mode, cb);
-        } break;
-        case CODE_PROFILE_60_MINUTE: {
+        //
+        //  data set of specific time period
+        //
+        data::data_set_t data_set;
 
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_utc_time(now - backtrack).get_start_of_month(),
-                cyng::date::make_date_from_utc_time(now).get_end_of_day());
+        //
+        //  reference date
+        //
+        // cyng::date prev = cyng::make_epoch_date();
+        cyng::date prev = start;
 
-#ifdef _DEBUG
-            std::cout << rr << std::endl;
-#endif
+        loop_readout_data(
+            db,
+            profile,
+            start,
+            [&](bool next_record,
+                boost::uuids::uuid tag,
+                srv_id_t id,
+                cyng::date act_time,
+                std::uint32_t status,
+                cyng::obis reg,
+                std::string value,
+                std::uint16_t code,
+                std::int8_t scaler,
+                mbus::unit unit) -> bool {
+                //
+                //  calculate slot
+                //
+                auto const sr = sml::to_index(act_time, profile);
+                BOOST_ASSERT(sr.second);
+                auto const d = sml::from_index_to_date(sr.first, profile);
 
-            lpex::generate_report_60_minutes(db, rr, filter, root, prefix, print_version, separated, debug_mode, cb);
-        } break;
-        case CODE_PROFILE_24_HOUR: {
+                if (next_record) {
 
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_utc_time(now - backtrack).get_start_of_month(),
-                cyng::date::make_date_from_utc_time(now).get_end_of_month());
+                    if (sml::is_new_reporting_period(profile, prev, d)) {
+                        //
+                        //  new day - generate report and clear data set
+                        //
+                        if (!data_set.empty()) {
+                            auto const file_name = get_filename(prefix, profile, prev);
+                            std::cout << ">> generate report " << root / file_name << std::endl;
+                            auto ofs = lpex::open_report(root, file_name, print_version);
+                            if (ofs.is_open()) {
+                                lpex::generate_report(ofs, profile, prev, data_set);
+                                lpex::clear_data(data_set);
+                            }
+                        }
+                    }
 
-#ifdef _DEBUG
-            std::cout << rr << std::endl;
-#endif
+                    //
+                    //  update time stamp
+                    //
+                    prev = d;
 
-            lpex::generate_report_24_hour(db, rr, filter, root, prefix, print_version, separated, debug_mode, cb);
-        } break;
-        case CODE_PROFILE_1_MONTH: {
+                    std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
+                              << ", " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+                }
 
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_utc_time(now - backtrack).get_start_of_year(),
-                cyng::date::make_date_from_utc_time(now).get_end_of_month());
+                //
+                //  update data set
+                //
+                if (has_passed(reg, filter)) {
+                    std::cout << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                    lpex::update_data_set(id, data_set, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
+                } else {
+                    std::cout << "> skip " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                }
+                return true;
+            });
 
-#ifdef _DEBUG
-            std::cout << rr << std::endl;
-#endif
-
-            lpex::generate_report_1_month(db, rr, filter, root, prefix, print_version, separated, debug_mode, cb);
-        } break;
-        case CODE_PROFILE_1_YEAR: {
-
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_utc_time(now - backtrack).get_start_of_year(),
-                cyng::date::make_date_from_utc_time(now).get_end_of_year());
-
-#ifdef _DEBUG
-            std::cout << rr << std::endl;
-#endif
-
-            lpex::generate_report_1_year(db, rr, filter, root, prefix, print_version, separated, debug_mode, cb);
-        } break;
-
-        default: break;
+        //
+        //  generate report for last data set
+        //
+        if (!data_set.empty()) {
+            auto const file_name = get_filename(prefix, profile, prev);
+            std::cout << ">> generate report " << root / file_name << std::endl;
+            auto ofs = lpex::open_report(root, file_name, print_version);
+            if (ofs.is_open()) {
+                lpex::generate_report(ofs, profile, prev, data_set);
+                ofs.close();
+            }
+            lpex::clear_data(data_set);
         }
     }
 
     namespace lpex {
-        /**
-         * 1 minute reports
-         */
-        void generate_report_1_minute(
-            cyng::db::session,
-            cyng::obis profile,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point now,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {
-            ;
-        }
 
-        /**
-         * Quarter hour reports
-         */
-        void generate_report_15_minutes(
-            cyng::db::session db,
-            report_range const &rr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {
+        void generate_report(std::ofstream &ofs, cyng::obis profile, cyng::date const &d, data::data_set_t const &data_set) {
+
+            auto const [start, end] = sml::to_index_range(d, profile);
+            BOOST_ASSERT(start <= end);
+            std::cout << "> generate report for " << data_set.size() << " meters from " << start << " = "
+                      << cyng::as_string(sml::from_index_to_date(start, profile), "%Y-%m-%d %H:%M:%S") << " to " << end << " = "
+                      << cyng::as_string(sml::from_index_to_date(end, profile), "%Y-%m-%d %H:%M:%S") << std::endl;
 
             //
-            //  generate lpex reports about the complete time range
+            //  customer data (if any)
             //
-            auto const step = std::chrono::hours(24);
-            for (auto idx = rr.get_start(); idx < rr.get_end(); idx += step) {
+            // auto customer_data = query_customer_data_by_meter(db, val.first);
+            auto customer_data = std::optional<lpex_customer>();
 
-                report_range const subrr(rr.get_profile(), idx, step);
-                generate_report_15_minutes_part(db, subrr, filter, root, prefix, print_version, separated, debug_mode, cb);
-            }
-        }
-
-        void generate_report_15_minutes_part(
-            cyng::db::session db,
-            report_range const &subrr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {
-
+            for (auto const &data : data_set) {
+                for (auto const &[reg, values] : data.second) {
+                    if (!values.empty()) {
+                        //
+                        //  first time point
+                        //
+                        auto const first = values.begin()->first;
+                        auto const unit = values.begin()->second.unit_;
+                        BOOST_ASSERT(start <= first);
+                        std::cout << cyng::as_string(d, "%d.%m.%y;%H:%M:%S;") << get_id(data.first) << ';' << obis::to_decimal(reg)
+                                  << ';' << mbus::get_name(unit);
 #ifdef _DEBUG
-            //  PROFILE_15_MINUTE:2022-11-26 00:00:00 ==120h=> 2022-11-31 00:00:00
-            std::cout << "subrr: " << subrr << std::endl;
+                        std::cout << ';' << '[' << start << ']' << ';' << '[' << first << ']' << ';' << '[' << end << ']';
 #endif
+                        //
+                        // report
+                        // start with the timestamp of the first entry
+                        //
+                        ofs << cyng::as_string(sml::from_index_to_date(first, profile), "%d.%m.%y;%H:%M:%S;");
 
-            auto const size = collect_report(db, subrr, filter, root, prefix, print_version, separated, debug_mode);
+                        //
+                        //  [3..10] customer data
+                        //
+                        emit_customer_data(ofs, data.first, customer_data);
 
-            //
-            //  logging callback
-            //
-            cb(subrr.get_start().to_local_time_point(), subrr.get_span(), size, subrr.max_readout_count());
-        }
+                        //
+                        //  [11] register (Kennzahl)
+                        //
+                        obis::to_decimal(ofs, reg);
+                        ofs << ";";
 
-        /**
-         * Hourly reports
-         */
-        void generate_report_60_minutes(
-            cyng::db::session db,
-            report_range const &rr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {
+                        //
+                        //  [12] unit (Einheit)
+                        //
+                        ofs << mbus::get_name(unit);
+                        ofs << ";";
+
+                        //  [13] Wandlerfaktor - conversion factor
+                        ofs << "1;";
+
+                        //  [14] Messperiodendauer (15/60) - measuring period in minutes
+                        ofs << sml::interval_time(d, profile).count();
+
+                        auto idx = start;
+                        for (auto const [slot, ro] : values) {
+                            //
+                            //  value
+                            //
+                            std::cout << ';' << ro.reading_;
+                            ofs << ";" << ro.reading_ << ";";
+
+                            //
+                            //  status
+                            //
+                            if (ro.status_ != 0) {
+                                ofs << std::hex << std::setfill('0') << std::setw(5) << ro.status_ << std::dec;
+                            } else {
+                                ofs << ro.status_;
+                            }
+
+                            //
+                            //  update slot
+                            //
+                            idx = slot;
+                        }
+                        for (; idx < end; ++idx) {
+                            std::cout << ';';
+                            ofs << ';';
 #ifdef _DEBUG
-            // std::cout << "60 min (" << profile << ") lpex report period spans from " << start << " to " << end << " ("
-            //           << std::chrono::duration_cast<std::chrono::hours>(end - start) << ") "
-            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
-            //           << " entries in total" << std::endl;
-
-            // std::cout << "start of month : " << cyng::sys::get_start_of_month(start) << std::endl;
-            // std::cout << "length of month: " << cyng::sys::get_length_of_month(start) << std::endl;
+                            std::cout << '[' << idx - start << ']';
 #endif
-            //
-            //  generate lpex reports about the complete time range
-            //
-            auto [start, end] = rr.get_range();
-            auto const step = std::chrono::hours(24);
-            while (start < end) {
-
-                report_range const subrr(rr.get_profile(), start, step);
-                generate_report_60_minutes_part(db, subrr, filter, root, prefix, print_version, debug_mode, separated, cb);
-                start += step;
+                        }
+                        std::cout << std::endl;
+                        ofs << std::endl;
+                    }
+                }
             }
         }
 
-        void generate_report_60_minutes_part(
-            cyng::db::session db,
-            report_range const &subrr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {
-
-            auto const size = collect_report(db, subrr, filter, root, prefix, print_version, separated, debug_mode);
-
-            //
-            //  logging callback
-            //
-            cb(subrr.get_start().to_utc_time_point(), subrr.get_span(), size, subrr.max_readout_count());
-
-#ifdef __DEBUG
-            std::cout << "start 60 min report ";
-            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
-            std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC)");
-            std::cout << ", offset to UTC is " << start.deviation().count() << " minutes - entries: " << size << "/" << count
-                      << std::endl;
-#endif
-        }
-
-        /**
-         * Daily reports
-         */
-        void generate_report_24_hour(
-            cyng::db::session db,
-            report_range const &rr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {
-
-            //
-            //  generate lpex reports about the complete time range
-            //
-            auto [start, end] = rr.get_range();
-            while (start < end) {
-
-                auto const step = start.hours_in_month();
-                report_range const subrr(rr.get_profile(), start, step);
-
-                generate_report_24_hour(db, subrr, filter, root, prefix, print_version, separated, debug_mode, cb);
-
-                start += step;
+        void clear_data(data::data_set_t &data_set) {
+            for (auto &data : data_set) {
+                std::cout << "> clear " << data.second.size() << " data records of meter " << to_string(data.first) << std::endl;
+                data.second.clear();
             }
         }
 
-        void generate_report_24_hour_part(
-            cyng::db::session db,
-            report_range const &subrr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {
+        void update_data_set(
+            smf::srv_id_t id,
+            data::data_set_t &data_set, // to update
+            cyng::obis reg,
+            std::uint64_t slot,
+            std::uint16_t code,
+            std::int8_t scaler,
+            std::uint8_t unit,
+            std::string value,
+            std::uint32_t status) {
+            auto pos = data_set.find(id);
+            if (pos != data_set.end()) {
+                //
+                // meter has already entries
+                // lookup for register
+                //
+                auto pos_reg = pos->second.find(reg);
+                if (pos_reg != pos->second.end()) {
+                    //
+                    //  register has already entries
+                    //
+                    pos_reg->second.insert(data::make_readout(slot, code, scaler, unit, value, status));
+                } else {
+                    //
+                    //  new register
+                    //
+                    std::cout << "> new register #" << pos->second.size() << ": " << reg << " of meter " << to_string(id)
+                              << std::endl;
+                    pos->second.insert(data::make_value(reg, data::make_readout(slot, code, scaler, unit, value, status)));
+                }
 
-            auto const size = collect_report(db, subrr, filter, root, prefix, print_version, separated, debug_mode);
+            } else {
+                //
+                //  new meter found
+                //
+                std::cout << "> new meter #" << data_set.size() << ": " << to_string(id) << std::endl;
+                std::cout << "> new register #0: " << reg << " of meter " << to_string(id) << std::endl;
 
-            //
-            //  logging callback
-            //
-            auto const [start, end] = subrr.get_range();
-            cb(start.to_utc_time_point(), subrr.get_span(), size, subrr.max_readout_count());
-
-            // auto const end = start.utc_time() + span;
-            // auto const count = sml::calculate_entry_count(profile, span);
-            // auto const size =
-            //     collect_report(db, profile, filter, root, prefix, start, end, start, count, print_version, separated,
-            //     debug_mode);
-            // cb(start.utc_time(), span, size, count);
-
-#ifdef __DEBUG
-            std::cout << "start 24 h report ";
-            cyng::sys::to_string_utc(std::cout, start, "%Y-%m-%dT%H:%M (UTC)");
-            std::cout << " => ";
-            cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC)");
-            std::cout << ", offset to UTC is " << start.deviation().count() << " minutes - entries: " << size << "/" << count
-                      << std::endl;
-#endif
+                //
+                //  create a record of readout data
+                //
+                data_set.insert(
+                    data::make_set(id, data::make_value(reg, data::make_readout(slot, code, scaler, unit, value, status))));
+            }
         }
-
-        /**
-         * Monthly reports
-         */
-        void generate_report_1_month(
-            cyng::db::session,
-            report_range const &rr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {}
-
-        /**
-         * Yearly reports
-         */
-        void generate_report_1_year(
-            cyng::db::session,
-            report_range const &rr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode,
-            lpex_cb cb) {}
 
         std::vector<std::string> get_header() {
             return {
@@ -379,85 +309,6 @@ namespace smf {
 
         std::vector<std::string> get_version() { return {"LPEX V2.0"}; }
 
-        std::size_t collect_report(
-            cyng::db::session db,
-            report_range const &subrr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode) {
-
-            //
-            //  collect data from this time range ordered by meter -> register -> timepoint
-            //
-            auto const data = collect_data_by_time_range(db, filter, subrr);
-
-            if (separated) {
-                //
-                // Generate reports for every device individually
-                // loop over all meters
-                //
-                for (auto const &val : data) {
-                    //
-                    //  server id
-                    //
-                    auto const srv_id = to_srv_id(val.first);
-
-                    //
-                    //  customer data (if any)
-                    //
-                    auto customer_data = query_customer_data_by_meter(db, val.first);
-
-                    //
-                    // print report (add offset to get the local time)
-                    //
-                    auto const file_name = get_filename(prefix, subrr.get_profile(), srv_id, subrr.get_start());
-
-                    //
-                    //  open stream
-                    //
-                    std::ofstream of = open_report(root, file_name, print_version);
-
-                    //
-                    //  write report
-                    //
-                    emit_report(of, subrr, srv_id, debug_mode, val.second, customer_data);
-                }
-            } else {
-                //
-                // Generate a report for *all* devices in one file.
-                // loop over all meters
-                //
-                auto const file_name = get_filename(prefix, subrr.get_profile(), subrr.get_start());
-
-                //
-                //  open stream
-                //
-                std::ofstream ofs = open_report(root, file_name, print_version);
-
-                for (auto const &val : data) {
-                    //
-                    //  server id
-                    //
-                    auto const srv_id = to_srv_id(val.first);
-
-                    //
-                    //  customer data (if any)
-                    //
-                    auto customer_data = query_customer_data_by_meter(db, val.first);
-
-                    //
-                    // print report (add offset to get the local time)
-                    //
-                    emit_report(ofs, subrr, srv_id, debug_mode, val.second, customer_data);
-                }
-            }
-
-            return data.size();
-        }
-
         std::ofstream open_report(std::filesystem::path root, std::string file_name, bool print_version) {
             auto const file_path = root / file_name;
             std::ofstream ofs(file_path.string(), std::ios::trunc);
@@ -483,173 +334,7 @@ namespace smf {
             return ofs; // move
         }
 
-        void emit_report(
-            std::ofstream &ofs,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            data::values_t const &data,
-            // std::chrono::minutes offset, // UTC offset
-            // std::size_t count,           //  entries in time span
-            std::optional<lpex_customer> const &customer_data) {
-
-            if (ofs.is_open()) {
-
-                //
-                //  data
-                //
-                emit_data(ofs, subrr, srv_id, debug_mode, data, customer_data);
-            }
-        }
-
-        void emit_data(
-            std::ostream &os,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            data::values_t const &data,
-            std::optional<lpex_customer> const &customer_data) {
-
-            //
-            //  iterate over all registers
-            //
-            for (auto pos = data.begin(); pos != data.end(); ++pos) {
-
-                //
-                //  the register in this data set
-                //
-                auto reg = pos->first;
-
-                auto pos_ro = pos->second.begin();
-                if (pos_ro != pos->second.end()) {
-
-                    if (pos_ro->second.unit_ != mbus::unit::UNDEFINED_) {
-
-                        //
-                        //   the first time stamp in this data set (UTC)
-                        //
-                        auto const time_slot = sml::restore_time_point(pos_ro->first, subrr.get_profile());
-
-                        //
-                        //  local time stamp (Datum, Zeit)
-                        //
-                        auto const first = cyng::date::make_date_from_utc_time(time_slot);
-                        cyng::as_string(os, first, "%d.%m.%y;%H:%M:%S;");
-#ifdef _DEBUG
-                        auto pos_ro_last = (--pos->second.end());
-                        auto const time_slot_last = sml::restore_time_point(pos_ro_last->first, subrr.get_profile());
-                        auto const last = cyng::date::make_date_from_utc_time(time_slot_last);
-
-                        std::cout << "start at " << cyng::as_string(first, "%d.%m.%y;%H:%M:%S;")
-                                  << ", last: " << cyng::as_string(last, "%d.%m.%y;%H:%M:%S;") << std::endl;
-#endif
-                        //
-                        //  [3..10] customer data
-                        //
-                        emit_customer_data(os, srv_id, customer_data);
-
-                        //
-                        //  [11] register (Kennzahl)
-                        //
-                        obis::to_decimal(os, reg);
-                        os << ";";
-
-                        //
-                        //  [12] unit (Einheit)
-                        //
-                        os << mbus::get_name(pos_ro->second.unit_);
-                        os << ";";
-
-                        //  [13] Wandlerfaktor - conversion factor
-                        os << "1;";
-
-                        //  [14] Messperiodendauer (15/60) - measuring period in minutes
-                        os << sml::interval_time(time_slot, subrr.get_profile()).count();
-
-                        // std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point now, cyng::obis profile)
-                        // auto const last = sml::to_index(subrr.get_end().to_utc_time_point(), subrr.get_profile());
-                        //
-                        // values
-                        // Emit only values that are after "first"
-                        //
-                        emit_values(
-                            os,
-                            subrr,
-                            srv_id,
-                            debug_mode,
-                            pos_ro->first, // first time slot
-                            pos->second    // readout data
-                        );
-                    }
-                }
-            }
-        }
-
-        void emit_values(
-            std::ostream &os,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            std::uint64_t first_slot,
-            std::map<std::int64_t, sml_data> const &load) {
-
-            BOOST_ASSERT(!load.empty());
-
-            auto const [slot_start, slot_end] = subrr.get_slots();
-            BOOST_ASSERT(slot_start < slot_end);
-            BOOST_ASSERT(slot_start <= first_slot);
-
-            //
-            // N entries per day
-            //
-
-            for (auto idx = first_slot; idx < slot_end; ++idx) {
-                auto const pos = load.find(idx);
-                if (pos == load.end()) {
-                    //
-                    //  no data for this slot
-                    //
-                    if (debug_mode) {
-                        //  debug build print index number
-                        os << ";[" << idx << "];0";
-                    } else {
-                        os << ";;0";
-                    }
-
-                } else {
-                    //
-                    //  data exists
-                    //
-                    os << ";" << pos->second.reading_ << ";";
-                    //  status
-                    if (pos->second.status_ != 0) {
-                        os << std::hex << std::setfill('0') << std::setw(5) << pos->second.status_ << std::dec;
-                    } else {
-                        os << pos->second.status_;
-                    }
-                }
-            }
-            os << std::endl;
-
-            if (debug_mode) {
-
-                auto const first = load.begin()->first;
-                auto const last = (--load.end())->first;
-                auto const h = fill_up(
-                    {"[DEBUG]",
-                     cyng::to_string(subrr.get_profile()),
-                     cyng::as_string(subrr.get_start(), "%d-%m-%yT%H:%M:%S"),
-                     cyng::as_string(subrr.get_end(), "%d-%m-%yT%H:%M:%S"),
-                     std::to_string(first_slot),
-                     std::to_string(slot_end),
-                     std::to_string(slot_end - first_slot),
-                     // std::to_string(slot_start),
-                     // std::to_string(first),
-                     // std::to_string(last),
-                     std::to_string(load.size())});
-                emit_line(os, h);
-            }
-        }
+        //
 
         void emit_line(std::ostream &os, std::vector<std::string> const vec) {
             bool init = false;

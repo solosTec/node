@@ -61,7 +61,7 @@ namespace smf {
         cyng::object act_time,
         std::uint32_t status,
         cyng::obis_path_t path,
-        cyng::param_map_t values) {
+        cyng::prop_map_t values) {
 
         if (path.size() == 1) {
 
@@ -81,7 +81,7 @@ namespace smf {
         cyng::buffer_t server_id,
         cyng::object actTime,
         std::uint32_t status,
-        cyng::param_map_t const &pmap) {
+        cyng::prop_map_t const &pmap) {
 
         //  9 byte array
         auto const srv_id = to_srv_id(server_id);
@@ -133,7 +133,8 @@ namespace smf {
                 } else if (boost::algorithm::equals(val.first, "value")) {
 
 #ifdef _DEBUG
-                    if (boost::algorithm::equals(v.first, "0100020802ff")) {
+                    //  REG_NEG_ACT_E_T2 (0100020802ff)
+                    if (v.first == OBIS_REG_NEG_ACT_E_T2) {
                         //  random value
                         reg_nae_t2_ += rnd_dist_(rnd_gen);
                         ss << "," << v.first << "=" << reg_nae_t2_;

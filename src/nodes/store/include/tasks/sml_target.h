@@ -59,7 +59,7 @@ namespace smf {
     };
 
     //      std::vector<std::string> to_str_vector(cyng::obis_path_t const &path, bool translate);
-    cyng::param_map_t convert_to_param_map(sml::sml_list_t const &);
+    cyng::prop_map_t convert_to_param_map(sml::sml_list_t const &);
 
 } // namespace smf
 

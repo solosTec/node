@@ -11,6 +11,7 @@
 #include <smf/sml/msg.h>
 
 #include <cyng/log/logger.h>
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/task/task_fwd.h>
 
 namespace smf {
@@ -57,8 +58,8 @@ namespace smf {
             std::string,
             std::string,
             bool,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
+            cyng::date,
+            cyng::date,
             cyng::obis_path_t,
             cyng::object,
             cyng::object);
@@ -192,8 +193,8 @@ namespace smf {
             std::string const &trx,
             cyng::buffer_t const &server,
             cyng::obis_path_t const &path,
-            std::chrono::system_clock::time_point const &begin,
-            std::chrono::system_clock::time_point const &end);
+            cyng::date const &begin,
+            cyng::date const &end);
 
         [[nodiscard]] cyng::tuple_t
         get_list_current_data_record(std::string const &trx, cyng::buffer_t const &, cyng::buffer_t const &, cyng::obis);

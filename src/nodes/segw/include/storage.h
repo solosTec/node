@@ -39,10 +39,7 @@ namespace smf {
             std::uint8_t nr,
             std::string description);
 
-        void loop_oplog(
-            std::chrono::system_clock::time_point const &begin,
-            std::chrono::system_clock::time_point const &end,
-            std::function<bool(cyng::record &&)>);
+        void loop_oplog(cyng::date const &begin, cyng::date const &end, std::function<bool(cyng::record &&)>);
 
       private:
         cyng::db::session db_;

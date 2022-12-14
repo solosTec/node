@@ -10,6 +10,7 @@
 #include <smf/mbus/units.h>
 
 #include <cyng/obj/intrinsics/container.h>
+#include <cyng/obj/intrinsics/date.h>
 #include <cyng/obj/intrinsics/obis.h>
 #include <cyng/obj/object.h>
 
@@ -100,8 +101,8 @@ namespace smf {
             std::string,
             std::string,
             bool,
-            std::chrono::system_clock::time_point,
-            std::chrono::system_clock::time_point,
+            cyng::date,
+            cyng::date,
             cyng::obis_path_t,
             cyng::object,
             cyng::object>

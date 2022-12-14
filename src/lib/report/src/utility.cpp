@@ -27,38 +27,6 @@
 #include <iostream>
 
 namespace smf {
-
-    std::vector<cyng::buffer_t> select_meters(cyng::db::session db, report_range const &rr) {
-
-        // BOOST_ASSERT_MSG(start < end, "invalid time range");
-        auto const [start, end] = rr.get_range();
-
-        //  SELECT DISTINCT hex(meterID) FROM TSMLreadout WHERE profile = '8181c78611ff' AND actTime BETWEEN
-        // julianday('2022-07-19')
-        //  AND julianday('2022-07-20');
-        //  Profile "8181c78611ff" translates to 142394398216703 in database
-        std::string const sql =
-            "SELECT DISTINCT meterID FROM TSMLReadout WHERE profile = ? AND actTime BETWEEN julianday(?) AND julianday(?)";
-        auto stmt = db.create_statement();
-        std::vector<cyng::buffer_t> meters;
-        std::pair<int, bool> const r = stmt->prepare(sql);
-        BOOST_ASSERT_MSG(r.second, "prepare SQL statement failed");
-        if (r.second) {
-            //  Without meta data the "real" data type is to be used
-            stmt->push(cyng::make_object(rr.get_profile()), 0); //	profile
-            stmt->push(cyng::make_object(start), 0);            //	start time
-            stmt->push(cyng::make_object(end), 0);              //	end time
-            while (auto res = stmt->get_result()) {
-                auto const meter = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 9));
-                BOOST_ASSERT(!meter.empty());
-                if (!meter.empty()) {
-                    meters.push_back(meter);
-                }
-            }
-        }
-        return meters;
-    }
-
     std::map<cyng::obis, sml_data> select_readout_data(cyng::db::session db, boost::uuids::uuid tag, std::uint32_t status) {
 
         // std::vector<sml_data> readout;
@@ -95,6 +63,113 @@ namespace smf {
         return readout;
     }
 
+    std::size_t loop_readout_data(cyng::db::session db, cyng::obis profile, cyng::date start, cb_loop_readout cb) {
+
+        std::size_t counter = 0;
+
+        std::string const sql =
+            "SELECT TSMLReadout.tag, TSMLReadout.meterID, datetime(actTime), TSMLReadout.status, "
+            "TSMLReadoutData.register, TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit FROM "
+            "TSMLReadout INNER JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
+            "WHERE TSMLReadout.actTime > julianday(?) AND TSMLReadout.profile = ? ORDER BY actTime";
+        auto stmt = db.create_statement();
+        std::pair<int, bool> const r = stmt->prepare(sql);
+        if (r.second) {
+            stmt->push(cyng::make_object(start), 0);   //	start time
+            stmt->push(cyng::make_object(profile), 0); //	select one profile at a time
+
+            boost::uuids::uuid prev_tag = boost::uuids::nil_uuid();
+            while (auto res = stmt->get_result()) {
+                //  [1] tag,
+                //  [2] meterID,
+                //  [3] actTime,
+                //  [4] status,
+                //  [5] register,
+                //  [6] reading,
+                //  [7] type,
+                //  [8] scaler,
+                //  [9] unit
+                auto const tag = cyng::value_cast(res->get(1, cyng::TC_UUID, 0), prev_tag);
+                BOOST_ASSERT(!tag.is_nil());
+
+                //
+                //  true if one record is complete
+                //
+                bool next_record = false;
+                if (tag != prev_tag) {
+                    prev_tag = tag;
+                    next_record = true;
+                }
+                ++counter;
+
+                //  [2] meterID
+                auto const meter = cyng::to_buffer(res->get(2, cyng::TC_BUFFER, 0));
+                auto const id = to_srv_id(meter);
+                //  [3] actTime
+                auto const act_time = cyng::value_cast(res->get(3, cyng::TC_DATE, 0), start);
+                BOOST_ASSERT(act_time >= start);
+                //  [4] status
+                auto const status = cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), 0u);
+                //  [5] register
+                auto const reg = cyng::value_cast(res->get(5, cyng::TC_OBIS, 0), OBIS_DATA_COLLECTOR_REGISTER);
+                //  [6] reading
+                auto const value = cyng::value_cast(res->get(6, cyng::TC_STRING, 0), "?");
+                //  [7] type
+                auto const code = cyng::value_cast<std::uint16_t>(res->get(7, cyng::TC_UINT16, 0), cyng::TC_STRING);
+                //  [8] scaler
+                auto const scaler = cyng::value_cast<std::int8_t>(res->get(8, cyng::TC_INT8, 0), 0);
+                //  [9] unit
+                auto const unit = mbus::to_unit(cyng::numeric_cast<std::uint8_t>(res->get(9, cyng::TC_UINT8, 0), 0u));
+
+                if (!cb(next_record, tag, id, act_time, status, reg, value, code, scaler, unit)) {
+                    break;
+                }
+            }
+        }
+        return counter;
+    }
+
+    std::size_t loop_readout(cyng::db::session db, cyng::obis profile, cyng::date start, cb_loop_meta cb) {
+
+        std::size_t counter = 0;
+
+        std::string const sql =
+            "SELECT meterID, datetime(actTime) FROM TSMLReadout WHERE profile = ? AND actTime > julianday(?) ORDER BY actTime";
+        auto stmt = db.create_statement();
+        std::pair<int, bool> const r = stmt->prepare(sql);
+        if (r.second) {
+            stmt->push(cyng::make_object(profile), 0); // profile
+            stmt->push(cyng::make_object(start), 0);   // start time
+
+            while (auto res = stmt->get_result()) {
+                //  [1] meterID
+                auto const meter = cyng::to_buffer(res->get(1, cyng::TC_BUFFER, 0));
+                auto const id = to_srv_id(meter);
+                //  [2] actTime
+                auto const act_time = cyng::value_cast(res->get(2, cyng::TC_DATE, 0), start);
+                BOOST_ASSERT(act_time >= start);
+                ++counter;
+
+                if (!cb(id, act_time)) {
+                    break;
+                }
+            }
+        }
+
+        return counter;
+    }
+
+    bool has_passed(cyng::obis reg, cyng::obis_path_t const &filter) {
+        //
+        // apply filter only if not empty
+        // The filter contains allowed registers (OBIS)
+        //
+        if (!filter.empty()) {
+            return std::find(filter.begin(), filter.end(), reg) != filter.end();
+        }
+        return true;
+    }
+
     std::set<cyng::obis> collect_profiles(std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &data) {
         std::set<cyng::obis> regs;
         for (auto const d : data) {
@@ -117,7 +192,7 @@ namespace smf {
 
         // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << cyng::as_string(start, "%Y%m%dT%H%M") << ".csv";
+        ss << prefix << get_prefix(profile) << "-" << cyng::as_string(start, "%Y-%m-%d") << ".csv";
         return ss.str();
     }
 
@@ -155,255 +230,6 @@ namespace smf {
         return to_string(profile);
     }
 
-    std::map<std::uint64_t, std::map<cyng::obis, sml_data>>
-    collect_data_by_timestamp(cyng::db::session db, report_range const &subrr, cyng::buffer_t id) {
-
-        //
-        //  ToDo: Incorporate the status into the return value.
-        //
-
-        std::map<std::uint64_t, std::map<cyng::obis, sml_data>> data;
-
-        //  get timestamps
-        auto [start, end] = subrr.get_range();
-
-        auto const ms = config::get_table_sml_readout();
-        std::string const sql =
-            "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) FROM TSMLReadout WHERE profile = ? AND meterID = ? AND received BETWEEN julianday(?) AND julianday(?) ORDER BY actTime";
-        auto stmt = db.create_statement();
-        std::pair<int, bool> const r = stmt->prepare(sql);
-        if (r.second) {
-            stmt->push(cyng::make_object(subrr.get_profile()), 0);         //	profile
-            stmt->push(cyng::make_object(id), 9);                          //	meterID
-            stmt->push(cyng::make_object(start.to_local_time_point()), 0); //	start time
-            stmt->push(cyng::make_object(end.to_local_time_point()), 0);   //	end time
-
-            while (auto res = stmt->get_result()) {
-                auto const rec = cyng::to_record(ms, res);
-                auto const tag = rec.value("tag", boost::uuids::nil_uuid());
-                BOOST_ASSERT(!tag.is_nil());
-                auto const status = rec.value<std::uint32_t>("status", 0u);
-
-                //
-                //  select readout data
-                //
-                //  std::map<cyng::obis, sml_data>
-                auto const readouts = select_readout_data(db, tag, status);
-
-                //
-                //  calculate the time slot
-                //
-                auto const act_time = rec.value("actTime", start);
-                auto const slot = sml::to_index(act_time.to_utc_time_point(), subrr.get_profile());
-                if (slot.second) {
-                    auto set_time = sml::restore_time_point(slot.first, subrr.get_profile());
-
-#ifdef _DEBUG
-                    // using cyng::operator<<;
-                    // std::cout << cyng::to_string(id) << " - slot: #" << slot.first << " (" << set_time
-                    //           << "), actTime: " << rec.value("actTime", start) << " with " << readouts.size() << " readouts"
-                    //           << std::endl;
-#endif
-
-                    data.emplace(slot.first, readouts);
-                }
-            }
-        }
-        return data;
-    }
-
-    gap::readout_t
-    collect_readouts_by_time_range(cyng::db::session db, gap::readout_t const &initial_data, report_range const &subrr) {
-
-        //
-        //  meter => slot => actTime
-        //
-        gap::readout_t data;
-
-        //
-        //  copy only meter IDs
-        //
-        for (auto const &init : initial_data) {
-            data.insert({init.first, {}});
-        }
-
-        auto const ms = config::get_table_sml_readout();
-        std::string const sql = "SELECT tag, gen, meterID, profile, trx, status, datetime(actTime), datetime(received) "
-                                "FROM TSMLReadout "
-                                "WHERE profile = ? AND received BETWEEN julianday(?) AND julianday(?) "
-                                "ORDER BY meterId, actTime";
-        auto stmt = db.create_statement();
-        std::pair<int, bool> const r = stmt->prepare(sql);
-        if (r.second) {
-
-            auto const [start, end] = subrr.get_range();
-
-#ifdef _DEBUG
-            std::cout << "select ro from " << cyng::as_string(start) << " to " << cyng::as_string(end) << " ("
-                      << start.to_utc_time_point() << " to " << end.to_utc_time_point() << ")" << std::endl;
-#endif
-
-            stmt->push(cyng::make_object(subrr.get_profile()), 0);       //	profile
-            stmt->push(cyng::make_object(start.to_utc_time_point()), 0); //	start time
-            stmt->push(cyng::make_object(end.to_utc_time_point()), 0);   //	end time
-
-            while (auto res = stmt->get_result()) {
-                auto const rec = cyng::to_record(ms, res);
-                auto const tag = rec.value("tag", boost::uuids::nil_uuid());
-                BOOST_ASSERT(!tag.is_nil());
-                // auto const status = rec.value<std::uint32_t>("status", 0u);
-
-                //
-                //  calculate the time slot
-                //
-                auto const act_time = rec.value("actTime", start.to_utc_time_point()); // + offset
-                auto const slot = sml::to_index(act_time, subrr.get_profile());
-#ifdef _DEBUG
-                // std::cout << "start: " << cyng::sys::to_string_utc(start, "%Y-%m-%dT%H:%M%z")
-                //           << ", actTime: " << cyng::sys::to_string_utc(act_time, "%Y-%m-%dT%H:%M%z") << ", slot: " << slot.first
-                //           << std::endl;
-#endif
-
-                if (slot.second) {
-                    auto set_time = sml::restore_time_point(slot.first, subrr.get_profile());
-                    auto const id = rec.value("meterID", cyng::make_buffer());
-
-#ifdef _DEBUG
-                    //  example: actTime '2022-10-07 11:00:00' from table translates to '2022-10-07T12:00:00+0200'
-                    // using cyng::operator<<;
-                    // std::cout << "=>start: " << cyng::sys::to_string(start, "%Y-%m-%dT%H:%M%z") << " - " << cyng::to_string(id)
-                    //          << " - slot: #" << slot.first << " (" << set_time << "), actTime: " << rec.value("actTime", start)
-                    //          << ", tag: " << tag << std::endl;
-#endif
-
-                    auto pos = data.find(id);
-                    if (pos != data.end()) {
-                        auto const res = pos->second.emplace(slot.first, act_time);
-                        // BOOST_ASSERT(res.second); - duplicates possible
-#ifdef __DEBUG
-                        if (res.second) {
-                            using cyng::operator<<;
-                            std::cout << cyng::to_string(id) << " has " << pos->second.size() << " entries (" << act_time << ")"
-                                      << std::endl;
-                            //} else {
-                            //    using cyng::operator<<;
-                            //    std::cout << cyng::to_string(id) << " duplicate at " << act_time << std::endl;
-                        }
-#endif
-                    } else {
-                        data.insert(gap::make_readout(id, gap::make_slot(slot.first, act_time)));
-                    }
-                }
-            }
-        }
-        return data;
-    }
-
-    data::profile_t collect_data_by_time_range(cyng::db::session db, cyng::obis_path_t const &filter, report_range const &subrr) {
-
-        data::profile_t data;
-
-        //
-        //  "TSMLReadout" and "TSMLReadoutData" joined by "tag"
-        //
-        std::string const sql =
-            "SELECT TSMLReadout.tag, TSMLReadout.meterID, TSMLReadoutData.register, TSMLReadoutData.gen, TSMLReadout.status, datetime(TSMLReadout.actTime), TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit "
-            "FROM TSMLReadout JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
-            "WHERE profile = ? AND TSMLReadout.actTime BETWEEN julianday(?) AND julianday(?) "
-            "ORDER BY TSMLReadout.meterID, TSMLReadoutData.register, TSMLReadout.actTime";
-        auto stmt = db.create_statement();
-        std::pair<int, bool> const r = stmt->prepare(sql);
-        if (r.second) {
-
-#ifdef _DEBUG
-            std::ofstream ofdbg("LPExdebug.log", std::ios::app);
-            ofdbg << subrr << std::endl;
-#endif
-
-            //  get timestamps in local time
-            auto [start, end] = subrr.get_range();
-            BOOST_ASSERT(start < end);
-
-#ifdef _DEBUG
-            std::cout << subrr << std::endl;
-            // std::cout << start.to_utc_time_point() << " -> " << end.to_utc_time_point() << std::endl;
-#endif
-
-            stmt->push(cyng::make_object(subrr.get_profile()), 0); //	profile
-            //  date and
-            stmt->push(cyng::make_object(start), 0); //	start time
-            stmt->push(cyng::make_object(end), 0);   //	end time
-
-            //
-            // all data for the specified meter in the time range ordered by
-            // 1. meter id
-            // 2. register (OBIS)
-            // 3. time stamp
-            //
-            auto const ms = get_table_virtual_sml_readout();
-            while (auto res = stmt->get_result()) {
-
-                //
-                //  get virtual data record
-                //
-                auto const rec = cyng::to_record(ms, res);
-#ifdef _DEBUG
-                ofdbg << rec.to_string() << std::endl;
-#endif
-
-                //
-                //  Incorporate the status into the return value.
-                //
-                auto const status = rec.value<std::uint32_t>("status", 0u);
-
-                //
-                //  get meter id
-                //
-                auto const id = rec.value("meterID", cyng::make_buffer());
-                BOOST_ASSERT(!id.empty());
-
-                //
-                //  calculate the time slot
-                //
-                auto const act_time = rec.value("actTime", start.to_utc_time_point());
-#ifdef _DEBUG
-                std::cout << start.to_utc_time_point() << ", act_time: " << act_time << ", " << end.to_utc_time_point()
-                          << std::endl;
-                // std::cout << rec.to_string() << std::endl;
-#endif
-                BOOST_ASSERT(start.to_utc_time_point() <= act_time);
-                BOOST_ASSERT(act_time <= end.to_utc_time_point());
-
-                auto const slot = sml::to_index(act_time, subrr.get_profile());
-                if (slot.second) {
-                    auto set_time = sml::restore_time_point(slot.first, subrr.get_profile());
-
-                    auto const code = rec.value<std::uint16_t>("type", cyng::TC_STRING);
-                    auto const reading = rec.value("reading", "");
-                    auto const scaler = rec.value<std::int8_t>("scaler", 0);
-                    auto const reg = rec.value("register", OBIS_DATA_COLLECTOR_REGISTER);
-                    auto const unit = rec.value<std::uint8_t>("unit", 0u);
-
-                    //
-                    // apply filter only if not empty
-                    // The filter contains allowed registers (OBIS)
-                    //
-                    if (!filter.empty()) {
-                        if (std::find(filter.begin(), filter.end(), reg) != filter.end()) {
-                            update_data(data, id, reg, slot.first, code, scaler, unit, reading, status);
-                        } // filter
-                    } else {
-                        //
-                        //  filter is empty - ignore it
-                        //
-                        update_data(data, id, reg, slot.first, code, scaler, unit, reading, status);
-                    }
-                }
-            }
-        }
-        return data;
-    }
-
     void update_data(
         data::profile_t &data,
         cyng::buffer_t id,
@@ -439,92 +265,6 @@ namespace smf {
             data.insert(
                 data::make_profile(id, data::make_value(reg, data::make_readout(slot, code, scaler, unit, reading, status))));
         }
-    }
-
-    std::map<cyng::obis, std::map<std::int64_t, sml_data>> collect_data_by_register(
-        cyng::db::session db,
-        cyng::obis profile,
-        cyng::buffer_t id, // meter id
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end) {
-
-        std::map<cyng::obis, std::map<std::int64_t, sml_data>> data;
-
-        //
-        //  "TSMLReadout" and "TSMLReadoutData" joined by "tag"
-        //
-        std::string const sql =
-            "SELECT TSMLReadout.tag, TSMLReadoutData.register, TSMLReadoutData.gen, TSMLReadout.status, datetime(TSMLReadout.actTime), TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit "
-            "FROM TSMLReadout JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
-            "WHERE profile = ? AND meterID = ? AND received BETWEEN julianday(?) AND julianday(?) "
-            "ORDER BY TSMLReadoutData.register, TSMLReadout.actTime";
-        auto stmt = db.create_statement();
-        std::pair<int, bool> const r = stmt->prepare(sql);
-        if (r.second) {
-            stmt->push(cyng::make_object(profile), 0); //	profile
-            stmt->push(cyng::make_object(id), 9);      //	meterID
-            stmt->push(cyng::make_object(start), 0);   //	start time
-            stmt->push(cyng::make_object(end), 0);     //	end time
-
-            //
-            // all data for the specified meter in the time range ordered by
-            // 1. register
-            // 2. time stamp
-            //
-            auto const ms = get_table_virtual_sml_readout();
-            while (auto res = stmt->get_result()) {
-
-                //
-                //  get virtual data record
-                //
-                auto const rec = cyng::to_record(ms, res);
-#ifdef _DEBUG
-                // std::cout << rec.to_string() << std::endl;
-#endif
-
-                //
-                //  Incorporate the status into the return value.
-                //
-                auto const status = rec.value<std::uint32_t>("status", 0u);
-
-                //
-                //  calculate the time slot
-                //
-                auto const act_time = rec.value("actTime", start);
-                auto const slot = sml::to_index(act_time, profile);
-                if (slot.second) {
-                    auto set_time = sml::restore_time_point(slot.first, profile);
-
-                    auto const code = rec.value<std::uint16_t>("type", cyng::TC_STRING);
-                    auto const reading = rec.value("reading", "");
-                    auto const scaler = rec.value<std::int8_t>("scaler", 0);
-                    auto const reg = rec.value("register", OBIS_DATA_COLLECTOR_REGISTER);
-                    auto const unit = rec.value<std::uint8_t>("unit", 0u);
-
-                    auto pos = data.find(reg);
-                    if (pos == data.end()) {
-                        //
-                        //  new element
-                        //  nested initialization doesn't work, so two steps are necessary
-                        //
-                        data.emplace(std::piecewise_construct, std::forward_as_tuple(reg), std::forward_as_tuple())
-                            .first->second.emplace(
-                                std::piecewise_construct,
-                                std::forward_as_tuple(slot.first),
-                                std::forward_as_tuple(code, scaler, unit, reading, status));
-                    } else {
-                        //
-                        //  existing element
-                        //
-                        pos->second.emplace(
-                            std::piecewise_construct,
-                            std::forward_as_tuple(slot.first),
-                            std::forward_as_tuple(code, scaler, unit, reading, status));
-                    }
-                }
-            }
-        }
-        return data;
     }
 
     std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id) {
@@ -683,25 +423,25 @@ namespace smf {
         typename values_t::value_type make_value(cyng::obis reg, readout_t::value_type value) { return {reg, {value}}; }
 
         typename profile_t::value_type make_profile(cyng::buffer_t id, values_t::value_type value) { return {id, {value}}; }
+        typename data_set_t::value_type make_set(smf::srv_id_t id, values_t::value_type value) { return {id, {value}}; }
 
     } // namespace data
 
     namespace gap {
-        typename slot_date_t::value_type make_slot(std::uint64_t slot, std::chrono::system_clock::time_point tp) {
-            return {slot, tp};
-        }
+        typename slot_date_t::value_type make_slot(std::uint64_t slot, cyng::date tp) { return {slot, tp}; }
 
-        typename readout_t::value_type make_readout(cyng::buffer_t id, slot_date_t::value_type val) { return {id, {val}}; }
+        typename readout_t::value_type make_readout(srv_id_t id, slot_date_t::value_type val) { return {id, {val}}; }
 
     } // namespace gap
 
-    void dump_readout(cyng::db::session db, std::chrono::system_clock::time_point now, std::chrono::hours backlog) {
+    void dump_readout(cyng::db::session db, cyng::date now, std::chrono::hours backlog) {
         // SELECT TSMLReadout.tag, hex(TSMLReadout.meterID), datetime(actTime), TSMLReadoutData.register, reading, unit from
         // TSMLReadout INNER JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag WHERE TSMLReadout.actTime >
         // julianday('2022-11-26') ORDER BY actTime;
 
         //  statistics
         std::set<srv_id_t> server;
+        int day = 0;
 
         std::string const sql =
             "SELECT TSMLReadout.tag, TSMLReadout.meterID, datetime(actTime), TSMLReadoutData.register, reading, unit from "
@@ -714,8 +454,8 @@ namespace smf {
 
             std::size_t idx_readout = 0;
             std::size_t idx_value = 0;
-            cyng::date ro_start = cyng::make_local_date();
-            cyng::date ro_end = cyng::date::make_date_from_local_time(now - backlog);
+            cyng::date ro_start = cyng::make_utc_date();
+            cyng::date ro_end = now - backlog;
             boost::uuids::uuid prev_tag = boost::uuids::nil_uuid();
             while (auto res = stmt->get_result()) {
                 auto const tag = cyng::value_cast(res->get(1, cyng::TC_UUID, 0), prev_tag);
@@ -731,13 +471,18 @@ namespace smf {
                 auto const id = to_srv_id(meter);
                 server.insert(id);
 
-                auto const act_time = cyng::value_cast(res->get(3, cyng::TC_TIME_POINT, 0), now);
-                auto const d = cyng::date::make_date_from_local_time(act_time);
-                if (ro_start > d) {
-                    ro_start = d;
+                auto const act_time = cyng::value_cast(res->get(3, cyng::TC_DATE, 0), now);
+                if (ro_start > act_time) {
+                    ro_start = act_time;
                 }
-                if (ro_end < d) {
-                    ro_end = d;
+                if (ro_end < act_time) {
+                    ro_end = act_time;
+                }
+
+                int const dom = cyng::day(act_time);
+                if (dom != day) {
+                    day = dom;
+                    std::cout << "day   : " << cyng::day(act_time) << std::endl;
                 }
 
                 auto const reg = cyng::value_cast(res->get(4, cyng::TC_OBIS, 0), OBIS_DATA_COLLECTOR_REGISTER);
@@ -745,49 +490,31 @@ namespace smf {
                 auto const unit = mbus::to_unit(cyng::numeric_cast<std::uint8_t>(res->get(6, cyng::TC_UINT8, 0), 0u));
 
                 std::cout << std::setw(4) << idx_readout << '#' << idx_value << ": " << tag << ", " << to_string(id) << ", "
-                          << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << ", " << reg << ": " << value << ' ' << mbus::get_name(unit)
-                          << std::endl;
+                          << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", " << reg << ": " << value << ' '
+                          << mbus::get_name(unit) << std::endl;
             }
 
+            std::cout << std::endl;
             std::cout << "statistics:" << std::endl;
 
-            auto const start_utc = cyng::date::make_date_from_utc_time(now);
-            auto const start = cyng::date::make_date_from_local_time(now - backlog);
-            auto const end = cyng::date::make_date_from_local_time(now);
+            auto const start_utc = now;
+            auto const start = now - backlog;
+            auto const end = now;
             auto ro_range = ro_end.sub<std::chrono::minutes>(ro_start);
 
+            std::cout << std::fixed << std::setprecision(2);
             std::cout << "UTC time  : " << cyng::as_string(start_utc) << std::endl;
             std::cout << "time span : " << cyng::as_string(start) << " to " << cyng::as_string(end) << " = " << backlog.count()
                       << "h" << std::endl;
             std::cout << "readouts  : " << idx_readout << std::endl;
-            std::cout << "frequency : " << idx_readout / backlog.count() << " readout(s) per hour" << std::endl;
+            std::cout << "frequency : " << static_cast<float>(idx_readout) / backlog.count() << " readout(s) per hour" << std::endl;
             std::cout << "first ro  : " << cyng::as_string(ro_start) << std::endl;
             std::cout << "last ro   : " << cyng::as_string(ro_end) << std::endl;
             std::cout << "ro span   : " << ro_range.count() << "min" << std::endl;
-            std::cout << "ro freq.  : " << (idx_readout * 60) / ro_range.count() << " readout(s) per hour" << std::endl;
+            std::cout << "ro freq.  : " << static_cast<float>(idx_readout * 60) / ro_range.count() << " readout(s) per hour"
+                      << std::endl;
             std::cout << "server    : " << server.size() << std::endl;
         }
     }
-
-    report_range::report_range(cyng::obis profile, cyng::date const &start, cyng::date const &end)
-        : profile_(profile)
-        , start_(start)
-        , end_(end) {
-        BOOST_ASSERT_MSG(start_ < end_, "invalid range");
-    }
-
-    cyng::date const &report_range::get_start() const noexcept { return start_; }
-    cyng::date const &report_range::get_end() const noexcept { return end_; }
-    cyng::obis const &report_range::get_profile() const noexcept { return profile_; }
-
-    std::pair<cyng::date, cyng::date> report_range::get_range() const noexcept { return {start_, end_}; }
-
-    std::pair<std::uint64_t, std::uint64_t> report_range::get_slots() const noexcept {
-        return {sml::to_index(start_.to_utc_time_point(), profile_).first, sml::to_index(end_.to_utc_time_point(), profile_).first};
-    }
-
-    std::chrono::hours report_range::get_span() const { return end_.sub<std::chrono::hours>(start_); }
-
-    std::size_t report_range::max_readout_count() const { return sml::calculate_entry_count(profile_, get_span()); }
 
 } // namespace smf

@@ -859,7 +859,7 @@ namespace smf {
             if (pos->second.is_alive()) {
                 std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
-                auto const now = std::chrono::system_clock::now();
+                auto const now = cyng::make_utc_date();
 
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex.reports"));
                 for (auto const &cfg_report : reports) {
@@ -889,25 +889,7 @@ namespace smf {
 
                             auto const prefix = reader_report.get("prefix", "LPEx-");
                             generate_lpex(
-                                pos->second,
-                                profile,
-                                filter,
-                                root,
-                                backtrack,
-                                now,
-                                prefix,
-                                print_version,
-                                separated,
-                                debug_mode,
-                                [=](std::chrono::system_clock::time_point start,
-                                    std::chrono::minutes range,
-                                    std::size_t count,
-                                    std::size_t size) {
-                                    auto const d = cyng::date::make_date_from_local_time(start);
-
-                                    std::cout << "scan " << obis::get_name(profile) << " from " << cyng::as_string(d, "%F %T")
-                                              << " + " << range.count() << " minutes and found " << count << " meters" << std::endl;
-                                });
+                                pos->second, profile, filter, root, now, backtrack, prefix, print_version, separated, debug_mode);
 
                         } else {
                             std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
@@ -921,7 +903,7 @@ namespace smf {
     }
 
     void controller::generate_gap_reports(cyng::object &&cfg) {
-        auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
 
         //
         //  data base connections
@@ -943,9 +925,9 @@ namespace smf {
                     if (enabled) {
                         auto const age = cyng::to_hours(reader_gap.get("backtrack", "48:00:00"));
 
-                        auto const d = cyng::date::make_date_from_local_time(now - age);
+                        // auto const d = cyng::date::make_date_from_local_time(now - age);
                         std::cout << "the gap report on db \"" << param.first << "\" for profile " << obis::get_name(profile)
-                                  << " start with " << cyng::as_string(d, "%Y-%m-%d %T") << std::endl;
+                                  << " start with " << cyng::as_string(now, "%Y-%m-%d %T") << std::endl;
                         auto const root = reader_gap.get("path", "");
                         if (!std::filesystem::exists(root)) {
                             std::cout << "***warning: output path [" << root << "] of gap report " << obis::get_name(profile)
@@ -955,7 +937,7 @@ namespace smf {
                                 std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
                             }
                         }
-                        smf::generate_gap(s, profile, root, age, now);
+                        smf::generate_gap(s, profile, root, now, age);
                     } else {
                         std::cout << "gap report on db " << param.first << " for profile " << obis::get_name(profile)
                                   << " is disabled" << std::endl;
@@ -1005,7 +987,7 @@ namespace smf {
     }
 
     void controller::dump_readout(cyng::object &&cfg, std::chrono::hours backlog) {
-        auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
         auto const reader = cyng::make_reader(cfg);
         BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
         auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
@@ -1013,7 +995,7 @@ namespace smf {
             auto const db = cyng::container_cast<cyng::param_map_t>(param.second);
             auto s = cyng::db::create_db_session(db);
             if (s.is_alive()) {
-                smf::dump_readout(s, now, backlog);
+                smf::dump_readout(s, now.get_end_of_day(), backlog);
             } else {
                 std::cout << "***warning: database [" << param.first << "] is not reachable" << std::endl;
             }

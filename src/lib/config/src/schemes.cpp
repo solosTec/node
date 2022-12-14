@@ -574,8 +574,8 @@ namespace smf {
                  cyng::column("profile", cyng::TC_OBIS),   // load profile
                  cyng::column("trx", cyng::TC_STRING),     // ipt transaction
                  cyng::column("status", cyng::TC_UINT32),
-                 cyng::column("actTime", cyng::TC_TIME_POINT),
-                 cyng::column("received", cyng::TC_TIME_POINT)},
+                 cyng::column("actTime", cyng::TC_DATE),
+                 cyng::column("received", cyng::TC_DATE)},
                 1);
         }
         cyng::meta_sql get_table_sml_readout() {

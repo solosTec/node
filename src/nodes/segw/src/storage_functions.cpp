@@ -65,14 +65,14 @@ namespace smf {
             {
                 // cyng::column("ROWID", cyng::TC_INT64), //	index - with SQLite this prevents creating a column
                 // cyng::column("idx", cyng::TC_INT64), //	index - with SQLite this prevents creating a column
-                cyng::column("actTime", cyng::TC_TIME_POINT),
+                cyng::column("actTime", cyng::TC_DATE),
                 cyng::column("age", cyng::TC_TIME_POINT),
                 cyng::column("regPeriod", cyng::TC_UINT32), //	register period
                 cyng::column("valTime", cyng::TC_UINT32),   //	val time
                 cyng::column("status", cyng::TC_UINT64),    //	status word
                 cyng::column("event", cyng::TC_UINT32),     //	event code
                 cyng::column("peer", cyng::TC_OBIS),        //	peer address (-> u64)
-                cyng::column("utc", cyng::TC_TIME_POINT),   //	UTC time
+                cyng::column("utc", cyng::TC_DATE),         //	UTC time
                 cyng::column("serverId", cyng::TC_BUFFER),  //	server ID (meter)
                 cyng::column("target", cyng::TC_STRING),    //	target name
                 cyng::column("pushNr", cyng::TC_UINT8),     //	operation number

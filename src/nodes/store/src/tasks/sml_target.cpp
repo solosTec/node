@@ -112,7 +112,7 @@ namespace smf {
         // convert value map from
         // std::map<cyng::obis, cyng::param_map_t>
         // to
-        // std::map<std::string, cyng::object> == cyng::param_map_t
+        // std::map<cyng::obis, cyng::object> == cyng::prop_map_t
         //
         //  pmap contains an "key" entry that contains the original
         //  obis code.
@@ -178,19 +178,19 @@ namespace smf {
         }
     }
 
-    cyng::param_map_t convert_to_param_map(sml::sml_list_t const &inp) {
-        cyng::param_map_t r;
+    cyng::prop_map_t convert_to_param_map(sml::sml_list_t const &inp) {
+        cyng::prop_map_t r;
         std::transform(
             std::begin(inp),
             std::end(inp),
             std::inserter(r, r.end()),
-            [](sml::sml_list_t::value_type value) -> cyng::param_map_t::value_type {
+            [](sml::sml_list_t::value_type value) -> cyng::prop_map_t::value_type {
                 //  Add the original key as value. This saves a reconversion from string type
                 value.second.emplace("key", cyng::make_object(value.first));
                 value.second.emplace("code", cyng::make_object(obis::get_name(value.first)));
                 value.second.emplace("descr", cyng::make_object(obis::get_description(value.first)));
 
-                return {cyng::to_string(value.first), cyng::make_object(value.second)};
+                return {value.first, cyng::make_object(value.second)};
             });
         return r;
     }

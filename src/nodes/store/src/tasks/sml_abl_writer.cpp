@@ -60,7 +60,7 @@ namespace smf {
         cyng::object act_time,
         std::uint32_t status,
         cyng::obis_path_t path,
-        cyng::param_map_t values) {
+        cyng::prop_map_t values) {
 
         auto const file_name = get_abl_filename(prefix_, suffix_, srv_id_to_str(server_id), std::chrono::system_clock::now());
         auto const file_path = root_dir_ / file_name;

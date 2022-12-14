@@ -28,7 +28,13 @@ namespace smf {
         std::filesystem::path out,
         std::string prefix,
         std::string suffix)
-        : sigs_{std::bind(&sml_xml_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), std::bind(&sml_xml_writer::close_response, this), std::bind(&sml_xml_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6), std::bind(&sml_xml_writer::get_proc_parameter_response, this), std::bind(&sml_xml_writer::stop, this, std::placeholders::_1)}
+        : sigs_{
+        std::bind(&sml_xml_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), // open.response
+        std::bind(&sml_xml_writer::close_response, this), // close.response
+        std::bind(&sml_xml_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6), // get.profile.list.response
+        std::bind(&sml_xml_writer::get_proc_parameter_response, this), // get.proc.parameter.response
+        std::bind(&sml_xml_writer::stop, this, std::placeholders::_1) // stop
+        }
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger)
@@ -51,7 +57,7 @@ namespace smf {
         cyng::object act_time,
         std::uint32_t status,
         cyng::obis_path_t path,
-        cyng::param_map_t values) {
+        cyng::prop_map_t values) {
 
         auto const now = std::chrono::system_clock::now();
         auto const file_name = sml_xml_filename(prefix_, suffix_, srv_id_to_str(server_id), now);

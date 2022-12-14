@@ -60,7 +60,7 @@ namespace smf {
         cyng::object act_time,
         std::uint32_t status,
         cyng::obis_path_t path,
-        cyng::param_map_t values) {
+        cyng::prop_map_t values) {
 
         // CYNG_LOG_TRACE(logger_, "[sml.csv.writer] get_profile_list_response: #" << values.size());
 

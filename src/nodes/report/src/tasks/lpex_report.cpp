@@ -56,44 +56,25 @@ namespace smf {
     void lpex_report::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop report task"); }
     void lpex_report::run() {
 
-        auto const now = std::chrono::system_clock::now();
+        // auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "report task already stopped");
         if (sp) {
-            auto const next = now + sml::interval_time(now, profile_);
+            auto const interval = sml::interval_time(now, profile_);
+            auto const next = now + interval;
             BOOST_ASSERT_MSG(next > now, "negative time span");
 
             //
             //  restart
             //
-            auto const span = std::chrono::duration_cast<std::chrono::seconds>(next - now);
-            sp->suspend(span, "run");
+            sp->suspend(interval, "run");
             CYNG_LOG_TRACE(logger_, "[report LPex] run " << obis::get_name(profile_) << " at " << next);
 
             //
             //  generate report
             //
-            // generate_csv(db_, profile_, root_, backtrack_, now, prefix_);
-            generate_lpex(
-                db_,
-                profile_,
-                filter_,
-                root_,
-                backtrack_,
-                now,
-                prefix_,
-                print_version_,
-                separated_,
-                debug_mode_,
-                [=, this](
-                    std::chrono::system_clock::time_point start, std::chrono::minutes range, std::size_t count, std::size_t size) {
-                    auto const d = cyng::date::make_date_from_local_time(start);
-
-                    CYNG_LOG_TRACE(
-                        logger_,
-                        "[LPEx report] scan " << obis::get_name(profile_) << " from " << cyng::as_string(d, "%F %T") << " + "
-                                              << range.count() << " minutes and found " << count << " meters");
-                });
+            generate_lpex(db_, profile_, filter_, root_, now, backtrack_, prefix_, print_version_, separated_, debug_mode_);
         }
     }
 } // namespace smf

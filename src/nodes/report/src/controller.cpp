@@ -321,9 +321,9 @@ namespace smf {
                 //"print.version"
                 // std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
-                auto const now = std::chrono::system_clock::now();
+                auto const now = cyng::make_utc_date();
                 using cyng::operator<<;
-                std::cout << "***info: start reporting at " << now << " (local time)" << std::endl;
+                std::cout << "***info: start reporting at " << now << " (UTC)" << std::endl;
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("lpex"));
 
                 auto const print_version = reader["lpex"].get("print.version", true);
@@ -369,21 +369,12 @@ namespace smf {
                                 profile,
                                 filter,
                                 root,
-                                backtrack, //  backtrack hours
                                 now,
+                                backtrack, //  backtrack hours
                                 prefix,
                                 print_version,
                                 separated,
-                                debug_mode,
-                                [=](std::chrono::system_clock::time_point start,
-                                    std::chrono::minutes range,
-                                    std::size_t count,
-                                    std::size_t size) {
-                                    auto const d = cyng::date::make_date_from_local_time(start);
-
-                                    std::cout << "scan " << obis::get_name(profile) << " from " << cyng::as_string(d, "%F %T")
-                                              << " + " << range.count() << " minutes and found " << count << " meters" << std::endl;
-                                });
+                                debug_mode);
 
                         } else {
                             std::cout << "***info: report " << name << " is disabled" << std::endl;
@@ -408,7 +399,7 @@ namespace smf {
             auto s = cyng::db::create_db_session(reader.get("DB"));
             if (s.is_alive()) {
                 auto const cwd = std::filesystem::current_path();
-                auto const now = std::chrono::system_clock::now();
+                auto const now = cyng::make_utc_date();
                 auto const reports = cyng::container_cast<cyng::param_map_t>(reader.get("gap"));
 
                 for (auto const &cfg_report : reports) {
@@ -435,12 +426,7 @@ namespace smf {
                             }
                             auto const backtrack = cyng::to_hours(reader_report.get("max.age", "40:00:00"));
 
-                            generate_gap(
-                                s,
-                                profile,
-                                root,
-                                backtrack, //  backtrack hours
-                                now);
+                            generate_gap(s, profile, root, now, backtrack);
 
                         } else {
                             std::cout << "***info: gap report " << name << " is disabled" << std::endl;
