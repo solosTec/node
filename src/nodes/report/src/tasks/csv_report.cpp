@@ -47,24 +47,25 @@ namespace smf {
     void csv_report::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop csv report task"); }
     void csv_report::run() {
 
-        auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "csv report task already stopped");
         if (sp) {
-            auto const next = now + sml::interval_time(now, profile_);
+            auto const interval = sml::interval_time(now, profile_);
+            auto const next = now + interval;
             BOOST_ASSERT_MSG(next > now, "negative time span");
 
             //
             //  restart
             //
-            auto const span = std::chrono::duration_cast<std::chrono::seconds>(next - now);
-            sp->suspend(span, "run");
+            // auto const span = std::chrono::duration_cast<std::chrono::seconds>(next - now);
+            sp->suspend(interval, "run");
             CYNG_LOG_TRACE(logger_, "[report csv] run " << obis::get_name(profile_) << " at " << next);
 
             //
             //  generate report
             //
-            generate_csv(db_, profile_, root_, backtrack_, now, prefix_);
+            generate_csv(db_, profile_, root_, prefix_, now, backtrack_);
         }
     }
 } // namespace smf

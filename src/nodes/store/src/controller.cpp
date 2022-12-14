@@ -800,7 +800,7 @@ namespace smf {
             if (pos->second.is_alive()) {
                 std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file.name", "") << std::endl;
                 auto const cwd = std::filesystem::current_path();
-                auto const now = std::chrono::system_clock::now();
+                auto const now = cyng::make_utc_date();
 
                 auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("csv.reports"));
                 for (auto const &cfg_report : reports) {
@@ -822,7 +822,7 @@ namespace smf {
                         }
                         auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
                         auto const prefix = reader_report.get("prefix", "");
-                        generate_csv(pos->second, profile, root, backtrack, now, prefix);
+                        generate_csv(pos->second, profile, root, prefix, now, backtrack);
 
                     } else {
                         std::cout << "***info: csv report " << name << " is disabled" << std::endl;
@@ -889,7 +889,7 @@ namespace smf {
 
                             auto const prefix = reader_report.get("prefix", "LPEx-");
                             generate_lpex(
-                                pos->second, profile, filter, root, now, backtrack, prefix, print_version, separated, debug_mode);
+                                pos->second, profile, filter, root, prefix, now, backtrack, print_version, separated, debug_mode);
 
                         } else {
                             std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
@@ -950,7 +950,7 @@ namespace smf {
     }
 
     void controller::cleanup_archive(cyng::object &&cfg) {
-        auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
         auto const reader = cyng::make_reader(cfg);
         BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
         auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
@@ -967,11 +967,11 @@ namespace smf {
                     if (enabled) {
                         auto const age = cyng::to_hours(reader_cls.get("max.age", "48:00:00"));
 
-                        auto const d = cyng::date::make_date_from_local_time(now - age);
+                        auto const d = now - age;
                         std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
                                   << " older than " << cyng::as_string(d, "%Y-%m-%d %H:%M") << std::endl;
                         auto const limit = reader_cls.get("limit", 256u);
-                        auto const size = smf::cleanup(s, profile, now - age, limit);
+                        auto const size = smf::cleanup(s, profile, d, limit);
                         if (size != 0) {
                             std::cout << size << " records removed" << std::endl;
                         }
@@ -1396,16 +1396,11 @@ namespace smf {
                 //
                 //  calculate start time
                 //
-                auto const now = std::chrono::system_clock::now();
-                auto const next = sml::floor(now + sml::interval_time(now, profile), profile);
-                CYNG_LOG_INFO(logger, "start CSV report " << profile << " (" << name << ") at " << next);
-                // bus_.sys_msg(cyng::severity::LEVEL_INFO, "start report ", profile, " (", name, ") at ", next, " UTC");
+                auto const now = cyng::make_utc_date();
+                auto const interval = sml::interval_time(now, profile);
+                CYNG_LOG_INFO(logger, "start CSV report " << profile << " (" << name << ") at " << now + interval);
 
-                if (next > now) {
-                    channel->suspend(next - now, "run");
-                } else {
-                    channel->suspend(sml::interval_time(now, profile), "run");
-                }
+                channel->suspend(interval, "run");
 
             } else {
                 CYNG_LOG_TRACE(logger, "CSV report " << cfg.first << " is disabled");
@@ -1459,21 +1454,13 @@ namespace smf {
                     //
                     //  calculate start time
                     //
-                    auto const now = std::chrono::system_clock::now();
+                    auto const now = cyng::make_utc_date();
                     auto const interval = sml::interval_time(now, profile);
-                    auto const next = sml::floor(now + interval, profile);
 
-                    if (next > now) {
-                        auto const d = cyng::date::make_date_from_local_time(next);
-                        CYNG_LOG_INFO(
-                            logger, "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(d, "%F %T%z"));
-                        channel->suspend(next - now, "run");
-                    } else {
-                        auto const d = cyng::date::make_date_from_local_time(now + interval);
-                        CYNG_LOG_INFO(
-                            logger, "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(d, "%F %T%z"));
-                        channel->suspend(interval, "run");
-                    }
+                    CYNG_LOG_INFO(
+                        logger,
+                        "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(now + interval, "%F %T%z"));
+                    channel->suspend(interval, "run");
                 } else {
                     CYNG_LOG_TRACE(logger, "LPEx report " << cfg.first << " (" << name << ") is disabled");
                 }

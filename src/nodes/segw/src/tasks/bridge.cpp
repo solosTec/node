@@ -812,7 +812,7 @@ namespace smf {
             //
             cfg_http_post http_post_cfg(cfg_, type);
             auto const emt_task_name = http_post_cfg.get_emt_task_name();
-            CYNG_LOG_INFO(logger_, "create emt task [" << emt_task_name << "]");
+            CYNG_LOG_INFO(logger_, "create emt task [" << emt_task_name << "] -> " << http_post_cfg.get_server());
             auto channel_emt = ctl_.create_named_channel_with_ref<emt>(emt_task_name, ctl_, logger_, db_, cfg_);
             stash_.lock(channel_emt);
             if (!http_post_cfg.is_enabled()) {

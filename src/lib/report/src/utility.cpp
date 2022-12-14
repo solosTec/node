@@ -184,7 +184,7 @@ namespace smf {
 
         // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(start, "%Y%m%dT%H%M") << ".csv";
+        ss << prefix << get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(start, "%Y-%m-%d") << ".csv";
         return ss.str();
     }
 
@@ -193,21 +193,6 @@ namespace smf {
         // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
         ss << prefix << get_prefix(profile) << "-" << cyng::as_string(start, "%Y-%m-%d") << ".csv";
-        return ss.str();
-    }
-
-    std::string get_filename(
-        std::string prefix,
-        cyng::obis profile,
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end) {
-
-        BOOST_ASSERT(start < end);
-
-        auto const d = cyng::date::make_date_from_local_time(start);
-        auto const hours = std::chrono::duration_cast<std::chrono::hours>(start - end);
-        std::stringstream ss;
-        ss << prefix << get_prefix(profile) << cyng::as_string(d, "-%Y%m%dT%H%M-") << std::abs(hours.count()) << 'h' << ".csv";
         return ss.str();
     }
 
@@ -228,43 +213,6 @@ namespace smf {
         default: break;
         }
         return to_string(profile);
-    }
-
-    void update_data(
-        data::profile_t &data,
-        cyng::buffer_t id,
-        cyng::obis reg,
-        std::int64_t slot,
-        std::uint16_t code,
-        std::int8_t scaler,
-        std::uint8_t unit,
-        std::string const &reading,
-        std::uint32_t status) {
-        auto pos = data.find(id);
-        if (pos != data.end()) {
-            //
-            //  meter is already inserted - lookup register
-            //
-            auto pos_reg = pos->second.find(reg);
-            if (pos_reg != pos->second.end()) {
-                //
-                //  register is already inserted - lookup time slot
-                //
-                pos_reg->second.insert(data::make_readout(slot, code, scaler, unit, reading, status));
-            } else {
-                //
-                //  new register of this meter
-                //
-                pos->second.insert(data::make_value(reg, data::make_readout(slot, code, scaler, unit, reading, status)));
-            }
-        } else {
-            //
-            //  new meter
-            //  nested initialization doesn't work, so multiple steps are necessary
-            //
-            data.insert(
-                data::make_profile(id, data::make_value(reg, data::make_readout(slot, code, scaler, unit, reading, status))));
-        }
     }
 
     std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id) {
@@ -288,7 +236,7 @@ namespace smf {
         return std::nullopt;
     }
 
-    std::size_t cleanup(cyng::db::session db, cyng::obis profile, std::chrono::system_clock::time_point tp, std::size_t limit) {
+    std::size_t cleanup(cyng::db::session db, cyng::obis profile, cyng::date tp, std::size_t limit) {
 
         std::set<boost::uuids::uuid> tags;
 
@@ -421,9 +369,59 @@ namespace smf {
         }
 
         typename values_t::value_type make_value(cyng::obis reg, readout_t::value_type value) { return {reg, {value}}; }
-
-        typename profile_t::value_type make_profile(cyng::buffer_t id, values_t::value_type value) { return {id, {value}}; }
         typename data_set_t::value_type make_set(smf::srv_id_t id, values_t::value_type value) { return {id, {value}}; }
+
+        void clear(data_set_t &data_set) {
+            for (auto &data : data_set) {
+                std::cout << "> clear " << data.second.size() << " data records of meter " << to_string(data.first) << std::endl;
+                data.second.clear();
+            }
+        }
+
+        void update(
+            data_set_t &data_set, // to update
+            smf::srv_id_t id,
+            cyng::obis reg,
+            std::uint64_t slot,
+            std::uint16_t code,
+            std::int8_t scaler,
+            std::uint8_t unit,
+            std::string value,
+            std::uint32_t status) {
+            auto pos = data_set.find(id);
+            if (pos != data_set.end()) {
+                //
+                // meter has already entries
+                // lookup for register
+                //
+                auto pos_reg = pos->second.find(reg);
+                if (pos_reg != pos->second.end()) {
+                    //
+                    //  register has already entries
+                    //
+                    pos_reg->second.insert(make_readout(slot, code, scaler, unit, value, status));
+                } else {
+                    //
+                    //  new register
+                    //
+                    // std::cout << "> new register #" << pos->second.size() << ": " << reg << " of meter " << to_string(id)
+                    //          << std::endl;
+                    pos->second.insert(make_value(reg, make_readout(slot, code, scaler, unit, value, status)));
+                }
+
+            } else {
+                //
+                //  new meter found
+                //
+                // std::cout << "> new meter #" << data_set.size() << ": " << to_string(id) << std::endl;
+                // std::cout << "> new register #0: " << reg << " of meter " << to_string(id) << std::endl;
+
+                //
+                //  create a record of readout data
+                //
+                data_set.insert(make_set(id, make_value(reg, make_readout(slot, code, scaler, unit, value, status))));
+            }
+        }
 
     } // namespace data
 

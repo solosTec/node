@@ -40,18 +40,15 @@ namespace smf {
         //
         //  calculate initial start time
         //
-        auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "store task already stopped");
         if (sp) {
             auto const interval = sml::interval_time(now, profile_);
-            auto const next_push = sml::next(interval, profile_, now);
-            BOOST_ASSERT_MSG(next_push > now, "negative time span");
 
-            auto const span = std::chrono::duration_cast<std::chrono::seconds>(next_push - now);
-            sp->suspend(span, "run");
+            sp->suspend(interval, "run");
 
-            CYNG_LOG_TRACE(logger_, "[store] run " << obis::get_name(profile_) << " at " << next_push);
+            CYNG_LOG_TRACE(logger_, "[store] run " << obis::get_name(profile_) << " at " << now + interval);
         }
     }
 
@@ -60,7 +57,7 @@ namespace smf {
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "store task already stopped");
         if (sp) {
-            auto const now = std::chrono::system_clock::now();
+            auto const now = cyng::make_utc_date();
             auto const interval = sml::interval_time(now, profile_);
             sp->suspend(interval, "run");
             CYNG_LOG_TRACE(
@@ -75,7 +72,7 @@ namespace smf {
         }
     }
 
-    std::pair<std::size_t, std::size_t> store::transfer(std::chrono::system_clock::time_point now) {
+    std::pair<std::size_t, std::size_t> store::transfer(cyng::date now) {
         std::size_t meta_count = 0, data_count = 0;
 
         cfg_.get_cache().access(

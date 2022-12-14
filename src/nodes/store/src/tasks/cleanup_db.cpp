@@ -45,12 +45,11 @@ namespace smf {
     void cleanup_db::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop cleanup task"); }
     void cleanup_db::run(std::chrono::hours span) {
 
-        auto const now = std::chrono::system_clock::now();
+        auto const now = cyng::make_utc_date();
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "cleanup task already stopped");
         if (sp) {
-            auto const next = now + sml::interval_time(now, profile_);
-            BOOST_ASSERT_MSG(next > now, "negative time span");
+            auto const interval = sml::interval_time(now, profile_);
 
             //
             //  cleanup
@@ -64,8 +63,8 @@ namespace smf {
             //
             //  restart
             //
-            sp->suspend(span, "run", span);
-            CYNG_LOG_TRACE(logger_, "[cleanup] run " << obis::get_name(profile_) << " at " << next);
+            sp->suspend(interval, "run", span);
+            CYNG_LOG_TRACE(logger_, "[cleanup] run " << obis::get_name(profile_) << " at " << now + interval);
         }
     }
 } // namespace smf

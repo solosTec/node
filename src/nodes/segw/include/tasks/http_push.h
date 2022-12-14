@@ -31,8 +31,8 @@ namespace smf {
         using signatures_t = std::tuple<
             std::function<void(void)>,                                                           //	init
             std::function<void(void)>,                                                           //	run
-            std::function<void(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, //  on_channel_open
-            std::function<void(bool, std::uint32_t)>,                                            //  on_channel_close
+            std::function<void(bool, std::uint32_t, std::uint32_t, std::uint32_t, std::string)>, // on_channel_open
+            std::function<void(bool, std::uint32_t)>,                                            // on_channel_close
             std::function<void(cyng::eod)>>;
 
       public:

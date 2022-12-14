@@ -32,10 +32,10 @@ namespace smf {
         cyng::db::session,
         cyng::obis profile,
         cyng::obis_path_t filter,
-        std::filesystem::path,
+        std::filesystem::path root,
+        std::string prefix,
         cyng::date now,
         std::chrono::hours backtrack,
-        std::string prefix,
         bool print_version,
         bool separated,
         bool debug_mode);
@@ -71,25 +71,6 @@ namespace smf {
          * Generate the LPex report
          */
         void generate_report(std::ofstream &, cyng::obis profile, cyng::date const &d, data::data_set_t const &data);
-
-        /**
-         * remove only readout
-         */
-        void clear_data(data::data_set_t &data);
-
-        /**
-         * merge incoming data into data set
-         */
-        void update_data_set(
-            smf::srv_id_t id,
-            data::data_set_t &,
-            cyng::obis reg,
-            std::uint64_t slot,
-            std::uint16_t code,
-            std::int8_t scaler,
-            std::uint8_t unit,
-            std::string value,
-            std::uint32_t status);
 
     } // namespace lpex
 

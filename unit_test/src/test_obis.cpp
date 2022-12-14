@@ -133,19 +133,19 @@ BOOST_AUTO_TEST_CASE(profile) {
     // 2022-07-10 16:56:32
     auto const now = std::chrono::time_point<std::chrono::system_clock>(std::chrono::seconds(1657472192));
 
-    auto const interval = smf::sml::interval_time(now, profile);
-    auto const next_push = smf::sml::next(interval, profile, now);
-    BOOST_REQUIRE(next_push > now); // negative time span
+    // auto const interval = smf::sml::interval_time(now, profile);
+    // auto const next_push = smf::sml::next(interval, profile, now);
+    // BOOST_REQUIRE(next_push > now); // negative time span
 
-    auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
+    // auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
 
-    //  2022-07-10 17:00:00.0000000
-    std::cout << next_push << std::endl;
+    ////  2022-07-10 17:00:00.0000000
+    // std::cout << next_push << std::endl;
 
-    // std::int64_t to_index(std::chrono::system_clock::time_point, cyng::obis profile);
-    // std::chrono::system_clock::time_point to_index(std::int64_t, cyng::obis profile);
-    auto const idx = smf::sml::to_index(now, profile);
-    // auto const tp = smf::sml::to_time_point(idx.first, profile);
+    //// std::int64_t to_index(std::chrono::system_clock::time_point, cyng::obis profile);
+    //// std::chrono::system_clock::time_point to_index(std::int64_t, cyng::obis profile);
+    // auto const idx = smf::sml::to_index(now, profile);
+    //  auto const tp = smf::sml::to_time_point(idx.first, profile);
 
     //  2022-07-10 16:56:32.0000000/2022-07-10 16:45:00.0000000
     // std::cout << now << "/" << tp << std::endl;

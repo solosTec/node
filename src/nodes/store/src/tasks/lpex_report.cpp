@@ -76,7 +76,7 @@ namespace smf {
             //
             //  generate report
             //
-            smf::generate_lpex(db_, profile_, filter_, root_, now, backtrack_, prefix_, print_version_, separated_, debug_mode_);
+            smf::generate_lpex(db_, profile_, filter_, root_, prefix_, now, backtrack_, print_version_, separated_, debug_mode_);
         }
     }
 } // namespace smf

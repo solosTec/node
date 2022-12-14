@@ -96,16 +96,11 @@ namespace smf {
                 //
                 //  calculate start time
                 //
-                auto const now = std::chrono::system_clock::now();
-                auto const next = sml::floor(now + sml::interval_time(now, profile), profile);
-                CYNG_LOG_INFO(logger_, "start csv report " << profile << " (" << name << ") at " << next);
-                bus_.sys_msg(cyng::severity::LEVEL_INFO, "start csv report ", profile, " (", name, ") at ", next, " UTC");
+                auto const now = cyng::make_utc_date();
+                auto const interval = sml::interval_time(now, profile);
+                bus_.sys_msg(cyng::severity::LEVEL_INFO, "start csv report ", profile, " (", name, ") at ", interval, " UTC");
 
-                if (next > now) {
-                    channel->suspend(next - now, "run");
-                } else {
-                    channel->suspend(sml::interval_time(now, profile), "run");
-                }
+                channel->suspend(interval, "run");
 
             } else {
                 CYNG_LOG_TRACE(logger_, "csv report " << cfg.first << " is disabled");
@@ -153,19 +148,13 @@ namespace smf {
                 //
                 //  calculate start time
                 //
-                auto const now = std::chrono::system_clock::now();
+                auto const now = cyng::make_utc_date();
                 auto const interval = sml::interval_time(now, profile);
-                auto const next = sml::floor(now + interval, profile);
-                CYNG_LOG_INFO(logger_, "start lpex report " << profile << " (" << name << ") at " << next);
+                CYNG_LOG_INFO(logger_, "start lpex report " << profile << " (" << name << ") at " << interval);
 
-                if (next > now) {
-                    bus_.sys_msg(cyng::severity::LEVEL_INFO, "start lpex report ", profile, " (", name, ") at ", next, " UTC");
-                    channel->suspend(next - now, "run");
-                } else {
-                    bus_.sys_msg(
-                        cyng::severity::LEVEL_INFO, "start lpex report ", profile, " (", name, ") at ", now + interval, " UTC");
-                    channel->suspend(interval, "run");
-                }
+                bus_.sys_msg(
+                    cyng::severity::LEVEL_INFO, "start lpex report ", profile, " (", name, ") at ", now + interval, " UTC");
+                channel->suspend(interval, "run");
 
             } else {
                 CYNG_LOG_TRACE(logger_, "lpex report " << cfg.first << " is disabled");
@@ -204,19 +193,12 @@ namespace smf {
                 //
                 //  calculate start time
                 //
-                auto const now = std::chrono::system_clock::now();
+                auto const now = cyng::make_utc_date();
                 auto const interval = sml::interval_time(now, profile);
-                auto const next = sml::floor(now + interval, profile);
-                CYNG_LOG_INFO(logger_, "start gap report " << profile << " (" << name << ") at " << next);
+                CYNG_LOG_INFO(logger_, "start gap report " << profile << " (" << name << ") at " << interval);
 
-                if (next > now) {
-                    bus_.sys_msg(cyng::severity::LEVEL_INFO, "start gap report ", profile, " (", name, ") at ", next, " UTC");
-                    channel->suspend(next - now, "run");
-                } else {
-                    bus_.sys_msg(
-                        cyng::severity::LEVEL_INFO, "start gap report ", profile, " (", name, ") at ", now + interval, " UTC");
-                    channel->suspend(sml::interval_time(now, profile), "run");
-                }
+                bus_.sys_msg(cyng::severity::LEVEL_INFO, "start gap report ", profile, " (", name, ") at ", now + interval, " UTC");
+                channel->suspend(interval, "run");
 
             } else {
                 CYNG_LOG_TRACE(logger_, "gap report " << cfg.first << " is disabled");

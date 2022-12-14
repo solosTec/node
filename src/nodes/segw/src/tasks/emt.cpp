@@ -162,6 +162,7 @@ namespace smf {
                     //  send data
                     //
                     push_data(cp);
+                    //                    cp->
                 },
                 [=, this](cyng::buffer_t data) {
                     //  should not receive anything - send only

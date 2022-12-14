@@ -11,13 +11,13 @@
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
 #include <cyng/obj/buffer_cast.hpp>
-#include <cyng/obj/intrinsics/date.h>
 #include <cyng/obj/util.hpp>
 
 #include <fstream>
 #include <iostream>
 
 #include <boost/uuid/nil_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace smf {
 
@@ -25,379 +25,164 @@ namespace smf {
         cyng::db::session db,
         cyng::obis profile,
         std::filesystem::path root,
-        std::chrono::hours backtrack,
-        std::chrono::system_clock::time_point now,
-        std::string prefix) {
+        std::string prefix,
+        cyng::date now,
+        std::chrono::hours backtrack) {
 
-//        switch (profile.to_uint64()) {
-//        case CODE_PROFILE_1_MINUTE: {
-//            // auto const tp = cyng::utc_cast<std::chrono::system_clock::time_point>(
-//            //     cyng::date::make_date_from_local_time(now - backtrack).get_start_of_day());
-//            // csv::generate_report_1_minute(db, profile, root, prefix, tp, now);
-//        } break;
-//        case CODE_PROFILE_15_MINUTE: {
-//
-//            report_range const rr(
-//                profile,
-//                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_day(),
-//                cyng::date::make_date_from_local_time(now).get_end_of_day());
-//
-//#ifdef _DEBUG
-//            std::cout << rr << std::endl;
-//#endif
-//
-//            csv::generate_report_15_minutes(db, rr, root, prefix);
-//        } break;
-//        case CODE_PROFILE_60_MINUTE: {
-//
-//            report_range const rr(
-//                profile,
-//                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_month(),
-//                cyng::date::make_date_from_local_time(now).get_end_of_day());
-//
-//#ifdef _DEBUG
-//            std::cout << rr << std::endl;
-//#endif
-//
-//            csv::generate_report_60_minutes(db, rr, root, prefix);
-//        } break;
-//        case CODE_PROFILE_24_HOUR: {
-//            report_range const rr(
-//                profile,
-//                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_month(),
-//                cyng::date::make_date_from_local_time(now).get_end_of_month());
-//
-//#ifdef _DEBUG
-//            std::cout << rr << std::endl;
-//#endif
-//            csv::generate_report_24_hour(db, rr, root, prefix);
-//        } break;
-//        case CODE_PROFILE_1_MONTH: {
-//            report_range const rr(
-//                profile,
-//                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_year(),
-//                cyng::date::make_date_from_local_time(now).get_end_of_month());
-//
-//#ifdef _DEBUG
-//            std::cout << rr << std::endl;
-//#endif
-//            csv::generate_report_1_month(db, rr, root, prefix);
-//        } break;
-//        case CODE_PROFILE_1_YEAR: {
-//
-//            report_range const rr(
-//                profile,
-//                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_year(),
-//                cyng::date::make_date_from_local_time(now).get_end_of_year());
-//
-//#ifdef _DEBUG
-//            std::cout << rr << std::endl;
-//#endif
-//
-//            csv::generate_report_1_year(db, rr, root, prefix);
-//        } break;
-//
-//        default: break;
-//        }
+        //
+        //	start transaction
+        //
+        cyng::db::transaction trx(db);
+
+        //
+        //  loop
+        //
+        auto const start = (now - backtrack).get_start_of_day();
+#ifdef _DEBUG
+        std::cout << "start at: " << cyng::as_string(start) << std::endl;
+#endif
+
+        //
+        //  data set of specific time period
+        //
+        data::data_set_t data_set;
+
+        //
+        //  reference date
+        //
+        cyng::date prev = start;
+
+        loop_readout_data(
+            db,
+            profile,
+            start,
+            [&](bool next_record,
+                boost::uuids::uuid tag,
+                srv_id_t id,
+                cyng::date act_time,
+                std::uint32_t status,
+                cyng::obis reg,
+                std::string value,
+                std::uint16_t code,
+                std::int8_t scaler,
+                mbus::unit unit) -> bool {
+                //
+                //  calculate slot
+                //
+                auto const sr = sml::to_index(act_time, profile);
+                BOOST_ASSERT(sr.second);
+                auto const d = sml::from_index_to_date(sr.first, profile);
+
+                if (next_record) {
+
+                    if (sml::is_new_reporting_period(profile, prev, d)) {
+                        //
+                        //  new day - generate report and clear data set
+                        //
+                        if (!data_set.empty()) {
+                            csv::generate_report(profile, prev, data_set, root, prefix);
+                            data::clear(data_set);
+                        }
+                    }
+
+                    //
+                    //  update time stamp
+                    //
+                    prev = d;
+
+                    std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
+                              << ", " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+                }
+
+                //
+                //  update data set
+                //
+                data::update(data_set, id, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
+
+                return true;
+            });
+
+        //
+        //  generate report for last data set
+        //
+        if (!data_set.empty()) {
+            csv::generate_report(profile, prev, data_set, root, prefix);
+            data::clear(data_set);
+        }
     }
 
     namespace csv {
-        //        void generate_report_1_minute(
-        //            cyng::db::session db,
-        //            cyng::obis profile,
-        //            std::filesystem::path root,
-        //            std::string prefix,
-        //            std::chrono::system_clock::time_point start,
-        //            std::chrono::system_clock::time_point now) {
-        //
-        // #ifdef _DEBUG
-        //            std::cout << "minutely reports start at " << start << std::endl;
-        // #endif
-        //
-        //            //
-        //            //  generate reports about the complete time range
-        //            //
-        //            while (start < now) {
-        //
-        //                start = generate_report_1_minute(db, profile, root, prefix, start, std::chrono::hours(24));
-        //            }
-        //        }
-        //
-        //        std::chrono::system_clock::time_point generate_report_1_minute(
-        //            cyng::db::session db,
-        //            cyng::obis profile,
-        //            std::filesystem::path root,
-        //            std::string prefix,
-        //            std::chrono::system_clock::time_point start,
-        //            std::chrono::hours span) {
-        //
-        //            auto const end = start + span;
-        //
-        // #ifdef _DEBUG
-        //            std::cout << "start " << start << " => " << end << std::endl;
-        // #endif
-        //
-        //            //
-        //            //  (1) select all meters of this profile that have entries in this
-        //            // time range
-        //            //
-        //            auto const meters = select_meters(db, profile, start, end);
-        //
-        //            //
-        //            //  generate a report for each meter
-        //            //
-        //            for (auto const &meter : meters) {
-        //                collect_report(db, profile, root, prefix, start, end, to_srv_id(meter));
-        //            }
-        //
-        //            return end;
-        //        }
+        std::ofstream open_report(std::filesystem::path root, std::string file_name) {
+            auto const file_path = root / file_name;
+            std::ofstream ofs(file_path.string(), std::ios::trunc);
 
-//        void
-//        generate_report_15_minutes(cyng::db::session db, report_range const &rr, std::filesystem::path root, std::string prefix) {
-//
-// #ifdef _DEBUG
-//            // std::cout << "15 min (" << profile << ") csv report period spans from " << start << " to " << now << " ("
-//            //           << std::chrono::duration_cast<std::chrono::hours>(now - start) << ")" << std::endl;
-// #endif
-//
-//            //
-//            //  generate csv reports about the complete time range
-//            //
-//            auto const step = std::chrono::hours(24);
-//            for (auto idx = rr.get_start(); idx < rr.get_end(); idx += step) {
-//
-//                report_range const subrr(rr.get_profile(), idx, step);
-//                generate_report_15_minutes_part(db, subrr, root, prefix);
-//            }
-//        }
-//
-//        void generate_report_15_minutes_part(
-//            cyng::db::session db,
-//            report_range const &subrr,
-//            std::filesystem::path root,
-//            std::string prefix) {
-//
-//            // auto const end = start + span;
-//
-// #ifdef _DEBUG
-//            // std::cout << "15 min (" << profile << ") report period spans from " << start << " => " << end << " ("
-//            //           << std::chrono::duration_cast<std::chrono::hours>(end - start) << ")" << std::endl;
-// #endif
-//
-//            //
-//            //  (1) select all meters of this profile that have entries in this
-//            // time range
-//            //
-//            auto const meters = select_meters(db, subrr);
-//
-// #ifdef _DEBUG
-//            if (!meters.empty()) {
-//                std::cout << subrr.get_profile() << " has " << meters.size() << " meters: ";
-//                for (auto const &meter : meters) {
-//                    using cyng::operator<<;
-//                    std::cout << meter << " ";
-//                }
-//                std::cout << std::endl;
-//            }
-// #endif
-//
-//            //
-//            //  generate a report for each meter
-//            //
-//            for (auto const &meter : meters) {
-//                collect_report(db, subrr, root, prefix, to_srv_id(meter));
-//            }
-//        }
-//
-//        void
-//        generate_report_60_minutes(cyng::db::session db, report_range const &rr, std::filesystem::path root, std::string prefix) {
-//
-// #ifdef _DEBUG
-//            // std::cout << "1h (" << profile << ") report period spans from " << start << " to " << now << " ("
-//            //           << std::chrono::duration_cast<std::chrono::hours>(now - start) << ")" << std::endl;
-// #endif
-//
-//            //
-//            //  generate reports about the complete time range
-//            //
-//            auto [start, end] = rr.get_range();
-//            auto const step = std::chrono::hours(24);
-//            while (start < end) {
-//
-//                report_range const subrr(rr.get_profile(), start, step);
-//                generate_report_60_minutes(db, subrr, root, prefix);
-//                start += step;
-//            }
-//        }
-//
-//        void generate_report_60_minutes_part(
-//            cyng::db::session db,
-//            report_range const &subrr,
-//            std::filesystem::path root,
-//            std::string prefix) {
-//
-//            // auto const end = start + span;
-//
-// #ifdef _DEBUG
-//            // std::cout << "1h (" << profile << ") report period spans from " << start << " => " << end << " ("
-//            //           << std::chrono::duration_cast<std::chrono::hours>(end - start) << ")" << std::endl;
-// #endif
-//
-//            //
-//            //  (1) select all meters of this profile that have entries in this
-//            // time range
-//            //
-//            auto const meters = select_meters(db, subrr);
-//
-//            //
-//            //  generate a report for each meter
-//            //
-//            for (auto const &meter : meters) {
-//                collect_report(db, subrr, root, prefix, to_srv_id(meter));
-//            }
-//        }
-//
-//        void generate_report_24_hour(cyng::db::session db, report_range const &rr, std::filesystem::path root, std::string prefix)
-//        {
-// #ifdef _DEBUG
-//            // std::cout << "daily reports start at " << start << std::endl;
-// #endif
-//
-//            //
-//            //  generate reports about the complete time range
-//            //
-//            auto [start, end] = rr.get_range();
-//            while (start < end) {
-//
-//                auto const step = start.hours_in_month();
-//                report_range const subrr(rr.get_profile(), start, step);
-//                generate_report_24_hour(db, subrr, root, prefix);
-//                start += step;
-//            }
-//        }
-//
-//        void generate_report_24_hour_part(
-//            cyng::db::session db,
-//            report_range const &subrr,
-//            std::filesystem::path root,
-//            std::string prefix) {
-//
-// #ifdef _DEBUG
-//            // std::cout << "start " << start << " => " << end << std::endl;
-// #endif
-//
-//            //
-//            //  (1) select all meters of this profile that have entries in this
-//            // time range
-//            //
-//            auto const meters = select_meters(db, subrr);
-//
-//            //
-//            //  generate a report for each meter
-//            //
-//            for (auto const &meter : meters) {
-//                collect_report(db, subrr, root, prefix, to_srv_id(meter));
-//            }
-//        }
-//
-//        void generate_report_1_month(cyng::db::session db, report_range const &rr, std::filesystem::path root, std::string prefix)
-//        {
-//            //  ToDo: implement
-//        }
-//        void generate_report_1_year(cyng::db::session db, report_range const &rr, std::filesystem::path root, std::string prefix)
-//        {
-//            //  ToDo: implement
-//        }
-//
-//        void emit_report(
-//            std::filesystem::path root,
-//            std::string file_name,
-//            report_range const &subrr,
-//            std::set<cyng::obis> regs,
-//            std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &data) {
-//
-//            auto const file_path = root / file_name;
-//            std::ofstream of(file_path.string(), std::ios::trunc);
-//
-//            if (of.is_open()) {
-//                //
-//                //  header
-//                //
-//                of << "time,";
-//
-//                bool init = false;
-//                for (auto const &reg : regs) {
-//                    if (init) {
-//                        of << ",";
-//                    } else {
-//                        init = true;
-//                    }
-//                    of << reg;
-//                }
-//                of << std::endl;
-//
-//                //
-//                //  data
-//                //
-//                for (auto const &set : data) {
-//                    //
-//                    //  print time slot
-//                    //
-//                    auto set_time = sml::restore_time_point(set.first, subrr.get_profile());
-//                    using cyng::operator<<;
-//                    of << set_time << ",";
-//
-//                    //
-//                    //  metering data of this time slot
-//                    //
-//                    for (auto const &reg : regs) {
-//                        auto const pos = set.second.find(reg);
-//                        if (pos != set.second.end()) {
-//                            of << pos->second.reading_ << " " << mbus::get_name(pos->second.unit_);
-//                        }
-//                        of << ",";
-//                    }
-//                    of << std::endl;
-//                }
-//            }
-//        }
-//
-//        void collect_report(
-//            cyng::db::session db,
-//            report_range const &subrr,
-//            std::filesystem::path root,
-//            std::string prefix,
-//            srv_id_t srv_id) {
-//
-//            //
-//            //  server id as "octet"
-//            //
-//            auto const id = to_buffer(srv_id);
-//
-//            //
-//            //  collect data from this time range ordered by time stamp
-//            //
-//            std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const data = collect_data_by_timestamp(db, subrr, id);
-//
-//            //
-//            // collect all used profiles
-//            //
-//            auto const regs = collect_profiles(data);
-//
-// #ifdef _DEBUG
-//            std::cout << to_string(srv_id) << " has " << regs.size() << " registers: ";
-//            for (auto const &reg : regs) {
-//                std::cout << reg << " ";
-//            }
-//            std::cout << std::endl;
-// #endif
-//
-//            //
-//            // print report
-//            //
-//            auto const file_name = get_filename(prefix, subrr.get_profile(), srv_id, subrr.get_start());
-//            emit_report(root, file_name, subrr, regs, data);
-//        }
+            if (ofs.is_open()) {
+
+                //
+                // header
+                //
+            }
+
+            return ofs; // move
+        }
+
+        void generate_report(
+            cyng::obis profile,
+            cyng::date const &d,
+            data::data_set_t const &data_set,
+            std::filesystem::path root,
+            std::string prefix) {
+
+            auto const [start, end] = sml::to_index_range(d, profile);
+            BOOST_ASSERT(start <= end);
+            std::cout << "> generate report for " << data_set.size() << " meters from " << start << " = "
+                      << cyng::as_string(sml::from_index_to_date(start, profile), "%Y-%m-%d %H:%M:%S") << " to " << end << " = "
+                      << cyng::as_string(sml::from_index_to_date(end, profile), "%Y-%m-%d %H:%M:%S") << std::endl;
+
+            //
+            //  meter -> register -> slot -> data
+            //
+            for (auto const &[id, values] : data_set) {
+                std::cout << to_string(id) << " has " << values.size() << " entries" << std::endl;
+                std::cout << '#' << to_string(id) << std::endl;
+                // ofs << '#' << to_string(id) << std::endl;
+
+                auto const file_name = get_filename(prefix, profile, id, d);
+                std::cout << ">> generate report " << root / file_name << std::endl;
+                auto ofs = csv::open_report(root, file_name);
+                if (ofs.is_open()) {
+
+                    //
+                    //  header
+                    //
+                    ofs << "date;time;id";
+                    for (auto const &[reg, data] : values) {
+                        ofs << ';' << cyng::to_string(reg);
+                    }
+                    ofs << std::endl;
+
+                    //
+                    //  body
+                    //
+
+                    for (auto idx = start; idx < end; ++idx) {
+                        ofs << cyng::as_string(sml::from_index_to_date(idx, profile), "%Y-%m-%d;%H:%M;");
+                        ofs << to_string(id);
+
+                        for (auto const &[reg, data] : values) {
+                            ofs << ';';
+                            auto const pos = data.find(idx);
+                            if (pos != data.end()) {
+                                ofs << pos->second.reading_;
+                            } else {
+                                ofs << "[-]";
+                            }
+                        }
+                        ofs << std::endl;
+                    }
+                    ofs.close();
+                }
+            }
+        }
     } // namespace csv
 } // namespace smf

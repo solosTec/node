@@ -277,7 +277,7 @@ namespace smf {
         if (s.is_alive()) {
             std::cout << "***info: file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
             auto const cwd = std::filesystem::current_path();
-            auto const now = std::chrono::system_clock::now();
+            auto const now = cyng::make_utc_date();
             auto reports = cyng::container_cast<cyng::param_map_t>(reader.get("csv"));
 
             for (auto const &cfg_report : reports) {
@@ -298,7 +298,7 @@ namespace smf {
                     }
 
                     auto const prefix = reader_report.get("prefix", "");
-                    generate_csv(s, profile, root, std::chrono::hours(40), now, prefix);
+                    generate_csv(s, profile, root, prefix, now, std::chrono::hours(40));
                     return true;
 
                 } else {
@@ -369,9 +369,9 @@ namespace smf {
                                 profile,
                                 filter,
                                 root,
+                                prefix,
                                 now,
                                 backtrack, //  backtrack hours
-                                prefix,
                                 print_version,
                                 separated,
                                 debug_mode);

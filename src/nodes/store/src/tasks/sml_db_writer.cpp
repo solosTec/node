@@ -108,15 +108,6 @@ namespace smf {
         auto const now = cyng::make_utc_date();
 
         //
-        //  check act_time
-        //
-        BOOST_ASSERT(now > sml::get_offset());
-        if (now < sml::get_offset()) {
-            CYNG_LOG_WARNING(logger_, "[sml.db] invalid \"act_time\" " << act_time << " at transaction " << trx);
-            return;
-        }
-
-        //
         //  meter id
         //
         auto const id = get_id(srv);

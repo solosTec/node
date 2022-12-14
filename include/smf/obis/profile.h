@@ -29,7 +29,6 @@ namespace smf {
          * @param tp timepoint in the specified period of time. Only required for monthly and annual profiles
          * @return interval time for the specified profile
          */
-        [[deprecated]] std::chrono::minutes interval_time(std::chrono::system_clock::time_point, cyng::obis profile);
         std::chrono::minutes interval_time(cyng::date const &, cyng::obis profile);
 
         /**
@@ -45,12 +44,12 @@ namespace smf {
          * smf::sml::to_time_point(smf::sml::to_index(now, profile), profile);
          * @endcode
          */
-        std::chrono::system_clock::time_point floor(std::chrono::system_clock::time_point, cyng::obis profile);
+        [[deprecated]] std::chrono::system_clock::time_point floor(std::chrono::system_clock::time_point, cyng::obis profile);
 
         /**
          * Stick to nearest time point.
          */
-        std::chrono::system_clock::time_point round(std::chrono::system_clock::time_point, cyng::obis profile);
+        [[deprecated]] std::chrono::system_clock::time_point round(std::chrono::system_clock::time_point, cyng::obis profile);
 
         /**
          * Put the length of an interval in a certain grid depended from the profile and guaranties
@@ -61,7 +60,7 @@ namespace smf {
          * using hours        = duration<int, ratio<3600>>;
          * @endcode
          */
-        std::int64_t rasterize_interval(std::int64_t sec, cyng::obis profile);
+        [[deprecated]] std::int64_t rasterize_interval(std::int64_t sec, cyng::obis profile);
 
         /**
          * Calculate next time point to push data for specified profile.
@@ -73,7 +72,6 @@ namespace smf {
         /**
          * Calculate an index of the time stamp with an offset to 1. january 2022.
          */
-        [[deprecated]] std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point, cyng::obis profile);
         std::pair<std::int64_t, bool> to_index(cyng::date, cyng::obis profile);
 
         /**
@@ -104,19 +102,6 @@ namespace smf {
          */
         std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours);
 
-        /**
-         * Calculate the time point of the index
-         */
-        std::chrono::system_clock::time_point restore_time_point(std::int64_t, cyng::obis profile);
-
-        /**
-         * @return the offset date (2022-01-01 00:00:00) as UTC.
-         */
-        [[deprecated]] cyng::date get_offset();
-
-        //  2022-01-01 00:00:00 (UTC)
-        constexpr static std::chrono::time_point<std::chrono::system_clock> offset_ =
-            std::chrono::time_point<std::chrono::system_clock>(std::chrono::seconds(1640995200));
     } // namespace sml
 
     /**
@@ -130,11 +115,6 @@ namespace smf {
      * @return hours since Unix epoch (00:00:00 UTC on 1 January 1970)
      */
     [[deprecated]] std::chrono::hours hours_since_epoch(std::chrono::system_clock::time_point);
-
-    /**
-     * Calculate the offset time to 2022-01-01 00:00:00
-     */
-    [[deprecated]] std::chrono::system_clock::time_point calculate_offset(std::chrono::system_clock::time_point);
 
 } // namespace smf
 

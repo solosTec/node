@@ -48,7 +48,6 @@ set (segw_tasks
     include/tasks/en13757.h
     include/tasks/counter.h
     include/tasks/ipt_push.h
-    include/tasks/http_push.h
     include/tasks/store.h
     include/tasks/emt.h
     src/tasks/bridge.cpp
@@ -64,7 +63,6 @@ set (segw_tasks
     src/tasks/en13757.cpp
     src/tasks/counter.cpp
     src/tasks/ipt_push.cpp
-    src/tasks/http_push.cpp
     src/tasks/store.cpp
     src/tasks/emt.cpp
 )

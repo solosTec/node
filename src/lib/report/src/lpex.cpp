@@ -11,7 +11,7 @@
 
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
-#include <cyng/obj/intrinsics/date.h>
+// #include <cyng/obj/intrinsics/date.h>
 
 #include <fstream>
 #include <iostream>
@@ -25,9 +25,9 @@ namespace smf {
         cyng::obis profile,
         cyng::obis_path_t filter,
         std::filesystem::path root,
+        std::string prefix,
         cyng::date now,
         std::chrono::hours backtrack,
-        std::string prefix,
         bool print_version,
         bool separated,
         bool debug_mode) {
@@ -53,7 +53,6 @@ namespace smf {
         //
         //  reference date
         //
-        // cyng::date prev = cyng::make_epoch_date();
         cyng::date prev = start;
 
         loop_readout_data(
@@ -89,7 +88,7 @@ namespace smf {
                             auto ofs = lpex::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
                                 lpex::generate_report(ofs, profile, prev, data_set);
-                                lpex::clear_data(data_set);
+                                data::clear(data_set);
                             }
                         }
                     }
@@ -108,7 +107,7 @@ namespace smf {
                 //
                 if (has_passed(reg, filter)) {
                     std::cout << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
-                    lpex::update_data_set(id, data_set, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
+                    data::update(data_set, id, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
                 } else {
                     std::cout << "> skip " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
                 }
@@ -126,7 +125,7 @@ namespace smf {
                 lpex::generate_report(ofs, profile, prev, data_set);
                 ofs.close();
             }
-            lpex::clear_data(data_set);
+            data::clear(data_set);
         }
     }
 
@@ -146,6 +145,9 @@ namespace smf {
             // auto customer_data = query_customer_data_by_meter(db, val.first);
             auto customer_data = std::optional<lpex_customer>();
 
+            //
+            //  meter -> register -> slot -> data
+            //
             for (auto const &data : data_set) {
                 for (auto const &[reg, values] : data.second) {
                     if (!values.empty()) {
@@ -222,59 +224,6 @@ namespace smf {
                         ofs << std::endl;
                     }
                 }
-            }
-        }
-
-        void clear_data(data::data_set_t &data_set) {
-            for (auto &data : data_set) {
-                std::cout << "> clear " << data.second.size() << " data records of meter " << to_string(data.first) << std::endl;
-                data.second.clear();
-            }
-        }
-
-        void update_data_set(
-            smf::srv_id_t id,
-            data::data_set_t &data_set, // to update
-            cyng::obis reg,
-            std::uint64_t slot,
-            std::uint16_t code,
-            std::int8_t scaler,
-            std::uint8_t unit,
-            std::string value,
-            std::uint32_t status) {
-            auto pos = data_set.find(id);
-            if (pos != data_set.end()) {
-                //
-                // meter has already entries
-                // lookup for register
-                //
-                auto pos_reg = pos->second.find(reg);
-                if (pos_reg != pos->second.end()) {
-                    //
-                    //  register has already entries
-                    //
-                    pos_reg->second.insert(data::make_readout(slot, code, scaler, unit, value, status));
-                } else {
-                    //
-                    //  new register
-                    //
-                    std::cout << "> new register #" << pos->second.size() << ": " << reg << " of meter " << to_string(id)
-                              << std::endl;
-                    pos->second.insert(data::make_value(reg, data::make_readout(slot, code, scaler, unit, value, status)));
-                }
-
-            } else {
-                //
-                //  new meter found
-                //
-                std::cout << "> new meter #" << data_set.size() << ": " << to_string(id) << std::endl;
-                std::cout << "> new register #0: " << reg << " of meter " << to_string(id) << std::endl;
-
-                //
-                //  create a record of readout data
-                //
-                data_set.insert(
-                    data::make_set(id, data::make_value(reg, data::make_readout(slot, code, scaler, unit, value, status))));
             }
         }
 
