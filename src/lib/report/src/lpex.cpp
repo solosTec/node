@@ -11,7 +11,6 @@
 
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
-// #include <cyng/obj/intrinsics/date.h>
 
 #include <fstream>
 #include <iostream>
@@ -30,7 +29,8 @@ namespace smf {
         std::chrono::hours backtrack,
         bool print_version,
         bool separated,
-        bool debug_mode) {
+        bool debug_mode,
+        bool customer) {
 
         //
         //	start transaction
@@ -87,7 +87,7 @@ namespace smf {
                             std::cout << ">> generate report " << root / file_name << std::endl;
                             auto ofs = lpex::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
-                                lpex::generate_report(ofs, profile, prev, data_set);
+                                lpex::generate_report(db, ofs, profile, prev, data_set);
                                 data::clear(data_set);
                             }
                         }
@@ -122,7 +122,7 @@ namespace smf {
             std::cout << ">> generate report " << root / file_name << std::endl;
             auto ofs = lpex::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
-                lpex::generate_report(ofs, profile, prev, data_set);
+                lpex::generate_report(ofs, profile, prev, data_set, customer);
                 ofs.close();
             }
             data::clear(data_set);
@@ -131,7 +131,13 @@ namespace smf {
 
     namespace lpex {
 
-        void generate_report(std::ofstream &ofs, cyng::obis profile, cyng::date const &d, data::data_set_t const &data_set) {
+        void generate_report(
+            cyng::db::session db,
+            std::ofstream &ofs,
+            cyng::obis profile,
+            cyng::date const &d,
+            data::data_set_t const &data_set,
+            bool customer) {
 
             auto const [start, end] = sml::to_index_range(d, profile);
             BOOST_ASSERT(start <= end);
@@ -140,15 +146,17 @@ namespace smf {
                       << cyng::as_string(sml::from_index_to_date(end, profile), "%Y-%m-%d %H:%M:%S") << std::endl;
 
             //
-            //  customer data (if any)
-            //
-            // auto customer_data = query_customer_data_by_meter(db, val.first);
-            auto customer_data = std::optional<lpex_customer>();
-
-            //
             //  meter -> register -> slot -> data
             //
             for (auto const &data : data_set) {
+
+                //
+                //  customer data
+                //  This slows down the overall performance. Maybe caching is a good idea
+                //
+                auto customer_data =
+                    customer ? query_customer_data_by_meter(db, smf::to_buffer(data.first)) : std::optional<lpex_customer>();
+
                 for (auto const &[reg, values] : data.second) {
                     if (!values.empty()) {
                         //

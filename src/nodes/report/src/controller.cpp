@@ -150,6 +150,7 @@ namespace smf {
                 cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", "LPEx-"),
                 cyng::make_param("separated.by.devices", false), // individual reports for each device
+                cyng::make_param("add.customer.data", false),    // add/update customer data
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -362,6 +363,7 @@ namespace smf {
 
                             auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
                             auto const separated = reader_report.get("separated.by.devices", false);
+                            auto const customer = reader_report.get("add.customer.data", false);
 
                             auto const prefix = reader_report.get("prefix", "");
                             generate_lpex(
@@ -374,7 +376,8 @@ namespace smf {
                                 backtrack, //  backtrack hours
                                 print_version,
                                 separated,
-                                debug_mode);
+                                debug_mode,
+                                customer);
 
                         } else {
                             std::cout << "***info: report " << name << " is disabled" << std::endl;

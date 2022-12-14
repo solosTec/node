@@ -37,7 +37,8 @@ namespace smf {
             std::string prefix,
             bool print_version,
             bool separated,
-            bool debug_mode);
+            bool debug_mode,
+            bool customer);
 
         ~lpex_report() = default;
 
@@ -59,6 +60,7 @@ namespace smf {
         bool const print_version_;
         bool const separated_;
         bool const debug_mode_;
+        bool const customer_;
     };
 
 } // namespace smf

@@ -29,7 +29,8 @@ namespace smf {
         std::string prefix,
         bool print_version,
         bool separated,
-        bool debug_mode)
+        bool debug_mode,
+        bool customer)
         : sigs_{
             std::bind(&lpex_report::run, this), // start
             std::bind(&lpex_report::stop, this, std::placeholders::_1) // stop
@@ -45,7 +46,8 @@ namespace smf {
         , prefix_(prefix)
         , print_version_(print_version)
         , separated_(separated)
-        , debug_mode_(debug_mode) {
+        , debug_mode_(debug_mode)
+        , customer_(customer) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -74,7 +76,8 @@ namespace smf {
             //
             //  generate report
             //
-            generate_lpex(db_, profile_, filter_, root_, prefix_, now, backtrack_, print_version_, separated_, debug_mode_);
+            generate_lpex(
+                db_, profile_, filter_, root_, prefix_, now, backtrack_, print_version_, separated_, debug_mode_, customer_);
         }
     }
 } // namespace smf

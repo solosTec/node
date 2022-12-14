@@ -38,7 +38,8 @@ namespace smf {
         std::chrono::hours backtrack,
         bool print_version,
         bool separated,
-        bool debug_mode);
+        bool debug_mode,
+        bool customer);
 
     namespace lpex {
 
@@ -70,7 +71,13 @@ namespace smf {
         /**
          * Generate the LPex report
          */
-        void generate_report(std::ofstream &, cyng::obis profile, cyng::date const &d, data::data_set_t const &data);
+        void generate_report(
+            cyng::db::session db,
+            std::ofstream &,
+            cyng::obis profile,
+            cyng::date const &d,
+            data::data_set_t const &data,
+            bool customer);
 
     } // namespace lpex
 

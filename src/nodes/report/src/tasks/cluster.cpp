@@ -126,6 +126,7 @@ namespace smf {
                 auto const prefix = reader.get("prefix", "");
                 auto const backtrack = cyng::to_hours(reader.get("backtrack", "40:00:00"));
                 auto const separated = reader.get("separated.by.devices", false);
+                auto const customer = reader.get("add.customer.data", false);
 
                 cyng::obis_path_t filter;
                 auto channel = ctl_.create_named_channel_with_ref<lpex_report>(
@@ -140,8 +141,8 @@ namespace smf {
                     prefix,
                     true,      // print version
                     separated, // separated
-                    false      // debug mode
-                );
+                    false,     // debug mode
+                    customer);
                 BOOST_ASSERT(channel->is_open());
                 channels_.lock(channel);
 

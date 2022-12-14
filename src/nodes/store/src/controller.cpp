@@ -291,6 +291,7 @@ namespace smf {
                 cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", ""),
                 cyng::make_param("separated.by.devices", false), // individual reports for each device
+                cyng::make_param("add.customer.data", false),    // add/update customer data
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -886,10 +887,21 @@ namespace smf {
                             }
                             auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
                             auto const separated = reader_report.get("separated.by.devices", false);
+                            auto const customer = reader_report.get("add.customer.data", false);
 
                             auto const prefix = reader_report.get("prefix", "LPEx-");
                             generate_lpex(
-                                pos->second, profile, filter, root, prefix, now, backtrack, print_version, separated, debug_mode);
+                                pos->second,
+                                profile,
+                                filter,
+                                root,
+                                prefix,
+                                now,
+                                backtrack,
+                                print_version,
+                                separated,
+                                debug_mode,
+                                customer);
 
                         } else {
                             std::cout << "***info: lpex report " << name << " is disabled" << std::endl;
@@ -1437,6 +1449,7 @@ namespace smf {
                     auto const backtrack = cyng::to_hours(reader.get("backtrack", "10:00:00"));
                     auto const prefix = reader.get("prefix", "");
                     auto const separated = reader.get("separated.by.devices", false);
+                    auto const customer = reader.get("add.customer.data", false);
 
                     if (!std::filesystem::exists(path)) {
                         CYNG_LOG_WARNING(logger, "output path [" << path << "] of LPEx report " << name << " does not exists");
@@ -1447,7 +1460,19 @@ namespace smf {
                     }
 
                     auto channel = ctl.create_named_channel_with_ref<lpex_report>(
-                        name, ctl, logger, db, profile, filter, path, backtrack, prefix, print_version, separated, debug_mode);
+                        name,
+                        ctl,
+                        logger,
+                        db,
+                        profile,
+                        filter,
+                        path,
+                        backtrack,
+                        prefix,
+                        print_version,
+                        separated,
+                        debug_mode,
+                        customer);
                     BOOST_ASSERT(channel->is_open());
                     channels.lock(channel);
 
