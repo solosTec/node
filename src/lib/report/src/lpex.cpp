@@ -87,7 +87,7 @@ namespace smf {
                             std::cout << ">> generate report " << root / file_name << std::endl;
                             auto ofs = lpex::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
-                                lpex::generate_report(db, ofs, profile, prev, data_set);
+                                lpex::generate_report(db, ofs, profile, prev, data_set, customer);
                                 data::clear(data_set);
                             }
                         }
@@ -122,7 +122,7 @@ namespace smf {
             std::cout << ">> generate report " << root / file_name << std::endl;
             auto ofs = lpex::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
-                lpex::generate_report(ofs, profile, prev, data_set, customer);
+                lpex::generate_report(db, ofs, profile, prev, data_set, customer);
                 ofs.close();
             }
             data::clear(data_set);
