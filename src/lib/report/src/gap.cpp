@@ -22,351 +22,134 @@ namespace smf {
         cyng::db::session db,
         cyng::obis profile,
         std::filesystem::path root,
-        std::chrono::hours backtrack,
-        std::chrono::system_clock::time_point now) {
+        cyng::date now,
+        std::chrono::hours backtrack) {
 
         //
         //	start transaction
         //
         cyng::db::transaction trx(db);
 
-        switch (profile.to_uint64()) {
-        case CODE_PROFILE_1_MINUTE: {
-
-            auto const start = cyng::date::make_date_from_local_time(now - backtrack).get_start_of_day().to_utc_time_point();
-            gap::generate_report_1_minute(
-                db,
-                profile,
-                root,
-                start, //  start
-                now    // end
-            );
-        } break;
-        case CODE_PROFILE_15_MINUTE: {
-
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_day(),
-                cyng::date::make_date_from_local_time(now).get_end_of_day());
-
+        //
+        //  loop
+        //
+        auto const start = (now - backtrack).get_start_of_day();
 #ifdef _DEBUG
-            std::cout << rr << std::endl;
+        std::cout << "start at: " << cyng::as_string(start) << std::endl;
 #endif
 
-            gap::generate_report_15_minutes(db, rr, root);
-        } break;
-        case CODE_PROFILE_60_MINUTE: {
+        //
+        //  reference date
+        //
+        // cyng::date prev = start - sml::reporting_period(profile, start);
+        cyng::date prev = start;
 
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_month(),
-                cyng::date::make_date_from_local_time(now).get_end_of_day());
+        //
+        //  data set
+        //
+        gap::readout_t data;
 
-#ifdef _DEBUG
-            std::cout << rr << std::endl;
-#endif
-
-            gap::generate_report_60_minutes(db, rr, root);
-        } break;
-        case CODE_PROFILE_24_HOUR: {
-
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_month(),
-                cyng::date::make_date_from_local_time(now).get_end_of_month());
+        loop_readout(db, profile, start, [&](srv_id_t id, cyng::date act_time) -> bool {
+            //
+            //
+            //  calculate slot
+            //
+            auto const sr = sml::to_index(act_time, profile);
+            BOOST_ASSERT(sr.second);
+            auto const d = smf::sml::from_index_to_date(sr.first, profile);
 
 #ifdef _DEBUG
-            std::cout << rr << std::endl;
+            std::cout << "start: " << cyng::as_string(start) << ", d: " << cyng::as_string(d) << std::endl;
 #endif
 
-            gap::generate_report_24_hour(db, rr, root);
-        } break;
+            if (sml::is_new_reporting_period(profile, prev, d)) {
 
-        case CODE_PROFILE_1_MONTH: {
+                //
+                //  detect missing report periods
+                //
+                auto const period_target = sml::reporting_period(profile, prev);
+                auto const period_actual = d.sub<std::chrono::hours>(prev);
+                auto const miss = (period_actual.count() / period_target.count());
+                std::cout << ">> there are #" << miss << " missing report periods " << std::endl;
+                for (int idx = 0; idx < miss; ++idx) {
+                    auto const ts = prev + (period_target * idx);
+                    auto const file_name = get_filename("gap-", profile, ts);
+                    std::cout << ">> generate report " << root / file_name << std::endl;
+                }
 
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_year(),
-                cyng::date::make_date_from_local_time(now).get_end_of_month());
+                if (!data.empty()) {
+                    auto const file_name = get_filename("gap-", profile, prev);
+                    std::cout << ">> generate report " << root / file_name << std::endl;
+                    auto ofs = gap::open_report(root, file_name);
+                    if (ofs.is_open()) {
+                        gap::generate_report(ofs, profile, prev, data);
+                        gap::clear_data(data);
+                    }
+                }
+                //
+                //  update time stamp
+                //
+                prev = d;
+            }
 
-#ifdef _DEBUG
-            std::cout << rr << std::endl;
-#endif
+            //
+            //  update data set
+            //
+            auto pos = data.find(id);
+            if (pos != data.end()) {
+                std::cout << "> new slot #" << data.size() << ": " << sr.first << " of meter " << to_string(id) << std::endl;
+                pos->second.insert(gap::make_slot(sr.first, d));
+            } else {
+                std::cout << "> new meter #" << data.size() << ": " << to_string(id) << std::endl;
+                std::cout << "> new slot #0: " << sr.first << " of meter " << to_string(id) << std::endl;
+                data.insert(gap::make_readout(id, gap::make_slot(sr.first, d)));
+            }
 
-            gap::generate_report_1_month(db, rr, root);
-        } break;
-        case CODE_PROFILE_1_YEAR: {
+            return true;
+        });
 
-            report_range const rr(
-                profile,
-                cyng::date::make_date_from_local_time(now - backtrack).get_start_of_year(),
-                cyng::date::make_date_from_local_time(now).get_end_of_year());
-
-#ifdef _DEBUG
-            std::cout << rr << std::endl;
-#endif
-            gap::generate_report_1_year(db, rr, root);
-        }
-
-        break;
-
-        default: break;
+        auto const file_name = get_filename("gap-", profile, prev);
+        std::cout << ">> generate report " << root / file_name << std::endl;
+        auto ofs = gap::open_report(root, file_name);
+        if (ofs.is_open()) {
+            gap::generate_report(ofs, profile, prev, data);
+            gap::clear_data(data);
         }
     }
 
     namespace gap {
-        /**
-         * 1 minute reports
-         */
-        void generate_report_1_minute(
-            cyng::db::session,
-            cyng::obis profile,
-            std::filesystem::path root,
-            std::chrono::system_clock::time_point start,
-            std::chrono::system_clock::time_point end) {}
-
-        /**
-         * Quarter hour reports
-         */
-        void generate_report_15_minutes(cyng::db::session db, report_range const &rr, std::filesystem::path root) {
-#ifdef _DEBUG
-            // std::cout << "15 min (" << profile << ") reporting period spans "
-            //           << std::chrono::duration_cast<std::chrono::hours>(end - start) << " from "
-            //           << cyng::sys::to_string_utc(start, "%F %T%z") << " to " << cyng::sys::to_string_utc(end, "%F %T%z")
-            //           << ", offset = " << start << " with "
-            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
-            //           << " expected entries/meter in total" << std::endl;
-#endif
-            //
-            //  generate gap reports about the complete time range
-            //
-            gap::readout_t data;
-            auto const step = std::chrono::hours(24);
-            for (auto idx = rr.get_start(); idx < rr.get_end(); idx += step) {
-
-                report_range subrr(rr.get_profile(), idx, step);
-                data = generate_report_15_minutes(
-                    db,
-                    data, // initial data
-                    subrr,
-                    root);
+        void clear_data(readout_t &data_set) {
+            for (auto &data : data_set) {
+                std::cout << "> clear " << data.second.size() << " data records of meter " << to_string(data.first) << std::endl;
+                data.second.clear();
             }
         }
-
-        gap::readout_t generate_report_15_minutes(
-            cyng::db::session db,
-            gap::readout_t const &initial_data,
-            report_range const &rr,
-            std::filesystem::path root) {
-
-            auto const data = collect_report(db, initial_data, rr, root);
-#ifdef _DEBUG
-            // std::cout << "gap report (15 min) ";
-            // cyng::sys::to_string(std::cout, start, "%Y-%m-%dT%H:%M%z");
-            // std::cout << " => ";
-            // cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z - ");
-            // std::cout << data.size() << "/" << count << " entries for " << data.size() << " meter(s) each" << std::endl;
-#endif
-            return data;
+        std::ofstream open_report(std::filesystem::path root, std::string file_name) {
+            auto const file_path = root / file_name;
+            return std::ofstream(file_path.string(), std::ios::trunc);
         }
 
-        /**
-         * Hourly reports
-         */
-        void generate_report_60_minutes(cyng::db::session db, report_range const &rr, std::filesystem::path root) {
-#ifdef _DEBUG
-            // std::cout << "60 min (" << profile << ") gap report period spans from " << start << " to " << end << " ("
-            //           << std::chrono::duration_cast<std::chrono::hours>(end - start) << "), offset = ?"
-            //           << " minutes with "
-            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(end - start))
-            //           << " entries in total" << std::endl;
+        void generate_report(std::ofstream &ofs, cyng::obis profile, cyng::date const &d, readout_t const &data) {
+            auto const [start, end] = sml::to_index_range(d, profile);
+            BOOST_ASSERT(start <= end);
+            std::cout << "> generate report for " << data.size() << " meters from " << start << " = "
+                      << cyng::as_string(sml::from_index_to_date(start, profile), "%Y-%m-%d %H:%M:%S") << " to " << end << " = "
+                      << cyng::as_string(sml::from_index_to_date(end, profile), "%Y-%m-%d %H:%M:%S") << std::endl;
 
-            // std::cout << "\tmonth starts at " << cyng::sys::get_start_of_month(start) << " with a length of "
-            //           << cyng::sys::get_length_of_month(start) << std::endl;
-#endif
-
-            //
-            //  generate gap reports about the complete time range
-            //
-            gap::readout_t data;
-            auto [start, end] = rr.get_range();
-            auto const step = std::chrono::hours(24);
-            for (auto idx = start; idx < end;) {
-
-                report_range const subrr(rr.get_profile(), start, step);
-                data = generate_report_60_minutes(db, data, subrr, root);
-                idx += step;
-            }
-        }
-
-        gap::readout_t generate_report_60_minutes(
-            cyng::db::session db,
-            gap::readout_t const &initial_data,
-            report_range const &subrr,
-            std::filesystem::path root) {
-
-            auto const data = collect_report(db, initial_data, subrr, root);
-#ifdef _DEBUG
-            // std::cout << "start 60 min report " << start;
-            // std::cout << " => ";
-            // cyng::sys::to_string_utc(std::cout, end, "%Y-%m-%dT%H:%M (UTC) - ");
-            // std::cout << count << " expected entries, " << data.size() << " meter(s) each" << std::endl;
-#endif
-            return data;
-        }
-
-        /**
-         * Daily reports
-         */
-        void generate_report_24_hour(cyng::db::session db, report_range const &rr, std::filesystem::path root) {
-#ifdef _DEBUG
-            // std::cout << "24 h (" << profile << ") gap report period spans from " << start << " to " << now << " ("
-            //           << std::chrono::duration_cast<std::chrono::hours>(now - start) << "), offset = ? "
-            //           << " minutes with "
-            //           << sml::calculate_entry_count(profile, std::chrono::duration_cast<std::chrono::hours>(now - start))
-            //           << " entries in total" << std::endl;
-#endif
-            //
-            //  generate gap reports about the complete time range
-            //
-            gap::readout_t data;
-
-            auto [start, end] = rr.get_range();
-            while (start < end) {
-
-                auto const step = start.hours_in_month();
-                report_range const subrr(rr.get_profile(), start, step);
-
-                data = generate_report_24_hour(
-                    db,
-                    data, // initial data
-                    subrr,
-                    root);
-
-                start += step;
-            }
-        }
-
-        gap::readout_t generate_report_24_hour(
-            cyng::db::session db,
-            gap::readout_t const &initial_data,
-            report_range const &subrr,
-            std::filesystem::path root) {
-
-            auto const data = collect_report(db, initial_data, subrr, root);
-#ifdef _DEBUG
-            // std::cout << "start 24 h report " << start;
-            // std::cout << " => ";
-            // cyng::sys::to_string(std::cout, end, "%Y-%m-%dT%H:%M%z (UTC) - ");
-            // std::cout << count << " expected entries, " << data.size() << " meter(s)" << std::endl;
-#endif
-            return data;
-        }
-
-        /**
-         * Monthly reports
-         */
-        void generate_report_1_month(cyng::db::session, report_range const &rr, std::filesystem::path root) {}
-
-        /**
-         * Yearly reports
-         */
-        void generate_report_1_year(cyng::db::session, report_range const &rr, std::filesystem::path root) {}
-
-        gap::readout_t collect_report(
-            cyng::db::session db,
-            gap::readout_t const &initial_data,
-            report_range const &subrr,
-            std::filesystem::path root) {
-
-            auto const [start, end] = subrr.get_range();
-
-            auto const slot = sml::to_index(start.to_local_time_point(), subrr.get_profile()); //  start slot
-            BOOST_ASSERT(slot.second);
-
-            //
-            //  collect data from this time range ordered by meter -> register -> timepoint
-            //
-            auto const data = collect_readouts_by_time_range(db, initial_data, subrr);
-
-            //
-            //  generate report only if data available (don't spamming)
-            //
-            if (!data.empty()) {
-
-                auto const file_name = get_filename(
-                    "", subrr.get_profile(), subrr.get_start().to_local_time_point(), subrr.get_end().to_local_time_point());
-                auto const file_path = root / file_name;
-                std::ofstream of(file_path.string(), std::ios::trunc);
-
-                if (of.is_open()) {
-
-                    //
-                    //  loop over all meters
-                    //
-                    if (data.empty()) {
-                        // of << count << std::endl;
+            for (auto const &[id, slots] : data) {
+                ofs << cyng::as_string(d, "%Y-%m-%d;");
+                ofs << to_string(id);
+                for (auto idx = start; idx < end; ++idx) {
+                    ofs << ';';
+                    auto const pos = slots.find(idx);
+                    if (pos != slots.end()) {
+                        ofs << 'Y';
                     } else {
-                        for (auto const &val : data) {
-                            //
-                            //  server id
-                            //
-                            auto const srv_id = to_srv_id(val.first);
-
-#ifdef _DEBUG
-                            // std::cout << srv_id_to_str(val.first) << " has " << val.second.size() << "/" << count << " entries =>
-                            // "
-                            //           << ((val.second.size() * 100.0) / count) << "%" << std::endl;
-#endif
-                            //
-                            // print report
-                            //
-                            emit_data(of, subrr, srv_id, slot.first, val.second);
-                        }
+                        ofs << 'N';
                     }
                 }
+                ofs << std::endl;
             }
-            return data;
-        }
-
-        void emit_data(
-            std::ostream &os,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            std::int64_t start_slot,
-            gap::slot_date_t const &data) //  expected number of entries in time span
-        {
-            auto const count = subrr.max_readout_count();
-
-            os << to_string(srv_id) << ' ' << '#' << start_slot << ',' << data.size() << ',' << count << ','
-               << ((data.size() * 100.0) / count) << '%';
-            for (auto slot = start_slot; slot < start_slot + count; ++slot) {
-
-                os << ',';
-                auto const pos = data.find(slot);
-                if (pos != data.end()) {
-                    os << "[set@";
-
-                    auto const d = cyng::date::make_date_from_local_time(pos->second);
-                    cyng::as_string(os, d, "%Y-%m-%dT%H:%M");
-                    // cyng::sys::to_string(os, pos->second, "%Y-%m-%dT%H:%M");
-#ifdef _DEBUG
-                    os << '#' << slot;
-#endif
-                    os << ']';
-                } else {
-                    //  missing time point
-                    os << "[pull@";
-                    auto const tp = sml::restore_time_point(slot, subrr.get_profile());
-                    auto const d = cyng::date::make_date_from_local_time(tp);
-                    cyng::as_string(os, d, "%Y-%m-%dT%H:%M");
-#ifdef _DEBUG
-                    os << '#' << slot;
-#endif
-                    os << ']';
-                }
-            }
-            os << std::endl;
         }
     } // namespace gap
 

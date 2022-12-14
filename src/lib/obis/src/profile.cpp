@@ -58,7 +58,7 @@ namespace smf {
             //  this is an error
             //
             BOOST_ASSERT_MSG(false, "not a load profile");
-            return std::chrono::minutes(1);
+            return std::chrono::hours(1);
         }
 
         std::chrono::hours backtrack_time(cyng::obis profile) {
@@ -315,6 +315,26 @@ namespace smf {
             return cyng::make_epoch_date();
         }
 
+        std::chrono::hours reporting_period(cyng::obis profile, cyng::date const &ref) {
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE:
+            case CODE_PROFILE_15_MINUTE:
+            case CODE_PROFILE_60_MINUTE:
+                // one day
+                return std::chrono::hours(24);
+            case CODE_PROFILE_24_HOUR:
+            case CODE_PROFILE_1_MONTH:
+                // one month
+                return std::chrono::hours(24 * ref.days_in_month());
+            case CODE_PROFILE_1_YEAR:
+                // one year
+                return std::chrono::hours(24 * ref.days_in_year());
+            default: break;
+            }
+            //
+            return std::chrono::hours(24);
+        }
+
         bool is_new_reporting_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next) {
 
             switch (profile.to_uint64()) {
@@ -337,7 +357,7 @@ namespace smf {
             return prev != next;
         }
 
-        std::size_t calculate_entry_count(cyng::obis profile, std::chrono::hours span) {
+        std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours span) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);
             case CODE_PROFILE_15_MINUTE: return (span.count() * 60u) / 15u;

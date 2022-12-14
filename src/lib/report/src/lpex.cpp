@@ -53,7 +53,8 @@ namespace smf {
         //
         //  reference date
         //
-        cyng::date prev = cyng::make_epoch_date();
+        // cyng::date prev = cyng::make_epoch_date();
+        cyng::date prev = start;
 
         loop_readout_data(
             db,
@@ -61,7 +62,7 @@ namespace smf {
             start,
             [&](bool next_record,
                 boost::uuids::uuid tag,
-                smf::srv_id_t id,
+                srv_id_t id,
                 cyng::date act_time,
                 std::uint32_t status,
                 cyng::obis reg,
@@ -74,7 +75,7 @@ namespace smf {
                 //
                 auto const sr = sml::to_index(act_time, profile);
                 BOOST_ASSERT(sr.second);
-                auto const d = smf::sml::from_index_to_date(sr.first, profile);
+                auto const d = sml::from_index_to_date(sr.first, profile);
 
                 if (next_record) {
 
@@ -117,14 +118,16 @@ namespace smf {
         //
         //  generate report for last data set
         //
-        auto const file_name = get_filename(prefix, profile, prev);
-        std::cout << ">> generate report " << root / file_name << std::endl;
-        auto ofs = lpex::open_report(root, file_name, print_version);
-        if (ofs.is_open()) {
-            lpex::generate_report(ofs, profile, prev, data_set);
-            ofs.close();
+        if (!data_set.empty()) {
+            auto const file_name = get_filename(prefix, profile, prev);
+            std::cout << ">> generate report " << root / file_name << std::endl;
+            auto ofs = lpex::open_report(root, file_name, print_version);
+            if (ofs.is_open()) {
+                lpex::generate_report(ofs, profile, prev, data_set);
+                ofs.close();
+            }
+            lpex::clear_data(data_set);
         }
-        lpex::clear_data(data_set);
     }
 
     namespace lpex {
@@ -158,9 +161,10 @@ namespace smf {
                         std::cout << ';' << '[' << start << ']' << ';' << '[' << first << ']' << ';' << '[' << end << ']';
 #endif
                         //
-                        //  report
+                        // report
+                        // start with the timestamp of the first entry
                         //
-                        ofs << cyng::as_string(d, "%d.%m.%y;%H:%M:%S;");
+                        ofs << cyng::as_string(sml::from_index_to_date(first, profile), "%d.%m.%y;%H:%M:%S;");
 
                         //
                         //  [3..10] customer data
@@ -230,7 +234,7 @@ namespace smf {
 
         void update_data_set(
             smf::srv_id_t id,
-            data::data_set_t &data_set,
+            data::data_set_t &data_set, // to update
             cyng::obis reg,
             std::uint64_t slot,
             std::uint16_t code,
@@ -305,85 +309,6 @@ namespace smf {
 
         std::vector<std::string> get_version() { return {"LPEX V2.0"}; }
 
-        std::size_t collect_report(
-            cyng::db::session db,
-            report_range const &subrr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode) {
-
-            //
-            //  collect data from this time range ordered by meter -> register -> timepoint
-            //
-            auto const data = collect_data_by_time_range(db, filter, subrr);
-
-            if (separated) {
-                //
-                // Generate reports for every device individually
-                // loop over all meters
-                //
-                for (auto const &val : data) {
-                    //
-                    //  server id
-                    //
-                    auto const srv_id = to_srv_id(val.first);
-
-                    //
-                    //  customer data (if any)
-                    //
-                    auto customer_data = query_customer_data_by_meter(db, val.first);
-
-                    //
-                    // print report (add offset to get the local time)
-                    //
-                    auto const file_name = get_filename(prefix, subrr.get_profile(), srv_id, subrr.get_start());
-
-                    //
-                    //  open stream
-                    //
-                    std::ofstream of = open_report(root, file_name, print_version);
-
-                    //
-                    //  write report
-                    //
-                    emit_report(of, subrr, srv_id, debug_mode, val.second, customer_data);
-                }
-            } else {
-                //
-                // Generate a report for *all* devices in one file.
-                // loop over all meters
-                //
-                auto const file_name = get_filename(prefix, subrr.get_profile(), subrr.get_start());
-
-                //
-                //  open stream
-                //
-                std::ofstream ofs = open_report(root, file_name, print_version);
-
-                for (auto const &val : data) {
-                    //
-                    //  server id
-                    //
-                    auto const srv_id = to_srv_id(val.first);
-
-                    //
-                    //  customer data (if any)
-                    //
-                    auto customer_data = query_customer_data_by_meter(db, val.first);
-
-                    //
-                    // print report (add offset to get the local time)
-                    //
-                    emit_report(ofs, subrr, srv_id, debug_mode, val.second, customer_data);
-                }
-            }
-
-            return data.size();
-        }
-
         std::ofstream open_report(std::filesystem::path root, std::string file_name, bool print_version) {
             auto const file_path = root / file_name;
             std::ofstream ofs(file_path.string(), std::ios::trunc);
@@ -409,173 +334,7 @@ namespace smf {
             return ofs; // move
         }
 
-        void emit_report(
-            std::ofstream &ofs,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            data::values_t const &data,
-            // std::chrono::minutes offset, // UTC offset
-            // std::size_t count,           //  entries in time span
-            std::optional<lpex_customer> const &customer_data) {
-
-            if (ofs.is_open()) {
-
-                //
-                //  data
-                //
-                emit_data(ofs, subrr, srv_id, debug_mode, data, customer_data);
-            }
-        }
-
-        void emit_data(
-            std::ostream &os,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            data::values_t const &data,
-            std::optional<lpex_customer> const &customer_data) {
-
-            //
-            //  iterate over all registers
-            //
-            for (auto pos = data.begin(); pos != data.end(); ++pos) {
-
-                //
-                //  the register in this data set
-                //
-                auto reg = pos->first;
-
-                auto pos_ro = pos->second.begin();
-                if (pos_ro != pos->second.end()) {
-
-                    if (pos_ro->second.unit_ != mbus::unit::UNDEFINED_) {
-
-                        //
-                        //   the first time stamp in this data set (UTC)
-                        //
-                        auto const time_slot = sml::restore_time_point(pos_ro->first, subrr.get_profile());
-
-                        //
-                        //  local time stamp (Datum, Zeit)
-                        //
-                        auto const first = cyng::date::make_date_from_utc_time(time_slot);
-                        cyng::as_string(os, first, "%d.%m.%y;%H:%M:%S;");
-#ifdef _DEBUG
-                        auto pos_ro_last = (--pos->second.end());
-                        auto const time_slot_last = sml::restore_time_point(pos_ro_last->first, subrr.get_profile());
-                        auto const last = cyng::date::make_date_from_utc_time(time_slot_last);
-
-                        std::cout << "start at " << cyng::as_string(first, "%d.%m.%y;%H:%M:%S;")
-                                  << ", last: " << cyng::as_string(last, "%d.%m.%y;%H:%M:%S;") << std::endl;
-#endif
-                        //
-                        //  [3..10] customer data
-                        //
-                        emit_customer_data(os, srv_id, customer_data);
-
-                        //
-                        //  [11] register (Kennzahl)
-                        //
-                        obis::to_decimal(os, reg);
-                        os << ";";
-
-                        //
-                        //  [12] unit (Einheit)
-                        //
-                        os << mbus::get_name(pos_ro->second.unit_);
-                        os << ";";
-
-                        //  [13] Wandlerfaktor - conversion factor
-                        os << "1;";
-
-                        //  [14] Messperiodendauer (15/60) - measuring period in minutes
-                        os << sml::interval_time(time_slot, subrr.get_profile()).count();
-
-                        // std::pair<std::int64_t, bool> to_index(std::chrono::system_clock::time_point now, cyng::obis profile)
-                        // auto const last = sml::to_index(subrr.get_end().to_utc_time_point(), subrr.get_profile());
-                        //
-                        // values
-                        // Emit only values that are after "first"
-                        //
-                        emit_values(
-                            os,
-                            subrr,
-                            srv_id,
-                            debug_mode,
-                            pos_ro->first, // first time slot
-                            pos->second    // readout data
-                        );
-                    }
-                }
-            }
-        }
-
-        void emit_values(
-            std::ostream &os,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            std::uint64_t first_slot,
-            std::map<std::int64_t, sml_data> const &load) {
-
-            BOOST_ASSERT(!load.empty());
-
-            auto const [slot_start, slot_end] = subrr.get_slots();
-            BOOST_ASSERT(slot_start < slot_end);
-            BOOST_ASSERT(slot_start <= first_slot);
-
-            //
-            // N entries per day
-            //
-
-            for (auto idx = first_slot; idx < slot_end; ++idx) {
-                auto const pos = load.find(idx);
-                if (pos == load.end()) {
-                    //
-                    //  no data for this slot
-                    //
-                    if (debug_mode) {
-                        //  debug build print index number
-                        os << ";[" << idx << "];0";
-                    } else {
-                        os << ";;0";
-                    }
-
-                } else {
-                    //
-                    //  data exists
-                    //
-                    os << ";" << pos->second.reading_ << ";";
-                    //  status
-                    if (pos->second.status_ != 0) {
-                        os << std::hex << std::setfill('0') << std::setw(5) << pos->second.status_ << std::dec;
-                    } else {
-                        os << pos->second.status_;
-                    }
-                }
-            }
-            os << std::endl;
-
-            if (debug_mode) {
-
-                auto const first = load.begin()->first;
-                auto const last = (--load.end())->first;
-                auto const h = fill_up(
-                    {"[DEBUG]",
-                     cyng::to_string(subrr.get_profile()),
-                     cyng::as_string(subrr.get_start(), "%d-%m-%yT%H:%M:%S"),
-                     cyng::as_string(subrr.get_end(), "%d-%m-%yT%H:%M:%S"),
-                     std::to_string(first_slot),
-                     std::to_string(slot_end),
-                     std::to_string(slot_end - first_slot),
-                     // std::to_string(slot_start),
-                     // std::to_string(first),
-                     // std::to_string(last),
-                     std::to_string(load.size())});
-                emit_line(os, h);
-            }
-        }
+        //
 
         void emit_line(std::ostream &os, std::vector<std::string> const vec) {
             bool init = false;

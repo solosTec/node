@@ -399,7 +399,7 @@ namespace smf {
             auto s = cyng::db::create_db_session(reader.get("DB"));
             if (s.is_alive()) {
                 auto const cwd = std::filesystem::current_path();
-                auto const now = std::chrono::system_clock::now();
+                auto const now = cyng::make_utc_date();
                 auto const reports = cyng::container_cast<cyng::param_map_t>(reader.get("gap"));
 
                 for (auto const &cfg_report : reports) {
@@ -426,12 +426,7 @@ namespace smf {
                             }
                             auto const backtrack = cyng::to_hours(reader_report.get("max.age", "40:00:00"));
 
-                            generate_gap(
-                                s,
-                                profile,
-                                root,
-                                backtrack, //  backtrack hours
-                                now);
+                            generate_gap(s, profile, root, now, backtrack);
 
                         } else {
                             std::cout << "***info: gap report " << name << " is disabled" << std::endl;

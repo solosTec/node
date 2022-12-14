@@ -56,67 +56,67 @@ namespace smf {
     } // namespace data
 
     namespace gap {
-        using slot_date_t = std::map<std::uint64_t, std::chrono::system_clock::time_point>; //  slot => actTime
-        using readout_t = std::map<cyng::buffer_t, slot_date_t>;                            // meter => slot
+        using slot_date_t = std::map<std::uint64_t, cyng::date>; // slot => actTime
+        using readout_t = std::map<srv_id_t, slot_date_t>;       // meter => slot
 
-        typename slot_date_t::value_type make_slot(std::uint64_t, std::chrono::system_clock::time_point);
-        typename readout_t::value_type make_readout(cyng::buffer_t, slot_date_t::value_type);
+        typename slot_date_t::value_type make_slot(std::uint64_t, cyng::date);
+        typename readout_t::value_type make_readout(srv_id_t, slot_date_t::value_type);
 
     } // namespace gap
 
     /**
      * Helper class to store report specific data
      */
-    class report_range {
-      public:
-        report_range(cyng::obis profile, cyng::date const &start, cyng::date const &end);
+    // class [[deprecated]] report_range {
+    //   public:
+    //     report_range(cyng::obis profile, cyng::date const &start, cyng::date const &end);
 
-        template <typename R, typename P>
-        report_range(cyng::obis profile, cyng::date const &start, std::chrono::duration<R, P> d)
-            : report_range(profile, start, start.add(d)) {}
+    //    template <typename R, typename P>
+    //    report_range(cyng::obis profile, cyng::date const &start, std::chrono::duration<R, P> d)
+    //        : report_range(profile, start, start.add(d)) {}
 
-        report_range(report_range const &) = default;
-        report_range(report_range &&) = default;
+    //    report_range(report_range const &) = default;
+    //    report_range(report_range &&) = default;
 
-        cyng::date const &get_start() const noexcept;
-        cyng::date const &get_end() const noexcept;
+    //    cyng::date const &get_start() const noexcept;
+    //    cyng::date const &get_end() const noexcept;
 
-        /**
-         * both values as pair
-         */
-        std::pair<cyng::date, cyng::date> get_range() const noexcept;
-        std::pair<std::uint64_t, std::uint64_t> get_slots() const noexcept;
+    //    /**
+    //     * both values as pair
+    //     */
+    //    std::pair<cyng::date, cyng::date> get_range() const noexcept;
+    //    std::pair<std::uint64_t, std::uint64_t> get_slots() const noexcept;
 
-        cyng::obis const &get_profile() const noexcept;
+    //    cyng::obis const &get_profile() const noexcept;
 
-        /**
-         * timespan of intervall
-         */
-        std::chrono::hours get_span() const;
+    //    /**
+    //     * timespan of intervall
+    //     */
+    //    std::chrono::hours get_span() const;
 
-        template <typename CharT, typename Traits>
-        friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, report_range const &rr) {
+    //    template <typename CharT, typename Traits>
+    //    friend std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, report_range const &rr) {
 
-            os << obis::get_name(rr.get_profile()) << ":";
-            // os << cyng::to_string(rr.get_profile()) << ": ";
+    //        os << obis::get_name(rr.get_profile()) << ":";
+    //        // os << cyng::to_string(rr.get_profile()) << ": ";
 
-            cyng::as_string(os, rr.get_start(), "%Y-%m-%d %H:%M:%S");
-            os << " ==" << rr.get_end().sub<std::chrono::hours>(rr.get_start()).count() << "h=> ";
-            cyng::as_string(os, rr.get_end(), "%Y-%m-%d %H:%M:%S");
+    //        cyng::as_string(os, rr.get_start(), "%Y-%m-%d %H:%M:%S");
+    //        os << " ==" << rr.get_end().sub<std::chrono::hours>(rr.get_start()).count() << "h=> ";
+    //        cyng::as_string(os, rr.get_end(), "%Y-%m-%d %H:%M:%S");
 
-            return os;
-        }
+    //        return os;
+    //    }
 
-        /**
-         * Calculate the maximal count of readouts for this profile in this timespan.
-         */
-        std::size_t max_readout_count() const;
+    //    /**
+    //     * Calculate the maximal count of readouts for this profile in this timespan.
+    //     */
+    //    std::size_t max_readout_count() const;
 
-      private:
-        cyng::obis profile_;
-        cyng::date start_;
-        cyng::date end_;
-    };
+    //  private:
+    //    cyng::obis profile_;
+    //    cyng::date start_;
+    //    cyng::date end_;
+    //};
 
     /**
      * @return start time for a reporting period.
@@ -127,7 +127,7 @@ namespace smf {
      * @return all meters that have data of the specified profile
      * in this time range.
      */
-    [[nodiscard, deprecated]] std::vector<cyng::buffer_t> select_meters(cyng::db::session db, report_range const &rr);
+    //[[nodiscard, deprecated]] std::vector<cyng::buffer_t> select_meters(cyng::db::session db, report_range const &rr);
 
     /**
      * @param status comes from table "TSMLReadout"
@@ -136,7 +136,7 @@ namespace smf {
     [[nodiscard]] std::map<cyng::obis, sml_data>
     select_readout_data(cyng::db::session db, boost::uuids::uuid, std::uint32_t status);
 
-    using loop_cb = std::function<bool(
+    using cb_loop_readout = std::function<bool(
         bool,
         boost::uuids::uuid,
         smf::srv_id_t,
@@ -150,7 +150,14 @@ namespace smf {
     /**
      * loop over result set
      */
-    std::size_t loop_readout_data(cyng::db::session db, cyng::obis profile, cyng::date start, loop_cb);
+    std::size_t loop_readout_data(cyng::db::session db, cyng::obis profile, cyng::date start, cb_loop_readout);
+
+    using cb_loop_meta = std::function<bool(smf::srv_id_t, cyng::date)>;
+
+    /**
+     * loop over meta data
+     */
+    std::size_t loop_readout(cyng::db::session db, cyng::obis profile, cyng::date start, cb_loop_meta);
 
     /**
      * @return true if reg is an element of the filter or filter is empty
@@ -178,23 +185,13 @@ namespace smf {
     /**
      * Collect data over the specified time range
      */
-    std::map<std::uint64_t, std::map<cyng::obis, sml_data>>
-    collect_data_by_timestamp(cyng::db::session db, report_range const &subrr, cyng::buffer_t id);
+    // std::map<std::uint64_t, std::map<cyng::obis, sml_data>>
+    // collect_data_by_timestamp(cyng::db::session db, report_range const &subrr, cyng::buffer_t id);
 
-    data::profile_t collect_data_by_time_range(cyng::db::session db, cyng::obis_path_t const &filter, report_range const &);
-
-    gap::readout_t
-    collect_readouts_by_time_range(cyng::db::session db, gap::readout_t const &initial_data, report_range const &subrr);
-
-    [[deprecated]] std::map<cyng::obis, std::map<std::int64_t, sml_data>> collect_data_by_register(
-        cyng::db::session db,
-        cyng::obis profile,
-        cyng::buffer_t,
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end);
+    // data::profile_t collect_data_by_time_range(cyng::db::session db, cyng::obis_path_t const &filter, report_range const &);
 
     /**
-     *
+     * get customer data from database
      */
     std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id);
 

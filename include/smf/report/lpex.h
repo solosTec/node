@@ -58,47 +58,28 @@ namespace smf {
          */
         std::vector<std::string> get_version();
 
-        std::size_t collect_report(
-            cyng::db::session,
-            report_range const &subrr,
-            cyng::obis_path_t const &filter,
-            std::filesystem::path root,
-            std::string prefix,
-            bool print_version,
-            bool separated,
-            bool debug_mode);
-
-        void emit_report(
-            std::ofstream &ofs,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            data::values_t const &,
-            std::optional<lpex_customer> const &customer_data);
-
         void emit_line(std::ostream &, std::vector<std::string> const);
 
-        void emit_data(
-            std::ostream &,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            data::values_t const &,
-            std::optional<lpex_customer> const &customer_data);
-
         void emit_customer_data(std::ostream &os, srv_id_t srv_id, std::optional<lpex_customer> const &customer_data);
-        void emit_values(
-            std::ostream &os,
-            report_range const &subrr,
-            srv_id_t srv_id,
-            bool debug_mode,
-            std::uint64_t first_slot, // first slot with data
-            std::map<std::int64_t, sml_data> const &load);
 
+        /**
+         * opens the report file
+         */
         std::ofstream open_report(std::filesystem::path root, std::string file_name, bool print_version);
 
+        /**
+         * Generate the LPex report
+         */
         void generate_report(std::ofstream &, cyng::obis profile, cyng::date const &d, data::data_set_t const &data);
+
+        /**
+         * remove only readout
+         */
         void clear_data(data::data_set_t &data);
+
+        /**
+         * merge incoming data into data set
+         */
         void update_data_set(
             smf::srv_id_t id,
             data::data_set_t &,
