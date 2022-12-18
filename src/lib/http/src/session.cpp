@@ -5,9 +5,10 @@
  *
  */
 
+#include <smf/http/session.h>
+
 #include <smf.h>
 #include <smf/http/mime_type.h>
-#include <smf/http/session.h>
 #include <smf/http/url.h>
 #include <smf/http/ws.h>
 
@@ -131,8 +132,8 @@ namespace smf {
             }
 
             if (ec) {
-                // return fail(ec, "read");
-                CYNG_LOG_WARNING(logger_, "HTTP read " << ec << ": " << ec.message());
+                std::string const msg(boost::asio::buffers_begin(buffer_), boost::asio::buffers_end(buffer_));
+                CYNG_LOG_WARNING(logger_, "HTTP read " << ec << ": " << ec.message() << " [" << msg << "]");
                 return;
             }
 

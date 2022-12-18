@@ -120,10 +120,12 @@ namespace smf {
                             cyng::make_utc_date()), // received
                         1u,
                         cfg_.get_tag())) {
-                    CYNG_LOG_TRACE(logger_, "[httpCache] data of meter " << to_string(srv_id) << " inserted");
+                    CYNG_LOG_TRACE(
+                        logger_, "[httpCache] data of meter " << to_string(srv_id) << " inserted, record #" << tbl->size());
 
                 } else {
-                    CYNG_LOG_TRACE(logger_, "[httpCache] data of meter " << to_string(srv_id) << " updated");
+                    CYNG_LOG_TRACE(
+                        logger_, "[httpCache] data of meter " << to_string(srv_id) << " updated, record #" << tbl->size());
                 }
             },
             cyng::access::write("httpCache"));
@@ -161,8 +163,8 @@ namespace smf {
                     //
                     //  send data
                     //
+                    auto lock = cp->shared_from_this();
                     push_data(cp);
-                    //                    cp->
                 },
                 [=, this](cyng::buffer_t data) {
                     //  should not receive anything - send only
@@ -196,7 +198,7 @@ namespace smf {
                     //  build header
                     //
                     auto const received = rec.value("received", now);
-                    auto const ts = cyng::as_string(received, "%Y-%M-%D %h:%m:%s");
+                    auto const ts = cyng::as_string(received, "%F %T");
                     auto const header = cyng::param_map_factory("Content-Type", "text/plain") // content type
                                         ("Accept", "*/*")                                     //
                                         ("X-timestamp", ts)                                   //
