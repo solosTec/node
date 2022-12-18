@@ -245,6 +245,7 @@ namespace smf {
          * load readout data from database
          */
         load_table(get_table_mbus_cache());
+        load_table(get_table_http_cache());
     }
 
     void bridge::init_cache_persistence() {
@@ -255,6 +256,10 @@ namespace smf {
         auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", ctl_, logger_, cfg_, storage_);
         BOOST_ASSERT(channel->is_open());
         stash_.lock(channel);
+
+        //
+        //  update operation log: power return (0x00100023)
+        //
         channel->dispatch("oplog.power.return");
 
         //
@@ -364,7 +369,7 @@ namespace smf {
                             key,
                             cyng::data_generator(static_cast<std::uint32_t>(1u)),
                             1u,              //	only needed for insert operations
-                            cfg_.get_tag()); //	tag mybe not available yet
+                            cfg_.get_tag()); //	tag may not yet be available
                     }
                 }
             },
@@ -413,7 +418,7 @@ namespace smf {
 #endif
                     auto const path = sanitize_key(rec.value("path", ""));
                     auto const key = sanitize_key(path);
-                    auto const type = rec.value<std::uint16_t>("type", 15u);
+                    auto const type = rec.value<std::uint16_t>("type", cyng::TC_STRING);
                     auto const val = rec.value("value", "");
 
                     if (!boost::algorithm::equals(path, key)) {

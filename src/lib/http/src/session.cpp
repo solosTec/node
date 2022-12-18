@@ -204,7 +204,11 @@ namespace smf {
                 return queue_(send_bad_request(req.version(), req.keep_alive(), "Illegal request-target"));
             }
 
+#if BOOST_VERSION > 108000
+            std::string target = req.target().substr();
+#else
             auto target = req.target().to_string();
+#endif
             CYNG_LOG_TRACE(logger_, "request target " << target);
 
             //
@@ -213,21 +217,11 @@ namespace smf {
             intrinsic_redirect(target);
 
             switch (req.method()) {
-            case boost::beast::http::verb::get:
-                handle_get_head_request(std::move(req), target, false);
-                break;
-            case boost::beast::http::verb::head:
-                handle_get_head_request(std::move(req), target, true);
-                break;
-            case boost::beast::http::verb::post:
-                handle_post_request(std::move(req), target);
-                break;
-            case boost::beast::http::verb::options:
-                handle_options_request(std::move(req));
-                break;
-            default:
-                return queue_(send_bad_request(req.version(), req.keep_alive(), "Unknown HTTP-method"));
-                break;
+            case boost::beast::http::verb::get: handle_get_head_request(std::move(req), target, false); break;
+            case boost::beast::http::verb::head: handle_get_head_request(std::move(req), target, true); break;
+            case boost::beast::http::verb::post: handle_post_request(std::move(req), target); break;
+            case boost::beast::http::verb::options: handle_options_request(std::move(req)); break;
+            default: return queue_(send_bad_request(req.version(), req.keep_alive(), "Unknown HTTP-method")); break;
             }
         }
 
@@ -305,7 +299,12 @@ namespace smf {
                 //
                 //	404
                 //
-                queue_(send_not_found(req.version(), req.keep_alive(), req.target().to_string()));
+#if BOOST_VERSION > 108000
+                std::string target = req.target().substr();
+#else
+                aut target = req.target().to_string();
+#endif
+                queue_(send_not_found(req.version(), req.keep_alive(), target));
                 return;
             }
 
@@ -343,13 +342,17 @@ namespace smf {
             CYNG_LOG_DEBUG(logger_, "payload: " << req.body());
 #endif
 
+#if BOOST_VERSION > 108000
+            std::string ct = req.target().substr();
+#else
+            auto ct = content_type.to_string();
+#endif
+
             if (boost::algorithm::equals(content_type, "application/xml")) {
-                auto const file_name =
-                    post_cb_(target, std::string(req.body().begin(), req.body().end()), content_type.to_string());
+                auto const file_name = post_cb_(target, std::string(req.body().begin(), req.body().end()), ct);
                 //  ToDo: start download
             } else if (boost::algorithm::starts_with(content_type, "application/json")) {
-                auto const file_name =
-                    post_cb_(target, std::string(req.body().begin(), req.body().end()), content_type.to_string());
+                auto const file_name = post_cb_(target, std::string(req.body().begin(), req.body().end()), ct);
                 //  start download
                 std::filesystem::path const attachment(target);
                 start_download(file_name, attachment.filename());
@@ -419,7 +422,12 @@ namespace smf {
         }
 
         bool session::check_auth(boost::beast::http::request<boost::beast::http::string_body> const &req) {
+#if BOOST_VERSION > 108000
+            std::string const target = req.target().substr();
+#else
             auto const target = req.target().to_string();
+#endif
+
             if (is_auth_required(target.empty() ? "/" : target, auths_)) {
 
                 //
@@ -436,7 +444,7 @@ namespace smf {
                     //
                     //	send auth request
                     //
-                    queue_(send_not_authorized(req.version(), req.keep_alive(), req.target().to_string(), "solos::Tec"));
+                    queue_(send_not_authorized(req.version(), req.keep_alive(), target, "solos::Tec"));
 
                     //  authorization failed - but complete
                     return false;
@@ -453,7 +461,12 @@ namespace smf {
             boost::beast::http::request<boost::beast::http::string_body> const &req,
             boost::beast::string_view credentials) {
 
-            CYNG_LOG_DEBUG(logger_, "credentials input: " << credentials.to_string());
+#if BOOST_VERSION > 108000
+            std::string const cr = req.target().substr();
+#else
+            auto const cr = credentials.to_string();
+#endif
+            CYNG_LOG_DEBUG(logger_, "credentials input: " << cr);
 
             //
             //	authorized as "auth@example.com:secret"
@@ -473,7 +486,12 @@ namespace smf {
                 //
                 //	send auth request
                 //
-                queue_(send_not_authorized(req.version(), req.keep_alive(), req.target().to_string(), "solos::Tec"));
+#if BOOST_VERSION > 108000
+                std::string target = req.target().substr();
+#else
+                auto target = req.target().to_string();
+#endif
+                queue_(send_not_authorized(req.version(), req.keep_alive(), target, "solos::Tec"));
             }
             return false;
         }

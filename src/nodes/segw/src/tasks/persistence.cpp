@@ -28,7 +28,7 @@ namespace smf {
             std::bind(&persistence::clear, this, std::placeholders::_1, std::placeholders::_2), // "db.clear"
             std::bind(&persistence::trx, this, std::placeholders::_1, std::placeholders::_2), // "db.trx"
             std::bind(&persistence::power_return, this), // "oplog.power.return"
-            std::bind(&persistence::authorized, this, std::placeholders::_1), // "oplog.power.return"
+            std::bind(&persistence::authorized, this, std::placeholders::_1), // 
             std::bind(&persistence::stop, this, std::placeholders::_1)
         }
         , channel_(wp)
