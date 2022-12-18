@@ -303,7 +303,7 @@ namespace smf {
 #if BOOST_VERSION > 108000
                 std::string target = req.target().substr();
 #else
-                aut target = req.target().to_string();
+                auto target = req.target().to_string();
 #endif
                 queue_(send_not_found(req.version(), req.keep_alive(), target));
                 return;
