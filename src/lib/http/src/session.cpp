@@ -132,7 +132,9 @@ namespace smf {
             }
 
             if (ec) {
-                std::string const msg(boost::asio::buffers_begin(buffer_), boost::asio::buffers_end(buffer_));
+                //  The following line doesn't compile
+                // std::string const msg(boost::asio::buffers_begin(buffer_), boost::asio::buffers_end(buffer_));
+                std::string const msg = boost::beast::buffers_to_string(buffer_.data());
                 CYNG_LOG_WARNING(logger_, "HTTP read " << ec << ": " << ec.message() << " [" << msg << "]");
                 return;
             }
