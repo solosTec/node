@@ -1165,6 +1165,7 @@ namespace smf {
         //  collect data and transform it
         //
         auto cfg = transform_config(read_config(db, s));
+        // auto cfg = read_config(db, s);
         auto const vec = cyng::make_vector({cfg});
 
         //
@@ -1369,6 +1370,52 @@ namespace smf {
         }
 
         //
+        // broker config
+        //
+        {
+            auto r = cyng::extract(cfg, {"broker", "0"});
+            if (r.second && cfg_lmn.size() > 0) {
+                auto pmap = cyng::container_cast<cyng::param_map_t>(r.first.second);
+                auto vec = cyng::extract_vector(std::move(pmap));
+                //  replace objects by container
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(0));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("broker", cyng::make_object(vec));
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"broker", "1"});
+            if (r.second && cfg_lmn.size() > 1) {
+                auto pmap = cyng::container_cast<cyng::param_map_t>(r.first.second);
+                auto vec = cyng::extract_vector(std::move(pmap));
+                //  replace objects by container
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(1));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("broker", cyng::make_object(vec));
+            }
+        }
+
+        //
+        // http config
+        //
+        {
+            auto r = cyng::extract(cfg, {"http.post", "0"});
+            if (r.second && cfg_lmn.size() > 0) {
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(0));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("http.post", r.first.second);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"http.post", "1"});
+            if (r.second && cfg_lmn.size() > 1) {
+                auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(1));
+                BOOST_ASSERT(p != nullptr);
+                p->emplace("http.post", r.first.second);
+            }
+        }
+
+        //
         //  transform structure
         //
         cyng::transform(
@@ -1421,6 +1468,14 @@ namespace smf {
                     //  no longer used
                     return {obj, cyng::action::REMOVE};
                 }
+                if (!path.empty() && boost::algorithm::equals(path.at(0), "broker")) {
+                    //  no longer used
+                    return {obj, cyng::action::REMOVE};
+                }
+                if (!path.empty() && boost::algorithm::equals(path.at(0), "http.post")) {
+                    //  no longer used
+                    return {obj, cyng::action::REMOVE};
+                }
                 return {obj, cyng::action::NONE};
             });
 
@@ -1428,6 +1483,7 @@ namespace smf {
         //  rename elements
         //
         cyng::rename(cfg, {"81490d0700ff"}, {"ipt"});
+        // cyng::rename(cfg, {"ipt", "81490d070001","814917070001"}, {"ipt", "host"});
 
         cyng::io::serialize_json_pretty(std::cout, cfg);
 
