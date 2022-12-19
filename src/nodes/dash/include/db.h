@@ -104,7 +104,7 @@ namespace smf {
          */
         cyng::vector_t generate_new_key(std::string const &, cyng::vector_t &&key, cyng::param_map_t const &data);
 
-        cyng::data_t complete(std::string const &, cyng::param_map_t &&);
+        cyng::data_t complete(std::string const &, cyng::param_map_t const &);
 
         /**
          * Search a meter record by it's meter id
@@ -158,48 +158,39 @@ namespace smf {
      */
     std::vector<cyng::meta_store> get_store_meta_data();
 
-    cyng::object convert_to_type(cyng::type_code, cyng::object &);
-    cyng::object convert_to_uuid(cyng::object &);
-    cyng::object convert_to_tp(cyng::object &);
-    cyng::object convert_to_ip_address(cyng::object &);
-    cyng::object convert_to_aes128(cyng::object &);
-    cyng::object convert_to_aes192(cyng::object &obj);
-    cyng::object convert_to_aes256(cyng::object &obj);
+    cyng::object convert_to_type(cyng::type_code, cyng::object const &);
+    cyng::object convert_to_uuid(cyng::object const &);
+    cyng::object convert_to_tp(cyng::object const &);
+    cyng::object convert_to_ip_address(cyng::object const &);
+    cyng::object convert_to_aes128(cyng::object const &);
+    cyng::object convert_to_aes192(cyng::object const &obj);
+    cyng::object convert_to_aes256(cyng::object const &obj);
 
-    template <typename T> cyng::object convert_to_numeric(cyng::object &obj) {
+    template <typename T> cyng::object convert_to_numeric(cyng::object const &obj) {
         if (obj.tag() == cyng::TC_NULL)
             return cyng::make_object(T(0));
         BOOST_ASSERT(obj.rtti().is_integral());
         return cyng::make_object(cyng::numeric_cast<T>(obj, T(0)));
     }
 
-    cyng::object convert_to_nanoseconds(cyng::object &);
-    cyng::object convert_to_microseconds(cyng::object &);
-    cyng::object convert_to_milliseconds(cyng::object &);
-    cyng::object convert_to_seconds(cyng::object &);
-    cyng::object convert_to_minutes(cyng::object &);
-    cyng::object convert_to_hours(cyng::object &);
+    cyng::object convert_to_nanoseconds(cyng::object const &);
+    cyng::object convert_to_microseconds(cyng::object const &);
+    cyng::object convert_to_milliseconds(cyng::object const &);
+    cyng::object convert_to_seconds(cyng::object const &);
+    cyng::object convert_to_minutes(cyng::object const &);
+    cyng::object convert_to_hours(cyng::object const &);
 
-    template <typename T> cyng::object convert_number_to_timespan(cyng::object &obj) {
+    template <typename T> cyng::object convert_number_to_timespan(cyng::object const &obj) {
         switch (obj.tag()) {
-        case cyng::TC_UINT8:
-            return cyng::make_object(T(cyng::numeric_cast<std::uint8_t>(obj, 0)));
-        case cyng::TC_UINT16:
-            return cyng::make_object(T(cyng::numeric_cast<std::uint16_t>(obj, 0)));
-        case cyng::TC_UINT32:
-            return cyng::make_object(T(cyng::numeric_cast<std::uint32_t>(obj, 0)));
-        case cyng::TC_UINT64:
-            return cyng::make_object(T(cyng::numeric_cast<std::uint64_t>(obj, 0)));
-        case cyng::TC_INT8:
-            return cyng::make_object(T(cyng::numeric_cast<std::int8_t>(obj, 0)));
-        case cyng::TC_INT16:
-            return cyng::make_object(T(cyng::numeric_cast<std::int16_t>(obj, 0)));
-        case cyng::TC_INT32:
-            return cyng::make_object(T(cyng::numeric_cast<std::int32_t>(obj, 0)));
-        case cyng::TC_INT64:
-            return cyng::make_object(T(cyng::numeric_cast<std::int64_t>(obj, 0)));
-        default:
-            break;
+        case cyng::TC_UINT8: return cyng::make_object(T(cyng::numeric_cast<std::uint8_t>(obj, 0)));
+        case cyng::TC_UINT16: return cyng::make_object(T(cyng::numeric_cast<std::uint16_t>(obj, 0)));
+        case cyng::TC_UINT32: return cyng::make_object(T(cyng::numeric_cast<std::uint32_t>(obj, 0)));
+        case cyng::TC_UINT64: return cyng::make_object(T(cyng::numeric_cast<std::uint64_t>(obj, 0)));
+        case cyng::TC_INT8: return cyng::make_object(T(cyng::numeric_cast<std::int8_t>(obj, 0)));
+        case cyng::TC_INT16: return cyng::make_object(T(cyng::numeric_cast<std::int16_t>(obj, 0)));
+        case cyng::TC_INT32: return cyng::make_object(T(cyng::numeric_cast<std::int32_t>(obj, 0)));
+        case cyng::TC_INT64: return cyng::make_object(T(cyng::numeric_cast<std::int64_t>(obj, 0)));
+        default: break;
         }
         return obj;
     }

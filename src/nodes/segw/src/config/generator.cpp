@@ -197,8 +197,7 @@ namespace smf {
 #endif
                 ("mode", "drop") //	or accept
             ("period", 30)       //	seconds
-                .
-                operator cyng::param_map_t());
+                .get_map());
     }
 
     cyng::param_t create_wireless_broker(std::string const &hostname) {
@@ -219,8 +218,7 @@ namespace smf {
                         ("connect.on.demand", true) //  broker algorithm (connect on demand, otherwise connect at start)
                         ("write.timeout", std::chrono::seconds(2)) //	seconds - only for on-demand
                         ("watchdog", std::chrono::seconds(12))     //	seconds - only for on-start
-                            .
-                            operator cyng::param_map_t()
+                            .get_map()
                 }));
     }
 
@@ -236,8 +234,7 @@ namespace smf {
                  ("connect.on.demand", true)                   // broker algorithm (connect on demand, otherwise connect at start)
                  ("write.timeout", 2)                          // seconds - only for on-demand
                  ("watchdog", 12)                              // seconds - only for on-start
-                     .
-                     operator cyng::param_map_t()}));
+                     .get_map()}));
     }
 
     cyng::param_t create_rs485_listener() {

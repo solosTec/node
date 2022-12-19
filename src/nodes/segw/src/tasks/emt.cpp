@@ -166,10 +166,10 @@ namespace smf {
                     auto lock = cp->shared_from_this();
                     push_data(cp);
                 },
-                [=, this](std::int32_t result, cyng::buffer_t data) {
+                [=, this](std::int32_t result, cyng::param_map_t header, cyng::buffer_t body) {
                     //  should not receive anything - send only
                     CYNG_LOG_WARNING(
-                        logger_, "[" << sp->get_name() << "] received " << data.size() << " bytes, status: " << result);
+                        logger_, "[" << sp->get_name() << "] received " << body.size() << " bytes, status: " << result);
                 },
                 [=, this](boost::system::error_code ec) {
                     //	fill async
@@ -203,9 +203,8 @@ namespace smf {
                     auto const header = cyng::param_map_factory("Content-Type", "text/plain") // content type
                                         ("Accept", "*/*")                                     //
                                         ("X-timestamp", ts)                                   //
-                                        ("X-cls-adapter-id", serial)                          //
-                                            .
-                                            operator cyng::param_map_t();
+                                        ("X-cls-adapter-id", serial)
+                                            .get_map();
 
                     //
                     //  build body

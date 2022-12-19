@@ -212,8 +212,7 @@ namespace smf {
                     ("number", "")                                 // unused
                     ("version", "")                                // unused
                     ("timeout", 30)
-                        .
-                        operator cyng::param_map_t()),
+                        .get_map()),
                 cyng::make_param(
                     "IEC",
                     cyng::param_map_factory("target", "iec@store") // ipt target
@@ -221,8 +220,7 @@ namespace smf {
                     ("number", "")                                 // unused
                     ("version", "")                                // unused
                     ("timeout", 30)                                // unused
-                        .
-                        operator cyng::param_map_t()),
+                        .get_map()),
                 cyng::make_param(
                     "DLMS",
                     cyng::param_map_factory("target", "dlms@store") // ipt target
@@ -230,8 +228,7 @@ namespace smf {
                     ("number", "")                                  // unused
                     ("version", "")                                 // unused
                     ("timeout", 30)
-                        .
-                        operator cyng::param_map_t())));
+                        .get_map())));
     }
 
     cyng::param_t controller::create_cluster_spec() {

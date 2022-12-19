@@ -243,7 +243,7 @@ namespace smf {
         return key;
     }
 
-    cyng::data_t db::complete(std::string const &table_name, cyng::param_map_t &&pm) {
+    cyng::data_t db::complete(std::string const &table_name, cyng::param_map_t const &pm) {
 
         cyng::data_t data;
         auto const pos = store_map_.find(table_name);
@@ -281,12 +281,9 @@ namespace smf {
 
     cyng::object db::generate_empty_value(cyng::type_code tc) {
         switch (tc) {
-        case cyng::TC_UUID:
-            return cyng::make_object(boost::uuids::nil_uuid());
-        case cyng::TC_TIME_POINT:
-            return cyng::make_object(std::chrono::system_clock::now());
-        case cyng::TC_IP_ADDRESS:
-            return cyng::make_object(boost::asio::ip::address());
+        case cyng::TC_UUID: return cyng::make_object(boost::uuids::nil_uuid());
+        case cyng::TC_TIME_POINT: return cyng::make_object(std::chrono::system_clock::now());
+        case cyng::TC_IP_ADDRESS: return cyng::make_object(boost::asio::ip::address());
         case cyng::TC_AES128:
             return cyng::make_object(cyng::to_aes_key<cyng::crypto::aes128_size>("00000000000000000000000000000000"));
         case cyng::TC_AES192:
@@ -296,61 +293,35 @@ namespace smf {
             return cyng::make_object(
                 cyng::to_aes_key<cyng::crypto::aes256_size>("0000000000000000000000000000000000000000000000000000000000000000"));
 
-        case cyng::TC_BUFFER:
-            return cyng::make_object(cyng::buffer_t());
-        case cyng::TC_VERSION:
-            return cyng::make_object(cyng::version());
-        case cyng::TC_REVISION:
-            return cyng::make_object(cyng::revision());
-        case cyng::TC_OP:
-            return cyng::make_object(cyng::op::NOOP);
-        case cyng::TC_SEVERITY:
-            return cyng::make_object(cyng::severity::LEVEL_INFO);
-        case cyng::TC_MAC48:
-            return cyng::make_object(cyng::mac48());
-        case cyng::TC_MAC64:
-            return cyng::make_object(cyng::mac64());
-        case cyng::TC_PID:
-            return cyng::make_object(cyng::pid());
-        case cyng::TC_OBIS:
-            return cyng::make_object(cyng::obis());
-        case cyng::TC_EDIS:
-            return cyng::make_object(cyng::edis());
+        case cyng::TC_BUFFER: return cyng::make_object(cyng::buffer_t());
+        case cyng::TC_VERSION: return cyng::make_object(cyng::version());
+        case cyng::TC_REVISION: return cyng::make_object(cyng::revision());
+        case cyng::TC_OP: return cyng::make_object(cyng::op::NOOP);
+        case cyng::TC_SEVERITY: return cyng::make_object(cyng::severity::LEVEL_INFO);
+        case cyng::TC_MAC48: return cyng::make_object(cyng::mac48());
+        case cyng::TC_MAC64: return cyng::make_object(cyng::mac64());
+        case cyng::TC_PID: return cyng::make_object(cyng::pid());
+        case cyng::TC_OBIS: return cyng::make_object(cyng::obis());
+        case cyng::TC_EDIS: return cyng::make_object(cyng::edis());
 
-        case cyng::TC_UINT8:
-            return cyng::make_object<std::uint8_t>(0);
-        case cyng::TC_UINT16:
-            return cyng::make_object<std::uint16_t>(0);
-        case cyng::TC_UINT32:
-            return cyng::make_object<std::uint32_t>(0);
-        case cyng::TC_UINT64:
-            return cyng::make_object<std::uint64_t>(0);
-        case cyng::TC_INT8:
-            return cyng::make_object<std::int8_t>(0);
-        case cyng::TC_INT16:
-            return cyng::make_object<std::int16_t>(0);
-        case cyng::TC_INT32:
-            return cyng::make_object<std::int32_t>(0);
-        case cyng::TC_INT64:
-            return cyng::make_object<std::int64_t>(0);
+        case cyng::TC_UINT8: return cyng::make_object<std::uint8_t>(0);
+        case cyng::TC_UINT16: return cyng::make_object<std::uint16_t>(0);
+        case cyng::TC_UINT32: return cyng::make_object<std::uint32_t>(0);
+        case cyng::TC_UINT64: return cyng::make_object<std::uint64_t>(0);
+        case cyng::TC_INT8: return cyng::make_object<std::int8_t>(0);
+        case cyng::TC_INT16: return cyng::make_object<std::int16_t>(0);
+        case cyng::TC_INT32: return cyng::make_object<std::int32_t>(0);
+        case cyng::TC_INT64: return cyng::make_object<std::int64_t>(0);
 
-        case cyng::TC_STRING:
-            return cyng::make_object("");
-        case cyng::TC_NANO_SECOND:
-            return cyng::make_object(std::chrono::nanoseconds(0));
-        case cyng::TC_MICRO_SECOND:
-            return cyng::make_object(std::chrono::microseconds(0));
-        case cyng::TC_MILLI_SECOND:
-            return cyng::make_object(std::chrono::milliseconds(0));
-        case cyng::TC_SECOND:
-            return cyng::make_object(std::chrono::seconds(0));
-        case cyng::TC_MINUTE:
-            return cyng::make_object(std::chrono::minutes(0));
-        case cyng::TC_HOUR:
-            return cyng::make_object(std::chrono::hours(0));
+        case cyng::TC_STRING: return cyng::make_object("");
+        case cyng::TC_NANO_SECOND: return cyng::make_object(std::chrono::nanoseconds(0));
+        case cyng::TC_MICRO_SECOND: return cyng::make_object(std::chrono::microseconds(0));
+        case cyng::TC_MILLI_SECOND: return cyng::make_object(std::chrono::milliseconds(0));
+        case cyng::TC_SECOND: return cyng::make_object(std::chrono::seconds(0));
+        case cyng::TC_MINUTE: return cyng::make_object(std::chrono::minutes(0));
+        case cyng::TC_HOUR: return cyng::make_object(std::chrono::hours(0));
 
-        default:
-            break;
+        default: break;
         }
         return cyng::make_object();
     }
@@ -508,50 +479,30 @@ namespace smf {
             config::get_store_cfg_set_meta()};
     }
 
-    cyng::object convert_to_type(cyng::type_code tc, cyng::object &obj) {
+    cyng::object convert_to_type(cyng::type_code tc, cyng::object const &obj) {
         switch (tc) {
-        case cyng::TC_UUID:
-            return convert_to_uuid(obj);
-        case cyng::TC_TIME_POINT:
-            return convert_to_tp(obj);
-        case cyng::TC_IP_ADDRESS:
-            return convert_to_ip_address(obj);
-        case cyng::TC_AES128:
-            return convert_to_aes128(obj);
-        case cyng::TC_AES192:
-            return convert_to_aes192(obj);
-        case cyng::TC_AES256:
-            return convert_to_aes256(obj);
+        case cyng::TC_UUID: return convert_to_uuid(obj);
+        case cyng::TC_TIME_POINT: return convert_to_tp(obj);
+        case cyng::TC_IP_ADDRESS: return convert_to_ip_address(obj);
+        case cyng::TC_AES128: return convert_to_aes128(obj);
+        case cyng::TC_AES192: return convert_to_aes192(obj);
+        case cyng::TC_AES256: return convert_to_aes256(obj);
 
-        case cyng::TC_UINT8:
-            return convert_to_numeric<std::uint8_t>(obj);
-        case cyng::TC_UINT16:
-            return convert_to_numeric<std::uint16_t>(obj);
-        case cyng::TC_UINT32:
-            return convert_to_numeric<std::uint32_t>(obj);
-        case cyng::TC_UINT64:
-            return convert_to_numeric<std::uint64_t>(obj);
-        case cyng::TC_INT8:
-            return convert_to_numeric<std::int8_t>(obj);
-        case cyng::TC_INT16:
-            return convert_to_numeric<std::int16_t>(obj);
-        case cyng::TC_INT32:
-            return convert_to_numeric<std::int32_t>(obj);
-        case cyng::TC_INT64:
-            return convert_to_numeric<std::int64_t>(obj);
+        case cyng::TC_UINT8: return convert_to_numeric<std::uint8_t>(obj);
+        case cyng::TC_UINT16: return convert_to_numeric<std::uint16_t>(obj);
+        case cyng::TC_UINT32: return convert_to_numeric<std::uint32_t>(obj);
+        case cyng::TC_UINT64: return convert_to_numeric<std::uint64_t>(obj);
+        case cyng::TC_INT8: return convert_to_numeric<std::int8_t>(obj);
+        case cyng::TC_INT16: return convert_to_numeric<std::int16_t>(obj);
+        case cyng::TC_INT32: return convert_to_numeric<std::int32_t>(obj);
+        case cyng::TC_INT64: return convert_to_numeric<std::int64_t>(obj);
 
-        case cyng::TC_NANO_SECOND:
-            return convert_to_nanoseconds(obj);
-        case cyng::TC_MICRO_SECOND:
-            return convert_to_microseconds(obj);
-        case cyng::TC_MILLI_SECOND:
-            return convert_to_milliseconds(obj);
-        case cyng::TC_SECOND:
-            return convert_to_seconds(obj);
-        case cyng::TC_MINUTE:
-            return convert_to_minutes(obj);
-        case cyng::TC_HOUR:
-            return convert_to_hours(obj);
+        case cyng::TC_NANO_SECOND: return convert_to_nanoseconds(obj);
+        case cyng::TC_MICRO_SECOND: return convert_to_microseconds(obj);
+        case cyng::TC_MILLI_SECOND: return convert_to_milliseconds(obj);
+        case cyng::TC_SECOND: return convert_to_seconds(obj);
+        case cyng::TC_MINUTE: return convert_to_minutes(obj);
+        case cyng::TC_HOUR: return convert_to_hours(obj);
 
         default:
             // all other data types pass through
@@ -560,23 +511,20 @@ namespace smf {
         return obj;
     }
 
-    cyng::object convert_to_uuid(cyng::object &obj) {
+    cyng::object convert_to_uuid(cyng::object const &obj) {
         switch (obj.tag()) {
         case cyng::TC_STRING: {
             auto const str = cyng::io::to_plain(obj);
             BOOST_ASSERT(str.size() == 36);
             return cyng::make_object(cyng::to_uuid(str));
         }
-        case cyng::TC_UUID:
-            return obj;
-        default:
-            BOOST_ASSERT(obj.tag() == cyng::TC_NULL);
-            break;
+        case cyng::TC_UUID: return obj;
+        default: BOOST_ASSERT(obj.tag() == cyng::TC_NULL); break;
         }
         return cyng::make_object(boost::uuids::nil_uuid());
     }
 
-    cyng::object convert_to_tp(cyng::object &obj) {
+    cyng::object convert_to_tp(cyng::object const &obj) {
         if (obj.tag() == cyng::TC_TIME_POINT)
             return obj;
         if (obj.tag() == cyng::TC_STRING) {
@@ -586,7 +534,7 @@ namespace smf {
         return cyng::make_object(std::chrono::system_clock::now());
     }
 
-    cyng::object convert_to_ip_address(cyng::object &obj) {
+    cyng::object convert_to_ip_address(cyng::object const &obj) {
         if (obj.tag() == cyng::TC_IP_ADDRESS)
             return obj;
         if (obj.tag() == cyng::TC_STRING) {
@@ -596,7 +544,7 @@ namespace smf {
         return cyng::make_object(boost::asio::ip::make_address("0.0.0.0"));
     }
 
-    cyng::object convert_to_aes128(cyng::object &obj) {
+    cyng::object convert_to_aes128(cyng::object const &obj) {
         if (obj.tag() == cyng::TC_AES128)
             return obj;
         BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
@@ -606,7 +554,7 @@ namespace smf {
                    ? cyng::make_object(cyng::to_aes_key<cyng::crypto::aes128_size>(str))
                    : cyng::make_object(cyng::crypto::aes_128_key());
     }
-    cyng::object convert_to_aes192(cyng::object &obj) {
+    cyng::object convert_to_aes192(cyng::object const &obj) {
         if (obj.tag() == cyng::TC_AES192)
             return obj;
         BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
@@ -616,7 +564,7 @@ namespace smf {
                    ? cyng::make_object(cyng::to_aes_key<cyng::crypto::aes192_size>(str))
                    : cyng::make_object(cyng::crypto::aes_192_key());
     }
-    cyng::object convert_to_aes256(cyng::object &obj) {
+    cyng::object convert_to_aes256(cyng::object const &obj) {
         if (obj.tag() == cyng::TC_AES256)
             return obj;
         BOOST_ASSERT(obj.tag() == cyng::TC_STRING);
@@ -627,7 +575,7 @@ namespace smf {
                    : cyng::make_object(cyng::crypto::aes_256_key());
     }
 
-    cyng::object convert_to_nanoseconds(cyng::object &obj) {
+    cyng::object convert_to_nanoseconds(cyng::object const &obj) {
 
         switch (obj.tag()) {
         case cyng::TC_STRING:
@@ -640,19 +588,16 @@ namespace smf {
         case cyng::TC_INT8:
         case cyng::TC_INT16:
         case cyng::TC_INT32:
-        case cyng::TC_INT64:
-            return convert_number_to_timespan<std::chrono::nanoseconds>(obj);
-        default:
-            break;
+        case cyng::TC_INT64: return convert_number_to_timespan<std::chrono::nanoseconds>(obj);
+        default: break;
         }
         return obj;
     }
 
-    cyng::object convert_to_microseconds(cyng::object &obj) {
+    cyng::object convert_to_microseconds(cyng::object const &obj) {
 
         switch (obj.tag()) {
-        case cyng::TC_STRING:
-            return cyng::make_object(cyng::to_microseconds(cyng::io::to_plain(obj)));
+        case cyng::TC_STRING: return cyng::make_object(cyng::to_microseconds(cyng::io::to_plain(obj)));
         case cyng::TC_UINT8:
         case cyng::TC_UINT16:
         case cyng::TC_UINT32:
@@ -660,19 +605,16 @@ namespace smf {
         case cyng::TC_INT8:
         case cyng::TC_INT16:
         case cyng::TC_INT32:
-        case cyng::TC_INT64:
-            return convert_number_to_timespan<std::chrono::microseconds>(obj);
-        default:
-            break;
+        case cyng::TC_INT64: return convert_number_to_timespan<std::chrono::microseconds>(obj);
+        default: break;
         }
         return obj;
     }
 
-    cyng::object convert_to_milliseconds(cyng::object &obj) {
+    cyng::object convert_to_milliseconds(cyng::object const &obj) {
 
         switch (obj.tag()) {
-        case cyng::TC_STRING:
-            return cyng::make_object(cyng::to_milliseconds(cyng::io::to_plain(obj)));
+        case cyng::TC_STRING: return cyng::make_object(cyng::to_milliseconds(cyng::io::to_plain(obj)));
         case cyng::TC_UINT8:
         case cyng::TC_UINT16:
         case cyng::TC_UINT32:
@@ -680,18 +622,15 @@ namespace smf {
         case cyng::TC_INT8:
         case cyng::TC_INT16:
         case cyng::TC_INT32:
-        case cyng::TC_INT64:
-            return convert_number_to_timespan<std::chrono::milliseconds>(obj);
-        default:
-            break;
+        case cyng::TC_INT64: return convert_number_to_timespan<std::chrono::milliseconds>(obj);
+        default: break;
         }
         return obj;
     }
 
-    cyng::object convert_to_seconds(cyng::object &obj) {
+    cyng::object convert_to_seconds(cyng::object const &obj) {
         switch (obj.tag()) {
-        case cyng::TC_STRING:
-            return cyng::make_object(cyng::to_seconds(cyng::io::to_plain(obj)));
+        case cyng::TC_STRING: return cyng::make_object(cyng::to_seconds(cyng::io::to_plain(obj)));
         case cyng::TC_UINT8:
         case cyng::TC_UINT16:
         case cyng::TC_UINT32:
@@ -699,18 +638,15 @@ namespace smf {
         case cyng::TC_INT8:
         case cyng::TC_INT16:
         case cyng::TC_INT32:
-        case cyng::TC_INT64:
-            return convert_number_to_timespan<std::chrono::seconds>(obj);
-        default:
-            break;
+        case cyng::TC_INT64: return convert_number_to_timespan<std::chrono::seconds>(obj);
+        default: break;
         }
         return obj;
     }
 
-    cyng::object convert_to_minutes(cyng::object &obj) {
+    cyng::object convert_to_minutes(cyng::object const &obj) {
         switch (obj.tag()) {
-        case cyng::TC_STRING:
-            return cyng::make_object(cyng::to_minutes(cyng::io::to_plain(obj)));
+        case cyng::TC_STRING: return cyng::make_object(cyng::to_minutes(cyng::io::to_plain(obj)));
         case cyng::TC_UINT8:
         case cyng::TC_UINT16:
         case cyng::TC_UINT32:
@@ -718,15 +654,13 @@ namespace smf {
         case cyng::TC_INT8:
         case cyng::TC_INT16:
         case cyng::TC_INT32:
-        case cyng::TC_INT64:
-            return convert_number_to_timespan<std::chrono::minutes>(obj);
-        default:
-            break;
+        case cyng::TC_INT64: return convert_number_to_timespan<std::chrono::minutes>(obj);
+        default: break;
         }
         return obj;
     }
 
-    cyng::object convert_to_hours(cyng::object &obj) {
+    cyng::object convert_to_hours(cyng::object const &obj) {
         if (obj.tag() == cyng::TC_HOUR)
             return obj;
         BOOST_ASSERT(obj.tag() == cyng::TC_STRING);

@@ -82,7 +82,7 @@ namespace smf {
             , redirects_intrinsic_(redirects_intrinsic)
             , auths_(auths)
             , max_upload_size_(max_upload_size)
-            , nickname_(nickname)
+            , nickname_(nickname.empty() ? "S&storm" : nickname)
             , timeout_(timeout)
             , ws_cb_(cb)
             , post_cb_(post)
@@ -148,11 +148,8 @@ namespace smf {
 
             // See if it is a WebSocket Upgrade
             if (boost::beast::websocket::is_upgrade(parser_->get())) {
-                // BOOST_ASSERT_MSG(false, "ToDo: implement");
                 // Create a websocket session, transferring ownership
                 // of both the socket and the HTTP request.
-                // std::make_shared<ws>(
-                //    stream_.release_socket(), logger_)->do_accept(parser_->release());
                 ws_cb_(stream_.release_socket(), parser_->release());
                 return;
             }

@@ -90,9 +90,7 @@ namespace smf {
                 CYNG_LOG_WARNING(
                     logger_, "[sml] " << sml::get_name(type) << ": " << trx << ", " << msg << " - " << obis::get_name(code));
             } break;
-            default:
-                CYNG_LOG_DEBUG(logger_, "\n" << cyng::io::to_pretty(msg));
-                break;
+            default: CYNG_LOG_DEBUG(logger_, "\n" << cyng::io::to_pretty(msg)); break;
             }
         })
 #endif
@@ -367,12 +365,8 @@ namespace smf {
                     &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
             }
             break;
-        case ipt::code::APP_RES_SOFTWARE_VERSION:
-            update_software_version(ipt::app_res_software_version(std::move(body)));
-            break;
-        case ipt::code::APP_RES_DEVICE_IDENTIFIER:
-            update_device_identifier(ipt::app_res_device_identifier(std::move(body)));
-            break;
+        case ipt::code::APP_RES_SOFTWARE_VERSION: update_software_version(ipt::app_res_software_version(std::move(body))); break;
+        case ipt::code::APP_RES_DEVICE_IDENTIFIER: update_device_identifier(ipt::app_res_device_identifier(std::move(body))); break;
         case ipt::code::CTRL_REQ_REGISTER_TARGET:
             if (cluster_bus_.is_connected()) {
                 auto const [name, paket_size, window_size] = ipt::ctrl_req_register_target(std::move(body));
@@ -949,9 +943,7 @@ namespace smf {
         //     //
         //     proxy_.get_list_req(name, pwd, tag, id, code, params, source, tag_cluster);
         //     break;
-        default:
-            CYNG_LOG_WARNING(logger_, "[cfg] unknown channel: " << channel << ", section: " << section);
-            break;
+        default: CYNG_LOG_WARNING(logger_, "[cfg] unknown channel: " << channel << ", section: " << section); break;
         }
     }
 
