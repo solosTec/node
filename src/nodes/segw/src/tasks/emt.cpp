@@ -166,9 +166,10 @@ namespace smf {
                     auto lock = cp->shared_from_this();
                     push_data(cp);
                 },
-                [=, this](cyng::buffer_t data) {
+                [=, this](std::int32_t result, cyng::buffer_t data) {
                     //  should not receive anything - send only
-                    CYNG_LOG_WARNING(logger_, "[" << sp->get_name() << "] received " << data.size() << " bytes");
+                    CYNG_LOG_WARNING(
+                        logger_, "[" << sp->get_name() << "] received " << data.size() << " bytes, status: " << result);
                 },
                 [=, this](boost::system::error_code ec) {
                     //	fill async
