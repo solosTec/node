@@ -1293,6 +1293,38 @@ namespace smf {
         }
 
         //
+        // ipt params
+        //
+        cyng::param_map_t param_ipt;
+        {
+            auto r = cyng::extract(cfg, {"81490d0700ff", "814827320601"});
+            if (r.second) {
+                param_ipt.emplace(r.first);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"81490d0700ff", "814831320201"});
+            if (r.second) {
+                param_ipt.emplace(r.first);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"81490d0700ff", "008080000301"});
+            if (r.second) {
+                param_ipt.emplace(r.first);
+            }
+        }
+        {
+            auto r = cyng::extract(cfg, {"81490d0700ff", "enabled"});
+            if (r.second) {
+                param_ipt.emplace(r.first);
+            }
+        }
+        //  remove
+        cyng::extract(cfg, {"81490d0700ff", "local.ep"});
+        cyng::extract(cfg, {"81490d0700ff", "remote.ep"});
+
+        //
         // LMN config
         //
         cyng::vector_t cfg_lmn;
@@ -1449,6 +1481,7 @@ namespace smf {
                     if (obj.tag() == cyng::TC_PARAM_MAP) {
                         auto pmap = cyng::container_cast<cyng::param_map_t>(obj);
                         pmap.emplace("config", cyng::make_object(cfg_ipt));
+                        pmap.emplace("param", cyng::make_object(param_ipt));
                         return {cyng::make_object(pmap), cyng::action::REPLACE};
                     }
                     return {cyng::make_object("ipt"), cyng::action::NONE};
