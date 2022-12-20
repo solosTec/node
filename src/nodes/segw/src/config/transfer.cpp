@@ -370,8 +370,6 @@ namespace smf {
 
     void read_sml(cyng::db::statement_ptr stmt_insert, cyng::db::statement_ptr stmt_select, cyng::param_map_t &&pmap) {
 
-        auto flag_default_profile = false;
-
         for (auto const &param : pmap) {
             if (boost::algorithm::equals(param.first, "address")) {
 
@@ -413,7 +411,6 @@ namespace smf {
                         cyng::to_path(cfg::sep, "sml", param.first),
                         cyng::make_object(profile),
                         "default profile for auto-config mode (" + obis::get_name(profile) + ")");
-                    flag_default_profile = true;
                 }
             } else {
                 insert_config_record(
@@ -421,7 +418,7 @@ namespace smf {
             }
         }
 
-        if (!flag_default_profile) {
+        if (pmap.find("default.profile") == pmap.end()) {
             //
             //  profile not supported or missing
             //
@@ -432,18 +429,20 @@ namespace smf {
                 cyng::make_object(OBIS_PROFILE_15_MINUTE),
                 "use \"15 minutes\" as default profile");
         }
+        if (pmap.find("accept.all.ids") == pmap.end()) {
+            //
+            //  default = false
+            //
+            insert_config_record(
+                stmt_insert,
+                stmt_select,
+                cyng::to_path(cfg::sep, "sml", "accept.all.ids"),
+                cyng::make_object(false),
+                "ignore gateway IDs");
+        }
     }
 
     void read_nms(cyng::db::statement_ptr stmt_insert, cyng::db::statement_ptr stmt_select, cyng::param_map_t &&pmap) {
-
-        //
-        //  This flag is used to check if one of the NICs is selected
-        //  for the communication over a local-link address.
-        //
-        bool flag_nic = false;
-        bool flag_nic_ipv4 = false;
-        bool flag_nic_linklocal = false;
-        bool flag_nic_index = false;
 
         auto const nic = get_nic();
         auto const ipv4_addr = get_ipv4_address(nic);
@@ -483,7 +482,6 @@ namespace smf {
                         cyng::make_object(boost::asio::ip::make_address("169.254.0.1", ec)),
                         "IPv4 address of NMS adapter");
                 }
-                flag_nic_ipv4 = true;
             } else if (boost::algorithm::equals(key, "nic.linklocal")) {
                 auto const s = cyng::value_cast(param.second, "fe80::");
                 boost::system::error_code ec;
@@ -503,7 +501,6 @@ namespace smf {
                         cyng::make_object(boost::asio::ip::make_address("[fe80::]", ec)),
                         "link local address of NMS adapter");
                 }
-                flag_nic_linklocal = true;
             } else if (boost::algorithm::equals(key, "port")) {
 
                 auto const nms_port = cyng::numeric_cast<std::uint16_t>(param.second, 7261);
@@ -533,7 +530,6 @@ namespace smf {
                     "default bind delay " + inp);
 
             } else if (boost::algorithm::equals(key, "nic.index")) {
-                flag_nic_index = true;
                 auto const nic_index = cyng::numeric_cast<std::uint32_t>(param.second, 0u);
                 insert_config_record(
                     stmt_insert,
@@ -543,15 +539,11 @@ namespace smf {
                     "default NMS nic index (" + std::to_string(nic_index) + ")");
 
             } else {
-
                 insert_config_record(stmt_insert, stmt_select, cyng::to_path(cfg::sep, "nms", key), param.second, "NMS: " + key);
-                if (boost::algorithm::equals(key, "nic")) {
-                    flag_nic = true;
-                }
             }
         }
 
-        if (!flag_nic) {
+        if (pmap.find("nic") == pmap.end()) {
             //
             //  set a default NIC to communicate over a link-local address
             //
@@ -562,7 +554,7 @@ namespace smf {
                 cyng::make_object(nic),
                 "designated nic for communication over a local-link address");
         }
-        if (!flag_nic_ipv4) {
+        if (pmap.find("nic.ipv4") == pmap.end()) {
             insert_config_record(
                 stmt_insert,
                 stmt_select,
@@ -570,7 +562,7 @@ namespace smf {
                 cyng::make_object(ipv4_addr),
                 "IPv4 address of NMS adapter");
         }
-        if (!flag_nic_linklocal) {
+        if (pmap.find("nic.linklocal") == pmap.end()) {
             insert_config_record(
                 stmt_insert,
                 stmt_select,
@@ -578,7 +570,7 @@ namespace smf {
                 cyng::make_object(link_local.first),
                 "link local address of NMS adapter");
         }
-        if (!flag_nic_index) {
+        if (pmap.find("nic.index") == pmap.end()) {
             insert_config_record(
                 stmt_insert,
                 stmt_select,
@@ -625,7 +617,7 @@ namespace smf {
                         "databits (7, 8)");
                 } else if (boost::algorithm::equals(key, "speed")) {
 
-                    auto const speed = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, key), 2400);
+                    auto const speed = cyng::numeric_cast<std::uint32_t>(cyng::find(cfg, key), 2400u);
                     insert_config_record(
                         stmt_insert,
                         stmt_select,
@@ -643,7 +635,7 @@ namespace smf {
                 } else if (boost::algorithm::equals(key, "broker")) {
 
                     //
-                    //	multiple broker possible
+                    //	multiple brokers are possible
                     //
                     read_broker(stmt_insert, stmt_select, counter, cyng::container_cast<cyng::vector_t>(param.second));
                 } else if (boost::algorithm::equals(key, "blocklist")) {
@@ -676,6 +668,9 @@ namespace smf {
                     //
                     read_http_post(stmt_insert, stmt_select, counter, cyng::container_cast<cyng::param_map_t>(param.second));
                 } else {
+                    //
+                    //  any other entry
+                    //
                     insert_config_record(
                         stmt_insert,
                         stmt_select,
@@ -683,6 +678,15 @@ namespace smf {
                         cyng::find(cfg, key),
                         key);
                 }
+            }
+
+            if (pmap.find("broker.enabled") == pmap.end()) {
+                insert_config_record(
+                    stmt_insert,
+                    stmt_select,
+                    cyng::to_path(cfg::sep, "lmn", "broker.enabled"),
+                    cyng::make_object(false),
+                    " send data to EDM");
             }
 
             //
@@ -1126,7 +1130,7 @@ namespace smf {
         insert_config_record(
             stmt_insert, stmt_select, cyng::to_path(cfg::sep, "gpio", "path"), cyng::make_object(std::move(p)), "virtual path");
 
-        auto const vec = cyng::vector_cast<std::int64_t>(cyng::find(pmap, "list"), 0);
+        auto const vec = cyng::vector_cast<std::int64_t>(cyng::find(pmap, "pin"), 0);
         std::size_t counter{0};
         for (auto pin : vec) {
 
@@ -1278,6 +1282,21 @@ namespace smf {
         //
         // ipt config
         //
+        cyng::rename(cfg, {"81490d0700ff", "81490d070001", "814917070001"}, {"81490d0700ff", "81490d070001", "host"});
+        cyng::rename(cfg, {"81490d0700ff", "81490d070002", "814917070002"}, {"81490d0700ff", "81490d070002", "host"});
+
+        cyng::rename(cfg, {"81490d0700ff", "81490d070001", "81491a070001"}, {"81490d0700ff", "81490d070001", "service"});
+        cyng::rename(cfg, {"81490d0700ff", "81490d070002", "81491a070002"}, {"81490d0700ff", "81490d070002", "service"});
+
+        cyng::rename(cfg, {"81490d0700ff", "81490d070001", "8149633c0101"}, {"81490d0700ff", "81490d070001", "account"});
+        cyng::rename(cfg, {"81490d0700ff", "81490d070002", "8149633c0102"}, {"81490d0700ff", "81490d070002", "account"});
+
+        cyng::rename(cfg, {"81490d0700ff", "81490d070001", "8149633c0201"}, {"81490d0700ff", "81490d070001", "pwd"});
+        cyng::rename(cfg, {"81490d0700ff", "81490d070002", "8149633c0202"}, {"81490d0700ff", "81490d070002", "pwd"});
+
+        cyng::rename(cfg, {"81490d0700ff", "81490d070001", "8149633c0301"}, {"81490d0700ff", "81490d070001", "scrambled"});
+        cyng::rename(cfg, {"81490d0700ff", "81490d070002", "8149633c0302"}, {"81490d0700ff", "81490d070002", "scrambled"});
+
         cyng::vector_t cfg_ipt;
         {
             auto r = cyng::extract(cfg, {"81490d0700ff", "81490d070001"});
@@ -1320,7 +1339,7 @@ namespace smf {
                 param_ipt.emplace(r.first);
             }
         }
-        //  remove
+        //  remove temporary values
         cyng::extract(cfg, {"81490d0700ff", "local.ep"});
         cyng::extract(cfg, {"81490d0700ff", "remote.ep"});
 
@@ -1347,14 +1366,34 @@ namespace smf {
         {
             auto r = cyng::extract(cfg, {"blocklist", "0"});
             if (r.second && cfg_lmn.size() > 0) {
+
+                // r.first.first.find()
+                auto pmap = cyng::container_cast<cyng::param_map_t>(r.first.second);
+                auto const pos = pmap.find("meter");
+                if (pos != pmap.end()) {
+                    auto mp = cyng::container_cast<cyng::param_map_t>(pos->second);
+                    auto vec = cyng::extract_vector(std::move(mp));
+                    pmap.erase(pos);
+                    // meters as a vector
+                    pmap.emplace("meter", cyng::make_object(vec));
+                }
                 auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(0));
                 BOOST_ASSERT(p != nullptr);
-                p->emplace("blocklist", r.first.second);
+                p->emplace("blocklist", cyng::make_object(pmap));
             }
         }
         {
             auto r = cyng::extract(cfg, {"blocklist", "1"});
             if (r.second && cfg_lmn.size() > 1) {
+                auto pmap = cyng::container_cast<cyng::param_map_t>(r.first.second);
+                auto const pos = pmap.find("meter");
+                if (pos != pmap.end()) {
+                    auto mp = cyng::container_cast<cyng::param_map_t>(pos->second);
+                    auto vec = cyng::extract_vector(std::move(mp));
+                    pmap.erase(pos);
+                    // meters as a vector
+                    pmap.emplace("meter", cyng::make_object(vec));
+                }
                 auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(1));
                 BOOST_ASSERT(p != nullptr);
                 p->emplace("blocklist", r.first.second);
@@ -1385,6 +1424,10 @@ namespace smf {
         // listener config
         //
         {
+            //  remove temporary values
+            cyng::extract(cfg, {"listener", "0", "taskIdIPv4"});
+            cyng::extract(cfg, {"listener", "0", "taskIdIPv6"});
+
             auto r = cyng::extract(cfg, {"listener", "0"});
             if (r.second && cfg_lmn.size() > 0) {
                 auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(0));
@@ -1393,6 +1436,10 @@ namespace smf {
             }
         }
         {
+            //  remove temporary values
+            cyng::extract(cfg, {"listener", "0", "taskIdIPv4"});
+            cyng::extract(cfg, {"listener", "0", "taskIdIPv6"});
+
             auto r = cyng::extract(cfg, {"listener", "1"});
             if (r.second && cfg_lmn.size() > 1) {
                 auto p = cyng::object_cast<cyng::param_map_t>(cfg_lmn.at(1));
@@ -1516,7 +1563,6 @@ namespace smf {
         //  rename elements
         //
         cyng::rename(cfg, {"81490d0700ff"}, {"ipt"});
-        // cyng::rename(cfg, {"ipt", "81490d070001","814917070001"}, {"ipt", "host"});
 
         cyng::io::serialize_json_pretty(std::cout, cfg);
 
