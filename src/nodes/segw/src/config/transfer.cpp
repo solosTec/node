@@ -68,29 +68,34 @@ namespace smf {
             if (r_select.second) {
 
                 //
-                //	transfer some global entries
-                //
-                // insert_config_record(
-                //    stmt_insert,
-                //    stmt_select,
-                //    cyng::to_path(cfg::sep, "country.code"),
-                //    reader["country.code"].get(),
-                //    "country code");
+                //	transfer some global entries if available
+                {
+                    auto obj = reader["country.code"].get();
+                    if (obj) {
+                        insert_config_record(
+                            stmt_insert,
+                            stmt_select,
+                            cyng::to_path(cfg::sep, "country.code"),
+                            obj,
+                            "2 letter country code (ISO 3166)");
+                    }
+                }
 
-                // insert_config_record(
-                //     stmt_insert,
-                //     stmt_select,
-                //     cyng::to_path(cfg::sep, "language.code"),
-                //     reader["language.code"].get(),
-                //     "language code");
+                {
+                    auto obj = reader["language.code"].get();
+                    if (obj) {
+                        insert_config_record(
+                            stmt_insert, stmt_select, cyng::to_path(cfg::sep, "language.code"), obj, "ISO 639-1 language code");
+                    }
+                }
 
-                // std::cout << "***info   : insert " << cyng::to_path(cfg::sep, "generate-profile") << std::endl;
-                insert_config_record(
-                    stmt_insert,
-                    stmt_select,
-                    cyng::to_path(cfg::sep, "generate-profile"),
-                    reader["generate-profile"].get(),
-                    "generate profiles");
+                {
+                    // std::cout << "***info   : insert " << cyng::to_path(cfg::sep, "generate.profile") << std::endl;
+                    //  default is false
+                    auto val = cyng::make_object(reader.get("generate.profile", false));
+                    insert_config_record(
+                        stmt_insert, stmt_select, cyng::to_path(cfg::sep, "generate.profile"), val, "generate readout profiles");
+                }
 
                 auto const obj = reader["tag"].get();
                 if (cyng::is_of_type<cyng::TC_STRING>(obj)) {

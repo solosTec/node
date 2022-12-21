@@ -101,12 +101,18 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
         message(STATUS "** compile definitions: ${CMAKE_CXX_FLAGS}")
 
-        #       "${PROJECT_SOURCE_DIR}\\assets\\logo.ico"
+        # "${PROJECT_SOURCE_DIR}\\assets\\logo.ico"
         file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/assets/logo.ico" ASSET_LOGO_ICO_PATH)
         STRING(REPLACE "\\" "\\\\" ASSET_LOGO_ICO_PATH ${ASSET_LOGO_ICO_PATH} )
 
+        #   set default type for libraries
+        #   don't use shared libraries
+        set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build SHARED libraries")
 
     elseif(CMAKE_COMPILER_IS_GNUCXX)
+        #   set default type for libraries
+        #   use shared libraries
+        set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build SHARED libraries")
         set(GLOBAL_LIBRARY_TYPE SHARED)
     endif()
 
@@ -207,9 +213,6 @@ endif()
 #	smf_CROSSCOMPILING = true
 #
 string(TOLOWER ${CMAKE_CROSSCOMPILING} ${PROJECT_NAME}_CROSSCOMPILING)
-
-#   use shared libraries
-set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build SHARED libraries")
 
 # Find packages ...
 
@@ -1042,6 +1045,14 @@ endif()
 if(${CAPITAL_NAME}_UNIT_TEST)
 
     add_subdirectory(unit_test)
+
+endif()
+
+option(BUILD_CLI "Build the SMF CLI" OFF)
+if(BUILD_CLI)
+
+    # the SMF CLI
+    add_subdirectory(src/cli)
 
 endif()
 
