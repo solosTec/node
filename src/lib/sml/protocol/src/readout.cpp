@@ -78,7 +78,7 @@ namespace smf {
                 //	buffer to string
                 //
                 auto const buffer = cyng::to_buffer(obj);
-                return (cyng::is_ascii(buffer)) ? cyng::make_object(cyng::make_string(buffer)) : cyng::make_object(buffer);
+                return (cyng::is_ascii(buffer)) ? cyng::make_object(cyng::make_string<char>(buffer)) : cyng::make_object(buffer);
 
             } else if (OBIS_TARGET_IP_ADDRESS == code || code.starts_with({0x81, 0x49, 0x17, 0x07, 0x0})) {
                 //
@@ -219,7 +219,7 @@ namespace smf {
         std::string to_string(cyng::object obj) {
             if (obj.tag() == cyng::TC_BUFFER) {
                 cyng::buffer_t const buffer = cyng::to_buffer(obj);
-                return cyng::make_string(buffer);
+                return cyng::make_string<char>(buffer);
             }
             return "";
         }
