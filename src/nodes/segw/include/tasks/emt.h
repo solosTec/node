@@ -20,7 +20,11 @@
 
 namespace smf {
     /**
-     * Processor for wireless M-Bus data (EMT).
+     * EMT is german (Externer Marktteilnehmer - external market participiant).
+     * This task collects unencryptet M-Bus data in a temporary cache and sends this data
+     * as hexcoded string via HTTPS POST to the specified server.
+     * Additionally the HTTP header ccontains a time stamp and the serial number
+     * of the gateway.
      *
      */
     class emt {
@@ -60,9 +64,14 @@ namespace smf {
          */
         void add_target_channel(std::string);
 
+        /**
+         * Merge incoming data 
+         */
         void update_cache(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
-        // void update_load_profile(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
 
+        /**
+         * Get the parsed header data
+         */
         void decode(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
 
         /**
@@ -71,6 +80,9 @@ namespace smf {
         void push();
         void push_data(cyng::channel_ptr);
 
+        /**
+         * Write cache to database.  
+         */
         void backup();
 
       private:
