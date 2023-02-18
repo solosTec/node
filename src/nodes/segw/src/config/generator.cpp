@@ -195,8 +195,8 @@ namespace smf {
             ("enabled", false)                         // blocklist disabled
             ("list", cyng::make_vector({}))            // no entries
 #endif
-                ("mode", "drop") //	or accept
-            ("period", 30)       //	seconds
+                ("mode", "drop")                 //	or accept
+            ("period", std::chrono::seconds(30)) //	seconds
                 .get_map());
     }
 

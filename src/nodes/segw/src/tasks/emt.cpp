@@ -90,11 +90,6 @@ namespace smf {
         } else {
             CYNG_LOG_TRACE(logger_, "[emt] is diabled");
         }
-
-        //
-        //  update load profile
-        //
-        // update_load_profile(h, tpl, data);
     }
 
     void emt::update_cache(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data) {
