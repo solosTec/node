@@ -1,4 +1,30 @@
 
+project(imega)
+                                                          
+message(STATUS "                    ____                                    ")
+message(STATUS "                  ,'  , `.                                  ")
+message(STATUS "    ,--,       ,-+-,.' _ |                                  ")
+message(STATUS "  ,--.'|    ,-+-. ;   , ||                                  ")
+message(STATUS "  |  |,    ,--.'|'   |  ;|           ,----._,.              ")
+message(STATUS "  `--'_   |   |  ,', |  ':  ,---.   /   /  ' /   ,--.--.    ")
+message(STATUS "  ,' ,'|  |   | /  | |  || /     \\ |   :     |  /       \\   ")
+message(STATUS "  '  | |  '   | :  | :  |,/    /  ||   | .\\  . .--.  .-. |  ")
+message(STATUS "  |  | :  ;   . |  ; |--'.    ' / |.   ; ';  |  \\__\\/: . .  ")
+message(STATUS "  '  : |__|   : |  | ,   '   ;   /|'   .   . |  ,\" .--.; |  ")
+message(STATUS "  |  | '.'|   : '  |/    '   |  / | `---`-'| | /  /  ,.  |  ")
+message(STATUS "  ;  :    ;   | |`-'     |   :    | .'__/\\_: |;  :   .'   \\ ")
+message(STATUS "  |  ,   /|   ;/          \\   \\  /  |   :    :|  ,     .-./ ")
+message(STATUS "   ---`-' '---'            `----'    \\   \\  /  `--`---'     ")
+
+                                                               
+message(STATUS "CMAKE_PROJECT_NAME       : ${CMAKE_PROJECT_NAME}")
+message(STATUS "PROJECT_NAME             : ${PROJECT_NAME}")
+message(STATUS "CMAKE_BINARY_DIR         : ${CMAKE_BINARY_DIR}")
+message(STATUS "PROJECT_BINARY_DIR       : ${PROJECT_BINARY_DIR}")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR : ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "version                  : v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}")                                                
+
+
 include (node.cmake)
 
 add_executable(imega ${imega_node})
@@ -38,6 +64,7 @@ target_link_libraries(imega
         smf::config
         smf::cluster
         smf::cluster_bus
+        smf::imega
         cyng::obj
         cyng::parse
         cyng::io

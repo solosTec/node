@@ -957,6 +957,52 @@ target_link_libraries(smf_modbus
 )
 
 #
+# add library: smf_imega
+#
+include (src/lib/imega/protocol/lib.cmake)
+add_library(smf_imega ${GLOBAL_LIBRARY_TYPE} ${imega_lib})
+add_library(smf::imega ALIAS "smf_imega")
+
+target_include_directories(smf_imega
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${OPENSSL_INCLUDE_DIR}
+    PRIVATE
+        ${CYNG_INCLUDE_DIRS}
+#        ${SMFSEC_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_imega PRIVATE 
+    cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug imega protocol
+#
+target_compile_definitions(smf_imega 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_IMEGA>
+)
+
+target_link_libraries(smf_imega 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # add library: smf_report
 #
 include (src/lib/report/lib.cmake)
