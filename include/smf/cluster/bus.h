@@ -12,7 +12,7 @@
 
 #include <cyng/io/ostream.h> // sys_msg<>()
 #include <cyng/io/parser/parser.h>
-//#include <cyng/io/serialize.h>
+// #include <cyng/io/serialize.h>
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/store/key.hpp>
@@ -121,6 +121,9 @@ namespace smf {
             std::string const &node_name,
             boost::uuids::uuid tag,
             std::uint32_t features,
+            /**
+             * dependency injection
+             */
             bus_client_interface *bip);
 
         void start();
