@@ -300,9 +300,7 @@ namespace smf {
     /**
      * Try to detect the server ID
      */
-    //std::string detect_server_id(std::string const &);
-
-    std::pair <std::string, bool> is_custom_gateway(std::string const &);
+    std::pair<std::string, bool> is_custom_gateway(std::string const &);
 
 } // namespace smf
 

@@ -117,29 +117,17 @@ namespace smf {
 
         auto const session_cfg = customize_session_config(cyng::container_cast<cyng::param_map_t>(reader["session"].get()));
 
-        // cluster_ = ctl.create_named_channel_with_ref<server>(
-        //                   "main",
-        //                   ctl,
-        //                   tag,
-        //                   country_code,
-        //                   lang_code,
-        //                   logger,
-        //                   account,
-        //                   pwd,
-        //                   salt,
-        //                   std::chrono::seconds(monitor),
-        //                   session_cfg)
-        //                .first;
-        // BOOST_ASSERT(cluster_->is_open());
-
-        // cluster_->dispatch("start", cyng::make_tuple(ep));
-
         /**
          *  data cache
          */
         static cyng::store store;
         static db cache(store, logger, tag);
         static cyng::mesh fabric(ctl);
+
+        //
+        //	create all tables and set initial values
+        //
+        cache.init(session_cfg, country_code, lang_code);
 
         cyng::net::server_factory srvf(ctl);
         server_proxy_ = srvf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
@@ -156,11 +144,6 @@ namespace smf {
                 auto sp =
                     std::shared_ptr<session>(new session(std::move(socket), cache, fabric, logger), [this, &logger](session *s) {
                         BOOST_ASSERT(s != nullptr);
-
-                        //
-                        //  stop ping
-                        //
-                        // ping_tsk->stop();
 
                         //
                         //	remove from cluster table
@@ -202,10 +185,16 @@ namespace smf {
                     cache.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_, "node(s) online + ", ep);
                 }
             });
+
+        //
+        //  start cluster server
+        //
+        server_proxy_.listen(ep);
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 
+        server_proxy_.stop();
         config::stop_tasks(logger, reg, "main");
 
         //
