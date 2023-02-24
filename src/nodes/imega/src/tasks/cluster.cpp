@@ -17,9 +17,10 @@ namespace smf {
 		, std::string const& node_name
 		, cyng::logger logger
 		, toggle::server_vec_t&& tgl
-        , bool auto_answer
-        , std::chrono::milliseconds guard
-        , std::chrono::seconds timeout) //  gatekeeper
+        , imega::policy policy
+        , std::string const &pwd
+        , std::chrono::seconds timeout//  gatekeeper
+        , std::chrono::minutes watchdog) 
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&cyng::net::server_proxy::listen<boost::asio::ip::tcp::endpoint>, &server_proxy_, std::placeholders::_1),
@@ -35,63 +36,61 @@ namespace smf {
 	{
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "listen"});
+        }
 
-            //
-            //  create the modem server
-            //
-            cyng::net::server_factory srvf(ctl);
-            server_proxy_ = srvf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-                [this](boost::system::error_code ec) {
-                    if (!ec) {
-                        CYNG_LOG_INFO(logger_, "listen callback " << ec.message());
-                    } else {
-                        CYNG_LOG_WARNING(logger_, "listen callback " << ec.message());
-                    }
-                },
-                [=, this](boost::asio::ip::tcp::socket socket) {
-                    CYNG_LOG_INFO(logger_, "new session #" << session_counter_ << ": " << socket.remote_endpoint());
-                    auto sp = std::shared_ptr<modem_session>(
-                        new modem_session(std::move(socket), bus_, fabric_, logger_, auto_answer, guard), [this](modem_session *s) {
-                            //
-                            //	update cluster state
-                            //
-                            s->logout();
-                            s->stop();
+        CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
 
-                            //
-                            //	update session counter
-                            //
-                            --session_counter_;
-                            CYNG_LOG_TRACE(logger_, "session(s) running: " << session_counter_);
-
-                            //
-                            //	remove session
-                            //
-                            delete s;
-                        });
-
-                    if (sp) {
-
+        //
+        //  create the iMega server
+        //
+        cyng::net::server_factory srvf(ctl);
+        server_proxy_ = srvf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+            [this](boost::system::error_code ec) {
+                if (!ec) {
+                    CYNG_LOG_INFO(logger_, "listen callback " << ec.message());
+                } else {
+                    CYNG_LOG_WARNING(logger_, "listen callback " << ec.message());
+                }
+            },
+            [=, this](boost::asio::ip::tcp::socket socket) {
+                CYNG_LOG_INFO(logger_, "new session #" << session_counter_ << ": " << socket.remote_endpoint());
+                auto sp = std::shared_ptr<imega_session>(
+                    new imega_session(std::move(socket), bus_, fabric_, logger_, policy, pwd), [this](imega_session *s) {
                         //
-                        //	start session
+                        //	update cluster state
                         //
-                        sp->start(timeout);
+                        s->logout();
+                        s->stop();
 
                         //
                         //	update session counter
                         //
-                        ++session_counter_;
-                    }
-                });
+                        --session_counter_;
+                        CYNG_LOG_TRACE(logger_, "session(s) running: " << session_counter_);
 
-            CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
-        } else {
-            CYNG_LOG_FATAL(logger_, "cluster task " << tag << " failed");
-        }
+                        //
+                        //	remove session
+                        //
+                        delete s;
+                    });
+
+                if (sp) {
+
+                    //
+                    //	start session
+                    //
+                    sp->start(timeout);
+
+                    //
+                    //	update session counter
+                    //
+                    ++session_counter_;
+                }
+            });
     }
 
     cluster::~cluster() {
-#ifdef _DEBUG_IPT
+#ifdef _DEBUG_IMEGA
         std::cout << "cluster(~)" << std::endl;
 #endif
     }
@@ -101,7 +100,10 @@ namespace smf {
         bus_.stop();
     }
 
-    void cluster::connect() { bus_.start(); }
+    void cluster::connect() {
+        //  join cluster
+        bus_.start();
+    }
 
     //
     //	bus interface

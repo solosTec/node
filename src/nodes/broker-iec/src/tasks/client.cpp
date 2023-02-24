@@ -92,7 +92,7 @@ namespace smf {
                     break;
                 }
             }),
-          reconnect_(ctl_.create_channel_with_ref<reconnect>(logger_, channel_)),
+          reconnect_(ctl_.create_channel_with_ref<reconnect>(logger_, channel_).first),
           retry_counter_{3} {
 
         if (auto sp = channel_.lock(); sp) {
@@ -104,7 +104,6 @@ namespace smf {
         //
         //	check writer and reconnect task
         //
-        // BOOST_ASSERT(writer_->is_open());
         BOOST_ASSERT(reconnect_->is_open());
     }
 
@@ -201,8 +200,7 @@ namespace smf {
                     ("meter", mgr_.get_id())                                      //  current meter id/name
                 );
                 break;
-            case state_value::CONNECTED:
-                break;
+            case state_value::CONNECTED: break;
             case state_value::RETRY: //  connection got lost, try to reconnect
                 //  required to get a proper error code: connection_aborted
                 socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
@@ -211,11 +209,8 @@ namespace smf {
                 BOOST_ASSERT(retry_counter_ != 0);
                 retry_counter_--;
                 break;
-            case state_value::STOPPED:
-                socket_.close(ignored_ec);
-                break;
-            default:
-                break;
+            case state_value::STOPPED: socket_.close(ignored_ec); break;
+            default: break;
             }
         }
     }

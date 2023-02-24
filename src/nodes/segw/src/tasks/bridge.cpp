@@ -253,7 +253,7 @@ namespace smf {
         //
         //	connect database to cache
         //
-        auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", ctl_, logger_, cfg_, storage_);
+        auto channel = ctl_.create_named_channel_with_ref<persistence>("persistence", ctl_, logger_, cfg_, storage_).first;
         BOOST_ASSERT(channel->is_open());
         stash_.lock(channel);
 
@@ -384,7 +384,7 @@ namespace smf {
 
     void bridge::init_op_counter() {
         CYNG_LOG_INFO(logger_, "init operation counter");
-        auto channel = ctl_.create_named_channel_with_ref<counter>("counter", logger_, cfg_);
+        auto channel = ctl_.create_named_channel_with_ref<counter>("counter", logger_, cfg_).first;
         BOOST_ASSERT(channel->is_open());
         channel->dispatch("inc");
         stash_.lock(channel);
@@ -594,7 +594,7 @@ namespace smf {
                 //  ToDo: substitute LMN task with the virtual meter task
                 //
             }
-            auto channel = ctl_.create_named_channel_with_ref<lmn>(port, ctl_, logger_, cfg_, type);
+            auto channel = ctl_.create_named_channel_with_ref<lmn>(port, ctl_, logger_, cfg_, type).first;
             BOOST_ASSERT(channel->is_open());
             stash_.lock(channel);
 
@@ -610,7 +610,7 @@ namespace smf {
                 //
                 //	start CP210x parser
                 //
-                auto hci = ctl_.create_named_channel_with_ref<CP210x>("CP210x", ctl_, logger_);
+                auto hci = ctl_.create_named_channel_with_ref<CP210x>("CP210x", ctl_, logger_).first;
                 BOOST_ASSERT(hci->is_open());
                 stash_.lock(hci);
 
@@ -741,11 +741,13 @@ namespace smf {
                 if (trg.is_connect_on_demand()) {
 
                     auto channel =
-                        ctl_.create_named_channel_with_ref<broker_on_demand>(name, ctl_, logger_, cfg_, type, trg.get_index());
+                        ctl_.create_named_channel_with_ref<broker_on_demand>(name, ctl_, logger_, cfg_, type, trg.get_index())
+                            .first;
                     BOOST_ASSERT(channel->is_open());
                     stash_.lock(channel);
                 } else {
-                    auto channel = ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, cfg_, type, trg.get_index());
+                    auto channel =
+                        ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, cfg_, type, trg.get_index()).first;
                     BOOST_ASSERT(channel->is_open());
                     stash_.lock(channel);
                     channel->dispatch("start"); //  init state_holder_
@@ -795,7 +797,7 @@ namespace smf {
             auto const task_name = cfg.get_task_name();
             CYNG_LOG_INFO(logger_, "create filter task [" << task_name << "]");
 
-            auto channel_filter = ctl_.create_named_channel_with_ref<filter>(task_name, ctl_, logger_, cfg_, type);
+            auto channel_filter = ctl_.create_named_channel_with_ref<filter>(task_name, ctl_, logger_, cfg_, type).first;
             BOOST_ASSERT(channel_filter->is_open());
             stash_.lock(channel_filter);
 
@@ -807,7 +809,7 @@ namespace smf {
             //
             //  start wireless M-Bus processor (protocol EN-13757)
             //
-            auto channel_en13757 = ctl_.create_named_channel_with_ref<en13757>("EN-13757", ctl_, logger_, db_, cfg_);
+            auto channel_en13757 = ctl_.create_named_channel_with_ref<en13757>("EN-13757", ctl_, logger_, db_, cfg_).first;
             stash_.lock(channel_en13757);
             auto const en13757_task_name = channel_en13757->get_name();
             BOOST_ASSERT_MSG(en13757_task_name == "EN-13757", "invalid task name");
@@ -818,7 +820,7 @@ namespace smf {
             cfg_http_post http_post_cfg(cfg_, type);
             auto const emt_task_name = http_post_cfg.get_emt_task_name();
             CYNG_LOG_INFO(logger_, "create emt task [" << emt_task_name << "] -> " << http_post_cfg.get_server());
-            auto channel_emt = ctl_.create_named_channel_with_ref<emt>(emt_task_name, ctl_, logger_, db_, cfg_);
+            auto channel_emt = ctl_.create_named_channel_with_ref<emt>(emt_task_name, ctl_, logger_, db_, cfg_).first;
             stash_.lock(channel_emt);
             if (!http_post_cfg.is_enabled()) {
                 CYNG_LOG_WARNING(logger_, "task [" << emt_task_name << "] is diabled");
@@ -883,7 +885,7 @@ namespace smf {
                 auto const sp = cfg.get_path(pin);
                 auto const name = cfg_gpio::get_name(pin);
                 CYNG_LOG_INFO(logger_, "init GPIO [" << name << "]");
-                auto channel = ctl_.create_named_channel_with_ref<gpio>(name, logger_, sp);
+                auto channel = ctl_.create_named_channel_with_ref<gpio>(name, logger_, sp).first;
                 BOOST_ASSERT(channel->is_open());
                 stash_.lock(channel);
 #ifdef _DEBUG
@@ -952,7 +954,7 @@ namespace smf {
             CYNG_LOG_INFO(logger_, "[NMS] is in \"" << mode << "\" mode");
 
             //  cyng::channel_weak wp, cyng::controller &ctl, cfg &, cyng::logger
-            auto channel = ctl_.create_named_channel_with_ref<nms::server>("nms", ctl_, cfg_, logger_);
+            auto channel = ctl_.create_named_channel_with_ref<nms::server>("nms", ctl_, cfg_, logger_).first;
             BOOST_ASSERT(channel->is_open());
             stash_.lock(channel);
 
@@ -1006,7 +1008,7 @@ namespace smf {
             auto const name = cfg.get_task_name();
 
             auto channel =
-                ctl_.create_named_channel_with_ref<rdr::server>(name, ctl_, cfg_, logger_, type, rdr::server::type::ipv4);
+                ctl_.create_named_channel_with_ref<rdr::server>(name, ctl_, cfg_, logger_, type, rdr::server::type::ipv4).first;
             stash_.lock(channel);
             cfg.set_IPv4_task_id(channel->get_id());
 
@@ -1048,7 +1050,8 @@ namespace smf {
             CYNG_LOG_INFO(logger_, "create link-local listener/rdr [" << name << "] " << ep);
 
             auto channel =
-                ctl_.create_named_channel_with_ref<rdr::server>(name, ctl_, cfg_, logger_, cfg.get_type(), rdr::server::type::ipv6);
+                ctl_.create_named_channel_with_ref<rdr::server>(name, ctl_, cfg_, logger_, cfg.get_type(), rdr::server::type::ipv6)
+                    .first;
             stash_.lock(channel);
             cfg.set_IPv6_task_id(channel->get_id());
 

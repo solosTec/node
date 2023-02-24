@@ -40,7 +40,7 @@ namespace smf {
         , cfg_ipt_(std::move(cfg_ipt))
         , pcc_(std::move(pcc))
 		, fabric_(ctl)
-		, bus_(ctl.get_ctx(), logger, std::move(cfg_cluster), node_name, tag, NO_FEATURES, this)
+		, bus_(ctl, logger, std::move(cfg_cluster), node_name, tag, NO_FEATURES, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_, channel_))
         , delay_(0)
@@ -89,16 +89,17 @@ namespace smf {
         //	start client
         //
         auto channel = ctl_.create_named_channel_with_ref<client>(
-            task_name,
-            ctl_,
-            bus_,
-            logger_,
-            rec.key(),
-            connect_counter,
-            failure_counter,
-            host,
-            std::to_string(port),
-            std::chrono::seconds(reconnect_timeout_));
+                               task_name,
+                               ctl_,
+                               bus_,
+                               logger_,
+                               rec.key(),
+                               connect_counter,
+                               failure_counter,
+                               host,
+                               std::to_string(port),
+                               std::chrono::seconds(reconnect_timeout_))
+                           .first;
         BOOST_ASSERT(channel->is_open());
 
         //
@@ -295,7 +296,7 @@ namespace smf {
         //  push task is identified by the meter name/id
         //
         auto channel =
-            ctl_.create_named_channel_with_ref<push>(name, ctl_, logger_, update_cfg(cfg_ipt_, account, pwd), pcc_, client);
+            ctl_.create_named_channel_with_ref<push>(name, ctl_, logger_, update_cfg(cfg_ipt_, account, pwd), pcc_, client).first;
         BOOST_ASSERT(channel->is_open());
         channel->suspend(std::chrono::seconds(15) + std::chrono::milliseconds(stash_.size() * 120), "connect");
         stash_.lock(channel);

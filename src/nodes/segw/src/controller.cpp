@@ -411,7 +411,7 @@ namespace smf {
         auto s = cyng::db::create_db_session(reader.get("DB"));
 
         auto const md = get_store_meta_data();
-        bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, md);
+        bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, md).first;
         BOOST_ASSERT(bridge_->is_open());
         bridge_->dispatch("start");
     }

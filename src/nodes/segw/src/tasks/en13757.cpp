@@ -45,6 +45,7 @@ namespace smf {
 		, ctl_(ctl)
         , client_factory_(ctl)
         , proxy_()
+        , is_connected_(false)
 		, logger_(logger)
         , db_(db)
         , cfg_(config)
@@ -614,8 +615,9 @@ namespace smf {
             //  send data
             //
             proxy_ = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-                [=, this](std::size_t) -> std::pair<std::chrono::seconds, bool> {
-                    CYNG_LOG_WARNING(logger_, "[EN-13757] cannot connect to " << host << ':' << service);
+                [=, this](std::size_t, std::size_t counter) -> std::pair<std::chrono::seconds, bool> {
+                    CYNG_LOG_WARNING(
+                        logger_, "[EN-13757] cannot connect to " << host << ':' << service << " for the " << counter << " time");
 
                     //
                     //  write cache to database
@@ -623,8 +625,8 @@ namespace smf {
                     sp->dispatch("backup");
                     return {std::chrono::seconds(0), false};
                 },
-                [this](boost::asio::ip::tcp::endpoint ep, cyng::channel_ptr cp) {
-                    CYNG_LOG_TRACE(logger_, "[EN-13757]  successfully connected to " << ep);
+                [this](boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep, cyng::channel_ptr cp) {
+                    CYNG_LOG_TRACE(logger_, "[EN-13757]  successfully connected to " << rep);
 
                     //
                     //  send data
@@ -639,6 +641,12 @@ namespace smf {
                 [this](boost::system::error_code ec) {
                     //	fill async
                     CYNG_LOG_WARNING(logger_, "[EN-13757] connection lost " << ec.message());
+                },
+                [this](cyng::net::client_state state) -> void {
+                    //
+                    //  update client state
+                    //
+                    is_connected_ = state == cyng::net::client_state::CONNECTED;
                 });
 
             CYNG_LOG_INFO(logger_, "[EN-13757] open connection to " << host << ":" << service);

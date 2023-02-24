@@ -72,7 +72,7 @@ namespace smf {
 
     void wmbus_session::start(std::chrono::seconds timeout) {
 
-        gatekeeper_ = ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), timeout);
+        gatekeeper_ = ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), timeout).first;
         BOOST_ASSERT(gatekeeper_->is_open());
 
         //

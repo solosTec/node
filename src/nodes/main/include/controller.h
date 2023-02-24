@@ -10,6 +10,10 @@
 
 #include <smf/controller_base.h>
 
+#include <db.h>
+
+#include <cyng/net/server_proxy.h>
+
 namespace smf {
 
     class controller : public config::controller_base {
@@ -31,7 +35,8 @@ namespace smf {
         cyng::param_t create_cluster_spec();
 
       private:
-        cyng::channel_ptr cluster_;
+        cyng::net::server_proxy server_proxy_;
+        std::uint64_t session_counter_;
     };
 
     cyng::param_map_t customize_session_config(cyng::param_map_t &&cfg);

@@ -33,7 +33,7 @@ namespace smf {
         , channel_(wp)
         , ctl_(ctl)
         , logger_(logger)
-        , protocol_(ctl.create_channel<cyng::log>()) {
+        , protocol_(ctl.create_channel<cyng::log>().first) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"open.response", "close.response", "get.profile.list.response", "get.proc.parameter.response"});

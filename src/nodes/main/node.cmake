@@ -38,9 +38,7 @@ else()
 endif()
 
 set (main_tasks
-  include/tasks/server.h
   include/tasks/ping.h 
-  src/tasks/server.cpp
   src/tasks/ping.cpp
 )
 

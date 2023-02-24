@@ -45,7 +45,7 @@ namespace smf {
         , tag_(tag)
         , logger_(logger)
         , fabric_(ctl)
-        , bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, NO_FEATURES, this)
+        , bus_(ctl, logger, std::move(cfg), node_name, tag, NO_FEATURES, this)
         , db_(cyng::db::create_db_session(cfg_db)) {
 
         if (auto sp = channel_.lock(); sp) {
@@ -89,7 +89,8 @@ namespace smf {
                 auto const prefix = reader.get("prefix", "");
 
                 auto channel =
-                    ctl_.create_named_channel_with_ref<csv_report>(name, ctl_, logger_, db_, profile, path, backtrack, prefix);
+                    ctl_.create_named_channel_with_ref<csv_report>(name, ctl_, logger_, db_, profile, path, backtrack, prefix)
+                        .first;
                 BOOST_ASSERT(channel->is_open());
                 channels_.lock(channel);
 
@@ -130,19 +131,20 @@ namespace smf {
 
                 cyng::obis_path_t filter;
                 auto channel = ctl_.create_named_channel_with_ref<lpex_report>(
-                    name,
-                    ctl_,
-                    logger_,
-                    db_,
-                    profile,
-                    filter, // filter
-                    path,
-                    backtrack,
-                    prefix,
-                    true,      // print version
-                    separated, // separated
-                    false,     // debug mode
-                    customer);
+                                       name,
+                                       ctl_,
+                                       logger_,
+                                       db_,
+                                       profile,
+                                       filter, // filter
+                                       path,
+                                       backtrack,
+                                       prefix,
+                                       true,      // print version
+                                       separated, // separated
+                                       false,     // debug mode
+                                       customer)
+                                   .first;
                 BOOST_ASSERT(channel->is_open());
                 channels_.lock(channel);
 
@@ -187,7 +189,8 @@ namespace smf {
                     }
                 }
 
-                auto channel = ctl_.create_named_channel_with_ref<gap_report>(name, ctl_, logger_, db_, profile, root, backtrack);
+                auto channel =
+                    ctl_.create_named_channel_with_ref<gap_report>(name, ctl_, logger_, db_, profile, root, backtrack).first;
                 BOOST_ASSERT(channel->is_open());
                 channels_.lock(channel);
 

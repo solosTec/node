@@ -1,12 +1,10 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Sylko Olzscher
- *
- */
 #include <tasks/cluster.h>
 
+#include <tasks/writer.h>
+#include <wmbus_session.h>
+
 #include <cyng/log/record.h>
+#include <cyng/net/server_factory.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
 
@@ -25,7 +23,7 @@ namespace smf {
 		, std::filesystem::path client_out)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
-		std::bind(&wmbus_server::listen, &server_, std::placeholders::_1),
+		std::bind(&cyng::net::server_proxy::listen<boost::asio::ip::tcp::endpoint>, &server_proxy_, std::placeholders::_1),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
 	}
 		, channel_(wp)
@@ -33,14 +31,82 @@ namespace smf {
 		, tag_(tag)
 		, logger_(logger)
 		, fabric_(ctl)
-		, bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, NO_FEATURES, this)
+		, bus_(ctl, logger, std::move(cfg), node_name, tag, NO_FEATURES, this)
 		, store_()
 		, db_(std::make_shared<db>(store_, logger_, tag_))
-		, server_(ctl, logger, bus_, db_, client_timeout, client_out)
+        , server_proxy_()
+        , session_counter_{0}
 	{
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "listen"}); //	wmbus_server
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
+
+            //
+            //  create the wireless M-Bus server
+            //
+            cyng::net::server_factory srvf(ctl);
+            server_proxy_ = srvf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+                [this](boost::system::error_code ec) {
+                    if (!ec) {
+                        CYNG_LOG_INFO(logger_, "listen callback " << ec.message());
+                    } else {
+                        CYNG_LOG_WARNING(logger_, "listen callback " << ec.message());
+                    }
+                },
+                [=, this](boost::asio::ip::tcp::socket socket) {
+                    CYNG_LOG_INFO(logger_, "new session #" << session_counter_ << ": " << socket.remote_endpoint());
+
+                    //
+                    //	update "gwwMBus" table
+                    //
+                    auto const key = db_->update_gw_status(socket.remote_endpoint(), bus_);
+
+                    //
+                    //	start writer
+                    //
+                    auto w = ctl_.create_channel_with_ref<writer>(logger_, client_out).first;
+                    BOOST_ASSERT(w->is_open());
+
+                    auto sp = std::shared_ptr<wmbus_session>(
+                        new wmbus_session(ctl_, std::move(socket), db_, logger_, bus_, key, w), [this, w](wmbus_session *s) {
+                            s->stop();
+
+                            //
+                            //	update session counter
+                            //
+                            bus_.update_pty_counter(--session_counter_);
+                            CYNG_LOG_TRACE(logger_, "[server] session(s) running: " << session_counter_);
+
+                            //
+                            //	stop writer
+                            //
+                            w->stop();
+
+                            //
+                            //	remove session
+                            //
+                            delete s;
+                        });
+
+                    if (sp) {
+
+                        //
+                        //	start session
+                        //
+                        sp->start(client_timeout);
+
+                        //
+                        //	update session counter
+                        //	update cluster table
+                        //
+                        bus_.update_pty_counter(++session_counter_);
+                    }
+                });
+
+            CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
+
+        } else {
+            CYNG_LOG_FATAL(logger_, "cluster task " << tag << " failed");
         }
     }
 

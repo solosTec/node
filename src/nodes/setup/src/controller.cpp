@@ -57,8 +57,8 @@ namespace smf {
                     cyng::make_param("connection.type", "SQLite"),
                     cyng::make_param("file.name", (cwd / "setup.database").string()),
                     cyng::make_param("busy.timeout", std::chrono::milliseconds(12)), //	seconds
-                    cyng::make_param("watchdog", std::chrono::seconds(30)),     //	for database connection
-                    cyng::make_param("pool.size", 1)      //	no pooling for SQLite
+                    cyng::make_param("watchdog", std::chrono::seconds(30)),          //	for database connection
+                    cyng::make_param("pool.size", 1)                                 //	no pooling for SQLite
                     )),
 
             cyng::make_param(
@@ -126,7 +126,8 @@ namespace smf {
         cyng::param_map_t &&cfg_db) {
 
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
-            "cluster", ctl, tag, node_name, logger, std::move(cfg_cluster), storage_type, std::move(cfg_db));
+                          "cluster", ctl, tag, node_name, logger, std::move(cfg_cluster), storage_type, std::move(cfg_db))
+                       .first;
         BOOST_ASSERT(cluster_->is_open());
         cluster_->dispatch("connect", cyng::make_tuple());
     }

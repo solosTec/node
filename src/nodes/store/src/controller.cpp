@@ -609,7 +609,8 @@ namespace smf {
                     logger,
                     "start db cleanup task \"" << name << "\" for profile " << obis::get_name(profile) << " in "
                                                << (age.count() / 2) << " hours");
-                auto channel = ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age, limit);
+                auto channel =
+                    ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age, limit).first;
                 BOOST_ASSERT(channel->is_open());
                 // don't start immediately
                 channel->suspend(age / 2, "run", age / 4);
@@ -647,7 +648,8 @@ namespace smf {
                 }
 
                 auto const age = cyng::to_hours(reader_cls.get("max.age", "120:00:00"));
-                auto channel = ctl.create_named_channel_with_ref<gap_report>("gap-report", ctl, logger, db, profile, root, age);
+                auto channel =
+                    ctl.create_named_channel_with_ref<gap_report>("gap-report", ctl, logger, db, profile, root, age).first;
                 BOOST_ASSERT(channel->is_open());
                 channel->dispatch("run", age / 2);
             } else {
@@ -679,8 +681,10 @@ namespace smf {
         std::set<std::string> const &dlms_targets,
         std::set<std::string> const &writer) {
 
-        auto channel = ctl.create_named_channel_with_ref<network>(
-            "network", ctl, tag, logger, node_name, model, std::move(tgl), sml_targets, iec_targets, dlms_targets, writer);
+        auto channel =
+            ctl.create_named_channel_with_ref<network>(
+                   "network", ctl, tag, logger, node_name, model, std::move(tgl), sml_targets, iec_targets, dlms_targets, writer)
+                .first;
         BOOST_ASSERT(channel->is_open());
         channels.lock(channel);
 
@@ -1110,7 +1114,7 @@ namespace smf {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start sml database writer");
             auto const reader = cyng::make_reader(pm);
-            auto channel = ctl.create_named_channel_with_ref<sml_db_writer>(name, ctl, logger, db);
+            auto channel = ctl.create_named_channel_with_ref<sml_db_writer>(name, ctl, logger, db).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -1136,7 +1140,7 @@ namespace smf {
         }
         if (!out.empty()) {
             CYNG_LOG_INFO(logger, "start sml xml writer");
-            auto channel = ctl.create_named_channel_with_ref<sml_xml_writer>(name, ctl, logger, out, prefix, suffix);
+            auto channel = ctl.create_named_channel_with_ref<sml_xml_writer>(name, ctl, logger, out, prefix, suffix).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -1162,7 +1166,7 @@ namespace smf {
         }
 
         if (!out.empty()) {
-            auto channel = ctl.create_named_channel_with_ref<sml_json_writer>(name, ctl, logger, out, prefix, suffix);
+            auto channel = ctl.create_named_channel_with_ref<sml_json_writer>(name, ctl, logger, out, prefix, suffix).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -1188,7 +1192,7 @@ namespace smf {
             } else {
                 CYNG_LOG_INFO(logger, "[sml.abl.writer] start -> " << out);
             }
-            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>(name, ctl, logger, out, prefix, suffix, eol_dos);
+            auto channel = ctl.create_named_channel_with_ref<sml_abl_writer>(name, ctl, logger, out, prefix, suffix, eol_dos).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         } else {
@@ -1216,7 +1220,7 @@ namespace smf {
             } else {
                 CYNG_LOG_INFO(logger, "[sml.log.writer] start -> " << out);
             }
-            auto channel = ctl.create_named_channel_with_ref<sml_log_writer>(name, ctl, logger, out, prefix, suffix);
+            auto channel = ctl.create_named_channel_with_ref<sml_log_writer>(name, ctl, logger, out, prefix, suffix).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -1243,7 +1247,7 @@ namespace smf {
                 CYNG_LOG_INFO(logger, "[sml.csv.writer] start -> " << out);
             }
 
-            auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>(name, ctl, logger, out, prefix, suffix, header);
+            auto channel = ctl.create_named_channel_with_ref<sml_csv_writer>(name, ctl, logger, out, prefix, suffix, header).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         } else {
@@ -1262,7 +1266,8 @@ namespace smf {
         std::string const &db) {
 
         CYNG_LOG_INFO(logger, "start " << name);
-        auto channel = ctl.create_named_channel_with_ref<sml_influx_writer>(name, ctl, logger, host, service, protocol, cert, db);
+        auto channel =
+            ctl.create_named_channel_with_ref<sml_influx_writer>(name, ctl, logger, host, service, protocol, cert, db).first;
         BOOST_ASSERT(channel->is_open());
         channels.lock(channel);
     }
@@ -1276,7 +1281,7 @@ namespace smf {
         std::string const &name) {
         if (!pm.empty()) {
             CYNG_LOG_INFO(logger, "start iec database writer");
-            auto channel = ctl.create_named_channel_with_ref<iec_db_writer>(name, ctl, logger, db);
+            auto channel = ctl.create_named_channel_with_ref<iec_db_writer>(name, ctl, logger, db).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -1302,7 +1307,7 @@ namespace smf {
         }
 
         if (!out.empty()) {
-            auto channel = ctl.create_named_channel_with_ref<iec_json_writer>(name, ctl, logger, out, prefix, suffix);
+            auto channel = ctl.create_named_channel_with_ref<iec_json_writer>(name, ctl, logger, out, prefix, suffix).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -1318,7 +1323,7 @@ namespace smf {
         std::string suffix) {
         CYNG_LOG_INFO(logger, "start iec log writer -> " << out);
         if (!out.empty()) {
-            auto channel = ctl.create_named_channel_with_ref<iec_log_writer>(name, ctl, logger, out, prefix, suffix);
+            auto channel = ctl.create_named_channel_with_ref<iec_log_writer>(name, ctl, logger, out, prefix, suffix).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -1334,7 +1339,7 @@ namespace smf {
         bool header) {
         CYNG_LOG_INFO(logger, "start iec csv writer -> " << out);
         if (!out.empty()) {
-            auto channel = ctl.create_named_channel_with_ref<iec_csv_writer>(name, ctl, logger, out, prefix, suffix, header);
+            auto channel = ctl.create_named_channel_with_ref<iec_csv_writer>(name, ctl, logger, out, prefix, suffix, header).first;
             BOOST_ASSERT(channel->is_open());
             channels.lock(channel);
         }
@@ -1350,7 +1355,8 @@ namespace smf {
         std::string const &cert,
         std::string const &db) {
         CYNG_LOG_INFO(logger, "start " << name);
-        auto channel = ctl.create_named_channel_with_ref<iec_influx_writer>(name, ctl, logger, host, service, protocol, cert, db);
+        auto channel =
+            ctl.create_named_channel_with_ref<iec_influx_writer>(name, ctl, logger, host, service, protocol, cert, db).first;
         BOOST_ASSERT(channel->is_open());
         channels.lock(channel);
     }
@@ -1365,7 +1371,8 @@ namespace smf {
         std::string const &cert,
         std::string const &db) {
         CYNG_LOG_INFO(logger, "start " << name);
-        auto channel = ctl.create_named_channel_with_ref<dlms_influx_writer>(name, ctl, logger, host, service, protocol, cert, db);
+        auto channel =
+            ctl.create_named_channel_with_ref<dlms_influx_writer>(name, ctl, logger, host, service, protocol, cert, db).first;
         BOOST_ASSERT(channel->is_open());
         channels.lock(channel);
     }
@@ -1401,7 +1408,7 @@ namespace smf {
                 }
 
                 auto channel =
-                    ctl.create_named_channel_with_ref<csv_report>(name, ctl, logger, db, profile, path, backtrack, prefix);
+                    ctl.create_named_channel_with_ref<csv_report>(name, ctl, logger, db, profile, path, backtrack, prefix).first;
                 BOOST_ASSERT(channel->is_open());
                 channels.lock(channel);
 
@@ -1460,19 +1467,20 @@ namespace smf {
                     }
 
                     auto channel = ctl.create_named_channel_with_ref<lpex_report>(
-                        name,
-                        ctl,
-                        logger,
-                        db,
-                        profile,
-                        filter,
-                        path,
-                        backtrack,
-                        prefix,
-                        print_version,
-                        separated,
-                        debug_mode,
-                        customer);
+                                          name,
+                                          ctl,
+                                          logger,
+                                          db,
+                                          profile,
+                                          filter,
+                                          path,
+                                          backtrack,
+                                          prefix,
+                                          print_version,
+                                          separated,
+                                          debug_mode,
+                                          customer)
+                                       .first;
                     BOOST_ASSERT(channel->is_open());
                     channels.lock(channel);
 

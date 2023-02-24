@@ -1,15 +1,14 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 Sylko Olzscher
+ * Copyright (c) 2023 Sylko Olzscher
  *
  */
-#ifndef SMF_MODEM_TASK_CLUSTER_H
-#define SMF_MODEM_TASK_CLUSTER_H
-
-#include <server.h>
+#ifndef SMF_IMEGA_TASK_CLUSTER_H
+#define SMF_IMEGA_TASK_CLUSTER_H
 
 #include <smf/cluster/bus.h>
+#include <smf/imega.h>
 
 #include <cyng/log/logger.h>
 #include <cyng/net/server_proxy.h>
@@ -30,9 +29,9 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>,                           // connect
-            std::function<void(boost::asio::ip::tcp::endpoint)>, // listen
-            std::function<void(cyng::eod)>                       // eod
+            std::function<void(void)>,                           //
+            std::function<void(boost::asio::ip::tcp::endpoint)>, //
+            std::function<void(cyng::eod)>                       // stop
             >;
 
       public:
@@ -43,9 +42,10 @@ namespace smf {
             std::string const &node_name,
             cyng::logger,
             toggle::server_vec_t &&,
-            bool auto_answer,
-            std::chrono::milliseconds guard,
-            std::chrono::seconds timeout);
+            imega::policy,
+            std::string const &pwd,
+            std::chrono::seconds timeout,
+            std::chrono::minutes watchdog);
         ~cluster();
 
         void connect();
@@ -84,7 +84,7 @@ namespace smf {
         bus bus_;
 
         /**
-         * modem server
+         * imega server
          */
         cyng::net::server_proxy server_proxy_;
         std::uint64_t session_counter_;

@@ -157,7 +157,8 @@ namespace smf {
         ipt::push_channel &&pcc_dlms) {
 
         auto channel = ctl.create_named_channel_with_ref<push>(
-            "push", ctl, logger, std::move(tgl), std::move(pc_sml), std::move(pcc_iec), std::move(pcc_dlms));
+                              "push", ctl, logger, std::move(tgl), std::move(pc_sml), std::move(pcc_iec), std::move(pcc_dlms))
+                           .first;
         BOOST_ASSERT(channel->is_open());
 
         //
@@ -188,7 +189,8 @@ namespace smf {
         std::filesystem::path client_out) {
 
         auto channel = ctl.create_named_channel_with_ref<cluster>(
-            "cluster", ctl, tag, node_name, logger, std::move(tgl), client_login, client_timeout, client_out);
+                              "cluster", ctl, tag, node_name, logger, std::move(tgl), client_login, client_timeout, client_out)
+                           .first;
         BOOST_ASSERT(channel->is_open());
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);

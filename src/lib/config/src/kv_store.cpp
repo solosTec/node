@@ -8,6 +8,7 @@
 #include <smf/config/kv_store.h>
 
 #include <cyng/obj/container_cast.hpp>
+#include <cyng/parse/duration.h>
 
 #ifdef _DEBUG_SEGW
 #include <iostream>
@@ -69,10 +70,12 @@ namespace smf {
             //  convert to std::uint64_t
             return (value.tag() == cyng::TC_UINT64) ? value : cyng::make_object(cyng::numeric_cast<std::uint64_t>(value, 100));
         } else if (boost::algorithm::equals(key, "def.IEC.interval")) {
+            if (value.tag() == cyng::TC_MINUTE) {
+                return value;
+            }
             //  convert to std::chrono::minutes
-            return (value.tag() == cyng::TC_MINUTE)
-                       ? value
-                       : cyng::make_object(std::chrono::minutes(cyng::numeric_cast<std::uint64_t>(value, 20)));
+            auto const inp = cyng::value_cast(value, "00:20:00");
+            return cyng::make_object(cyng::to_minutes(inp));
         } else {
             ; //  unchanged (mostly boolean)
         }

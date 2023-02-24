@@ -12,7 +12,7 @@
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/util.hpp>
-//#include <cyng/parse/string.h>
+// #include <cyng/parse/string.h>
 #include <cyng/task/channel.h>
 #include <cyng/task/controller.h>
 
@@ -48,7 +48,7 @@ namespace smf {
         , dlms_targets_(dlms_targets)
         , writer_(writer)
         , bus_(
-              ctl_.get_ctx(),
+              ctl_,
               logger_,
               std::move(toggle_),
               model,
@@ -102,7 +102,7 @@ namespace smf {
         //
         for (auto const &name : sml_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register sml target " << name);
-            auto channel = ctl_.create_named_channel_with_ref<sml_target>(name, ctl_, logger_, bus_);
+            auto channel = ctl_.create_named_channel_with_ref<sml_target>(name, ctl_, logger_, bus_).first;
             channel->dispatch("register", name);
 
             //
@@ -125,7 +125,7 @@ namespace smf {
         //
         for (auto const &name : iec_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register iec target " << name);
-            auto channel = ctl_.create_named_channel_with_ref<iec_target>(name, ctl_, logger_, bus_);
+            auto channel = ctl_.create_named_channel_with_ref<iec_target>(name, ctl_, logger_, bus_).first;
             channel->dispatch("register", name);
 
             //
@@ -148,7 +148,7 @@ namespace smf {
         //
         for (auto const &name : dlms_targets_) {
             CYNG_LOG_TRACE(logger_, "[ipt] register dlms target " << name);
-            auto channel = ctl_.create_named_channel_with_ref<dlms_target>(name, ctl_, logger_, bus_);
+            auto channel = ctl_.create_named_channel_with_ref<dlms_target>(name, ctl_, logger_, bus_).first;
             channel->dispatch("register", name);
 
             //

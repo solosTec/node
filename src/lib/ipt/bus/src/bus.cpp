@@ -1,18 +1,14 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Sylko Olzscher
- *
- */
+#include <smf/ipt/bus.h>
 
 #include <smf.h>
-#include <smf/ipt/bus.h>
 #include <smf/ipt/codes.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_format.h>
 #include <smf/ipt/transpiler.h>
 
 #include <cyng/log/record.h>
+#include <cyng/net/client_factory.hpp>
+#include <cyng/task/channel.h>
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
 
@@ -31,200 +27,59 @@
 namespace smf {
     namespace ipt {
         bus::bus(
-            boost::asio::io_context &ctx,
+            cyng::controller &ctl,
             cyng::logger logger,
             toggle::server_vec_t &&tgl,
             std::string model,
             parser::command_cb cb_cmd,
             parser::data_cb cb_stream,
             auth_cb cb_auth)
-            : state_holder_()
-            , ctx_(ctx)
+            : state_(state::INITIAL)
+            , ctl_(ctl)
             , logger_(logger)
             , tgl_(std::move(tgl))
+            , client_()
             , model_(model)
             , cb_cmd_(cb_cmd)
             , cb_auth_(cb_auth)
-            , socket_(ctx)
-            , timer_(ctx)
-            , dispatcher_(ctx)
             , serializer_(tgl_.get().sk_)
             , parser_(tgl_.get().sk_, std::bind(&bus::cmd_complete, this, std::placeholders::_1, std::placeholders::_2), cb_stream)
-            , buffer_write_()
-            , input_buffer_({0})
             , pending_targets_()
             , targets_()
             , opening_channel_()
             , channels_()
-            , closing_channels_() {}
+            , closing_channels_()
+            , local_endpoint_()
+            , remote_endpoint_() {
 
-        bool bus::is_authorized() const { return (state_holder_) ? state_holder_->is_authorized() : false; }
-
-        void bus::start() {
-
-            CYNG_LOG_INFO(logger_, "[ipt] start client [" << tgl_.get() << "]");
-            state_holder_.reset();
-
-            //
-            //	connect to IP-T server
-            //
-            try {
-                boost::asio::ip::tcp::resolver r(ctx_);
-                //
-                //  bus state is START
-                //
-                state_holder_ = std::make_shared<state>(r.resolve(tgl_.get().host_, tgl_.get().service_));
-                connect(state_holder_->shared_from_this());
-            } catch (std::exception const &ex) {
-                CYNG_LOG_ERROR(logger_, "[ipt] start client: " << ex.what());
-
-                //
-                //	switch redundancy
-                //
-                tgl_.changeover();
-                CYNG_LOG_WARNING(logger_, "[ipt] connect failed - switch to " << tgl_.get());
-
-                //
-                //  it's safe to to set timer here because this is the START state
-                //
-                state_holder_ = std::make_shared<state>(boost::asio::ip::tcp::resolver::results_type());
-                set_reconnect_timer(std::chrono::seconds(60));
-            }
-        }
-
-        void bus::connect(state_ptr sp) {
-
-            //
-            // Start the connect actor holding a reference
-            // to the bus state
-            //
-            start_connect(sp, sp->endpoints_.begin());
-        }
-
-        void bus::stop() {
-            // CYNG_LOG_INFO(logger_, "ipt " << tgl_.get() << " stop");
-            if (state_holder_) {
-                reset(state_holder_, state_value::STOPPED);
-            }
-        }
-
-        void bus::reset(state_ptr sp, state_value s) {
-            if (!sp->is_stopped()) {
-
-                sp->value_ = s;
-                boost::system::error_code ignored_ec;
-                //  required to get a proper error code: bad_descriptor (EBADF) instead of connection_aborted
-                socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
-                socket_.close(ignored_ec);
-                auto const count = timer_.cancel();
-                CYNG_LOG_TRACE(logger_, "[ipt] cancel " << count << " timer");
-                if (s != state_value::STOPPED) {
-
-                    buffer_write_.clear();
-                    pending_targets_.clear();
-                    targets_.clear();
-                    opening_channel_.clear();
-                    parser_.clear();
-
-                    if (sp->is_authorized()) {
-
-                        //
-                        //	signal changed authorization state
-                        //
-                        auto const ep = boost::asio::ip::tcp::endpoint();
-                        cb_auth_(false, ep, ep);
+            cyng::net::client_factory cf(ctl);
+            client_ = cf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+                [this](std::size_t, std::size_t counter) -> std::pair<std::chrono::seconds, bool> {
+                    //
+                    //  connect failed, reconnect after 20 seconds
+                    //
+                    state_ = state::INITIAL;
+                    CYNG_LOG_WARNING(logger_, "[ipt] " << tgl_.get() << " connect failed for the " << counter << " time");
+                    if (counter < 3) {
+                        //  try same address again
+                        return {std::chrono::seconds(20 * counter), true};
                     }
-                }
-            }
-        }
-
-        void bus::set_reconnect_timer(std::chrono::seconds delay) {
-
-            BOOST_ASSERT_MSG(state_holder_, "state holder is empty");
-
-            auto const count = timer_.expires_after(delay);
-            CYNG_LOG_INFO(logger_, "[ipt] set reconnect timer: " << delay.count() << " seconds - " << count << " timer cancelled");
-            timer_.async_wait(boost::asio::bind_executor(
-                dispatcher_, boost::bind(&bus::reconnect_timeout, this, state_holder_, boost::asio::placeholders::error)));
-        }
-
-        void bus::start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
-
-            //
-            //  test if bus was stopped
-            //
-            if (!sp->is_stopped()) {
-                if (endpoint_iter != sp->endpoints_.end()) {
-
-                    CYNG_LOG_INFO(logger_, "[ipt] connect to " << endpoint_iter->endpoint());
-
-                    // Start the asynchronous connect operation.
-                    socket_.async_connect(
-                        endpoint_iter->endpoint(), std::bind(&bus::handle_connect, this, sp, std::placeholders::_1, endpoint_iter));
-                } else {
-
-                    //
-                    //  full reset
-                    //
-                    reset(sp, state_value::START);
-
-                    //
-                    //	switch redundancy
-                    //
+                    //  next redundancy
                     tgl_.changeover();
-                    CYNG_LOG_WARNING(logger_, "[ipt] connect failed - switch to " << tgl_.get());
+                    client_.connect(std::chrono::seconds(30), tgl_.get().host_, tgl_.get().service_);
+                    //  stop
+                    return {std::chrono::seconds(0), false};
+                },
+                [=, this](boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep, cyng::channel_ptr sp) {
+                    CYNG_LOG_INFO(logger_, "[ipt] " << tgl_.get() << " connected to " << rep);
+
+                    local_endpoint_ = lep;
+                    remote_endpoint_ = rep;
 
                     //
-                    //	reconnect after 20 seconds
+                    //	send login sequence direct
                     //
-                    set_reconnect_timer(boost::asio::chrono::seconds(20));
-                }
-            }
-        }
-
-        void bus::handle_connect(
-            state_ptr sp,
-            const boost::system::error_code &ec,
-            boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter) {
-
-            //
-            //  test if bus was stopped
-            //
-            if (!sp->is_stopped()) {
-
-                BOOST_ASSERT_MSG(sp->has_state(state_value::START), "START state expected");
-
-                // The async_connect() function automatically opens the socket at the
-                // start of the asynchronous operation. If the socket is closed at this
-                // time then the timeout handler must have run first.
-                if (!socket_.is_open()) {
-
-                    CYNG_LOG_WARNING(logger_, "[ipt/" << tgl_.get() << "] connect timed out");
-
-                    // Try the next available endpoint.
-                    start_connect(sp, ++endpoint_iter);
-                }
-
-                // Check if the connect operation failed before the deadline expired.
-                else if (ec) {
-                    CYNG_LOG_WARNING(logger_, "[ipt/" << tgl_.get() << " connect error: " << ec.message());
-
-                    // We need to close the socket used in the previous connection attempt
-                    // before starting a new one.
-                    socket_.close();
-
-                    // Try the next available endpoint.
-                    start_connect(sp, ++endpoint_iter);
-                }
-
-                // Otherwise we have successfully established a connection.
-                else {
-                    CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] connected to " << endpoint_iter->endpoint());
-                    sp->value_ = state_value::CONNECTED;
-
-                    //
-                    //	send login sequence
-                    //
+                    state_ = state::CONNECTED;
                     auto const srv = tgl_.get();
                     if (srv.scrambled_) {
 
@@ -235,191 +90,94 @@ namespace smf {
 
                         CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] sk = " << ipt::to_string(sk));
                         parser_.set_sk(sk);
-                        send(sp, std::bind(&serializer::req_login_scrambled, &serializer_, srv.account_, srv.pwd_, sk));
+                        client_.send(serializer_.req_login_scrambled(srv.account_, srv.pwd_, sk), true);
                     } else {
-                        send(sp, std::bind(&serializer::req_login_public, &serializer_, srv.account_, srv.pwd_));
+                        client_.send(serializer_.req_login_public(srv.account_, srv.pwd_), true);
                     }
+                },
+                [&](cyng::buffer_t data) {
+                    //  read from socket
+                    CYNG_LOG_DEBUG(logger_, "[ipt] " << tgl_.get() << " received " << data.size() << "bytes");
 
-                    //  Start the input actor.
-                    //  Sorward state.
-                    do_read(sp);
+                    //
+                    //	let parse it
+                    //
+                    parser_.read(data.begin(), data.end());
+                },
+                [=, this](boost::system::error_code ec) {
+                    //
+                    //	call disconnect function
+                    //	signal changed authorization state
+                    //
+                    state_ = state::STOPPED;
+                    CYNG_LOG_WARNING(logger_, "[ipt] connection closed: " << ec.message());
+                    auto const ep = boost::asio::ip::tcp::endpoint();
+                    cb_auth_(false, local_endpoint_, remote_endpoint_);
+
+                    //
+                    //  reconnect
+                    //
+                    tgl_.changeover();
+                    client_.connect(tgl_.get().host_, tgl_.get().service_);
+                },
+                [this](cyng::net::client_state state) -> void {
+                    //
+                    //  update client state
+                    //
+                    switch (state) {
+                    case cyng::net::client_state::INITIAL: CYNG_LOG_TRACE(logger_, "[ipt] client state INITIAL"); break;
+                    case cyng::net::client_state::WAIT: CYNG_LOG_TRACE(logger_, "[ipt] client state WAIT"); break;
+                    case cyng::net::client_state::CONNECTED: CYNG_LOG_TRACE(logger_, "[ipt] client state CONNECTED"); break;
+                    case cyng::net::client_state::STOPPED: CYNG_LOG_TRACE(logger_, "[ipt] client state STOPPED"); break;
+                    default: CYNG_LOG_ERROR(logger_, "[ipt] client state ERROR"); break;
+                    }
+                });
+        }
+
+        bool bus::is_authorized() const {
+            //  at least authorized
+            return state_ == state::AUTHORIZED || state_ == state::LINKED;
+        }
+
+        void bus::start() {
+
+            CYNG_LOG_INFO(logger_, "[ipt] start client [" << tgl_.get() << "]");
+
+            //
+            //	connect to IP-T server
+            //
+            client_.connect(tgl_.get().host_, tgl_.get().service_);
+        }
+
+        void bus::stop() {
+            // CYNG_LOG_INFO(logger_, "ipt " << tgl_.get() << " stop");
+            client_.stop();
+        }
+
+        void bus::reset() {
+            if (state_ != state::STOPPED) {
+
+                pending_targets_.clear();
+                targets_.clear();
+                opening_channel_.clear();
+                parser_.clear();
+
+                if (is_authorized()) {
+
+                    //
+                    //	signal changed authorization state
+                    //
+                    local_endpoint_ = boost::asio::ip::tcp::endpoint();
+                    remote_endpoint_ = boost::asio::ip::tcp::endpoint();
+                    cb_auth_(false, local_endpoint_, remote_endpoint_);
                 }
             }
-        }
-
-        void bus::reconnect_timeout(state_ptr sp, boost::system::error_code const &ec) {
-            if (sp && !sp->is_stopped()) {
-
-                if (!ec) {
-                    CYNG_LOG_INFO(logger_, "[ipt] reconnect to " << tgl_.get().host_);
-                    if (!sp->is_authorized()) {
-                        start();
-                    }
-                } else if (ec == boost::asio::error::operation_aborted) {
-                    // CYNG_LOG_TRACE(logger_, "[ipt] reconnect timer cancelled");
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[ipt] reconnect timer: " << ec.message());
-                }
-            }
-        }
-
-        void bus::do_read(state_ptr sp) {
-
-            // Start an asynchronous operation to read a newline-delimited message.
-            socket_.async_read_some(
-                boost::asio::buffer(input_buffer_),
-                std::bind(&bus::handle_read, this, sp, std::placeholders::_1, std::placeholders::_2));
-        }
-
-        void bus::do_write(state_ptr sp) {
-            //
-            //  test if bus was stopped
-            //
-            if (!sp->is_stopped()) {
-
-                // BOOST_ASSERT(!buffer_write_.empty());
-#ifdef _DEBUG
-                CYNG_LOG_TRACE(
-                    logger_,
-                    "[ipt/" << tgl_.get() << "] send #" << buffer_write_.size() << ": " << buffer_write_.front().size()
-                            << " bytes to " << socket_.remote_endpoint());
-#else
-                CYNG_LOG_TRACE(
-                    logger_,
-                    "[ipt/" << tgl_.get() << "] send #" << buffer_write_.size() << ": " << buffer_write_.front().size()
-                            << " bytes");
-#endif
-
-#ifdef __DEBUG_IPT
-                {
-                    //  scrambled data
-                    std::stringstream ss;
-                    cyng::io::hex_dump<8> hd;
-                    hd(ss, buffer_write_.front().begin(), buffer_write_.front().end());
-                    auto const dmp = ss.str();
-                    CYNG_LOG_DEBUG(logger_, "[ipt] write #" << buffer_write_.size() << ":\n" << dmp);
-                }
-#endif
-                try {
-                    // Start an asynchronous operation to send a heartbeat message.
-                    boost::asio::async_write(
-                        socket_,
-                        boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-                        dispatcher_.wrap(std::bind(&bus::handle_write, this, sp, std::placeholders::_1)));
-                } catch (std::exception const &ex) {
-                    CYNG_LOG_FATAL(logger_, "[ipt] write #" << buffer_write_.size() << ": " << ex.what());
-                    socket_.close();
-                    //  restart
-                    start();
-                }
-            }
-        }
-
-        void bus::handle_read(state_ptr sp, const boost::system::error_code &ec, std::size_t n) {
-            //
-            //  test if bus was stopped
-            //
-            if (!sp->is_stopped()) {
-
-                if (!ec) {
-                    CYNG_LOG_DEBUG(logger_, "[ipt/" << tgl_.get() << "] received " << n << " bytes " << socket_.remote_endpoint());
-
-                    //
-                    //  get de-obfuscated data
-                    //
-                    auto const data = parser_.read(input_buffer_.begin(), input_buffer_.begin() + n);
-#ifdef __DEBUG_IPT
-                    {
-                        std::stringstream ss;
-                        cyng::io::hex_dump<8> hd;
-                        hd(ss, data.begin(), data.end());
-                        auto const dmp = ss.str();
-                        CYNG_LOG_DEBUG(
-                            logger_,
-                            "received " << n << " bytes ipt data from [" << socket_.remote_endpoint() << "]:\n"
-                                        << dmp);
-                    }
-#else
-                    boost::ignore_unused(data);
-#endif
-
-                    //
-                    //	continue reading
-                    //
-                    do_read(sp);
-
-                } else {
-                    CYNG_LOG_ERROR(logger_, "[ipt/" << tgl_.get() << "] on receive " << ec.value() << ": " << ec.message());
-
-                    //
-                    //  cleanup
-                    //
-                    reset(sp, state_value::START);
-
-                    //
-                    //	reconnect after 10/20 seconds
-                    //
-                    switch (ec.value()) {
-                    case boost::asio::error::bad_descriptor:
-                        //	closed by itself
-                        set_reconnect_timer(boost::asio::chrono::seconds(100));
-                        break;
-                    case boost::asio::error::connection_reset:
-                        //  closes from peer
-                        set_reconnect_timer(boost::asio::chrono::seconds(10));
-                        break;
-                    default: set_reconnect_timer(boost::asio::chrono::seconds(20)); break;
-                    }
-                }
-            }
-        }
-
-        void bus::handle_write(state_ptr sp, const boost::system::error_code &ec) {
-            //
-            //  test if bus was stopped
-            //
-            if (!sp->is_stopped()) {
-
-                if (!ec) {
-
-                    CYNG_LOG_TRACE(logger_, "[ipt/" << tgl_.get() << "] write buffer #" << buffer_write_.size());
-                    if (buffer_write_.empty()) {
-                        CYNG_LOG_FATAL(logger_, "ipt write empty buffer");
-                    }
-                    // BOOST_ASSERT(!buffer_write_.empty());
-                    buffer_write_.pop_front();
-                    if (!buffer_write_.empty()) {
-                        do_write(sp);
-                    }
-                } else {
-                    CYNG_LOG_ERROR(logger_, "ipt write [" << tgl_.get() << "]: " << ec.message());
-
-                    reset(sp, state_value::START);
-                }
-            }
-        }
-
-        void bus::send(state_ptr sp, std::function<cyng::buffer_t()> f) {
-            boost::asio::post(dispatcher_, [this, sp, f]() {
-                if (sp) {
-                    //  if true - already writing
-                    auto const b = buffer_write_.empty();
-                    buffer_write_.push_back(f());
-                    //
-                    //  it's essential not to start a new write operation
-                    //  if one is already running.
-                    //
-                    if (b) {
-                        do_write(sp);
-                    }
-                }
-            });
         }
 
         void bus::cmd_complete(header const &h, cyng::buffer_t &&body) {
 
-            BOOST_ASSERT(state_holder_);
-            BOOST_ASSERT(!state_holder_->is_stopped());
+            // BOOST_ASSERT(state_holder_);
+            // BOOST_ASSERT(!state_holder_->is_stopped());
 
             CYNG_LOG_TRACE(logger_, "[ipt/" << tgl_.get() << "] cmd " << command_name(h.command_));
 
@@ -442,31 +200,22 @@ namespace smf {
             case code::TP_RES_OPEN_CONNECTION: cb_cmd_(h, std::move(body)); break;
             case code::TP_REQ_CLOSE_CONNECTION: close_connection(h.sequence_); break;
             case code::TP_RES_CLOSE_CONNECTION: cb_cmd_(h, std::move(body)); break;
-            case code::APP_REQ_PROTOCOL_VERSION:
-                send(state_holder_, std::bind(&serializer::res_protocol_version, &serializer_, h.sequence_, 1));
-                break;
+            case code::APP_REQ_PROTOCOL_VERSION: client_.send(serializer_.res_protocol_version(h.sequence_, 1), false); break;
             case code::APP_REQ_SOFTWARE_VERSION:
-                send(state_holder_, std::bind(&serializer::res_software_version, &serializer_, h.sequence_, SMF_VERSION_NAME));
+                client_.send(serializer_.res_software_version(h.sequence_, SMF_VERSION_NAME), false);
                 break;
-            case code::APP_REQ_DEVICE_IDENTIFIER:
-                send(state_holder_, std::bind(&serializer::res_device_id, &serializer_, h.sequence_, model_));
-                break;
+            case code::APP_REQ_DEVICE_IDENTIFIER: client_.send(serializer_.res_device_id(h.sequence_, model_), false); break;
             case code::APP_REQ_DEVICE_AUTHENTIFICATION:
-                send(
-                    state_holder_,
-                    std::bind(
-                        &serializer::res_device_auth,
-                        &serializer_,
+                client_.send(
+                    serializer_.res_device_auth(
                         h.sequence_,
                         tgl_.get().account_,
                         tgl_.get().pwd_,
-                        tgl_.get().account_ //	number
-                        ,
-                        model_));
+                        tgl_.get().account_, //	number
+                        model_),
+                    false);
                 break;
-            case code::APP_REQ_DEVICE_TIME:
-                send(state_holder_, std::bind(&serializer::res_device_time, &serializer_, h.sequence_));
-                break;
+            case code::APP_REQ_DEVICE_TIME: client_.send(serializer_.res_device_time(h.sequence_), false); break;
             case code::CTRL_RES_LOGIN_PUBLIC: res_login(std::move(body)); break;
             case code::CTRL_RES_LOGIN_SCRAMBLED:
                 res_login(std::move(body));
@@ -478,58 +227,47 @@ namespace smf {
                 //	break;
 
             case code::CTRL_REQ_REGISTER_TARGET:
-                send(state_holder_, std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
+                client_.send(serializer_.res_unknown_command(h.sequence_, h.command_), false);
                 break;
             case code::CTRL_RES_REGISTER_TARGET: res_register_target(h, std::move(body)); break;
             case code::CTRL_REQ_DEREGISTER_TARGET:
-                send(state_holder_, std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
+                client_.send(serializer_.res_unknown_command(h.sequence_, h.command_), false);
                 break;
             case code::CTRL_RES_DEREGISTER_TARGET: cb_cmd_(h, std::move(body)); break;
             case code::CTRL_REQ_WATCHDOG: req_watchdog(h, std::move(body)); break;
 
             case code::UNKNOWN:
-            default: send(state_holder_, std::bind(&serializer::res_unknown_command, &serializer_, h.sequence_, h.command_)); break;
+            default: client_.send(serializer_.res_unknown_command(h.sequence_, h.command_), false); break;
             }
         }
 
         void bus::res_login(cyng::buffer_t &&data) {
-            if (state_holder_) {
-                auto const [res, watchdog, redirect] = ctrl_res_login(std::move(data));
-                auto r = make_login_response(res);
-                if (r.is_success()) {
+            auto const [res, watchdog, redirect] = ctrl_res_login(std::move(data));
+            auto r = make_login_response(res);
+            if (r.is_success()) {
 
-                    CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] " << r.get_response_name());
+                CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] " << r.get_response_name());
 
-                    //
-                    //	update state
-                    //
-                    state_holder_->value_ = state_value::AUTHORIZED;
+                //
+                //	update state
+                //
+                state_ = state::AUTHORIZED;
 
-                    //
-                    //	set watchdog
-                    //
-                    if (watchdog != 0) {
-                        CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] set watchdog: " << watchdog << " minutes");
-
-                        //
-                        //	ToDo: start watchdog
-                        //
-                    }
+                //
+                //	set watchdog
+                //
+                if (watchdog != 0) {
+                    CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] set watchdog: " << watchdog << " minutes");
 
                     //
-                    //	signal changed authorization state
+                    //	ToDo: start watchdog
                     //
-                    cb_auth_(true, socket_.local_endpoint(), socket_.remote_endpoint());
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[ipt/" << tgl_.get() << "] login failed: " << r.get_response_name());
-                    boost::system::error_code ignored_ec;
-                    //
-                    //  This triggers a reconnect.
-                    //  required to get a proper error code: bad_descriptor (EBADF) instead of connection_aborted
-                    //
-                    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
-                    socket_.close(ignored_ec);
                 }
+
+                //
+                //	signal changed authorization state
+                //
+                cb_auth_(true, local_endpoint_, remote_endpoint_);
             }
         }
 
@@ -540,7 +278,7 @@ namespace smf {
                 //
                 //	send request
                 //
-                send(state_holder_, [=, this]() -> cyng::buffer_t {
+                auto fn = [=, this]() -> cyng::buffer_t {
                     auto r = serializer_.req_register_push_target(
                         name,
                         std::numeric_limits<std::uint16_t>::max(), //	0xffff
@@ -553,9 +291,10 @@ namespace smf {
 
                     //  buffer
                     return r.first;
-                });
-
+                };
+                client_.send(fn(), false);
                 return true;
+
             } else {
                 CYNG_LOG_WARNING(logger_, "[ipt] cannot register target: name or channel is empty");
             }
@@ -569,7 +308,7 @@ namespace smf {
                 //
                 //	send request
                 //
-                send(state_holder_, [=, this]() -> cyng::buffer_t {
+                auto fn = [=, this]() -> cyng::buffer_t {
                     auto const r = serializer_.req_open_push_channel(
                         pc_cfg.target_, pc_cfg.account_, pc_cfg.number_, pc_cfg.version_, pc_cfg.id_, pc_cfg.timeout_);
 
@@ -584,8 +323,8 @@ namespace smf {
 
                     //  buffer
                     return r.first;
-                });
-
+                };
+                client_.send(fn(), false);
                 return true;
             } else {
                 CYNG_LOG_WARNING(logger_, "[ipt] cannot open push chanel: name or channel is empty");
@@ -597,12 +336,10 @@ namespace smf {
             BOOST_ASSERT(!wp.expired());
 
             if (!wp.expired()) {
-                send(state_holder_, [=, this]() -> cyng::buffer_t {
+                auto fn = [=, this]() -> cyng::buffer_t {
                     CYNG_LOG_INFO(logger_, "[ipt] close channel: " << channel);
 
-                    BOOST_ASSERT_MSG(
-                        state_holder_->has_state(state_value::AUTHORIZED) || state_holder_->has_state(state_value::LINKED),
-                        "AUTHORIZED state expected");
+                    BOOST_ASSERT_MSG(state_ == state::AUTHORIZED || state_ == state::LINKED, "AUTHORIZED state expected");
                     auto const r = serializer_.req_close_push_channel(channel);
 
                     //
@@ -614,7 +351,8 @@ namespace smf {
                     //	send "close push channel" command to ip-t server
                     //
                     return r.first;
-                });
+                };
+                client_.send(fn(), false);
                 return true;
             }
 
@@ -622,13 +360,14 @@ namespace smf {
         }
 
         void bus::res_open_push_channel(header const &h, cyng::buffer_t &&body) {
+
             //
             //	read message body (TP_RES_OPEN_CONNECTION)
             //
-            // response code, channel, source, packet size, window size, status, target count
             auto const [res, channel, source, packet_size, window_size, status, count] = tp_res_open_push_channel(std::move(body));
 
-            boost::asio::post(dispatcher_, [this, h, res, channel, source, packet_size, window_size, status, count]() {
+            BOOST_ASSERT(client_.get_channel());
+            cyng::exec(client_.get_channel(), [this, h, res, channel, source, packet_size, window_size, status, count]() {
                 auto const pos = opening_channel_.find(h.sequence_);
                 if (pos != opening_channel_.end()) {
 
@@ -682,7 +421,10 @@ namespace smf {
             //
             // std::tuple<std::uint8_t, std::uint32_t>
             auto const [res, channel] = tp_res_close_push_channel(std::move(body));
-            boost::asio::post(dispatcher_, [this, h, res, channel]() {
+
+            BOOST_ASSERT(client_.get_channel());
+
+            cyng::exec(client_.get_channel(), [this, h, res, channel]() {
                 auto const pos = closing_channels_.find(h.sequence_);
                 if (pos != closing_channels_.end()) {
 
@@ -737,7 +479,9 @@ namespace smf {
             //
             //	sync with strand
             //
-            boost::asio::post(dispatcher_, [this, h, res, channel]() {
+            BOOST_ASSERT(client_.get_channel());
+
+            cyng::exec(client_.get_channel(), [this, h, res, channel]() {
                 auto const pos = pending_targets_.find(h.sequence_);
                 if (pos != pending_targets_.end()) {
 
@@ -795,7 +539,9 @@ namespace smf {
             //
             //	sync with strand
             //
-            boost::asio::post(dispatcher_, [this, h, channel, source, status, block, data]() {
+            BOOST_ASSERT(client_.get_channel());
+
+            cyng::exec(client_.get_channel(), [this, h, channel, source, status, block, data]() {
                 BOOST_ASSERT_MSG(!data.empty(), "no push data");
 
                 auto const pos = targets_.find(channel);
@@ -844,44 +590,28 @@ namespace smf {
         void bus::req_watchdog(header const &h, cyng::buffer_t &&body) {
             BOOST_ASSERT(body.empty());
             CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " " << +h.sequence_);
-            send(state_holder_, std::bind(&serializer::res_watchdog, &serializer_, h.sequence_));
+            client_.send(serializer_.res_watchdog(h.sequence_), false);
         }
 
         void bus::open_connection(std::string number, sequence_t seq) {
-            // BOOST_ASSERT_MSG(sp->has_state(state_value::AUTHORIZED), "AUTHORIZED state expected");
-            if (state_holder_ && state_holder_->has_state(state_value::AUTHORIZED)) {
-                state_holder_->value_ = state_value::LINKED;
+            if (state_ == state::AUTHORIZED) {
+                state_ = state::LINKED;
                 CYNG_LOG_TRACE(logger_, "[ipt] linked to " << number);
-                send(
-                    state_holder_,
-                    std::bind(&serializer::res_open_connection, &serializer_, seq, tp_res_open_connection_policy::DIALUP_SUCCESS));
+                client_.send(serializer_.res_open_connection(seq, tp_res_open_connection_policy::DIALUP_SUCCESS), false);
             } else {
-                send(
-                    state_holder_,
-                    std::bind(&serializer::res_open_connection, &serializer_, seq, tp_res_open_connection_policy::BUSY));
+                client_.send(serializer_.res_open_connection(seq, tp_res_open_connection_policy::BUSY), false);
             }
         }
 
         void bus::close_connection(sequence_t seq) {
-            // BOOST_ASSERT_MSG(sp->has_state(state_value::LINKED), "LINKED state expected");
-            if (state_holder_ && state_holder_->has_state(state_value::LINKED)) {
-                state_holder_->value_ = state_value::AUTHORIZED;
-                send(
-                    state_holder_,
-                    std::bind(
-                        &serializer::res_close_connection,
-                        &serializer_,
-                        seq,
-                        tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED));
+            if (state_ == state::LINKED) {
+                state_ = state::AUTHORIZED;
+                client_.send(
+                    serializer_.res_close_connection(seq, tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED), false);
                 CYNG_LOG_TRACE(logger_, "[ipt] unlinked");
             } else {
-                send(
-                    state_holder_,
-                    std::bind(
-                        &serializer::res_close_connection,
-                        &serializer_,
-                        seq,
-                        tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
+                client_.send(
+                    serializer_.res_close_connection(seq, tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED), false);
             }
         }
 
@@ -901,18 +631,20 @@ namespace smf {
             }
 #endif
 
-            send(state_holder_, std::bind(&serializer::req_transfer_push_data, &serializer_, id.first, id.second, 0xc1, 0, data));
+            // send(state_holder_, std::bind(&serializer::req_transfer_push_data, &serializer_, id.first, id.second, 0xc1, 0,
+            // data));
+            client_.send(serializer_.req_transfer_push_data(id.first, id.second, 0xc1, 0, data), false);
         }
 
         void bus::transfer(cyng::buffer_t &&data) {
             CYNG_LOG_TRACE(logger_, "[ipt] transfer " << data.size() << " bytes");
             //  escape and scramble data
-            send(state_holder_, [=, this]() mutable -> cyng::buffer_t { return serializer_.escape_data(std::move(data)); });
+            client_.send(serializer_.escape_data(std::move(data)), false);
         }
 
-        bus::state::state(boost::asio::ip::tcp::resolver::results_type &&res)
-            : value_(state_value::START)
-            , endpoints_(std::move(res)) {}
+        // bus::state::state(boost::asio::ip::tcp::resolver::results_type &&res)
+        //     : value_(state_value::START)
+        //     , endpoints_(std::move(res)) {}
 
         bool is_null(channel_id const &id) { return id == std::make_pair(0u, 0u); }
         void init(channel_id &id) { id = std::make_pair(0u, 0u); }

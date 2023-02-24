@@ -8,11 +8,11 @@
 #define SMF_BROKER_WMBUS_TASK_CLUSTER_H
 
 #include <db.h>
-#include <wmbus_server.h>
 
 #include <smf/cluster/bus.h>
 
 #include <cyng/log/logger.h>
+#include <cyng/net/server_proxy.h>
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/task/task_fwd.h>
 #include <cyng/vm/mesh.h>
@@ -78,7 +78,12 @@ namespace smf {
         bus bus_;
         cyng::store store_;
         std::shared_ptr<db> db_;
-        wmbus_server server_;
+
+        /**
+         * wmbus server
+         */
+        cyng::net::server_proxy server_proxy_;
+        std::uint64_t session_counter_;
     };
 
 } // namespace smf

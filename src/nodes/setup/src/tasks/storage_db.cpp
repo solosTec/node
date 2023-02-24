@@ -238,7 +238,8 @@ namespace smf {
 
         if (boost::algorithm::equals(table_name, "config")) {
             //
-            //  convert data and store it in "TConfig" table
+            // Convert data and store it in "TConfig" table.
+            // Since "TConfig" has no cache
             //
             BOOST_ASSERT_MSG(!data.empty(), "insert without data");
             if (!key.empty() && !data.empty()) {
@@ -252,22 +253,60 @@ namespace smf {
 
                 //  convert to string
                 auto const v = cyng::io::to_plain(data.at(0));
-                CYNG_LOG_DEBUG(logger_, "[db] insert config data " << key.at(0) << ": " << v);
+                CYNG_LOG_DEBUG(logger_, "[db] merge config data " << key.at(0) << ": \"" << v << "\"");
 
                 auto const ms = config::get_table_config();
-                auto const sql = cyng::sql::insert(db_.get_dialect(), ms).bind_values(ms).to_string();
                 auto stmt = db_.create_statement();
-                std::pair<int, bool> const r = stmt->prepare(sql);
-                if (r.second) {
-                    stmt->push(key.at(0), 128);                                         //  key
-                    stmt->push(cyng::make_object(v), 256);                              //  value
-                    stmt->push(cyng::make_object(cyng::io::to_typed(data.at(0))), 256); //  default
-                    stmt->push(cyng::make_object(data.at(0).tag()), 0);                 //  type
-                    stmt->push(key.at(0), 256);                                         //  description
-                    if (stmt->execute()) {
-                        stmt->clear();
+
+                //
+                //  Test if key already in use
+                //
+
+                auto const sql_query = cyng::sql::select(db_.get_dialect(), ms).all(ms, false).from().where(cyng::sql::pk())();
+                std::pair<int, bool> const r_query = stmt->prepare(sql_query);
+                if (r_query.second) {
+                    stmt->push(key.at(0), 128); //  key
+                    auto res = stmt->get_result();
+                    if (res) {
+                        //  update
+                        auto const val = cyng::value_cast(res->get(2, cyng::TC_STRING, 256), "");
+                        if (boost::algorithm::equals(v, val)) {
+                            CYNG_LOG_DEBUG(logger_, "[db] config entry \"" << key.at(0) << "\" is already up to date");
+                        } else {
+                            CYNG_LOG_INFO(logger_, "[db] update config entry " << key.at(0) << " from " << val << " ==> " << v);
+                            //  "TConfig" has no "gen" column
+                            auto const sql_update = "UPDATE TConfig SET value = ? WHERE path = ?";
+                            std::pair<int, bool> const r_update = stmt->prepare(sql_update);
+                            if (r_update.second) {
+                                stmt->push(cyng::make_object(v), 256); //  value
+                                stmt->push(key.at(0), 128);            //  key
+                                if (stmt->execute()) {
+                                    stmt->clear();
+                                } else {
+                                    CYNG_LOG_WARNING(logger_, "[db] update error: " << sql_update);
+                                }
+                            }
+                        }
+
                     } else {
-                        CYNG_LOG_WARNING(logger_, "[db] insert error: " << sql);
+                        //  insert
+                        auto const sql_insert = cyng::sql::insert(db_.get_dialect(), ms).bind_values(ms).to_string();
+                        std::pair<int, bool> const r_insert = stmt->prepare(sql_insert);
+                        if (r_insert.second) {
+                            stmt->push(key.at(0), 128);                                         //  key
+                            stmt->push(cyng::make_object(v), 256);                              //  value
+                            stmt->push(cyng::make_object(cyng::io::to_typed(data.at(0))), 256); //  default
+                            stmt->push(cyng::make_object(data.at(0).tag()), 0);                 //  type
+                            stmt->push(key.at(0), 256);                                         //  description
+                            if (stmt->execute()) {
+                                stmt->clear();
+                            } else {
+                                CYNG_LOG_WARNING(logger_, "[db] insert error: " << sql_insert);
+                                CYNG_LOG_DEBUG(logger_, "[db] default: " << cyng::io::to_typed(data.at(0)));
+                                CYNG_LOG_DEBUG(logger_, "[db] type: " << data.at(0).tag());
+                                CYNG_LOG_DEBUG(logger_, "[db] description: " << key.at(0));
+                            }
+                        }
                     }
                 }
             }

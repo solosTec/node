@@ -42,7 +42,11 @@ namespace smf {
             //	the callback of the receiver task holds a reference of this session
             //
             channel_ = ctl.create_named_channel_with_ref<forwarder>(
-                "redirector", registry_, logger_, std::bind(&session::do_write, this->shared_from_this(), std::placeholders::_1));
+                              "redirector",
+                              registry_,
+                              logger_,
+                              std::bind(&session::do_write, this->shared_from_this(), std::placeholders::_1))
+                           .first;
             BOOST_ASSERT(channel_->is_open());
 
             //

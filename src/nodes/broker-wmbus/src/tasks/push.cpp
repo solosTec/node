@@ -59,7 +59,7 @@ namespace smf {
     }
     , channel_(wp), logger_(logger), pcc_sml_(pcc_sml), pcc_iec_(pcc_iec), pcc_dlms_(pcc_dlms)
     , bus_(
-        ctl.get_ctx(),
+        ctl,
         logger,
         std::move(cfg),
         "model",

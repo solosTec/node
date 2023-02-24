@@ -7,12 +7,13 @@
 #ifndef SMF_IPT_TASK_CLUSTER_H
 #define SMF_IPT_TASK_CLUSTER_H
 
-#include <server.h>
+// #include <server.h>
 
 #include <smf/cluster/bus.h>
 #include <smf/ipt/scramble_key.h>
 
 #include <cyng/log/logger.h>
+#include <cyng/net/server_proxy.h>
 #include <cyng/obj/intrinsics/eod.h>
 #include <cyng/task/task_fwd.h>
 #include <cyng/vm/mesh.h>
@@ -76,11 +77,17 @@ namespace smf {
         cyng::controller &ctl_;
         cyng::logger logger_;
         cyng::mesh fabric_;
+
         /**
          * cluster bus
          */
         bus bus_;
-        ipt_server server_;
+
+        /**
+         * IP-T server
+         */
+        cyng::net::server_proxy server_proxy_;
+        std::uint64_t session_counter_;
     };
 
 } // namespace smf

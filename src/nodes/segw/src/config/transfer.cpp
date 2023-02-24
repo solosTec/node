@@ -741,7 +741,8 @@ namespace smf {
 
             } else if (boost::algorithm::equals(param.first, "period")) {
                 //	"max-readout-frequency"
-                auto const period = std::chrono::seconds(cyng::numeric_cast<std::uint32_t>(param.second, 30));
+                auto const inp = cyng::value_cast(param.second, "00:00:02.000000");
+                auto const period = cyng::to_seconds(inp);
                 insert_config_record(
                     stmt_insert,
                     stmt_select,

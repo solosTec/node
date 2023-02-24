@@ -225,7 +225,8 @@ namespace smf {
         BOOST_ASSERT(!csv_reports.empty());
 
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
-            "report", ctl, channels, tag, node_name, logger, std::move(cfg_cluster), std::move(cfg_db));
+                          "report", ctl, channels, tag, node_name, logger, std::move(cfg_cluster), std::move(cfg_db))
+                       .first;
         BOOST_ASSERT(cluster_->is_open());
         cluster_->dispatch("connect");
         cluster_->dispatch("start.csv", csv_reports);

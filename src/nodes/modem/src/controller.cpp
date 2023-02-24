@@ -1,14 +1,8 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Sylko Olzscher
- *
- */
+#include <smf.h>
 
 #include <controller.h>
-#include <tasks/cluster.h>
 
-#include <smf.h>
+#include <tasks/cluster.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -19,12 +13,11 @@
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
-// #include <cyng/sys/locale.h>
+#include <cyng/parse/duration.h>
 #include <cyng/task/controller.h>
 #include <cyng/task/registry.h>
 
 #include <iostream>
-// #include <locale>
 
 namespace smf {
 
@@ -36,9 +29,6 @@ namespace smf {
         std::chrono::system_clock::time_point &&now,
         std::filesystem::path &&tmp,
         std::filesystem::path &&cwd) {
-
-        std::locale loc(std::locale(), new std::ctype<char>);
-        std::cout << std::locale("").name().c_str() << std::endl;
 
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
@@ -69,12 +59,18 @@ namespace smf {
         auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
         auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 9000);
         auto const answer = cyng::value_cast(reader["server"]["auto-answer"].get(), true);
+        auto const guard_str = cyng::value_cast(
+            reader["server"]["guard-time"].get(),
 #ifdef _DEBUG
-        auto const guard = cyng::numeric_cast<std::uint64_t>(reader["server"]["guard-time"].get(), 30);
+            "00:00:00.4"
 #else
-        auto const guard = cyng::numeric_cast<std::uint64_t>(reader["server"]["guard-time"].get(), 10);
+            "00:00:00.1"
 #endif
-        auto const timeout = cyng::numeric_cast<std::uint64_t>(reader["server"]["timeout"].get(), 10);
+        );
+        auto const guard = cyng::to_milliseconds(guard_str);
+
+        auto const timeout_str = cyng::value_cast(reader["server"]["timeout"].get(), "00:00:10");
+        auto const timeout = cyng::to_seconds(timeout_str);
 
         //
         //	connect to cluster
@@ -88,8 +84,8 @@ namespace smf {
             address,
             port,
             answer,
-            std::chrono::milliseconds(guard),
-            std::chrono::seconds(timeout));
+            guard.count() > 10000 ? std::chrono::milliseconds(10000) : guard,
+            timeout.count() > 3600 ? std::chrono::seconds(3600) : timeout);
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
@@ -109,11 +105,11 @@ namespace smf {
                 cyng::make_param("port", 9000),
                 cyng::make_param("auto-answer", true), //	accept incoming calls automatically
 #ifdef _DEBUG
-                cyng::make_param("guard-time", 0), //	no guard time
+                cyng::make_param("guard-time", std::chrono::milliseconds(0)), //	no guard time
 #else
-                cyng::make_param("guard-time", 1000), //	milliseconds
+                cyng::make_param("guard-time", std::chrono::milliseconds(1000)), //	milliseconds
 #endif
-                cyng::make_param("timeout", 10) //	connection timeout in seconds (gatekeeper)
+                cyng::make_param("timeout", std::chrono::seconds(10)) //	connection timeout in seconds (gatekeeper)
                 ));
     }
 
@@ -145,7 +141,8 @@ namespace smf {
         std::chrono::seconds timeout) {
 
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
-            "cluster", ctl, tag, node_name, logger, std::move(cfg), answer, guard, timeout);
+                          "cluster", ctl, tag, node_name, logger, std::move(cfg), answer, guard, timeout)
+                       .first;
         BOOST_ASSERT(cluster_->is_open());
         cluster_->dispatch("connect");
 

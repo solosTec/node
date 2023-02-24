@@ -135,21 +135,22 @@ namespace smf {
         }
 
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
-            "cluster",
-            ctl,
-            tag,
-            node_name,
-            logger,
-            std::move(cfg),
-            document_root,
-            max_upload_size,
-            nickname,
-            timeout,
-            country_code,
-            lang_code,
-            std::move(blocklist),
-            std::move(redirects_intrinsic),
-            auths);
+                          "cluster",
+                          ctl,
+                          tag,
+                          node_name,
+                          logger,
+                          std::move(cfg),
+                          document_root,
+                          max_upload_size,
+                          nickname,
+                          timeout,
+                          country_code,
+                          lang_code,
+                          std::move(blocklist),
+                          std::move(redirects_intrinsic),
+                          auths)
+                       .first;
 
         BOOST_ASSERT(cluster_->is_open());
         cluster_->dispatch("connect", cyng::make_tuple());

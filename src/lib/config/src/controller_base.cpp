@@ -159,7 +159,7 @@ namespace smf {
                     //
                     //	setup logging
                     //
-                    cyng::logger logger(ctl.create_channel<cyng::log>());
+                    cyng::logger logger(ctl.create_channel<cyng::log>().first);
 
                     //
                     //	log level

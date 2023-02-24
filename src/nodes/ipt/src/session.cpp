@@ -219,7 +219,8 @@ namespace smf {
     void ipt_session::start(std::chrono::seconds timeout) {
         do_read();
         gatekeeper_ =
-            ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), cluster_bus_, socket_.remote_endpoint());
+            ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), cluster_bus_, socket_.remote_endpoint())
+                .first;
         BOOST_ASSERT(gatekeeper_->is_open());
         CYNG_LOG_TRACE(logger_, "start gatekeeper with a timeout of " << timeout.count() << " seconds");
         gatekeeper_->suspend(timeout, "timeout");

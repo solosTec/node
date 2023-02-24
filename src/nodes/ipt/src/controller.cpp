@@ -45,7 +45,7 @@ namespace smf {
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
-//            cyng::make_param("log.dir", tmp.string()),
+            //            cyng::make_param("log.dir", tmp.string()),
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
@@ -167,7 +167,8 @@ namespace smf {
         cyng::mac48 client_id) {
 
         cluster_ = ctl.create_named_channel_with_ref<cluster>(
-            "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout, client_id);
+                          "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout, client_id)
+                       .first;
         BOOST_ASSERT(cluster_->is_open());
         cluster_->dispatch("connect");
 

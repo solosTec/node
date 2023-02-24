@@ -12,10 +12,11 @@
 
 #include <cyng/io/ostream.h> // sys_msg<>()
 #include <cyng/io/parser/parser.h>
-// #include <cyng/io/serialize.h>
 #include <cyng/log/logger.h>
+#include <cyng/net/client_proxy.h>
 #include <cyng/obj/intrinsics/buffer.h>
 #include <cyng/store/key.hpp>
+#include <cyng/task/controller.h>
 #include <cyng/vm/proxy.h>
 #include <cyng/vm/vm_fwd.h>
 
@@ -41,10 +42,10 @@ namespace smf {
          */
         virtual void cfg_data(
             boost::uuids::uuid tag,  // HTTP session
-            cyng::key_t gw,          //  key gateway table
-            std::string channel,     //  SML message type
+            cyng::key_t gw,          // key gateway table
+            std::string channel,     // SML message type
             cyng::obis section,      // OBIS root
-            cyng::param_map_t params //   data / results
+            cyng::param_map_t params // data / results
             ) = 0;
     };
 
@@ -64,6 +65,11 @@ namespace smf {
          * @param msg system message
          */
         virtual void on_disconnect(std::string msg) = 0;
+
+        /**
+         * To return a null pointer is allowed.
+         */
+        // virtual cfg_db_interface *get_cfg_db_interface() = 0;
 
         virtual void db_res_insert(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) = 0;
 
@@ -91,31 +97,9 @@ namespace smf {
      * in the asio C++11 example folder (libs/asio/example/cpp11/timeouts/async_tcp_client.cpp)
      */
     class bus {
-        enum class state_value {
-            START,
-            WAIT,
-            CONNECTED,
-            STOPPED,
-        };
-
-        struct state : std::enable_shared_from_this<state> {
-            state(boost::asio::ip::tcp::resolver::results_type &&);
-            constexpr auto is_connected() const -> bool { return has_state(state_value::CONNECTED); }
-            constexpr auto is_stopped() const -> bool { return has_state(state_value::STOPPED); }
-            constexpr bool has_state(state_value s) const { return s == value_; }
-
-            state_value value_;
-            boost::asio::ip::tcp::resolver::results_type endpoints_;
-        };
-        using state_ptr = std::shared_ptr<state>;
-        /**
-         * helps to control state from the outside without
-         * to establish an additional reference to the state object.
-         */
-        state_ptr state_holder_;
 
       public:
-        bus(boost::asio::io_context &ctx,
+        bus(cyng::controller &ctl,
             cyng::logger,
             toggle::server_vec_t &&cfg,
             std::string const &node_name,
@@ -295,23 +279,6 @@ namespace smf {
         );
 
       private:
-        void reset(state_ptr sp, state_value);
-        void connect(state_ptr sp);
-        void start_connect(state_ptr sp, boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void handle_connect(
-            state_ptr sp,
-            boost::system::error_code const &,
-            boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-        void do_read(state_ptr sp);
-        void do_write(state_ptr sp);
-        void handle_read(state_ptr sp, boost::system::error_code const &, std::size_t n);
-        void handle_write(state_ptr sp, boost::system::error_code const &);
-        void reconnect_timeout(state_ptr sp, boost::system::error_code const &);
-
-        void set_reconnect_timer(std::chrono::seconds);
-
-        void add_msg(state_ptr, std::deque<cyng::buffer_t> &&);
-
         /**
          * insert external functions
          */
@@ -322,18 +289,16 @@ namespace smf {
         void on_test_msg(std::string);
 
       private:
-        boost::asio::io_context &ctx_;
+        cyng::controller &ctl_;
         cyng::logger logger_;
         toggle const tgl_;
+        cyng::net::client_proxy client_;
+        bool is_connected_; //!< true is connected
         std::string const node_name_;
         boost::uuids::uuid const tag_;
         std::uint32_t const features_;
         bus_client_interface *bip_;
 
-        boost::asio::ip::tcp::socket socket_;
-        boost::asio::steady_timer timer_;
-        std::deque<cyng::buffer_t> buffer_write_;
-        std::array<char, 2048> input_buffer_;
         cyng::vm_proxy vm_;
         cyng::io::parser parser_;
     };

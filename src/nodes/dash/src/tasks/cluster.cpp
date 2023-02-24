@@ -41,7 +41,7 @@ namespace smf {
         , tag_(tag)
         , logger_(logger)
         , fabric_(ctl)
-        , bus_(ctl.get_ctx(), logger, std::move(cfg), node_name, tag, NO_FEATURES, this)
+        , bus_(ctl, logger, std::move(cfg), node_name, tag, CONFIG_MANAGER, this)
         , store_()
         , db_(store_, logger, tag)
         , http_server_(

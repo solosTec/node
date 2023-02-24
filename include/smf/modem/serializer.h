@@ -13,6 +13,8 @@
 #include <cyng/obj/buffer_cast.hpp>
 #include <cyng/obj/intrinsics/buffer.h>
 
+#include <boost/asio/ip/tcp.hpp>
+
 #include <type_traits>
 
 namespace smf {
@@ -26,19 +28,21 @@ namespace smf {
         class serializer {
 
           public:
-            serializer();
-            [[nodiscard]] cyng::buffer_t ok() const;
-            [[nodiscard]] cyng::buffer_t error() const;
-            [[nodiscard]] cyng::buffer_t busy() const;
-            [[nodiscard]] cyng::buffer_t no_dialtone() const;
-            [[nodiscard]] cyng::buffer_t no_carrier() const;
-            [[nodiscard]] cyng::buffer_t no_answer() const;
+            // serializer();
+            [[nodiscard]] static cyng::buffer_t ok();
+            [[nodiscard]] static cyng::buffer_t error();
+            [[nodiscard]] static cyng::buffer_t busy();
+            [[nodiscard]] static cyng::buffer_t no_dialtone();
+            [[nodiscard]] static cyng::buffer_t no_carrier();
+            [[nodiscard]] static cyng::buffer_t no_answer();
 
-            [[nodiscard]] cyng::buffer_t ring() const;
-            [[nodiscard]] cyng::buffer_t connect() const;
+            [[nodiscard]] static cyng::buffer_t ring();
+            [[nodiscard]] static cyng::buffer_t connect();
+
+            [[nodiscard]] static cyng::buffer_t ep(boost::asio::ip::tcp::endpoint);
 
           private:
-            [[nodiscard]] cyng::buffer_t write(std::string const &) const;
+            [[nodiscard]] static cyng::buffer_t write(std::string const &);
         };
     } // namespace modem
 } // namespace smf

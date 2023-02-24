@@ -68,6 +68,7 @@ target_link_libraries(imega
         cyng::obj
         cyng::parse
         cyng::io
+        cyng::net
         cyng::log
         cyng::sys
         cyng::task

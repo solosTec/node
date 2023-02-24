@@ -1,18 +1,19 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 Sylko Olzscher
+ * Copyright (c) 2023 Sylko Olzscher
  *
  */
-#ifndef SMF_MODEM_SESSION_H
-#define SMF_MODEM_SESSION_H
+#ifndef SMF_IMEGA_SESSION_H
+#define SMF_IMEGA_SESSION_H
 
 #include <smf/cluster/bus.h>
-#include <smf/modem/parser.h>
-#include <smf/modem/serializer.h>
+#include <smf/imega.h>
+#include <smf/imega/parser.h>
+#include <smf/imega/serializer.h>
 
 #include <cyng/log/logger.h>
-#include <cyng/obj/intrinsics/buffer.h>
+#include <cyng/net/client_proxy.h>
 #include <cyng/task/controller.h>
 #include <cyng/vm/proxy.h>
 #include <cyng/vm/vm_fwd.h>
@@ -22,16 +23,16 @@
 
 namespace smf {
 
-    class modem_session : public std::enable_shared_from_this<modem_session> {
+    class imega_session : public std::enable_shared_from_this<imega_session> {
       public:
-        modem_session(
+        imega_session(
             boost::asio::ip::tcp::socket socket,
             bus &cluster_bus,
             cyng::mesh &fabric,
             cyng::logger logger,
-            bool auto_answer,
-            std::chrono::milliseconds guard);
-        ~modem_session();
+            imega::policy policy,
+            std::string const &pwd);
+        ~imega_session();
 
         void start(std::chrono::seconds timeout);
         void stop();
@@ -72,9 +73,8 @@ namespace smf {
 
       private:
         cyng::controller &ctl_;
-        cyng::logger logger_;
         boost::asio::ip::tcp::socket socket_;
-        bool const auto_answer_;
+        cyng::logger logger_;
 
         bus &cluster_bus_;
 
@@ -90,14 +90,14 @@ namespace smf {
         std::deque<cyng::buffer_t> buffer_write_;
 
         /**
-         * parser for modem data
+         * parser for imega data
          */
-        modem::parser parser_;
+        imega::parser parser_;
 
         /**
-         * serializer for modem data
+         * serializer for imega data
          */
-        modem::serializer serializer_;
+        imega::serializer serializer_;
 
         cyng::vm_proxy vm_;
 

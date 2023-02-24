@@ -6,11 +6,13 @@
  */
 
 #include <controller.h>
-#include <tasks/server.h>
+// #include <tasks/server.h>
 
+#include <session.h>
 #include <smf.h>
 
 #include <cyng/log/record.h>
+#include <cyng/net/server_factory.hpp>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
@@ -27,7 +29,7 @@ namespace smf {
 
     controller::controller(config::startup const &config)
         : controller_base(config)
-        , cluster_() {}
+        , server_proxy_() {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now,
@@ -76,14 +78,14 @@ namespace smf {
                 cyng::make_param("generate-time-series", false),
                 cyng::make_param("catch.meters", false),
                 cyng::make_param("catch.lora", true),
-                cyng::make_param("stat.dir", tmp.string()), //	store statistics
-                cyng::make_param("max.messages", 1000),     //	system log
-                cyng::make_param("max.events", 2000),       //	time series events
-                cyng::make_param("max.LoRa.records", 500),  //	LoRa uplink records
-                cyng::make_param("max.wMBus.records", 500), //	wireless M-Bus uplink records
-                cyng::make_param("max.IEC.records", 600),   //	IECs uplink records
-                cyng::make_param("max.bridges", 300),       //	max. entries in TBridge
-                cyng::make_param("def.IEC.interval", 20)    //  IEC default readout interval in minutes
+                cyng::make_param("stat.dir", tmp.string()),                    //	store statistics
+                cyng::make_param("max.messages", 1000),                        //	system log
+                cyng::make_param("max.events", 2000),                          //	time series events
+                cyng::make_param("max.LoRa.records", 500),                     //	LoRa uplink records
+                cyng::make_param("max.wMBus.records", 500),                    //	wireless M-Bus uplink records
+                cyng::make_param("max.IEC.records", 600),                      //	IECs uplink records
+                cyng::make_param("max.bridges", 300),                          //	max. entries in TBridge
+                cyng::make_param("def.IEC.interval", std::chrono::minutes(20)) //  IEC default readout interval in minutes
                 ));
     }
 
@@ -115,11 +117,91 @@ namespace smf {
 
         auto const session_cfg = customize_session_config(cyng::container_cast<cyng::param_map_t>(reader["session"].get()));
 
-        cluster_ = ctl.create_named_channel_with_ref<server>(
-            "main", ctl, tag, country_code, lang_code, logger, account, pwd, salt, std::chrono::seconds(monitor), session_cfg);
-        BOOST_ASSERT(cluster_->is_open());
+        // cluster_ = ctl.create_named_channel_with_ref<server>(
+        //                   "main",
+        //                   ctl,
+        //                   tag,
+        //                   country_code,
+        //                   lang_code,
+        //                   logger,
+        //                   account,
+        //                   pwd,
+        //                   salt,
+        //                   std::chrono::seconds(monitor),
+        //                   session_cfg)
+        //                .first;
+        // BOOST_ASSERT(cluster_->is_open());
 
-        cluster_->dispatch("start", cyng::make_tuple(ep));
+        // cluster_->dispatch("start", cyng::make_tuple(ep));
+
+        /**
+         *  data cache
+         */
+        static cyng::store store;
+        static db cache(store, logger, tag);
+        static cyng::mesh fabric(ctl);
+
+        cyng::net::server_factory srvf(ctl);
+        server_proxy_ = srvf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+            [this, &logger](boost::system::error_code ec) {
+                if (!ec) {
+                    CYNG_LOG_INFO(logger, "listen callback " << ec.message());
+                } else {
+                    CYNG_LOG_WARNING(logger, "listen callback " << ec.message());
+                }
+            },
+            [this, &logger](boost::asio::ip::tcp::socket socket) {
+                auto const ep = socket.remote_endpoint();
+                CYNG_LOG_INFO(logger, "new session #" << session_counter_ << ": " << ep);
+                auto sp =
+                    std::shared_ptr<session>(new session(std::move(socket), cache, fabric, logger), [this, &logger](session *s) {
+                        BOOST_ASSERT(s != nullptr);
+
+                        //
+                        //  stop ping
+                        //
+                        // ping_tsk->stop();
+
+                        //
+                        //	remove from cluster table
+                        //
+                        auto const ptys = cache.remove_pty_by_peer(s->get_peer(), s->get_remote_peer());
+                        CYNG_LOG_TRACE(logger, "session [" << s->get_peer() << "] with " << ptys << " users closed");
+
+                        //
+                        //	stop session and
+                        //	remove all subscriptions
+                        //
+                        s->stop();
+
+                        //
+                        //	update session counter
+                        //
+                        BOOST_ASSERT(session_counter_ != 0);
+                        --session_counter_;
+                        CYNG_LOG_TRACE(logger, "session(s) running: " << session_counter_);
+                        cache.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_, "node(s) online - ", ptys);
+
+                        //
+                        //	remove session
+                        //
+                        delete s;
+                    });
+
+                if (sp) {
+
+                    //
+                    //	start session
+                    //
+                    sp->start();
+
+                    //
+                    //	update session counter
+                    //
+                    ++session_counter_;
+                    cache.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_, "node(s) online + ", ep);
+                }
+            });
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {

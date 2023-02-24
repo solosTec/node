@@ -77,6 +77,7 @@ target_link_libraries(ipt
         cyng::rnd
         cyng::task
         cyng::vm
+        cyng::net
         "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
 # required by aarch64
         OpenSSL::SSL

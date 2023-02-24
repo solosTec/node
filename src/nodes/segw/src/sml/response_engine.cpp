@@ -799,7 +799,7 @@ namespace smf {
             //	but the task itself will not be started.
             //
 
-            auto channel = ctl_.create_named_channel_with_ref<ipt_push>("push", logger_, bus_, cfg_, meter, nr);
+            auto channel = ctl_.create_named_channel_with_ref<ipt_push>("push", logger_, bus_, cfg_, meter, nr).first;
             BOOST_ASSERT(channel->is_open());
             tbl->modify(key, cyng::make_param("task", channel->get_id()), source);
             channel->dispatch("init");

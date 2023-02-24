@@ -141,6 +141,11 @@ namespace smf {
              */
             void clear();
 
+            /**
+             * @return parser state as text
+             */
+            std::string get_mode() const;
+
           private:
             /**
              * read a single byte and update

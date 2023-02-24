@@ -26,10 +26,9 @@
 #include <cyng/vm/vm.h>
 
 #include <iostream>
-//#include <version>  // __cpp_lib_starts_ends_with
+// #include <version>  // __cpp_lib_starts_ends_with
 
 #include <boost/predef.h> //	requires Boost 1.55
-
 
 namespace smf {
 
@@ -44,7 +43,7 @@ namespace smf {
         , parser_([this](cyng::object &&obj) {
             //  un-comment this line to debug problems with transferring data over
             //  the cluster bus.
-            // CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
+            CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
             vm_.load(std::move(obj));
         })
         , slot_(cyng::make_slot(new slot(this)))
@@ -92,7 +91,8 @@ namespace smf {
         //	start ping
         //
         ping_ = ctl_.create_channel_with_ref<ping>(
-            ctl_, logger_, cache_, std::bind(&session::send_ping_request, this->shared_from_this()));
+                        ctl_, logger_, cache_, std::bind(&session::send_ping_request, this->shared_from_this()))
+                    .first;
         BOOST_ASSERT(ping_->is_open());
         ping_->suspend(std::chrono::minutes(1), "update");
     }
@@ -600,7 +600,7 @@ namespace smf {
 
         //  28c4b783-f35d-49f1-9027-a75dbae9f5e2|1|0500153B02517E|EMH|2459307.01790509|06441734|00:00:00:00:00:00|00:00:00:00:00:00|pw|root|A815408943050131|operator|operator
 
-        //auto const srv_id = detect_server_id(id);
+        // auto const srv_id = detect_server_id(id);
 
         cache_.get_store().access(
             [&](cyng::table *tbl_gw) {
@@ -608,7 +608,7 @@ namespace smf {
                     tbl_gw->insert(
                         key,
                         cyng::data_generator(
-                            id,                           // server id
+                            id,                               // server id
                             "---",                            // manufacturer
                             std::chrono::system_clock::now(), // TOM
                             "0",                              // fabrik nummer
@@ -1638,7 +1638,7 @@ namespace smf {
         return std::chrono::seconds(interval.count() + (300 - mod));
     }
 
-    std::pair<std::string, bool> is_custom_gateway(std::string const & id) { 
+    std::pair<std::string, bool> is_custom_gateway(std::string const &id) {
         if (boost::algorithm::starts_with(id, "smf.gw:") || boost::algorithm::starts_with(id, "EMH-")) {
             auto const vec = cyng::split(id, ":");
             if (vec.size() == 3 && vec.at(2).size() == 14) {

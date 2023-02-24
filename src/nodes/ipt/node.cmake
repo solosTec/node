@@ -6,14 +6,12 @@ set (ipt_node)
 set (ipt_cpp
     src/main.cpp
     src/controller.cpp
-    src/server.cpp
     src/session.cpp
     src/proxy.cpp
 )
     
 set (ipt_h
     include/controller.h
-    include/server.h
     include/session.h
     include/proxy.h
 )

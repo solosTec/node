@@ -75,6 +75,7 @@ target_link_libraries(dash
         cyng::rnd
         cyng::task
         cyng::vm
+        cyng::net
         "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         smfsec::smfsec
         OpenSSL::SSL

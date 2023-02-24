@@ -43,7 +43,7 @@ namespace smf {
         , ipt_cfg_(config)
         , hw_cfg_(config)
         , bus_(
-              ctl_.get_ctx(),
+              ctl_,
               logger_,
               ipt_cfg_.get_toggle(),
               hw_cfg_.get_model(),
@@ -110,14 +110,6 @@ namespace smf {
             //
             CYNG_LOG_INFO(logger_, "[ipt bus] initialize as " << hw_cfg_.get_model());
             try {
-                // bus_ = std::make_unique<ipt::bus>(
-                //     ctl_.get_ctx(),
-                //     logger_,
-                //     ipt_cfg.get_toggle(),
-                //     hw_cfg.get_model(),
-                //     std::bind(&router::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
-                //     std::bind(&router::ipt_stream, this, std::placeholders::_1),
-                //     std::bind(&router::auth_state, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
                 bus_.start();
 
                 init_ipt_push();
@@ -274,7 +266,7 @@ namespace smf {
                         logger_,
                         "[ipt] initialize: \"push\" task [" << meter << " => " << target << "], " << obis::get_name(profile));
 
-                    auto channel = ctl_.create_named_channel_with_ref<ipt_push>("push", logger_, bus_, cfg_, meter, nr);
+                    auto channel = ctl_.create_named_channel_with_ref<ipt_push>("push", logger_, bus_, cfg_, meter, nr).first;
                     BOOST_ASSERT(channel->is_open());
                     channel->dispatch("init");
                     task_ids.emplace(key, channel->get_id());
@@ -305,7 +297,7 @@ namespace smf {
         for (auto const profile : sml::get_profiles()) {
             CYNG_LOG_INFO(
                 logger_, "[ipt] start \"store\" task " << obis::get_name(profile) << " (" << cyng::to_string(profile) << ")");
-            auto channel = ctl_.create_named_channel_with_ref<store>(cyng::to_string(profile), logger_, bus_, cfg_, profile);
+            auto channel = ctl_.create_named_channel_with_ref<store>(cyng::to_string(profile), logger_, bus_, cfg_, profile).first;
             BOOST_ASSERT(channel->is_open());
             channel->dispatch("init");
         }

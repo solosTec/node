@@ -50,7 +50,7 @@ namespace smf {
 		, logger_(logger)
 		, pcc_(pcc)
         , client_task_(client)
-		, bus_(ctl.get_ctx()
+		, bus_(ctl
 			, logger
 			, std::move(cfg)
 			, "IEC-Broker"

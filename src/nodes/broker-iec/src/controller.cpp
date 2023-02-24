@@ -161,16 +161,17 @@ namespace smf {
         ipt::push_channel &&pcc) {
 
         auto channel = ctl.create_named_channel_with_ref<cluster>(
-            "cluster",
-            ctl,
-            tag,
-            node_name,
-            logger,
-            std::move(tgl_cluster),
-            login,
-            reconnect_timeout,
-            std::move(tgl_ipt),
-            std::move(pcc));
+                              "cluster",
+                              ctl,
+                              tag,
+                              node_name,
+                              logger,
+                              std::move(tgl_cluster),
+                              login,
+                              reconnect_timeout,
+                              std::move(tgl_ipt),
+                              std::move(pcc))
+                           .first;
 
         BOOST_ASSERT(channel->is_open());
         channel->dispatch("connect");

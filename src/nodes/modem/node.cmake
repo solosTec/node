@@ -6,13 +6,11 @@ set (modem_node)
 set (modem_cpp
     src/main.cpp
     src/controller.cpp
-    src/server.cpp
     src/session.cpp
 )
     
 set (modem_h
     include/controller.h
-    include/server.h
     include/session.h
 )
 
