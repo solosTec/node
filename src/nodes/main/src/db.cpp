@@ -402,7 +402,8 @@ namespace smf {
                         //  update "lastLogin" and "loginCounter"
                         //
                         auto const counter = rec.value("loginCounter", static_cast<std::uint32_t>(0u));
-                        tbl_stat->modify(key, cyng::param_map_factory("initial", now)("loginCounter", counter + 1), cfg_.get_tag());
+                        tbl_stat->modify(
+                            key, cyng::param_map_factory("lastLogin", now)("loginCounter", counter + 1), cfg_.get_tag());
                     }
                     //
                     //  Only use this when it is known how the table will be deleted again.
