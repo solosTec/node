@@ -24,6 +24,8 @@ namespace smf {
 
     };
 
+    enum pty_event : std::uint32_t { EVT_LOGIN = 1, EVT_LOGOUT };
+
 } // namespace smf
 
 #endif

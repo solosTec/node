@@ -139,6 +139,9 @@ namespace smf {
         CYNG_LOG_TRACE(
             logger_, "[db] insert session " << name << ", tag: " << tag << ", peer: " << peer << ", remote tag: " << rtag);
 
+        //
+        //  update session table
+        //
         return cache_.insert(
             "session",
             cyng::key_generator(tag),
@@ -159,10 +162,12 @@ namespace smf {
             cfg_.get_tag());
     }
 
-    std::pair<cyng::key_t, bool> db::remove_pty(boost::uuids::uuid tag, boost::uuids::uuid dev) {
+    std::tuple<cyng::key_t, bool, std::string> db::remove_pty(boost::uuids::uuid tag, boost::uuids::uuid dev) {
 
         bool r = false;
         cyng::key_t key_remote;
+        std::string name;
+
         cache_.access(
             [&](cyng::table *tbl_pty, cyng::table *tbl_target, cyng::table *tbl_channel, cyng::table *tbl_conn) {
                 //
@@ -183,6 +188,7 @@ namespace smf {
                     //  remote session key, if session has an open connection
                     //
                     auto const ctag = rec_pty.value("cTag", boost::uuids::nil_uuid());
+                    name = rec_pty.value("name", "-"); //  device name
                     if (!ctag.is_nil()) {
 
                         //
@@ -209,7 +215,7 @@ namespace smf {
                 //
                 //	remove from session table
                 //
-                //#ifdef _DEBUG
+                // #ifdef _DEBUG
                 // tbl_pty->loop([&](cyng::record &&rec, std::size_t) -> bool {
                 //     // if (key == rec.key())
                 //     CYNG_LOG_TRACE(
@@ -218,7 +224,7 @@ namespace smf {
                 //                 << ", rec : " << rec.to_string());
                 //     return true;
                 // });
-                //#endif
+                // #endif
                 r = tbl_pty->erase(key, cfg_.get_tag());
                 if (!r) {
                     CYNG_LOG_WARNING(logger_, "[db] remove session " << dev << ", tag: " << tag << " failed");
@@ -277,7 +283,7 @@ namespace smf {
             cyng::access::write("channel"),
             cyng::access::write("connection"));
 
-        return {key_remote, r};
+        return {key_remote, r, name};
     }
 
     pty db::get_access_params(cyng::key_t key) {
@@ -373,6 +379,53 @@ namespace smf {
             cyng::access::read("session"),
             cyng::access::write("cluster"));
         return count;
+    }
+
+    void db::update_pty_statistics(pty_event evt, boost::uuids::uuid dev, boost::uuids::uuid peer) {
+
+        auto const key = cyng::key_generator(dev);
+        auto const now = cyng::make_utc_date();
+
+        cache_.access(
+            [&](cyng::table *tbl_stat, cyng::table *tbl_hist) {
+                // CYNG_LOG_TRACE(logger_, "[db] session [" << peer << "] has " << count << " ptys");
+                switch (evt) {
+                case EVT_LOGIN: {
+                    auto const rec = tbl_stat->lookup(key);
+                    if (rec.empty()) {
+                        //
+                        //  first entry
+                        //
+                        tbl_stat->insert(key, cyng::data_generator(now, now, 1u), 1u, cfg_.get_tag());
+                    } else {
+                        //
+                        //  update "lastLogin" and "loginCounter"
+                        //
+                        auto const counter = rec.value("loginCounter", static_cast<std::uint32_t>(0u));
+                        tbl_stat->modify(key, cyng::param_map_factory("initial", now)("loginCounter", counter + 1), cfg_.get_tag());
+                    }
+                    //
+                    //  Only use this when it is known how the table will be deleted again.
+                    //
+                    // tbl_hist->insert(cyng::key_generator(dev, peer, now), cyng::data_generator("login"), 1u, cfg_.get_tag());
+                } break;
+                case EVT_LOGOUT: {
+                    auto const rec = tbl_stat->lookup(key);
+                    if (!rec.empty()) {
+                        tbl_stat->modify(key, cyng::make_param("lastLogin", now), cfg_.get_tag());
+                    } else {
+                        //  error
+                    }
+                    //
+                    //  Only use this when it is known how the table will be deleted again.
+                    //
+                    // tbl_hist->insert(cyng::key_generator(dev, peer, now), cyng::data_generator("logout"), 1u, cfg_.get_tag());
+                } break;
+                default: break;
+                }
+            },
+            cyng::access::write("statistics"),
+            cyng::access::write("history"));
     }
 
     std::pair<boost::uuids::uuid, bool> db::lookup_device(std::string const &name, std::string const &pwd) {
@@ -1919,23 +1972,27 @@ namespace smf {
 
     std::vector<cyng::meta_store> get_store_meta_data() {
         return {
-            config::get_config(), //	"config"
-            config::get_store_device(),
-            config::get_store_meter(),
-            config::get_store_meterIEC(),
-            config::get_store_meterwMBus(),
-            config::get_store_gateway(),
-            config::get_store_lora(),
-            config::get_store_gui_user(),
-            config::get_store_target(),
-            config::get_store_cluster(),
-            config::get_store_location(),
-            config::get_store_session(),
-            config::get_store_connection(),
-            config::get_store_channel(), //	only in main node
+            config::get_config(),             // "config"
+            config::get_store_device(),       // "device"
+            config::get_store_meter(),        // "meter"
+            config::get_store_meterIEC(),     // "meterIEC"
+            config::get_store_meterwMBus(),   // "meterwMBus"
+            config::get_store_gateway(),      // "gateway"
+            config::get_store_lora(),         // "loRaDevice"
+            config::get_store_gui_user(),     // "guiUser"
+            config::get_store_target(),       // "target"
+            config::get_store_cluster(),      // "cluster"
+            config::get_store_location(),     // "location"
+            config::get_store_cfg_set_meta(), // "cfgSetMeta"
+            config::get_store_statistics(),
+            config::get_store_history(),
+            //  volatile
+            config::get_store_session(),    // "session"
+            config::get_store_connection(), // "connection"
+            config::get_store_channel(),    //	only in main node
             config::get_store_gwIEC(),
             config::get_store_gwwMBus(),
-            config::get_store_cfg_set_meta()};
+        };
     }
 
 } // namespace smf

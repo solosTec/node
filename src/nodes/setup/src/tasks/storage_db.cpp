@@ -36,7 +36,14 @@ namespace smf {
         cyng::logger logger,
         cyng::param_map_t &&cfg,
         std::set<std::string> &&blocked_config_keys)
-        : sigs_{std::bind(&storage_db::open, this), std::bind(&storage_db::load_stores, this), std::bind(&storage_db::update, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), std::bind(&storage_db::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), std::bind(&storage_db::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), std::bind(&storage_db::clear, this, std::placeholders::_1, std::placeholders::_2), std::bind(&storage_db::stop, this, std::placeholders::_1)}
+        : sigs_{std::bind(&storage_db::open, this), // open
+        std::bind(&storage_db::load_stores, this), // load
+        std::bind(&storage_db::update, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), // update
+        std::bind(&storage_db::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), // insert
+        std::bind(&storage_db::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), // remove
+        std::bind(&storage_db::clear, this, std::placeholders::_1, std::placeholders::_2), // clear
+        std::bind(&storage_db::stop, this, std::placeholders::_1) // stop
+        }
         , channel_(wp)
         , ctl_(ctl)
         , cluster_bus_(cluster_bus)
@@ -473,6 +480,8 @@ namespace smf {
             config::get_table_gui_user(),
             config::get_table_location(),
             config::get_table_cfg_set_meta(),
+            config::get_table_statistics(),
+            config::get_table_history(),
             //  "TCfgSet" is handled separately since this table has
             //  a different scheme then the in-memory table.
             //  See init_storage()

@@ -278,7 +278,13 @@ namespace smf {
                << '.' << (cyng::sys::get_asio_version() % 100)                     //	patch level
                << " (" << cyng::sys::get_asio_version() << ")" << std::endl
 
-               << "cpp version    : " << cyng::sys::get_cpp_version() << std::endl
+               << "Beast library  : v" << (cyng::sys::get_beast_version() / 100000) //	major version
+               << '.' << (cyng::sys::get_beast_version() / 100 % 1000)              //	minor version
+               << '.' << (cyng::sys::get_beast_version() % 100)                     //	patch level
+               << " (" << cyng::sys::get_beast_version() << ")" << std::endl
+
+               << "C++ version    : " << cyng::sys::get_cpp_version() << std::endl
+               << "C++ compiler   : " << cyng::sys::get_compiler() << std::endl
 
                << "cross compiled : " << (cyng::sys::is_crosscompiled() ? "yes" : "no") << std::endl
 

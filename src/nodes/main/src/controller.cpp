@@ -6,7 +6,6 @@
  */
 
 #include <controller.h>
-// #include <tasks/server.h>
 
 #include <session.h>
 #include <smf.h>
@@ -29,15 +28,13 @@ namespace smf {
 
     controller::controller(config::startup const &config)
         : controller_base(config)
-        , server_proxy_() {}
+        , server_proxy_()
+        , session_counter_{0u} {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now,
         std::filesystem::path &&tmp,
         std::filesystem::path &&cwd) {
-
-        std::locale loc(std::locale(), new std::ctype<char>);
-        std::cout << std::locale("").name().c_str() << std::endl;
 
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
@@ -163,7 +160,7 @@ namespace smf {
                         BOOST_ASSERT(session_counter_ != 0);
                         --session_counter_;
                         CYNG_LOG_TRACE(logger, "session(s) running: " << session_counter_);
-                        cache.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_, "node(s) online - ", ptys);
+                        cache.sys_msg(cyng::severity::LEVEL_TRACE, "node is going offline - ", ptys, "#", session_counter_);
 
                         //
                         //	remove session
@@ -182,7 +179,7 @@ namespace smf {
                     //	update session counter
                     //
                     ++session_counter_;
-                    cache.sys_msg(cyng::severity::LEVEL_TRACE, session_counter_, "node(s) online + ", ep);
+                    cache.sys_msg(cyng::severity::LEVEL_TRACE, "node comes online + ", ep, "#", session_counter_);
                 }
             });
 

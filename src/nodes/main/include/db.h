@@ -7,8 +7,8 @@
 #ifndef SMF_MAIN_DB_H
 #define SMF_MAIN_DB_H
 
+#include <smf/cluster/features.h>
 #include <smf/config/kv_store.h>
-
 #include <smf/config/schemes.h>
 
 #include <cyng/log/logger.h>
@@ -81,7 +81,7 @@ namespace smf {
         /**
          * @return session key to an possible open connection
          */
-        std::pair<cyng::key_t, bool> remove_pty(boost::uuids::uuid, boost::uuids::uuid);
+        std::tuple<cyng::key_t, bool, std::string> remove_pty(boost::uuids::uuid, boost::uuids::uuid);
 
         /**
          * @return rTag and peer of the specified session
@@ -101,6 +101,11 @@ namespace smf {
          * count of members in "session" table
          */
         std::size_t update_pty_counter(boost::uuids::uuid peer, boost::uuids::uuid remote_peer);
+
+        /**
+         * update pty statistics and history
+         */
+        void update_pty_statistics(pty_event, boost::uuids::uuid dev, boost::uuids::uuid peer);
 
         /**
          * @return the tag of the device with the specified credentials. Returns a null-tag

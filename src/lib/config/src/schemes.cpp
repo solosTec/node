@@ -359,6 +359,56 @@ namespace smf {
                 });
         }
 
+        cyng::meta_store get_store_statistics() {
+            return cyng::meta_store(
+                "statistics",
+                {
+                    cyng::column("tag", cyng::TC_UUID),       // key (device)
+                    cyng::column("initial", cyng::TC_DATE),   // initial appearance
+                    cyng::column("lastLogin", cyng::TC_DATE), // last appearance
+                    cyng::column("loginCounter", cyng::TC_UINT32),
+                },
+                1);
+        }
+        cyng::meta_sql get_table_statistics() {
+            //
+            //  SELECT datetime(TStatistics.initial), datetime(TStatistics.lastLogin), loginCounter, TDevice.name FROM TStatistics
+            //  JOIN TDevice ON TStatistics.tag = TDevice.tag ORDER BY TStatistics.initial;
+            //
+            return cyng::to_sql(
+                get_store_statistics(),
+                {
+                    36, //	key "tag"
+                    0,  //	initial
+                    0,  //	lastLogin
+                    0   //	loginCounter
+                });
+        }
+
+        cyng::meta_store get_store_history() {
+            return cyng::meta_store(
+                "history",
+                {
+                    cyng::column("tag", cyng::TC_UUID),  // key (device)
+                    cyng::column("peer", cyng::TC_UUID), // peer (session)
+                    cyng::column("ts", cyng::TC_DATE),
+                    cyng::column("event", cyng::TC_STRING) // event (login, logout)
+                },
+                3);
+        }
+        cyng::meta_sql get_table_history() {
+            //  SELECT datetime(THistory.ts), THistory.event, TDevice.name FROM THistory JOIN TDevice ON THistory.tag = TDevice.tag
+            //  ORDER BY THistory.ts;
+            return cyng::to_sql(
+                get_store_history(),
+                {
+                    36, // device "tag"
+                    36, // peer "tag"
+                    0,  // timestamp
+                    32  // event
+                });
+        }
+
         cyng::meta_store get_store_session() {
 
             return cyng::meta_store(
@@ -562,7 +612,8 @@ namespace smf {
                    boost::algorithm::equals(name, "session") || boost::algorithm::equals(name, "connection") ||
                    boost::algorithm::equals(name, "target") || boost::algorithm::equals(name, "config") ||
                    boost::algorithm::equals(name, "loRaUplink") || boost::algorithm::equals(name, "iecUplink") ||
-                   boost::algorithm::equals(name, "wMBusUplink") || boost::algorithm::equals(name, "cfgSetMeta");
+                   boost::algorithm::equals(name, "wMBusUplink") || boost::algorithm::equals(name, "cfgSetMeta") ||
+                   boost::algorithm::equals(name, "statistics") || boost::algorithm::equals(name, "history");
         }
 
         cyng::meta_store get_store_sml_readout() {

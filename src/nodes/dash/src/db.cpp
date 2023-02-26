@@ -451,7 +451,9 @@ namespace smf {
         db::rel{"iecUplink", "monitor.IEC", "table.IECUplink.count"},
         db::rel{"gwIEC", "status.IECgw", "table.gwIEC.count"},
         db::rel{"gwwMBus", "status.wMBusgw", "table.gwwMBus.count"},
-        db::rel{"cfgSetMeta", "config.cfgSetMeta", "table.cfgSetMeta.count"}
+        db::rel{"cfgSetMeta", "config.cfgSetMeta", "table.cfgSetMeta.count"},
+        db::rel{"statistics", "config.statistics", "table.statistics.count"},
+        db::rel{"history", "config.history", "table.history.count"}
         //  don't add table "meterFull" - no syncing
     };
 
@@ -476,7 +478,9 @@ namespace smf {
             config::get_store_gwIEC(),
             config::get_store_gwwMBus(),
             config::get_store_meter_full(),
-            config::get_store_cfg_set_meta()};
+            config::get_store_cfg_set_meta(),
+            config::get_store_statistics(),
+            config::get_store_history()};
     }
 
     cyng::object convert_to_type(cyng::type_code tc, cyng::object const &obj) {

@@ -75,8 +75,20 @@ namespace smf {
         cyng::meta_store get_store_cfg_set_meta();
         cyng::meta_sql get_table_cfg_set_meta();
 
+        /**
+         * device statistics
+         */
+        cyng::meta_store get_store_statistics();
+        cyng::meta_sql get_table_statistics();
+
+        /**
+         * device history
+         */
+        cyng::meta_store get_store_history();
+        cyng::meta_sql get_table_history();
+
         //
-        //	store only schemes
+        //	from here store only schemes
         // -----------------------------------------------------------------+
         //
 

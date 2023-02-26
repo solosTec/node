@@ -66,10 +66,11 @@ namespace smf {
         //
         ping_->stop();
 
-        //	https://www.boost.org/doc/libs/1_75_0/doc/html/boost_asio/reference/basic_stream_socket/close/overload2.html
-        CYNG_LOG_WARNING(logger_, "stop session");
+        CYNG_LOG_WARNING(logger_, "stop " << protocol_layer_ << " session");
         boost::system::error_code ec;
         socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
+        //  Any asynchronous send, receive or connect operations will be cancelled immediately,
+        //  and will complete with the boost::asio::error::operation_aborted error.
         socket_.close(ec);
 
         //
@@ -991,30 +992,38 @@ namespace smf {
             //
             //	insert into session table
             //
-            cache_.insert_pty(
-                dev,           //  pk
-                vm_.get_tag(), //  peer
-                rtag,
-                name,
-                pwd,
-                ep,
-                data_layer);
+            if (cache_.insert_pty(
+                    dev,           //  pk
+                    vm_.get_tag(), //  peer
+                    rtag,
+                    name,
+                    pwd,
+                    ep,
+                    data_layer)) {
 
-            //
-            //	send response
-            //
-            cluster_send_msg(cyng::serialize_forward("pty.res.login", rtag, true, dev));
+                //
+                //	send response
+                //
+                cluster_send_msg(cyng::serialize_forward("pty.res.login", rtag, true, dev));
 
-            //
-            //	update cluster table (pty counter)
-            //
-            auto const counter = cache_.update_pty_counter(vm_.get_tag(), peer_);
+                //
+                //	update cluster table (pty counter)
+                //
+                auto const counter = cache_.update_pty_counter(vm_.get_tag(), peer_);
 #ifdef _DEBUG_MAIN
-            cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users");
+                cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users", "(", name, ")");
 #else
-            boost::ignore_unused(counter);
+                boost::ignore_unused(counter);
 #endif
+                //
+                //  update statistics and history
+                //
+                cache_.update_pty_statistics(EVT_LOGIN, dev, vm_.get_tag());
 
+            } else {
+                CYNG_LOG_ERROR(logger_, "pty login [" << name << "] failed");
+                cache_.sys_msg(cyng::severity::LEVEL_WARNING, data_layer, "login [", name, ":", pwd, "] failed");
+            }
         } else {
             CYNG_LOG_WARNING(logger_, "pty login [" << name << "] failed");
             cache_.sys_msg(cyng::severity::LEVEL_TRACE, data_layer, "login [", name, ":", pwd, "] failed");
@@ -1044,9 +1053,9 @@ namespace smf {
         //	Remove session table, targets and channels.
         //  connections holds a list of sessions connected to this session.
         //
-        auto const [connection_key, success] = cache_.remove_pty(tag, dev);
+        auto const [connection_key, success, name] = cache_.remove_pty(tag, dev);
         if (!success) {
-            CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << " logout [" << dev << "] failed");
+            CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << " logout [" << dev << ", " << name << "] failed");
         } else {
 
             //
@@ -1064,10 +1073,14 @@ namespace smf {
             //
             auto const counter = cache_.update_pty_counter(vm_.get_tag(), peer_);
 #ifdef _DEBUG_MAIN
-            cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users");
+            cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "has", counter, "users", "(", name, ")");
 #else
             boost::ignore_unused(counter);
 #endif
+            //
+            //  update statistics and history
+            //
+            cache_.update_pty_statistics(EVT_LOGOUT, dev, vm_.get_tag());
         }
     }
 
@@ -1127,6 +1140,8 @@ namespace smf {
         } else {
 
             CYNG_LOG_TRACE(logger_, "pty " << msisdn << " is offline / connected");
+            cache_.sys_msg(
+                cyng::severity::LEVEL_WARNING, protocol_layer_, " device", caller, "cannot open connection to [", msisdn, "]");
 
             //
             //	session offline or already connected
@@ -1323,12 +1338,14 @@ namespace smf {
                 cache_.open_channel(dev, name, account, number, sv, id, timeout);
 
             if (count == 0) {
-                cache_.sys_msg(cyng::severity::LEVEL_WARNING, protocol_layer_, "target [", name, "] not found");
-                CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << "target [" << name << "] not found");
+                cache_.sys_msg(
+                    cyng::severity::LEVEL_WARNING, protocol_layer_, " device", device, "cannot find target [", name, "]");
+                CYNG_LOG_WARNING(
+                    logger_, "pty " << protocol_layer_ << " device " << device << " cannot find target [" << name << "]");
             } else {
                 CYNG_LOG_INFO(
                     logger_,
-                    "pty " << device << '/' << protocol_layer_ << " open channel [" << name << "] " << channel << ':' << source);
+                    "pty " << device << '/' << protocol_layer_ << " opens channel [" << name << "] " << channel << ':' << source);
             }
 
             cluster_send_msg(cyng::serialize_forward(
