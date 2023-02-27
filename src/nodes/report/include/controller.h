@@ -55,6 +55,14 @@ namespace smf {
          */
         bool generate_gap_reports(cyng::object &&cfg);
 
+        /**
+         * option --generate feed, -G
+         * Vorschübe
+         */
+        bool generate_feed_reports(cyng::object &&cfg);
+
+        void dump_readout(cyng::object &&cfg, std::chrono::hours backlog);
+
       private:
         cyng::channel_ptr cluster_;
     };
@@ -62,6 +70,7 @@ namespace smf {
     cyng::param_t create_cluster_spec();
     cyng::prop_t create_csv_spec(cyng::obis, std::filesystem::path, bool enabled, std::chrono::hours);
     cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
+    cyng::prop_t create_feed_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
     cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::chrono::hours backtrack, bool enabled);
 
 } // namespace smf

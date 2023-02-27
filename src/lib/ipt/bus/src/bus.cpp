@@ -98,7 +98,7 @@ namespace smf {
                 },
                 [&](cyng::buffer_t data) {
                     //  read from socket
-                    CYNG_LOG_DEBUG(logger_, "[ipt] " << tgl_.get() << " received " << data.size() << "bytes");
+                    CYNG_LOG_DEBUG(logger_, "[ipt] " << tgl_.get() << " received " << data.size() << " bytes");
 
                     //
                     //	let parse it

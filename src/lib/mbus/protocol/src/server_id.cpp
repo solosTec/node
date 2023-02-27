@@ -156,16 +156,12 @@ namespace smf {
         return mbus::get_medium_name(static_cast<mbus::device_type>(get_medium(address)));
     }
 
-    std::pair<char, char> get_manufacturer_code(srv_id_t id) {
+    std::pair<char, char> get_manufacturer_code(srv_id_t id) { return {static_cast<char>(id.at(1)), static_cast<char>(id.at(2))}; }
 
-        return {static_cast<char>(id.at(1)), static_cast<char>(id.at(2))};
-    }
-
-    std::uint16_t get_manufacturer_flag(srv_id_t id) { 
+    std::uint16_t get_manufacturer_flag(srv_id_t id) {
         auto const [c1, c2] = get_manufacturer_code(id);
         return static_cast<unsigned char>(c1) + (static_cast<unsigned char>(c2) << 8);
     }
-
 
     std::string gen_metering_code(std::string const &country_code, boost::uuids::uuid tag) {
 
@@ -183,6 +179,16 @@ namespace smf {
         srv_id_t srv_id{0};
         if (buffer.size() == std::tuple_size<srv_id_t>::value) {
             std::copy(buffer.begin(), buffer.end(), srv_id.begin());
+        } else if (buffer.size() == 4) {
+            srv_id.at(0) = 1; // wireless
+            //  [3-6] 4 bytes serial number (reversed)
+            srv_id.at(3) = buffer.at(3);
+            srv_id.at(4) = buffer.at(2);
+            srv_id.at(5) = buffer.at(1);
+            srv_id.at(6) = buffer.at(0);
+        } else if (buffer.size() == 8) {
+            BOOST_ASSERT_MSG(false, "not implemented yet");
+            srv_id.at(0) = 1; // wireless
         }
         return srv_id;
     }

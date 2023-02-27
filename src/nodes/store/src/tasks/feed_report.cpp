@@ -1,5 +1,5 @@
 
-#include <tasks/lpex_report.h>
+#include <tasks/feed_report.h>
 
 #include <smf/obis/db.h>
 #include <smf/obis/profile.h>
@@ -16,23 +16,22 @@
 namespace smf {
 
     // cyng::channel_weak, cyng::controller &, cyng::logger
-    lpex_report::lpex_report(
+    feed_report::feed_report(
         cyng::channel_weak wp,
         cyng::controller &ctl,
         cyng::logger logger, 
         cyng::db::session db, 
-        cyng::obis profile, 
+        cyng::obis profile,
         cyng::obis_path_t filter,
         std::string path,
         std::chrono::hours backtrack,
         std::string prefix,
         bool print_version,
-        //bool separated,
         bool debug_mode,
         bool customer)
         : sigs_{
-            std::bind(&lpex_report::run, this), // start
-            std::bind(&lpex_report::stop, this, std::placeholders::_1) // stop
+            std::bind(&feed_report::run, this), // start
+            std::bind(&feed_report::stop, this, std::placeholders::_1) // stop
         }
         , channel_(wp)
         , ctl_(ctl)
@@ -44,7 +43,6 @@ namespace smf {
         , backtrack_(backtrack)
         , prefix_(prefix)
         , print_version_(print_version)
-        //, separated_(separated)
         , debug_mode_(debug_mode)
         , customer_(customer) {
 
@@ -54,13 +52,16 @@ namespace smf {
         }
     }
 
-    void lpex_report::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop report task"); }
-    void lpex_report::run() {
+    void feed_report::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop LPEx report task"); }
+    void feed_report::run() {
 
-        // auto const now = std::chrono::system_clock::now();
+        //
+        //  get reference time
+        //
         auto const now = cyng::make_utc_date();
+
         auto sp = channel_.lock();
-        BOOST_ASSERT_MSG(sp, "report task already stopped");
+        BOOST_ASSERT_MSG(sp, "feed report task already stopped");
         if (sp) {
             auto const interval = sml::interval_time(now, profile_);
             auto const next = now + interval;
@@ -70,12 +71,12 @@ namespace smf {
             //  restart
             //
             sp->suspend(interval, "run");
-            CYNG_LOG_TRACE(logger_, "[report LPex] run " << obis::get_name(profile_) << " at " << next);
+            CYNG_LOG_TRACE(logger_, "[feed report] run " << obis::get_name(profile_) << " at " << cyng::as_string(next, "%F %T"));
 
             //
             //  generate report
             //
-            generate_lpex(db_, profile_, filter_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_);
+            smf::generate_lpex(db_, profile_, filter_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_);
         }
     }
 } // namespace smf

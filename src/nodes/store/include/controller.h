@@ -176,6 +176,16 @@ namespace smf {
             bool print_version,
             bool debug_mode);
 
+        void start_feed_reports(
+            cyng::controller &ctl,
+            cyng::stash &channels,
+            cyng::logger logger,
+            cyng::db::session,
+            cyng::param_map_t reports,
+            cyng::obis_path_t filter,
+            bool print_version,
+            bool debug_mode);
+
       private:
         /**
          * @param create if true tables will be created

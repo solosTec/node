@@ -94,6 +94,7 @@ namespace smf {
          * @return if true a new report has to be generated
          */
         bool is_new_reporting_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next);
+        bool is_new_feed_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next);
 
         /**
          * Each profile has a specific count of entries in a time span. e.g. a 15 minutes report has 96 entries

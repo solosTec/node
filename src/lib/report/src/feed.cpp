@@ -1,5 +1,5 @@
 
-#include <smf/report/lpex.h>
+#include <smf/report/feed.h>
 
 #include <smf/config/schemes.h>
 #include <smf/mbus/server_id.h>
@@ -19,7 +19,7 @@
 
 namespace smf {
 
-    void generate_lpex(
+    void generate_feed(
         cyng::db::session db,
         cyng::obis profile,
         cyng::obis_path_t filter,
@@ -87,9 +87,9 @@ namespace smf {
                         if (!data_set.empty()) {
                             auto const file_name = get_filename(prefix, profile, prev);
                             std::cout << ">> generate report " << root / file_name << std::endl;
-                            auto ofs = lpex::open_report(root, file_name, print_version);
+                            auto ofs = feed::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
-                                lpex::generate_report(db, ofs, profile, prev, data_set, customer);
+                                feed::generate_report(db, ofs, profile, prev, data_set, customer);
                                 data::clear(data_set);
                             }
                         }
@@ -122,16 +122,16 @@ namespace smf {
         if (!data_set.empty()) {
             auto const file_name = get_filename(prefix, profile, prev);
             std::cout << ">> generate report " << root / file_name << std::endl;
-            auto ofs = lpex::open_report(root, file_name, print_version);
+            auto ofs = feed::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
-                lpex::generate_report(db, ofs, profile, prev, data_set, customer);
+                feed::generate_report(db, ofs, profile, prev, data_set, customer);
                 ofs.close();
             }
             data::clear(data_set);
         }
     }
 
-    namespace lpex {
+    namespace feed {
 
         void generate_report(
             cyng::db::session db,
@@ -357,6 +357,6 @@ namespace smf {
             // [13] Einheit
         }
 
-    } // namespace lpex
+    } // namespace feed
 
 } // namespace smf

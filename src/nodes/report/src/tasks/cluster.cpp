@@ -126,7 +126,7 @@ namespace smf {
                 //                sml::backtrack_time(profile).count()));
                 auto const prefix = reader.get("prefix", "");
                 auto const backtrack = cyng::to_hours(reader.get("backtrack", "40:00:00"));
-                auto const separated = reader.get("separated.by.devices", false);
+                // auto const separated = reader.get("separated.by.devices", false);
                 auto const customer = reader.get("add.customer.data", false);
 
                 cyng::obis_path_t filter;
@@ -140,9 +140,9 @@ namespace smf {
                                        path,
                                        backtrack,
                                        prefix,
-                                       true,      // print version
-                                       separated, // separated
-                                       false,     // debug mode
+                                       true, // print version
+                                       // separated, // separated
+                                       false, // debug mode
                                        customer)
                                    .first;
                 BOOST_ASSERT(channel->is_open());

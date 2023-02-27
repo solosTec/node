@@ -304,6 +304,28 @@ namespace smf {
             return prev != next;
         }
 
+        bool is_new_feed_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next) {
+            BOOST_ASSERT_MSG(false, "ToDo: implement");
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE:
+            case CODE_PROFILE_15_MINUTE:
+            case CODE_PROFILE_60_MINUTE:
+                // every day
+                // return cyng::day(prev) != cyng::day(next);
+            case CODE_PROFILE_24_HOUR:
+            case CODE_PROFILE_1_MONTH:
+                // every month
+                // return cyng::month(prev) != cyng::month(next);
+            case CODE_PROFILE_1_YEAR:
+                // every year
+                // return cyng::year(prev) != cyng::year(next);
+
+            default: break;
+            }
+
+            return prev != next;
+        }
+
         std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours span) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);

@@ -26,9 +26,9 @@ namespace smf {
         std::uint32_t status_;
     };
 
-    cyng::object restore(std::uint16_t code, std::string const &val, std::int8_t);
-    cyng::object restore_buffer(std::string const &val);
-    cyng::object restore_int(std::string val, std::uint16_t code, std::int8_t);
+    // cyng::object restore(std::uint16_t code, std::string const &val, std::int8_t);
+    // cyng::object restore_buffer(std::string const &val);
+    // cyng::object restore_int(std::string val, std::uint16_t code, std::int8_t);
 
     struct lpex_customer {
         lpex_customer(std::string, std::string, std::string, std::string);

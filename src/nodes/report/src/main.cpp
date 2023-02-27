@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
     smf::config::startup config("report");
 
     std::string report_type;
+    int time_span = 1;
 
     //
     //	generic options
@@ -32,7 +33,11 @@ int main(int argc, char **argv) {
     generic.add_options() // additional options
         ("generate,G",
          boost::program_options::value<std::string>(&report_type)->default_value("csv"),
-         "report type [csv|lpex|gap]");
+         "report type [csv|lpex|gap|feed]") // --generate
+        ("dump",
+         boost::program_options::value<int>(&time_span)->default_value(1),
+         "dump readout data of the last N days") // --dump
+        ;
 
     //
     //	cmdline_options contains all generic and node specific options
@@ -61,9 +66,7 @@ int main(int argc, char **argv) {
         smf::config::set_resource_limit(config);
 
         smf::controller ctl(config);
-        if (ctl.run_options(vm))
-            return EXIT_SUCCESS;
-        return ctl.controller_base::run();
+        return (ctl.run_options(vm)) ? EXIT_SUCCESS : ctl.controller_base::run();
 
     } catch (std::bad_cast const &e) {
         std::cerr << "*** FATAL: " << e.what() << std::endl;

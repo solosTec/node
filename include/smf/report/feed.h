@@ -1,11 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Sylko Olzscher
+ * Copyright (c) 2023 Sylko Olzscher
  *
  */
-#ifndef SMF_LPEX_H
-#define SMF_LPEX_H
+#ifndef SMF_FEED_H
+#define SMF_FEED_H
 
 #include <smf/mbus/server_id.h>
 #include <smf/report/sml_data.h>
@@ -28,7 +28,7 @@ namespace smf {
      *
      * @param separated generated for each device individually
      */
-    void generate_lpex(
+    void generate_feed(
         cyng::db::session,
         cyng::obis profile,
         cyng::obis_path_t filter,
@@ -40,7 +40,7 @@ namespace smf {
         bool debug_mode,
         bool customer);
 
-    namespace lpex {
+    namespace feed {
 
         /**
          * Each LPEX file starts with the same header (in german)
@@ -78,7 +78,7 @@ namespace smf {
             data::data_set_t const &data,
             bool customer);
 
-    } // namespace lpex
+    } // namespace feed
 
 } // namespace smf
 

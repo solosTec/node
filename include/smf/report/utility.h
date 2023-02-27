@@ -103,6 +103,7 @@ namespace smf {
         std::uint16_t,
         std::int8_t,
         mbus::unit)>;
+
     /**
      * loop over result set
      */

@@ -67,11 +67,20 @@ namespace smf {
 
         std::size_t counter = 0;
 
+        //
+        // Collect all data from "start" for all devices of the specified profile ordered by readout time (actTime).
+        //
+        // Parameters are:
+        //
+        // * start time
+        // * profile
+        //
         std::string const sql =
             "SELECT TSMLReadout.tag, TSMLReadout.meterID, datetime(actTime), TSMLReadout.status, "
             "TSMLReadoutData.register, TSMLReadoutData.reading, TSMLReadoutData.type, TSMLReadoutData.scaler, TSMLReadoutData.unit FROM "
             "TSMLReadout INNER JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
-            "WHERE TSMLReadout.actTime > julianday(?) AND TSMLReadout.profile = ? ORDER BY actTime";
+            "WHERE TSMLReadout.actTime > julianday(?) AND TSMLReadout.profile = ? "
+            "ORDER BY actTime, TSMLReadout.tag";
         auto stmt = db.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
@@ -79,6 +88,7 @@ namespace smf {
             stmt->push(cyng::make_object(profile), 0); //	select one profile at a time
 
             boost::uuids::uuid prev_tag = boost::uuids::nil_uuid();
+
             while (auto res = stmt->get_result()) {
                 //  [1] tag,
                 //  [2] meterID,
@@ -104,10 +114,12 @@ namespace smf {
 
                 //  [2] meterID
                 auto const meter = cyng::to_buffer(res->get(2, cyng::TC_BUFFER, 0));
-                auto const id = to_srv_id(meter);
+                auto const id = to_srv_id(meter); //  different formats are possible
+
                 //  [3] actTime
                 auto const act_time = cyng::value_cast(res->get(3, cyng::TC_DATE, 0), start);
                 BOOST_ASSERT(act_time >= start);
+
                 //  [4] status
                 auto const status = cyng::value_cast<std::uint32_t>(res->get(4, cyng::TC_UINT32, 0), 0u);
                 //  [5] register
@@ -442,9 +454,10 @@ namespace smf {
         int day = 0;
 
         std::string const sql =
-            "SELECT TSMLReadout.tag, TSMLReadout.meterID, datetime(actTime), TSMLReadoutData.register, reading, unit from "
+            "SELECT TSMLReadout.tag, TSMLReadout.meterID, datetime(actTime), TSMLReadoutData.register, reading, unit FROM "
             "TSMLReadout INNER JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag "
-            "WHERE TSMLReadout.actTime > julianday(?) ORDER BY actTime";
+            "WHERE TSMLReadout.actTime > julianday(?) "
+            "ORDER BY actTime, TSMLReadout.tag";
         auto stmt = db.create_statement();
         std::pair<int, bool> const r = stmt->prepare(sql);
         if (r.second) {
@@ -456,15 +469,14 @@ namespace smf {
             cyng::date ro_end = now - backlog;
             boost::uuids::uuid prev_tag = boost::uuids::nil_uuid();
             while (auto res = stmt->get_result()) {
+                //
+                //  readout tag
+                //
                 auto const tag = cyng::value_cast(res->get(1, cyng::TC_UUID, 0), prev_tag);
-                if (tag != prev_tag) {
-                    std::cout << std::endl;
-                    prev_tag = tag;
-                    idx_value = 0;
-                    idx_readout++;
-                }
-                idx_value++;
 
+                //
+                //  meta data
+                //
                 auto const meter = cyng::to_buffer(res->get(2, cyng::TC_BUFFER, 0));
                 auto const id = to_srv_id(meter);
                 server.insert(id);
@@ -483,13 +495,21 @@ namespace smf {
                     std::cout << "day   : " << cyng::day(act_time) << std::endl;
                 }
 
-                auto const reg = cyng::value_cast(res->get(4, cyng::TC_OBIS, 0), OBIS_DATA_COLLECTOR_REGISTER);
-                auto const value = cyng::value_cast(res->get(5, cyng::TC_STRING, 0), "?");
-                auto const unit = mbus::to_unit(cyng::numeric_cast<std::uint8_t>(res->get(6, cyng::TC_UINT8, 0), 0u));
-
-                std::cout << std::setw(4) << idx_readout << '#' << idx_value << ": " << tag << ", " << to_string(id) << ", "
-                          << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", " << reg << ": " << value << ' '
-                          << mbus::get_name(unit) << std::endl;
+                if (tag != prev_tag) {
+                    std::cout << std::endl;
+                    prev_tag = tag;
+                    idx_value = 1;
+                    idx_readout++;
+                    std::cout << std::setw(4) << idx_readout << ": " << tag << ", " << to_string(id) << ", "
+                              << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << std::endl;
+                } else {
+                    idx_value++;
+                    auto const reg = cyng::value_cast(res->get(4, cyng::TC_OBIS, 0), OBIS_DATA_COLLECTOR_REGISTER);
+                    auto const value = cyng::value_cast(res->get(5, cyng::TC_STRING, 0), "?");
+                    auto const unit = mbus::to_unit(cyng::numeric_cast<std::uint8_t>(res->get(6, cyng::TC_UINT8, 0), 0u));
+                    std::cout << '#' << std::setw(3) << idx_value << ", " << reg << ": " << value << ' ' << mbus::get_name(unit)
+                              << std::endl;
+                }
             }
 
             std::cout << std::endl;
@@ -512,6 +532,18 @@ namespace smf {
             std::cout << "ro freq.  : " << static_cast<float>(idx_readout * 60) / ro_range.count() << " readout(s) per hour"
                       << std::endl;
             std::cout << "server    : " << server.size() << std::endl;
+
+            bool initial = true;
+            for (auto const &srv : server) {
+                if (initial) {
+                    std::cout << "          : ";
+                    initial = false;
+                } else {
+                    std::cout << ", ";
+                }
+                std::cout << to_string(srv);
+            }
+            std::cout << std::endl;
         }
     }
 

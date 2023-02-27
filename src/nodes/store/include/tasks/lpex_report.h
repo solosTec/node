@@ -40,7 +40,7 @@ namespace smf {
             std::chrono::hours backtrack,
             std::string prefix,
             bool print_version,
-            bool separated,
+            // bool separated,
             bool debug_mode,
             bool customer);
 
@@ -62,7 +62,7 @@ namespace smf {
         std::chrono::hours const backtrack_;
         std::string const prefix_;
         bool const print_version_;
-        bool const separated_;
+        // bool const separated_;
         bool const debug_mode_;
         bool const customer_;
     };

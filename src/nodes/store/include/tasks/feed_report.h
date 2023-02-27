@@ -1,11 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Sylko Olzscher
+ * Copyright (c) 2023 Sylko Olzscher
  *
  */
-#ifndef SMF_REPORT_TASK_LPEX_H
-#define SMF_REPORT_TASK_LPEX_H
+#ifndef SMF_REPORT_TASK_FEED_REPORT_H
+#define SMF_REPORT_TASK_FEED_REPORT_H
 
 #include <smf/mbus/server_id.h>
 
@@ -16,7 +16,7 @@
 
 namespace smf {
 
-    class lpex_report {
+    class feed_report {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
@@ -25,7 +25,11 @@ namespace smf {
             >;
 
       public:
-        lpex_report(
+        /**
+         *
+         * @param separated generated for each device individually
+         */
+        feed_report(
             cyng::channel_weak,
             cyng::controller &,
             cyng::logger,
@@ -36,10 +40,11 @@ namespace smf {
             std::chrono::hours backtrack,
             std::string prefix,
             bool print_version,
+            // bool separated,
             bool debug_mode,
             bool customer);
 
-        ~lpex_report() = default;
+        ~feed_report() = default;
 
       private:
         void stop(cyng::eod);
