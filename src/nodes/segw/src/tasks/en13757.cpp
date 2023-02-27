@@ -615,9 +615,12 @@ namespace smf {
             //  send data
             //
             proxy_ = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-                [=, this](std::size_t, std::size_t counter) -> std::pair<std::chrono::seconds, bool> {
+                [=,
+                 this](std::size_t, std::size_t counter, std::string &h, std::string &s) -> std::pair<std::chrono::seconds, bool> {
                     CYNG_LOG_WARNING(
                         logger_, "[EN-13757] cannot connect to " << host << ':' << service << " for the " << counter << " time");
+                    BOOST_ASSERT(boost::algorithm::equals(host, h));
+                    BOOST_ASSERT(boost::algorithm::equals(service, s));
 
                     //
                     //  write cache to database

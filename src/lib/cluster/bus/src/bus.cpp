@@ -53,7 +53,8 @@ namespace smf {
 
         cyng::net::client_factory cf(ctl);
         client_ = cf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-            [this](std::size_t, std::size_t counter) -> std::pair<std::chrono::seconds, bool> {
+            [this](std::size_t, std::size_t counter, std::string &host, std::string &service)
+                -> std::pair<std::chrono::seconds, bool> {
                 //
                 //  connect failed, reconnect after 20 seconds
                 //
@@ -65,9 +66,9 @@ namespace smf {
 
                 //  try next redundancy in 30 seconds
                 tgl_.changeover();
-                client_.connect(std::chrono::seconds(30), tgl_.get().host_, tgl_.get().service_);
-                //  stop
-                return {std::chrono::seconds(0), false};
+                host = tgl_.get().host_;
+                service = tgl_.get().service_;
+                return {std::chrono::seconds(0), true};
             },
             [=, this](boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep, cyng::channel_ptr sp) {
                 // std::cout << "connected to " << ep << " #" << sp->get_id() << std::endl;
