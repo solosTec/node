@@ -6,7 +6,7 @@ case 0x100ff: return "RESET_COUNTER";	// 0.1.0
 case 0x200ff: return "FIRMWARE_VERSION";	// COSEM class id 1
 case 0x10000ff: return "REAL_TIME_CLOCK";	// current time
 case 0x600100ff: return "SERIAL_NR";	// (C.1.0) Serial number I (assigned by the manufacturer)
-case 0x600101ff: return "SERIAL_NR_SECOND";	// Serial number II (costumer ID, assigned by the manufacturer).
+case 0x600101ff: return "SERIAL_NR_SECOND";	// Serial number II (customer ID, assigned by the manufacturer).
 case 0x600102ff: return "PARAMETERS_FILE_CODE";	// Parameters file code (C.1.2)
 case 0x600103ff: return "PRODUCTION_DATE";	// date of manufacture (C.1.3)
 case 0x600104ff: return "PARAMETERS_CHECK_SUM";	// Parameters check sum (C.1.4)
@@ -276,15 +276,24 @@ case 0x100605700ff: return "REG_ACTIVE_TARFIFF";	// Active tariff
 case 0x100606009ff: return "REG_FRAUD_FLAG";	// Fraud flag
 case 0x101000402ff: return "CURRENT_TRANSFORMER_RATIO";	// Current transformer ratio (L&G)
 case 0x101000403ff: return "VOLTAGE_TRANSFORMER_RATIO";	// Voltage transformer ratio (L&G)
+case 0x101011d00ff: return "PROFILE_POWER_POS_ACTIVE";	// Load profile (+A) Active energy import
+case 0x101021d00ff: return "PROFILE_POWER_NEG_ACTIVE";	// Load profile (-A) Active energy export
+case 0x101051d00ff: return "PROFILE_REACTIVE_Q1";	// Load profile Reactive Q1
+case 0x101061d00ff: return "PROFILE_REACTIVE_Q2";	// Load profile Reactive Q2
+case 0x101071d00ff: return "PROFILE_REACTIVE_Q3";	// Load profile Reactive Q3
+case 0x101081d00ff: return "PROFILE_REACTIVE_Q4";	// Load profile Reactive Q4
 case 0x101621700ff: return "REG_SM_POWER_THRESHOLD";	// Power threshold (D.23.0)
 case 0x40000010aff: return "REG_HCA_10";	// Local date at set date
 case 0x400000901ff: return "REG_HCA_F";	// Current time at time of transmission
 case 0x400000902ff: return "REG_HCA_G";	// Current date at time of transmission
 case 0x400010001ff: return "REG_HCA_0";	// Unrated integral, current value
 case 0x400010200ff: return "REG_HCA_2";	// Unrated integral, set date value
+case 0x501011d00ff: return "PROFILE_COLD";	// Load profile Cold
 case 0x600000800ff: return "REG_HEAT_AED";	// Power (energy flow) (P ), average, current value
 case 0x600010000ff: return "REG_HEAT_CURRENT";	// Energy (A), total, current value
 case 0x600010200ff: return "REG_HEAT_SET_DATE";	// Energy (A), total, set date value
+case 0x601011d00ff: return "PROFILE_HEAT";	// Load profile Heat
+case 0x6011f1d00ff: return "PROFILE_HEAT_POS_OUTPUT";	// Load profile Heat (+E) Energy output
 case 0x70000081cff: return "REG_GAS_INT";	// Averaging duration for actual flow rate value
 case 0x700002a02ff: return "REG_GAS_BP";	// defined Pressure, absolute, at base conditions
 case 0x700030000ff: return "REG_GAS_MC_0_0";	// Volume (meter), 
@@ -293,9 +302,12 @@ case 0x700030200ff: return "REG_GAS_MC_2_0";	// Volume (meter), base conditions 
 case 0x7002b0f00ff: return "REG_GAS_FR_15";	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
 case 0x7002b1000ff: return "REG_GAS_FR_16";	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
 case 0x7002b1100ff: return "REG_GAS_FR_17";	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
+case 0x7010b1b00ff: return "PROFILE_GAS_POS_OUTPUT";	// Load profile (+Vb) Operating volume Uninterrupted delivery
 case 0x800010000ff: return "WATER_CURRENT";	// Volume (V), accumulated, total, current value
 case 0x800010200ff: return "WATER_DATE";	// Volume (V), accumulated, total, due date value
 case 0x800020000ff: return "WATER_FLOW_RATE";	// Flow rate, average (Va/t), current value 
+case 0x801021b00ff: return "PROFILE_WATER_POS_OUTPUT";	// Load profile (+Vol) Volume output
+case 0x901011d00ff: return "PROFILE_HOT_WATER";	// Load profile Hot Water
 case 0x810000090b00: return "ACT_SENSOR_TIME";	// actSensorTime - current UTC time
 case 0x810000090b01: return "TZ_OFFSET";	// offset to actual time zone in minutes (-720 .. +720)
 case 0x810060050000: return "CLASS_OP_LOG_STATUS_WORD";

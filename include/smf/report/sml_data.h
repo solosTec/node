@@ -7,17 +7,18 @@
 #ifndef SMF_REPORT_SML_DATAH
 #define SMF_REPORT_SML_DATAH
 
+#include <smf/mbus/server_id.h>
 #include <smf/mbus/units.h>
 
 #include <cyng/obj/intrinsics/obis.h>
 #include <cyng/obj/object.h>
 
+#include <map>
+
 namespace smf {
 
     struct sml_data {
         sml_data(std::uint16_t code, std::int8_t scaler, std::uint8_t unit, std::string reading, std::uint32_t status);
-
-        [[nodiscard]] cyng::object restore() const;
 
         std::uint16_t code_;
         std::int8_t scaler_;
@@ -26,9 +27,27 @@ namespace smf {
         std::uint32_t status_;
     };
 
-    // cyng::object restore(std::uint16_t code, std::string const &val, std::int8_t);
-    // cyng::object restore_buffer(std::string const &val);
-    // cyng::object restore_int(std::string val, std::uint16_t code, std::int8_t);
+    /**
+     * data structure to hold a complete profile readout
+     */
+    namespace data {
+
+        //
+        //  slot -> data
+        //
+        using readout_t = std::map<std::int64_t, sml_data>;
+
+        //
+        //  register -> slot -> data
+        //
+        using values_t = std::map<cyng::obis, readout_t>;
+
+        //
+        //  data set of the full period
+        //  meter -> register -> slot -> data
+        //
+        using data_set_t = std::map<smf::srv_id_t, values_t>;
+    } // namespace data
 
     struct lpex_customer {
         lpex_customer(std::string, std::string, std::string, std::string);

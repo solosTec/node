@@ -74,7 +74,8 @@ namespace smf {
             cyng::db::session db,
             std::ofstream &,
             cyng::obis profile,
-            cyng::date const &d,
+            cyng::date const &start,
+            cyng::date const &end,
             data::data_set_t const &data,
             bool customer);
 
@@ -82,6 +83,11 @@ namespace smf {
          * We need two time units of lead.
          */
         cyng::date calculate_start_time(cyng::date const &now, std::chrono::hours const &backtrack, cyng::obis const &profile);
+
+        /**
+         * Calculate value feed/adcance
+         */
+        std::string calculate_advance(sml_data const &, sml_data const &);
 
     } // namespace feed
 

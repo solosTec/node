@@ -89,12 +89,12 @@ namespace smf {
                         //
                         if (!data_set.empty()) {
                             auto const file_name = get_filename(prefix, profile, prev);
-                            std::cout << ">> generate report " << root / file_name << std::endl;
+                            std::cout << ">> generate LPEx report " << root / file_name << std::endl;
                             auto ofs = lpex::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
                                 lpex::generate_report(db, ofs, profile, prev, data_set, customer);
-                                data::clear(data_set);
                             }
+                            data::clear(data_set);
                         }
                     }
 
@@ -124,7 +124,7 @@ namespace smf {
         //
         if (!data_set.empty()) {
             auto const file_name = get_filename(prefix, profile, prev);
-            std::cout << ">> generate report " << root / file_name << std::endl;
+            std::cout << ">> generate LPex report " << root / file_name << std::endl;
             auto ofs = lpex::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
                 lpex::generate_report(db, ofs, profile, prev, data_set, customer);
@@ -146,7 +146,7 @@ namespace smf {
 
             auto const [start, end] = sml::to_index_range(d, profile);
             BOOST_ASSERT(start <= end);
-            std::cout << "> generate report for " << data_set.size() << " meters from " << start << " = "
+            std::cout << "> generate LPEx report for " << data_set.size() << " meters from " << start << " = "
                       << cyng::as_string(sml::from_index_to_date(start, profile), "%Y-%m-%d %H:%M:%S") << " to " << end << " = "
                       << cyng::as_string(sml::from_index_to_date(end, profile), "%Y-%m-%d %H:%M:%S") << std::endl;
 

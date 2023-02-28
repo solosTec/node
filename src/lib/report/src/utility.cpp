@@ -523,20 +523,22 @@ namespace smf {
             std::cout << std::fixed << std::setprecision(2);
             std::cout << "UTC time  : " << cyng::as_string(start_utc) << std::endl;
             std::cout << "time span : " << cyng::as_string(start) << " to " << cyng::as_string(end) << " = " << backlog.count()
-                      << "h" << std::endl;
-            std::cout << "readouts  : " << idx_readout << std::endl;
-            std::cout << "frequency : " << static_cast<float>(idx_readout) / backlog.count() << " readout(s) per hour" << std::endl;
-            std::cout << "first ro  : " << cyng::as_string(ro_start) << std::endl;
-            std::cout << "last ro   : " << cyng::as_string(ro_end) << std::endl;
-            std::cout << "ro span   : " << ro_range.count() << "min" << std::endl;
-            std::cout << "ro freq.  : " << static_cast<float>(idx_readout * 60) / ro_range.count() << " readout(s) per hour"
+                      << "h (target)" << std::endl;
+            std::cout << "time span : " << cyng::as_string(ro_start) << " to " << cyng::as_string(ro_end) << " = "
+                      << ro_range.count() << " minutes (actual)" << std::endl;
+            std::cout << "readouts  : " << idx_readout << " (in total)" << std::endl;
+            //  backlog in hours
+            std::cout << "frequency : " << static_cast<float>(idx_readout) / backlog.count() << " readout(s) per hour (target)"
                       << std::endl;
-            std::cout << "server    : " << server.size() << std::endl;
+            std::cout << "ro freq.  : " << static_cast<float>(idx_readout * 60) / ro_range.count()
+                      << " readout(s) per hour (actual)" << std::endl;
+            std::cout << "server    : " << server.size();
 
             bool initial = true;
             for (auto const &srv : server) {
                 if (initial) {
-                    std::cout << "          : ";
+                    std::cout << " - ";
+                    // std::cout << "          : ";
                     initial = false;
                 } else {
                     std::cout << ", ";

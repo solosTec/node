@@ -7,7 +7,6 @@
 #ifndef SMF_REPORT_UTILITY_H
 #define SMF_REPORT_UTILITY_H
 
-#include <smf/mbus/server_id.h>
 #include <smf/obis/db.h>
 #include <smf/report/sml_data.h>
 
@@ -31,18 +30,18 @@ namespace smf {
         //
         //  slot -> data
         //
-        using readout_t = std::map<std::int64_t, sml_data>;
+        // using readout_t = std::map<std::int64_t, sml_data>;
 
         //
         //  register -> slot -> data
         //
-        using values_t = std::map<cyng::obis, readout_t>;
+        // using values_t = std::map<cyng::obis, readout_t>;
 
         //
         //  data set of the full period
         //  meter -> register -> slot -> data
         //
-        using data_set_t = std::map<smf::srv_id_t, values_t>;
+        // using data_set_t = std::map<smf::srv_id_t, values_t>;
 
         typename readout_t::value_type make_readout(
             std::int64_t slot,

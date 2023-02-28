@@ -501,18 +501,36 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(01, 01, 00, 04, 02, ff), {"CURRENT_TRANSFORMER_RATIO", cyng::TC_NULL, "Current transformer ratio (L&G)"}},
         {DEFINE_OBIS(01, 01, 00, 04, 03, ff), {"VOLTAGE_TRANSFORMER_RATIO", cyng::TC_NULL, "Voltage transformer ratio (L&G)"}},
 
+        {DEFINE_OBIS(01, 01, 01, 1D, 00, FF),
+         {"PROFILE_POWER_POS_ACTIVE", cyng::TC_DOUBLE, "Load profile (+A) Active energy import"}},
+        {DEFINE_OBIS(01, 01, 02, 1D, 00, FF),
+         {"PROFILE_POWER_NEG_ACTIVE", cyng::TC_DOUBLE, "Load profile (-A) Active energy export"}},
+        {DEFINE_OBIS(01, 01, 05, 1D, 00, FF), {"PROFILE_REACTIVE_Q1", cyng::TC_DOUBLE, "Load profile Reactive Q1"}},
+        {DEFINE_OBIS(01, 01, 06, 1D, 00, FF), {"PROFILE_REACTIVE_Q2", cyng::TC_DOUBLE, "Load profile Reactive Q2"}},
+        {DEFINE_OBIS(01, 01, 07, 1D, 00, FF), {"PROFILE_REACTIVE_Q3", cyng::TC_DOUBLE, "Load profile Reactive Q3"}},
+        {DEFINE_OBIS(01, 01, 08, 1D, 00, FF), {"PROFILE_REACTIVE_Q4", cyng::TC_DOUBLE, "Load profile Reactive Q4"}},
+
         //	-- Group 4 Heat COst Allocator
         //	-- Group 5 Cooling
+        {DEFINE_OBIS(05, 01, 01, 1D, 00, FF), {"PROFILE_COLD", cyng::TC_DOUBLE, "Load profile Cold"}},
         //	-- Group 6 Heat + Combined Heat/Cooling (section Heat
+        {DEFINE_OBIS(06, 01, 01, 1D, 00, FF), {"PROFILE_HEAT", cyng::TC_DOUBLE, "Load profile Heat"}},
+        {DEFINE_OBIS(06, 01, 1F, 1D, 00, FF), {"PROFILE_HEAT_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile Heat (+E) Energy output"}},
+
         //  -- Group 7 Gas
+        {DEFINE_OBIS(07, 01, 0B, 1B, 00, FF),
+         {"PROFILE_GAS_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile (+Vb) Operating volume Uninterrupted delivery"}},
+
         //
         //  -- Group 8 Water
         {DEFINE_OBIS(08, 00, 01, 00, 00, FF), {"WATER_CURRENT", cyng::TC_NULL, "Volume (V), accumulated, total, current value"}},
         {DEFINE_OBIS(08, 00, 01, 02, 00, FF), {"WATER_DATE", cyng::TC_NULL, "Volume (V), accumulated, total, due date value"}},
         {DEFINE_OBIS(08, 00, 02, 00, 00, FF), {"WATER_FLOW_RATE", cyng::TC_NULL, "Flow rate, average (Va/t), current value "}},
+        {DEFINE_OBIS(08, 01, 02, 1B, 00, FF), {"PROFILE_WATER_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile (+Vol) Volume output"}},
         //
 
         //  -- Group 9 Hot Water
+        {DEFINE_OBIS(09, 01, 01, 1D, 00, FF), {"PROFILE_HOT_WATER", cyng::TC_DOUBLE, "Load profile Hot Water"}},
 
         //	SMART METER Register
         {DEFINE_OBIS(01, 01, 62, 17, 00, FF), {"REG_SM_POWER_THRESHOLD", cyng::TC_NULL, "Power threshold (D.23.0)"}},

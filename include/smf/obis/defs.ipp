@@ -1,5 +1,5 @@
-	// generated at 2022-10-18 08:26:51
-	// 605 OBIS codes (3630 Bytes)
+	// generated at 2023-02-28 23:04:06
+	// 617 OBIS codes (3702 Bytes)
 
 	// #1
 	// Abstract objects
@@ -11,7 +11,7 @@
 	OBIS_CODE_DEFINITION(00, 00, 00, 02, 00, ff, FIRMWARE_VERSION);	// COSEM class id 1
 	OBIS_CODE_DEFINITION(00, 00, 01, 00, 00, ff, REAL_TIME_CLOCK);	// current time
 	OBIS_CODE_DEFINITION(00, 00, 60, 01, 00, ff, SERIAL_NR);	// (C.1.0) Serial number I (assigned by the manufacturer)
-	OBIS_CODE_DEFINITION(00, 00, 60, 01, 01, ff, SERIAL_NR_SECOND);	// Serial number II (costumer ID, assigned by the manufacturer).
+	OBIS_CODE_DEFINITION(00, 00, 60, 01, 01, ff, SERIAL_NR_SECOND);	// Serial number II (customer ID, assigned by the manufacturer).
 	OBIS_CODE_DEFINITION(00, 00, 60, 01, 02, ff, PARAMETERS_FILE_CODE);	// Parameters file code (C.1.2)
 	OBIS_CODE_DEFINITION(00, 00, 60, 01, 03, ff, PRODUCTION_DATE);	// date of manufacture (C.1.3)
 	OBIS_CODE_DEFINITION(00, 00, 60, 01, 04, ff, PARAMETERS_CHECK_SUM);	// Parameters check sum (C.1.4)
@@ -283,20 +283,31 @@
 	OBIS_CODE_DEFINITION(01, 00, 60, 60, 09, ff, REG_FRAUD_FLAG);	// Fraud flag
 	OBIS_CODE_DEFINITION(01, 01, 00, 04, 02, ff, CURRENT_TRANSFORMER_RATIO);	// Current transformer ratio (L&G)
 	OBIS_CODE_DEFINITION(01, 01, 00, 04, 03, ff, VOLTAGE_TRANSFORMER_RATIO);	// Voltage transformer ratio (L&G)
+	OBIS_CODE_DEFINITION(01, 01, 01, 1d, 00, ff, PROFILE_POWER_POS_ACTIVE);	// d - Load profile (+A) Active energy import
+	OBIS_CODE_DEFINITION(01, 01, 02, 1d, 00, ff, PROFILE_POWER_NEG_ACTIVE);	// d - Load profile (-A) Active energy export
+	OBIS_CODE_DEFINITION(01, 01, 05, 1d, 00, ff, PROFILE_REACTIVE_Q1);	// d - Load profile Reactive Q1
+	OBIS_CODE_DEFINITION(01, 01, 06, 1d, 00, ff, PROFILE_REACTIVE_Q2);	// d - Load profile Reactive Q2
+	OBIS_CODE_DEFINITION(01, 01, 07, 1d, 00, ff, PROFILE_REACTIVE_Q3);	// d - Load profile Reactive Q3
+	OBIS_CODE_DEFINITION(01, 01, 08, 1d, 00, ff, PROFILE_REACTIVE_Q4);	// d - Load profile Reactive Q4
 	OBIS_CODE_DEFINITION(01, 01, 62, 17, 00, ff, REG_SM_POWER_THRESHOLD);	// Power threshold (D.23.0)
-	// #280
+	// #286
 	// Heat Cost Allocators
 	OBIS_CODE_DEFINITION(04, 00, 00, 01, 0a, ff, REG_HCA_10);	// Local date at set date
 	OBIS_CODE_DEFINITION(04, 00, 00, 09, 01, ff, REG_HCA_F);	// Current time at time of transmission
 	OBIS_CODE_DEFINITION(04, 00, 00, 09, 02, ff, REG_HCA_G);	// Current date at time of transmission
 	OBIS_CODE_DEFINITION(04, 00, 01, 00, 01, ff, REG_HCA_0);	// Unrated integral, current value
 	OBIS_CODE_DEFINITION(04, 00, 01, 02, 00, ff, REG_HCA_2);	// Unrated integral, set date value
-	// #285
+	// #291
+	// Cooling
+	OBIS_CODE_DEFINITION(05, 01, 01, 1d, 00, ff, PROFILE_COLD);	// d - Load profile Cold
+	// #292
 	// Heat
 	OBIS_CODE_DEFINITION(06, 00, 00, 08, 00, ff, REG_HEAT_AED);	// Power (energy flow) (P ), average, current value
 	OBIS_CODE_DEFINITION(06, 00, 01, 00, 00, ff, REG_HEAT_CURRENT);	// Energy (A), total, current value
 	OBIS_CODE_DEFINITION(06, 00, 01, 02, 00, ff, REG_HEAT_SET_DATE);	// Energy (A), total, set date value
-	// #288
+	OBIS_CODE_DEFINITION(06, 01, 01, 1d, 00, ff, PROFILE_HEAT);	// d - Load profile Heat
+	OBIS_CODE_DEFINITION(06, 01, 1f, 1d, 00, ff, PROFILE_HEAT_POS_OUTPUT);	// d - Load profile Heat (+E) Energy output
+	// #297
 	// Gas
 	OBIS_CODE_DEFINITION(07, 00, 00, 08, 1c, ff, REG_GAS_INT);	// Averaging duration for actual flow rate value
 	OBIS_CODE_DEFINITION(07, 00, 00, 2a, 02, ff, REG_GAS_BP);	// defined Pressure, absolute, at base conditions
@@ -306,12 +317,17 @@
 	OBIS_CODE_DEFINITION(07, 00, 2b, 0f, 00, ff, REG_GAS_FR_15);	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
 	OBIS_CODE_DEFINITION(07, 00, 2b, 10, 00, ff, REG_GAS_FR_16);	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
 	OBIS_CODE_DEFINITION(07, 00, 2b, 11, 00, ff, REG_GAS_FR_17);	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
-	// #296
+	OBIS_CODE_DEFINITION(07, 01, 0b, 1b, 00, ff, PROFILE_GAS_POS_OUTPUT);	// d - Load profile (+Vb) Operating volume Uninterrupted delivery
+	// #306
 	// Water (cold)
 	OBIS_CODE_DEFINITION(08, 00, 01, 00, 00, ff, WATER_CURRENT);	// Volume (V), accumulated, total, current value
 	OBIS_CODE_DEFINITION(08, 00, 01, 02, 00, ff, WATER_DATE);	// Volume (V), accumulated, total, due date value
 	OBIS_CODE_DEFINITION(08, 00, 02, 00, 00, ff, WATER_FLOW_RATE);	// Flow rate, average (Va/t), current value 
-	// #299
+	OBIS_CODE_DEFINITION(08, 01, 02, 1b, 00, ff, PROFILE_WATER_POS_OUTPUT);	// d - Load profile (+Vol) Volume output
+	// #310
+	// Water (hot)
+	OBIS_CODE_DEFINITION(09, 01, 01, 1d, 00, ff, PROFILE_HOT_WATER);	// d - Load profile Hot Water
+	// #311
 	// next group
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 00, ACT_SENSOR_TIME);	// actSensorTime - current UTC time
 	OBIS_CODE_DEFINITION(81, 00, 00, 09, 0b, 01, TZ_OFFSET);	// u16 - offset to actual time zone in minutes (-720 .. +720)
@@ -589,7 +605,7 @@
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 12, ATTENTION_END_LIMIT_BEFORE_START);	// attention: end limit before start
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 13, ATTENTION_NO_ENTRIES_IN_RANGE);	// attention: range is empty - not the profile
 	OBIS_CODE_DEFINITION(81, 81, c7, c7, fe, 14, ATTENTION_MISSING_CLOSE_MSG);	// attention: missing close message
-	// #575
+	// #587
 	// next group
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 00, ff, ROOT_BROKER);	// 90 00 00 00 00 NN - broker list
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 01, ff, BROKER_LOGIN);
@@ -599,7 +615,7 @@
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 05, ff, BROKER_PWD);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, 06, ff, BROKER_TIMEOUT);
 	OBIS_CODE_DEFINITION(90, 00, 00, 00, a0, ff, BROKER_BLOCKLIST);
-	// #583
+	// #595
 	// next group
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 00, ff, ROOT_SERIAL);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 01, ff, SERIAL_NAME);	// example: /dev/ttyAPP0
@@ -609,7 +625,7 @@
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 05, ff, SERIAL_STOPBITS);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 06, ff, SERIAL_SPEED);
 	OBIS_CODE_DEFINITION(91, 00, 00, 00, 07, ff, SERIAL_TASK);	// LMN port task
-	// #591
+	// #603
 	// next group
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 00, ff, ROOT_NMS);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 01, ff, NMS_ADDRESS);
@@ -617,7 +633,7 @@
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 03, ff, NMS_USER);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 04, ff, NMS_PWD);
 	OBIS_CODE_DEFINITION(92, 00, 00, 00, 05, ff, NMS_ENABLED);
-	// #597
+	// #609
 	// next group
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 00, ff, ROOT_REDIRECTOR);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 01, ff, REDIRECTOR_LOGIN);
@@ -625,7 +641,7 @@
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 03, ff, REDIRECTOR_SERVICE);	// u16 - port
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 04, ff, REDIRECTOR_USER);
 	OBIS_CODE_DEFINITION(93, 00, 00, 00, 05, ff, REDIRECTOR_PWD);
-	// #603
+	// #615
 	// next group
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 03, LIST_CURRENT_DATA_RECORD);	// current data set
 	OBIS_CODE_DEFINITION(99, 00, 00, 00, 00, 04, LIST_SERVICES);

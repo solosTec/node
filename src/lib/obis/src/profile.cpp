@@ -257,7 +257,10 @@ namespace smf {
             case CODE_PROFILE_24_HOUR: return cyng::make_epoch_date() + std::chrono::hours(idx * 24);
             case CODE_PROFILE_1_MONTH: break;
             case CODE_PROFILE_1_YEAR: break;
-            default: break;
+            default:
+                //  ToDo: implement
+                BOOST_ASSERT_MSG(false, "from_index_to_date() is incomplete");
+                break;
             }
             return cyng::make_epoch_date();
         }
@@ -304,40 +307,18 @@ namespace smf {
             return prev != next;
         }
 
-        bool is_new_feed_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next) {
-            BOOST_ASSERT_MSG(false, "ToDo: implement");
-            switch (profile.to_uint64()) {
-            case CODE_PROFILE_1_MINUTE:
-            case CODE_PROFILE_15_MINUTE:
-            case CODE_PROFILE_60_MINUTE:
-                // every day
-                // return cyng::day(prev) != cyng::day(next);
-            case CODE_PROFILE_24_HOUR:
-            case CODE_PROFILE_1_MONTH:
-                // every month
-                // return cyng::month(prev) != cyng::month(next);
-            case CODE_PROFILE_1_YEAR:
-                // every year
-                // return cyng::year(prev) != cyng::year(next);
-
-            default: break;
-            }
-
-            return prev != next;
-        }
-
-        std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours span) {
-            switch (profile.to_uint64()) {
-            case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);
-            case CODE_PROFILE_15_MINUTE: return (span.count() * 60u) / 15u;
-            case CODE_PROFILE_60_MINUTE: return span.count();
-            case CODE_PROFILE_24_HOUR: return span.count() / 24u;
-            case CODE_PROFILE_1_MONTH:
-            case CODE_PROFILE_1_YEAR:
-            default: break;
-            }
-            return 0;
-        }
+        // std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours span) {
+        //     switch (profile.to_uint64()) {
+        //     case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);
+        //     case CODE_PROFILE_15_MINUTE: return (span.count() * 60u) / 15u;
+        //     case CODE_PROFILE_60_MINUTE: return span.count();
+        //     case CODE_PROFILE_24_HOUR: return span.count() / 24u;
+        //     case CODE_PROFILE_1_MONTH:
+        //     case CODE_PROFILE_1_YEAR:
+        //     default: BOOST_ASSERT_MSG(false, "not implemented"); break;
+        //     }
+        //     return 0;
+        // }
 
     } // namespace sml
 

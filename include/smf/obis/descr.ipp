@@ -6,7 +6,7 @@ case 0x100ff: return "0.1.0";	// 0.1.0
 case 0x200ff: return "COSEM class id 1";	// COSEM class id 1
 case 0x10000ff: return "current time";	// current time
 case 0x600100ff: return "(C.1.0) Serial number I (assigned by the manufacturer)";	// (C.1.0) Serial number I (assigned by the manufacturer)
-case 0x600101ff: return "Serial number II (costumer ID, assigned by the manufacturer).";	// Serial number II (costumer ID, assigned by the manufacturer).
+case 0x600101ff: return "Serial number II (customer ID, assigned by the manufacturer).";	// Serial number II (customer ID, assigned by the manufacturer).
 case 0x600102ff: return "Parameters file code (C.1.2)";	// Parameters file code (C.1.2)
 case 0x600103ff: return "date of manufacture (C.1.3)";	// date of manufacture (C.1.3)
 case 0x600104ff: return "Parameters check sum (C.1.4)";	// Parameters check sum (C.1.4)
@@ -276,15 +276,24 @@ case 0x100605700ff: return "Active tariff";	// Active tariff
 case 0x100606009ff: return "Fraud flag";	// Fraud flag
 case 0x101000402ff: return "Current transformer ratio (L&G)";	// Current transformer ratio (L&G)
 case 0x101000403ff: return "Voltage transformer ratio (L&G)";	// Voltage transformer ratio (L&G)
+case 0x101011d00ff: return "Load profile (+A) Active energy import";	// Load profile (+A) Active energy import
+case 0x101021d00ff: return "Load profile (-A) Active energy export";	// Load profile (-A) Active energy export
+case 0x101051d00ff: return "Load profile Reactive Q1";	// Load profile Reactive Q1
+case 0x101061d00ff: return "Load profile Reactive Q2";	// Load profile Reactive Q2
+case 0x101071d00ff: return "Load profile Reactive Q3";	// Load profile Reactive Q3
+case 0x101081d00ff: return "Load profile Reactive Q4";	// Load profile Reactive Q4
 case 0x101621700ff: return "Power threshold (D.23.0)";	// Power threshold (D.23.0)
 case 0x40000010aff: return "Local date at set date";	// Local date at set date
 case 0x400000901ff: return "Current time at time of transmission";	// Current time at time of transmission
 case 0x400000902ff: return "Current date at time of transmission";	// Current date at time of transmission
 case 0x400010001ff: return "Unrated integral, current value";	// Unrated integral, current value
 case 0x400010200ff: return "Unrated integral, set date value";	// Unrated integral, set date value
+case 0x501011d00ff: return "Load profile Cold";	// Load profile Cold
 case 0x600000800ff: return "Power (energy flow) (P ), average, current value";	// Power (energy flow) (P ), average, current value
 case 0x600010000ff: return "Energy (A), total, current value";	// Energy (A), total, current value
 case 0x600010200ff: return "Energy (A), total, set date value";	// Energy (A), total, set date value
+case 0x601011d00ff: return "Load profile Heat";	// Load profile Heat
+case 0x6011f1d00ff: return "Load profile Heat (+E) Energy output";	// Load profile Heat (+E) Energy output
 case 0x70000081cff: return "Averaging duration for actual flow rate value";	// Averaging duration for actual flow rate value
 case 0x700002a02ff: return "defined Pressure, absolute, at base conditions";	// defined Pressure, absolute, at base conditions
 case 0x700030000ff: return "Volume (meter), ";	// Volume (meter), 
@@ -293,9 +302,12 @@ case 0x700030200ff: return "Volume (meter), base conditions (Vb), forward, absol
 case 0x7002b0f00ff: return "Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval ";	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
 case 0x7002b1000ff: return "Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval";	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
 case 0x7002b1100ff: return "Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval";	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
+case 0x7010b1b00ff: return "Load profile (+Vb) Operating volume Uninterrupted delivery";	// Load profile (+Vb) Operating volume Uninterrupted delivery
 case 0x800010000ff: return "Volume (V), accumulated, total, current value";	// Volume (V), accumulated, total, current value
 case 0x800010200ff: return "Volume (V), accumulated, total, due date value";	// Volume (V), accumulated, total, due date value
 case 0x800020000ff: return "Flow rate, average (Va/t), current value ";	// Flow rate, average (Va/t), current value 
+case 0x801021b00ff: return "Load profile (+Vol) Volume output";	// Load profile (+Vol) Volume output
+case 0x901011d00ff: return "Load profile Hot Water";	// Load profile Hot Water
 case 0x810000090b00: return "actSensorTime - current UTC time";	// actSensorTime - current UTC time
 case 0x810000090b01: return "offset to actual time zone in minutes (-720 .. +720)";	// offset to actual time zone in minutes (-720 .. +720)
 case 0x810060050000: return "";

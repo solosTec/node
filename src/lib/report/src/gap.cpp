@@ -130,6 +130,9 @@ namespace smf {
         }
 
         void generate_report(std::ofstream &ofs, cyng::obis profile, cyng::date const &d, readout_t const &data) {
+            //
+            //  Returns always a full day.
+            //
             auto const [start, end] = sml::to_index_range(d, profile);
             BOOST_ASSERT(start <= end);
             std::cout << "> generate report for " << data.size() << " meters from " << start << " = "

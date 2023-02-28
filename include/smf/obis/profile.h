@@ -64,9 +64,9 @@ namespace smf {
 
         /**
          * Calculate next time point to push data for specified profile.
-         *
+         * Still used in segw - ipt_push.cpp
          */
-        std::chrono::system_clock::time_point
+        [[deprecated]] std::chrono::system_clock::time_point
         next(std::chrono::seconds interval, cyng::obis profile, std::chrono::system_clock::time_point);
 
         /**
@@ -76,7 +76,9 @@ namespace smf {
 
         /**
          * Produce a pair of time slots that represents the beginning and the and of a readout period
-         * of the given profile for this time stamp
+         * of the given profile for this time stamp.
+         *
+         * @return always a full day. Other time ranges are not supported yet.
          */
         std::pair<std::int64_t, std::int64_t> to_index_range(cyng::date, cyng::obis profile);
 
@@ -94,14 +96,13 @@ namespace smf {
          * @return if true a new report has to be generated
          */
         bool is_new_reporting_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next);
-        bool is_new_feed_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next);
 
         /**
          * Each profile has a specific count of entries in a time span. e.g. a 15 minutes report has 96 entries
          * a day.
          * Doesn't work for profiles with a variable time span.
          */
-        std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours);
+        // std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours);
 
     } // namespace sml
 
