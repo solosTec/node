@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(transpiler) {
                                        0x15, 0x3b, 0x02, 0x29, 0x80, 0x09, 0x35, 0x33, 0x32, 0x36, 0x31, 0x31, 0x30, 0x31, 0x0a,
                                        0x01, 0xe6, 0x1e, 0x57, 0x14, 0x06, 0x21, 0x36, 0x03, 0x01, 0x01, 0x63, 0x03, 0x96, 0x00});
 
-        auto [channel, source, status, block, data] = smf::ipt::tp_req_pushdata_transfer(std::move(body));
+        auto [ok, channel, source, status, block, data] = smf::ipt::tp_req_pushdata_transfer(std::move(body));
         BOOST_REQUIRE_EQUAL(channel, 3);
         BOOST_REQUIRE_EQUAL(source, 6);
         BOOST_REQUIRE_EQUAL(status, 193); //  0xc1
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(transpiler) {
     }
     {
         auto body = cyng::make_buffer({100, 108, 109, 115, 64, 115, 116, 111, 114, 101, 0, 0, 0, 0, 0, 30, 0});
-        auto const [target, account, msisdn, version, id, timeout] = smf::ipt::tp_req_open_push_channel(std::move(body));
+        auto const [ok, target, account, msisdn, version, id, timeout] = smf::ipt::tp_req_open_push_channel(std::move(body));
         BOOST_REQUIRE_EQUAL(target, "dlms@store");
     }
 }

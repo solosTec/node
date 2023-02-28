@@ -191,7 +191,7 @@ namespace smf {
 
         switch (ipt::to_code(h.command_)) {
         case ipt::code::TP_RES_PUSHDATA_TRANSFER: {
-            auto [res, channel, source, status, block] = ipt::tp_res_pushdata_transfer(std::move(body));
+            auto [ok, res, channel, source, status, block] = ipt::tp_res_pushdata_transfer(std::move(body));
             if (ipt::tp_res_pushdata_transfer_policy::is_success(res)) {
                 CYNG_LOG_TRACE(
                     logger_,

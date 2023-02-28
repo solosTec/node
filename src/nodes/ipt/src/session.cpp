@@ -26,14 +26,14 @@
 
 #include <iostream>
 
-#ifdef _DEBUG_IPT
 #include <cyng/io/hex_dump.hpp>
 #include <cyng/io/serialize.h>
 #include <iostream>
+#include <sstream>
+#ifdef _DEBUG_IPT
 #include <smf/obis/db.h>
 #include <smf/obis/list.h>
 #include <smf/sml/reader.h>
-#include <sstream>
 #endif
 
 namespace smf {
@@ -342,9 +342,20 @@ namespace smf {
         case ipt::code::CTRL_REQ_LOGIN_PUBLIC:
             if (cluster_bus_.is_connected()) {
                 std::string pwd;
-                std::tie(this->name_, pwd) = ipt::ctrl_req_login_public(std::move(body));
-                CYNG_LOG_INFO(logger_, "[ipt] public login: " << name_ << ':' << pwd);
-                cluster_bus_.pty_login(name_, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
+                bool ok = false;
+                std::tie(ok, this->name_, pwd) = ipt::ctrl_req_login_public(std::move(body));
+                if (ok) {
+                    CYNG_LOG_INFO(logger_, "[ipt] public login: " << name_ << ':' << pwd);
+                    cluster_bus_.pty_login(name_, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
+                } else {
+                    CYNG_LOG_ERROR(logger_, "[ipt] invalid public login request");
+
+                    std::stringstream ss;
+                    cyng::io::hex_dump<8> hd;
+                    hd(ss, body.begin(), body.end());
+                    auto const dmp = ss.str();
+                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- public login request:\n" << dmp);
+                }
             } else {
                 CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
                 ipt_send(std::bind(
@@ -355,11 +366,22 @@ namespace smf {
             if (cluster_bus_.is_connected()) {
                 std::string pwd;
                 ipt::scramble_key sk;
-                std::tie(this->name_, pwd, sk) = ipt::ctrl_req_login_scrambled(std::move(body));
-                CYNG_LOG_INFO(logger_, "[ipt] scrambled login: " << name_ << ':' << pwd << ", sk = " << ipt::to_string(sk));
-                parser_.set_sk(sk);
-                serializer_.set_sk(sk);
-                cluster_bus_.pty_login(name_, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
+                bool ok = false;
+                std::tie(ok, this->name_, pwd, sk) = ipt::ctrl_req_login_scrambled(std::move(body));
+                if (ok) {
+                    CYNG_LOG_INFO(logger_, "[ipt] scrambled login: " << name_ << ':' << pwd << ", sk = " << ipt::to_string(sk));
+                    parser_.set_sk(sk);
+                    serializer_.set_sk(sk);
+                    cluster_bus_.pty_login(name_, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
+                } else {
+                    CYNG_LOG_ERROR(logger_, "[ipt] invalid scrambled login request");
+
+                    std::stringstream ss;
+                    cyng::io::hex_dump<8> hd;
+                    hd(ss, body.begin(), body.end());
+                    auto const dmp = ss.str();
+                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- scrambled login request:\n" << dmp);
+                }
             } else {
                 CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
                 ipt_send(std::bind(
@@ -370,8 +392,18 @@ namespace smf {
         case ipt::code::APP_RES_DEVICE_IDENTIFIER: update_device_identifier(ipt::app_res_device_identifier(std::move(body))); break;
         case ipt::code::CTRL_REQ_REGISTER_TARGET:
             if (cluster_bus_.is_connected()) {
-                auto const [name, paket_size, window_size] = ipt::ctrl_req_register_target(std::move(body));
-                register_target(name, paket_size, window_size, h.sequence_);
+                auto const [ok, name, paket_size, window_size] = ipt::ctrl_req_register_target(std::move(body));
+                if (ok) {
+                    register_target(name, paket_size, window_size, h.sequence_);
+                } else {
+                    CYNG_LOG_ERROR(logger_, "[ipt] invalid register request");
+
+                    std::stringstream ss;
+                    cyng::io::hex_dump<8> hd;
+                    hd(ss, body.begin(), body.end());
+                    auto const dmp = ss.str();
+                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- register target request:\n" << dmp);
+                }
             }
             break;
         case ipt::code::CTRL_REQ_DEREGISTER_TARGET:
@@ -382,8 +414,18 @@ namespace smf {
             break;
         case ipt::code::TP_REQ_OPEN_PUSH_CHANNEL:
             if (cluster_bus_.is_connected()) {
-                auto const [target, account, msisdn, version, id, timeout] = ipt::tp_req_open_push_channel(std::move(body));
-                open_push_channel(target, account, msisdn, version, id, timeout, h.sequence_);
+                auto const [ok, target, account, msisdn, version, id, timeout] = ipt::tp_req_open_push_channel(std::move(body));
+                if (ok) {
+                    open_push_channel(target, account, msisdn, version, id, timeout, h.sequence_);
+                } else {
+                    CYNG_LOG_ERROR(logger_, "[ipt] invalid open push channel request");
+
+                    std::stringstream ss;
+                    cyng::io::hex_dump<8> hd;
+                    hd(ss, body.begin(), body.end());
+                    auto const dmp = ss.str();
+                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- open push channel:\n" << dmp);
+                }
             }
             break;
         case ipt::code::TP_REQ_CLOSE_PUSH_CHANNEL:
@@ -394,17 +436,18 @@ namespace smf {
             break;
         case ipt::code::TP_REQ_PUSHDATA_TRANSFER:
             if (cluster_bus_.is_connected()) {
-#ifdef __DEBUG_IPT
-                {
+                auto const [ok, channel, source, status, block, data] = ipt::tp_req_pushdata_transfer(std::move(body));
+                if (ok) {
+                    pushdata_transfer(channel, source, status, block, data, h.sequence_);
+                } else {
+                    CYNG_LOG_ERROR(logger_, "[ipt] invalid open push channel request");
+
                     std::stringstream ss;
                     cyng::io::hex_dump<8> hd;
                     hd(ss, body.begin(), body.end());
                     auto const dmp = ss.str();
-                    CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] <-- incoming push data:\n" << dmp);
+                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- push data transfer:\n" << dmp);
                 }
-#endif
-                auto const [channel, source, status, block, data] = ipt::tp_req_pushdata_transfer(std::move(body));
-                pushdata_transfer(channel, source, status, block, data, h.sequence_);
             }
             break;
         case ipt::code::TP_REQ_OPEN_CONNECTION:
@@ -466,7 +509,7 @@ namespace smf {
                     CYNG_LOG_ERROR(
                         logger_, "[ipt] invalid response open push channel - only " << body.size() << " bytes available");
                 } else {
-                    auto const [res, channel, source, ps, ws, status, count] = ipt::tp_res_open_push_channel(std::move(body));
+                    auto const [ok, res, channel, source, ps, ws, status, count] = ipt::tp_res_open_push_channel(std::move(body));
                     CYNG_LOG_WARNING(
                         logger_,
                         "[ipt] response open push channel " << channel << ':' << source << ": "

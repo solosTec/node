@@ -243,7 +243,7 @@ namespace smf {
         }
 
         void bus::res_login(cyng::buffer_t &&data) {
-            auto const [res, watchdog, redirect] = ctrl_res_login(std::move(data));
+            auto const [ok, res, watchdog, redirect] = ctrl_res_login(std::move(data));
             auto r = make_login_response(res);
             if (r.is_success()) {
 
@@ -365,7 +365,8 @@ namespace smf {
             //
             //	read message body (TP_RES_OPEN_CONNECTION)
             //
-            auto const [res, channel, source, packet_size, window_size, status, count] = tp_res_open_push_channel(std::move(body));
+            auto const [ok, res, channel, source, packet_size, window_size, status, count] =
+                tp_res_open_push_channel(std::move(body));
 
             BOOST_ASSERT(client_.get_channel());
             cyng::exec(client_.get_channel(), [this, h, res, channel, source, packet_size, window_size, status, count]() {
@@ -421,7 +422,7 @@ namespace smf {
             //	read message body (TP_RES_CLOSE_PUSH_CHANNEL)
             //
             // std::tuple<std::uint8_t, std::uint32_t>
-            auto const [res, channel] = tp_res_close_push_channel(std::move(body));
+            auto const [ok, res, channel] = tp_res_close_push_channel(std::move(body));
 
             BOOST_ASSERT(client_.get_channel());
 
@@ -475,7 +476,7 @@ namespace smf {
             //
             //	read message body
             //
-            auto const [res, channel] = ctrl_res_register_target(std::move(body));
+            auto const [ok, res, channel] = ctrl_res_register_target(std::move(body));
 
             //
             //	sync with strand
@@ -531,7 +532,7 @@ namespace smf {
             /**
              * @return channel, source, status, block and data
              */
-            auto [channel, source, status, block, data] = tp_req_pushdata_transfer(std::move(body));
+            auto [ok, channel, source, status, block, data] = tp_req_pushdata_transfer(std::move(body));
             CYNG_LOG_TRACE(
                 logger_,
                 "[ipt] cmd " << ipt::command_name(h.command_) << " " << channel << ':' << source << " - " << data.size()

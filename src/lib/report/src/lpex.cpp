@@ -37,7 +37,7 @@ namespace smf {
         cyng::db::transaction trx(db);
 
         //
-        //  loop
+        //  get start time
         //
         auto const start = (now - backtrack).get_start_of_day();
 #ifdef _DEBUG
@@ -54,6 +54,9 @@ namespace smf {
         //
         cyng::date prev = start;
 
+        //
+        // enter loop
+        //
         loop_readout_data(
             db,
             profile,

@@ -79,19 +79,31 @@ namespace smf {
 
         } // namespace
 
-        template <typename... Args> auto read(cyng::buffer_t &&data) -> std::tuple<std::decay_t<Args>...> {
+        template <typename... Args> auto read(cyng::buffer_t &&data) -> std::tuple<bool, std::decay_t<Args>...> {
             std::tuple<std::decay_t<Args>...> r;
 
             constexpr std::size_t upper_bound = sizeof...(Args) - 1;
 
             auto const size = read_impl<upper_bound, std::decay_t<Args>...>::convert(data, r, 0);
             BOOST_ASSERT(size == data.size());
-            return r;
+            return std::tuple_cat(std::make_tuple(size == data.size()), r);
+            // return r;
         }
 
-        std::tuple<response_t, std::uint16_t, std::string> ctrl_res_login(cyng::buffer_t &&data);
-        std::tuple<std::string, std::string> ctrl_req_login_public(cyng::buffer_t &&data);
-        std::tuple<std::string, std::string, scramble_key> ctrl_req_login_scrambled(cyng::buffer_t &&data);
+        // template <typename... Args> auto read_checked(cyng::buffer_t &&data) -> std::tuple<bool, std::decay_t<Args>...> {
+        //     std::tuple<std::decay_t<Args>...> r;
+
+        //    constexpr std::size_t upper_bound = sizeof...(Args) - 1;
+
+        //    auto const size = read_impl<upper_bound, std::decay_t<Args>...>::convert(data, r, 0);
+        //    BOOST_ASSERT(size == data.size());
+        //    return std::tuple_cat(std::make_tuple(size == data.size()), r);
+        //    // return r;
+        //}
+
+        std::tuple<bool, response_t, std::uint16_t, std::string> ctrl_res_login(cyng::buffer_t &&data);
+        std::tuple<bool, std::string, std::string> ctrl_req_login_public(cyng::buffer_t &&data);
+        std::tuple<bool, std::string, std::string, scramble_key> ctrl_req_login_scrambled(cyng::buffer_t &&data);
 
         std::string app_res_software_version(cyng::buffer_t &&data);
         std::string app_res_device_identifier(cyng::buffer_t &&data);
@@ -99,42 +111,43 @@ namespace smf {
         /**
          * @return target name, packet size, windows size
          */
-        std::tuple<std::string, std::uint16_t, std::uint8_t> ctrl_req_register_target(cyng::buffer_t &&data);
+        std::tuple<bool, std::string, std::uint16_t, std::uint8_t> ctrl_req_register_target(cyng::buffer_t &&data);
         std::string ctrl_req_deregister_target(cyng::buffer_t &&data);
 
         /**
          * @return response, channel
          */
-        std::tuple<std::uint8_t, std::uint32_t> ctrl_res_register_target(cyng::buffer_t &&data);
+        std::tuple<bool, std::uint8_t, std::uint32_t> ctrl_res_register_target(cyng::buffer_t &&data);
 
         /**
          * @return target name, account, number, version, device id, timout
          */
-        std::tuple<std::string, std::string, std::string, std::string, std::string, std::uint16_t>
+        std::tuple<bool, std::string, std::string, std::string, std::string, std::string, std::uint16_t>
         tp_req_open_push_channel(cyng::buffer_t &&data);
+
         std::uint32_t ctrl_req_close_push_channel(cyng::buffer_t &&data);
 
         /**
          * @return response code, channel, source, packet size, window size, status, target count
          */
-        std::tuple<std::uint8_t, std::uint32_t, std::uint32_t, std::uint16_t, std::uint8_t, std::uint8_t, std::uint32_t>
+        std::tuple<bool, std::uint8_t, std::uint32_t, std::uint32_t, std::uint16_t, std::uint8_t, std::uint8_t, std::uint32_t>
         tp_res_open_push_channel(cyng::buffer_t &&data);
 
         /**
          * @return response code, channel
          */
-        std::tuple<std::uint8_t, std::uint32_t> tp_res_close_push_channel(cyng::buffer_t &&data);
+        std::tuple<bool, std::uint8_t, std::uint32_t> tp_res_close_push_channel(cyng::buffer_t &&data);
 
         /**
          * @return channel, source, status, block and data
          */
-        std::tuple<std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t, cyng::buffer_t>
+        std::tuple<bool, std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t, cyng::buffer_t>
         tp_req_pushdata_transfer(cyng::buffer_t &&data);
 
         /**
          * @return response code, channel, source, status, block
          */
-        std::tuple<std::uint8_t, std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t>
+        std::tuple<bool, std::uint8_t, std::uint32_t, std::uint32_t, std::uint8_t, std::uint8_t>
         tp_res_pushdata_transfer(cyng::buffer_t &&data);
 
         /**

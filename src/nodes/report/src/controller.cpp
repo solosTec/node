@@ -343,10 +343,13 @@ namespace smf {
                     auto const root = reader_report.get("path", cwd.string());
 
                     if (!std::filesystem::exists(root)) {
-                        std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                        std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists"
+                                  << std::endl;
                         std::error_code ec;
                         if (!std::filesystem::create_directories(root, ec)) {
-                            std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                            std::cerr << "***error: cannot create path [" << root << "]: " << ec.message() << std::endl;
+                        } else {
+                            std::cout << "***info: path [" << root << "] created " << std::endl;
                         }
                     }
 
@@ -414,10 +417,13 @@ namespace smf {
                         auto const root = reader_report.get("path", cwd.string());
 
                         if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists"
+                                      << std::endl;
                             std::error_code ec;
                             if (!std::filesystem::create_directories(root, ec)) {
-                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message() << std::endl;
+                            } else {
+                                std::cout << "***info: path [" << root << "] created " << std::endl;
                             }
                         }
 
@@ -473,10 +479,13 @@ namespace smf {
                         auto const root = reader_report.get("path", cwd.string());
 
                         if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists"
+                                      << std::endl;
                             std::error_code ec;
                             if (!std::filesystem::create_directories(root, ec)) {
-                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message() << std::endl;
+                            } else {
+                                std::cout << "***info: path [" << root << "] created " << std::endl;
                             }
                         }
                         auto const backtrack = cyng::to_hours(reader_report.get("max.age", "40:00:00"));
@@ -547,10 +556,13 @@ namespace smf {
                         auto const root = reader_report.get("path", cwd.string());
 
                         if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists";
+                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists"
+                                      << std::endl;
                             std::error_code ec;
                             if (!std::filesystem::create_directories(root, ec)) {
-                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message() << std::endl;
+                            } else {
+                                std::cout << "***info: path [" << root << "] created " << std::endl;
                             }
                         }
 

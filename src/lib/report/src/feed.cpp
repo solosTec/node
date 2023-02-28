@@ -37,9 +37,10 @@ namespace smf {
         cyng::db::transaction trx(db);
 
         //
-        //  loop
+        // We need two time units of lead.
         //
-        auto const start = (now - backtrack).get_start_of_day();
+        auto const start = feed::calculate_start_time(now, backtrack, profile);
+
 #ifdef _DEBUG
         std::cout << "start at: " << cyng::as_string(start) << std::endl;
 #endif
@@ -54,6 +55,11 @@ namespace smf {
         //
         cyng::date prev = start;
 
+        //
+        // Enter loop
+        // We need at least 2 values to calculate a value advance, because this is the difference
+        // of 2 values. Addionally these 2 values should follow each other directly.
+        //
         loop_readout_data(
             db,
             profile,
@@ -355,6 +361,25 @@ namespace smf {
             }
             // [12] Kennzahl (OBIS)
             // [13] Einheit
+        }
+
+        cyng::date calculate_start_time(cyng::date const &now, std::chrono::hours const &backtrack, cyng::obis const &profile) {
+
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE:
+            case CODE_PROFILE_15_MINUTE:
+            case CODE_PROFILE_60_MINUTE:
+            case CODE_PROFILE_24_HOUR: return (now - backtrack).get_start_of_day() - (2 * sml::interval_time(now, profile));
+
+            case CODE_PROFILE_1_MONTH: break;
+            case CODE_PROFILE_1_YEAR: break;
+            default:
+                //  error
+                BOOST_ASSERT_MSG(false, "not implemented yet");
+                break;
+            }
+
+            return (now - backtrack).get_start_of_day();
         }
 
     } // namespace feed

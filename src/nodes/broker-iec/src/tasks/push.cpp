@@ -98,27 +98,31 @@ namespace smf {
 
         switch (ipt::to_code(h.command_)) {
         case ipt::code::TP_RES_PUSHDATA_TRANSFER: {
-            auto [res, channel, source, status, block] = ipt::tp_res_pushdata_transfer(std::move(body));
-            if (ipt::tp_res_pushdata_transfer_policy::is_success(res)) {
-                CYNG_LOG_TRACE(
-                    logger_,
-                    "[iec.push] transfer [" << channel << "," << source
-                                            << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
+            auto [ok, res, channel, source, status, block] = ipt::tp_res_pushdata_transfer(std::move(body));
+            if (ok) {
+                if (ipt::tp_res_pushdata_transfer_policy::is_success(res)) {
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[iec.push] transfer [" << channel << "," << source
+                                                << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
 
+                } else {
+                    CYNG_LOG_WARNING(
+                        logger_,
+                        "[iec.push] transfer [" << channel << "," << source
+                                                << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
+                    //  close/reopen channel
+
+                    // if (auto sp = channel_.lock(); sp) {
+                    //     CYNG_LOG_INFO(logger_, "[push] reopen channels in one minute");
+                    //     sp->suspend(std::chrono::minutes(1), "open.channels");
+                    // }
+                    // else {
+                    //     CYNG_LOG_ERROR(logger_, "[push] channel invalid - cannot reopen channels");
+                    // }
+                }
             } else {
-                CYNG_LOG_WARNING(
-                    logger_,
-                    "[iec.push] transfer [" << channel << "," << source
-                                            << "]: " << ipt::tp_res_pushdata_transfer_policy::get_response_name(res));
-                //  close/reopen channel
-
-                // if (auto sp = channel_.lock(); sp) {
-                //     CYNG_LOG_INFO(logger_, "[push] reopen channels in one minute");
-                //     sp->suspend(std::chrono::minutes(1), "open.channels");
-                // }
-                // else {
-                //     CYNG_LOG_ERROR(logger_, "[push] channel invalid - cannot reopen channels");
-                // }
+                CYNG_LOG_ERROR(logger_, "[iec.push] invalid push data transfer response");
             }
         } break;
 

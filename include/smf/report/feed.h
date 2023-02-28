@@ -78,6 +78,11 @@ namespace smf {
             data::data_set_t const &data,
             bool customer);
 
+        /**
+         * We need two time units of lead.
+         */
+        cyng::date calculate_start_time(cyng::date const &now, std::chrono::hours const &backtrack, cyng::obis const &profile);
+
     } // namespace feed
 
 } // namespace smf

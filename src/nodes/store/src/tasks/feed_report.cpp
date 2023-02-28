@@ -52,7 +52,7 @@ namespace smf {
         }
     }
 
-    void feed_report::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop LPEx report task"); }
+    void feed_report::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop feed report task"); }
     void feed_report::run() {
 
         //

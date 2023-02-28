@@ -27,7 +27,6 @@ namespace smf {
         std::chrono::hours backtrack,
         std::string prefix,
         bool print_version,
-        //bool separated,
         bool debug_mode,
         bool customer)
         : sigs_{
@@ -44,7 +43,6 @@ namespace smf {
         , backtrack_(backtrack)
         , prefix_(prefix)
         , print_version_(print_version)
-        //, separated_(separated)
         , debug_mode_(debug_mode)
         , customer_(customer) {
 
