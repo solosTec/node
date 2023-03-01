@@ -302,11 +302,11 @@ case 0x700030200ff: return "Volume (meter), base conditions (Vb), forward, absol
 case 0x7002b0f00ff: return "Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval ";	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
 case 0x7002b1000ff: return "Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval";	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
 case 0x7002b1100ff: return "Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval";	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
-case 0x7010b1b00ff: return "Load profile (+Vb) Operating volume Uninterrupted delivery";	// Load profile (+Vb) Operating volume Uninterrupted delivery
+case 0x7010b1d00ff: return "Load profile (+Vb) Operating volume Uninterrupted delivery";	// Load profile (+Vb) Operating volume Uninterrupted delivery
 case 0x800010000ff: return "Volume (V), accumulated, total, current value";	// Volume (V), accumulated, total, current value
 case 0x800010200ff: return "Volume (V), accumulated, total, due date value";	// Volume (V), accumulated, total, due date value
 case 0x800020000ff: return "Flow rate, average (Va/t), current value ";	// Flow rate, average (Va/t), current value 
-case 0x801021b00ff: return "Load profile (+Vol) Volume output";	// Load profile (+Vol) Volume output
+case 0x801011d00ff: return "Load profile (+Vol) Volume output";	// Load profile (+Vol) Volume output
 case 0x901011d00ff: return "Load profile Hot Water";	// Load profile Hot Water
 case 0x810000090b00: return "actSensorTime - current UTC time";	// actSensorTime - current UTC time
 case 0x810000090b01: return "offset to actual time zone in minutes (-720 .. +720)";	// offset to actual time zone in minutes (-720 .. +720)

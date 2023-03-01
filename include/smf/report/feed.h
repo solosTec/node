@@ -89,6 +89,11 @@ namespace smf {
          */
         std::string calculate_advance(sml_data const &, sml_data const &);
 
+        /**
+         * Check if obis code is convertible and then return true with the profile code
+         */
+        std::pair<cyng::obis, bool> convert_obis(cyng::obis const &);
+
     } // namespace feed
 
 } // namespace smf

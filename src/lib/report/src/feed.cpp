@@ -200,11 +200,11 @@ namespace smf {
                 std::cout << std::endl;
 #endif
                 for (auto const &[reg, values] : data.second) {
-                    //  ToDo: select and convert profiles
-                    // if (reg == OBIS_REG_POS_ACT_E) {
-                    //     //  -> 01, 01, 02, 1D, 00, FF
-                    // }
-                    if (!values.empty()) {
+                    //
+                    //  only profiles (Lastgänge) listed
+                    //
+                    auto const [reg_profile, ok] = convert_obis(reg);
+                    if (!values.empty() && ok) {
 
                         //
                         //  values at the beginning of the line
@@ -225,7 +225,7 @@ namespace smf {
                         //
                         //  [11] register (Kennzahl)
                         //
-                        obis::to_decimal(ofs, reg);
+                        obis::to_decimal(ofs, reg_profile);
                         ofs << ";";
 
                         //
@@ -451,6 +451,24 @@ namespace smf {
             } catch (std::invalid_argument const &) {
             }
             return "0.0";
+        }
+
+        std::pair<cyng::obis, bool> convert_obis(cyng::obis const &code) {
+            if (code == OBIS_REG_NEG_ACT_E) {
+                return {OBIS_PROFILE_POWER_NEG_ACTIVE, true};
+            } else if (code == OBIS_REG_POS_ACT_E) {
+                return {OBIS_PROFILE_POWER_POS_ACTIVE, true};
+            } else if (code == OBIS_REG_HEAT_CURRENT) {
+                //  Heat Energy (A), total, current value
+                return {OBIS_PROFILE_HEAT_POS_OUTPUT, true};
+            } else if (code == OBIS_WATER_CURRENT) {
+                //  Water Volume (V), accumulated, total, current value
+                return {OBIS_PROFILE_WATER_POS_OUTPUT, true};
+            } else if (code == OBIS_REG_GAS_MC_1_0) {
+                //  Gas Volume (meter), temperature converted (Vtc), forward, absolute, current value
+                return {OBIS_PROFILE_GAS_POS_OUTPUT, true};
+            }
+            return {code, false};
         }
 
     } // namespace feed

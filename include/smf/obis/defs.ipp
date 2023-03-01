@@ -1,4 +1,4 @@
-	// generated at 2023-02-28 23:04:06
+	// generated at 2023-03-01 09:07:58
 	// 617 OBIS codes (3702 Bytes)
 
 	// #1
@@ -317,13 +317,13 @@
 	OBIS_CODE_DEFINITION(07, 00, 2b, 0f, 00, ff, REG_GAS_FR_15);	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
 	OBIS_CODE_DEFINITION(07, 00, 2b, 10, 00, ff, REG_GAS_FR_16);	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
 	OBIS_CODE_DEFINITION(07, 00, 2b, 11, 00, ff, REG_GAS_FR_17);	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
-	OBIS_CODE_DEFINITION(07, 01, 0b, 1b, 00, ff, PROFILE_GAS_POS_OUTPUT);	// d - Load profile (+Vb) Operating volume Uninterrupted delivery
+	OBIS_CODE_DEFINITION(07, 01, 0b, 1d, 00, ff, PROFILE_GAS_POS_OUTPUT);	// d - Load profile (+Vb) Operating volume Uninterrupted delivery
 	// #306
 	// Water (cold)
 	OBIS_CODE_DEFINITION(08, 00, 01, 00, 00, ff, WATER_CURRENT);	// Volume (V), accumulated, total, current value
 	OBIS_CODE_DEFINITION(08, 00, 01, 02, 00, ff, WATER_DATE);	// Volume (V), accumulated, total, due date value
 	OBIS_CODE_DEFINITION(08, 00, 02, 00, 00, ff, WATER_FLOW_RATE);	// Flow rate, average (Va/t), current value 
-	OBIS_CODE_DEFINITION(08, 01, 02, 1b, 00, ff, PROFILE_WATER_POS_OUTPUT);	// d - Load profile (+Vol) Volume output
+	OBIS_CODE_DEFINITION(08, 01, 01, 1d, 00, ff, PROFILE_WATER_POS_OUTPUT);	// d - Load profile (+Vol) Volume output
 	// #310
 	// Water (hot)
 	OBIS_CODE_DEFINITION(09, 01, 01, 1d, 00, ff, PROFILE_HOT_WATER);	// d - Load profile Hot Water

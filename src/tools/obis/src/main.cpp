@@ -518,7 +518,7 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(06, 01, 1F, 1D, 00, FF), {"PROFILE_HEAT_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile Heat (+E) Energy output"}},
 
         //  -- Group 7 Gas
-        {DEFINE_OBIS(07, 01, 0B, 1B, 00, FF),
+        {DEFINE_OBIS(07, 01, 0B, 1D, 00, FF),
          {"PROFILE_GAS_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile (+Vb) Operating volume Uninterrupted delivery"}},
 
         //
@@ -526,7 +526,7 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(08, 00, 01, 00, 00, FF), {"WATER_CURRENT", cyng::TC_NULL, "Volume (V), accumulated, total, current value"}},
         {DEFINE_OBIS(08, 00, 01, 02, 00, FF), {"WATER_DATE", cyng::TC_NULL, "Volume (V), accumulated, total, due date value"}},
         {DEFINE_OBIS(08, 00, 02, 00, 00, FF), {"WATER_FLOW_RATE", cyng::TC_NULL, "Flow rate, average (Va/t), current value "}},
-        {DEFINE_OBIS(08, 01, 02, 1B, 00, FF), {"PROFILE_WATER_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile (+Vol) Volume output"}},
+        {DEFINE_OBIS(08, 01, 01, 1D, 00, FF), {"PROFILE_WATER_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile (+Vol) Volume output"}},
         //
 
         //  -- Group 9 Hot Water

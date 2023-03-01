@@ -302,11 +302,11 @@ case 0x700030200ff: return "REG_GAS_MC_2_0";	// Volume (meter), base conditions 
 case 0x7002b0f00ff: return "REG_GAS_FR_15";	// Flow rate at measuring conditions, averaging period 1 (default period = 5 min), current interval 
 case 0x7002b1000ff: return "REG_GAS_FR_16";	// Flow rate, temperature converted, averaging period 1(default period = 5 min), current interval
 case 0x7002b1100ff: return "REG_GAS_FR_17";	// Flow rate at base conditions, averaging period 1 (default period = 5 min), current interval
-case 0x7010b1b00ff: return "PROFILE_GAS_POS_OUTPUT";	// Load profile (+Vb) Operating volume Uninterrupted delivery
+case 0x7010b1d00ff: return "PROFILE_GAS_POS_OUTPUT";	// Load profile (+Vb) Operating volume Uninterrupted delivery
 case 0x800010000ff: return "WATER_CURRENT";	// Volume (V), accumulated, total, current value
 case 0x800010200ff: return "WATER_DATE";	// Volume (V), accumulated, total, due date value
 case 0x800020000ff: return "WATER_FLOW_RATE";	// Flow rate, average (Va/t), current value 
-case 0x801021b00ff: return "PROFILE_WATER_POS_OUTPUT";	// Load profile (+Vol) Volume output
+case 0x801011d00ff: return "PROFILE_WATER_POS_OUTPUT";	// Load profile (+Vol) Volume output
 case 0x901011d00ff: return "PROFILE_HOT_WATER";	// Load profile Hot Water
 case 0x810000090b00: return "ACT_SENSOR_TIME";	// actSensorTime - current UTC time
 case 0x810000090b01: return "TZ_OFFSET";	// offset to actual time zone in minutes (-720 .. +720)
