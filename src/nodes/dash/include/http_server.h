@@ -113,6 +113,7 @@ namespace smf {
         void response_subscribe_channel_gateway(ws_sptr, std::string const &, std::string const &);
         void response_subscribe_channel_meter(ws_sptr, std::string const &, std::string const &);
         void response_subscribe_channel_cfg_set_meta(ws_sptr, std::string const &, std::string const &);
+        void response_subscribe_channel_statistics(ws_sptr, std::string const &, std::string const &);
 
         void modify_request(std::string const &channel, cyng::vector_t &&key, cyng::param_map_t &&data);
 

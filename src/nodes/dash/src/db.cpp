@@ -452,8 +452,8 @@ namespace smf {
         db::rel{"gwIEC", "status.IECgw", "table.gwIEC.count"},
         db::rel{"gwwMBus", "status.wMBusgw", "table.gwwMBus.count"},
         db::rel{"cfgSetMeta", "config.cfgSetMeta", "table.cfgSetMeta.count"},
-        db::rel{"statistics", "config.statistics", "table.statistics.count"},
-        db::rel{"history", "config.history", "table.history.count"}
+        db::rel{"statistics", "monitor.statistics", "table.statistics.count"},
+        db::rel{"history", "monitor.history", "table.history.count"}
         //  don't add table "meterFull" - no syncing
     };
 

@@ -562,6 +562,8 @@ namespace smf {
             response_subscribe_channel_meter(wsp, name, table_name);
         } else if (boost::algorithm::equals(table_name, "cfgSetMeta")) {
             response_subscribe_channel_cfg_set_meta(wsp, name, table_name);
+        } else if (boost::algorithm::equals(table_name, "statistics")) {
+            response_subscribe_channel_statistics(wsp, name, table_name);
         } else {
             //
             //	Send initial data set
@@ -921,6 +923,56 @@ namespace smf {
             cyng::access::read("gateway"));
     }
 
+    void http_server::response_subscribe_channel_statistics(ws_sptr wsp, std::string const &name, std::string const &table_name) {
+        BOOST_ASSERT(boost::algorithm::equals(table_name, "statistics"));
+
+        //
+        //	Send initial data set
+        //
+        db_.cache_.access(
+            [&](cyng::table const *tbl, cyng::table const *tbl_dev) -> void {
+                //
+                //	get total record size
+                //
+                auto total_size{tbl->size()};
+                std::size_t percent{0}, idx{0};
+
+                tbl->loop([&](cyng::record &&rec, std::size_t idx) -> bool {
+                    auto const key_dev = cyng::key_generator(rec.value("tag", boost::uuids::nil_uuid()));
+                    auto const rec_dev = tbl_dev->lookup(key_dev);
+                    if (!rec_dev.empty()) {
+
+                        //
+                        //  append device name
+                        //
+                        auto name = rec_dev.value("name", "");
+                        auto enabled = rec_dev.value("enabled", false);
+                        auto tpl = rec.to_tuple(cyng::param_map_factory("name", name)("enabled", enabled));
+                        auto const str = json_insert_record(name, std::move(tpl));
+                        CYNG_LOG_DEBUG(logger_, str);
+                        wsp->push_msg(str);
+
+                    } else {
+                        CYNG_LOG_WARNING(logger_, "statistics record " << rec.key() << " has no device");
+                    }
+
+                    //
+                    //	update current index and percentage calculation
+                    //
+                    ++idx;
+                    const auto prev_percent = percent;
+                    percent = (100u * idx) / total_size;
+                    if (prev_percent != percent) {
+                        wsp->push_msg(json_load_level(name, percent));
+                    }
+
+                    return true;
+                });
+            },
+            cyng::access::read(table_name),
+            cyng::access::read("device"));
+    }
+
     void http_server::response_update_channel(ws_sptr wsp, std::string const &name) {
 
         if (boost::algorithm::starts_with(name, "sys.cpu.usage.total")) {
@@ -940,10 +992,8 @@ namespace smf {
     }
 
     void http_server::notify_remove(std::string channel, cyng::key_t key, boost::uuids::uuid tag) {
-        auto const pos = ws_map_.find(tag);
-        if (pos != ws_map_.end()) {
-            auto sp = pos->second.lock();
-            if (sp) {
+        if (auto const pos = ws_map_.find(tag); pos != ws_map_.end()) {
+            if (auto sp = pos->second.lock(); sp) {
                 sp->push_msg(json_delete_record(channel, key));
             } else {
                 //	shouldn't be necessary
@@ -954,10 +1004,8 @@ namespace smf {
     }
 
     void http_server::notify_clear(std::string channel, boost::uuids::uuid tag) {
-        auto const pos = ws_map_.find(tag);
-        if (pos != ws_map_.end()) {
-            auto sp = pos->second.lock();
-            if (sp) {
+        if (auto const pos = ws_map_.find(tag); pos != ws_map_.end()) {
+            if (auto sp = pos->second.lock(); sp) {
                 sp->push_msg(json_clear_table(channel));
             } else {
                 //	shouldn't be necessary
@@ -968,10 +1016,8 @@ namespace smf {
     }
 
     void http_server::notify_insert(std::string channel, cyng::record &&rec, boost::uuids::uuid tag) {
-        auto const pos = ws_map_.find(tag);
-        if (pos != ws_map_.end()) {
-            auto sp = pos->second.lock();
-            if (sp) {
+        if (auto const pos = ws_map_.find(tag); pos != ws_map_.end()) {
+            if (auto sp = pos->second.lock(); sp) {
                 sp->push_msg(json_insert_record(channel, rec.to_tuple()));
             } else {
                 //	shouldn't be necessary
@@ -982,10 +1028,8 @@ namespace smf {
     }
 
     void http_server::notify_update(std::string channel, cyng::key_t key, cyng::param_t const &param, boost::uuids::uuid tag) {
-        auto const pos = ws_map_.find(tag);
-        if (pos != ws_map_.end()) {
-            auto sp = pos->second.lock();
-            if (sp) {
+        if (auto const pos = ws_map_.find(tag); pos != ws_map_.end()) {
+            if (auto sp = pos->second.lock(); sp) {
                 sp->push_msg(json_update_record(channel, key, param));
             } else {
                 //	shouldn't be necessary
@@ -997,10 +1041,8 @@ namespace smf {
 
     void http_server::notify_size(std::string channel, std::size_t size, boost::uuids::uuid tag) {
 
-        auto const pos = ws_map_.find(tag);
-        if (pos != ws_map_.end()) {
-            auto sp = pos->second.lock();
-            if (sp) {
+        if (auto const pos = ws_map_.find(tag); pos != ws_map_.end()) {
+            if (auto sp = pos->second.lock(); sp) {
                 auto const str = json_update_channel(channel, size);
                 sp->push_msg(str);
             }

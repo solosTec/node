@@ -501,16 +501,22 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(01, 01, 00, 04, 02, ff), {"CURRENT_TRANSFORMER_RATIO", cyng::TC_NULL, "Current transformer ratio (L&G)"}},
         {DEFINE_OBIS(01, 01, 00, 04, 03, ff), {"VOLTAGE_TRANSFORMER_RATIO", cyng::TC_NULL, "Voltage transformer ratio (L&G)"}},
 
+        //  0x06 == maximum
+        //  0x08 == time integral 1 (Zählerstände)
+        //  0x09 == time integral 2 (Vorschübe)
+        //  0x1D == time integral 5 (Lastgang)
         {DEFINE_OBIS(01, 01, 01, 1D, 00, FF),
          {"PROFILE_POWER_POS_ACTIVE", cyng::TC_DOUBLE, "Load profile (+A) Active energy import"}},
         {DEFINE_OBIS(01, 01, 02, 1D, 00, FF),
          {"PROFILE_POWER_NEG_ACTIVE", cyng::TC_DOUBLE, "Load profile (-A) Active energy export"}},
+        {DEFINE_OBIS(01, 01, 03, 1D, 00, FF), {"PROFILE_REACTIVE_POS", cyng::TC_DOUBLE, "Load profile (+) Reactive"}},
+        {DEFINE_OBIS(01, 01, 04, 1D, 00, FF), {"PROFILE_REACTIVE_NEG", cyng::TC_DOUBLE, "Load profile (-) Reactive"}},
         {DEFINE_OBIS(01, 01, 05, 1D, 00, FF), {"PROFILE_REACTIVE_Q1", cyng::TC_DOUBLE, "Load profile Reactive Q1"}},
         {DEFINE_OBIS(01, 01, 06, 1D, 00, FF), {"PROFILE_REACTIVE_Q2", cyng::TC_DOUBLE, "Load profile Reactive Q2"}},
         {DEFINE_OBIS(01, 01, 07, 1D, 00, FF), {"PROFILE_REACTIVE_Q3", cyng::TC_DOUBLE, "Load profile Reactive Q3"}},
         {DEFINE_OBIS(01, 01, 08, 1D, 00, FF), {"PROFILE_REACTIVE_Q4", cyng::TC_DOUBLE, "Load profile Reactive Q4"}},
 
-        //	-- Group 4 Heat COst Allocator
+        //	-- Group 4 Heat Cost Allocator
         //	-- Group 5 Cooling
         {DEFINE_OBIS(05, 01, 01, 1D, 00, FF), {"PROFILE_COLD", cyng::TC_DOUBLE, "Load profile Cold"}},
         //	-- Group 6 Heat + Combined Heat/Cooling (section Heat
@@ -518,6 +524,8 @@ int main(int argc, char **argv) {
         {DEFINE_OBIS(06, 01, 1F, 1D, 00, FF), {"PROFILE_HEAT_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile Heat (+E) Energy output"}},
 
         //  -- Group 7 Gas
+        {DEFINE_OBIS(07, 01, 01, 00, 00, 00),
+         {"REG_GAS_POS_OUTPUT", cyng::TC_DOUBLE, "Operating volume (+Vb) Operating volume Uninterrupted delivery"}},
         {DEFINE_OBIS(07, 01, 0B, 1D, 00, FF),
          {"PROFILE_GAS_POS_OUTPUT", cyng::TC_DOUBLE, "Load profile (+Vb) Operating volume Uninterrupted delivery"}},
 
