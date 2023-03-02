@@ -1438,7 +1438,7 @@ namespace smf {
                         //
                         //  forward to node/pty
                         //
-                        vm_.load(cyng::generate_forward("cluster.send.msg", peer, cyng::serialize_invoke("pty.req.stop", rtag)));
+                        vm_.load(cyng::generate_forward("cluster.send.msg", peer, cyng::serialize_forward("pty.req.stop", rtag)));
                         vm_.run();
 
                     } else {

@@ -103,6 +103,9 @@ namespace smf {
                 update_gw_online_state(rec, event_type::UPDATE);
                 update_meter_iec_online_state(rec, event_type::UPDATE);
                 update_meter_wmbus_online_state(rec, event_type::UPDATE);
+            } else if (boost::algorithm::equals(r.table_, "device")) {
+                cyng::record rec(tbl->meta(), key, data, gen);
+                update_statistics_enabled_state(rec, event_type::UPDATE);
             }
         }
         return true;
@@ -198,7 +201,6 @@ namespace smf {
                 << "config.meter"
                 << " update (#" << count << "): " << col_name << " => " << get_name(evt));
 
-        // auto const param = cyng::make_param(col_name, online ? 1 : 0);
         auto const param = cyng::make_param(col_name, calc_connection_state(evt, rec));
         for (auto pos = range.first; pos != range.second; ++pos) {
             http_server_.notify_update("config.meter", rec.key(), param, pos->second);
@@ -223,17 +225,32 @@ namespace smf {
     void notifier::update_meter_iec_online_state(cyng::record const &, event_type evt) {}
     void notifier::update_meter_wmbus_online_state(cyng::record const &, event_type evt) {}
 
+    void notifier::update_statistics_enabled_state(cyng::record const &rec, event_type evt) {
+        auto const range = db_.subscriptions_.equal_range("monitor.statistics");
+        auto const count = std::distance(range.first, range.second);
+        //	get column name
+        std::string const col_name = "enabled";
+        CYNG_LOG_INFO(
+            logger_,
+            "[channel] "
+                << "monitor.statistics"
+                << " update (#" << count << "): " << col_name << " => " << get_name(evt));
+        //
+        auto const tag = rec.value("tag", boost::uuids::nil_uuid());
+        auto const enabled = rec.value("enabled", false);
+        auto const param = cyng::make_param(col_name, enabled);
+        for (auto pos = range.first; pos != range.second; ++pos) {
+            http_server_.notify_update("monitor.statistics", rec.key(), param, pos->second);
+        }
+    }
+
     // static
     std::string notifier::get_name(event_type evt) {
         switch (evt) {
-        case event_type::INSERT:
-            return "INSERT";
-        case event_type::UPDATE:
-            return "UPDATE";
-        case event_type::REMOVE:
-            return "REMOVE";
-        default:
-            break;
+        case event_type::INSERT: return "INSERT";
+        case event_type::UPDATE: return "UPDATE";
+        case event_type::REMOVE: return "REMOVE";
+        default: break;
         }
         return "UNKNOWN";
     }
@@ -241,12 +258,9 @@ namespace smf {
     // static
     std::uint32_t notifier::calc_connection_state(event_type evt, cyng::record const &rec) {
         switch (evt) {
-        case event_type::INSERT:
-            return 1;
-        case event_type::REMOVE:
-            return 0;
-        default:
-            break;
+        case event_type::INSERT: return 1;
+        case event_type::REMOVE: return 0;
+        default: break;
         }
 
         auto const tag = rec.value("tag", boost::uuids::nil_uuid());

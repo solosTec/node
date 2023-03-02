@@ -123,6 +123,8 @@ namespace smf {
 
         void stop_request(std::string const &channel, cyng::vector_t &&key);
 
+        void reset_request(std::string const &channel, cyng::vector_t &&key);
+
         void query_request(std::string const &channel, cyng::vector_t &&key, ws_sptr);
 
         void config_request(

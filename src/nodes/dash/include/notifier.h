@@ -64,6 +64,7 @@ namespace smf {
         void update_gw_online_state(cyng::record const &, event_type);
         void update_meter_iec_online_state(cyng::record const &, event_type);
         void update_meter_wmbus_online_state(cyng::record const &, event_type);
+        void update_statistics_enabled_state(cyng::record const &, event_type);
 
         static std::string get_name(event_type);
         static std::uint32_t calc_connection_state(event_type evt, cyng::record const &);

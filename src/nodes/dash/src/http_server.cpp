@@ -295,6 +295,11 @@ namespace smf {
                         code,
                         cyng::container_cast<cyng::param_map_t>(reader["params"].get()),
                         tag);
+
+                } else if (boost::algorithm::equals(cmd, "reset")) {
+                    auto const channel = cyng::value_cast(reader["channel"].get(), "uups");
+                    CYNG_LOG_TRACE(logger_, "[HTTP] ws [" << tag << "] reset request from channel " << channel);
+                    reset_request(channel, cyng::container_cast<cyng::vector_t>(reader["key"].get()));
                 } else {
                     // received
                     CYNG_LOG_WARNING(logger_, "[HTTP] unknown ws command \"" << cmd << "\"");
@@ -384,6 +389,27 @@ namespace smf {
             cluster_bus_.pty_stop(rel.table_, key);
         } else {
             CYNG_LOG_WARNING(logger_, "[HTTP] stop: undefined channel " << channel);
+        }
+    }
+
+    void http_server::reset_request(std::string const &channel, cyng::vector_t &&key) {
+        BOOST_ASSERT_MSG(!key.empty(), "no modify key");
+        auto const rel = db_.by_channel(channel);
+        if (!rel.empty()) {
+
+            BOOST_ASSERT(boost::algorithm::equals(channel, rel.channel_));
+            db_.convert(rel.table_, key);
+
+            CYNG_LOG_TRACE(logger_, "[HTTP] reset statistics " << rel.table_ << ": " << key);
+            //  reset "loginCounter" and "initial"
+            cluster_bus_.req_db_update(
+                rel.table_,
+                key,
+                cyng::param_map_factory("loginCounter", static_cast<std::uint32_t>(0)) // login counter
+                ("initial", cyng::make_utc_date())                                     // first login
+            );
+        } else {
+            CYNG_LOG_WARNING(logger_, "[HTTP] reset: undefined channel " << channel);
         }
     }
 
@@ -904,6 +930,10 @@ namespace smf {
 
                     } else {
                         CYNG_LOG_WARNING(logger_, "cfgSetMeta " << rec.key() << " has no gateway");
+                        auto tpl = rec.to_tuple(cyng::param_map_factory("serverId", "*no gateway*"));
+                        auto const str = json_insert_record(name, std::move(tpl));
+                        CYNG_LOG_DEBUG(logger_, str);
+                        wsp->push_msg(str);
                     }
 
                     //
@@ -949,11 +979,14 @@ namespace smf {
                         auto enabled = rec_dev.value("enabled", false);
                         auto tpl = rec.to_tuple(cyng::param_map_factory("name", name)("enabled", enabled));
                         auto const str = json_insert_record(name, std::move(tpl));
-                        CYNG_LOG_DEBUG(logger_, str);
+                        // CYNG_LOG_DEBUG(logger_, str);
                         wsp->push_msg(str);
 
                     } else {
                         CYNG_LOG_WARNING(logger_, "statistics record " << rec.key() << " has no device");
+                        auto tpl = rec.to_tuple(cyng::param_map_factory("name", std::string("*removed*"))("enabled", false));
+                        auto const str = json_insert_record(name, std::move(tpl));
+                        wsp->push_msg(str);
                     }
 
                     //
