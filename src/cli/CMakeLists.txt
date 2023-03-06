@@ -9,7 +9,7 @@ include (node.cmake)
 set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
 FetchContent_Declare(ftxui
     GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
-    GIT_TAG "v3.0.0"
+    GIT_TAG "v4.0.0"
 )
 FetchContent_GetProperties(ftxui)
 if(NOT ftxui_POPULATED)
@@ -17,22 +17,53 @@ if(NOT ftxui_POPULATED)
   add_subdirectory(${ftxui_SOURCE_DIR} ${ftxui_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-#FetchContent_MakeAvailable(ftxui)
+message(STATUS "** ftxui sources    : ${ftxui_SOURCE_DIR}") 
+message(STATUS "** ftxui binaries   : ${ftxui_BINARY_DIR}") 
 
 project(smfgui
   LANGUAGES CXX
   VERSION 1.0.0
 )
  
-#add_executable(smfgui src/gui.cpp)
-#target_include_directories(ftxui-starter PRIVATE src)
- 
-#target_link_libraries(smfgui
-#  PRIVATE ftxui::screen
-#  PRIVATE ftxui::dom
-#  PRIVATE ftxui::component # Not needed for this example.
-#)
-#target_include_directories(smfgui PRIVATE src)
+include (node.cmake)
+add_executable(smfcli ${smf_cli})
 
-add_executable(smfcli src/main.cpp)
-target_include_directories(smfcli PRIVATE src)
+
+target_compile_features(smfcli PRIVATE 
+    cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+
+target_include_directories(smfcli 
+    PRIVATE 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${Boost_INCLUDE_DIRS}
+)
+
+target_link_directories(smfcli
+    PRIVATE
+        ${Boost_LIBRARY_DIRS}
+)
+
+target_link_libraries(smfcli
+    PRIVATE
+            cyng::cyng 
+        "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
+      ftxui::screen
+      ftxui::dom
+      ftxui::component # Not needed for this example.
+)
