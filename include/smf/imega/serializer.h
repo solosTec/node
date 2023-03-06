@@ -19,11 +19,16 @@ namespace smf {
     namespace imega {
 
         /**
+         * Currently the serializer doesn't implement a protocol
          */
         class serializer {
 
           public:
             serializer();
+            /**
+             * no serialization al all
+             */
+            cyng::buffer_t raw_data(cyng::buffer_t &&data);
         };
     } // namespace imega
 } // namespace smf

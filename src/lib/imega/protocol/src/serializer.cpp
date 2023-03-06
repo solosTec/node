@@ -12,5 +12,6 @@ namespace smf {
     namespace imega {
         serializer::serializer() {}
 
+        cyng::buffer_t serializer::raw_data(cyng::buffer_t &&data) { return data; }
     } // namespace imega
 } // namespace smf

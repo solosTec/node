@@ -44,7 +44,6 @@ namespace smf {
         void do_read();
         void do_write();
         void handle_write(const boost::system::error_code &ec);
-        void print(cyng::buffer_t &&);
 
         void pty_stop();
 
@@ -71,6 +70,11 @@ namespace smf {
 
         void pty_req_close_connection();
 
+        /**
+         * send data to device
+         */
+        void imega_send(std::function<cyng::buffer_t()> f);
+
       private:
         cyng::controller &ctl_;
         boost::asio::ip::tcp::socket socket_;
@@ -82,7 +86,7 @@ namespace smf {
          * Buffer for incoming data.
          */
         std::array<char, 2048> buffer_;
-        std::uint64_t rx_, sx_, px_;
+        std::uint64_t rx_, sx_;
 
         /**
          * Buffer for outgoing data.
@@ -99,6 +103,9 @@ namespace smf {
          */
         imega::serializer serializer_;
 
+        /**
+         * client VM
+         */
         cyng::vm_proxy vm_;
 
         /**

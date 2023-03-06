@@ -66,7 +66,7 @@ namespace smf {
             case state::ERROR_: //!>	error
             default:
                 //  error recovery
-                cb_data_(std::move(buffer_), true);
+                cb_data_(std::move(buffer_), false);
                 state_ = state::STREAM_MODE;
                 break;
             }
@@ -74,7 +74,7 @@ namespace smf {
 
         bool parser::post_processing() {
             if (state_ == state::STREAM_MODE && !buffer_.empty()) {
-                cb_data_(std::move(buffer_), false);
+                cb_data_(std::move(buffer_), true);
                 return true;
             }
             return false;
@@ -112,8 +112,8 @@ namespace smf {
                     //
                     return state::STREAM_MODE;
                 }
-                //  error flag is true
-                cb_data_(std::move(buffer_), true);
+                //  error state
+                cb_data_(std::move(buffer_), false);
                 return state::INITIAL;
             }
 

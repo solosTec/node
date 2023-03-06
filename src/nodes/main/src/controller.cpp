@@ -72,7 +72,7 @@ namespace smf {
                 cyng::make_param("superseede", true),
                 cyng::make_param("gw.cache", true),       //  no longer used
                 cyng::make_param("auto.insert.gw", true), //  not active used yet
-                cyng::make_param("generate-time-series", false),
+                cyng::make_param("generate.time.series", false),
                 cyng::make_param("catch.meters", false),
                 cyng::make_param("catch.lora", true),
                 cyng::make_param("stat.dir", tmp.string()),                    //	store statistics

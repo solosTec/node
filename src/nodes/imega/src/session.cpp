@@ -1,6 +1,8 @@
 #include <session.h>
 #include <tasks/gatekeeper.h>
 
+#include <smf/config/protocols.h>
+
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
@@ -27,24 +29,57 @@ namespace smf {
         std::string const &pwd)
         : ctl_(fabric.get_ctl())
         , socket_(std::move(socket))
-        //, auto_answer_(auto_answer)
         , logger_(logger)
         , cluster_bus_(cluster_bus)
         , buffer_()
         , rx_{0}
         , sx_{0}
-        , px_{0}
         , buffer_write_()
         , parser_(
-              [&, this](std::uint8_t, cyng::version, std::string, std::string) {
+              [=, this](std::uint8_t protocol, cyng::version v, std::string telnb, std::string mname) {
                   //  login
+                  switch (policy) {
+                  case imega::policy::MNAME:
+                      CYNG_LOG_INFO(
+                          logger_,
+                          "[pty] login MNAME " << vm_.get_tag() << ", " << mname << ':' << telnb << '@'
+                                               << socket_.remote_endpoint());
+                      cluster_bus_.pty_login(
+                          mname, mname, vm_.get_tag(), config::get_name(config::protocol::DLMS), socket_.remote_endpoint());
+                      break;
+                  case imega::policy::TELNB:
+                      CYNG_LOG_INFO(
+                          logger_,
+                          "[pty] login TELNB " << vm_.get_tag() << ", " << mname << ':' << telnb << '@'
+                                               << socket_.remote_endpoint());
+                      cluster_bus_.pty_login(
+                          telnb, mname, vm_.get_tag(), config::get_name(config::protocol::DLMS), socket_.remote_endpoint());
+                      break;
+                  default:
+                      //    global
+                      CYNG_LOG_INFO(
+                          logger_,
+                          "[pty] login GLOBAL " << vm_.get_tag() << ", " << mname << ':' << telnb << ':' << pwd << '@'
+                                                << socket_.remote_endpoint());
+                      cluster_bus_.pty_login(
+                          mname, pwd, vm_.get_tag(), config::get_name(config::protocol::DLMS), socket_.remote_endpoint());
+                      break;
+                  }
               },
               [&, this]() {
                   //  watchdog
+                  CYNG_LOG_TRACE(logger_, "[pty] watchdog " << vm_.get_tag() << " from " << socket_.remote_endpoint());
               },
-              [&, this](cyng::buffer_t &&data, bool) {
-                  //    transfer data over open connection
-                  //                  cluster_bus_.pty_transfer_data(this->dev_, this->vm_.get_tag(), std::move(data));
+              [&, this](cyng::buffer_t &&data, bool ok) {
+                  if (ok) {
+                      //    transfer data over open connection
+                      CYNG_LOG_TRACE(
+                          logger_, "[pty] data " << vm_.get_tag() << " from " << socket_.remote_endpoint() << ": " << data);
+                      cluster_bus_.pty_transfer_data(this->dev_, this->vm_.get_tag(), std::move(data));
+                  } else {
+                      CYNG_LOG_WARNING(
+                          logger_, "[pty] data " << vm_.get_tag() << " from " << socket_.remote_endpoint() << ": " << data);
+                  }
               })
         , serializer_()
         , vm_()
@@ -136,16 +171,6 @@ namespace smf {
                         logger_,
                         "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
                                      << socket_.remote_endpoint() << "]");
-
-                // if (bytes_transferred == 45) {
-                //    int i = 0; //  start debugging here
-                //               //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
-                //               //  garble data from wMBus broker to oen a second channel when scrambling is active
-                //}
-
-                // if (gatekeeper_->is_open()) {
-                //     gatekeeper_->stop();
-                // }
 #ifdef _DEBUG_IMEGA
                     {
                         std::stringstream ss;
@@ -237,15 +262,6 @@ namespace smf {
         }
     }
 
-    void imega_session::print(cyng::buffer_t &&data) {
-        cyng::exec(vm_, [this, d = std::move(data)]() {
-            bool const b = buffer_write_.empty();
-            buffer_write_.push_back(std::move(d));
-            if (b)
-                do_write();
-        });
-    }
-
     void imega_session::pty_res_login(bool success, boost::uuids::uuid dev) {
         if (success) {
 
@@ -268,38 +284,24 @@ namespace smf {
     void imega_session::pty_res_open_connection(bool success, cyng::param_map_t token) {
 
         auto const reader = cyng::make_reader(token);
-        auto const auto_answer = cyng::value_cast(reader["auto-answer"].get(), true);
 
         if (success) {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " dialup ok: " << token);
-            // print(serializer_.connect());
-            // parser_.set_stream_mode();
 
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " dialup failed: " << token);
-            // print(serializer_.no_answer());
         }
     }
 
     void imega_session::pty_res_close_connection(bool success, cyng::param_map_t token) {
 
-        auto const reader = cyng::make_reader(token);
-
+        // auto const reader = cyng::make_reader(token);
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed (response)" << token);
-
-        // print(success ? serializer_.no_carrier() : serializer_.error());
-
-        // ipt_send(std::bind(
-        //     &ipt::serializer::res_close_connection,
-        //     &serializer_,
-        //     seq,
-        //     success ? ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED
-        //     : ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
     }
 
     void imega_session::pty_transfer_data(cyng::buffer_t data) {
-        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " transfer " << data.size() << " byte");
-#ifdef _DEBUG_MODEM
+        CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " transfer " << data.size() << " bytes to " << dev_);
+#ifdef _DEBUG_IMEGA
         {
             std::stringstream ss;
             cyng::io::hex_dump<8> hd;
@@ -308,8 +310,18 @@ namespace smf {
             CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] emit " << data.size() << " bytes:\n" << dmp);
         }
 #endif
-        //  print binary data
-        print(std::move(data));
+        //  send to device
+        imega_send([=, this]() mutable -> cyng::buffer_t { return serializer_.raw_data(std::move(data)); });
+    }
+
+    void imega_session::imega_send(std::function<cyng::buffer_t()> f) {
+        cyng::exec(vm_, [this, f]() {
+            bool const b = buffer_write_.empty();
+            buffer_write_.push_back(f());
+            if (b) {
+                do_write();
+            }
+        });
     }
 
     void imega_session::pty_req_open_connection(std::string msisdn, bool local, cyng::param_map_t token) {
@@ -321,8 +333,7 @@ namespace smf {
 
     void imega_session::pty_req_close_connection() {
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed (request)");
-        // print(serializer_.no_carrier());
-        //  ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
+        // always successful
     }
 
     void imega_session::pty_stop() { stop(); }

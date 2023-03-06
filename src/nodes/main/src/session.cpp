@@ -1037,7 +1037,7 @@ namespace smf {
             //	check auto insert
             auto const auto_login = cache_.get_cfg().get_value("auto.login", false);
             if (auto_login) {
-                CYNG_LOG_INFO(logger_, "auto-login is ON - insert [" << name << "] into device table");
+                CYNG_LOG_INFO(logger_, "auto.login is ON - insert [" << name << "] into device table");
                 auto const auto_enabled = cache_.get_cfg().get_value("auto.enabled", true);
                 cache_.insert_device(rtag, name, pwd, auto_enabled);
             }

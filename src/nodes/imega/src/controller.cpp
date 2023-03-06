@@ -126,6 +126,7 @@ namespace smf {
         cluster_->dispatch("connect");
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
+        CYNG_LOG_INFO(logger, "server is listening at " << ep);
         cluster_->dispatch("listen", ep);
     }
 

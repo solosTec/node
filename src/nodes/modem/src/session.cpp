@@ -2,6 +2,8 @@
 
 #include <tasks/gatekeeper.h>
 
+#include <smf/config/protocols.h>
+
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
@@ -43,7 +45,12 @@ namespace smf {
                       auto const vec = cyng::split(data, "?");
                       if (vec.size() == 2) {
                           CYNG_LOG_INFO(logger_, "[" << parser_.get_mode() << "] login: " << vec.at(0) << ':' << vec.at(1));
-                          cluster_bus_.pty_login(vec.at(0), vec.at(1), vm_.get_tag(), "modem", socket_.remote_endpoint());
+                          cluster_bus_.pty_login(
+                              vec.at(0),
+                              vec.at(1),
+                              vm_.get_tag(),
+                              config::get_name(config::protocol::HAYESAT),
+                              socket_.remote_endpoint());
                       } else {
                           CYNG_LOG_WARNING(logger_, "[" << parser_.get_mode() << "] incomplete login data: " << data);
                       }
@@ -198,15 +205,6 @@ namespace smf {
                         "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
                                      << socket_.remote_endpoint() << "]");
 
-                // if (bytes_transferred == 45) {
-                //    int i = 0; //  start debugging here
-                //               //  [0000]  f9 0c e2 29 87 b1 2a 3b  4a 4a 44 74 6a be 03 e1  ...)..*; JJDtj...
-                //               //  garble data from wMBus broker to oen a second channel when scrambling is active
-                //}
-
-                // if (gatekeeper_->is_open()) {
-                //     gatekeeper_->stop();
-                // }
 #ifdef _DEBUG_MODEM
                     {
                         std::stringstream ss;

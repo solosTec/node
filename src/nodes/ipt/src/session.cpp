@@ -7,6 +7,7 @@
 #include <session.h>
 #include <tasks/gatekeeper.h>
 
+#include <smf/config/protocols.h>
 #include <smf/ipt/codes.h>
 #include <smf/ipt/query.h>
 #include <smf/ipt/response.hpp>
@@ -346,7 +347,8 @@ namespace smf {
                 std::tie(ok, this->name_, pwd) = ipt::ctrl_req_login_public(std::move(body));
                 if (ok) {
                     CYNG_LOG_INFO(logger_, "[ipt] public login: " << name_ << ':' << pwd);
-                    cluster_bus_.pty_login(name_, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
+                    cluster_bus_.pty_login(
+                        name_, pwd, vm_.get_tag(), config::get_name(config::protocol::SML), socket_.remote_endpoint());
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] invalid public login request");
 
@@ -372,7 +374,8 @@ namespace smf {
                     CYNG_LOG_INFO(logger_, "[ipt] scrambled login: " << name_ << ':' << pwd << ", sk = " << ipt::to_string(sk));
                     parser_.set_sk(sk);
                     serializer_.set_sk(sk);
-                    cluster_bus_.pty_login(name_, pwd, vm_.get_tag(), "sml", socket_.remote_endpoint());
+                    cluster_bus_.pty_login(
+                        name_, pwd, vm_.get_tag(), config::get_name(config::protocol::SML), socket_.remote_endpoint());
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] invalid scrambled login request");
 

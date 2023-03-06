@@ -123,6 +123,9 @@ namespace smf {
 
     void storage_db::load_config() {
 
+        //
+        //  load config data
+        //
         auto const ms = config::get_table_config();
         store_.access(
             [&](cyng::table *tbl) {
@@ -144,6 +147,9 @@ namespace smf {
             },
             cyng::access::write("config"));
 
+        //
+        //  subscribe config data
+        //
         cluster_bus_.req_subscribe("config");
     }
 
@@ -298,6 +304,7 @@ namespace smf {
                     } else {
                         //  insert
                         auto const sql_insert = cyng::sql::insert(db_.get_dialect(), ms).bind_values(ms).to_string();
+                        stmt->clear();
                         std::pair<int, bool> const r_insert = stmt->prepare(sql_insert);
                         if (r_insert.second) {
                             stmt->push(key.at(0), 128);                                         //  key
@@ -313,6 +320,8 @@ namespace smf {
                                 CYNG_LOG_DEBUG(logger_, "[db] type: " << data.at(0).tag());
                                 CYNG_LOG_DEBUG(logger_, "[db] description: " << key.at(0));
                             }
+                        } else {
+                            CYNG_LOG_ERROR(logger_, "[db] insert error: " << sql_insert);
                         }
                     }
                 }
