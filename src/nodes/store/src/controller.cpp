@@ -1652,7 +1652,7 @@ namespace smf {
                     CYNG_LOG_INFO(
                         logger,
                         "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(now + interval, "%F %T%z"));
-                    channel->suspend(interval, "run");
+                    channel->suspend(interval < std::chrono::minutes(2 * 60) ? std::chrono::minutes(2 * 60) : interval, "run");
                 } else {
                     CYNG_LOG_TRACE(logger, "LPEx report " << cfg.first << " (" << name << ") is disabled");
                 }
@@ -1714,7 +1714,7 @@ namespace smf {
                     CYNG_LOG_INFO(
                         logger,
                         "start feed report " << profile << " (" << name << ") at " << cyng::as_string(now + interval, "%F %T%z"));
-                    channel->suspend(interval, "run");
+                    channel->suspend(interval < std::chrono::minutes(2 * 60) ? std::chrono::minutes(2 * 60) : interval, "run");
                 } else {
                     CYNG_LOG_TRACE(logger, "LPEx report " << cfg.first << " (" << name << ") is disabled");
                 }
