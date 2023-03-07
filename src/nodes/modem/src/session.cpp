@@ -36,7 +36,6 @@ namespace smf {
         , buffer_()
         , rx_{0}
         , sx_{0}
-        , px_{0}
         , buffer_write_()
         , parser_(
               [&, this](std::string const &cmd, std::string const &data) {
@@ -117,6 +116,10 @@ namespace smf {
         , vm_()
         , dev_(boost::uuids::nil_uuid())
         , gatekeeper_() {
+
+        //
+        //  init VM
+        //
         vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
             cyng::make_description(
@@ -349,13 +352,6 @@ namespace smf {
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed (response)" << token);
 
         print(success ? serializer_.no_carrier() : serializer_.error());
-
-        // ipt_send(std::bind(
-        //     &ipt::serializer::res_close_connection,
-        //     &serializer_,
-        //     seq,
-        //     success ? ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_SUCCEEDED
-        //     : ipt::tp_res_close_connection_policy::CONNECTION_CLEARING_FAILED));
     }
 
     void modem_session::pty_transfer_data(cyng::buffer_t data) {

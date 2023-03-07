@@ -196,6 +196,7 @@ namespace smf {
         void generate_csv_reports(cyng::object &&cfg);
         void generate_lpex_reports(cyng::object &&cfg);
         void generate_gap_reports(cyng::object &&cfg);
+        void generate_feed_reports(cyng::object &&cfg);
         void cleanup_archive(cyng::object &&cfg);
         void dump_readout(cyng::object &&cfg, std::chrono::hours);
 

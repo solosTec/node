@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
          "execute influxdb command [create|show|drop]") // --influxdb
         ("generate,G",
          boost::program_options::value<std::string>(&report_type)->default_value("csv"),
-         "report type [csv|lpex|gap]") // --generate
+         "report type [csv|lpex|gap|feed]") // --generate
         ("cleanup",
          boost::program_options::bool_switch()->default_value(false),
          "remove outdated records from database") // --cleanup

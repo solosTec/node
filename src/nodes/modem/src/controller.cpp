@@ -1,8 +1,8 @@
-#include <smf.h>
-
 #include <controller.h>
 
 #include <tasks/cluster.h>
+
+#include <smf.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -56,9 +56,6 @@ namespace smf {
             CYNG_LOG_FATAL(logger, "no cluster data configured");
         }
 
-        auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
-        auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 9000);
-        auto const answer = cyng::value_cast(reader["server"]["auto-answer"].get(), true);
         auto const guard_str = cyng::value_cast(
             reader["server"]["guard-time"].get(),
 #ifdef _DEBUG
@@ -81,9 +78,9 @@ namespace smf {
             tag,
             node_name,
             std::move(tgl),
-            address,
-            port,
-            answer,
+            cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0"),
+            cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 9000),
+            cyng::value_cast(reader["server"]["auto-answer"].get(), true),
             guard.count() > 10000 ? std::chrono::milliseconds(10000) : guard,
             timeout.count() > 3600 ? std::chrono::seconds(3600) : timeout);
     }
@@ -123,7 +120,6 @@ namespace smf {
                     cyng::make_param("account", "root"),
                     cyng::make_param("pwd", "NODE_PWD"),
                     cyng::make_param("salt", "NODE_SALT"),
-                    // cyng::make_param("monitor", rnd_monitor()),	//	seconds
                     cyng::make_param("group", 0)) //	customer ID
             }));
     }
@@ -134,7 +130,7 @@ namespace smf {
         boost::uuids::uuid tag,
         std::string const &node_name,
         toggle::server_vec_t &&cfg,
-        std::string const &address,
+        std::string &&address,
         std::uint16_t port,
         bool answer,
         std::chrono::milliseconds guard,
@@ -147,6 +143,7 @@ namespace smf {
         cluster_->dispatch("connect");
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
+        CYNG_LOG_INFO(logger, "server is listening at " << ep);
         cluster_->dispatch("listen", ep);
     }
 } // namespace smf

@@ -30,7 +30,7 @@ target_compile_features(dns PRIVATE cxx_std_20)
 
 target_compile_definitions(dns
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_FRONTEND>
+        $<$<CONFIG:Debug>:_DEBUG_DNS>
 )
 
 #
@@ -61,6 +61,7 @@ target_link_libraries(dns
         smf::config
         smf::cluster
         smf::cluster_bus
+        smf::dns
         cyng::obj
         cyng::parse
         cyng::io
@@ -68,6 +69,7 @@ target_link_libraries(dns
         cyng::sys
         cyng::task
         cyng::vm
+        cyng::net
         "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         "$<$<PLATFORM_ID:Linux>:${Boost_THREAD_LIBRARY};${Boost_SYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_RANDOM_LIBRARY};${Boost_LOCALE_LIBRARY};${CMAKE_DL_LIBS};atomic;pthread>"
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>

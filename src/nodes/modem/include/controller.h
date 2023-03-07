@@ -36,7 +36,7 @@ namespace smf {
             boost::uuids::uuid,
             std::string const &node_name,
             toggle::server_vec_t &&cfg,
-            std::string const &address,
+            std::string &&address,
             std::uint16_t port,
             bool answer,
             std::chrono::milliseconds guard,

@@ -1,19 +1,16 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2022 Sylko Olzscher
- *
- */
-
 #include <controller.h>
+
+#include <tasks/cluster.h>
+
 #include <smf.h>
 
+#include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
+#include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
 #include <cyng/obj/object.h>
 #include <cyng/obj/util.hpp>
-// #include <cyng/sys/locale.h>
 #include <cyng/task/registry.h>
 
 #include <iostream>
@@ -22,7 +19,8 @@
 namespace smf {
 
     controller::controller(config::startup const &config)
-        : controller_base(config) {}
+        : controller_base(config)
+        , cluster_() {}
 
     cyng::vector_t controller::create_default_config(
         std::chrono::system_clock::time_point &&now,
@@ -37,15 +35,54 @@ namespace smf {
             create_cluster_spec())});
     }
     void controller::run(
-        cyng::controller &,
+        cyng::controller &ctl,
         cyng::stash &channels,
-        cyng::logger,
+        cyng::logger logger,
         cyng::object const &cfg,
         std::string const &node_name) {
 
         auto const reader = cyng::make_reader(cfg);
         auto const tag = read_tag(reader["tag"].get());
+
+        auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
+        BOOST_ASSERT(!tgl.empty());
+        if (tgl.empty()) {
+            CYNG_LOG_FATAL(logger, "no cluster data configured");
+        }
+
+        //
+        //	connect to cluster
+        //
+        join_cluster(
+            ctl,
+            logger,
+            tag,
+            node_name,
+            std::move(tgl),
+            cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0"),
+            cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 53));
     }
+
+    void controller::join_cluster(
+        cyng::controller &ctl,
+        cyng::logger logger,
+        boost::uuids::uuid tag,
+        std::string const &node_name,
+        toggle::server_vec_t &&cfg,
+        std::string &&address,
+        std::uint16_t port) {
+
+        // auto const ep = boost::asio::ip::udp::endpoint(boost::asio::ip::make_address(address), port);
+        auto const ep = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port);
+        CYNG_LOG_INFO(logger, "server is listening at " << ep);
+
+        cluster_ = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(cfg), ep).first;
+        BOOST_ASSERT(cluster_->is_open());
+        cluster_->dispatch("connect");
+
+        // cluster_->dispatch("listen", ep);
+    }
+
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
 
         //
@@ -59,7 +96,11 @@ namespace smf {
             "server",
             cyng::make_tuple(
                 cyng::make_param("address", "192.168.1.26"),
-                cyng::make_param("service", "53"),
+                cyng::make_param("port", 53),        // plain
+                cyng::make_param("port_crypt", 443), // DNSCrypt
+                cyng::make_param("port_doh", 443),   // DNS-over-HTTPS
+                cyng::make_param("port_dot", 853),   // DNS-over-TLS
+                cyng::make_param("port_doq", 853),   // DNS-over-QUIC
 #if defined(BOOST_OS_LINUX_AVAILABLE)
                 cyng::make_param("interface", "eth0"), //  wlan0
 #else
@@ -67,7 +108,7 @@ namespace smf {
 #endif
                 cyng::make_param("gateway", "192.168.1.1"),
                 cyng::make_param("provider", "1.1.1.1"), //	DNS provider (CloudFlare DNS)
-                cyng::make_param("suffix", "test.local") //    DNS suffix
+                cyng::make_param("suffix", "test.local") // DNS suffix
                 ));
     }
 

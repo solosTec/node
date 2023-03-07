@@ -82,7 +82,7 @@ namespace smf {
          * Buffer for incoming data.
          */
         std::array<char, 2048> buffer_;
-        std::uint64_t rx_, sx_, px_;
+        std::uint64_t rx_, sx_;
 
         /**
          * Buffer for outgoing data.
@@ -99,6 +99,9 @@ namespace smf {
          */
         modem::serializer serializer_;
 
+        /**
+         * session VM
+         */
         cyng::vm_proxy vm_;
 
         /**

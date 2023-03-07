@@ -838,6 +838,8 @@ namespace smf {
                 generate_lpex_reports(read_config_section(config_.json_path_, config_.config_index_));
             } else if (boost::algorithm::equals(type, "gap")) {
                 generate_gap_reports(read_config_section(config_.json_path_, config_.config_index_));
+            } else if (boost::algorithm::equals(type, "feed") || boost::algorithm::equals(type, "adv")) {
+                generate_feed_reports(read_config_section(config_.json_path_, config_.config_index_));
             }
             return true; //  stop application
         }
@@ -1042,6 +1044,82 @@ namespace smf {
             } else {
                 std::cout << "***warning: database [" << param.first << "] is not reachable" << std::endl;
             }
+        }
+    }
+
+    void controller::generate_feed_reports(cyng::object &&cfg) {
+        //
+        //  data base connections
+        //
+        auto sm = init_storage(cfg, false);
+        auto const reader = cyng::make_reader(std::move(cfg));
+
+        //     "feed.reports": {
+        //          "print.version": true,
+        //           "debug": true,
+        //          "filter": "0100010800ff:0100010801ff:0700030000ff",
+        //          "profiles": {
+        //              "8181c78611ff": { ... }
+        //          }
+        //      }
+
+        //  lpex.reports/print.version
+        auto const print_version = reader["feed.reports"].get("print.version", true);
+
+        //  lpex.reports/debug
+        auto const debug_mode = reader["feed.reports"].get(
+            "debug",
+#ifdef _DEBUG
+            true
+#else
+            false
+#endif
+        );
+
+        //  lpex.reports/filter
+        auto const filter = cyng::to_obis_path(reader["feed.reports"].get("filter", ""));
+
+        //  lpex.reports/db
+        auto const db = reader["feed.reports"].get("db", "default");
+        auto const pos = sm.find(db);
+        if (pos != sm.end()) {
+
+            if (pos->second.is_alive()) {
+                std::cout << "***info: file-name: " << reader["db"][db].get<std::string>("file.name", "") << std::endl;
+                auto const cwd = std::filesystem::current_path();
+                auto const now = cyng::make_utc_date();
+
+                auto reports = cyng::container_cast<cyng::param_map_t>(reader["feed.reports"].get("profiles"));
+                for (auto const &cfg_report : reports) {
+
+                    auto const reader_report = cyng::make_reader(cfg_report.second);
+                    auto const name = reader_report.get("name", "no-name");
+
+                    if (reader_report.get("enabled", false)) {
+                        auto const profile = cyng::to_obis(cfg_report.first);
+                        std::cout << "***info: generate feed report " << name << " (" << profile << ")" << std::endl;
+                        auto const root = reader_report.get("path", cwd.string());
+                        if (!std::filesystem::exists(root)) {
+                            std::cout << "***warning: output path [" << root << "] of feed report " << name << " does not exists";
+                            std::error_code ec;
+                            if (!std::filesystem::create_directories(root, ec)) {
+                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                            }
+                        }
+                        auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
+                        auto const customer = reader_report.get("add.customer.data", false);
+
+                        auto const prefix = reader_report.get("prefix", "LPExA-");
+                        generate_lpex(
+                            pos->second, profile, filter, root, prefix, now, backtrack, print_version, debug_mode, customer);
+
+                    } else {
+                        std::cout << "***info: feed report " << name << " is disabled" << std::endl;
+                    }
+                }
+            }
+        } else {
+            std::cerr << "***error: feed report uses an undefined database: " << db << std::endl;
         }
     }
 

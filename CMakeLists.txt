@@ -1049,6 +1049,51 @@ target_link_libraries(smf_report
 )
 
 #
+# add library: smf_dns
+#
+include (src/lib/dns/protocol/lib.cmake)
+add_library(smf_dns ${GLOBAL_LIBRARY_TYPE} ${dns_lib})
+add_library(smf::dns ALIAS "smf_dns")
+
+target_include_directories(smf_dns
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+#        ${OPENSSL_INCLUDE_DIR}
+    PRIVATE
+        ${CYNG_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_dns PRIVATE 
+    cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug dns protocol
+#
+target_compile_definitions(smf_dns 
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_DNS>
+)
+
+target_link_libraries(smf_dns 
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # nodes
 #
 add_subdirectory(src/nodes/broker-iec)
