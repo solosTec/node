@@ -4,6 +4,7 @@
 #include <smf/report/feed.h>
 #include <tasks/cleanup_db.h>
 #include <tasks/csv_report.h>
+#include <tasks/feed_report.h>
 #include <tasks/gap_report.h>
 #include <tasks/lpex_report.h>
 #include <tasks/network.h>
@@ -623,7 +624,7 @@ namespace smf {
                 if (debug_mode) {
                     CYNG_LOG_WARNING(logger, "feed reports in debug mode");
                 }
-                start_feed_reports(ctl, channels, logger, pos->second, lpex_reports, filter, print_version, debug_mode);
+                start_feed_reports(ctl, channels, logger, pos->second, feed_reports, filter, print_version, debug_mode);
             } else {
                 CYNG_LOG_FATAL(logger, "no database [" << db << "] for feed reports configured");
             }
@@ -1697,23 +1698,12 @@ namespace smf {
                         }
                     }
 
-                    // auto channel = ctl.create_named_channel_with_ref<feed_report>(
-                    //                       name,
-                    //                       ctl,
-                    //                       logger,
-                    //                       db,
-                    //                       profile,
-                    //                       filter,
-                    //                       path,
-                    //                       backtrack,
-                    //                       prefix,
-                    //                       print_version,
-                    //                       // separated,
-                    //                       debug_mode,
-                    //                       customer)
-                    //                    .first;
-                    // BOOST_ASSERT(channel->is_open());
-                    // channels.lock(channel);
+                    auto channel =
+                        ctl.create_named_channel_with_ref<feed_report>(
+                               name, ctl, logger, db, profile, filter, path, backtrack, prefix, print_version, debug_mode, customer)
+                            .first;
+                    BOOST_ASSERT(channel->is_open());
+                    channels.lock(channel);
 
                     //
                     //  calculate start time
@@ -1724,7 +1714,7 @@ namespace smf {
                     CYNG_LOG_INFO(
                         logger,
                         "start feed report " << profile << " (" << name << ") at " << cyng::as_string(now + interval, "%F %T%z"));
-                    // channel->suspend(interval, "run");
+                    channel->suspend(interval, "run");
                 } else {
                     CYNG_LOG_TRACE(logger, "LPEx report " << cfg.first << " (" << name << ") is disabled");
                 }
