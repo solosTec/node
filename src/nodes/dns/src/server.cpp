@@ -19,7 +19,9 @@ namespace smf {
         server::server(cyng::controller &ctl, cyng::logger logger, boost::asio::ip::udp::endpoint ep)
             : ctl_(ctl)
             , logger_(logger)
-            , socket_(ctl_.get_ctx(), ep) {}
+            , socket_(ctl_.get_ctx(), ep)
+            , remote_endpoint_()
+            , recv_buffer_() {}
 
         void server::start() {
             //

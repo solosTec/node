@@ -445,10 +445,12 @@ namespace smf {
     } // namespace gap
 
     void dump_readout(cyng::db::session db, cyng::date now, std::chrono::hours backlog) {
-        // SELECT TSMLReadout.tag, hex(TSMLReadout.meterID), datetime(actTime), TSMLReadoutData.register, reading, unit from
-        // TSMLReadout INNER JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag WHERE TSMLReadout.actTime >
-        // julianday('2022-11-26') ORDER BY actTime;
 
+#ifdef _DEBUG
+        std::cout << "Now       : " << cyng::as_string(now) << std::endl;
+        std::cout << "Backlog   : " << backlog << std::endl;
+        std::cout << "Start time: " << cyng::as_string(now - backlog) << std::endl;
+#endif
         //  statistics
         std::set<srv_id_t> server;
         int day = 0;
@@ -546,6 +548,31 @@ namespace smf {
                 std::cout << to_string(srv);
             }
             std::cout << std::endl;
+
+            {
+                //  total number of entries
+                std::string const sql = "SELECT count(*) FROM TSMLReadout";
+                auto stmt = db.create_statement();
+                std::pair<int, bool> const r = stmt->prepare(sql);
+                if (r.second) {
+                    if (auto res = stmt->get_result(); res) {
+                        auto const count = cyng::numeric_cast<std::uint64_t>(res->get(1, cyng::TC_UINT64, 0), 0u);
+                        std::cout << "TSMLReadout contains " << count << " records" << std::endl;
+                    }
+                }
+            }
+            {
+                //  total number of entries
+                std::string const sql = "SELECT count(*) FROM TSMLReadoutData";
+                auto stmt = db.create_statement();
+                std::pair<int, bool> const r = stmt->prepare(sql);
+                if (r.second) {
+                    if (auto res = stmt->get_result(); res) {
+                        auto const count = cyng::numeric_cast<std::uint64_t>(res->get(1, cyng::TC_UINT64, 0), 0u);
+                        std::cout << "TSMLReadoutData contains " << count << " records" << std::endl;
+                    }
+                }
+            }
         }
     }
 

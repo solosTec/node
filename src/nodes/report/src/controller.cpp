@@ -234,6 +234,7 @@ namespace smf {
             cyng::container_cast<cyng::param_map_t>(reader.get("DB")),
             cyng::container_cast<cyng::param_map_t>(reader.get("csv")),
             cyng::container_cast<cyng::param_map_t>(reader.get("lpex")),
+            cyng::container_cast<cyng::param_map_t>(reader.get("feed")),
             cyng::container_cast<cyng::param_map_t>(reader.get("gap")));
     }
 
@@ -259,6 +260,7 @@ namespace smf {
         cyng::param_map_t &&cfg_db,
         cyng::param_map_t &&csv_reports,
         cyng::param_map_t &&lpex_reports,
+        cyng::param_map_t &&feed_reports,
         cyng::param_map_t &&gap_reports) {
 
         BOOST_ASSERT(!csv_reports.empty());
@@ -270,6 +272,7 @@ namespace smf {
         cluster_->dispatch("connect");
         cluster_->dispatch("start.csv", csv_reports);
         cluster_->dispatch("start.lpex", lpex_reports);
+        cluster_->dispatch("start.feed", feed_reports);
         cluster_->dispatch("start.egp", gap_reports);
     }
 
@@ -313,7 +316,9 @@ namespace smf {
         if (!vars["dump"].defaulted()) {
             //	generate all reports
             auto const hours = std::chrono::hours(vars["dump"].as<int>() * 24);
-            dump_readout(read_config_section(config_.json_path_, config_.config_index_), hours);
+            dump_readout(
+                read_config_section(config_.json_path_, config_.config_index_),
+                (hours < std::chrono::hours::zero()) ? (-1 * hours) : hours);
             return true; //  stop application
         }
 

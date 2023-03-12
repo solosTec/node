@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace smf {
     namespace dns {
@@ -68,23 +69,31 @@ namespace smf {
 // Constant sized fields of the resource record structure
 #pragma pack(push, 1)
         struct answer {
-            std::uint16_t type;
-            std::uint16_t _class;
+            std::uint16_t type = {};
+            std::uint16_t _class = {};
             unsigned int ttl;
-            std::uint16_t data_len;
+            std::uint16_t data_len = {};
         };
 #pragma pack(pop)
         // Pointers to resource record contents
-        // struct res_record {
-        //    unsigned char *name;
-        //    struct r_data *resource;
-        //    unsigned char *rdata;
-        //};
+        struct resource_record {
+            std::string name_ = {};
+            answer resource_ = {};
+            std::string data_ = {};
+        };
 
-        // Structure of a Query
+        // Structure of a query
         struct query {
-            unsigned char *name;
-            struct question *ques;
+            std::string name_ = {};
+            question question_ = {};
+        };
+
+        struct package {
+            header header_ = {};
+            std::vector<query> questions_ = {};
+            std::vector<resource_record> answers_ = {};
+            std::vector<resource_record> authoritys_ = {};
+            std::vector<resource_record> additional_ = {};
         };
 
         // Types of DNS resource records
@@ -96,7 +105,7 @@ namespace smf {
             // #define T_PTR 12  // domain name pointer
             // #define T_MX 15   // Mail server
             // a host address
-            RES_A = 1,      // an authoritative name server
+            RES_A = 1,      // an authoritative name server (Ipv4 address)
             RES_NS = 2,     // a mail destination (Obsolete - use MX)
             RES_MD = 3,     // a mail forwarder (Obsolete - use MX)
             RES_MF = 4,     // the canonical name for an alias
@@ -118,7 +127,7 @@ namespace smf {
             RES_A6 = 0x0026,
             RES_OPT = 0x0029,
             RES_ANY = 0x00ff
-        }
+        };
 
     } // namespace dns
 } // namespace smf

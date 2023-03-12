@@ -38,6 +38,7 @@ namespace smf {
             cyng::param_map_t &&,
             cyng::param_map_t &&,
             cyng::param_map_t &&,
+            cyng::param_map_t &&,
             cyng::param_map_t &&);
 
         /**

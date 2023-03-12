@@ -1,12 +1,7 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Sylko Olzscher
- *
- */
 #include <tasks/cluster.h>
 
 #include <tasks/csv_report.h>
+#include <tasks/feed_report.h>
 #include <tasks/gap_report.h>
 #include <tasks/lpex_report.h>
 
@@ -36,6 +31,7 @@ namespace smf {
             std::bind(&cluster::connect, this), //  connect
             std::bind(&cluster::start_csv, this, std::placeholders::_1), //  start
             std::bind(&cluster::start_lpex, this, std::placeholders::_1), //  start
+            std::bind(&cluster::start_feed, this, std::placeholders::_1), //  start
             std::bind(&cluster::start_gap, this, std::placeholders::_1), //  start
             std::bind(&cluster::stop, this, std::placeholders::_1) // stop
         }
@@ -161,6 +157,58 @@ namespace smf {
 
             } else {
                 CYNG_LOG_TRACE(logger_, "lpex report " << cfg.first << " is disabled");
+            }
+        }
+    }
+
+    void cluster::start_feed(cyng::param_map_t reports) {
+
+        //
+        //	start reporting
+        //
+        for (auto const &cfg : reports) {
+            auto const reader = cyng::make_reader(cfg.second);
+            if (reader.get("enabled", false)) {
+
+                auto const profile = cyng::to_obis(cfg.first);
+                BOOST_ASSERT(sml::is_profile(profile));
+                auto const name = reader.get("name", "");
+                auto const path = reader.get("path", "");
+                auto const prefix = reader.get("prefix", "");
+                auto const backtrack = cyng::to_hours(reader.get("backtrack", "40:00:00"));
+                auto const customer = reader.get("add.customer.data", false);
+
+                cyng::obis_path_t filter;
+                auto channel = ctl_.create_named_channel_with_ref<lpex_report>(
+                                       name,
+                                       ctl_,
+                                       logger_,
+                                       db_,
+                                       profile,
+                                       filter, // filter
+                                       path,
+                                       backtrack,
+                                       prefix,
+                                       true,  // print version
+                                       false, // debug mode
+                                       customer)
+                                   .first;
+                BOOST_ASSERT(channel->is_open());
+                channels_.lock(channel);
+
+                //
+                //  calculate start time
+                //
+                auto const now = cyng::make_utc_date();
+                auto const interval = sml::interval_time(now, profile);
+                CYNG_LOG_INFO(logger_, "start feed report " << profile << " (" << name << ") at " << interval);
+
+                bus_.sys_msg(
+                    cyng::severity::LEVEL_INFO, "start feed report ", profile, " (", name, ") at ", now + interval, " UTC");
+                channel->suspend(interval, "run");
+
+            } else {
+                CYNG_LOG_TRACE(logger_, "feed report " << cfg.first << " is disabled");
             }
         }
     }

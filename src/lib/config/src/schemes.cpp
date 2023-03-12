@@ -666,8 +666,19 @@ namespace smf {
             //  ON TSMLReadout.tag = TSMLReadoutData.tag ORDER BY actTime;
             //
             //  SELECT hex(TSMLReadout.meterID), TSMLReadoutData.register, reading, unit, datetime(actTime) from TSMLReadout INNER
-            //  JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag WHERE TSMLReadout.actTime > julianday('2022-11-26')
+            //  JOIN TSMLReadoutData ON TSMLReadout.tag = TSMLReadoutData.tag WHERE TSMLReadout.actTime > julianday('2023-02-01')
             //  ORDER BY actTime;
+            //
+            //  DELETE FROM TSMLReadout WHERE ROWID IN (SELECT a.ROWID FROM TSMLReadout a INNER JOIN TSMLReadoutData b ON (a.tag =
+            //  b.tag) WHERE TSMLReadout.actTime < julianday('2023-02-01'))
+            //
+            //  DELETE FROM TSMLReadoutData
+            //  WHERE tag IN (
+            //      SELECT tag FROM TSMLReadout a
+            //      INNER JOIN TSMLReadoutData b
+            //          ON (a.tag = b.tag)
+            //      WHERE a.actTime < julianday(?)
+            //  );
             //
             //
             return cyng::to_sql(get_store_sml_readout_data(), {0, 0, 256, 0, 0, 0});

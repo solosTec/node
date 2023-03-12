@@ -7,6 +7,8 @@
 #ifndef SMF_DNS_SERVER_H
 #define SMF_DNS_SERVER_H
 
+#include <smf/dns/parser.h>
+
 #include <cyng/log/logger.h>
 #include <cyng/task/controller.h>
 // #include <cyng/net/server_proxy.h>
@@ -40,11 +42,12 @@ namespace smf {
           private:
             cyng::controller &ctl_;
             cyng::logger logger_;
+            dns::parser
 
-            /**
-             * DNS server
-             */
-            boost::asio::ip::udp::socket socket_;
+                /**
+                 * DNS server
+                 */
+                boost::asio::ip::udp::socket socket_;
             boost::asio::ip::udp::endpoint remote_endpoint_;
             std::array<char, 1024> recv_buffer_;
         };

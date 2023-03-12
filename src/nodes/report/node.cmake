@@ -31,10 +31,12 @@ set (report_tasks
   include/tasks/csv_report.h
   include/tasks/lpex_report.h
   include/tasks/gap_report.h
+  include/tasks/feed_report.h
   src/tasks/cluster.cpp
   src/tasks/csv_report.cpp
   src/tasks/lpex_report.cpp
   src/tasks/gap_report.cpp
+  src/tasks/feed_report.cpp
 )
 
 source_group("report-assets" FILES ${report_assets})
