@@ -149,7 +149,12 @@ namespace smf {
      *
      * @param limit max number of records to delete
      */
-    std::size_t cleanup(cyng::db::session db, cyng::obis profile, cyng::date, std::size_t limit);
+    void cleanup(cyng::db::session db, cyng::obis profile, cyng::date, std::size_t limit);
+
+    /**
+     * calls the vacuum command
+     */
+    void vacuum(cyng::db::session db);
 
     void dump_readout(cyng::db::session db, cyng::date, std::chrono::hours);
 

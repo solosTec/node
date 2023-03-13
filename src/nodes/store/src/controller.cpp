@@ -332,8 +332,8 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("max-age", hours),
-                cyng::make_param("limit", 256),
+                cyng::make_param("max.age", hours),
+                cyng::make_param("limit", 512),
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -670,6 +670,12 @@ namespace smf {
         std::string name,
         cyng::db::session db,
         cyng::param_map_t &&cleanup_tasks) {
+
+        //
+        //  vacuum dabase only once
+        //
+        bool vac = false;
+
         for (auto const &tsk : cleanup_tasks) {
             auto const reader_cls = cyng::make_reader(tsk.second);
 
@@ -679,7 +685,7 @@ namespace smf {
                 BOOST_ASSERT(sml::is_profile(profile));
                 auto const name = reader_cls.get("name", "");
                 auto const age = cyng::to_hours(reader_cls.get("max.age", "120:00:00"));
-                auto const limit = reader_cls.get("limit", 256u);
+                auto const limit = reader_cls.get("limit", 512u);
                 CYNG_LOG_INFO(
                     logger,
                     "start db cleanup task \"" << name << "\" for profile " << obis::get_name(profile) << " in "
@@ -688,7 +694,13 @@ namespace smf {
                     ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age, limit).first;
                 BOOST_ASSERT(channel->is_open());
                 // don't start immediately
-                channel->suspend(age / 2, "run", age / 4);
+                channel->suspend(age / 2, "run");
+
+                //  first vacuum the database
+                if (!vac) {
+                    vac = true;
+                    channel->dispatch("vacuum");
+                }
 
             } else {
                 CYNG_LOG_WARNING(
@@ -1652,6 +1664,9 @@ namespace smf {
                     CYNG_LOG_INFO(
                         logger,
                         "start LPEx report " << profile << " (" << name << ") at " << cyng::as_string(now + interval, "%F %T%z"));
+                    //
+                    //  make sure that the interval is at least 2h long
+                    //
                     channel->suspend(interval < std::chrono::minutes(2 * 60) ? std::chrono::minutes(2 * 60) : interval, "run");
                 } else {
                     CYNG_LOG_TRACE(logger, "LPEx report " << cfg.first << " (" << name << ") is disabled");
@@ -1714,6 +1729,9 @@ namespace smf {
                     CYNG_LOG_INFO(
                         logger,
                         "start feed report " << profile << " (" << name << ") at " << cyng::as_string(now + interval, "%F %T%z"));
+                    //
+                    //  make sure that the interval is at least 2h long
+                    //
                     channel->suspend(interval < std::chrono::minutes(2 * 60) ? std::chrono::minutes(2 * 60) : interval, "run");
                 } else {
                     CYNG_LOG_TRACE(logger, "LPEx report " << cfg.first << " (" << name << ") is disabled");

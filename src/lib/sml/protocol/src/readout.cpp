@@ -324,13 +324,13 @@ namespace smf {
     }
 
     std::string scale_value(std::int64_t value, std::int8_t scaler) {
-        //	Working with a string operation prevents us of losing precision.
-        std::string str_value = std::to_string(value);
-
         //	treat 0 as special value
         if (value == 0) {
             return "0.0";
         }
+
+        //	Working with a string operation prevents us of losing precision.
+        std::string str_value = std::to_string(value);
 
         //	should at least contain a "0"
         BOOST_ASSERT_MSG(!str_value.empty(), "no number");
@@ -350,6 +350,15 @@ namespace smf {
             if (str_value.size() > static_cast<std::size_t>(std::abs(scaler))) {
                 const std::size_t pos = str_value.size() + scaler;
                 str_value.insert(pos, ".");
+                //  remove '0's at the end
+                while (!str_value.empty() && str_value.back() == '0') {
+                    str_value.pop_back();
+                    //  but not the '0' after the dot
+                    if (str_value.back() == '.') {
+                        str_value.push_back('0');
+                        break;
+                    }
+                }
             }
         } else {
             //	simulating: result = value * pow10(scaler)
@@ -360,6 +369,62 @@ namespace smf {
         }
 
         return str_value;
+    }
+
+    std::int64_t scale_value_reverse(std::string value, std::int8_t scaler) {
+
+        if (scaler >= 0) {
+            //
+            //  there should be no dot on the string
+            //
+            BOOST_ASSERT(value.find('.') == std::string::npos);
+
+            //
+            //  "10"    -> (1) -> 1
+            //  "100"   -> (2) -> 1
+            //  "100"   -> (1) -> 10
+            //
+            if (value.size() > scaler) {
+                value.erase(value.size() - scaler);
+            }
+
+        } else {
+            //
+            //  "0.1"   -> (-1) -> 1
+            //  "0.01"  -> (-2) -> 1
+            //  "0.42"  -> (-2) -> 42
+            //  "4.2"   -> (-2) -> 420
+            //  "1.0"   -> (-2) -> 100
+            //
+
+            //  remove trailing zeros
+            while (!value.empty() && value.front() == '0') {
+                value.erase(value.begin());
+            }
+
+            //  find dot
+            auto pos = value.find('.');
+            BOOST_ASSERT(pos != std::string::npos);
+            BOOST_ASSERT(pos < value.size());
+
+            //  distance to end of string
+            auto dist = (value.size() - 1) - pos;
+            std::cout << dist << std::endl;
+            value.erase(pos, 1);
+            if (dist < std::abs(scaler)) {
+                //  add '0's
+                auto const count = std::abs(scaler) - dist;
+                value.append(count, '0');
+            } else {
+                //  complete
+                while (!value.empty() && value.front() == '0') {
+                    value.erase(value.begin());
+                }
+            }
+        }
+
+        //  convert to integer
+        return std::stoll(value, nullptr, 10);
     }
 
 } // namespace smf

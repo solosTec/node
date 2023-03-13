@@ -11,6 +11,7 @@
 #include <smf/sml/msg.h>
 #include <smf/sml/parser.h>
 #include <smf/sml/reader.h>
+#include <smf/sml/readout.h>
 #include <smf/sml/select.h>
 #include <smf/sml/status.h>
 #include <smf/sml/tokenizer.h>
@@ -1529,6 +1530,32 @@ BOOST_AUTO_TEST_CASE(status) {
     //      ("WIRED_MBUS_IF_AVAILABLE":false),
     //      ("WIRELESS_BUS_IF_AVAILABLE":true)
     //  )
+}
+
+BOOST_AUTO_TEST_CASE(scale) {
+    //
+    BOOST_REQUIRE_EQUAL(smf::scale_value(0, 0), "0.0");
+    BOOST_REQUIRE_EQUAL(smf::scale_value(1, 0), "1");
+    BOOST_REQUIRE_EQUAL(smf::scale_value(1, 1), "10");
+    BOOST_REQUIRE_EQUAL(smf::scale_value(1, 2), "100");
+    BOOST_REQUIRE_EQUAL(smf::scale_value(10, 1), "100");
+
+    BOOST_REQUIRE_EQUAL(smf::scale_value(1, -1), "0.1");
+    BOOST_REQUIRE_EQUAL(smf::scale_value(1, -2), "0.01");
+    BOOST_REQUIRE_EQUAL(smf::scale_value(42, -2), "0.42");
+    BOOST_REQUIRE_EQUAL(smf::scale_value(420, -2), "4.2");
+    BOOST_REQUIRE_EQUAL(smf::scale_value(100, -2), "1.0");
+
+    //  reverse
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("1", 0), 1);
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("10", 1), 1);
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("100", 2), 1);
+
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("0.1", -1), 1);
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("0.01", -2), 1);
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("0.42", -2), 42);
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("4.2", -2), 420);
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("1.0", -2), 100);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -3,7 +3,7 @@
 
 #include <smf/obis/db.h>
 #include <smf/obis/profile.h>
-#include <smf/report/lpex.h>
+#include <smf/report/feed.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
@@ -63,7 +63,11 @@ namespace smf {
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "feed report task already stopped");
         if (sp) {
-            auto const interval = sml::interval_time(now, profile_);
+            //  make sure that the interval is at least 6h long
+            auto interval = sml::interval_time(now, profile_);
+            if (interval < std::chrono::minutes(6 * 60)) {
+                interval = std::chrono::minutes(6 * 60);
+            }
             auto const next = now + interval;
             BOOST_ASSERT_MSG(next > now, "negative time span");
 
@@ -76,7 +80,7 @@ namespace smf {
             //
             //  generate report
             //
-            smf::generate_lpex(db_, profile_, filter_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_);
+            smf::generate_feed(db_, profile_, filter_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_);
         }
     }
 } // namespace smf

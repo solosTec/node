@@ -25,7 +25,8 @@ namespace smf {
         std::chrono::hours max_age,
         std::size_t limit)
         : sigs_{
-            std::bind(&cleanup_db::run, this, std::placeholders::_1), // start
+            std::bind(&cleanup_db::run, this), // start
+            std::bind(&cleanup_db::vacuum, this), // vacuum
             std::bind(&cleanup_db::stop, this, std::placeholders::_1) // stop
         }
         , channel_(wp)
@@ -43,7 +44,7 @@ namespace smf {
     }
 
     void cleanup_db::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop cleanup task"); }
-    void cleanup_db::run(std::chrono::hours span) {
+    void cleanup_db::run() {
 
         auto const now = cyng::make_utc_date();
         auto sp = channel_.lock();
@@ -54,17 +55,19 @@ namespace smf {
             //
             //  cleanup
             //
-            auto const size = smf::cleanup(db_, profile_, now - max_age_, limit_);
+            smf::cleanup(db_, profile_, now - max_age_, limit_);
             CYNG_LOG_INFO(
                 logger_,
-                "[cleanup] " << size << " records older than " << max_age_.count() << "h from " << obis::get_name(profile_)
-                             << " removed");
+                "[cleanup] all records older than " << max_age_.count() << "h from " << obis::get_name(profile_) << " removed");
 
             //
-            //  restart
+            //  restart after half the interval time
             //
-            sp->suspend(interval, "run", span);
+            sp->suspend(interval / 2, "run");
             CYNG_LOG_TRACE(logger_, "[cleanup] run " << obis::get_name(profile_) << " at " << now + interval);
         }
     }
+
+    void cleanup_db::vacuum() { smf::vacuum(db_); }
+
 } // namespace smf

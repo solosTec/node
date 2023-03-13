@@ -87,7 +87,18 @@ namespace smf {
     std::string ip_address_to_str(cyng::object obj);
     boost::asio::ip::address to_ip_address_v4(cyng::object obj);
 
+    /**
+     * Convert a scaled integer value into a string the represents
+     * the floating point value.
+     */
     std::string scale_value(std::int64_t value, std::int8_t scaler);
+
+    /**
+     * Reverse function of scale_value()
+     * Converts a string that contains a floating point value back to the
+     * integer value.
+     */
+    std::int64_t scale_value_reverse(std::string value, std::int8_t scaler);
 
 } // namespace smf
 #endif

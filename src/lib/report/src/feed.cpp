@@ -84,7 +84,8 @@ namespace smf {
 
                 //
                 // floor() - get timestamp from slot
-                // This guaranties that the timestamp is
+                // This guaranties that the timestamp is properly aligned
+                // in the time frame.
                 //
                 auto const d = sml::from_index_to_date(sr.first, profile);
 

@@ -21,8 +21,9 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(std::chrono::hours)>, // start
-            std::function<void(cyng::eod)>           // stop
+            std::function<void()>,         // start
+            std::function<void()>,         // vacuum
+            std::function<void(cyng::eod)> // stop
             >;
 
       public:
@@ -39,7 +40,8 @@ namespace smf {
 
       private:
         void stop(cyng::eod);
-        void run(std::chrono::hours);
+        void run();
+        void vacuum();
 
       private:
         signatures_t sigs_;
