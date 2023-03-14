@@ -28,6 +28,11 @@ namespace smf {
     };
 
     /**
+     * calculate delta
+     */
+    std::string operator-(sml_data const &, sml_data const &);
+
+    /**
      * data structure to hold a complete profile readout
      */
     namespace data {

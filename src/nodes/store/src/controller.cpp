@@ -289,14 +289,22 @@ namespace smf {
 #endif
                         ), // if true the generated LPex files contain debug data
                     // only this obis codes will be accepted
-                    cyng::make_param("filter", cyng::obis_path_t{OBIS_REG_POS_ACT_E, OBIS_REG_POS_ACT_E_T1, OBIS_REG_GAS_MC_0_0}),
+                    cyng::make_param(
+                        "filter",
+                        cyng::obis_path_t{
+                            OBIS_REG_POS_ACT_E,
+                            OBIS_REG_NEG_ACT_E,
+                            OBIS_REG_HEAT_CURRENT,
+                            OBIS_WATER_CURRENT,
+                            OBIS_REG_GAS_MC_0_0,
+                            OBIS_REG_GAS_MC_1_0}),
                     cyng::make_param(
                         "profiles",
                         cyng::make_tuple(
-                            create_lpex_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
-                            create_lpex_spec(OBIS_PROFILE_60_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
-                            create_lpex_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
-                            create_lpex_spec(
+                            create_feed_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
+                            create_feed_spec(OBIS_PROFILE_60_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
+                            create_feed_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
+                            create_feed_spec(
                                 OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH))) // feed tuple
                         )                                                                                     // feed param
                     ))                                                                                        // "feed.reports"
@@ -327,13 +335,25 @@ namespace smf {
                 cyng::make_param("enabled", enabled)));
     }
 
+    cyng::prop_t create_feed_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
+        return cyng::make_prop(
+            profile,
+            cyng::make_tuple(
+                cyng::make_param("name", obis::get_name(profile)),
+                cyng::make_param("path", (cwd / "feed.reports" / get_prefix(profile)).string()),
+                cyng::make_param("backtrack", backtrack),
+                cyng::make_param("prefix", ""),
+                cyng::make_param("add.customer.data", false), // add/update customer data
+                cyng::make_param("enabled", enabled)));
+    }
+
     cyng::prop_t create_cleanup_spec(cyng::obis profile, std::chrono::hours hours, bool enabled) {
         return cyng::make_prop(
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
                 cyng::make_param("max.age", hours),
-                cyng::make_param("limit", 512),
+                // cyng::make_param("limit", 512),
                 cyng::make_param("enabled", enabled)));
     }
 
@@ -685,13 +705,12 @@ namespace smf {
                 BOOST_ASSERT(sml::is_profile(profile));
                 auto const name = reader_cls.get("name", "");
                 auto const age = cyng::to_hours(reader_cls.get("max.age", "120:00:00"));
-                auto const limit = reader_cls.get("limit", 512u);
+                // auto const limit = reader_cls.get("limit", 512u);
                 CYNG_LOG_INFO(
                     logger,
                     "start db cleanup task \"" << name << "\" for profile " << obis::get_name(profile) << " in "
                                                << (age.count() / 2) << " hours");
-                auto channel =
-                    ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age, limit).first;
+                auto channel = ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age).first;
                 BOOST_ASSERT(channel->is_open());
                 // don't start immediately
                 channel->suspend(age / 2, "run");
@@ -1069,7 +1088,7 @@ namespace smf {
 
         //     "feed.reports": {
         //          "print.version": true,
-        //           "debug": true,
+        //          "debug": true,
         //          "filter": "0100010800ff:0100010801ff:0700030000ff",
         //          "profiles": {
         //              "8181c78611ff": { ... }
@@ -1113,10 +1132,11 @@ namespace smf {
                         std::cout << "***info: generate feed report " << name << " (" << profile << ")" << std::endl;
                         auto const root = reader_report.get("path", cwd.string());
                         if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of feed report " << name << " does not exists";
+                            std::cout << "***warning: output path [" << root << "] of feed report " << name << " does not exists"
+                                      << std::endl;
                             std::error_code ec;
                             if (!std::filesystem::create_directories(root, ec)) {
-                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message();
+                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message() << std::endl;
                             }
                         }
                         auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
@@ -1141,6 +1161,7 @@ namespace smf {
         auto const reader = cyng::make_reader(cfg);
         BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
         auto const pm = cyng::container_cast<cyng::param_map_t>(reader.get("db"));
+        bool vac = false;
         for (auto const &param : pm) {
             auto const db = cyng::container_cast<cyng::param_map_t>(param.second);
             auto s = cyng::db::create_db_session(db);
@@ -1151,17 +1172,20 @@ namespace smf {
                     auto const reader_cls = cyng::make_reader(tsk.second);
                     auto const profile = cyng::to_obis(tsk.first);
                     auto const enabled = reader_cls.get("enabled", false);
+                    if (!vac) {
+                        vac = true;
+                        std::cout << "vacuum database" << std::endl;
+                        // smf::vacuum(s);
+                    }
                     if (enabled) {
                         auto const age = cyng::to_hours(reader_cls.get("max.age", "48:00:00"));
 
                         auto const d = now - age;
                         std::cout << "start cleanup task on db \"" << param.first << "\" for profile " << obis::get_name(profile)
                                   << " older than " << cyng::as_string(d, "%Y-%m-%d %H:%M") << std::endl;
-                        auto const limit = reader_cls.get("limit", 256u);
-                        auto const size = smf::cleanup(s, profile, d, limit);
-                        if (size != 0) {
-                            std::cout << size << " records removed" << std::endl;
-                        }
+                        // auto const limit = reader_cls.get("limit", 256u);
+                        smf::cleanup(s, profile, d);
+                        std::cout << "profile " << obis::get_name(profile) << " complete" << std::endl;
                     } else {
                         std::cout << "cleanup task on db " << param.first << " for profile " << obis::get_name(profile)
                                   << " is disabled" << std::endl;

@@ -1545,6 +1545,7 @@ BOOST_AUTO_TEST_CASE(scale) {
     BOOST_REQUIRE_EQUAL(smf::scale_value(42, -2), "0.42");
     BOOST_REQUIRE_EQUAL(smf::scale_value(420, -2), "4.2");
     BOOST_REQUIRE_EQUAL(smf::scale_value(100, -2), "1.0");
+    // BOOST_REQUIRE_EQUAL(smf::scale_value(0, -2), "0.0");
 
     //  reverse
     BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("1", 0), 1);
@@ -1556,6 +1557,21 @@ BOOST_AUTO_TEST_CASE(scale) {
     BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("0.42", -2), 42);
     BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("4.2", -2), 420);
     BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("1.0", -2), 100);
+    BOOST_REQUIRE_EQUAL(smf::scale_value_reverse("0.0", -1), 0);
+
+    //
+    //  ceck a whole range of values
+    //
+    for (std::int64_t value = -1002; value < 1002; ++value) {
+        for (std::int8_t scaler = -3; scaler < 4; ++scaler) {
+            // std::cout << value << ", " << ", scaler: " << +scaler;
+            auto const s = smf::scale_value(value, scaler);
+            // std::cout << ", " << s;
+            auto const v = smf::scale_value_reverse(s, scaler);
+            // std::cout << ", " << v << std::endl;
+            BOOST_REQUIRE_EQUAL(value, v);
+        }
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

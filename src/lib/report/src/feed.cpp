@@ -185,6 +185,13 @@ namespace smf {
             //
             for (auto const &data : data_set) {
 
+                if (is_null(data.first)) {
+#ifdef _DEBUG
+                    std::cerr << "skip \"null\" meter" << std::endl;
+#endif
+                    continue;
+                }
+
                 //
                 //  customer data
                 //  This slows down the overall performance. Maybe caching is a good idea
@@ -269,7 +276,7 @@ namespace smf {
                                 //
                                 //  no value
                                 //
-                                ofs << ';;';
+                                ofs << ";;";
                             }
                         }
                         std::cout << std::endl;
@@ -421,33 +428,16 @@ namespace smf {
         std::string calculate_advance(sml_data const &first, sml_data const &second) {
             try {
                 //
-                // see "std::string scale_value(std::int64_t value, std::int8_t scaler)" in readout.cpp
-                //  ToDo: restore integer values, subtract, set point
-                //  0.00 -> 0
-                //  1.00 -> 1
-                //  1.20 -> 12
-
-                // if (first.scaler_ < 0) {
-                //     //  remove dot
-                //     auto const pos = first.reading_.find_first_of('.');
-                // } else {
-                //     //  unchanged
-                // }
-
+                //  see overloaded operator of sml_data
                 //
-                // Since conversion between strings and doubles are imprecise the computed
-                // results are imprecise too.
-                //
-                auto const v0 = std::stod(first.reading_);
-                auto const v1 = std::stod(second.reading_);
+                auto const s = second - first;
+#ifdef __DEBUG
                 std::stringstream ss;
-                auto const delta = v1 - v0;
-                if (delta < 1) {
-                    ss << std::setprecision(1) << std::fixed << delta;
-                } else {
-                    ss << std::setprecision(std::abs(first.scaler_)) << std::fixed << delta;
-                }
+                ss << '[' << second.reading_ << "-" << first.reading_ << "=" << s << ']';
                 return ss.str();
+#else
+                return s;
+#endif
 
             } catch (std::invalid_argument const &) {
             }
@@ -456,17 +446,24 @@ namespace smf {
 
         std::pair<cyng::obis, bool> convert_obis(cyng::obis const &code) {
             if (code == OBIS_REG_NEG_ACT_E) {
+                //  Negative active energy(A+) total
+                //  01 00 02 08 00 ff
                 return {OBIS_PROFILE_POWER_NEG_ACTIVE, true};
             } else if (code == OBIS_REG_POS_ACT_E) {
+                //  Positive active energy(A+), current value
+                //  01 00 01 08 00 ff
                 return {OBIS_PROFILE_POWER_POS_ACTIVE, true};
             } else if (code == OBIS_REG_HEAT_CURRENT) {
                 //  Heat Energy (A), total, current value
+                //  06 00 01 00 00 ff
                 return {OBIS_PROFILE_HEAT_POS_OUTPUT, true};
             } else if (code == OBIS_WATER_CURRENT) {
                 //  Water Volume (V), accumulated, total, current value
+                //  08 00 01 00 00 ff
                 return {OBIS_PROFILE_WATER_POS_OUTPUT, true};
             } else if (code == OBIS_REG_GAS_MC_1_0) {
                 //  Gas Volume (meter), temperature converted (Vtc), forward, absolute, current value
+                //  07 00 03 01 00 ff
                 return {OBIS_PROFILE_GAS_POS_OUTPUT, true};
             }
             return {code, false};

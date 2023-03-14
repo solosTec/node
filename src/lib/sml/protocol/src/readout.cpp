@@ -87,7 +87,8 @@ namespace smf {
                 || OBIS_DATA_PUSH_DETAILS == code                     //
                 || OBIS_DEVICE_MODEL == code                          //
                 || OBIS_DEVICE_SERIAL == code                         //
-                || OBIS_DEVICE_CLASS == code) {
+                || OBIS_DEVICE_CLASS == code                          //
+                || OBIS_SERVER_ID_1_1 == code) {                      // example: 04917693
                 if (obj.tag() == cyng::TC_BUFFER) {
                     //
                     //	buffer to string
@@ -376,8 +377,9 @@ namespace smf {
         if (scaler >= 0) {
             //
             //  there should be no dot on the string
+            // But "0.0" is a valid value
             //
-            BOOST_ASSERT(value.find('.') == std::string::npos);
+            // BOOST_ASSERT(value.find('.') == std::string::npos);
 
             //
             //  "10"    -> (1) -> 1
@@ -409,7 +411,6 @@ namespace smf {
 
             //  distance to end of string
             auto dist = (value.size() - 1) - pos;
-            std::cout << dist << std::endl;
             value.erase(pos, 1);
             if (dist < std::abs(scaler)) {
                 //  add '0's
@@ -417,7 +418,7 @@ namespace smf {
                 value.append(count, '0');
             } else {
                 //  complete
-                while (!value.empty() && value.front() == '0') {
+                while ((value.size() > 1) && value.front() == '0') {
                     value.erase(value.begin());
                 }
             }

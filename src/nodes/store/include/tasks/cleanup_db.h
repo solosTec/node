@@ -33,8 +33,7 @@ namespace smf {
             cyng::logger logger,
             cyng::db::session db,
             cyng::obis profile,
-            std::chrono::hours max_age,
-            std::size_t limit);
+            std::chrono::hours max_age);
 
         ~cleanup_db() = default;
 
@@ -51,7 +50,6 @@ namespace smf {
         cyng::db::session db_;
         cyng::obis const profile_;
         std::chrono::hours const max_age_;
-        std::size_t const limit_;
     };
 
 } // namespace smf

@@ -13,6 +13,7 @@
 #include <cyng/parse/buffer.h>
 #include <cyng/parse/hex.h>
 
+#include <algorithm>
 #include <cstring>
 #include <iomanip>
 #include <sstream>
@@ -221,4 +222,10 @@ namespace smf {
 
         return srv_type::OTHER;
     }
+
+    bool is_null(srv_id_t const &id) {
+        //  test if all elements are '0'
+        return std::all_of(id.begin(), id.end(), [](std::uint8_t v) { return v == 0; });
+    }
+
 } // namespace smf

@@ -643,7 +643,7 @@ namespace smf {
             //
             //  dump only new data
             //  SELECT tag, hex(meterId), printf('%012X', profile), trx, status, datetime(actTime), datetime(received) FROM
-            //  TSMLReadout WHERE actTime > julianday('2022-10-09') ORDER BY actTime;
+            //  TSMLReadout WHERE actTime > julianday('2023-03-14') ORDER BY actTime;
 
             return cyng::to_sql(get_store_sml_readout(), {0, 9, 0, 21, 0, 0, 0});
         }
