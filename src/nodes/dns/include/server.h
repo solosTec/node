@@ -42,12 +42,12 @@ namespace smf {
           private:
             cyng::controller &ctl_;
             cyng::logger logger_;
-            dns::parser
+            dns::parser parser_;
 
-                /**
-                 * DNS server
-                 */
-                boost::asio::ip::udp::socket socket_;
+            /**
+             * DNS server
+             */
+            boost::asio::ip::udp::socket socket_;
             boost::asio::ip::udp::endpoint remote_endpoint_;
             std::array<char, 1024> recv_buffer_;
         };
