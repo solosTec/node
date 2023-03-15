@@ -83,7 +83,7 @@ namespace smf {
     void sml_target::open_response(std::string const &trx, cyng::tuple_t const &msg) {
         auto const tpl = smf::sml::read_public_open_response(msg);
 
-        CYNG_LOG_TRACE(logger_, "[sml] open response " << srv_id_to_str(std::get<1>(tpl)) << "*" << std::get<3>(tpl));
+        CYNG_LOG_TRACE(logger_, "[sml] open response " << srv_id_to_str(std::get<1>(tpl), true) << "*" << std::get<3>(tpl));
         for (auto writer : writers_) {
             //  send client and server ID
             ctl_.get_registry().dispatch(writer, "open.response", std::get<1>(tpl), std::get<3>(tpl));
@@ -103,7 +103,7 @@ namespace smf {
                 CYNG_LOG_WARNING(
                     logger_,
                     "[sml] get_profile_list_response with unsupported profile: " << profile << " (" << obis::get_name(profile)
-                                                                                 << ") from server " << srv_id_to_str(srv)
+                                                                                 << ") from server " << srv_id_to_str(srv, true)
                                                                                  << ", trx: " << trx);
             }
         }
@@ -150,7 +150,7 @@ namespace smf {
         //  client, server, obis, sensor-time, gw-time, sml_list_t (data)
         auto const r = smf::sml::read_get_list_response(msg);
 
-        CYNG_LOG_INFO(logger_, "[sml] list response from " << srv_id_to_str(std::get<1>(r)));
+        CYNG_LOG_INFO(logger_, "[sml] list response from " << srv_id_to_str(std::get<1>(r), true));
         for (auto const &ro : std::get<5>(r)) {
             CYNG_LOG_TRACE(logger_, ro.first << ": " << ro.second);
         }

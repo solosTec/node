@@ -441,6 +441,16 @@ namespace smf {
             if (cluster_bus_.is_connected()) {
                 auto const [ok, channel, source, status, block, data] = ipt::tp_req_pushdata_transfer(std::move(body));
                 if (ok) {
+                    //
+                    // debug a problem with server ids in unkown format.
+                    // ToDo: remove this log trace when problem is fixed.
+                    //
+                    std::stringstream ss;
+                    cyng::io::hex_dump<8> hd;
+                    hd(ss, body.begin(), body.end());
+                    auto const dmp = ss.str();
+                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- push data transfer:\n" << dmp);
+
                     pushdata_transfer(channel, source, status, block, data, h.sequence_);
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] invalid open push channel request");

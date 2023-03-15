@@ -109,7 +109,7 @@ namespace smf {
             //	tags:
             //  tags are indexd
             //
-            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id) << ",obis=" << v.first << ",area=" << area;
+            ss << ",profile=" << profile << ",server=" << srv_id_to_str(server_id, true) << ",obis=" << v.first << ",area=" << area;
 
             //
             //   space separator
@@ -120,8 +120,8 @@ namespace smf {
             //	fields:
             //  fields are not indexed
             //
-            ss << "status=" << status << ",meter=\"" << id << "\",fArea=\"" << area << "\",fServer=\"" << srv_id_to_str(server_id)
-               << "\"";
+            ss << "status=" << status << ",meter=\"" << id << "\",fArea=\"" << area << "\",fServer=\""
+               << srv_id_to_str(server_id, true) << "\"";
 
             auto const readout = cyng::container_cast<cyng::param_map_t>(v.second);
             for (auto const &val : readout) {

@@ -65,7 +65,7 @@ namespace smf {
             "[sml.log.writer] get_profile_list_response("
                 << "trx: " << trx << ")");
 
-        auto const id = srv_id_to_str(server_id);
+        auto const id = srv_id_to_str(server_id, true);
         CYNG_LOG_INFO(
             protocol_,
             "[sml.log.writer] get_profile_list_response("

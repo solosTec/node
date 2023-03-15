@@ -39,7 +39,7 @@ namespace smf {
 
         cyng::buffer_t msg::get_payload() const { return payload_; }
 
-        bool msg::is_complete() const { return get_length() + 1 == payload_.size(); }
+        bool msg::is_complete() const { return static_cast<std::size_t>(get_length()) + 1 == payload_.size(); }
 
         double msg::get_dBm() const { return (has_rssi()) ? (-120.0 + (0.75 * rssi_)) : 0; }
 

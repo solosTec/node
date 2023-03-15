@@ -50,7 +50,8 @@ namespace smf {
 
         void store(
             std::string trx,
-            srv_id_t &&,
+            cyng::buffer_t,
+            // srv_id_t &&,
             cyng::obis profile,
             cyng::object act_time,
             std::uint32_t status,

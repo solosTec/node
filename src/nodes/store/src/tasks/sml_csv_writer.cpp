@@ -64,7 +64,7 @@ namespace smf {
 
         // CYNG_LOG_TRACE(logger_, "[sml.csv.writer] get_profile_list_response: #" << values.size());
 
-        auto const file_name = sml_csv_filename(prefix_, suffix_, srv_id_to_str(server_id), std::chrono::system_clock::now());
+        auto const file_name = sml_csv_filename(prefix_, suffix_, srv_id_to_str(server_id, true), std::chrono::system_clock::now());
         auto const file_path = root_dir_ / file_name;
 
         std::ofstream of(file_path.string(), std::ios::app);

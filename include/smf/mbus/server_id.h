@@ -47,7 +47,7 @@ namespace smf {
      * tt-mmmm-nnnnnnnn-vv-uu
      */
     std::string to_string(srv_id_t);
-    std::string srv_id_to_str(cyng::buffer_t);
+    std::string srv_id_to_str(cyng::buffer_t, bool formatted);
 
     /**
      * Expects a string in the format:

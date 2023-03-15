@@ -60,7 +60,7 @@ namespace smf {
         cyng::prop_map_t values) {
 
         auto const now = std::chrono::system_clock::now();
-        auto const file_name = sml_xml_filename(prefix_, suffix_, srv_id_to_str(server_id), now);
+        auto const file_name = sml_xml_filename(prefix_, suffix_, srv_id_to_str(server_id, true), now);
         auto const file_path = root_dir_ / file_name;
 
         std::ofstream of(file_path.string(), std::ios::app);

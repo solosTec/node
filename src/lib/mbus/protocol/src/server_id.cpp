@@ -53,23 +53,29 @@ namespace smf {
 
     cyng::buffer_t to_buffer(srv_id_t const &id) { return cyng::buffer_t(id.begin(), id.end()); }
 
-    std::string to_string(srv_id_t id) { return srv_id_to_str(to_buffer(id)); }
+    std::string to_string(srv_id_t id) { return srv_id_to_str(to_buffer(id), true); }
 
-    std::string srv_id_to_str(cyng::buffer_t id) {
+    std::string srv_id_to_str(cyng::buffer_t id, bool formatted) {
         std::ostringstream ss;
         ss << std::hex << std::setfill('0');
 
         if (id.size() == 9) {
-            std::size_t counter{0};
-            for (auto c : id) {
-                ss << std::setw(2) << (+c & 0xFF);
-                counter++;
-                switch (counter) {
-                case 1:
-                case 3:
-                case 7:
-                case 8: ss << '-'; break;
-                default: break;
+            if (formatted) {
+                std::size_t counter{0};
+                for (auto c : id) {
+                    ss << std::setw(2) << (+c & 0xFF);
+                    counter++;
+                    switch (counter) {
+                    case 1:
+                    case 3:
+                    case 7:
+                    case 8: ss << '-'; break;
+                    default: break;
+                    }
+                }
+            } else {
+                for (auto c : id) {
+                    ss << std::setw(2) << (+c & 0xFF);
                 }
             }
         } else if (id.size() == 4) {

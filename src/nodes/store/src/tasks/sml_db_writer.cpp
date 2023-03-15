@@ -82,14 +82,14 @@ namespace smf {
             auto const &profile = path.front();
             if (sml::is_profile(profile)) {
                 CYNG_LOG_TRACE(logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << obis::get_name(profile));
-                store(trx, to_srv_id(server_id), profile, act_time, status, values);
+                store(trx, server_id, profile, act_time, status, values);
             } else {
                 CYNG_LOG_WARNING(
                     logger_,
                     "[sml.db] get_profile_list_response with unsupported profile: "
-                        << profile << " (" << obis::get_name(profile) << ") from server " << srv_id_to_str(server_id));
+                        << profile << " (" << obis::get_name(profile) << ") from server " << srv_id_to_str(server_id, true));
                 //  assume 15 min profile
-                store(trx, to_srv_id(server_id), OBIS_PROFILE_15_MINUTE, act_time, status, values);
+                store(trx, server_id, OBIS_PROFILE_15_MINUTE, act_time, status, values);
             }
 
         } else {
@@ -99,7 +99,8 @@ namespace smf {
 
     void sml_db_writer::store(
         std::string trx,
-        srv_id_t &&srv,
+        cyng::buffer_t srv,
+        // srv_id_t &&srv,
         cyng::obis profile,
         cyng::object act_time,
         std::uint32_t status,
@@ -110,8 +111,7 @@ namespace smf {
         //
         //  meter id
         //
-        auto const id = get_id(srv);
-        auto const meter = to_buffer(srv);
+        auto const id = srv_id_to_str(srv, false);
 
         //
         //  primary key
@@ -142,7 +142,7 @@ namespace smf {
 
                 stmt->push(cyng::make_object(0), 0); //	gen
 
-                stmt->push(cyng::make_object(meter), 9);   //	meterID
+                stmt->push(cyng::make_object(srv), 9);     //	meterID
                 stmt->push(cyng::make_object(profile), 0); //	profile
                 stmt->push(cyng::make_object(trx), 21);    //	trx
                 stmt->push(cyng::make_object(status), 0);  //	status
@@ -175,8 +175,7 @@ namespace smf {
                     stmt->clear();
                     CYNG_LOG_TRACE(
                         logger_,
-                        "[sml.db] data record of " << to_string(srv) << " successful stored in table " << m.get_name()
-                                                   << " by key: " << tag);
+                        "[sml.db] data record of " << id << " successful stored in table " << m.get_name() << " by key: " << tag);
                 } else {
                     CYNG_LOG_WARNING(logger_, "[sml.db] insert into " << m.get_name() << " failed");
                 }

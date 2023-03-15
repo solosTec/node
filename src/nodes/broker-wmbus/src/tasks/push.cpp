@@ -104,8 +104,8 @@ namespace smf {
         if (pos != channels_.end()) {
             CYNG_LOG_INFO(
                 logger_,
-                "[wmbus.push] sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv) << " to " << pos->second.first
-                                    << ':' << pos->second.second);
+                "[wmbus.push] sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv, true) << " to "
+                                    << pos->second.first << ':' << pos->second.second);
             bus_.transmit(pos->second, payload);
         } else {
             CYNG_LOG_WARNING(logger_, "[wmbus.push] no SML channel open");
@@ -159,7 +159,7 @@ namespace smf {
         if (pos != channels_.end()) {
             CYNG_LOG_INFO(
                 logger_,
-                "[wmbus.push] mbus/sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv) << " to "
+                "[wmbus.push] mbus/sml " << payload.size() << " bytes payload from " << srv_id_to_str(srv, true) << " to "
                                          << pos->second.first << ':' << pos->second.second);
             bus_.transmit(pos->second, payload);
         } else {

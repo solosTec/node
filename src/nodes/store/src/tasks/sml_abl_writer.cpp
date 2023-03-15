@@ -62,7 +62,7 @@ namespace smf {
         cyng::obis_path_t path,
         cyng::prop_map_t values) {
 
-        auto const file_name = get_abl_filename(prefix_, suffix_, srv_id_to_str(server_id), std::chrono::system_clock::now());
+        auto const file_name = get_abl_filename(prefix_, suffix_, srv_id_to_str(server_id, true), std::chrono::system_clock::now());
         auto const file_path = root_dir_ / file_name;
 
         std::ofstream of(file_path.string(), std::ios::app | std::ios::binary);

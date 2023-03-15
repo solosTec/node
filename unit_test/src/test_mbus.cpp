@@ -960,12 +960,12 @@ BOOST_AUTO_TEST_CASE(convert) {
 
     {
         //  04917771
-        auto id = smf::srv_id_to_str(cyng::make_buffer({0x30, 0x34, 0x39, 0x31, 0x37, 0x37, 0x37, 0x31}));
+        auto id = smf::srv_id_to_str(cyng::make_buffer({0x30, 0x34, 0x39, 0x31, 0x37, 0x37, 0x37, 0x31}), false);
         BOOST_REQUIRE_EQUAL(id, "04917771");
     }
     {
         //  04917771
-        auto id = smf::srv_id_to_str(cyng::make_buffer({0x04, 0x91, 0x77, 0x71}));
+        auto id = smf::srv_id_to_str(cyng::make_buffer({0x04, 0x91, 0x77, 0x71}), false);
         BOOST_REQUIRE_EQUAL(id, "04917771");
     }
 }
