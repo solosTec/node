@@ -36,7 +36,7 @@ namespace smf {
         , max_age_(max_age) {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"run"});
+            sp->set_channel_names({"run", "vacuum"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
     }

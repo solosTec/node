@@ -280,18 +280,20 @@ namespace smf {
                 //	send request
                 //
                 auto fn = [=, this]() -> cyng::buffer_t {
-                    auto r = serializer_.req_register_push_target(
+                    //  std::pair<cyng::buffer_t, sequence_t>
+                    auto const [buffer, seq] = serializer_.req_register_push_target(
                         name,
-                        std::numeric_limits<std::uint16_t>::max(), //	0xffff
-                        1);
+                        std::numeric_limits<std::uint16_t>::max(), // max. packet size is 0xffff
+                        1);                                        // window size is always 1
 
                     //
                     //	send register command to ip-t server
                     //
-                    pending_targets_.emplace(r.second, std::make_pair(name, wp));
+                    pending_targets_.emplace(seq, std::make_pair(name, wp));
+                    CYNG_LOG_DEBUG(logger_, "[ipt] register target " << name << " with seq " << +seq);
 
                     //  buffer
-                    return r.first;
+                    return buffer;
                 };
                 client_.send(fn(), false);
                 return true;
@@ -514,7 +516,10 @@ namespace smf {
                     //
                     pending_targets_.erase(pos);
                 } else {
-                    CYNG_LOG_ERROR(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << ": missing registrant");
+                    CYNG_LOG_ERROR(
+                        logger_,
+                        "[ipt] cmd " << ipt::command_name(h.command_) << ": missing registrant for sequence " << +h.sequence_
+                                     << " (channel = " << channel << ")");
                 }
             });
 
