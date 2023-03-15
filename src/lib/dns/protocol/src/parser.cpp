@@ -1,5 +1,7 @@
 #include <smf/dns/parser.h>
 
+#include <cstring>
+
 #include <boost/assert.hpp>
 
 namespace smf {

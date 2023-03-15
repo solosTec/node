@@ -5,6 +5,7 @@
 
 #include <cyng/db/storage.h>
 
+#include <iomanip>
 #include <iostream>
 
 namespace smf {
