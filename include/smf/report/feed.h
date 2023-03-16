@@ -77,6 +77,7 @@ namespace smf {
             cyng::date const &start,
             cyng::date const &end,
             data::data_set_t const &data,
+            bool debug_mode,
             bool customer);
 
         /**

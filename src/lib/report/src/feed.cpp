@@ -105,7 +105,7 @@ namespace smf {
                             std::cout << ">> generate feed report " << root / file_name << std::endl;
                             auto ofs = feed::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
-                                feed::generate_report(db, ofs, profile, start, next_stop, data_set, customer);
+                                feed::generate_report(db, ofs, profile, start, next_stop, data_set, debug_mode, customer);
                             }
                             //
                             //  the meter list itself remains unchanged
@@ -151,7 +151,7 @@ namespace smf {
             std::cout << ">> generate feed report " << root / file_name << std::endl;
             auto ofs = feed::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
-                feed::generate_report(db, ofs, profile, start, next_stop, data_set, customer);
+                feed::generate_report(db, ofs, profile, start, next_stop, data_set, debug_mode, customer);
                 ofs.close();
             }
             data::clear(data_set);
@@ -167,6 +167,7 @@ namespace smf {
             cyng::date const &start,
             cyng::date const &end,
             data::data_set_t const &data_set,
+            bool debug_mode,
             bool customer) {
 
             BOOST_ASSERT(start <= end);
@@ -261,7 +262,11 @@ namespace smf {
 
                                 //  calculate advance
                                 auto const adv = calculate_advance(pos_0->second, pos_1->second);
-                                ofs << ";" << adv << ";";
+                                if (debug_mode) {
+                                    ofs << ";[" << pos_1->second.reading_ << "-" << pos_0->second.reading_ << "=" << adv << "];";
+                                } else {
+                                    ofs << ";" << adv << ";";
+                                }
 
                                 //
                                 //   status
