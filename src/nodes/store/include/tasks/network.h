@@ -22,8 +22,7 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void()>, // connect
-            // std::function<void(cyng::param_map_t)>, // start
+            std::function<void()>,         // connect
             std::function<void(cyng::eod)> // stop
             >;
 
@@ -44,10 +43,9 @@ namespace smf {
         ~network() = default;
 
         void stop(cyng::eod);
-
-      private:
         void connect();
 
+      private:
         //
         //	bus interface
         //

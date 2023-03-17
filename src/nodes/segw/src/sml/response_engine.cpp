@@ -802,7 +802,8 @@ namespace smf {
             auto channel = ctl_.create_named_channel_with_ref<ipt_push>("push", logger_, bus_, cfg_, meter, nr).first;
             BOOST_ASSERT(channel->is_open());
             tbl->modify(key, cyng::make_param("task", channel->get_id()), source);
-            channel->dispatch("init");
+            //  handle dispatch errors
+            channel->dispatch("init", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             return true;
         }

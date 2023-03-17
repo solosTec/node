@@ -46,7 +46,9 @@ namespace smf {
         if (sp) {
             auto const interval = sml::interval_time(now, profile_);
 
-            sp->suspend(interval, "run");
+            //  handle dispatch errors
+            sp->suspend(
+                interval, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             CYNG_LOG_TRACE(logger_, "[store] run " << obis::get_name(profile_) << " at " << now + interval);
         }
@@ -59,7 +61,9 @@ namespace smf {
         if (sp) {
             auto const now = cyng::make_utc_date();
             auto const interval = sml::interval_time(now, profile_);
-            sp->suspend(interval, "run");
+            //  handle dispatch errors
+            sp->suspend(
+                interval, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
             CYNG_LOG_TRACE(
                 logger_, "[store] " << obis::get_name(profile_) << " - next: " << std::chrono::system_clock::now() + interval);
 

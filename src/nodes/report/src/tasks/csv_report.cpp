@@ -59,7 +59,9 @@ namespace smf {
             //  restart
             //
             // auto const span = std::chrono::duration_cast<std::chrono::seconds>(next - now);
-            sp->suspend(interval, "run");
+            // handle dispatch errors
+            sp->suspend(
+                interval, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
             CYNG_LOG_TRACE(logger_, "[report csv] run " << obis::get_name(profile_) << " at " << next);
 
             //

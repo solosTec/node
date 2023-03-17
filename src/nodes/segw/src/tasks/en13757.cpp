@@ -606,7 +606,8 @@ namespace smf {
             //  restart push
             //
             auto const period = cfg_cache_.get_interval();
-            sp->suspend(period, "push");
+            //  handle dispatch errors
+            sp->suspend(period, "push", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             auto const host = cfg_cache_.get_push_host();
             auto const service = cfg_cache_.get_push_service();
@@ -615,8 +616,10 @@ namespace smf {
             //  send data
             //
             proxy_ = client_factory_.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-                [=,
-                 this](std::size_t, std::size_t counter, std::string &h, std::string &s) -> std::pair<std::chrono::seconds, bool> {
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                [=, this] //
+                (std::size_t, std::size_t counter, std::string & h, std::string & s) -> std::pair<std::chrono::seconds, bool> {
                     CYNG_LOG_WARNING(
                         logger_, "[EN-13757] cannot connect to " << host << ':' << service << " for the " << counter << " time");
                     BOOST_ASSERT(boost::algorithm::equals(host, h));
@@ -625,7 +628,9 @@ namespace smf {
                     //
                     //  write cache to database
                     //
-                    sp->dispatch("backup");
+                    //  handle dispatch errors
+                    sp->dispatch(
+                        "backup", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                     return {std::chrono::seconds(0), false};
                 },
                 [this](boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep, cyng::channel_ptr cp) {
@@ -668,7 +673,11 @@ namespace smf {
                     auto const id = rec.value("meterID", cyng::make_buffer());
                     auto const payload = rec.value("payload", cyng::make_buffer());
                     CYNG_LOG_TRACE(logger_, "[roCache] send data of meter " << id);
-                    cp->dispatch("send", payload);
+                    //  handle dispatch errors
+                    cp->dispatch(
+                        "send",
+                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        payload);
                     return true;
                 });
                 //

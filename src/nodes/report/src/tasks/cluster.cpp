@@ -97,7 +97,9 @@ namespace smf {
                 auto const interval = sml::interval_time(now, profile);
                 bus_.sys_msg(cyng::severity::LEVEL_INFO, "start csv report ", profile, " (", name, ") at ", interval, " UTC");
 
-                channel->suspend(interval, "run");
+                //  handle dispatch errors
+                channel->suspend(
+                    interval, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             } else {
                 CYNG_LOG_TRACE(logger_, "csv report " << cfg.first << " is disabled");
@@ -153,7 +155,9 @@ namespace smf {
 
                 bus_.sys_msg(
                     cyng::severity::LEVEL_INFO, "start lpex report ", profile, " (", name, ") at ", now + interval, " UTC");
-                channel->suspend(interval, "run");
+                //  handle dispatch errors
+                channel->suspend(
+                    interval, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             } else {
                 CYNG_LOG_TRACE(logger_, "lpex report " << cfg.first << " is disabled");
@@ -205,7 +209,9 @@ namespace smf {
 
                 bus_.sys_msg(
                     cyng::severity::LEVEL_INFO, "start feed report ", profile, " (", name, ") at ", now + interval, " UTC");
-                channel->suspend(interval, "run");
+                //  handle dispatch errors
+                channel->suspend(
+                    interval, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             } else {
                 CYNG_LOG_TRACE(logger_, "feed report " << cfg.first << " is disabled");
@@ -250,7 +256,9 @@ namespace smf {
                 CYNG_LOG_INFO(logger_, "start gap report " << profile << " (" << name << ") at " << interval);
 
                 bus_.sys_msg(cyng::severity::LEVEL_INFO, "start gap report ", profile, " (", name, ") at ", now + interval, " UTC");
-                channel->suspend(interval, "run");
+                //  handle dispatch errors
+                channel->suspend(
+                    interval, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             } else {
                 CYNG_LOG_TRACE(logger_, "gap report " << cfg.first << " is disabled");

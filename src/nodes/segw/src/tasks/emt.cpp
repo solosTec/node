@@ -133,7 +133,8 @@ namespace smf {
             //  restart push
             //
             auto const period = cfg_http_post_.get_interval();
-            sp->suspend(period, "push");
+            //  handle dispatch errors
+            sp->suspend(period, "push", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             auto const host = cfg_http_post_.get_host();
             auto const service = cfg_http_post_.get_service();
@@ -149,7 +150,9 @@ namespace smf {
                     //
                     //  write cache to database
                     //
-                    sp->dispatch("backup");
+                    //  handle dispatch errors
+                    sp->dispatch(
+                        "backup", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                     return {std::chrono::seconds(0), false};
                 },
                 [=, this](boost::asio::ip::tcp::endpoint ep, cyng::channel_ptr cp) {
@@ -214,7 +217,13 @@ namespace smf {
                     auto const body = ss.str();
                     CYNG_LOG_DEBUG(logger_, "[" << cp->get_name() << "] push " << body);
                     CYNG_LOG_TRACE(logger_, "[" << cp->get_name() << "] send data of meter " << id);
-                    cp->dispatch("post", "/", cfg_http_post_.get_server(), header, body);
+                    cp->dispatch(
+                        "post",
+                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        "/",
+                        cfg_http_post_.get_server(),
+                        header,
+                        body);
                     return true;
                 });
                 //

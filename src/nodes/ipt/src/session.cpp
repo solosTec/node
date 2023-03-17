@@ -98,6 +98,8 @@ namespace smf {
     {
         vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2),
             cyng::make_description(
                 "pty.res.login", cyng::vm_adaptor<ipt_session, void, bool, boost::uuids::uuid>(this, &ipt_session::pty_res_login)),
 
@@ -224,7 +226,9 @@ namespace smf {
                 .first;
         BOOST_ASSERT(gatekeeper_->is_open());
         CYNG_LOG_TRACE(logger_, "start gatekeeper with a timeout of " << timeout.count() << " seconds");
-        gatekeeper_->suspend(timeout, "timeout");
+        //  handle dispatch errors
+        gatekeeper_->suspend(
+            timeout, "timeout", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
     }
 
     void ipt_session::do_read() {

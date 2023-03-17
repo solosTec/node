@@ -79,10 +79,18 @@ namespace smf {
 
                         if (next_push > now) {
                             auto const span = std::chrono::duration_cast<std::chrono::minutes>(next_push - now);
-                            sp->suspend(span, "run");
+                            //  handle dispatch errors
+                            sp->suspend(
+                                span,
+                                "run",
+                                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                             CYNG_LOG_TRACE(logger_, "[push] " << target << " at " << next_push);
                         } else {
-                            sp->suspend(interval, "run");
+                            //  handle dispatch errors
+                            sp->suspend(
+                                interval,
+                                "run",
+                                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                             CYNG_LOG_WARNING(logger_, "[push] " << target << " - init: " << now + interval);
                         }
                     } else {
@@ -110,7 +118,11 @@ namespace smf {
                         BOOST_ASSERT(sml::is_profile(profile));
                         target = rec.value("target", "");
 
-                        sp->suspend(interval, "run");
+                        //  handle dispatch errors
+                        sp->suspend(
+                            interval,
+                            "run",
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                         CYNG_LOG_TRACE(logger_, "[push] " << target << " - next: " << std::chrono::system_clock::now() + interval);
                     } else {
                         CYNG_LOG_ERROR(logger_, "[push] no record for " << meter_ << "#" << +nr_ << " in table \"pushOps\"");

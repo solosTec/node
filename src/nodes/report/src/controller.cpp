@@ -269,11 +269,20 @@ namespace smf {
                           "report", ctl, channels, tag, node_name, logger, std::move(cfg_cluster), std::move(cfg_db))
                        .first;
         BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect");
-        cluster_->dispatch("start.csv", csv_reports);
-        cluster_->dispatch("start.lpex", lpex_reports);
-        cluster_->dispatch("start.feed", feed_reports);
-        cluster_->dispatch("start.egp", gap_reports);
+        //  handle dispatch errors
+        cluster_->dispatch("connect", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
+        //  handle dispatch errors
+        cluster_->dispatch(
+            "start.csv", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), csv_reports);
+        //  handle dispatch errors
+        cluster_->dispatch(
+            "start.lpex", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), lpex_reports);
+        //  handle dispatch errors
+        cluster_->dispatch(
+            "start.feed", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), feed_reports);
+        //  handle dispatch errors
+        cluster_->dispatch(
+            "start.egp", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), gap_reports);
     }
 
     cyng::param_t create_cluster_spec() {

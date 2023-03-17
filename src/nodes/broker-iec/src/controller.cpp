@@ -174,7 +174,8 @@ namespace smf {
                            .first;
 
         BOOST_ASSERT(channel->is_open());
-        channel->dispatch("connect");
+        //  handle dispatch errors
+        channel->dispatch("connect", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
         channels.lock(channel);
     }
 

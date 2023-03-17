@@ -63,7 +63,10 @@ namespace smf {
     }
 
     void persistence::connect(std::string name) {
-        cfg_.get_cache().connect_only(name, cyng::make_slot(channel_));
+        //  handle dispatch errors
+        cfg_.get_cache().connect_only(
+            name,
+            cyng::make_slot(channel_, std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2)));
         CYNG_LOG_TRACE(logger_, "[persistence] table " << name << " is connected");
     }
 

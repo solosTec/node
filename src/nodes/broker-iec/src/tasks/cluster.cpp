@@ -145,7 +145,12 @@ namespace smf {
                                     CYNG_LOG_INFO(
                                         logger_,
                                         "[db] " << task_name << " add meter " << name << " - " << counter << "/" << meter_counter);
-                                    channel->dispatch("add.meter", name, rec_iec.key());
+                                    //  handle dispatch errors
+                                    channel->dispatch(
+                                        "add.meter",
+                                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                                        name,
+                                        rec_iec.key());
 
                                     //
                                     //  create push task
@@ -176,10 +181,14 @@ namespace smf {
         //
         //  start all clients with a random delay between 10 and 300 seconds
         //
-        channel->dispatch("init", cyng::make_tuple(interval));
+        //  handle dispatch errors
+        channel->dispatch(
+            "init", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), interval);
+        //  handle dispatch errors
         channel->suspend(
             std::chrono::seconds(delay_) + std::chrono::seconds(12), //  +12 sec offset
-            "start");
+            "start",
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //  client stays alive since using a timer with a reference to the task
@@ -259,7 +268,13 @@ namespace smf {
                                 //  add meter
                                 //
                                 CYNG_LOG_INFO(logger_, "[db] " << task_name << " add meter " << name);
-                                ctl_.get_registry().dispatch(task_name, "add.meter", name, rec.key());
+                                //  handle dispatch errors
+                                ctl_.get_registry().dispatch(
+                                    task_name,
+                                    "add.meter",
+                                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                                    name,
+                                    rec.key());
 
                                 //
                                 //  create push task
@@ -298,7 +313,11 @@ namespace smf {
         auto channel =
             ctl_.create_named_channel_with_ref<push>(name, ctl_, logger_, update_cfg(cfg_ipt_, account, pwd), pcc_, client).first;
         BOOST_ASSERT(channel->is_open());
-        channel->suspend(std::chrono::seconds(15) + std::chrono::milliseconds(stash_.size() * 120), "connect");
+        //  handle dispatch errors
+        channel->suspend(
+            std::chrono::seconds(15) + std::chrono::milliseconds(stash_.size() * 120),
+            "connect",
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
         stash_.lock(channel);
         CYNG_LOG_INFO(logger_, "[cluster] " << stash_.size() << " push tasks stashed");
 
@@ -318,7 +337,11 @@ namespace smf {
                     if (!rec_meter.empty()) {
                         auto const name = rec_meter.value("meter", "");
                         auto const task_name = make_task_name(host, port);
-                        ctl_.get_registry().dispatch(task_name, "remove.meter", name);
+                        ctl_.get_registry().dispatch(
+                            task_name,
+                            "remove.meter",
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                            name);
 
                         //
                         //  stop push task
@@ -464,7 +487,10 @@ namespace smf {
                         //
                         auto const task_name = make_task_name(host, port);
 
-                        ctl_.get_registry().dispatch(task_name, "shutdown");
+                        ctl_.get_registry().dispatch(
+                            task_name,
+                            "shutdown",
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 #ifdef _DEBUG
                         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 #endif

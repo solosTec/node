@@ -37,7 +37,12 @@ namespace smf {
     void CP210x::put(hci::msg const &msg) {
         CYNG_LOG_DEBUG(logger_, "[CP210x] hci message: " << msg);
         for (auto target : targets_) {
-            ctl_.get_registry().dispatch(target, "receive", msg.get_payload());
+            ctl_.get_registry().dispatch(
+                target,
+                "receive",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                msg.get_payload());
         }
     }
 

@@ -164,7 +164,11 @@ namespace smf {
         //
         //  suspended to wait for ip-t node
         //
-        channel->suspend(delay, "connect", cyng::make_tuple());
+        channel->suspend(
+            delay,
+            "connect",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
         channels.lock(channel);
     }
 
@@ -194,8 +198,14 @@ namespace smf {
         BOOST_ASSERT(channel->is_open());
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-        channel->dispatch("connect");
-        channel->suspend(std::chrono::seconds(20), "listen", ep);
+        //  handle dispatch errors
+        channel->dispatch("connect", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
+        //  handle dispatch errors
+        channel->suspend(
+            std::chrono::seconds(20),
+            "listen",
+            std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2),
+            ep);
         channels.lock(channel);
     }
 

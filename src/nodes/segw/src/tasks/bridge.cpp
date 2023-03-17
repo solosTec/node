@@ -260,7 +260,9 @@ namespace smf {
         //
         //  update operation log: power return (0x00100023)
         //
-        channel->dispatch("oplog.power.return");
+        //  handle dispatch errors
+        channel->dispatch(
+            "oplog.power.return", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         //
         // Check some values.
@@ -386,7 +388,8 @@ namespace smf {
         CYNG_LOG_INFO(logger_, "init operation counter");
         auto channel = ctl_.create_named_channel_with_ref<counter>("counter", logger_, cfg_).first;
         BOOST_ASSERT(channel->is_open());
-        channel->dispatch("inc");
+        //  handle dispatch errors
+        channel->dispatch("inc", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
         stash_.lock(channel);
     }
 
@@ -601,7 +604,9 @@ namespace smf {
             stash_.lock(channel);
 
             CYNG_LOG_TRACE(logger_, "reset-data-sinks -> [" << port << "]");
-            channel->dispatch("reset-data-sinks");
+            //  handle dispatch errors
+            channel->dispatch(
+                "reset-data-sinks", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             cfg_blocklist blocklist(cfg_, type);
 
@@ -619,14 +624,28 @@ namespace smf {
                 //
                 //	init LMN
                 //
-                channel->dispatch("add-data-sink", hci->get_id()); //  this is the only dataa sink
-                channel->dispatch("open");
-                channel->dispatch("write", cyng::make_tuple(cfg.get_hci_init_seq()));
+                //  handle dispatch errors
+                channel->dispatch(
+                    "add-data-sink",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    hci->get_id()); //  this is the only dataa sink
+                //  handle dispatch errors
+                channel->dispatch(
+                    "open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+                //  handle dispatch errors
+                channel->dispatch(
+                    "write",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    cfg.get_hci_init_seq());
 
                 //
                 //	CP210x will forward incoming data to filter
                 //
-                hci->dispatch("add-data-sink", blocklist.get_task_name());
+                //  handle dispatch errors
+                hci->dispatch(
+                    "add-data-sink",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    blocklist.get_task_name());
 
             } else {
 
@@ -643,7 +662,11 @@ namespace smf {
                     for (auto sp : targets) {
                         if (sp) {
                             CYNG_LOG_TRACE(logger_, "add-data-sink -> [" << port << "] " << sp->get_name() << "#" << sp->get_id());
-                            channel->dispatch("add-data-sink", sp->get_id());
+                            //  handle dispatch errors
+                            channel->dispatch(
+                                "add-data-sink",
+                                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                                sp->get_id());
                         }
                     }
                 });
@@ -651,13 +674,19 @@ namespace smf {
                 //
                 //  start LMN GPIO statistics
                 //
-                channel->suspend(std::chrono::seconds(1), "update-statistics");
+                channel->suspend(
+                    std::chrono::seconds(1),
+                    "update-statistics",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
                 //
                 //	open serial port
                 //
                 CYNG_LOG_TRACE(logger_, "open -> [" << port << "]");
-                channel->dispatch("open", cyng::make_tuple());
+                //  handle dispatch errors
+                channel->dispatch(
+                    "open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
             }
 
             return true;
@@ -752,8 +781,19 @@ namespace smf {
                         ctl_.create_named_channel_with_ref<broker>(name, ctl_, logger_, cfg_, type, trg.get_index()).first;
                     BOOST_ASSERT(channel->is_open());
                     stash_.lock(channel);
-                    channel->dispatch("start"); //  init state_holder_
-                    channel->dispatch("check-status", trg.get_watchdog());
+                    //  handle dispatch errors
+                    channel->dispatch(
+                        "start",
+                        std::bind(
+                            cyng::log_dispatch_error,
+                            logger_,
+                            std::placeholders::_1,
+                            std::placeholders::_2)); //  init state_holder_
+                    //  handle dispatch errors
+                    channel->dispatch(
+                        "check-status",
+                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        trg.get_watchdog());
                 }
             }
         } else {
@@ -806,7 +846,11 @@ namespace smf {
             //
             //	update statistics every second
             //
-            channel_filter->suspend(std::chrono::seconds(1), "update-statistics");
+            //  handle dispatch errors
+            channel_filter->suspend(
+                std::chrono::seconds(1),
+                "update-statistics",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             //
             //  start wireless M-Bus processor (protocol EN-13757)
@@ -831,7 +875,9 @@ namespace smf {
             //
             //  clear listeners
             //
-            channel_filter->dispatch("reset-data-sinks");
+            //  handle dispatch errors
+            channel_filter->dispatch(
+                "reset-data-sinks", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             //
             //	broker tasks are target channels
@@ -841,17 +887,37 @@ namespace smf {
             //
             cfg_broker broker_cfg(cfg_, type);
             auto const broker_task_name = broker_cfg.get_task_name();
-            channel_filter->dispatch("add-data-sink", broker_task_name);
-            channel_filter->dispatch("add-data-sink", en13757_task_name); //  load profile
-            channel_filter->dispatch("add-data-sink", emt_task_name);     //  HTTP POST
+            //  handle dispatch errors
+            channel_filter->dispatch(
+                "add-data-sink",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                broker_task_name);
+            //  handle dispatch errors
+            channel_filter->dispatch(
+                "add-data-sink",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                en13757_task_name); //  load profile
+            //  handle dispatch errors
+            channel_filter->dispatch(
+                "add-data-sink",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                emt_task_name); //  HTTP POST
 
             //  send data periodically
             cfg_cache cache_cfg(cfg_, type);
             CYNG_LOG_TRACE(logger_, "[" << en13757_task_name << "] push cycle " << cache_cfg.get_interval());
-            channel_en13757->suspend(cache_cfg.get_interval(), "push");
+            //  handle dispatch errors
+            channel_en13757->suspend(
+                cache_cfg.get_interval(),
+                "push",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             CYNG_LOG_TRACE(logger_, "[" << emt_task_name << "] push cycle " << http_post_cfg.get_interval());
-            channel_emt->suspend(http_post_cfg.get_interval(), "push");
+            //  handle dispatch errors
+            channel_emt->suspend(
+                http_post_cfg.get_interval(),
+                "push",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         } else {
             CYNG_LOG_ERROR(logger_, "[filter] LMN type " << get_name(type) << " doesn't support filters");
@@ -891,7 +957,11 @@ namespace smf {
                 BOOST_ASSERT(channel->is_open());
                 stash_.lock(channel);
 #ifdef _DEBUG
-                channel->dispatch("blinking", std::chrono::milliseconds(500));
+                //  handle dispatch errors
+                channel->dispatch(
+                    "blinking",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    std::chrono::milliseconds(500));
 #else
                 if (pin == 53u) {
                     // turn on the Power LED and turn off all others
@@ -964,7 +1034,9 @@ namespace smf {
             auto const ep = cfg.get_ep();
             auto const delay = cfg.get_delay();
             CYNG_LOG_INFO(logger_, "start NMS server " << ep << " (delayed by " << delay.count() << " seconds)");
-            channel->suspend(delay, "start", ep);
+            //  handle dispatch errors
+            channel->suspend(
+                delay, "start", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), ep);
 
         } else {
             CYNG_LOG_WARNING(logger_, "NMS is not enabled");
@@ -1019,7 +1091,9 @@ namespace smf {
                 logger_,
                 "start external listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id());
 
-            channel->suspend(delay, "start", cyng::make_tuple(delay));
+            //  handle dispatch errors
+            channel->suspend(
+                delay, "start", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), delay);
 
             //
             //  check the IPv6 case only for linux envronments
@@ -1067,7 +1141,9 @@ namespace smf {
                 logger_,
                 "start link-local listener/rdr [" << name << "] in " << delay.count() << " seconds as task #" << channel->get_id());
 
-            channel->suspend(delay, "start", cyng::make_tuple(delay));
+            //  handle dispatch errors
+            channel->suspend(
+                delay, "start", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), delay);
 
         } else {
             CYNG_LOG_WARNING(

@@ -45,7 +45,8 @@ namespace smf {
         auto sp = client_.lock();
         if (sp) {
             // CYNG_LOG_INFO(logger_, "[reconnect] " << sp->get_name() << " in " << reconnect_timeout_.count() << " seconds");
-            sp->dispatch("connect");
+            //  handle dispatch errors
+            sp->dispatch("connect", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
         }
     }
 

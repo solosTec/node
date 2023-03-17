@@ -119,15 +119,17 @@ namespace smf {
         std::chrono::seconds timeout,
         std::chrono::minutes watchdog) {
 
-        cluster_ = ctl.create_named_channel_with_ref<cluster>(
-                          "cluster", ctl, tag, node_name, logger, std::move(cfg), policy, pwd, timeout, watchdog)
-                       .first;
+        cluster *tsk = nullptr;
+        std::tie(cluster_, tsk) = ctl.create_named_channel_with_ref<cluster>(
+            "cluster", ctl, tag, node_name, logger, std::move(cfg), policy, pwd, timeout, watchdog);
         BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect");
+        BOOST_ASSERT(tsk != nullptr);
+        tsk->connect();
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
         CYNG_LOG_INFO(logger, "server is listening at " << ep);
-        cluster_->dispatch("listen", ep);
+        //  handle dispatch errors
+        cluster_->dispatch("listen", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), ep);
     }
 
 } // namespace smf

@@ -64,8 +64,7 @@ namespace smf {
                 boost::asio::post(dispatcher_, [this]() { write_buffer_.clear(); });
                 break;
             case state::value::STOPPED:
-            case state::value::CONNECTED:
-                break;
+            case state::value::CONNECTED: break;
             default:
                 //  required to get a proper error code: connection_aborted
                 socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
@@ -194,6 +193,7 @@ namespace smf {
                 sp->suspend(
                     timeout,
                     "check-status",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                     cyng::make_tuple(timeout < std::chrono::seconds(10) ? std::chrono::seconds(10) : timeout));
             }
         }
@@ -429,8 +429,7 @@ namespace smf {
                 socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ignored_ec);
                 socket_.close(ignored_ec); //  connection_aborted
                 break;
-            default:
-                break;
+            default: break;
             }
         }
     }
@@ -452,9 +451,7 @@ namespace smf {
                     CYNG_LOG_TRACE(logger_, "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] state: CONNECTED");
                     send(state_holder_, data);
                     break;
-                default:
-                    CYNG_LOG_TRACE(logger_, "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] state: ?");
-                    break;
+                default: CYNG_LOG_TRACE(logger_, "[broker-on-demand/" << +cfg_.get_index() << "/" << index_ << "] state: ?"); break;
                 }
             }
         } else {
@@ -568,7 +565,11 @@ namespace smf {
                     auto ch_ptr = channel_.lock();
                     if (ch_ptr) {
                         auto const timeout = cfg_.get_timeout(index_);
-                        ch_ptr->suspend(timeout, "close.socket");
+                        //  handle dispatch errors
+                        ch_ptr->suspend(
+                            timeout,
+                            "close.socket",
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                     }
                 }
             } else {

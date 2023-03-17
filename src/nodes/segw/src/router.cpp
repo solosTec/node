@@ -164,7 +164,12 @@ namespace smf {
         //  update status word
         //
         cfg_.update_status_word(sml::status_bit::NOT_AUTHORIZED_IPT, !auth);
-        ctl_.get_registry().dispatch("persistence", "oplog.authorized", auth);
+        ctl_.get_registry().dispatch(
+            "persistence",
+            "oplog.authorized",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            auth);
 
         if (auth) {
             CYNG_LOG_INFO(logger_, "[ipt] authorized at " << rep);
@@ -268,7 +273,9 @@ namespace smf {
 
                     auto channel = ctl_.create_named_channel_with_ref<ipt_push>("push", logger_, bus_, cfg_, meter, nr).first;
                     BOOST_ASSERT(channel->is_open());
-                    channel->dispatch("init");
+                    //  handle dispatch errors
+                    channel->dispatch(
+                        "init", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                     task_ids.emplace(key, channel->get_id());
                     return true;
                 });
@@ -299,7 +306,7 @@ namespace smf {
                 logger_, "[ipt] start \"store\" task " << obis::get_name(profile) << " (" << cyng::to_string(profile) << ")");
             auto channel = ctl_.create_named_channel_with_ref<store>(cyng::to_string(profile), logger_, bus_, cfg_, profile).first;
             BOOST_ASSERT(channel->is_open());
-            channel->dispatch("init");
+            channel->dispatch("init", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
         }
     }
     void router::stop_ipt_store() {

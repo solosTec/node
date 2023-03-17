@@ -54,6 +54,8 @@ namespace smf {
 
             cyng::net::client_factory cf(ctl);
             client_ = cf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+                //  handle dispatch errors
+                [this](std::string task, std::string slot) { CYNG_LOG_FATAL(logger_, task << " has no slot " << slot); },
                 [this](std::size_t, std::size_t counter, std::string &host, std::string &service)
                     -> std::pair<std::chrono::seconds, bool> {
                     //
@@ -399,6 +401,8 @@ namespace smf {
 
                         sp->dispatch(
                             "on.channel.open",
+                            //  handle dispatch errors
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                             tp_res_open_push_channel_policy::is_success(res),
                             channel,
                             source,
@@ -453,7 +457,12 @@ namespace smf {
                         //
                         // dispatch
                         //
-                        sp->dispatch("on.channel.close", tp_res_close_push_channel_policy::is_success(res), channel);
+                        sp->dispatch(
+                            "on.channel.close",
+                            //  handle dispatch errors
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                            tp_res_close_push_channel_policy::is_success(res),
+                            channel);
                     }
 
                     //
@@ -570,7 +579,14 @@ namespace smf {
                         }
                         // BOOST_ASSERT_MSG(!pos->second.first.empty(), "no target name");
                         std::string const target = pos->second.first;
-                        sp->dispatch("pushdata.transfer", channel, source, data, target);
+                        //  handle dispatch errors
+                        sp->dispatch(
+                            "pushdata.transfer",
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                            channel,
+                            source,
+                            data,
+                            target);
                     } else {
                         CYNG_LOG_WARNING(logger_, "[ipt] remove target " << channel << ':' << source);
                         //

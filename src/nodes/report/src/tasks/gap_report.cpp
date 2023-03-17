@@ -60,7 +60,9 @@ namespace smf {
             //
             //  restart
             //
-            sp->suspend(span, "run", span);
+            //  handle dispatch errors
+            sp->suspend(
+                span, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), span);
             CYNG_LOG_TRACE(logger_, "[gap report] run " << obis::get_name(profile_) << " at " << next);
 
             //

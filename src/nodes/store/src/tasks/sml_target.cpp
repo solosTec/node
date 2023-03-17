@@ -86,7 +86,13 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[sml] open response " << srv_id_to_str(std::get<1>(tpl), true) << "*" << std::get<3>(tpl));
         for (auto writer : writers_) {
             //  send client and server ID
-            ctl_.get_registry().dispatch(writer, "open.response", std::get<1>(tpl), std::get<3>(tpl));
+            ctl_.get_registry().dispatch(
+                writer,
+                "open.response",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                std::get<1>(tpl),
+                std::get<3>(tpl));
         }
     }
     void sml_target::close_response(std::string const &trx, cyng::tuple_t const &msg) {
@@ -126,6 +132,8 @@ namespace smf {
             ctl_.get_registry().dispatch(
                 writer,
                 "get.profile.list.response",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                 trx,
                 srv,  //  [buffer_t] server id
                 act,  //  [cyng::object] actTime
@@ -169,6 +177,8 @@ namespace smf {
             ctl_.get_registry().dispatch(
                 writer,
                 "get.profile.list.response",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                 trx,
                 std::get<1>(r),                      //  [buffer_t] server id
                 std::chrono::system_clock::now(),    //  [cyng::object] actTime

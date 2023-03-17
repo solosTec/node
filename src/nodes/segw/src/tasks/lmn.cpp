@@ -160,14 +160,24 @@ namespace smf {
         //  C++17 if
         if (auto sp = channel_.lock(); sp) {
             //  repeat each second
-            sp->suspend(std::chrono::seconds(1), "update-statistics");
+            //  handle dispatch errors
+            sp->suspend(
+                std::chrono::seconds(1),
+                "update-statistics",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
         }
     }
 
     void lmn::flash_led(std::chrono::milliseconds ms, std::size_t count) {
         auto const gpio_channel = cfg_gpio::get_name(cfg_.get_lmn_type());
         BOOST_ASSERT(!gpio_channel.empty());
-        ctl_.get_registry().dispatch(gpio_channel, "flashing", ms, count);
+        ctl_.get_registry().dispatch(
+            gpio_channel,
+            "flashing",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            ms,
+            count);
     }
 
     void lmn::do_read() {
@@ -200,6 +210,7 @@ namespace smf {
                 ctl_.get_registry().dispatch(
                     data_sinks_,
                     "receive",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                     cyng::make_tuple(cyng::buffer_t(std::begin(buffer_), std::begin(buffer_) + bytes_transferred)));
 
                 //

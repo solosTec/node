@@ -95,7 +95,11 @@ namespace smf {
                         ctl_, logger_, cache_, std::bind(&session::send_ping_request, this->shared_from_this()))
                     .first;
         BOOST_ASSERT(ping_->is_open());
-        ping_->suspend(std::chrono::minutes(1), "update");
+        //  handle dispatch errors
+        ping_->suspend(
+            std::chrono::minutes(1),
+            "update",
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
     }
 
     void session::do_read() {
@@ -131,6 +135,8 @@ namespace smf {
     cyng::vm_proxy session::init_vm(cyng::mesh &fabric) {
 
         return fabric.make_proxy(
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_description(
                 "cluster.req.login",
                 cyng::vm_adaptor<

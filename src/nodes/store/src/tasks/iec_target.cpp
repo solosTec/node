@@ -91,17 +91,28 @@ namespace smf {
                   //    send to writer(s)
                   //
                   for (auto writer : writers_) {
-                      ctl_.get_registry().dispatch(writer, "open", std::string(id_));
+                      ctl_.get_registry().dispatch(
+                          writer,
+                          "open",
+                          //  handle dispatch errors
+                          std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                          std::string(id_));
                       for (auto const &readout : data_) {
                           ctl_.get_registry().dispatch(
                               writer,
                               "store",
+                              //  handle dispatch errors
+                              std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                               readout.first,        // obis code
                               readout.second.first, //  key
                               readout.second.second //  value
                           );
                       }
-                      ctl_.get_registry().dispatch(writer, "commit");
+                      ctl_.get_registry().dispatch(
+                          writer,
+                          "commit",
+                          //  handle dispatch errors
+                          std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                   }
 
                   //

@@ -413,7 +413,8 @@ namespace smf {
         auto const md = get_store_meta_data();
         bridge_ = ctl.create_named_channel_with_ref<bridge>("bridge", ctl, logger, s, md).first;
         BOOST_ASSERT(bridge_->is_open());
-        bridge_->dispatch("start");
+        //  handle dispatch errors
+        bridge_->dispatch("start", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {

@@ -40,7 +40,12 @@ namespace smf {
             if (task_id_ipv4 != 0) {
                 auto const ep = cfg.get_ipv4_ep();
                 CYNG_LOG_INFO(logger_, "[distributor] set global listener tcp/ip endpoint to " << ep);
-                ctl_.get_registry().dispatch(task_id_ipv4, "restart", cyng::make_tuple());
+                ctl_.get_registry().dispatch(
+                    task_id_ipv4,
+                    "restart",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    cyng::make_tuple());
             }
 
             //
@@ -51,7 +56,12 @@ namespace smf {
 
                 auto const ep = cfg.get_link_local_ep();
                 CYNG_LOG_INFO(logger_, "[distributor] use link-local tcp/ip endpoint " << ep);
-                ctl_.get_registry().dispatch(task_id_ipv6, "restart", cyng::make_tuple());
+                ctl_.get_registry().dispatch(
+                    task_id_ipv6,
+                    "restart",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    cyng::make_tuple());
             }
         }
     }
@@ -61,15 +71,40 @@ namespace smf {
         cfg_lmn cfg(cfg_, type);
 
         if (boost::algorithm::equals(key, cfg_lmn::speed_path(get_index(type)))) {
-            ctl_.get_registry().dispatch(cfg.get_port(), "set-baud-rate", cyng::tuple_t{val});
+            ctl_.get_registry().dispatch(
+                cfg.get_port(),
+                "set-baud-rate",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                cyng::tuple_t{val});
         } else if (boost::algorithm::equals(key, cfg_lmn::parity_path(get_index(type)))) {
-            ctl_.get_registry().dispatch(cfg.get_port(), "set-parity", cyng::tuple_t{val});
+            ctl_.get_registry().dispatch(
+                cfg.get_port(),
+                "set-parity",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                cyng::tuple_t{val});
         } else if (boost::algorithm::equals(key, cfg_lmn::flow_control_path(get_index(type)))) {
-            ctl_.get_registry().dispatch(cfg.get_port(), "set-flow-control", cyng::tuple_t{val});
+            ctl_.get_registry().dispatch(
+                cfg.get_port(),
+                "set-flow-control",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                cyng::tuple_t{val});
         } else if (boost::algorithm::equals(key, cfg_lmn::stopbits_path(get_index(type)))) {
-            ctl_.get_registry().dispatch(cfg.get_port(), "set-stopbits", cyng::tuple_t{val});
+            ctl_.get_registry().dispatch(
+                cfg.get_port(),
+                "set-stopbits",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                cyng::tuple_t{val});
         } else if (boost::algorithm::equals(key, cfg_lmn::databits_path(get_index(type)))) {
-            ctl_.get_registry().dispatch(cfg.get_port(), "set-databits", cyng::tuple_t{val});
+            ctl_.get_registry().dispatch(
+                cfg.get_port(),
+                "set-databits",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                cyng::tuple_t{val});
         }
     }
 

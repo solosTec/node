@@ -49,7 +49,12 @@ namespace smf {
             //
             auto const id = sp->get_id();
             CYNG_LOG_TRACE(logger_, "[redirector] #" << id << " connect to [" << lmn_task_name << "]");
-            registry_.dispatch(lmn_task_name, "add-data-sink", cyng::make_tuple(id));
+            registry_.dispatch(
+                lmn_task_name,
+                "add-data-sink",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                id);
         }
     }
 
@@ -63,7 +68,12 @@ namespace smf {
             //
             auto const id = sp->get_id();
             CYNG_LOG_TRACE(logger_, "[redirector] #" << id << " disconnect from [" << lmn_task_name << "]");
-            registry_.dispatch(lmn_task_name, "remove-data-sink", cyng::make_tuple(id));
+            registry_.dispatch(
+                lmn_task_name,
+                "remove-data-sink",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                cyng::make_tuple(id));
         }
     }
 

@@ -31,7 +31,11 @@ namespace smf {
 
             trigger_();
             //  repeat
-            sp->suspend(std::chrono::minutes(1), "update");
+            //  handle dispatch errors
+            sp->suspend(
+                std::chrono::minutes(1),
+                "update",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
         }
     }
 

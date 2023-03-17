@@ -54,7 +54,8 @@ namespace smf {
         //	connect to database and
         //	load data into cache
         //
-        storage_->dispatch("open");
+        //  handle dispatch errors
+        storage_->dispatch("open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //	join cluster
@@ -74,7 +75,8 @@ namespace smf {
             //
             //	load data from database and synchronize data with main node
             //
-            storage_->dispatch("load");
+            //  handle dispatch errors
+            storage_->dispatch("load", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         } else {
             CYNG_LOG_ERROR(logger_, "joining cluster failed");
@@ -107,7 +109,15 @@ namespace smf {
                     //
                     //	insert into database (persistence layer)
                     //
-                    storage_->dispatch("insert", cyng::make_tuple(table_name, key, data, gen, tag));
+                    //  handle dispatch errors
+                    storage_->dispatch(
+                        "insert",
+                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        table_name,
+                        key,
+                        data,
+                        gen,
+                        tag);
                 }
             },
             cyng::access::write(table_name));
@@ -133,21 +143,33 @@ namespace smf {
             "[cluster] update " << table_name << ": " << key << " - " << attr.first //	zero based body index
                                 << " => " << attr.second);
 
-        storage_->dispatch("update", cyng::make_tuple(table_name, key, attr, gen, tag));
+        //  handle dispatch errors
+        storage_->dispatch(
+            "update",
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            cyng::make_tuple(table_name, key, attr, gen, tag));
     }
 
     void cluster::db_res_remove(std::string table_name, cyng::key_t key, boost::uuids::uuid tag) {
 
         CYNG_LOG_TRACE(logger_, "[cluster] remove " << table_name << ": " << key);
 
-        storage_->dispatch("remove", cyng::make_tuple(table_name, key, tag));
+        //  handle dispatch errors
+        storage_->dispatch(
+            "remove",
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            table_name,
+            key,
+            tag);
     }
 
     void cluster::db_res_clear(std::string table_name, boost::uuids::uuid tag) {
 
         CYNG_LOG_TRACE(logger_, "[cluster] clear: " << table_name);
 
-        storage_->dispatch("clear", cyng::make_tuple(table_name, tag));
+        //  handle dispatch errors
+        storage_->dispatch(
+            "clear", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), table_name, tag);
     }
 
     void cluster::upload(std::string const &table_name) {

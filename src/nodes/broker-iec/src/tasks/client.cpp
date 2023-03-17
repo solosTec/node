@@ -245,7 +245,11 @@ namespace smf {
             //  this is an absolute time
             //
             next_readout_ += interval_;
-            if (sp->suspend(next_readout_, "start")) {
+            //  handle dispatch errors
+            if (sp->suspend(
+                    next_readout_,
+                    "start",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2))) {
 
                 CYNG_LOG_INFO(
                     logger_, "start client: " << host_ << ':' << service_ << " #" << mgr_.size() << " @" << next_readout_);
@@ -324,7 +328,11 @@ namespace smf {
                         );
                         retry_counter_--;
                         //  reconnect after a specified "reconnect.timeout"
-                        reconnect_->suspend(reconnect_timeout_, "run");
+                        //  handle dispatch errors
+                        reconnect_->suspend(
+                            reconnect_timeout_,
+                            "run",
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                     } else {
                         bus_.req_db_update(
                             "gwIEC",
@@ -414,7 +422,9 @@ namespace smf {
                 //
                 //  open push channel
                 //
-                ctl_.get_registry().dispatch(name, "open");
+                //  handle dispatch errors
+                ctl_.get_registry().dispatch(
+                    name, "open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
             }
         }
     }
@@ -473,7 +483,11 @@ namespace smf {
                 //  send to push target
                 //
                 ctl_.get_registry().dispatch(
-                    mgr_.get_id(), "push", cyng::buffer_t(input_buffer_.data(), input_buffer_.data() + bytes_transferred));
+                    mgr_.get_id(),
+                    "push",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    cyng::buffer_t(input_buffer_.data(), input_buffer_.data() + bytes_transferred));
                 //
                 //  start parser
                 //
@@ -516,7 +530,11 @@ namespace smf {
                         if ((retry_counter_ != 0) && is_sufficient_time(std::chrono::minutes(5))) {
                             reset(sp, state_value::RETRY);
                             //  reconnect after a specified "reconnect.timeout"
-                            reconnect_->suspend(reconnect_timeout_, "run");
+                            //  handle dispatch errors
+                            reconnect_->suspend(
+                                reconnect_timeout_,
+                                "run",
+                                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                         } else {
                             reset(sp, state_value::START);
                         }
@@ -589,7 +607,9 @@ namespace smf {
         //
         // close open channel
         //
-        ctl_.get_registry().dispatch(mgr_.get_id(), "close");
+        //  handle dispatch errors
+        ctl_.get_registry().dispatch(
+            mgr_.get_id(), "close", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //	next meter
@@ -615,7 +635,9 @@ namespace smf {
                 //
                 //  open push channel
                 //
-                ctl_.get_registry().dispatch(name, "open");
+                //  handle dispatch errors
+                ctl_.get_registry().dispatch(
+                    name, "open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
                 //} else {
 

@@ -79,7 +79,12 @@ namespace smf {
             if (cfg_gpio_.is_enabled()) {
 
                 auto const gpio_task_name = cfg_gpio::get_name(lmn_type::ETHERNET);
-                ctl_.get_registry().dispatch(gpio_task_name, "turn", false);
+                //  handle dispatch errors
+                ctl_.get_registry().dispatch(
+                    gpio_task_name,
+                    "turn",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    false);
             }
         }
     }
@@ -123,7 +128,12 @@ namespace smf {
                 CYNG_LOG_TRACE(
                     logger_, "[" << cfg_blocklist_.get_task_name() << "] " << data.size() << " bytes passing to " << target);
                 //  we have to make a copy of "data" to prevent moving "data" away.
-                ctl_.get_registry().dispatch(target, "receive", cyng::clone(data));
+                ctl_.get_registry().dispatch(
+                    target,
+                    "receive",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    cyng::clone(data));
             }
         }
     }
@@ -153,7 +163,12 @@ namespace smf {
                     //  distribute valid data
                     //
                     for (auto target : targets_) {
-                        ctl_.get_registry().dispatch(target, "receive", mbus::radio::restore_data(h, t, payload));
+                        ctl_.get_registry().dispatch(
+                            target,
+                            "receive",
+                            //  handle dispatch errors
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                            mbus::radio::restore_data(h, t, payload));
                     }
                 }
             } else {
@@ -174,7 +189,12 @@ namespace smf {
                         "[" << cfg_blocklist_.get_task_name() << "] send " << accumulated_bytes_ << " bytes to " << targets_.size()
                             << " target(s) in " << cfg_blocklist_.get_mode() << " mode");
                     for (auto target : targets_) {
-                        ctl_.get_registry().dispatch(target, "receive", mbus::radio::restore_data(h, t, payload));
+                        ctl_.get_registry().dispatch(
+                            target,
+                            "receive",
+                            //  handle dispatch errors
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                            mbus::radio::restore_data(h, t, payload));
                     }
                 }
             } else {
@@ -260,7 +280,11 @@ namespace smf {
 
         if (auto sp = channel_.lock(); sp) {
             //  repeat
-            sp->suspend(std::chrono::seconds(1), "update-statistics");
+            //  handle dispatch errors
+            sp->suspend(
+                std::chrono::seconds(1),
+                "update-statistics",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
         }
     }
 
@@ -272,7 +296,13 @@ namespace smf {
         if (cfg_gpio_.is_enabled()) {
 
             auto const gpio_task_name = cfg_gpio::get_name(lmn_type::ETHERNET);
-            ctl_.get_registry().dispatch(gpio_task_name, "flashing", cyng::make_tuple(ms, count));
+            ctl_.get_registry().dispatch(
+                gpio_task_name,
+                "flashing",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                ms,
+                count);
         }
     }
 

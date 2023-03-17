@@ -222,7 +222,11 @@ namespace smf {
 
                 if (auto sp = channel_.lock(); sp) {
                     CYNG_LOG_INFO(logger_, "[wmbus.push] reopen channels in one minute");
-                    sp->suspend(std::chrono::minutes(1), "open.channels");
+                    //  handle dispatch errors
+                    sp->suspend(
+                        std::chrono::minutes(1),
+                        "open.channels",
+                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                 } else {
                     CYNG_LOG_ERROR(logger_, "[wmbus.push] channel invalid - cannot reopen channels");
                 }
@@ -257,7 +261,11 @@ namespace smf {
             //
             if (auto sp = channel_.lock(); sp) {
                 CYNG_LOG_INFO(logger_, "[wmbus.push] reconnect in one minute");
-                sp->suspend(std::chrono::minutes(1), "connect");
+                //  handle dispatch errors
+                sp->suspend(
+                    std::chrono::minutes(1),
+                    "connect",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
             } else {
                 CYNG_LOG_ERROR(logger_, "[wmbus.push] channel invalid - cannot reconnect");
             }

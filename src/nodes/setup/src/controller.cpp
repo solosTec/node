@@ -125,11 +125,12 @@ namespace smf {
         std::string storage_type,
         cyng::param_map_t &&cfg_db) {
 
-        cluster_ = ctl.create_named_channel_with_ref<cluster>(
-                          "cluster", ctl, tag, node_name, logger, std::move(cfg_cluster), storage_type, std::move(cfg_db))
-                       .first;
+        cluster *tsk = nullptr;
+        std::tie(cluster_, tsk) = ctl.create_named_channel_with_ref<cluster>(
+            "cluster", ctl, tag, node_name, logger, std::move(cfg_cluster), storage_type, std::move(cfg_db));
         BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect", cyng::make_tuple());
+        BOOST_ASSERT(tsk != nullptr);
+        tsk->connect();
     }
 
     cyng::param_t controller::create_cluster_spec() {

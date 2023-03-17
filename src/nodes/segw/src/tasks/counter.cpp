@@ -43,7 +43,11 @@ namespace smf {
         //
         if (auto sp = channel_.lock(); sp) {
             //  repeat
-            sp->suspend(std::chrono::seconds(1), "inc");
+            //  handle dispatch errors
+            sp->suspend(
+                std::chrono::seconds(1),
+                "inc",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             //
             //	increment

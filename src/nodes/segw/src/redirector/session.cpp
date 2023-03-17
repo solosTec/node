@@ -52,7 +52,11 @@ namespace smf {
             //
             //	port name == LMN task name
             //
-            channel_->dispatch("connect", cyng::make_tuple(cfg_.get_port_name()));
+            //  handle dispatch errors
+            channel_->dispatch(
+                "connect",
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                cfg_.get_port_name());
 
             //
             //	start reading incoming data (mostly "/?!")
@@ -132,6 +136,8 @@ namespace smf {
                         registry_.dispatch(
                             port_name,
                             "write",
+                            //  handle dispatch errors
+                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                             cyng::make_tuple(cyng::buffer_t(buffer_.begin(), buffer_.begin() + bytes_transferred)));
 
                         //
@@ -151,7 +157,13 @@ namespace smf {
             if (channel_) {
                 auto const id = channel_->get_id();
                 CYNG_LOG_TRACE(logger_, "[RDR] stop redirector #" << channel_->get_id());
-                registry_.dispatch(cfg_.get_port_name(), "remove-data-sink", id);
+
+                registry_.dispatch(
+                    cfg_.get_port_name(),
+                    "remove-data-sink",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    id);
                 channel_->stop();
                 return true;
             }

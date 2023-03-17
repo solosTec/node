@@ -84,7 +84,12 @@ namespace smf {
                     acceptor_.cancel(ec);
                     acceptor_.close(ec);
 
-                    sp->suspend(delay, "start", cyng::make_tuple(delay));
+                    //  handle dispatch errors
+                    sp->suspend(
+                        delay,
+                        "start",
+                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        cyng::make_tuple(delay));
                 }
             } else {
                 CYNG_LOG_FATAL(logger_, "[RDR] task removed");
@@ -130,7 +135,12 @@ namespace smf {
                                 cfg_listener cfg(cfg_, type_);
                                 auto const delay = cfg.get_delay();
                                 CYNG_LOG_INFO(logger_, "[RDR] #" << cp->get_id() << " restart other listener");
-                                ctl_.get_registry().dispatch_exclude(sp, "start", cyng::make_tuple(delay));
+                                ctl_.get_registry().dispatch_exclude(
+                                    sp,
+                                    "start",
+                                    //  handle dispatch errors
+                                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                                    cyng::make_tuple(delay));
                                 // if (count == 0) {
                                 //     CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " no other listener available");
                                 // } else {
@@ -158,7 +168,12 @@ namespace smf {
                         auto cp = channel_.lock();
                         if (cp && session_counter_ == 1) {
                             CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " halt other listener(s)");
-                            ctl_.get_registry().dispatch_exclude(cp, "halt", cyng::make_tuple());
+                            ctl_.get_registry().dispatch_exclude(
+                                cp,
+                                "halt",
+                                //  handle dispatch errors
+                                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                                cyng::make_tuple());
                             // if (count == 0) {
                             //     CYNG_LOG_WARNING(logger_, "[RDR] #" << cp->get_id() << " no other listeners available");
                             // } else {

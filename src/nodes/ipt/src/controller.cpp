@@ -166,14 +166,16 @@ namespace smf {
         std::chrono::seconds timeout,
         cyng::mac48 client_id) {
 
-        cluster_ = ctl.create_named_channel_with_ref<cluster>(
-                          "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout, client_id)
-                       .first;
+        cluster *tsk = nullptr;
+        std::tie(cluster_, tsk) = ctl.create_named_channel_with_ref<cluster>(
+            "cluster", ctl, tag, query, node_name, logger, std::move(tgl), sk, watchdog, timeout, client_id);
         BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect");
+        BOOST_ASSERT(tsk != nullptr);
+        tsk->connect();
 
         auto const ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(address), port);
-        cluster_->dispatch("listen", ep);
+        //  handle dispatch errors
+        cluster_->dispatch("listen", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), ep);
     }
 
 } // namespace smf

@@ -76,11 +76,12 @@ namespace smf {
         auto const ep = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port);
         CYNG_LOG_INFO(logger, "server is listening at " << ep);
 
-        cluster_ = ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(cfg), ep).first;
+        cluster *tsk = nullptr;
+        std::tie(cluster_, tsk) =
+            ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, node_name, logger, std::move(cfg), ep);
         BOOST_ASSERT(cluster_->is_open());
-        cluster_->dispatch("connect");
-
-        // cluster_->dispatch("listen", ep);
+        BOOST_ASSERT(tsk != nullptr);
+        tsk->connect();
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {

@@ -53,7 +53,9 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[gatekeeper] defer by " << timeout_.count() << " seconds");
         auto sp = channel_.lock();
         if (sp) {
-            sp->suspend(timeout_, "timeout");
+            //  handle dispatch errors
+            sp->suspend(
+                timeout_, "timeout", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
         }
     }
 

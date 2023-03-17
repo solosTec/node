@@ -168,7 +168,15 @@ namespace smf {
         //  send update status to client
         //
         if (auto sp = channel_.lock(); sp) {
-            registry_.dispatch(client_task_, "channel.open", success, sp->get_name(), channel, source);
+            registry_.dispatch(
+                client_task_,
+                "channel.open",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                success,
+                sp->get_name(),
+                channel,
+                source);
         }
     }
 
@@ -177,7 +185,13 @@ namespace smf {
             CYNG_LOG_INFO(logger_, "[push] channel " << channel << " is closed");
             auto sp = channel_.lock();
             if (sp) {
-                registry_.dispatch(client_task_, "channel.close", sp->get_name(), channel);
+                registry_.dispatch(
+                    client_task_,
+                    "channel.close",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    sp->get_name(),
+                    channel);
             }
         } else {
             CYNG_LOG_WARNING(logger_, "[push] close channel " << channel << " failed");

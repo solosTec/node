@@ -67,7 +67,9 @@ namespace smf {
             //
             //  restart
             //
-            sp->suspend(interval, "run");
+            //  handle dispatch errors
+            sp->suspend(
+                interval, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
             CYNG_LOG_TRACE(logger_, "[report LPex] run " << obis::get_name(profile_) << " at " << next);
 
             //

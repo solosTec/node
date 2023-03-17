@@ -85,7 +85,8 @@ namespace smf {
 
     void wmbus_session::do_read() {
         auto self = shared_from_this();
-        gatekeeper_->dispatch("defer");
+        //  handle dispatch errors
+        gatekeeper_->dispatch("defer", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         socket_.async_read_some(
             boost::asio::buffer(buffer_.data(), buffer_.size()),
@@ -304,7 +305,12 @@ namespace smf {
 #endif
     }
     void wmbus_session::push_dlsm_data(cyng::buffer_t const &payload) {
-        ctl_.get_registry().dispatch("push", "send.dlsm", cyng::make_tuple());
+        ctl_.get_registry().dispatch(
+            "push",
+            "send.dlsm",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            cyng::make_tuple());
     }
     void wmbus_session::push_data(cyng::buffer_t const &payload) {}
 
@@ -321,7 +327,8 @@ namespace smf {
         //
         //	open CSV file
         //
-        writer_->dispatch("open", cyng::make_tuple(id));
+        //  handle dispatch errors
+        writer_->dispatch("open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), id);
 
         std::size_t offset = 2;
         cyng::obis code;
@@ -345,7 +352,13 @@ namespace smf {
                 //
                 //	store data to csv file
                 //
-                writer_->dispatch("store", cyng::make_tuple(code, value, smf::mbus::get_name(u)));
+                //  handle dispatch errors
+                writer_->dispatch(
+                    "store",
+                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    code,
+                    value,
+                    smf::mbus::get_name(u));
 
                 if (!init) {
                     init = true;
@@ -369,12 +382,19 @@ namespace smf {
         //
         //	close CSV file
         //
-        writer_->dispatch("commit");
+        //  handle dispatch errors
+        writer_->dispatch("commit", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         auto const msg = ss.str();
         CYNG_LOG_TRACE(logger_, "[sml] CI_HEADER_SHORT: " << msg);
 
-        ctl_.get_registry().dispatch("push", "send.mbus", cyng::buffer_t(address.begin(), address.end()), sml_list);
+        ctl_.get_registry().dispatch(
+            "push",
+            "send.mbus",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            cyng::buffer_t(address.begin(), address.end()),
+            sml_list);
         return count;
     }
 
@@ -388,7 +408,7 @@ namespace smf {
         //
         //	open CSV file
         //
-        writer_->dispatch("open", cyng::make_tuple(id));
+        writer_->dispatch("open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), id);
 
         std::size_t count{0};
         smf::sml::unpack p(
@@ -410,7 +430,11 @@ namespace smf {
                     //
                     //	store data to csv file
                     //
-                    writer_->dispatch("store", cyng::make_tuple(m.first, value, unit_name));
+                    //  handle dispatch errors
+                    writer_->dispatch(
+                        "store",
+                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        cyng::make_tuple(m.first, value, unit_name));
                 }
 
                 count = data.size();
@@ -420,7 +444,7 @@ namespace smf {
         //
         //	close CSV file
         //
-        writer_->dispatch("commit");
+        writer_->dispatch("commit", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //	remove trailing 0x2F
@@ -433,7 +457,12 @@ namespace smf {
             data.resize(index);
         }
 
-        ctl_.get_registry().dispatch("push", "send.sml", cyng::make_tuple(cyng::buffer_t(address.begin(), address.end()), data));
+        ctl_.get_registry().dispatch(
+            "push",
+            "send.sml",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            cyng::make_tuple(cyng::buffer_t(address.begin(), address.end()), data));
 
         return count;
     }

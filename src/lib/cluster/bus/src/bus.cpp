@@ -53,6 +53,8 @@ namespace smf {
 
         cyng::net::client_factory cf(ctl);
         client_ = cf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
+            //  handle dispatch errors
+            [this](std::string task, std::string slot) { CYNG_LOG_FATAL(logger_, task << " has no slot " << slot); },
             [this](std::size_t, std::size_t counter, std::string &host, std::string &service)
                 -> std::pair<std::chrono::seconds, bool> {
                 //
@@ -127,6 +129,9 @@ namespace smf {
     cyng::vm_proxy bus::init_vm(bus_client_interface *bip) {
 
         return bip->get_fabric()->make_proxy(
+
+            //  handle dispatch errors
+            [this](std::string task, std::string slot) { cyng::log_dispatch_error(logger_, task, slot); },
 
             //	"cluster.res.login"
             cyng::make_description(

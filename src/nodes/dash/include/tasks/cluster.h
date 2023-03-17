@@ -31,8 +31,11 @@ namespace smf {
     class cluster : private bus_client_interface {
         template <typename T> friend class cyng::task;
 
-        using signatures_t = std::
-            tuple<std::function<void(void)>, std::function<void(boost::asio::ip::tcp::endpoint)>, std::function<void(cyng::eod)>>;
+        using signatures_t = std::tuple<
+            std::function<void(void)>,                           // open
+            std::function<void(boost::asio::ip::tcp::endpoint)>, // listen
+            std::function<void(cyng::eod)>                       // stop
+            >;
 
       public:
         cluster(
@@ -54,10 +57,9 @@ namespace smf {
         ~cluster();
 
         void stop(cyng::eod);
-
-      private:
         void connect();
 
+      private:
         //
         //	bus interface
         //

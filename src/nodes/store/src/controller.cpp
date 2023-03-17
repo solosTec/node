@@ -713,12 +713,20 @@ namespace smf {
                 auto channel = ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age).first;
                 BOOST_ASSERT(channel->is_open());
                 // don't start immediately
-                channel->suspend(age / 2, "run");
+
+                channel->suspend(
+                    age / 2,
+                    "run",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
 
                 //  first vacuum the database
                 if (!vac) {
                     vac = true;
-                    channel->dispatch("vacuum");
+                    channel->dispatch(
+                        "vacuum",
+                        //  handle dispatch errors
+                        std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
                 }
 
             } else {
@@ -757,7 +765,12 @@ namespace smf {
                 auto channel =
                     ctl.create_named_channel_with_ref<gap_report>("gap-report", ctl, logger, db, profile, root, age).first;
                 BOOST_ASSERT(channel->is_open());
-                channel->dispatch("run", age / 2);
+
+                channel->dispatch(
+                    "run",
+                    //  handle dispatch errors
+                    std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2),
+                    age / 2);
             } else {
                 CYNG_LOG_WARNING(
                     logger, "gap report on db " << name << " for profile " << obis::get_name(profile) << " is disabled");
@@ -787,17 +800,16 @@ namespace smf {
         std::set<std::string> const &dlms_targets,
         std::set<std::string> const &writer) {
 
-        auto channel =
-            ctl.create_named_channel_with_ref<network>(
-                   "network", ctl, tag, logger, node_name, model, std::move(tgl), sml_targets, iec_targets, dlms_targets, writer)
-                .first;
+        auto [channel, tsk] = ctl.create_named_channel_with_ref<network>(
+            "network", ctl, tag, logger, node_name, model, std::move(tgl), sml_targets, iec_targets, dlms_targets, writer);
         BOOST_ASSERT(channel->is_open());
         channels.lock(channel);
+        BOOST_ASSERT(tsk != nullptr);
 
         //
-        //  wait for IP-T server to start up
+        //  "connect" is also as slot available
         //
-        channel->suspend(delay, "connect");
+        tsk->connect();
     }
 
     bool controller::run_options(boost::program_options::variables_map &vars) {
@@ -1614,7 +1626,9 @@ namespace smf {
                 auto const interval = sml::interval_time(now, profile);
                 CYNG_LOG_INFO(logger, "start CSV report " << profile << " (" << name << ") at " << now + interval);
 
-                channel->suspend(interval, "run");
+                //  handle dispatch errors
+                channel->suspend(
+                    interval, "run", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
 
             } else {
                 CYNG_LOG_TRACE(logger, "CSV report " << cfg.first << " is disabled");
@@ -1691,7 +1705,11 @@ namespace smf {
                     //
                     //  make sure that the interval is at least 2h long
                     //
-                    channel->suspend(interval < std::chrono::minutes(2 * 60) ? std::chrono::minutes(2 * 60) : interval, "run");
+                    //  handle dispatch errors
+                    channel->suspend(
+                        interval < std::chrono::minutes(2 * 60) ? std::chrono::minutes(2 * 60) : interval,
+                        "run",
+                        std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
                 } else {
                     CYNG_LOG_TRACE(logger, "LPEx report " << cfg.first << " (" << name << ") is disabled");
                 }
@@ -1756,7 +1774,11 @@ namespace smf {
                     //
                     //  make sure that the interval is at least 2h long
                     //
-                    channel->suspend(interval < std::chrono::minutes(2 * 60) ? std::chrono::minutes(2 * 60) : interval, "run");
+                    //  handle dispatch errors
+                    channel->suspend(
+                        interval < std::chrono::minutes(2 * 60) ? std::chrono::minutes(2 * 60) : interval,
+                        "run",
+                        std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
                 } else {
                     CYNG_LOG_TRACE(logger, "LPEx report " << cfg.first << " (" << name << ") is disabled");
                 }

@@ -29,8 +29,8 @@ namespace smf {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
-            std::function<void(void)>,                           //
-            std::function<void(boost::asio::ip::tcp::endpoint)>, //
+            std::function<void(void)>,                           // connect
+            std::function<void(boost::asio::ip::tcp::endpoint)>, // listen
             std::function<void(cyng::eod)>                       // stop
             >;
 
