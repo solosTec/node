@@ -966,9 +966,11 @@ namespace smf {
                 if (pin == 53u) {
                     // turn on the Power LED and turn off all others
                     CYNG_LOG_TRACE(logger_, "Init GPIOs: turned on the PWR LED.");
-                    channel->dispatch("turn", true);
+                    channel->dispatch(
+                        "turn", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), true);
                 } else {
-                    channel->dispatch("turn", false);
+                    channel->dispatch(
+                        "turn", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), false);
                 }
 #endif
             }
