@@ -99,7 +99,7 @@ namespace smf {
         ping_->suspend(
             std::chrono::minutes(1),
             "update",
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&db::log_dispatch_error, &cache_, std::placeholders::_1, std::placeholders::_2));
     }
 
     void session::do_read() {
@@ -136,7 +136,7 @@ namespace smf {
 
         return fabric.make_proxy(
             //  handle dispatch errors
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            std::bind(&db::log_dispatch_error, &cache_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_description(
                 "cluster.req.login",
                 cyng::vm_adaptor<

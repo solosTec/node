@@ -148,7 +148,7 @@ namespace smf {
                                     //  handle dispatch errors
                                     channel->dispatch(
                                         "add.meter",
-                                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                                        std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
                                         name,
                                         rec_iec.key());
 
@@ -183,12 +183,12 @@ namespace smf {
         //
         //  handle dispatch errors
         channel->dispatch(
-            "init", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), interval);
+            "init", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2), interval);
         //  handle dispatch errors
         channel->suspend(
             std::chrono::seconds(delay_) + std::chrono::seconds(12), //  +12 sec offset
             "start",
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //  client stays alive since using a timer with a reference to the task
@@ -272,7 +272,7 @@ namespace smf {
                                 ctl_.get_registry().dispatch(
                                     task_name,
                                     "add.meter",
-                                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                                    std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
                                     name,
                                     rec.key());
 
@@ -317,7 +317,7 @@ namespace smf {
         channel->suspend(
             std::chrono::seconds(15) + std::chrono::milliseconds(stash_.size() * 120),
             "connect",
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
         stash_.lock(channel);
         CYNG_LOG_INFO(logger_, "[cluster] " << stash_.size() << " push tasks stashed");
 
@@ -340,7 +340,7 @@ namespace smf {
                         ctl_.get_registry().dispatch(
                             task_name,
                             "remove.meter",
-                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
                             name);
 
                         //
@@ -490,7 +490,7 @@ namespace smf {
                         ctl_.get_registry().dispatch(
                             task_name,
                             "shutdown",
-                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+                            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 #ifdef _DEBUG
                         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 #endif

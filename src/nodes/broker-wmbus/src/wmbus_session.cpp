@@ -86,7 +86,7 @@ namespace smf {
     void wmbus_session::do_read() {
         auto self = shared_from_this();
         //  handle dispatch errors
-        gatekeeper_->dispatch("defer", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+        gatekeeper_->dispatch("defer", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         socket_.async_read_some(
             boost::asio::buffer(buffer_.data(), buffer_.size()),
@@ -309,7 +309,7 @@ namespace smf {
             "push",
             "send.dlsm",
             //  handle dispatch errors
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_tuple());
     }
     void wmbus_session::push_data(cyng::buffer_t const &payload) {}
@@ -328,7 +328,7 @@ namespace smf {
         //	open CSV file
         //
         //  handle dispatch errors
-        writer_->dispatch("open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), id);
+        writer_->dispatch("open", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2), id);
 
         std::size_t offset = 2;
         cyng::obis code;
@@ -355,7 +355,7 @@ namespace smf {
                 //  handle dispatch errors
                 writer_->dispatch(
                     "store",
-                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
                     code,
                     value,
                     smf::mbus::get_name(u));
@@ -383,7 +383,7 @@ namespace smf {
         //	close CSV file
         //
         //  handle dispatch errors
-        writer_->dispatch("commit", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+        writer_->dispatch("commit", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         auto const msg = ss.str();
         CYNG_LOG_TRACE(logger_, "[sml] CI_HEADER_SHORT: " << msg);
@@ -392,7 +392,7 @@ namespace smf {
             "push",
             "send.mbus",
             //  handle dispatch errors
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             cyng::buffer_t(address.begin(), address.end()),
             sml_list);
         return count;
@@ -408,7 +408,7 @@ namespace smf {
         //
         //	open CSV file
         //
-        writer_->dispatch("open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), id);
+        writer_->dispatch("open", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2), id);
 
         std::size_t count{0};
         smf::sml::unpack p(
@@ -433,7 +433,7 @@ namespace smf {
                     //  handle dispatch errors
                     writer_->dispatch(
                         "store",
-                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
                         cyng::make_tuple(m.first, value, unit_name));
                 }
 
@@ -444,7 +444,7 @@ namespace smf {
         //
         //	close CSV file
         //
-        writer_->dispatch("commit", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+        writer_->dispatch("commit", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //	remove trailing 0x2F
@@ -461,7 +461,7 @@ namespace smf {
             "push",
             "send.sml",
             //  handle dispatch errors
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_tuple(cyng::buffer_t(address.begin(), address.end()), data));
 
         return count;

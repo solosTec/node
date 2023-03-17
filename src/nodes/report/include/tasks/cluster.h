@@ -49,9 +49,9 @@ namespace smf {
             cyng::param_map_t &&cfg_db);
 
         ~cluster() = default;
+        void connect();
 
       private:
-        void connect();
         void start_csv(cyng::param_map_t);
         void start_lpex(cyng::param_map_t);
         void start_feed(cyng::param_map_t);

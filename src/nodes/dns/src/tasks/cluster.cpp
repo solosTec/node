@@ -1,9 +1,6 @@
 #include <tasks/cluster.h>
 
-// #include <session.h>
-
 #include <cyng/log/record.h>
-// #include <cyng/net/server_factory.hpp>
 #include <cyng/obj/util.hpp>
 #include <cyng/task/channel.h>
 

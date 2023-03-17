@@ -131,7 +131,7 @@ namespace smf {
         return bip->get_fabric()->make_proxy(
 
             //  handle dispatch errors
-            [this](std::string task, std::string slot) { cyng::log_dispatch_error(logger_, task, slot); },
+            [this](std::string task, std::string slot) { log_dispatch_error(task, slot); },
 
             //	"cluster.res.login"
             cyng::make_description(
@@ -356,6 +356,12 @@ namespace smf {
     }
 
     void bus::push_sys_msg(std::string msg, cyng::severity level) { client_.send(cyng::serialize_invoke("sys.msg", msg, level)); }
+
+    void bus::log_dispatch_error(std::string task, std::string slot) {
+        //  internal dispatch error
+        std::string msg = "internal dispatch error: " + task + "/" + slot;
+        client_.send(cyng::serialize_invoke("sys.msg", msg, cyng::severity::LEVEL_FATAL));
+    }
 
     void bus::update_pty_counter(std::uint64_t count) {
 

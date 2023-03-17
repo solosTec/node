@@ -160,22 +160,21 @@ namespace smf {
         ipt::toggle::server_vec_t &&tgl_ipt,
         ipt::push_channel &&pcc) {
 
-        auto channel = ctl.create_named_channel_with_ref<cluster>(
-                              "cluster",
-                              ctl,
-                              tag,
-                              node_name,
-                              logger,
-                              std::move(tgl_cluster),
-                              login,
-                              reconnect_timeout,
-                              std::move(tgl_ipt),
-                              std::move(pcc))
-                           .first;
+        auto [channel, tsk] = ctl.create_named_channel_with_ref<cluster>(
+            "cluster",
+            ctl,
+            tag,
+            node_name,
+            logger,
+            std::move(tgl_cluster),
+            login,
+            reconnect_timeout,
+            std::move(tgl_ipt),
+            std::move(pcc));
 
         BOOST_ASSERT(channel->is_open());
-        //  handle dispatch errors
-        channel->dispatch("connect", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
+        BOOST_ASSERT(tsk != nullptr);
+        tsk->connect();
         channels.lock(channel);
     }
 

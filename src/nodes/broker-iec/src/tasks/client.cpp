@@ -249,7 +249,7 @@ namespace smf {
             if (sp->suspend(
                     next_readout_,
                     "start",
-                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2))) {
+                    std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2))) {
 
                 CYNG_LOG_INFO(
                     logger_, "start client: " << host_ << ':' << service_ << " #" << mgr_.size() << " @" << next_readout_);
@@ -332,7 +332,7 @@ namespace smf {
                         reconnect_->suspend(
                             reconnect_timeout_,
                             "run",
-                            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+                            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
                     } else {
                         bus_.req_db_update(
                             "gwIEC",
@@ -424,7 +424,7 @@ namespace smf {
                 //
                 //  handle dispatch errors
                 ctl_.get_registry().dispatch(
-                    name, "open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+                    name, "open", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
             }
         }
     }
@@ -486,7 +486,7 @@ namespace smf {
                     mgr_.get_id(),
                     "push",
                     //  handle dispatch errors
-                    std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                    std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
                     cyng::buffer_t(input_buffer_.data(), input_buffer_.data() + bytes_transferred));
                 //
                 //  start parser
@@ -534,7 +534,7 @@ namespace smf {
                             reconnect_->suspend(
                                 reconnect_timeout_,
                                 "run",
-                                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+                                std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
                         } else {
                             reset(sp, state_value::START);
                         }
@@ -609,7 +609,7 @@ namespace smf {
         //
         //  handle dispatch errors
         ctl_.get_registry().dispatch(
-            mgr_.get_id(), "close", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+            mgr_.get_id(), "close", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //	next meter
@@ -637,7 +637,7 @@ namespace smf {
                 //
                 //  handle dispatch errors
                 ctl_.get_registry().dispatch(
-                    name, "open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+                    name, "open", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
                 //} else {
 

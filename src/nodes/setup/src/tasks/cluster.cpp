@@ -55,7 +55,7 @@ namespace smf {
         //	load data into cache
         //
         //  handle dispatch errors
-        storage_->dispatch("open", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+        storage_->dispatch("open", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //	join cluster
@@ -76,7 +76,7 @@ namespace smf {
             //	load data from database and synchronize data with main node
             //
             //  handle dispatch errors
-            storage_->dispatch("load", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+            storage_->dispatch("load", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         } else {
             CYNG_LOG_ERROR(logger_, "joining cluster failed");
@@ -112,7 +112,7 @@ namespace smf {
                     //  handle dispatch errors
                     storage_->dispatch(
                         "insert",
-                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
                         table_name,
                         key,
                         data,
@@ -146,7 +146,7 @@ namespace smf {
         //  handle dispatch errors
         storage_->dispatch(
             "update",
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_tuple(table_name, key, attr, gen, tag));
     }
 
@@ -157,7 +157,7 @@ namespace smf {
         //  handle dispatch errors
         storage_->dispatch(
             "remove",
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             table_name,
             key,
             tag);
@@ -169,7 +169,7 @@ namespace smf {
 
         //  handle dispatch errors
         storage_->dispatch(
-            "clear", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2), table_name, tag);
+            "clear", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2), table_name, tag);
     }
 
     void cluster::upload(std::string const &table_name) {

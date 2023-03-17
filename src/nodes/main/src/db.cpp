@@ -1578,6 +1578,11 @@ namespace smf {
         return cache_.insert_auto("sysMsg", cyng::data_generator(std::chrono::system_clock::now(), level, msg), cfg_.get_tag());
     }
 
+    void db::log_dispatch_error(std::string task, std::string slot) {
+        //  internal dispatch error
+        push_sys_msg("internal dispatch error: " + task + "/" + slot, cyng::severity::LEVEL_FATAL);
+    }
+
     std::pair<std::uint32_t, bool> db::register_target(
         boost::uuids::uuid tag,
         boost::uuids::uuid dev,

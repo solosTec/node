@@ -92,7 +92,8 @@ namespace smf {
         virtual cfg_data_interface *get_cfg_data_interface() = 0;
     };
 
-    /**
+    /** @brief cluster bus
+     *
      * The TCP/IP behaviour is modelled after the async_tcp_client.cpp" example
      * in the asio C++11 example folder (libs/asio/example/cpp11/timeouts/async_tcp_client.cpp)
      */
@@ -215,6 +216,11 @@ namespace smf {
             push_sys_msg(ss.str(), level);
         }
         void push_sys_msg(std::string, cyng::severity level);
+
+        /**
+         * forward a dispatch error message
+         */
+        void log_dispatch_error(std::string task, std::string slot);
 
         /**
          * send an update request for "cluster" table to main node

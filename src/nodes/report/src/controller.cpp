@@ -265,24 +265,37 @@ namespace smf {
 
         BOOST_ASSERT(!csv_reports.empty());
 
-        cluster_ = ctl.create_named_channel_with_ref<cluster>(
-                          "report", ctl, channels, tag, node_name, logger, std::move(cfg_cluster), std::move(cfg_db))
-                       .first;
+        cluster *tsk = nullptr;
+        std::tie(cluster_, tsk) = ctl.create_named_channel_with_ref<cluster>(
+            "report", ctl, channels, tag, node_name, logger, std::move(cfg_cluster), std::move(cfg_db));
         BOOST_ASSERT(cluster_->is_open());
-        //  handle dispatch errors
-        cluster_->dispatch("connect", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
-        //  handle dispatch errors
+        BOOST_ASSERT(tsk != nullptr);
+
+        tsk->connect();
+
         cluster_->dispatch(
-            "start.csv", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), csv_reports);
-        //  handle dispatch errors
+            "start.csv",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2),
+            csv_reports);
+
         cluster_->dispatch(
-            "start.lpex", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), lpex_reports);
-        //  handle dispatch errors
+            "start.lpex",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2),
+            lpex_reports);
+
         cluster_->dispatch(
-            "start.feed", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), feed_reports);
-        //  handle dispatch errors
+            "start.feed",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2),
+            feed_reports);
+
         cluster_->dispatch(
-            "start.egp", std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2), gap_reports);
+            "start.egp",
+            //  handle dispatch errors
+            std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2),
+            gap_reports);
     }
 
     cyng::param_t create_cluster_spec() {

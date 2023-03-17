@@ -88,7 +88,7 @@ namespace smf {
         vm_ = fabric.make_proxy(
             cluster_bus_.get_tag(),
             //  handle dispatch errors
-            std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2),
+            std::bind(&bus::log_dispatch_error, &cluster_bus_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_description(
                 "pty.res.login",
                 cyng::vm_adaptor<imega_session, void, bool, boost::uuids::uuid>(this, &imega_session::pty_res_login)),
@@ -163,7 +163,7 @@ namespace smf {
         gatekeeper_->suspend(
             timeout,
             "timeout", //  handle dispatch errors
-            std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&bus::log_dispatch_error, &cluster_bus_, std::placeholders::_1, std::placeholders::_2));
     }
 
     void imega_session::do_read() {

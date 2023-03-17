@@ -159,6 +159,11 @@ namespace smf {
         bool push_sys_msg(std::string msg, cyng::severity);
 
         /**
+         * forward a dispatch error message
+         */
+        void log_dispatch_error(std::string task, std::string slot);
+
+        /**
          * insert new system message
          */
         template <typename Head, typename... Args> bool sys_msg(cyng::severity level, Head &&v, Args &&...args) {
