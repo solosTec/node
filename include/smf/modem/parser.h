@@ -98,7 +98,7 @@ namespace smf {
              * @param cb this function is called, when parsing is complete
              */
             parser(command_cb, data_cb, std::chrono::milliseconds guard_time);
-            parser(parser &&) noexcept = default;
+            parser(parser &&) = default;
 
             /**
              * The destructor is required since the unique_ptr
