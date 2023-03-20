@@ -4,6 +4,7 @@
 set (dns_lib)
 
 set (dns_cpp
+    src/lib/dns/protocol/src/header.cpp
     src/lib/dns/protocol/src/parser.cpp
     src/lib/dns/protocol/src/serializer.cpp
 )

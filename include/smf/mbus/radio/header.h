@@ -55,11 +55,14 @@ namespace smf {
                 using data_type = std::array<value_type, SIZE::value>;
 
               public:
-                constexpr static std::size_t size() noexcept { return SIZE::value; }
-
                 header();
 
                 void reset();
+
+                /**
+                 * size of internal data buffer
+                 */
+                constexpr static std::size_t size() noexcept { return SIZE::value; }
 
                 /**
                  * total size
@@ -150,7 +153,7 @@ namespace smf {
             };
 
             /** @brief Transport Layer
-             *  
+             *
              * Context data required to decrypt wireless mBus data.
              * Part of the mBus wireless header.
              * Same for short and long TPL headers

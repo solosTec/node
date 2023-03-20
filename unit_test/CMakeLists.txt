@@ -19,6 +19,7 @@ add_executable(unit_test
     src/test_mbus.cpp
     src/test_obis.cpp
     src/test_report.cpp
+    src/test_dns.cpp
     ${test_assets}
 )
 
@@ -62,6 +63,7 @@ target_link_libraries(unit_test
         smf::ipt
         smf::mbus
         smf::obis
+        smf::dns
         smfsec::smfsec
         ${CYNG_LIBRARIES} 
         ${SMFSEC_LIBRARIES}
