@@ -7,23 +7,19 @@
 #ifndef SMF_IMEGA_SESSION_H
 #define SMF_IMEGA_SESSION_H
 
-#include <smf/cluster/bus.h>
+#include <smf/session/session.hpp>
+
 #include <smf/imega.h>
 #include <smf/imega/parser.h>
 #include <smf/imega/serializer.h>
 
-#include <cyng/log/logger.h>
-#include <cyng/net/client_proxy.h>
-#include <cyng/task/controller.h>
-#include <cyng/vm/proxy.h>
-#include <cyng/vm/vm_fwd.h>
-
-#include <array>
-#include <memory>
-
 namespace smf {
 
-    class imega_session : public std::enable_shared_from_this<imega_session> {
+    class imega_session : public session<imega::parser, imega::serializer, imega_session, 2048> {
+
+        //  base class
+        using base_t = session<imega::parser, imega::serializer, imega_session, 2048>;
+
       public:
         imega_session(
             boost::asio::ip::tcp::socket socket,
@@ -32,18 +28,19 @@ namespace smf {
             cyng::logger logger,
             imega::policy policy,
             std::string const &pwd);
-        ~imega_session();
 
-        void start(std::chrono::seconds timeout);
+        virtual ~imega_session();
+
+        // void start(std::chrono::seconds timeout);
         void stop();
         void logout();
 
         boost::asio::ip::tcp::endpoint get_remote_endpoint() const;
 
       private:
-        void do_read();
-        void do_write();
-        void handle_write(const boost::system::error_code &ec);
+        // void do_read();
+        // void do_write();
+        // void handle_write(const boost::system::error_code &ec);
 
         void pty_stop();
 
@@ -73,50 +70,50 @@ namespace smf {
         /**
          * send data to device
          */
-        void imega_send(std::function<cyng::buffer_t()> f);
+        // void imega_send(std::function<cyng::buffer_t()> f);
 
       private:
-        cyng::controller &ctl_;
-        boost::asio::ip::tcp::socket socket_;
-        cyng::logger logger_;
+        // cyng::controller &ctl_;
+        // boost::asio::ip::tcp::socket socket_;
+        // cyng::logger logger_;
 
-        bus &cluster_bus_;
+        // bus &cluster_bus_;
 
         /**
          * Buffer for incoming data.
          */
-        std::array<char, 2048> buffer_;
-        std::uint64_t rx_, sx_;
+        // std::array<char, 2048> buffer_;
+        // std::uint64_t rx_, sx_;
 
         /**
          * Buffer for outgoing data.
          */
-        std::deque<cyng::buffer_t> buffer_write_;
+        // std::deque<cyng::buffer_t> buffer_write_;
 
         /**
          * parser for imega data
          */
-        imega::parser parser_;
+        // imega::parser parser_;
 
         /**
          * serializer for imega data
          */
-        imega::serializer serializer_;
+        // imega::serializer serializer_;
 
         /**
          * client VM
          */
-        cyng::vm_proxy vm_;
+        // cyng::vm_proxy vm_;
 
         /**
          * tag/pk of device
          */
-        boost::uuids::uuid dev_;
+        // boost::uuids::uuid dev_;
 
         /**
          * gatekeeper
          */
-        cyng::channel_ptr gatekeeper_;
+        // cyng::channel_ptr gatekeeper_;
     };
 
 } // namespace smf

@@ -50,7 +50,8 @@ namespace smf {
           public:
             parser(cb_login, cb_watchdog, cb_data);
 
-            parser(parser const &) = delete;
+            // parser(parser const &) = delete;
+            parser(parser &&) = default;
 
             /**
              * parse the specified range

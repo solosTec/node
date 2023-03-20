@@ -16,9 +16,7 @@ set (imega_h
 
 set (imega_tasks
     include/tasks/cluster.h
-    include/tasks/gatekeeper.h
     src/tasks/cluster.cpp
-    src/tasks/gatekeeper.cpp
 )
 
 if(WIN32)
