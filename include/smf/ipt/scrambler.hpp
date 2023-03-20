@@ -49,13 +49,12 @@ namespace smf {
                  *	not thread safe(!)
                  */
                 T operator()() {
-                    BOOST_ASSERT_MSG(!(index_ > LAST), "counter out of range (1)");
                     if (index_ >= LAST) {
                         T tmp = index_;
                         index_ = FIRST;
                         return tmp;
                     }
-                    BOOST_ASSERT_MSG(index_ < LAST, "counter out of range (2)");
+                    BOOST_ASSERT_MSG(index_ < LAST, "counter out of range");
                     return index_++;
                 }
 

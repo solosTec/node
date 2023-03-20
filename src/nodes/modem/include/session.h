@@ -7,22 +7,18 @@
 #ifndef SMF_MODEM_SESSION_H
 #define SMF_MODEM_SESSION_H
 
-#include <smf/cluster/bus.h>
+#include <smf/session/session.hpp>
+
 #include <smf/modem/parser.h>
 #include <smf/modem/serializer.h>
 
-#include <cyng/log/logger.h>
-#include <cyng/obj/intrinsics/buffer.h>
-#include <cyng/task/controller.h>
-#include <cyng/vm/proxy.h>
-#include <cyng/vm/vm_fwd.h>
-
-#include <array>
-#include <memory>
-
 namespace smf {
 
-    class modem_session : public std::enable_shared_from_this<modem_session> {
+    class modem_session : public session<modem::parser, modem::serializer, modem_session, 2048> {
+
+        //  base class
+        using base_t = session<modem::parser, modem::serializer, modem_session, 2048>;
+
       public:
         modem_session(
             boost::asio::ip::tcp::socket socket,
@@ -31,20 +27,12 @@ namespace smf {
             cyng::logger logger,
             bool auto_answer,
             std::chrono::milliseconds guard);
-        ~modem_session();
+        virtual ~modem_session();
 
-        void start(std::chrono::seconds timeout);
         void stop();
         void logout();
 
-        boost::asio::ip::tcp::endpoint get_remote_endpoint() const;
-
       private:
-        void do_read();
-        void do_write();
-        void handle_write(const boost::system::error_code &ec);
-        void print(cyng::buffer_t &&);
-
         void pty_stop();
 
         void cfg_backup(
@@ -71,48 +59,7 @@ namespace smf {
         void pty_req_close_connection();
 
       private:
-        cyng::controller &ctl_;
-        cyng::logger logger_;
-        boost::asio::ip::tcp::socket socket_;
         bool const auto_answer_;
-
-        bus &cluster_bus_;
-
-        /**
-         * Buffer for incoming data.
-         */
-        std::array<char, 2048> buffer_;
-        std::uint64_t rx_, sx_;
-
-        /**
-         * Buffer for outgoing data.
-         */
-        std::deque<cyng::buffer_t> buffer_write_;
-
-        /**
-         * parser for modem data
-         */
-        modem::parser parser_;
-
-        /**
-         * serializer for modem data
-         */
-        modem::serializer serializer_;
-
-        /**
-         * session VM
-         */
-        cyng::vm_proxy vm_;
-
-        /**
-         * tag/pk of device
-         */
-        boost::uuids::uuid dev_;
-
-        /**
-         * gatekeeper
-         */
-        cyng::channel_ptr gatekeeper_;
     };
 
 } // namespace smf

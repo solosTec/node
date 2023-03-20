@@ -31,8 +31,6 @@ namespace smf {
             BOOST_ASSERT_MSG(d_cb, "no data callback specified");
         }
 
-        parser::~parser() {}
-
         bool parser::put(char c) {
             bool advance{true};
             switch (state_) {

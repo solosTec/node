@@ -1,9 +1,3 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Sylko Olzscher
- *
- */
 #include <session.h>
 #include <tasks/gatekeeper.h>
 
@@ -1053,9 +1047,9 @@ namespace smf {
                     name_ + "-proxy",
                     name_,
                     std::chrono::system_clock::now(),
-                    true,  //  local
-                    "ipt", //  protocol layer
-                    "ipt",
+                    true,                                    // local
+                    config::get_name(config::protocol::IPT), // protocol layer (caller)
+                    config::get_name(config::protocol::IPT), // protocol layer (callee)
                     static_cast<std::uint64_t>(0)),
                 1);
         } else {

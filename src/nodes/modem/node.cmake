@@ -16,9 +16,7 @@ set (modem_h
 
 set (modem_tasks
     include/tasks/cluster.h
-    include/tasks/gatekeeper.h
     src/tasks/cluster.cpp
-    src/tasks/gatekeeper.cpp
 )
 
 

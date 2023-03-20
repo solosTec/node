@@ -98,12 +98,13 @@ namespace smf {
              * @param cb this function is called, when parsing is complete
              */
             parser(command_cb, data_cb, std::chrono::milliseconds guard_time);
+            parser(parser &&) noexcept = default;
 
             /**
              * The destructor is required since the unique_ptr
              * uses an incomplete type.
              */
-            virtual ~parser();
+            ~parser() = default;
 
             /**
              * parse the specified range

@@ -443,6 +443,50 @@ target_link_libraries(smf_cluster_bus
 )
 
 #
+# add library: smf_session
+#
+include (src/lib/session/lib.cmake)
+add_library(smf_session ${GLOBAL_LIBRARY_TYPE} ${session_lib})
+add_library(smf::session ALIAS "smf_session")
+
+target_include_directories(smf_session
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        ${CYNG_INCLUDE_DIRS}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_features(smf_session PRIVATE 
+cxx_alignas
+    cxx_std_20
+    cxx_auto_type
+    cxx_constexpr
+    cxx_lambdas
+    cxx_noexcept
+    cxx_override
+    cxx_range_for
+    cxx_rvalue_references
+    cxx_static_assert
+    cxx_strong_enums
+)
+
+#
+#   debug smf session
+#
+target_compile_definitions(smf_session
+    PRIVATE 
+        $<$<CONFIG:Debug>:_DEBUG_SESSION>
+)
+
+target_link_libraries(smf_session
+    PRIVATE 
+        Boost::boost 
+)
+
+#
 # add library: smf_http
 #
 include (src/lib/http/lib.cmake)
@@ -1234,7 +1278,7 @@ install(
         PATTERN "*hpp"
 )
 
-set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_hci smf_http smf_ipt smf_modem smf_iec smf_ipt_bus smf_mbus smf_obis smf_report smf_serial_bus smf_sml dash imega ipt segw store lora main modem setup mqtt broker-iec broker-wmbus report)
+set(SMF_TARGET_LIST smf_cluster smf_cluster_bus smf_config smf_session smf_hci smf_http smf_ipt smf_modem smf_iec smf_ipt_bus smf_mbus smf_obis smf_report smf_serial_bus smf_sml dash imega ipt segw store lora main modem setup mqtt broker-iec broker-wmbus report)
 
 message(STATUS "** Target list                  : ${SMF_TARGET_LIST}")
 

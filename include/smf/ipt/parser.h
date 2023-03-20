@@ -77,6 +77,7 @@ namespace smf {
             using data_cb = std::function<void(cyng::buffer_t &&)>;
 
             parser(scramble_key const &, command_cb, data_cb);
+            parser(parser &&) = default;
 
             /**
              * parse the specified range
