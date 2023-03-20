@@ -8,26 +8,31 @@
 #define SMF_IPT_SESSION_H
 
 #include <proxy.h>
-#include <smf/cluster/bus.h>
+#include <smf/session/session.hpp>
+// #include <smf/cluster/bus.h>
 #include <smf/ipt/parser.h>
 #include <smf/ipt/serializer.h>
 #ifdef _DEBUG_IPT
 #include <smf/sml/unpack.h>
 #endif
 
-#include <cyng/log/logger.h>
-#include <cyng/obj/intrinsics/buffer.h>
-#include <cyng/task/controller.h>
-#include <cyng/vm/proxy.h>
-#include <cyng/vm/vm_fwd.h>
-
-#include <array>
-#include <memory>
+// #include <cyng/log/logger.h>
+// #include <cyng/obj/intrinsics/buffer.h>
+// #include <cyng/task/controller.h>
+// #include <cyng/vm/proxy.h>
+// #include <cyng/vm/vm_fwd.h>
+//
+// #include <array>
+// #include <memory>
 
 namespace smf {
 
     class proxy;
-    class ipt_session : public std::enable_shared_from_this<ipt_session> {
+    class ipt_session : public session<ipt::parser, ipt::serializer, ipt_session, 2048> {
+
+        //  base class
+        using base_t = session<ipt::parser, ipt::serializer, ipt_session, 2048>;
+
         friend class proxy;
 
       public:
@@ -39,18 +44,18 @@ namespace smf {
             ipt::scramble_key const &sk,
             std::uint32_t query,
             cyng::mac48 client_id);
-        ~ipt_session();
+        virtual ~ipt_session();
 
-        void start(std::chrono::seconds timeout);
+        // void start(std::chrono::seconds timeout);
         void stop();
         void logout();
 
-        boost::asio::ip::tcp::endpoint get_remote_endpoint() const;
+        // boost::asio::ip::tcp::endpoint get_remote_endpoint() const;
 
       private:
-        void do_read();
-        void do_write();
-        void handle_write(const boost::system::error_code &ec);
+        // void do_read();
+        // void do_write();
+        // void handle_write(const boost::system::error_code &ec);
 
         //
         //	bus interface
@@ -63,7 +68,7 @@ namespace smf {
          * @param f to provide a function that produces a buffer instead of the buffer itself
          * guaranties that scrambled content is has the correct index in the scramble key.
          */
-        void ipt_send(std::function<cyng::buffer_t()> f);
+        // void ipt_send(std::function<cyng::buffer_t()> f);
 
         void pty_res_login(bool success, boost::uuids::uuid dev);
         void pty_res_register(bool success, std::uint32_t channel, cyng::param_map_t token);
@@ -150,54 +155,16 @@ namespace smf {
         void update_connect_state(bool connected);
 
       private:
-        cyng::controller &ctl_;
-        boost::asio::ip::tcp::socket socket_;
-        cyng::logger logger_;
-
-        bus &cluster_bus_;
         std::uint32_t const query_;
 
-        /**
-         * Buffer for incoming data.
-         */
-        std::array<char, 2048> buffer_;
-        std::uint64_t rx_, sx_, px_;
+        std::uint64_t px_;
 
-        /**
-         * Buffer for outgoing data.
-         */
-        std::deque<cyng::buffer_t> buffer_write_;
-
-        /**
-         * parser for ip-t data
-         */
-        ipt::parser parser_;
         std::string name_; //  login name
-
-        /**
-         * serializer for ip-t data
-         */
-        ipt::serializer serializer_;
-
-        /**
-         * process cluster commands
-         */
-        cyng::vm_proxy vm_;
-
-        /**
-         * tag/pk of device
-         */
-        boost::uuids::uuid dev_;
 
         /**
          * store temporary data during connection establishment
          */
         std::map<ipt::sequence_t, cyng::param_map_t> oce_map_;
-
-        /**
-         * gatekeeper
-         */
-        cyng::channel_ptr gatekeeper_;
 
         /**
          * proxy

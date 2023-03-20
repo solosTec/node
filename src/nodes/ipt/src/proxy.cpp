@@ -188,7 +188,7 @@ namespace smf {
         //
         throughput_ += data.size();
         auto const key_conn = cyng::key_generator(cyng::merge(session_.dev_, session_.vm_.get_tag()));
-        session_.cluster_bus_.req_db_update("connection", key_conn, cyng::param_map_factory()("throughput", throughput_));
+        session_.bus_.req_db_update("connection", key_conn, cyng::param_map_factory()("throughput", throughput_));
     }
 
     std::string proxy::backup_s::get_state() const {
@@ -215,7 +215,7 @@ namespace smf {
         //
         //  query some basic configurations and all active devices
         //
-        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+        prx.session_.send([&, this]() mutable -> cyng::buffer_t {
             sml::messages_t messages;
             messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
             messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, OBIS_ROOT_LAN_DSL));
@@ -404,7 +404,7 @@ namespace smf {
 
         if (!meters_.empty()) {
 
-            prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+            prx.session_.send([&, this]() mutable -> cyng::buffer_t {
                 sml::messages_t messages;
                 messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
                 auto const id = meters_.front();
@@ -434,7 +434,7 @@ namespace smf {
         //
         state_ = query_state::QRY_ACCESS;
 
-        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+        prx.session_.send([&, this]() mutable -> cyng::buffer_t {
             CYNG_LOG_INFO(prx.logger_, "[proxy] backup " << get_state());
             sml::messages_t messages;
             messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
@@ -490,7 +490,7 @@ namespace smf {
 
         if (!access_.empty()) {
 
-            prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+            prx.session_.send([&, this]() mutable -> cyng::buffer_t {
                 // CYNG_LOG_INFO(logger_, "[proxy] backup " << get_state());
                 BOOST_ASSERT(!id_.empty());
                 sml::messages_t messages;
@@ -552,11 +552,10 @@ namespace smf {
         //
         if (connected) {
             state_ = query_state::QRY_BASIC;
-            ipts.cluster_bus_.req_db_update(
-                "session", cyng::key_generator(ipts.dev_), cyng::param_map_factory()("cTag", ipts.dev_));
+            ipts.bus_.req_db_update("session", cyng::key_generator(ipts.dev_), cyng::param_map_factory()("cTag", ipts.dev_));
         } else {
             state_ = query_state::OFF;
-            ipts.cluster_bus_.req_db_update(
+            ipts.bus_.req_db_update(
                 "session", cyng::key_generator(ipts.dev_), cyng::param_map_factory()("cTag", boost::uuids::nil_uuid()));
         }
 
@@ -589,7 +588,7 @@ namespace smf {
         //
         //  query proc parameter
         //
-        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+        prx.session_.send([&, this]() mutable -> cyng::buffer_t {
             sml::messages_t messages;
             messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
             messages.emplace_back(prx.req_gen_.get_proc_parameter(id_, root_));
@@ -625,7 +624,7 @@ namespace smf {
             //  [2022-03-07T10:52:25+0100] DEBUG 2a36b3de -- list  :
             auto const word = cyng::value_cast<sml::status_word_t>(evt.attr_.second, 0);
             CYNG_LOG_INFO(prx.logger_, "status word: " << word);
-            prx.session_.cluster_bus_.cfg_sml_channel_back(
+            prx.session_.bus_.cfg_sml_channel_back(
                 cyng::key_generator(cyng::to_string(id_)),                  //  key
                 sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE),  //  channel
                 root_,                                                      //  section
@@ -639,7 +638,7 @@ namespace smf {
 
             //  //  replace attribute by it's object
             auto const pm = smf::sml::compress(evt.tpl_);
-            prx.session_.cluster_bus_.cfg_sml_channel_back(
+            prx.session_.bus_.cfg_sml_channel_back(
                 cyng::key_generator(cyng::to_string(id_)),                 //  key
                 sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE), //  channel
                 evt.code_,                                                 //  section
@@ -674,7 +673,7 @@ namespace smf {
                     pm.emplace("active", cyng::make_object(evt.code_ == OBIS_ROOT_ACTIVE_DEVICES));
                     pm.emplace("serverId", cyng::make_object(cyng::clone(evt.srv_)));
                     CYNG_LOG_TRACE(prx.logger_, "device " << pm);
-                    prx.session_.cluster_bus_.cfg_sml_channel_back(
+                    prx.session_.bus_.cfg_sml_channel_back(
                         cyng::key_generator(cyng::to_string(id_)),                 //  key
                         sml::get_name(sml::msg_type::GET_PROC_PARAMETER_RESPONSE), //  channel
                         evt.code_,                                                 //  section
@@ -724,7 +723,7 @@ namespace smf {
         //
         //  set proc parameter
         //
-        prx.session_.ipt_send([&, this, path, attr]() mutable -> cyng::buffer_t {
+        prx.session_.send([&, this, path, attr]() mutable -> cyng::buffer_t {
             sml::messages_t messages;
             messages.emplace_back(prx.req_gen_.public_open(prx.client_id_, id_));
 
@@ -754,14 +753,12 @@ namespace smf {
         if (path ==
             cyng::obis_path_t({OBIS_ROOT_IPT_PARAM, {0x81, 0x49, 0x0d, 0x07, 0x00, 0x01}, {0x81, 0x49, 0x63, 0x3c, 0x01, 0x01}})) {
 
-            prx.session_.cluster_bus_.req_db_update(
-                "device", cyng::key_generator(tag_), cyng::param_map_factory()("name", attr.second));
+            prx.session_.bus_.req_db_update("device", cyng::key_generator(tag_), cyng::param_map_factory()("name", attr.second));
         } else if (
             path ==
             cyng::obis_path_t({OBIS_ROOT_IPT_PARAM, {0x81, 0x49, 0x0d, 0x07, 0x00, 0x01}, {0x81, 0x49, 0x63, 0x3c, 0x02, 0x01}})) {
 
-            prx.session_.cluster_bus_.req_db_update(
-                "device", cyng::key_generator(tag_), cyng::param_map_factory()("pwd", attr.second));
+            prx.session_.bus_.req_db_update("device", cyng::key_generator(tag_), cyng::param_map_factory()("pwd", attr.second));
         }
     }
 
@@ -778,7 +775,7 @@ namespace smf {
         //
         //  query profile
         //
-        prx.session_.ipt_send([&, this]() mutable -> cyng::buffer_t {
+        prx.session_.send([&, this]() mutable -> cyng::buffer_t {
             sml::messages_t messages;
             auto const now = std::chrono::system_clock::now();
 
@@ -813,7 +810,7 @@ namespace smf {
         });
         pm.emplace("status", cyng::make_object(evt.mbus_state_));
 
-        prx.session_.cluster_bus_.cfg_sml_channel_back(
+        prx.session_.bus_.cfg_sml_channel_back(
             cyng::key_generator(cyng::to_string(id_)),               //  key
             sml::get_name(sml::msg_type::GET_PROFILE_LIST_RESPONSE), //  channel
             evt.path_.front(),                                       //  section

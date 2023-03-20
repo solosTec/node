@@ -1,5 +1,5 @@
 #include <session.h>
-#include <tasks/gatekeeper.h>
+// #include <tasks/gatekeeper.h>
 
 #include <smf/config/protocols.h>
 #include <smf/ipt/codes.h>
@@ -41,27 +41,21 @@ namespace smf {
         ipt::scramble_key const &sk,
         std::uint32_t query,
         cyng::mac48 client_id)
-        : ctl_(fabric.get_ctl())
-        , socket_(std::move(socket))
-        , logger_(logger)
-        , cluster_bus_(cluster_bus)
+        : base_t(
+              std::move(socket),
+              cluster_bus,
+              fabric,
+              logger,
+              ipt::parser(
+                  sk,
+                  std::bind(&ipt_session::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
+                  std::bind(&ipt_session::ipt_stream, this, std::placeholders::_1)),
+              ipt::serializer(sk))
         , query_(query)
-        , buffer_()
-        , rx_{0}
-        , sx_{0}
         , px_{0}
-        , buffer_write_()
-        , parser_(
-              sk,
-              std::bind(&ipt_session::ipt_cmd, this, std::placeholders::_1, std::placeholders::_2),
-              std::bind(&ipt_session::ipt_stream, this, std::placeholders::_1))
         , name_()
-        , serializer_(sk)
-        , vm_()
-        , dev_(boost::uuids::nil_uuid())
         , oce_map_() //	store temporary data during connection establishment
-        , gatekeeper_()
-        , proxy_(logger, *this, cluster_bus_, client_id)
+        , proxy_(logger, *this, cluster_bus, client_id)
 #ifdef _DEBUG_IPT
         , sml_parser_([this](
                           std::string trx,
@@ -91,9 +85,9 @@ namespace smf {
 #endif
     {
         vm_ = fabric.make_proxy(
-            cluster_bus_.get_tag(),
+            bus_.get_tag(),
             //  handle dispatch errors
-            std::bind(&bus::log_dispatch_error, &cluster_bus_, std::placeholders::_1, std::placeholders::_2),
+            std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_description(
                 "pty.res.login", cyng::vm_adaptor<ipt_session, void, bool, boost::uuids::uuid>(this, &ipt_session::pty_res_login)),
 
@@ -179,11 +173,10 @@ namespace smf {
                     boost::uuids::uuid  // tag
                     >(this, &ipt_session::cfg_sml_channel)));
 
-        CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << socket_.remote_endpoint() << " created");
+        CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << get_remote_endpoint() << " created");
     }
 
     ipt_session::~ipt_session() {
-        // gatekeeper_->stop(); //  this is impossible
 #ifdef _DEBUG_IPT
         // std::cout << "session(~)" << std::endl;
 #endif
@@ -195,158 +188,151 @@ namespace smf {
         if (vm_.stop()) {
 
             //    no more write
-            //  buffer_write_.clear();
-            BOOST_ASSERT_MSG(buffer_write_.empty(), "pending write op");
             oce_map_.clear();
 
             //  this can cause to call the stop() function again
-            boost::system::error_code ec;
-            socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
-            socket_.close(ec);
+            close_socket();
         }
     }
 
-    void ipt_session::logout() { cluster_bus_.pty_logout(dev_, vm_.get_tag()); }
+    void ipt_session::logout() { bus_.pty_logout(dev_, vm_.get_tag()); }
 
-    boost::asio::ip::tcp::endpoint ipt_session::get_remote_endpoint() const {
-        boost::system::error_code ec;
-        return socket_.remote_endpoint(ec);
-    }
 
-    void ipt_session::start(std::chrono::seconds timeout) {
-        do_read();
-        gatekeeper_ =
-            ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), cluster_bus_, socket_.remote_endpoint())
-                .first;
-        BOOST_ASSERT(gatekeeper_->is_open());
-        CYNG_LOG_TRACE(logger_, "start gatekeeper with a timeout of " << timeout.count() << " seconds");
-        //  handle dispatch errors
-        gatekeeper_->suspend(
-            timeout, "timeout", std::bind(&bus::log_dispatch_error, &cluster_bus_, std::placeholders::_1, std::placeholders::_2));
-    }
+    // void ipt_session::start(std::chrono::seconds timeout) {
+    //     do_read();
+    //     gatekeeper_ =
+    //         ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), cluster_bus_, get_remote_endpoint())
+    //             .first;
+    //     BOOST_ASSERT(gatekeeper_->is_open());
+    //     CYNG_LOG_TRACE(logger_, "start gatekeeper with a timeout of " << timeout.count() << " seconds");
+    //     //  handle dispatch errors
+    //     gatekeeper_->suspend(
+    //         timeout, "timeout", std::bind(&bus::log_dispatch_error, &cluster_bus_, std::placeholders::_1,
+    //         std::placeholders::_2));
+    // }
 
-    void ipt_session::do_read() {
-        auto self = shared_from_this();
+    //    void ipt_session::do_read() {
+    //        auto self = shared_from_this();
+    //
+    //        socket_.async_read_some(
+    //            boost::asio::buffer(buffer_.data(), buffer_.size()),
+    //            [this, self](boost::system::error_code ec, std::size_t bytes_transferred) {
+    //                if (!ec) {
+    //                    CYNG_LOG_DEBUG(
+    //                        logger_,
+    //                        "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
+    //                                     << get_remote_endpoint() << "]");
+    //
+    // #ifdef __DEBUG_IPT
+    //                    {
+    //                        std::stringstream ss;
+    //                        cyng::io::hex_dump<8> hd;
+    //                        hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
+    //                        auto const dmp = ss.str();
+    //
+    //                        CYNG_LOG_DEBUG(
+    //                            logger_,
+    //                            "[" << get_remote_endpoint() << "] " << bytes_transferred << " bytes scrambled "
+    //                                << ipt::to_string(parser_.get_sk()) << "@" << parser_.get_scrambler_index() << " ip-t data:\n"
+    //                                << dmp);
+    //                    }
+    // #endif
+    //                    //
+    //                    //	let parse it
+    //                    //
+    //                    auto const data = parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
+    // #ifdef _DEBUG_IPT
+    //                    {
+    //                        std::stringstream ss;
+    //                        cyng::io::hex_dump<8> hd;
+    //                        hd(ss, data.begin(), data.end());
+    //                        auto const dmp = ss.str();
+    //                        CYNG_LOG_DEBUG(
+    //                            logger_,
+    //                            "[" << get_remote_endpoint() << "] " << bytes_transferred << " bytes (unscrambled) ip-t data:\n"
+    //                                << dmp);
+    //
+    //                        //
+    //                        //  debug sml data
+    //                        //
+    //                        // sml_parser_.read(std::begin(data), std::end(data));
+    //                    }
+    // #endif
+    //
+    //                    //
+    //                    //	update rx
+    //                    //
+    //                    rx_ += static_cast<std::uint64_t>(bytes_transferred);
+    //                    if (!dev_.is_nil() && bus_.is_connected()) {
+    //
+    //                        bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("rx",
+    //                        rx_));
+    //                    }
+    //
+    //                    //
+    //                    //	continue reading
+    //                    //
+    //                    do_read();
+    //                } else {
+    //                    CYNG_LOG_WARNING(logger_, "[session] " << vm_.get_tag() << " read: " << ec.message());
+    //                    stop();
+    //                }
+    //            });
+    //    }
 
-        socket_.async_read_some(
-            boost::asio::buffer(buffer_.data(), buffer_.size()),
-            [this, self](boost::system::error_code ec, std::size_t bytes_transferred) {
-                if (!ec) {
-                    CYNG_LOG_DEBUG(
-                        logger_,
-                        "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
-                                     << socket_.remote_endpoint() << "]");
+    //    void ipt_session::do_write() {
+    //        BOOST_ASSERT_MSG(!buffer_write_.empty(), "write buffer empty");
+    //
+    // #ifdef _DEBUG
+    //        CYNG_LOG_DEBUG(
+    //            logger_,
+    //            "send ipt msg #" << buffer_write_.size() << ": " << buffer_write_.front().size() << " bytes to "
+    //                             << get_remote_endpoint());
+    // #endif
+    //
+    //        // Start an asynchronous operation to send a heartbeat message.
+    //        boost::asio::async_write(
+    //            socket_,
+    //            boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
+    //            cyng::expose_dispatcher(vm_).wrap(std::bind(&ipt_session::handle_write, this, std::placeholders::_1)));
+    //    }
 
-#ifdef __DEBUG_IPT
-                    {
-                        std::stringstream ss;
-                        cyng::io::hex_dump<8> hd;
-                        hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
-                        auto const dmp = ss.str();
+    // void ipt_session::handle_write(const boost::system::error_code &ec) {
 
-                        CYNG_LOG_DEBUG(
-                            logger_,
-                            "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes scrambled "
-                                << ipt::to_string(parser_.get_sk()) << "@" << parser_.get_scrambler_index() << " ip-t data:\n"
-                                << dmp);
-                    }
-#endif
-                    //
-                    //	let parse it
-                    //
-                    auto const data = parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
-#ifdef _DEBUG_IPT
-                    {
-                        std::stringstream ss;
-                        cyng::io::hex_dump<8> hd;
-                        hd(ss, data.begin(), data.end());
-                        auto const dmp = ss.str();
-                        CYNG_LOG_DEBUG(
-                            logger_,
-                            "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes (unscrambled) ip-t data:\n"
-                                << dmp);
+    //    if (!ec) {
 
-                        //
-                        //  debug sml data
-                        //
-                        // sml_parser_.read(std::begin(data), std::end(data));
-                    }
-#endif
+    //        //
+    //        //	update sx
+    //        //
+    //        sx_ += static_cast<std::uint64_t>(buffer_write_.front().size());
+    //        if (!dev_.is_nil() && bus_.is_connected()) {
 
-                    //
-                    //	update rx
-                    //
-                    rx_ += static_cast<std::uint64_t>(bytes_transferred);
-                    if (!dev_.is_nil() && cluster_bus_.is_connected()) {
+    //            bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("sx", sx_));
+    //        }
 
-                        cluster_bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("rx", rx_));
-                    }
+    //        buffer_write_.pop_front();
+    //        if (!buffer_write_.empty()) {
+    //            do_write();
+    //        }
+    //    } else {
+    //        CYNG_LOG_ERROR(logger_, "[session] " << vm_.get_tag() << " write: " << ec.message());
 
-                    //
-                    //	continue reading
-                    //
-                    do_read();
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[session] " << vm_.get_tag() << " read: " << ec.message());
-                    stop();
-                }
-            });
-    }
-
-    void ipt_session::do_write() {
-        BOOST_ASSERT_MSG(!buffer_write_.empty(), "write buffer empty");
-
-#ifdef _DEBUG
-        CYNG_LOG_DEBUG(
-            logger_,
-            "send ipt msg #" << buffer_write_.size() << ": " << buffer_write_.front().size() << " bytes to "
-                             << socket_.remote_endpoint());
-#endif
-
-        // Start an asynchronous operation to send a heartbeat message.
-        boost::asio::async_write(
-            socket_,
-            boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-            cyng::expose_dispatcher(vm_).wrap(std::bind(&ipt_session::handle_write, this, std::placeholders::_1)));
-    }
-
-    void ipt_session::handle_write(const boost::system::error_code &ec) {
-
-        if (!ec) {
-
-            //
-            //	update sx
-            //
-            sx_ += static_cast<std::uint64_t>(buffer_write_.front().size());
-            if (!dev_.is_nil() && cluster_bus_.is_connected()) {
-
-                cluster_bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("sx", sx_));
-            }
-
-            buffer_write_.pop_front();
-            if (!buffer_write_.empty()) {
-                do_write();
-            }
-        } else {
-            CYNG_LOG_ERROR(logger_, "[session] " << vm_.get_tag() << " write: " << ec.message());
-
-            // reset();
-        }
-    }
+    //        // reset();
+    //    }
+    //}
 
     void ipt_session::ipt_cmd(ipt::header const &h, cyng::buffer_t &&body) {
         CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_));
 
         switch (ipt::to_code(h.command_)) {
         case ipt::code::CTRL_REQ_LOGIN_PUBLIC:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 std::string pwd;
                 bool ok = false;
                 std::tie(ok, this->name_, pwd) = ipt::ctrl_req_login_public(std::move(body));
                 if (ok) {
                     CYNG_LOG_INFO(logger_, "[ipt] public login: " << name_ << ':' << pwd);
-                    cluster_bus_.pty_login(
-                        name_, pwd, vm_.get_tag(), config::get_name(config::protocol::SML), socket_.remote_endpoint());
+                    bus_.pty_login(name_, pwd, vm_.get_tag(), config::get_name(config::protocol::SML), get_remote_endpoint());
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] invalid public login request");
 
@@ -354,16 +340,16 @@ namespace smf {
                     cyng::io::hex_dump<8> hd;
                     hd(ss, body.begin(), body.end());
                     auto const dmp = ss.str();
-                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- public login request:\n" << dmp);
+                    CYNG_LOG_TRACE(logger_, "[" << get_remote_endpoint() << "] <-- public login request:\n" << dmp);
                 }
             } else {
                 CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
-                ipt_send(std::bind(
+                send(std::bind(
                     &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
             }
             break;
         case ipt::code::CTRL_REQ_LOGIN_SCRAMBLED:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 std::string pwd;
                 ipt::scramble_key sk;
                 bool ok = false;
@@ -372,8 +358,7 @@ namespace smf {
                     CYNG_LOG_INFO(logger_, "[ipt] scrambled login: " << name_ << ':' << pwd << ", sk = " << ipt::to_string(sk));
                     parser_.set_sk(sk);
                     serializer_.set_sk(sk);
-                    cluster_bus_.pty_login(
-                        name_, pwd, vm_.get_tag(), config::get_name(config::protocol::SML), socket_.remote_endpoint());
+                    bus_.pty_login(name_, pwd, vm_.get_tag(), config::get_name(config::protocol::SML), get_remote_endpoint());
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] invalid scrambled login request");
 
@@ -381,18 +366,18 @@ namespace smf {
                     cyng::io::hex_dump<8> hd;
                     hd(ss, body.begin(), body.end());
                     auto const dmp = ss.str();
-                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- scrambled login request:\n" << dmp);
+                    CYNG_LOG_TRACE(logger_, "[" << get_remote_endpoint() << "] <-- scrambled login request:\n" << dmp);
                 }
             } else {
                 CYNG_LOG_WARNING(logger_, "[session] login rejected - MALFUNCTION");
-                ipt_send(std::bind(
+                send(std::bind(
                     &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::MALFUNCTION, 0, ""));
             }
             break;
         case ipt::code::APP_RES_SOFTWARE_VERSION: update_software_version(ipt::app_res_software_version(std::move(body))); break;
         case ipt::code::APP_RES_DEVICE_IDENTIFIER: update_device_identifier(ipt::app_res_device_identifier(std::move(body))); break;
         case ipt::code::CTRL_REQ_REGISTER_TARGET:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 auto const [ok, name, paket_size, window_size] = ipt::ctrl_req_register_target(std::move(body));
                 if (ok) {
                     register_target(name, paket_size, window_size, h.sequence_);
@@ -403,18 +388,18 @@ namespace smf {
                     cyng::io::hex_dump<8> hd;
                     hd(ss, body.begin(), body.end());
                     auto const dmp = ss.str();
-                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- register target request:\n" << dmp);
+                    CYNG_LOG_TRACE(logger_, "[" << get_remote_endpoint() << "] <-- register target request:\n" << dmp);
                 }
             }
             break;
         case ipt::code::CTRL_REQ_DEREGISTER_TARGET:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 auto const name = ipt::ctrl_req_deregister_target(std::move(body));
                 deregister_target(name, h.sequence_);
             }
             break;
         case ipt::code::TP_REQ_OPEN_PUSH_CHANNEL:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 auto const [ok, target, account, msisdn, version, id, timeout] = ipt::tp_req_open_push_channel(std::move(body));
                 if (ok) {
                     open_push_channel(target, account, msisdn, version, id, timeout, h.sequence_);
@@ -425,18 +410,18 @@ namespace smf {
                     cyng::io::hex_dump<8> hd;
                     hd(ss, body.begin(), body.end());
                     auto const dmp = ss.str();
-                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- open push channel:\n" << dmp);
+                    CYNG_LOG_TRACE(logger_, "[" << get_remote_endpoint() << "] <-- open push channel:\n" << dmp);
                 }
             }
             break;
         case ipt::code::TP_REQ_CLOSE_PUSH_CHANNEL:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 auto const channel = ipt::ctrl_req_close_push_channel(std::move(body));
                 close_push_channel(channel, h.sequence_);
             }
             break;
         case ipt::code::TP_REQ_PUSHDATA_TRANSFER:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 auto const [ok, channel, source, status, block, data] = ipt::tp_req_pushdata_transfer(std::move(body));
                 if (ok) {
                     //
@@ -447,7 +432,7 @@ namespace smf {
                     cyng::io::hex_dump<8> hd;
                     hd(ss, body.begin(), body.end());
                     auto const dmp = ss.str();
-                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- push data transfer:\n" << dmp);
+                    CYNG_LOG_TRACE(logger_, "[" << get_remote_endpoint() << "] <-- push data transfer:\n" << dmp);
 
                     pushdata_transfer(channel, source, status, block, data, h.sequence_);
                 } else {
@@ -457,18 +442,18 @@ namespace smf {
                     cyng::io::hex_dump<8> hd;
                     hd(ss, body.begin(), body.end());
                     auto const dmp = ss.str();
-                    CYNG_LOG_TRACE(logger_, "[" << socket_.remote_endpoint() << "] <-- push data transfer:\n" << dmp);
+                    CYNG_LOG_TRACE(logger_, "[" << get_remote_endpoint() << "] <-- push data transfer:\n" << dmp);
                 }
             }
             break;
         case ipt::code::TP_REQ_OPEN_CONNECTION:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 auto const number = ipt::tp_req_open_connection(std::move(body));
                 open_connection(number, h.sequence_);
             }
             break;
         case ipt::code::TP_RES_OPEN_CONNECTION:
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 auto const res = ipt::tp_res_open_connection(std::move(body));
                 CYNG_LOG_INFO(
                     logger_, "[ipt] response open connection: " << ipt::tp_res_open_connection_policy::get_response_name(res));
@@ -489,7 +474,7 @@ namespace smf {
 
                     CYNG_LOG_TRACE(logger_, "[ipt] forward response to " << caller_tag << " on vm:" << caller_vm);
 
-                    cluster_bus_.pty_res_open_connection(
+                    bus_.pty_res_open_connection(
                         ipt::tp_res_open_connection_policy::is_success(res), dev_, vm_.get_tag(), std::move(pos->second));
 
                     //
@@ -502,7 +487,7 @@ namespace smf {
                 }
             } else {
                 //  close connection
-                ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
+                send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
             }
 
             break;
@@ -515,7 +500,7 @@ namespace smf {
             //	There is a bug in the VARIOSafe Manager to answer an open
             //	connection request with an open push channel response.
             //
-            if (cluster_bus_.is_connected()) {
+            if (bus_.is_connected()) {
                 if (body.size() < 20) {
                     CYNG_LOG_ERROR(
                         logger_, "[ipt] invalid response open push channel - only " << body.size() << " bytes available");
@@ -533,19 +518,19 @@ namespace smf {
             break;
         default:
             CYNG_LOG_WARNING(logger_, "[ipt] cmd " << ipt::command_name(h.command_) << " ignored");
-            // ipt_send(std::bind(&ipt::serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
+            // send(std::bind(&ipt::serializer::res_unknown_command, &serializer_, h.sequence_, h.command_));
             break;
         }
     }
 
     void ipt_session::register_target(std::string name, std::uint16_t paket_size, std::uint8_t window_size, ipt::sequence_t seq) {
         CYNG_LOG_INFO(logger_, "[ipt] register: " << name);
-        cluster_bus_.pty_reg_target(name, paket_size, window_size, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
+        bus_.pty_reg_target(name, paket_size, window_size, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
     }
 
     void ipt_session::deregister_target(std::string name, ipt::sequence_t seq) {
         CYNG_LOG_INFO(logger_, "[ipt] deregister: " << name);
-        cluster_bus_.pty_dereg_target(name, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
+        bus_.pty_dereg_target(name, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
     }
 
     void ipt_session::open_push_channel(
@@ -557,7 +542,7 @@ namespace smf {
         std::uint16_t timeout,
         ipt::sequence_t seq) {
         CYNG_LOG_INFO(logger_, "[ipt] open push channel: " << name);
-        cluster_bus_.pty_open_channel(
+        bus_.pty_open_channel(
             name,
             account,
             msisdn,
@@ -571,7 +556,7 @@ namespace smf {
 
     void ipt_session::close_push_channel(std::uint32_t channel, ipt::sequence_t seq) {
         CYNG_LOG_INFO(logger_, "[ipt] close push channel: " << channel);
-        cluster_bus_.pty_close_channel(channel, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
+        bus_.pty_close_channel(channel, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
     }
 
     void ipt_session::pushdata_transfer(
@@ -584,7 +569,7 @@ namespace smf {
         auto const size = data.size();
 
         CYNG_LOG_INFO(logger_, "[ipt] pushdata transfer " << channel << ':' << source << ", " << size << " bytes");
-        cluster_bus_.pty_push_data(
+        bus_.pty_push_data(
             channel,
             source,
             std::move(data),
@@ -596,15 +581,15 @@ namespace smf {
         //	update px
         //
         px_ += static_cast<std::uint64_t>(size);
-        if (!dev_.is_nil() && cluster_bus_.is_connected()) {
+        if (!dev_.is_nil() && bus_.is_connected()) {
 
-            cluster_bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("px", px_));
+            bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("px", px_));
         }
     }
 
     void ipt_session::open_connection(std::string msisdn, ipt::sequence_t seq) {
         CYNG_LOG_INFO(logger_, "[ipt] open connection: " << msisdn);
-        cluster_bus_.pty_open_connection(msisdn, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
+        bus_.pty_open_connection(msisdn, dev_, vm_.get_tag(), cyng::param_map_factory("seq", seq));
     }
 
     void ipt_session::update_software_version(std::string str) {
@@ -614,7 +599,7 @@ namespace smf {
         //	update "device" table
         //
         cyng::param_map_t const data = cyng::param_map_factory()("vFirmware", str);
-        cluster_bus_.req_db_update("device", cyng::key_generator(dev_), data);
+        bus_.req_db_update("device", cyng::key_generator(dev_), data);
     }
     void ipt_session::update_device_identifier(std::string str) {
         CYNG_LOG_INFO(logger_, "[ipt] device id: " << str);
@@ -624,7 +609,7 @@ namespace smf {
         //  "main" node will this device insert as gateway if string starts with "swf-gw:"
         //
         cyng::param_map_t const data = cyng::param_map_factory()("id", str);
-        cluster_bus_.req_db_update("device", cyng::key_generator(dev_), data);
+        bus_.req_db_update("device", cyng::key_generator(dev_), data);
     }
 
     void ipt_session::ipt_stream(cyng::buffer_t &&data) {
@@ -634,40 +619,37 @@ namespace smf {
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
             auto const dmp = ss.str();
-            CYNG_LOG_DEBUG(
-                logger_,
-                "received " << data.size() << " stream bytes from[" << socket_.remote_endpoint() << "]:\n"
-                            << dmp);
+            CYNG_LOG_DEBUG(logger_, "received " << data.size() << " stream bytes from[" << get_remote_endpoint() << "]:\n" << dmp);
             //
             //   debug sml data
             //
-            // CYNG_LOG_DEBUG(logger_, "received " << data.size() << " stream bytes from [" << socket_.remote_endpoint() << "]");
+            // CYNG_LOG_DEBUG(logger_, "received " << data.size() << " stream bytes from [" << get_remote_endpoint() << "]");
             sml_parser_.read(std::begin(data), std::end(data));
         }
 #endif
         //  redirect data optionally to proxy
-        if (cluster_bus_.is_connected()) {
+        if (bus_.is_connected()) {
             if (proxy_.is_online()) {
                 CYNG_LOG_TRACE(logger_, "routing " << data.size() << " bytes to proxy");
                 proxy_.read(std::move(data));
             } else {
                 CYNG_LOG_TRACE(logger_, "ipt stream " << data.size() << " byte");
-                cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), std::move(data));
+                bus_.pty_transfer_data(dev_, vm_.get_tag(), std::move(data));
             }
         } else {
             CYNG_LOG_WARNING(logger_, "ipt stream " << data.size() << " byte");
         }
     }
 
-    void ipt_session::ipt_send(std::function<cyng::buffer_t()> f) {
-        cyng::exec(vm_, [this, f]() {
-            bool const b = buffer_write_.empty();
-            buffer_write_.push_back(f());
-            if (b) {
-                do_write();
-            }
-        });
-    }
+    // void ipt_session::send(std::function<cyng::buffer_t()> f) {
+    //     cyng::exec(vm_, [this, f]() {
+    //         bool const b = buffer_write_.empty();
+    //         buffer_write_.push_back(f());
+    //         if (b) {
+    //             do_write();
+    //         }
+    //     });
+    // }
 
     void ipt_session::pty_res_login(bool success, boost::uuids::uuid dev) {
 
@@ -684,14 +666,13 @@ namespace smf {
             dev_ = dev;
 
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " login ok");
-            ipt_send(
-                std::bind(&ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
+            send(std::bind(&ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
 
             query();
 
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
-            ipt_send(std::bind(
+            send(std::bind(
                 &ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::UNKNOWN_ACCOUNT, 0, ""));
 
             //
@@ -710,11 +691,11 @@ namespace smf {
         if (success) {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " register target ok: " << token);
 
-            ipt_send(std::bind(
+            send(std::bind(
                 &ipt::serializer::res_register_push_target, &serializer_, seq, ipt::ctrl_res_register_target_policy::OK, channel));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " register target failed: " << token);
-            ipt_send(std::bind(
+            send(std::bind(
                 &ipt::serializer::res_register_push_target,
                 &serializer_,
                 seq,
@@ -744,7 +725,7 @@ namespace smf {
             BOOST_ASSERT(window_size == 1);
             BOOST_ASSERT(count != 0);
 
-            ipt_send(std::bind(
+            send(std::bind(
                 &ipt::serializer::res_open_push_channel,
                 &serializer_,
                 seq,
@@ -757,7 +738,7 @@ namespace smf {
                 count));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " open push channel failed: " << token);
-            ipt_send(std::bind(
+            send(std::bind(
                 &ipt::serializer::res_open_push_channel,
                 &serializer_,
                 seq,
@@ -779,12 +760,12 @@ namespace smf {
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
             auto const dmp = ss.str();
-            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] --> outgoing push data:\n" << dmp);
+            CYNG_LOG_DEBUG(logger_, "[" << get_remote_endpoint() << "] --> outgoing push data:\n" << dmp);
         }
 #endif
         std::uint8_t status = 0;
         std::uint8_t block = 0;
-        ipt_send(std::bind(&ipt::serializer::req_transfer_push_data, &serializer_, channel, source, status, block, data));
+        send(std::bind(&ipt::serializer::req_transfer_push_data, &serializer_, channel, source, status, block, data));
     }
 
     void ipt_session::pty_res_push_data(bool success, std::uint32_t channel, std::uint32_t source, cyng::param_map_t token) {
@@ -804,7 +785,7 @@ namespace smf {
                              << " invalid push channel status: " << +status);
             }
 
-            ipt_send(std::bind(
+            send(std::bind(
                 &ipt::serializer::res_transfer_push_data,
                 &serializer_,
                 seq,
@@ -815,7 +796,7 @@ namespace smf {
                 block));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " push data " << channel << " failed: " << token);
-            ipt_send([=, this]() {
+            send([=, this]() {
                 return serializer_.res_transfer_push_data(
                     seq, ipt::tp_res_pushdata_transfer_policy::UNREACHABLE, channel, source, status, block);
             });
@@ -829,7 +810,7 @@ namespace smf {
         BOOST_ASSERT(seq != 0);
         if (success) {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " close push channel " << channel << " ok: " << token);
-            ipt_send(std::bind(
+            send(std::bind(
                 &ipt::serializer::res_close_push_channel,
                 &serializer_,
                 seq,
@@ -837,7 +818,7 @@ namespace smf {
                 channel));
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " close push channel " << channel << " failed: " << token);
-            ipt_send(std::bind(
+            send(std::bind(
                 &ipt::serializer::res_close_push_channel,
                 &serializer_,
                 seq,
@@ -858,7 +839,7 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " dialup failed: " << token);
         }
 
-        ipt_send(std::bind(
+        send(std::bind(
             &ipt::serializer::res_open_connection,
             &serializer_,
             seq,
@@ -872,7 +853,7 @@ namespace smf {
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed " << token);
 
         BOOST_ASSERT(seq != 0);
-        ipt_send(std::bind(
+        send(std::bind(
             &ipt::serializer::res_close_connection,
             &serializer_,
             seq,
@@ -881,7 +862,7 @@ namespace smf {
     }
 
     void ipt_session::pty_req_open_connection(std::string msisdn, bool local, cyng::param_map_t token) {
-        ipt_send([=, this]() -> cyng::buffer_t {
+        send([=, this]() -> cyng::buffer_t {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " req open connection " << msisdn);
             auto r = serializer_.req_open_connection(msisdn);
             oce_map_.emplace(r.second, token);
@@ -897,24 +878,24 @@ namespace smf {
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
             auto const dmp = ss.str();
-            CYNG_LOG_DEBUG(logger_, "[" << socket_.remote_endpoint() << "] emit " << data.size() << " bytes:\n" << dmp);
+            CYNG_LOG_DEBUG(logger_, "[" << get_remote_endpoint() << "] emit " << data.size() << " bytes:\n" << dmp);
         }
 
         if (boost::algorithm::equals(std::string(data.begin(), data.end()), "hello")) {
             std::string const answer("welcome!\r\n");
-            cluster_bus_.pty_transfer_data(dev_, vm_.get_tag(), cyng::buffer_t(answer.begin(), answer.end()));
+            bus_.pty_transfer_data(dev_, vm_.get_tag(), cyng::buffer_t(answer.begin(), answer.end()));
         }
 #endif
         //
         //  send data to device/gateway
         //  escape and scramble data
         //
-        ipt_send([=, this]() mutable -> cyng::buffer_t { return serializer_.escape_data(std::move(data)); });
+        send([=, this]() mutable -> cyng::buffer_t { return serializer_.escape_data(std::move(data)); });
     }
 
     void ipt_session::pty_req_close_connection() {
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed");
-        ipt_send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
+        send(std::bind(&ipt::serializer::req_close_connection, &serializer_));
     }
 
     void ipt_session::pty_stop() {
@@ -1005,32 +986,32 @@ namespace smf {
     void ipt_session::query() {
         if (ipt::test_bit(query_, ipt::query::PROTOCOL_VERSION)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::PROTOCOL_VERSION)));
-            ipt_send(std::bind(&ipt::serializer::req_protocol_version, &serializer_));
+            send(std::bind(&ipt::serializer::req_protocol_version, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::FIRMWARE_VERSION)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::FIRMWARE_VERSION)));
-            ipt_send(std::bind(&ipt::serializer::req_software_version, &serializer_));
+            send(std::bind(&ipt::serializer::req_software_version, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::DEVICE_IDENTIFIER)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_IDENTIFIER)));
-            ipt_send(std::bind(&ipt::serializer::req_device_id, &serializer_));
+            send(std::bind(&ipt::serializer::req_device_id, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::NETWORK_STATUS)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::NETWORK_STATUS)));
-            ipt_send(std::bind(&ipt::serializer::req_network_status, &serializer_));
+            send(std::bind(&ipt::serializer::req_network_status, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::IP_STATISTIC)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::IP_STATISTIC)));
-            ipt_send(std::bind(&ipt::serializer::req_ip_statistics, &serializer_));
+            send(std::bind(&ipt::serializer::req_ip_statistics, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::DEVICE_AUTHENTIFICATION)) {
             CYNG_LOG_TRACE(
                 logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_AUTHENTIFICATION)));
-            ipt_send(std::bind(&ipt::serializer::req_device_auth, &serializer_));
+            send(std::bind(&ipt::serializer::req_device_auth, &serializer_));
         }
         if (ipt::test_bit(query_, ipt::query::DEVICE_TIME)) {
             CYNG_LOG_TRACE(logger_, "[pty] query: " << ipt::query_name(static_cast<std::uint32_t>(ipt::query::DEVICE_TIME)));
-            ipt_send(std::bind(&ipt::serializer::req_device_time, &serializer_));
+            send(std::bind(&ipt::serializer::req_device_time, &serializer_));
         }
     }
 
@@ -1040,7 +1021,7 @@ namespace smf {
         //
         auto const key_conn = cyng::key_generator(cyng::merge(dev_, vm_.get_tag()));
         if (connected) {
-            cluster_bus_.req_db_insert(
+            bus_.req_db_insert(
                 "connection",
                 key_conn,
                 cyng::data_generator(
@@ -1053,7 +1034,7 @@ namespace smf {
                     static_cast<std::uint64_t>(0)),
                 1);
         } else {
-            cluster_bus_.req_db_remove("connection", key_conn);
+            bus_.req_db_remove("connection", key_conn);
         }
     }
 
