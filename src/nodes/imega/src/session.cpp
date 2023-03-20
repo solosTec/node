@@ -78,18 +78,34 @@ namespace smf {
                       }
                   }),
               imega::serializer{}) {
-        vm_ = fabric.make_proxy(
+
+        //
+        //  initialize VM
+        //
+        vm_ = init_vm(fabric);
+
+        CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << get_remote_endpoint() << " created");
+    }
+
+    imega_session::~imega_session() {
+#ifdef _DEBUG_IMEGA
+        std::cout << "session(~)" << std::endl;
+#endif
+    }
+
+    cyng::vm_proxy imega_session::init_vm(cyng::mesh &fabric) {
+        return fabric.make_proxy(
             bus_.get_tag(),
             //  handle dispatch errors
             std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_description(
                 "pty.res.login",
                 cyng::vm_adaptor<imega_session, void, bool, boost::uuids::uuid>(this, &imega_session::pty_res_login)),
-            // cyng::make_description("pty.res.register", get_vm_func_pty_res_register(this)),
-            // cyng::make_description("pty.res.open.channel", get_vm_func_pty_res_open_channel(this)),
-            // cyng::make_description("pty.req.push.data", get_vm_func_pty_req_push_data(this)),
-            // cyng::make_description("pty.push.data.res", get_vm_func_pty_res_push_data(this)),
-            // cyng::make_description("pty.res.close.channel", get_vm_func_pty_res_close_channel(this)),
+            // "pty.res.register" is not implemented
+            // "pty.res.open.channel" is not implemented
+            // "pty.req.push.data" is not implemented
+            // "pty.push.data.res" is not implemented
+            // "pty.res.close.channel" is not implemented
             cyng::make_description(
                 "pty.res.open.connection",
                 cyng::vm_adaptor<imega_session, void, bool, cyng::param_map_t>(this, &imega_session::pty_res_open_connection)),
@@ -123,15 +139,6 @@ namespace smf {
                     cyng::buffer_t,
                     std::string, //  firware version
                     std::chrono::system_clock::time_point>(this, &imega_session::cfg_backup)));
-
-        CYNG_LOG_INFO(logger_, "[session] " << vm_.get_tag() << '@' << get_remote_endpoint() << " created");
-    }
-
-    imega_session::~imega_session() {
-        gatekeeper_->stop();
-#ifdef _DEBUG_IPT
-        std::cout << "session(~)" << std::endl;
-#endif
     }
 
     void imega_session::stop() {

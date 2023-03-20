@@ -31,16 +31,11 @@ namespace smf {
 
         virtual ~imega_session();
 
-        // void start(std::chrono::seconds timeout);
         void stop();
         void logout();
 
-        boost::asio::ip::tcp::endpoint get_remote_endpoint() const;
-
       private:
-        // void do_read();
-        // void do_write();
-        // void handle_write(const boost::system::error_code &ec);
+        cyng::vm_proxy init_vm(cyng::mesh &fabric);
 
         void pty_stop();
 
