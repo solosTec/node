@@ -1,10 +1,3 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Sylko Olzscher
- *
- */
-#include <tasks/gatekeeper.h>
 #include <wmbus_session.h>
 
 #include <smf/mbus/flag_id.h>
@@ -35,26 +28,25 @@
 namespace smf {
 
     wmbus_session::wmbus_session(
-        cyng::controller &ctl,
         boost::asio::ip::tcp::socket socket,
-        std::shared_ptr<db> db,
-        cyng::logger logger,
         bus &cluster_bus,
+        cyng::mesh &fabric,
+        cyng::logger logger,
+        std::shared_ptr<db> db,
         cyng::key_t key,
         cyng::channel_ptr writer)
-        : ctl_(ctl)
-        , socket_(std::move(socket))
-        , logger_(logger)
+        : base_t(
+              std::move(socket),
+              cluster_bus,
+              fabric,
+              logger,
+              mbus::radio::parser([this](mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data) {
+                  this->decode(h, t, data);
+              }),
+              mbus::serializer{})
         , db_(db)
-        , bus_(cluster_bus)
         , key_gw_wmbus_(key)
-        , writer_(writer)
-        , buffer_()
-        , buffer_write_()
-        , parser_([this](mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data) {
-            this->decode(h, t, data);
-        })
-        , gatekeeper_() {}
+        , writer_(writer) {}
 
     wmbus_session::~wmbus_session() {
 #ifdef _DEBUG_BROKER_WMBUS
@@ -64,92 +56,7 @@ namespace smf {
 
     void wmbus_session::stop() {
         CYNG_LOG_WARNING(logger_, "stop session");
-        gatekeeper_->stop();
-        boost::system::error_code ec;
-        socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
-        socket_.close(ec);
-    }
-
-    void wmbus_session::start(std::chrono::seconds timeout) {
-
-        gatekeeper_ = ctl_.create_channel_with_ref<gatekeeper>(logger_, this->shared_from_this(), timeout).first;
-        BOOST_ASSERT(gatekeeper_->is_open());
-
-        //
-        //	start reading
-        //
-        do_read();
-
-        // CYNG_LOG_TRACE(logger_, "start gatekeeper with a timeout of " << timeout.count() << " seconds");
-    }
-
-    void wmbus_session::do_read() {
-        auto self = shared_from_this();
-        //  handle dispatch errors
-        gatekeeper_->dispatch("defer", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
-
-        socket_.async_read_some(
-            boost::asio::buffer(buffer_.data(), buffer_.size()),
-            [this, self](boost::system::error_code ec, std::size_t bytes_transferred) {
-                if (!ec) {
-                    CYNG_LOG_DEBUG(
-                        logger_,
-                        "[session] received " << bytes_transferred << " bytes wM-Bus data from [" << socket_.remote_endpoint()
-                                              << "]");
-
-#ifdef _DEBUG_BROKER_WMBUS
-                    {
-                        std::stringstream ss;
-                        cyng::io::hex_dump<8> hd;
-                        hd(ss, buffer_.data(), buffer_.data() + bytes_transferred);
-                        auto const dmp = ss.str();
-                        CYNG_LOG_DEBUG(
-                            logger_,
-                            "[" << socket_.remote_endpoint() << "] " << bytes_transferred << " bytes wM-Bus data:\n"
-                                << dmp);
-                    }
-#endif
-
-                    //
-                    //	let parse it
-                    //
-                    parser_.read(buffer_.data(), buffer_.data() + bytes_transferred);
-
-                    //
-                    //	continue reading
-                    //
-                    do_read();
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[session] read: " << ec.message());
-                    gatekeeper_->stop();
-
-                    bus_.req_db_update(
-                        "gwwMBus",
-                        key_gw_wmbus_,
-                        cyng::param_map_factory()("state", static_cast<std::uint16_t>(0)) //  status: offline
-                    );
-                }
-            });
-    }
-
-    void wmbus_session::do_write() {
-        // Start an asynchronous operation to send a heartbeat message.
-        boost::asio::async_write(
-            socket_,
-            boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-            std::bind(&wmbus_session::handle_write, this, std::placeholders::_1));
-    }
-
-    void wmbus_session::handle_write(const boost::system::error_code &ec) {
-        if (!ec) {
-
-            buffer_write_.pop_front();
-            if (!buffer_write_.empty()) {
-                do_write();
-            }
-        } else {
-            CYNG_LOG_ERROR(logger_, "[session] write: " << ec.message());
-        }
+        close_socket();
     }
 
     void wmbus_session::decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data) {
@@ -254,15 +161,12 @@ namespace smf {
                 //	update config data
                 //	ip adress, port and last seen
                 //
-                boost::system::error_code ec;
-                auto const ep = socket_.remote_endpoint(ec);
-                if (!ec) {
-                    bus_.req_db_update(
-                        "meterwMBus",
-                        cyng::key_generator(tag),
-                        cyng::param_map_factory()("address", ep.address())("port", ep.port())(
-                            "lastSeen", std::chrono::system_clock::now()));
-                }
+                auto const ep = get_remote_endpoint();
+                bus_.req_db_update(
+                    "meterwMBus",
+                    cyng::key_generator(tag),
+                    cyng::param_map_factory()("address", ep.address())("port", ep.port())(
+                        "lastSeen", std::chrono::system_clock::now()));
 
                 switch (frame_type) {
                 case mbus::FIELD_CI_RES_LONG_SML:  // 0x7E - long header

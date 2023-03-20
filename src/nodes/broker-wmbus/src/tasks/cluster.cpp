@@ -68,7 +68,7 @@ namespace smf {
                     BOOST_ASSERT(w->is_open());
 
                     auto sp = std::shared_ptr<wmbus_session>(
-                        new wmbus_session(ctl_, std::move(socket), db_, logger_, bus_, key, w), [this, w](wmbus_session *s) {
+                        new wmbus_session(std::move(socket), bus_, fabric_, logger_, db_, key, w), [this, w](wmbus_session *s) {
                             s->stop();
 
                             //

@@ -19,6 +19,9 @@
 
 namespace smf {
 
+    /**
+     * use cyng::net::client to simplify this implementation
+     */
     class client {
         template <typename T> friend class cyng::task;
 

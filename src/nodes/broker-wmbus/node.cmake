@@ -6,14 +6,12 @@ set (broker-wmbus_node)
 set (broker-wmbus_cpp
     src/main.cpp
     src/controller.cpp
-#    src/wmbus_server.cpp
     src/wmbus_session.cpp
     src/db.cpp
 )
     
 set (broker-wmbus_h
     include/controller.h
-#    include/wmbus_server.h
     include/wmbus_session.h
     include/db.h
 )
@@ -35,11 +33,9 @@ endif()
 set (broker-wmbus_tasks
     include/tasks/cluster.h
     include/tasks/push.h
-    include/tasks/gatekeeper.h
     include/tasks/writer.h
     src/tasks/cluster.cpp
     src/tasks/push.cpp
-    src/tasks/gatekeeper.cpp
     src/tasks/writer.cpp
 )
 

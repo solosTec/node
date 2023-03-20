@@ -9,40 +9,36 @@
 
 #include <db.h>
 
-#include <smf/cluster/bus.h>
 #include <smf/mbus/radio/parser.h>
+#include <smf/session/session.hpp>
 
-#include <cyng/io/parser/parser.h>
-#include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/pid.h>
-#include <cyng/task/controller.h>
-#include <cyng/vm/proxy.h>
-
-#include <array>
-#include <memory>
 
 namespace smf {
+    namespace mbus {
+        //  dummy class
+        class serializer {};
+    } // namespace mbus
 
-    class wmbus_session : public std::enable_shared_from_this<wmbus_session> {
+    class wmbus_session : public session<mbus::radio::parser, mbus::serializer, wmbus_session, 2048> {
+
+        //  base class
+        using base_t = session<mbus::radio::parser, mbus::serializer, wmbus_session, 2048>;
+
       public:
         wmbus_session(
-            cyng::controller &ctl,
             boost::asio::ip::tcp::socket socket,
-            std::shared_ptr<db>,
+            bus &cluster_bus,
+            cyng::mesh &fabric,
             cyng::logger,
-            bus &,
+            std::shared_ptr<db>,
             cyng::key_t,
             cyng::channel_ptr writer);
-        ~wmbus_session();
+        virtual ~wmbus_session();
 
-        void start(std::chrono::seconds timeout);
         void stop();
 
       private:
-        void do_read();
-        void do_write();
-        void handle_write(const boost::system::error_code &ec);
-
         void decode(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &data);
         void decode(srv_id_t id, std::uint8_t access_no, std::uint8_t frame_type, cyng::buffer_t const &data);
 
@@ -64,33 +60,9 @@ namespace smf {
         std::size_t read_sml(srv_id_t const &address, cyng::buffer_t const &payload);
 
       private:
-        cyng::controller &ctl_;
-        boost::asio::ip::tcp::socket socket_;
         std::shared_ptr<db> db_;
-        cyng::logger logger_;
-        bus &bus_;
         cyng::key_t const key_gw_wmbus_;
         cyng::channel_ptr writer_;
-
-        /**
-         * Buffer for incoming data.
-         */
-        std::array<char, 2048> buffer_;
-
-        /**
-         * Buffer for outgoing data.
-         */
-        std::deque<cyng::buffer_t> buffer_write_;
-
-        /**
-         * parser for wireless M-Bus data
-         */
-        mbus::radio::parser parser_;
-
-        /**
-         * gatekeeper
-         */
-        cyng::channel_ptr gatekeeper_;
     };
 
 } // namespace smf

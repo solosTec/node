@@ -16,15 +16,6 @@
 #include <smf/sml/unpack.h>
 #endif
 
-// #include <cyng/log/logger.h>
-// #include <cyng/obj/intrinsics/buffer.h>
-// #include <cyng/task/controller.h>
-// #include <cyng/vm/proxy.h>
-// #include <cyng/vm/vm_fwd.h>
-//
-// #include <array>
-// #include <memory>
-
 namespace smf {
 
     class proxy;
@@ -46,29 +37,15 @@ namespace smf {
             cyng::mac48 client_id);
         virtual ~ipt_session();
 
-        // void start(std::chrono::seconds timeout);
         void stop();
         void logout();
 
-        // boost::asio::ip::tcp::endpoint get_remote_endpoint() const;
-
       private:
-        // void do_read();
-        // void do_write();
-        // void handle_write(const boost::system::error_code &ec);
-
         //
         //	bus interface
         //
         void ipt_cmd(ipt::header const &h, cyng::buffer_t &&body);
         void ipt_stream(cyng::buffer_t &&data);
-
-        /**
-         * start an async write
-         * @param f to provide a function that produces a buffer instead of the buffer itself
-         * guaranties that scrambled content is has the correct index in the scramble key.
-         */
-        // void ipt_send(std::function<cyng::buffer_t()> f);
 
         void pty_res_login(bool success, boost::uuids::uuid dev);
         void pty_res_register(bool success, std::uint32_t channel, cyng::param_map_t token);
@@ -155,8 +132,14 @@ namespace smf {
         void update_connect_state(bool connected);
 
       private:
+        /**
+         * @see ipt::query
+         */
         std::uint32_t const query_;
 
+        /**
+         * push bytes counter
+         */
         std::uint64_t px_;
 
         std::string name_; //  login name
