@@ -16,9 +16,10 @@ namespace smf {
             return (data_[2] & mask) == mask;
         }
 
-        std::uint8_t msg::get_opcode() const noexcept {
+        op_code msg::get_opcode() const noexcept {
             constexpr std::uint8_t mask{0b0001'1110}; // represents bit 1-4
-            return (data_[2] & mask) >> 1;
+            std::uint8_t code = (data_[2] & mask) >> 1;
+            return (code < 0xF) ? static_cast<op_code>(code) : op_code::INVALID;
         }
 
     } // namespace dns

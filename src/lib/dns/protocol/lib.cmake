@@ -7,6 +7,7 @@ set (dns_cpp
     src/lib/dns/protocol/src/header.cpp
     src/lib/dns/protocol/src/parser.cpp
     src/lib/dns/protocol/src/serializer.cpp
+    src/lib/dns/protocol/src/op_code.cpp
 )
     
 set (dns_h
@@ -14,6 +15,7 @@ set (dns_h
     include/smf/dns/header.h
     include/smf/dns/parser.h
     include/smf/dns/serializer.h
+    include/smf/dns/op_code.h
 )
 
 

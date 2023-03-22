@@ -198,7 +198,7 @@ namespace smf {
 
             cyng::make_description(
                 "cluster.send.msg",
-                cyng::vm_adaptor<session, void, std::deque<cyng::buffer_t>>(this, &session::send)), // from base class
+                cyng::vm_adaptor<session, void, std::deque<cyng::buffer_t>>(this, &session_base::send)), // from base class
 
             //"cfg.sml.channel"
             cyng::make_description(

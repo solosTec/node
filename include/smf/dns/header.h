@@ -7,6 +7,8 @@
 #ifndef SMF_DNS_HEADER_H
 #define SMF_DNS_HEADER_H
 
+#include <smf/dns/op_code.h>
+
 #include <array>
 #include <cstdint>
 #include <iomanip>
@@ -133,7 +135,26 @@ namespace smf {
             RES_ANY = 0x00ff
         };
 
+        //  forward declaration
         class parser;
+
+        /**
+         * @see https://datatracker.ietf.org/doc/html/rfc1035#section-4.1.1
+         *
+         * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+         * | ID |
+         * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+         * |QR| Opcode |AA|TC|RD|RA| Z | RCODE |
+         * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+         * | QDCOUNT |
+         * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+         * | ANCOUNT |
+         * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+         * | NSCOUNT |
+         * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+         * | ARCOUNT |
+         * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+         */
         class msg {
 
             friend class parser;
@@ -165,7 +186,7 @@ namespace smf {
              *  2 == server status request
              *  3 == reserved
              */
-            std::uint8_t get_opcode() const noexcept;
+            op_code get_opcode() const noexcept;
 
             /**
              * QR
@@ -189,8 +210,8 @@ namespace smf {
     template <typename ch, typename char_traits>
     std::basic_ostream<ch, char_traits> &operator<<(std::basic_ostream<ch, char_traits> &os, dns::msg const &m) {
         //  ToDo:
-        os << std::hex << std::setfill('0') << std::setw(2) << m.get_id() << (m.is_reponse_code() ? 'Q' : 'R') << std::dec
-           << +m.get_opcode();
+        os << std::hex << std::setfill('0') << std::setw(2) << m.get_id() << (m.is_reponse_code() ? 'Q' : 'R') << std::dec << '-'
+           << m.get_opcode();
         return os;
     }
 
