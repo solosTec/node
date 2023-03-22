@@ -1,20 +1,11 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Sylko Olzscher
- *
- */
 #include <session.h>
 
 #include <db.h>
-#include <tasks/ping.h>
 
 #include <smf/cluster/features.h>
 
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
-#include <cyng/log/record.h>
-#include <cyng/obj/algorithm/add.hpp>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/numeric_cast.hpp>
@@ -22,115 +13,32 @@
 #include <cyng/parse/string.h>
 #include <cyng/vm/generator.hpp>
 #include <cyng/vm/linearize.hpp>
-#include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
 
 #include <iostream>
-// #include <version>  // __cpp_lib_starts_ends_with
 
 #include <boost/predef.h> //	requires Boost 1.55
 
 namespace smf {
 
     session::session(boost::asio::ip::tcp::socket socket, db &cache, cyng::mesh &fabric, cyng::logger logger)
-        : socket_(std::move(socket))
+        : base_t(std::move(socket), fabric, logger, cyng::io::parser([this](cyng::object &&obj) {
+                     //  un-comment this line to debug problems with transferring data over
+                     //  the cluster bus.
+                     // CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
+                     vm_.load(std::move(obj));
+                 }))
         , cache_(cache)
         , ctl_(fabric.get_ctl())
-        , logger_(logger)
-        , buffer_()
-        , buffer_write_()
-        , vm_()
-        , parser_([this](cyng::object &&obj) {
-            //  un-comment this line to debug problems with transferring data over
-            //  the cluster bus.
-            // CYNG_LOG_DEBUG(logger_, "parser: " << cyng::io::to_typed(obj));
-            vm_.load(std::move(obj));
-        })
         , slot_(cyng::make_slot(new slot(this)))
         , peer_(boost::uuids::nil_uuid())
         , protocol_layer_("any")
-        , dep_key_()
-        , ping_() {
+        , dep_key_() {
 
         vm_ = init_vm(fabric);
     }
 
-    boost::uuids::uuid session::get_peer() const { return vm_.get_tag(); }
-
     boost::uuids::uuid session::get_remote_peer() const { return peer_; }
-
-    void session::stop() {
-
-        //
-        //  stop depended ping task
-        //
-        ping_->stop();
-
-        CYNG_LOG_WARNING(logger_, "stop " << protocol_layer_ << " session");
-        boost::system::error_code ec;
-        socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
-        //  Any asynchronous send, receive or connect operations will be cancelled immediately,
-        //  and will complete with the boost::asio::error::operation_aborted error.
-        socket_.close(ec);
-
-        //
-        //	remove all subscriptions
-        //
-        // BOOST_ASSERT(srvp_ != nullptr);
-        auto const count = cache_.get_store().disconnect(slot_);
-        CYNG_LOG_TRACE(logger_, "disconnect from " << count << " tables");
-
-        //
-        //	stop VM
-        //
-        vm_.stop();
-    }
-
-    void session::start() {
-        do_read();
-        //
-        //	start ping
-        //
-        ping_ = ctl_.create_channel_with_ref<ping>(
-                        ctl_, logger_, cache_, std::bind(&session::send_ping_request, this->shared_from_this()))
-                    .first;
-        BOOST_ASSERT(ping_->is_open());
-        //  handle dispatch errors
-        ping_->suspend(
-            std::chrono::minutes(1),
-            "update",
-            std::bind(&db::log_dispatch_error, &cache_, std::placeholders::_1, std::placeholders::_2));
-    }
-
-    void session::do_read() {
-        auto self = shared_from_this();
-
-        socket_.async_read_some(
-            boost::asio::buffer(buffer_.data(), buffer_.size()),
-            [this, self](boost::system::error_code ec, std::size_t bytes_transferred) {
-                if (!ec) {
-                    CYNG_LOG_DEBUG(
-                        logger_, "session [" << socket_.remote_endpoint() << "] received " << bytes_transferred << " bytes");
-
-                    //
-                    //	let parse it
-                    //
-                    parser_.read(buffer_.begin(), buffer_.begin() + bytes_transferred);
-
-                    //
-                    //	continue reading
-                    //
-                    do_read();
-                } else {
-                    CYNG_LOG_WARNING(logger_, "[session] read: " << ec.message());
-                    //  ping holds a reference of this session and must be terminated.
-                    if (ping_ && ping_->is_open()) {
-                        ping_->stop();
-                    }
-                    CYNG_LOG_TRACE(logger_, "[session] use count: " << self.use_count());
-                }
-            });
-    }
 
     cyng::vm_proxy session::init_vm(cyng::mesh &fabric) {
 
@@ -290,8 +198,7 @@ namespace smf {
 
             cyng::make_description(
                 "cluster.send.msg",
-                cyng::vm_adaptor<session, void, std::deque<cyng::buffer_t>>(
-                    this, &session::cluster_send_msg)), // cluster_send_msg() - internal function
+                cyng::vm_adaptor<session, void, std::deque<cyng::buffer_t>>(this, &session::send)), // from base class
 
             //"cfg.sml.channel"
             cyng::make_description(
@@ -308,31 +215,18 @@ namespace smf {
                     boost::uuids::uuid>(this, &session::cfg_sml_channel)));
     }
 
-    void session::do_write() {
-        BOOST_ASSERT(!buffer_write_.empty());
+    void session::stop() {
+
+        CYNG_LOG_WARNING(logger_, "stop " << protocol_layer_ << " session");
 
         //
-        //	write actually data to socket
+        //	remove all subscriptions
         //
-        boost::asio::async_write(
-            socket_,
-            boost::asio::buffer(buffer_write_.front().data(), buffer_write_.front().size()),
-            cyng::expose_dispatcher(vm_).wrap(std::bind(&session::handle_write, this, std::placeholders::_1)));
-    }
+        // BOOST_ASSERT(srvp_ != nullptr);
+        auto const count = cache_.get_store().disconnect(slot_);
+        CYNG_LOG_TRACE(logger_, "disconnect from " << count << " tables");
 
-    void session::handle_write(const boost::system::error_code &ec) {
-        if (!ec) {
-
-            BOOST_ASSERT(!buffer_write_.empty());
-            buffer_write_.pop_front();
-            if (!buffer_write_.empty()) {
-                do_write();
-            }
-        } else {
-            CYNG_LOG_ERROR(logger_, "[session] write: " << ec.message());
-
-            // reset();
-        }
+        base_t::stop();
     }
 
     void session::cluster_login(
@@ -345,13 +239,13 @@ namespace smf {
         cyng::version v) {
         CYNG_LOG_INFO(
             logger_,
-            "session [" << socket_.remote_endpoint() << "] cluster login " << name << ":" << pwd << "@" << node << " #"
+            "session [" << get_remote_endpoint() << "] cluster login " << name << ":" << pwd << "@" << node << " #"
                         << n.get_internal_value() << " v" << v << ", tag: " << tag << ", peer: " << vm_.get_tag());
 
 #if defined(BOOST_OS_WINDOWS_AVAILABLE)
         {
             std::stringstream ss;
-            ss << "[smf] cluster login " << socket_.remote_endpoint() << "  " << name << ":" << pwd << "@" << node << " pid "
+            ss << "[smf] cluster login " << get_remote_endpoint() << "  " << name << ":" << pwd << "@" << node << " pid "
                << n.get_internal_value() << " v" << v;
             auto const msg = ss.str();
             ::OutputDebugString(msg.c_str());
@@ -370,12 +264,12 @@ namespace smf {
         peer_ = tag;
         protocol_layer_ = node; //  class
         cache_.insert_cluster_member(
-            tag, vm_.get_tag(), node, v, socket_.remote_endpoint(), n, (features & CONFIG_MANAGER) == CONFIG_MANAGER);
+            tag, vm_.get_tag(), node, v, get_remote_endpoint(), n, (features & CONFIG_MANAGER) == CONFIG_MANAGER);
 
         //
         //	send response
         //
-        cluster_send_msg(cyng::serialize_invoke("cluster.res.login", true));
+        send(cyng::serialize_invoke("cluster.res.login", true));
 
 #ifdef _DEBUG
         if (boost::algorithm::equals(node, "ipt")) {
@@ -396,7 +290,7 @@ namespace smf {
 
     void session::db_req_subscribe(std::string table, boost::uuids::uuid tag) {
 
-        CYNG_LOG_INFO(logger_, "session [" << protocol_layer_ << "@" << socket_.remote_endpoint() << "] subscribe " << table);
+        CYNG_LOG_INFO(logger_, "session [" << protocol_layer_ << "@" << get_remote_endpoint() << "] subscribe " << table);
 
         cache_.get_store().connect(table, slot_);
     }
@@ -417,7 +311,7 @@ namespace smf {
             try {
                 CYNG_LOG_INFO(
                     logger_,
-                    "session [" << socket_.remote_endpoint() << "] req.insert " << table_name << " - " << key << " - " << data);
+                    "session [" << get_remote_endpoint() << "] req.insert " << table_name << " - " << key << " - " << data);
             } catch (std::exception const &ex) {
                 CYNG_LOG_WARNING(logger_, "session " << tag << " is offline: " << ex.what());
             }
@@ -500,7 +394,7 @@ namespace smf {
         std::reverse(data.begin(), data.end());
 
         try {
-            CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] req.insert.auto " << table_name << " - " << data);
+            CYNG_LOG_INFO(logger_, "session [" << get_remote_endpoint() << "] req.insert.auto " << table_name << " - " << data);
         } catch (std::exception const &ex) {
             CYNG_LOG_WARNING(logger_, "session " << tag << " is offline: " << ex.what());
         }
@@ -527,8 +421,7 @@ namespace smf {
 
         try {
             CYNG_LOG_INFO(
-                logger_,
-                "session [" << socket_.remote_endpoint() << "] req.update " << table_name << " - " << key << " = " << data);
+                logger_, "session [" << get_remote_endpoint() << "] req.update " << table_name << " - " << key << " = " << data);
         } catch (std::exception const &ex) {
             CYNG_LOG_WARNING(logger_, "session " << source << " is offline: " << ex.what());
         }
@@ -855,24 +748,11 @@ namespace smf {
 
     void session::db_req_clear(std::string table_name, boost::uuids::uuid source) { cache_.get_store().clear(table_name, source); }
 
-    void session::cluster_send_msg(std::deque<cyng::buffer_t> msg) {
-        cyng::exec(vm_, [=, this]() {
-            bool const b = buffer_write_.empty();
-            CYNG_LOG_DEBUG(logger_, "send " << msg.size() << " bytes cluster message to peer " << vm_.get_tag());
-            cyng::add(buffer_write_, msg);
-            if (b) {
-                do_write();
-            }
-        });
-    }
-
-    void session::send_ping_request() {
-        cluster_send_msg(cyng::serialize_invoke("cluster.req.ping", std::chrono::system_clock::now()));
-    }
+    void session::send_ping_request() { send(cyng::serialize_invoke("cluster.req.ping", std::chrono::system_clock::now())); }
 
     void session::cluster_test_msg(std::string msg) {
         CYNG_LOG_TRACE(logger_, "cluster_test_msg: " << msg);
-        cluster_send_msg(cyng::serialize_invoke("cluster.test.msg", msg));
+        send(cyng::serialize_invoke("cluster.test.msg", msg));
     }
 
 #ifdef _DEBUG
@@ -920,7 +800,7 @@ namespace smf {
         //
         CYNG_LOG_TRACE(sp_->logger_, "forward insert [" << tbl->meta().get_name() << '/' << sp_->protocol_layer_ << "]");
 
-        sp_->cluster_send_msg(cyng::serialize_invoke("db.res.insert", tbl->meta().get_name(), key, data, gen, source));
+        sp_->send(cyng::serialize_invoke("db.res.insert", tbl->meta().get_name(), key, data, gen, source));
 
         return true;
     }
@@ -940,7 +820,7 @@ namespace smf {
             "forward update [" << tbl->meta().get_name() << '/' << sp_->protocol_layer_ << "] " << attr.first << " => "
                                << attr.second);
 
-        sp_->cluster_send_msg(cyng::serialize_invoke("db.res.update", tbl->meta().get_name(), key, attr, gen, source));
+        sp_->send(cyng::serialize_invoke("db.res.update", tbl->meta().get_name(), key, attr, gen, source));
 
         return true;
     }
@@ -952,7 +832,7 @@ namespace smf {
         //
         CYNG_LOG_TRACE(sp_->logger_, "forward remove [" << tbl->meta().get_name() << '/' << sp_->protocol_layer_ << "]");
 
-        sp_->cluster_send_msg(cyng::serialize_invoke("db.res.remove", tbl->meta().get_name(), key, source));
+        sp_->send(cyng::serialize_invoke("db.res.remove", tbl->meta().get_name(), key, source));
 
         return true;
     }
@@ -964,7 +844,7 @@ namespace smf {
 
         CYNG_LOG_TRACE(sp_->logger_, " forward clear [" << tbl->meta().get_name() << '/' << sp_->protocol_layer_ << "]");
 
-        sp_->cluster_send_msg(cyng::serialize_invoke("db.res.clear", tbl->meta().get_name(), source));
+        sp_->send(cyng::serialize_invoke("db.res.clear", tbl->meta().get_name(), source));
 
         return true;
     }
@@ -972,7 +852,7 @@ namespace smf {
     bool session::slot::forward(cyng::table const *tbl, bool trx) {
         CYNG_LOG_TRACE(sp_->logger_, "forward trx [" << tbl->meta().get_name() << "] " << (trx ? "start" : "commit"));
 
-        sp_->cluster_send_msg(cyng::serialize_invoke("db.res.trx", tbl->meta().get_name(), trx));
+        sp_->send(cyng::serialize_invoke("db.res.trx", tbl->meta().get_name(), trx));
 
         return true;
     }
@@ -992,11 +872,8 @@ namespace smf {
         if (!dev.is_nil()) {
 
             //
-            //	ToDo: check if there is already a session of this pty
-            //
-
-            //
-            //	insert into session table
+            //  insert into session table
+            //  check if there is already a session of this pty
             //
             if (cache_.insert_pty(
                     dev,           //  pk
@@ -1010,7 +887,7 @@ namespace smf {
                 //
                 //	send response
                 //
-                cluster_send_msg(cyng::serialize_forward("pty.res.login", rtag, true, dev));
+                send(cyng::serialize_forward("pty.res.login", rtag, true, dev));
 
                 //
                 //	update cluster table (pty counter)
@@ -1037,8 +914,8 @@ namespace smf {
             //
             //	send response
             //
-            cluster_send_msg(cyng::serialize_forward("pty.res.login", rtag, false, boost::uuids::nil_uuid())); //	no
-                                                                                                               // device
+            send(cyng::serialize_forward("pty.res.login", rtag, false, boost::uuids::nil_uuid())); //	no
+                                                                                                   // device
 
             //	check auto insert
             auto const auto_login = cache_.get_cfg().get_value("auto.login", false);
@@ -1071,7 +948,7 @@ namespace smf {
                 auto const [rtag, peer] = cache_.get_access_params(connection_key);
                 // BOOST_ASSERT(peer == vm_.get_tag()); //	ToDo: correct implementation later
                 //"pty.req.close.connection"
-                cluster_send_msg(cyng::serialize_forward("pty.req.close.connection", rtag));
+                send(cyng::serialize_forward("pty.req.close.connection", rtag));
             }
 
             //
@@ -1147,18 +1024,26 @@ namespace smf {
 
             CYNG_LOG_TRACE(logger_, "pty " << msisdn << " is offline / connected");
             cache_.sys_msg(
-                cyng::severity::LEVEL_WARNING, protocol_layer_, " device", caller, "cannot open connection to [", msisdn, "]");
+                cyng::severity::LEVEL_WARNING,
+                protocol_layer_,
+                " device",
+                caller,
+                "cannot open connection to [",
+                callee,
+                "@",
+                msisdn,
+                "]");
 
             //
             //	session offline or already connected
             //
-            cluster_send_msg(cyng::serialize_forward("pty.res.open.connection", tag, false, token)); //	failed
+            send(cyng::serialize_forward("pty.res.open.connection", tag, false, token)); //	failed
         }
     }
 
     //  "pty.forward.open.connection"
     void session::pty_forward_res_open_connection(boost::uuids::uuid caller_tag, bool success, cyng::param_map_t token) {
-        cluster_send_msg(cyng::serialize_forward("pty.res.open.connection", caller_tag, success, token));
+        send(cyng::serialize_forward("pty.res.open.connection", caller_tag, success, token));
     }
 
     void session::pty_return_open_connection(
@@ -1220,7 +1105,7 @@ namespace smf {
         //
         if (local) {
             BOOST_ASSERT(caller_vm == callee_vm);
-            cluster_send_msg(cyng::serialize_forward("pty.res.open.connection", caller_tag, success, token)); //	complete
+            send(cyng::serialize_forward("pty.res.open.connection", caller_tag, success, token)); //	complete
         } else {
             //  caller on different VM
             vm_.load(cyng::generate_forward("pty.forward.res.open.connection", caller_vm, caller_tag, success, token));
@@ -1276,7 +1161,7 @@ namespace smf {
         //
         //  ack closed connection to caller
         //
-        cluster_send_msg(cyng::serialize_forward("pty.res.close.connection", tag, true, token)); //	success
+        send(cyng::serialize_forward("pty.res.close.connection", tag, true, token)); //	success
 
         //
         //  forward to remote
@@ -1300,11 +1185,11 @@ namespace smf {
             CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " registered target " << name << " {" << tag << "}");
             cache_.sys_msg(cyng::severity::LEVEL_TRACE, protocol_layer_, "target[", name, "#", channel, "] registered");
 
-            cluster_send_msg(cyng::serialize_forward("pty.res.register", tag, true, channel, token)); //	ok
+            send(cyng::serialize_forward("pty.res.register", tag, true, channel, token)); //	ok
 
         } else {
             CYNG_LOG_WARNING(logger_, "pty " << protocol_layer_ << " registering target " << name << " {" << tag << "} failed");
-            cluster_send_msg(cyng::serialize_forward("pty.res.register", tag, false, channel, token)); //	failed
+            send(cyng::serialize_forward("pty.res.register", tag, false, channel, token)); //	failed
         }
     }
 
@@ -1326,7 +1211,7 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "no target specified");
             cache_.sys_msg(cyng::severity::LEVEL_WARNING, protocol_layer_, "no target specified");
 
-            cluster_send_msg(cyng::serialize_forward(
+            send(cyng::serialize_forward(
                 "pty.res.open.channel",
                 tag,
                 false,
@@ -1354,7 +1239,7 @@ namespace smf {
                     "pty " << device << '/' << protocol_layer_ << " opens channel [" << name << "] " << channel << ':' << source);
             }
 
-            cluster_send_msg(cyng::serialize_forward(
+            send(cyng::serialize_forward(
                 "pty.res.open.channel",
                 tag,
                 (count != 0),                 //	success
@@ -1373,7 +1258,7 @@ namespace smf {
         CYNG_LOG_INFO(logger_, "pty " << protocol_layer_ << " close channel [#" << channel << "] " << token);
         auto const count = cache_.close_channel(channel);
 
-        cluster_send_msg(cyng::serialize_forward(
+        send(cyng::serialize_forward(
             "pty.res.close.channel",
             tag,
             (count != 0), //	success
@@ -1408,10 +1293,10 @@ namespace smf {
                 "pty " << protocol_layer_ << " push data to " << pty.pty_.first << ", " << pty.pty_.second << " - " << channel
                        << " <-> " << pty.channel_);
 
-            cluster_send_msg(cyng::serialize_forward("pty.req.push.data", pty.pty_.first, pty.channel_, source, data));
+            send(cyng::serialize_forward("pty.req.push.data", pty.pty_.first, pty.channel_, source, data));
         }
 
-        cluster_send_msg(cyng::serialize_forward(
+        send(cyng::serialize_forward(
             "pty.push.data.res",
             tag,
             !vec.empty(), //	success
@@ -1438,7 +1323,7 @@ namespace smf {
 
                         CYNG_LOG_INFO(
                             logger_,
-                            "session [" << socket_.remote_endpoint() << "] will stop " << table_name << ": " << rtag << " on peer "
+                            "session [" << get_remote_endpoint() << "] will stop " << table_name << ": " << rtag << " on peer "
                                         << peer);
 
                         //
@@ -1449,7 +1334,7 @@ namespace smf {
 
                     } else {
                         CYNG_LOG_ERROR(
-                            logger_, "session [" << socket_.remote_endpoint() << "] cannot stop " << table_name << ": " << tag);
+                            logger_, "session [" << get_remote_endpoint() << "] cannot stop " << table_name << ": " << tag);
                     }
                 },
                 cyng::access::read(table_name));
@@ -1488,8 +1373,8 @@ namespace smf {
                     std::string msisdn) -> void {
                     CYNG_LOG_INFO(
                         logger_,
-                        "session [" << socket_.remote_endpoint() << "] will backup gateway: " << name << '@' << msisdn
-                                    << " on peer " << peer);
+                        "session [" << get_remote_endpoint() << "] will backup gateway: " << name << '@' << msisdn << " on peer "
+                                    << peer);
 
                     vm_.load(cyng::generate_forward(
                         "cluster.send.msg",
@@ -1503,7 +1388,7 @@ namespace smf {
 
         } else {
             CYNG_LOG_ERROR(
-                logger_, "session [" << socket_.remote_endpoint() << "] backup of \"" << table_name << "\" is not supported");
+                logger_, "session [" << get_remote_endpoint() << "] backup of \"" << table_name << "\" is not supported");
         }
     }
 
@@ -1540,7 +1425,7 @@ namespace smf {
     }
 
     void session::cfg_backup_finish(boost::uuids::uuid tag, cyng::buffer_t gw, std::chrono::system_clock::time_point tp) {
-        CYNG_LOG_INFO(logger_, "session [" << socket_.remote_endpoint() << "] cfg.backup.finish: " << gw);
+        CYNG_LOG_INFO(logger_, "session [" << get_remote_endpoint() << "] cfg.backup.finish: " << gw);
         //
         //  distribute to configuration manager
         //
@@ -1594,7 +1479,7 @@ namespace smf {
                     std::string msisdn) -> void {
                     CYNG_LOG_INFO(
                         logger_,
-                        "session [" << socket_.remote_endpoint() << "] sml channel: " << channel << ", " << section
+                        "session [" << get_remote_endpoint() << "] sml channel: " << channel << ", " << section
                                     << ", source: " << source << ", cluster tag: " << tag_cluster);
 
                     //

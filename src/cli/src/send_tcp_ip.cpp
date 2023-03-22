@@ -1,4 +1,4 @@
-#include <send_tcp_ip.h>
+﻿#include <send_tcp_ip.h>
 
 #include <boost/asio.hpp>
 
@@ -18,7 +18,7 @@ bool send_tcp_ip(std::string host, std::string service, std::string path) {
         boost::asio::ip::tcp::resolver resolver(io_context);
         auto const ep = boost::asio::connect(s, resolver.resolve(host, service));
 
-        std::array<char, 512> buffer;
+        std::array<char, 64> buffer;
         for (;;) {
             auto const count = ifs.read(buffer.data(), buffer.size()).gcount();
 
@@ -33,6 +33,9 @@ bool send_tcp_ip(std::string host, std::string service, std::string path) {
             }
         }
 
+        // wait for user
+        std::cout << "Press Enter to continue…" << std::endl;
+        std::cin.get();
         return true;
     }
     return false;

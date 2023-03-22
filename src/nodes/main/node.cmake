@@ -7,12 +7,14 @@ set (main_cpp
     src/main.cpp
     src/controller.cpp
     src/session.cpp
+    src/session_base.cpp
     src/db.cpp
 )
     
 set (main_h
     include/controller.h
     include/session.h
+    include/session_base.hpp
     include/db.h
 )
 
@@ -38,7 +40,7 @@ else()
 endif()
 
 set (main_tasks
-  include/tasks/ping.h 
+  include/tasks/ping.hpp
   src/tasks/ping.cpp
 )
 

@@ -2,6 +2,7 @@
 
 #include <smf/config/protocols.h>
 
+#include <cyng/io/hex_dump.hpp>
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_factory.hpp>
@@ -10,12 +11,7 @@
 #include <cyng/vm/vm.h>
 
 #include <iostream>
-
-#ifdef _DEBUG_IMEGA
-#include <cyng/io/hex_dump.hpp>
-#include <iostream>
 #include <sstream>
-#endif
 
 namespace smf {
 
@@ -189,15 +185,13 @@ namespace smf {
 
     void imega_session::pty_transfer_data(cyng::buffer_t data) {
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " transfer " << data.size() << " bytes to " << dev_);
-#ifdef _DEBUG_IMEGA
         {
             std::stringstream ss;
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
             auto const dmp = ss.str();
-            CYNG_LOG_DEBUG(logger_, "[" << get_remote_endpoint() << "] emit " << data.size() << " bytes:\n" << dmp);
+            CYNG_LOG_TRACE(logger_, "[" << get_remote_endpoint() << "] emit " << data.size() << " bytes:\n" << dmp);
         }
-#endif
         //  send to device
         send([=, this]() mutable -> cyng::buffer_t { return serializer_.raw_data(std::move(data)); });
     }

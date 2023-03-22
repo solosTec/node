@@ -145,6 +145,7 @@ namespace smf {
 
           public:
             msg();
+            msg(msg const &) = default;
 
             /**
              * size of internal data buffer
@@ -157,14 +158,20 @@ namespace smf {
             // std::uint8_t truncation : 1;        //  TC
             // std::uint8_t authoritative : 1;     //  AA
 
-            // std::uint8_t opcode : 4;            //  Opcode
-            //  0 == standard query
-            //  1 == inverse of a query
-            //  2 == server status request
-            //  3 == reserved
+            /**
+             * std::uint8_t opcode : 4;            //  Opcode
+             *  0 == standard query
+             *  1 == inverse of a query
+             *  2 == server status request
+             *  3 == reserved
+             */
             std::uint8_t get_opcode() const noexcept;
 
-            // std::uint8_t is_response_code : 1;  //  QR
+            /**
+             * QR
+             * std::uint8_t is_response_code : 1;
+             * @return true if message contains a reponse, otherwise false.
+             */
             bool is_reponse_code() const noexcept;
 
             // std::uint8_t responsecode : 4; //  RCODE

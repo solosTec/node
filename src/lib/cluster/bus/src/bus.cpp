@@ -54,7 +54,10 @@ namespace smf {
         cyng::net::client_factory cf(ctl);
         client_ = cf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
             //  handle dispatch errors
-            [this](std::string task, std::string slot) { CYNG_LOG_FATAL(logger_, task << " has no slot " << slot); },
+            [this](std::string task, std::string slot) {
+                CYNG_LOG_FATAL(logger_, "task " << task << " has no slot " << slot);
+                log_dispatch_error(task, slot); // see global message log
+            },
             [this](std::size_t, std::size_t counter, std::string &host, std::string &service)
                 -> std::pair<std::chrono::seconds, bool> {
                 //
@@ -63,14 +66,14 @@ namespace smf {
                 CYNG_LOG_WARNING(logger_, "[cluster] " << tgl_.get() << " connect failed for the " << counter << " time");
                 if (counter < 3) {
                     //  retry
-                    return {std::chrono::seconds(20), true};
+                    return {std::chrono::seconds(20 * counter), true};
                 }
 
                 //  try next redundancy in 30 seconds
                 tgl_.changeover();
                 host = tgl_.get().host_;
                 service = tgl_.get().service_;
-                return {std::chrono::seconds(0), true};
+                return {std::chrono::seconds(30), true};
             },
             [=, this](boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep, cyng::channel_ptr sp) {
                 // std::cout << "connected to " << ep << " #" << sp->get_id() << std::endl;
@@ -94,7 +97,7 @@ namespace smf {
                 CYNG_LOG_DEBUG(logger_, "[cluster] " << tgl_.get() << " received " << data.size() << " bytes");
 
                 //
-                //	let parse it
+                //	let it parse
                 //
                 parser_.read(data.begin(), data.end());
             },
@@ -131,7 +134,10 @@ namespace smf {
         return bip->get_fabric()->make_proxy(
 
             //  handle dispatch errors
-            [this](std::string task, std::string slot) { log_dispatch_error(task, slot); },
+            [this](std::string task, std::string slot) {
+                CYNG_LOG_FATAL(logger_, "task " << task << " has no slot " << slot);
+                log_dispatch_error(task, slot);
+            },
 
             //	"cluster.res.login"
             cyng::make_description(

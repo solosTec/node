@@ -22,7 +22,9 @@
 
 namespace smf {
 
-    // class modem_session;
+    /**
+     * @tparam S session type
+     */
     template <typename S> class gatekeeper {
         template <typename U> friend class cyng::task;
 

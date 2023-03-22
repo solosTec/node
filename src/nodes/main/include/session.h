@@ -8,20 +8,20 @@
 #define SMF_MAIN_SESSION_H
 
 #include <db.h>
+#include <session_base.hpp>
 
 #include <cyng/io/parser/parser.h>
-#include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/pid.h>
 #include <cyng/store/slot_interface.h>
-#include <cyng/vm/mesh.h>
 #include <cyng/vm/proxy.h>
-
-#include <array>
-#include <memory>
 
 namespace smf {
 
-    class session : public std::enable_shared_from_this<session> {
+    class session : public session_base<cyng::io::parser, session, 2048> {
+
+        //  base class
+        using base_t = session_base<cyng::io::parser, session, 2048>;
+
         class slot : public cyng::slot_interface {
           public:
             slot(session *);
@@ -61,20 +61,17 @@ namespace smf {
         session(boost::asio::ip::tcp::socket socket, db &, cyng::mesh &, cyng::logger);
         ~session() = default;
 
-        void start();
         void stop();
 
-        /**
-         * @return tag of remote session
-         */
-        boost::uuids::uuid get_peer() const;
         boost::uuids::uuid get_remote_peer() const;
+
+        /**
+         * send ping request
+         */
+        void send_ping_request();
 
       private:
         cyng::vm_proxy init_vm(cyng::mesh &);
-        void do_read();
-        void do_write();
-        void handle_write(const boost::system::error_code &ec);
 
         void cluster_login(
             std::string,
@@ -233,16 +230,6 @@ namespace smf {
         cfg_sml_channel(bool, cyng::vector_t, std::string, cyng::obis, cyng::param_map_t, boost::uuids::uuid, boost::uuids::uuid);
 
         /**
-         * send data to cluster node
-         */
-        void cluster_send_msg(std::deque<cyng::buffer_t>);
-
-        /**
-         * update node status
-         */
-        void send_ping_request();
-
-        /**
          * emit a test message
          */
         void cluster_test_msg(std::string);
@@ -252,23 +239,15 @@ namespace smf {
 #endif
 
       private:
-        boost::asio::ip::tcp::socket socket_;
+        /**
+         * key value store
+         */
         db &cache_;
+
+        /**
+         * task controller
+         */
         cyng::controller &ctl_;
-        cyng::logger logger_;
-
-        /**
-         * Buffer for incoming data.
-         */
-        std::array<char, 2048> buffer_;
-
-        /**
-         * Buffer for outgoing data.
-         */
-        std::deque<cyng::buffer_t> buffer_write_;
-
-        cyng::vm_proxy vm_;
-        cyng::io::parser parser_;
 
         /**
          * database listener
@@ -285,11 +264,6 @@ namespace smf {
          * Generate dependend keys for table "gwIEC"
          */
         config::dependend_key dep_key_;
-
-        /**
-         * ping task to update node status
-         */
-        cyng::channel_ptr ping_;
     };
 
     /**

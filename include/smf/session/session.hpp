@@ -30,7 +30,14 @@
 
 namespace smf {
 
-    template <typename P, typename S, typename T, std::size_t N> class session : public std::enable_shared_from_this<T> {
+    /**
+     * @tparam P parser
+     * @tparam T implementation class
+     * @tparam N receive buffer size
+     */
+    template <typename P, typename S, typename T, std::size_t N>
+    //  generic base class for SMF sessions (client side)
+    class session : public std::enable_shared_from_this<T> {
       public:
         using parser_t = P;
         using serializer_t = S;
@@ -45,8 +52,8 @@ namespace smf {
             cyng::logger logger,
             parser_t &&parser,
             serializer_t &&serializer)
-            : read_buffer_()
-            , write_buffer_()
+            : read_buffer_{0}
+            , write_buffer_{}
             , rx_{0}
             , sx_{0}
             , socket_(std::move(socket))
@@ -93,7 +100,7 @@ namespace smf {
         }
 
         /**
-         * start reading
+         * start reading from socket
          */
         void start(std::chrono::seconds timeout) {
 
@@ -182,6 +189,8 @@ namespace smf {
                         do_read();
                     } else {
                         CYNG_LOG_WARNING(logger_, "[session] " << vm_.get_tag() << " read: " << ec.message());
+                        write_buffer_.clear();
+                        close_socket();
                     }
                 });
         }
@@ -215,7 +224,7 @@ namespace smf {
             } else {
                 CYNG_LOG_ERROR(logger_, "[session] " << vm_.get_tag() << " write: " << ec.message());
                 write_buffer_.clear();
-                socket_.close();
+                close_socket();
             }
         }
 

@@ -44,7 +44,7 @@ namespace smf {
 
         auto const address = cyng::value_cast(reader["server"]["address"].get(), "0.0.0.0");
         auto const port = cyng::numeric_cast<std::uint16_t>(reader["server"]["port"].get(), 5200);
-        auto const policy = imega::to_policy(cyng::value_cast(reader["server"]["policy"].get(), "global"));
+        auto const policy = imega::to_policy(cyng::value_cast(reader["server"]["pwd-policy"].get(), "global"));
         auto const pwd = cyng::value_cast(reader["server"]["global-pwd"].get(), "123456");
 
         auto const timeout_str = cyng::value_cast(reader["server"]["timeout"].get(), "00:00:12");
