@@ -70,7 +70,11 @@ namespace smf {
 
         return cyng::make_param(
             "net",
-            cyng::tuple_factory(cyng::make_param("mac", srv_mac), cyng::make_param(cyng::to_string(OBIS_SERVER_ID), srv_id)));
+            cyng::tuple_factory(
+                cyng::make_param("mac", srv_mac),                          // example: "00:15:5d:fb:ec:54"
+                cyng::make_param(cyng::to_string(OBIS_SERVER_ID), srv_id), // example: "8181c78204ff": "0500155dfbec54"
+                cyng::make_param("multicast.dns", false))                  // activate mDNS
+        );
     }
 
     cyng::param_t create_wireless_virtual_meter_spec() {

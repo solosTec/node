@@ -40,7 +40,7 @@ namespace smf {
         };
 
         /**
-         *	@return name of the IP-T command
+         *	@return name of the op code
          */
         const char *op_code_name(std::uint8_t);
 

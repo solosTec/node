@@ -334,9 +334,12 @@ namespace smf {
             }
         }
     } // namespace
-    void cleanup(cyng::db::session db, cyng::obis profile, cyng::date tp) {
 
+    std::size_t cleanup(cyng::db::session db, cyng::obis profile, cyng::date tp) {
+
+#ifdef _DEBUG
         std::cout << "***info: delete all records of profile : " << obis::get_name(profile) << " prior " << tp << std::endl;
+#endif
 
         //
         // start transaction
@@ -354,20 +357,28 @@ namespace smf {
         //  1. get all PKs of outdated readouts
         //
         std::set<boost::uuids::uuid> tags = select_readout_records(db, profile, tp);
+#ifdef _DEBUG
         std::cout << "***info: found " << tags.size() << " outdated records of profile : " << obis::get_name(profile) << std::endl;
+#endif
         //
         //  2. delete all affected records from "TSMLReadoutData"
         //
+#ifdef _DEBUG
         std::cout << "***info: delete " << tags.size()
                   << " outdated TSMLReadoutData records of profile : " << obis::get_name(profile) << std::endl;
+#endif
         delete_readout_data_records(db, tags);
 
-        //
-        //  3. delete all affected records from "TSMLReadout"
-        //
+//
+//  3. delete all affected records from "TSMLReadout"
+//
+#ifdef _DEBUG
         std::cout << "***info: delete " << tags.size() << " outdated TSMLReadout records of profile : " << obis::get_name(profile)
                   << std::endl;
+#endif
         delete_readout_records(db, tags);
+
+        return tags.size();
     }
 
     void vacuum(cyng::db::session db) {

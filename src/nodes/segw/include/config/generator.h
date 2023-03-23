@@ -11,6 +11,11 @@
 
 namespace smf {
 
+    /**
+     * Create the default configuration.
+     * Since the configuration is produced as a DOM like structure it's
+     * easy to save as JSON or XML file.
+     */
     cyng::vector_t create_default_config(
         std::chrono::system_clock::time_point now,
         std::filesystem::path tmp,

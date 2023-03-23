@@ -8,6 +8,7 @@
 #define SMF_DNS_HEADER_H
 
 #include <smf/dns/op_code.h>
+#include <smf/dns/r_code.h>
 
 #include <array>
 #include <cstdint>
@@ -141,18 +142,20 @@ namespace smf {
         /**
          * @see https://datatracker.ietf.org/doc/html/rfc1035#section-4.1.1
          *
+         *                                1  1  1  1  1  1
+         *  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
          * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         * | ID |
+         * |                      ID                       |
          * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         * |QR| Opcode |AA|TC|RD|RA| Z | RCODE |
+         * |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
          * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         * | QDCOUNT |
+         * |                    QDCOUNT                    |
          * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         * | ANCOUNT |
+         * |                    ANCOUNT                    |
          * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         * | NSCOUNT |
+         * |                    NSCOUNT                    |
          * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         * | ARCOUNT |
+         * |                    ARCOUNT                    |
          * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
          */
         class msg {
@@ -175,7 +178,12 @@ namespace smf {
 
             std::uint16_t get_id() const noexcept;
 
-            // std::uint8_t recursion_desired : 1; //  RD
+            /**
+             * std::uint8_t recursion_desired : 1;
+             * RD
+             */
+            bool is_recursion_desired() const noexcept;
+
             // std::uint8_t truncation : 1;        //  TC
             // std::uint8_t authoritative : 1;     //  AA
 
@@ -195,7 +203,12 @@ namespace smf {
              */
             bool is_reponse_code() const noexcept;
 
-            // std::uint8_t responsecode : 4; //  RCODE
+            /**
+             * std::uint8_t responsecode : 4;
+             * RCODE
+             */
+            r_code get_rcode() const noexcept;
+
             // std::uint8_t checking_disabled : 1;
             // std::uint8_t authenticated_data : 1;
             // std::uint8_t reserved : 1;
@@ -211,7 +224,7 @@ namespace smf {
     std::basic_ostream<ch, char_traits> &operator<<(std::basic_ostream<ch, char_traits> &os, dns::msg const &m) {
         //  ToDo:
         os << std::hex << std::setfill('0') << std::setw(2) << m.get_id() << (m.is_reponse_code() ? 'Q' : 'R') << std::dec << '-'
-           << m.get_opcode();
+           << m.get_opcode() << '-' << m.get_rcode();
         return os;
     }
 

@@ -53,17 +53,21 @@ namespace smf {
             //
             //  cleanup
             //
-            smf::cleanup(db_, profile_, now - max_age_);
+            auto const count = smf::cleanup(db_, profile_, now - max_age_);
             CYNG_LOG_INFO(
                 logger_,
-                "[cleanup] all records older than " << max_age_.count() << "h from " << obis::get_name(profile_) << " removed");
+                "[cleanup] " << count << " records older than " << max_age_.count() << "h from " << obis::get_name(profile_)
+                             << " removed");
 
             //
             //  restart after half the interval time
+            // don't start immediately and earliest after one hour
             //
-            //  handle dispatch errors
             sp->suspend(
-                interval / 2, "run", std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
+                std::chrono::hours(1) + (interval / 2),
+                "run",
+                //  handle dispatch errors
+                std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
             CYNG_LOG_TRACE(logger_, "[cleanup] run " << obis::get_name(profile_) << " at " << now + interval);
         }
     }

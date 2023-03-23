@@ -705,17 +705,16 @@ namespace smf {
                 BOOST_ASSERT(sml::is_profile(profile));
                 auto const name = reader_cls.get("name", "");
                 auto const age = cyng::to_hours(reader_cls.get("max.age", "120:00:00"));
-                // auto const limit = reader_cls.get("limit", 512u);
                 CYNG_LOG_INFO(
                     logger,
                     "start db cleanup task \"" << name << "\" for profile " << obis::get_name(profile) << " in "
                                                << (age.count() / 2) << " hours");
                 auto channel = ctl.create_named_channel_with_ref<cleanup_db>("cleanup-db", ctl, logger, db, profile, age).first;
                 BOOST_ASSERT(channel->is_open());
-                // don't start immediately
 
+                // don't start immediately and earliest after one hour
                 channel->suspend(
-                    age / 2,
+                    std::chrono::hours(1) + (age / 2),
                     "run",
                     //  handle dispatch errors
                     std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
