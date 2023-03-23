@@ -20,7 +20,8 @@ namespace smf {
          * The op code is encoded in 4 bits, so 16 different values are possible.
          */
         enum class r_code : std::uint8_t {
-            NOERROR = 0, //!< 0: No error (RFC1035)
+            //  NOERROR is defined in winerror.h
+            SUCCESS = 0, //!< 0: No error (RFC1035)
             FORMERR,     //!< 1: Format error (RFC1035)
             SERVFAIL,    //!< 2: Server failure (RFC1035)
             NXDOMAIN,    //!< 3: Name Error (RFC1035)

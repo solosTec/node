@@ -5,7 +5,7 @@ namespace smf {
         const char *r_code_name(std::uint8_t c) {
             switch (to_r_code(c)) {
 
-            case r_code::NOERROR: return "NOERROR";
+            case r_code::SUCCESS: return "NOERROR";
             case r_code::FORMERR: return "FORMERR";
             case r_code::SERVFAIL: return "SERVFAIL";
             case r_code::NXDOMAIN: return "NXDOMAIN";
