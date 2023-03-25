@@ -63,8 +63,10 @@ namespace smf {
             //  restart after half the interval time
             // don't start immediately and earliest after one hour
             //
+            auto const delay = ((interval / 2) < std::chrono::hours(1)) ? std::chrono::hours(1) : (interval / 2);
+
             sp->suspend(
-                std::chrono::hours(1) + (interval / 2),
+                delay,
                 "run",
                 //  handle dispatch errors
                 std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));

@@ -26,6 +26,11 @@ namespace smf {
         bool is_profile(cyng::obis code);
 
         /**
+         * @return a short prefix specific for the given profile.
+         */
+        std::string get_prefix(cyng::obis profile);
+
+        /**
          * @param tp timepoint in the specified period of time. Only required for monthly and annual profiles
          * @return interval time for the specified profile
          */

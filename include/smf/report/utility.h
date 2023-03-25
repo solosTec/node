@@ -129,11 +129,6 @@ namespace smf {
     std::string get_filename(std::string prefix, cyng::obis profile, cyng::date const &);
 
     /**
-     * @return a short prefix specific for the given profile.
-     */
-    std::string get_prefix(cyng::obis profile);
-
-    /**
      * get customer data from database
      */
     std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id);
@@ -156,7 +151,16 @@ namespace smf {
      */
     void vacuum(cyng::db::session db);
 
-    void dump_readout(cyng::db::session db, cyng::date, std::chrono::hours);
+    /**
+     * simple dump of all collected data
+     */
+    void dump_readout(cyng::db::session db, cyng::date, std::chrono::hours, std::ostream &os = std::cout);
+
+    /**
+     * create path if required
+     * @return false if path doesn't exist and cannot be created.
+     */
+    bool sanitize_path(std::string path);
 
 } // namespace smf
 

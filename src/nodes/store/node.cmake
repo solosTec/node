@@ -92,11 +92,17 @@ set(store_tasks_report
     src/tasks/gap_report.cpp
 )
 
+set(store_config
+    include/config/generator.h
+    src/config/generator.cpp
+)
+
 source_group("store-assets" FILES ${store_assets})
 source_group("tasks-sml" FILES ${store_tasks_sml})
 source_group("tasks-iec" FILES ${store_tasks_iec})
 source_group("tasks-dlsm" FILES ${store_tasks_dlms})
 source_group("tasks-report" FILES ${store_tasks_report})
+source_group("config" FILES ${store_config})
 
 
 set (store_node
@@ -107,6 +113,7 @@ set (store_node
   ${store_tasks_iec}
   ${store_tasks_dlms}
   ${store_tasks_report}
+  ${store_config}
 )
 
 if(WIN32)

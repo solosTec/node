@@ -163,7 +163,7 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "csv.reports" / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "csv.reports" / sml::get_prefix(profile)).string()),
                 cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", ""),
                 cyng::make_param("enabled", enabled)));
@@ -174,7 +174,7 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "lpex-reports" / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "lpex-reports" / sml::get_prefix(profile)).string()),
                 cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", "LPEx-"),
                 cyng::make_param("add.customer.data", false), // add/update customer data
@@ -186,7 +186,7 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "feed-reports" / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "feed-reports" / sml::get_prefix(profile)).string()),
                 cyng::make_param("backtrack", backtrack),
                 cyng::make_param("prefix", "LPEx2-"),
                 cyng::make_param("add.customer.data", false), // add/update customer data
@@ -198,7 +198,7 @@ namespace smf {
             profile,
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "gap-reports" / get_prefix(profile)).string()),
+                cyng::make_param("path", (cwd / "gap-reports" / sml::get_prefix(profile)).string()),
                 cyng::make_param("max.age", hours),
                 cyng::make_param("enabled", enabled)));
     }

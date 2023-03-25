@@ -25,6 +25,25 @@ namespace smf {
             return std::find(profiles.begin(), profiles.end(), code) != profiles.end();
         }
 
+        std::string get_prefix(cyng::obis profile) {
+            //
+            //  the prefox should be a valid file name
+            //
+            switch (profile.to_uint64()) {
+            case CODE_PROFILE_1_MINUTE: return "1min";
+            case CODE_PROFILE_15_MINUTE: return "15min";
+            case CODE_PROFILE_60_MINUTE: return "1h";
+            case CODE_PROFILE_24_HOUR: return "1d";
+            case CODE_PROFILE_LAST_2_HOURS: return "2h";
+            case CODE_PROFILE_LAST_WEEK: return "1w";
+            case CODE_PROFILE_1_MONTH: return "1mon";
+            case CODE_PROFILE_1_YEAR: return "1y";
+            case CODE_PROFILE_INITIAL: return "init";
+            default: break;
+            }
+            return to_string(profile);
+        }
+
         std::chrono::minutes interval_time(cyng::date const &d, cyng::obis profile) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE: return std::chrono::minutes(1);

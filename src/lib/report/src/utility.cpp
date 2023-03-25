@@ -196,7 +196,7 @@ namespace smf {
 
         // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(start, "%Y-%m-%d") << ".csv";
+        ss << prefix << sml::get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(start, "%Y-%m-%d") << ".csv";
         return ss.str();
     }
 
@@ -204,28 +204,28 @@ namespace smf {
 
         // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << get_prefix(profile) << "-" << cyng::as_string(start, "%Y-%m-%d") << ".csv";
+        ss << prefix << sml::get_prefix(profile) << "-" << cyng::as_string(start, "%Y-%m-%d") << ".csv";
         return ss.str();
     }
 
-    std::string get_prefix(cyng::obis profile) {
-        //
-        //  the prefox should be a valid file name
-        //
-        switch (profile.to_uint64()) {
-        case CODE_PROFILE_1_MINUTE: return "1min";
-        case CODE_PROFILE_15_MINUTE: return "15min";
-        case CODE_PROFILE_60_MINUTE: return "1h";
-        case CODE_PROFILE_24_HOUR: return "1d";
-        case CODE_PROFILE_LAST_2_HOURS: return "2h";
-        case CODE_PROFILE_LAST_WEEK: return "1w";
-        case CODE_PROFILE_1_MONTH: return "1mon";
-        case CODE_PROFILE_1_YEAR: return "1y";
-        case CODE_PROFILE_INITIAL: return "init";
-        default: break;
-        }
-        return to_string(profile);
-    }
+    // std::string get_prefix(cyng::obis profile) {
+    //     //
+    //     //  the prefox should be a valid file name
+    //     //
+    //     switch (profile.to_uint64()) {
+    //     case CODE_PROFILE_1_MINUTE: return "1min";
+    //     case CODE_PROFILE_15_MINUTE: return "15min";
+    //     case CODE_PROFILE_60_MINUTE: return "1h";
+    //     case CODE_PROFILE_24_HOUR: return "1d";
+    //     case CODE_PROFILE_LAST_2_HOURS: return "2h";
+    //     case CODE_PROFILE_LAST_WEEK: return "1w";
+    //     case CODE_PROFILE_1_MONTH: return "1mon";
+    //     case CODE_PROFILE_1_YEAR: return "1y";
+    //     case CODE_PROFILE_INITIAL: return "init";
+    //     default: break;
+    //     }
+    //     return to_string(profile);
+    // }
 
     std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id) {
         std::string const sql = "SELECT TLPExMeter.id, TLPExMeter.gen, TLPExMeter.mc, TLPExCustomer.name, TLPExCustomer.uniqueName "
@@ -496,7 +496,7 @@ namespace smf {
 
     } // namespace gap
 
-    void dump_readout(cyng::db::session db, cyng::date now, std::chrono::hours backlog) {
+    void dump_readout(cyng::db::session db, cyng::date now, std::chrono::hours backlog, std::ostream &os) {
 
 #ifdef _DEBUG
         std::cout << "Now       : " << cyng::as_string(now) << std::endl;
@@ -547,60 +547,60 @@ namespace smf {
                 int const dom = cyng::day(act_time);
                 if (dom != day) {
                     day = dom;
-                    std::cout << "day   : " << cyng::day(act_time) << std::endl;
+                    os << "day   : " << cyng::day(act_time) << std::endl;
                 }
 
                 if (tag != prev_tag) {
-                    std::cout << std::endl;
+                    os << std::endl;
                     prev_tag = tag;
                     idx_value = 1;
                     idx_readout++;
-                    std::cout << std::setw(4) << idx_readout << ": " << tag << ", " << to_string(id) << ", "
-                              << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << std::endl;
+                    os << std::setw(4) << idx_readout << ": " << tag << ", " << to_string(id) << ", "
+                       << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << std::endl;
                 } else {
                     idx_value++;
                     auto const reg = cyng::value_cast(res->get(4, cyng::TC_OBIS, 0), OBIS_DATA_COLLECTOR_REGISTER);
                     auto const value = cyng::value_cast(res->get(5, cyng::TC_STRING, 0), "?");
                     auto const unit = mbus::to_unit(cyng::numeric_cast<std::uint8_t>(res->get(6, cyng::TC_UINT8, 0), 0u));
-                    std::cout << '#' << std::setw(3) << idx_value << ", " << reg << ": " << value << ' ' << mbus::get_name(unit)
-                              << std::endl;
+                    os << '#' << std::setw(3) << idx_value << ", " << reg << ": " << value << ' ' << mbus::get_name(unit)
+                       << std::endl;
                 }
             }
 
-            std::cout << std::endl;
-            std::cout << "statistics:" << std::endl;
+            os << std::endl;
+            os << "statistics:" << std::endl;
 
             auto const start_utc = now;
             auto const start = now - backlog;
             auto const end = now;
             auto ro_range = ro_end.sub<std::chrono::minutes>(ro_start);
 
-            std::cout << std::fixed << std::setprecision(2);
-            std::cout << "UTC time  : " << cyng::as_string(start_utc) << std::endl;
-            std::cout << "time span : " << cyng::as_string(start) << " to " << cyng::as_string(end) << " = " << backlog.count()
-                      << "h (target)" << std::endl;
-            std::cout << "time span : " << cyng::as_string(ro_start) << " to " << cyng::as_string(ro_end) << " = "
-                      << ro_range.count() << " minutes (actual)" << std::endl;
-            std::cout << "readouts  : " << idx_readout << " (in total)" << std::endl;
+            os << std::fixed << std::setprecision(2);
+            os << "UTC time  : " << cyng::as_string(start_utc) << std::endl;
+            os << "time span : " << cyng::as_string(start) << " to " << cyng::as_string(end) << " = " << backlog.count()
+               << "h (target)" << std::endl;
+            os << "time span : " << cyng::as_string(ro_start) << " to " << cyng::as_string(ro_end) << " = " << ro_range.count()
+               << " minutes (actual)" << std::endl;
+            os << "readouts  : " << idx_readout << " (in total)" << std::endl;
             //  backlog in hours
-            std::cout << "frequency : " << static_cast<float>(idx_readout) / backlog.count() << " readout(s) per hour (target)"
-                      << std::endl;
-            std::cout << "ro freq.  : " << static_cast<float>(idx_readout * 60) / ro_range.count()
-                      << " readout(s) per hour (actual)" << std::endl;
-            std::cout << "server    : " << server.size();
+            os << "frequency : " << static_cast<float>(idx_readout) / backlog.count() << " readout(s) per hour (target)"
+               << std::endl;
+            os << "ro freq.  : " << static_cast<float>(idx_readout * 60) / ro_range.count() << " readout(s) per hour (actual)"
+               << std::endl;
+            os << "server    : " << server.size();
 
             bool initial = true;
             for (auto const &srv : server) {
                 if (initial) {
-                    std::cout << " - ";
-                    // std::cout << "          : ";
+                    os << " - ";
+                    // os << "          : ";
                     initial = false;
                 } else {
-                    std::cout << ", ";
+                    os << ", ";
                 }
-                std::cout << to_string(srv);
+                os << to_string(srv);
             }
-            std::cout << std::endl;
+            os << std::endl;
 
             {
                 //  total number of entries
@@ -610,7 +610,7 @@ namespace smf {
                 if (r.second) {
                     if (auto res = stmt->get_result(); res) {
                         auto const count = cyng::numeric_cast<std::uint64_t>(res->get(1, cyng::TC_UINT64, 0), 0u);
-                        std::cout << "TSMLReadout contains " << count << " records" << std::endl;
+                        os << "TSMLReadout contains " << count << " records" << std::endl;
                     }
                 }
             }
@@ -622,11 +622,19 @@ namespace smf {
                 if (r.second) {
                     if (auto res = stmt->get_result(); res) {
                         auto const count = cyng::numeric_cast<std::uint64_t>(res->get(1, cyng::TC_UINT64, 0), 0u);
-                        std::cout << "TSMLReadoutData contains " << count << " records" << std::endl;
+                        os << "TSMLReadoutData contains " << count << " records" << std::endl;
                     }
                 }
             }
         }
+    }
+
+    bool sanitize_path(std::string path) {
+        if (!std::filesystem::exists(path)) {
+            std::error_code ec;
+            return std::filesystem::create_directories(path, ec);
+        }
+        return true;
     }
 
 } // namespace smf

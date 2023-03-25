@@ -15,6 +15,15 @@
 
 namespace smf {
 
+    //
+    //  forward declaration
+    //
+    namespace cfg {
+        class feed_report;
+        class lpex_report;
+        class csv_report;
+    } // namespace cfg
+
     class controller : public config::controller_base {
       public:
         controller(config::startup const &);
@@ -164,27 +173,21 @@ namespace smf {
             cyng::stash &channels,
             cyng::logger logger,
             cyng::db::session,
-            cyng::param_map_t reports);
+            cfg::csv_report const &);
 
         void start_lpex_reports(
             cyng::controller &ctl,
             cyng::stash &channels,
             cyng::logger logger,
             cyng::db::session,
-            cyng::param_map_t reports,
-            cyng::obis_path_t filter,
-            bool print_version,
-            bool debug_mode);
+            cfg::lpex_report const &);
 
         void start_feed_reports(
             cyng::controller &ctl,
             cyng::stash &channels,
             cyng::logger logger,
             cyng::db::session,
-            cyng::param_map_t reports,
-            cyng::obis_path_t filter,
-            bool print_version,
-            bool debug_mode);
+            cfg::feed_report const &);
 
       private:
         /**
@@ -193,25 +196,16 @@ namespace smf {
         std::map<std::string, cyng::db::session> init_storage(cyng::object const &, bool create);
         cyng::db::session init_storage(cyng::param_map_t const &);
         int create_influx_dbs(cyng::object const &, std::string const &cmd);
-        void generate_csv_reports(cyng::object &&cfg);
-        void generate_lpex_reports(cyng::object &&cfg);
+        void generate_csv_reports(std::map<std::string, cyng::db::session> &, cyng::param_map_t &&cfg);
+        void generate_lpex_reports(std::map<std::string, cyng::db::session> &, cyng::param_map_t &&cfg);
         void generate_gap_reports(cyng::object &&cfg);
-        void generate_feed_reports(cyng::object &&cfg);
+        void generate_feed_reports(std::map<std::string, cyng::db::session> &, cyng::param_map_t &&cfg);
         void cleanup_archive(cyng::object &&cfg);
         void dump_readout(cyng::object &&cfg, std::chrono::hours);
 
         void start_cleanup_tasks(cyng::controller &ctl, cyng::logger, std::string, cyng::db::session, cyng::param_map_t &&);
         void start_gap_reports(cyng::controller &ctl, cyng::logger, std::string, cyng::db::session, cyng::param_map_t &&);
     };
-
-    /**
-     * Same function as in "report" app
-     */
-    cyng::prop_t create_report_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
-    cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
-    cyng::prop_t create_feed_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack);
-    cyng::prop_t create_cleanup_spec(cyng::obis profile, std::chrono::hours hours, bool enabled);
-    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::chrono::hours hours, bool enabled);
 
 } // namespace smf
 
