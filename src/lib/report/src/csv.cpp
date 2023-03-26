@@ -39,7 +39,7 @@ namespace smf {
         //
         auto const start = (now - backtrack).get_start_of_day();
 #ifdef _DEBUG
-        std::cout << "start at: " << cyng::as_string(start) << std::endl;
+        // std::cout << "start at: " << cyng::as_string(start) << std::endl;
 #endif
 
         //
@@ -90,8 +90,10 @@ namespace smf {
                     //
                     prev = d;
 
+#ifdef _DEBUG
                     std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
                               << ", " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+#endif
                 }
 
                 //
@@ -135,20 +137,25 @@ namespace smf {
 
             auto const [start, end] = sml::to_index_range(d, profile);
             BOOST_ASSERT(start <= end);
+#ifdef _DEBUG
             std::cout << "> generate report for " << data_set.size() << " meters from " << start << " = "
                       << cyng::as_string(sml::from_index_to_date(start, profile), "%Y-%m-%d %H:%M:%S") << " to " << end << " = "
                       << cyng::as_string(sml::from_index_to_date(end, profile), "%Y-%m-%d %H:%M:%S") << std::endl;
+#endif
 
             //
             //  meter -> register -> slot -> data
             //
             for (auto const &[id, values] : data_set) {
+#ifdef _DEBUG
                 std::cout << to_string(id) << " has " << values.size() << " entries" << std::endl;
                 std::cout << '#' << to_string(id) << std::endl;
-                // ofs << '#' << to_string(id) << std::endl;
+#endif
 
                 auto const file_name = get_filename(prefix, profile, id, d);
+#ifdef _DEBUG
                 std::cout << ">> generate report " << root / file_name << std::endl;
+#endif
                 auto ofs = csv::open_report(root, file_name);
                 if (ofs.is_open()) {
 

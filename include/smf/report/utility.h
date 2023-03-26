@@ -55,9 +55,14 @@ namespace smf {
         typename data_set_t::value_type make_set(smf::srv_id_t, values_t::value_type);
 
         /**
-         * remove only readout data
+         * Remove only readout data
          */
         void clear(data_set_t &data);
+
+        /**
+         * Remove everything except the last record in time.
+         */
+        void trim(data_set_t &data);
 
         /**
          * merge incoming data into data set
@@ -125,8 +130,22 @@ namespace smf {
      */
     [[nodiscard]] std::set<cyng::obis> collect_profiles(std::map<std::uint64_t, std::map<cyng::obis, sml_data>> const &);
 
+    /**
+     * Build a filename with an .csv prefix. Contains the prefix, the profile prefix, server id and the timestamp information
+     * with a resolution of one day.
+     */
     std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t, cyng::date const &);
-    std::string get_filename(std::string prefix, cyng::obis profile, cyng::date const &);
+
+    /**
+     * Build a filename with an .csv prefix. Contains the prefix and the timestamp information
+     * with a resolution of one day.
+     */
+    std::string get_filename(std::string prefix, cyng::date const &);
+
+    /**
+     * Opens a file with an .txt prefix. Contains the profile name.
+     */
+    std::ofstream get_meta_file(std::filesystem::path root, cyng::obis profile);
 
     /**
      * get customer data from database

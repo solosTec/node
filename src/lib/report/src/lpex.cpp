@@ -41,7 +41,7 @@ namespace smf {
         //
         auto const start = (now - backtrack).get_start_of_day();
 #ifdef _DEBUG
-        std::cout << "start at: " << cyng::as_string(start) << std::endl;
+        // std::cout << "start at: " << cyng::as_string(start) << std::endl;
 #endif
 
         //
@@ -88,13 +88,15 @@ namespace smf {
                         //  new period (day) - generate report and clear data set
                         //
                         if (!data_set.empty()) {
-                            auto const file_name = get_filename(prefix, profile, prev);
+                            auto const file_name = get_filename(prefix, prev);
+#ifdef _DEBUG
                             std::cout << ">> generate LPEx report " << root / file_name << std::endl;
+#endif
                             auto ofs = lpex::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
                                 lpex::generate_report(db, ofs, profile, prev, data_set, customer);
                             }
-                            data::clear(data_set);
+                            data::trim(data_set);
                         }
                     }
 
@@ -103,18 +105,24 @@ namespace smf {
                     //
                     prev = d;
 
+#ifdef _DEBUG
                     std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
                               << ", " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+#endif
                 }
 
                 //
                 //  update data set
                 //
                 if (has_passed(reg, filter)) {
+#ifdef _DEBUG
                     std::cout << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+#endif
                     data::update(data_set, id, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
                 } else {
+#ifdef _DEBUG
                     std::cout << "> skip " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+#endif
                 }
                 return true;
             });
@@ -123,8 +131,10 @@ namespace smf {
         //  generate report for last data set
         //
         if (!data_set.empty()) {
-            auto const file_name = get_filename(prefix, profile, prev);
+            auto const file_name = get_filename(prefix, prev);
+#ifdef _DEBUG
             std::cout << ">> generate LPex report " << root / file_name << std::endl;
+#endif
             auto ofs = lpex::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
                 lpex::generate_report(db, ofs, profile, prev, data_set, customer);
@@ -146,9 +156,11 @@ namespace smf {
 
             auto const [start, end] = sml::to_index_range(d, profile);
             BOOST_ASSERT(start <= end);
+#ifdef _DEBUG
             std::cout << "> generate LPEx report for " << data_set.size() << " meters from " << start << " = "
                       << cyng::as_string(sml::from_index_to_date(start, profile), "%Y-%m-%d %H:%M:%S") << " to " << end << " = "
                       << cyng::as_string(sml::from_index_to_date(end, profile), "%Y-%m-%d %H:%M:%S") << std::endl;
+#endif
 
             //
             //  meter -> register -> slot -> data
@@ -170,9 +182,9 @@ namespace smf {
                         auto const first = values.begin()->first;
                         auto const unit = values.begin()->second.unit_;
                         BOOST_ASSERT(start <= first);
+#ifdef _DEBUG
                         std::cout << cyng::as_string(d, "%d.%m.%y;%H:%M:%S;") << get_id(data.first) << ';' << obis::to_decimal(reg)
                                   << ';' << mbus::get_name(unit);
-#ifdef _DEBUG
                         std::cout << ';' << '[' << start << ']' << ';' << '[' << first << ']' << ';' << '[' << end << ']';
 #endif
                         //
@@ -209,7 +221,9 @@ namespace smf {
                             //
                             //  value
                             //
+#ifdef _DEBUG
                             std::cout << ';' << ro.reading_;
+#endif
                             ofs << ";" << ro.reading_ << ";";
 
                             //
@@ -227,13 +241,17 @@ namespace smf {
                             idx = slot;
                         }
                         for (; idx < end; ++idx) {
+#ifdef _DEBUG
                             std::cout << ';';
+#endif
                             ofs << ';';
 #ifdef _DEBUG
                             std::cout << '[' << idx - start << ']';
 #endif
                         }
+#ifdef _DEBUG
                         std::cout << std::endl;
+#endif
                         ofs << std::endl;
                     }
                 }

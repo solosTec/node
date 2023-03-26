@@ -414,6 +414,9 @@ namespace smf {
                 auto const path = cfg.get_path(code);
                 if (sanitize_path(path)) {
                     auto const backtrack = cfg.get_backtrack(code);
+
+                    CYNG_LOG_TRACE(logger, "gap report " << name << " path is " << path);
+
                     auto channel =
                         ctl.create_named_channel_with_ref<gap_report>("gap.report", ctl, logger, db, code, path, backtrack).first;
                     BOOST_ASSERT(channel->is_open());
@@ -624,7 +627,7 @@ namespace smf {
 
         //     "lpex.reports": {
         //          "print.version": true,
-        //           "debug": true,
+        //          "debug": true,
         //          "filter": "0100010800ff:0100010801ff:0700030000ff",
         //          "profiles": {
         //              "8181c78611ff": { ... }
@@ -1222,13 +1225,7 @@ namespace smf {
                     auto const backtrack = cfg.get_backtrack(code);
                     auto const prefix = cfg.get_prefix(code);
 
-                    if (!std::filesystem::exists(path)) {
-                        CYNG_LOG_WARNING(logger, "output path [" << path << "] of CSV report " << name << " does not exists");
-                        std::error_code ec;
-                        if (!std::filesystem::create_directories(path, ec)) {
-                            CYNG_LOG_ERROR(logger, "cannot create path [" << path << "]: " << ec.message());
-                        }
-                    }
+                    CYNG_LOG_TRACE(logger, "CSV report " << name << " path is " << path << " - " << prefix);
 
                     auto channel =
                         ctl.create_named_channel_with_ref<csv_report>(name, ctl, logger, db, code, path, backtrack, prefix).first;
@@ -1282,6 +1279,8 @@ namespace smf {
                     auto const prefix = cfg.get_prefix(code);
                     auto const customer = cfg.add_customer_data(code);
 
+                    CYNG_LOG_TRACE(logger, "LPEx report " << name << " path is " << path << " - " << prefix);
+
                     auto channel =
                         ctl.create_named_channel_with_ref<lpex_report>(
                                name, ctl, logger, db, code, filter, path, backtrack, prefix, print_version, debug_mode, customer)
@@ -1306,7 +1305,7 @@ namespace smf {
                         //  handle dispatch errors
                         std::bind(cyng::log_dispatch_error, logger, std::placeholders::_1, std::placeholders::_2));
                 } else {
-                    CYNG_LOG_ERROR(logger, "feed/adv output path [" << path << "] of report " << name << " does not exist");
+                    CYNG_LOG_ERROR(logger, "LPEx output path [" << path << "] of report " << name << " does not exist");
                 }
             } else {
                 CYNG_LOG_TRACE(logger, "LPEx report " << code << " (" << name << ") is disabled");
@@ -1341,6 +1340,8 @@ namespace smf {
                     auto const prefix = cfg.get_prefix(code);
                     auto const customer = cfg.add_customer_data(code);
 
+                    CYNG_LOG_TRACE(logger, "feed/adv report " << name << " path is " << path << " - " << prefix);
+
                     auto channel =
                         ctl.create_named_channel_with_ref<feed_report>(
                                name, ctl, logger, db, code, filter, path, backtrack, prefix, print_version, debug_mode, customer)
@@ -1353,10 +1354,15 @@ namespace smf {
                     //
                     auto const interval = sml::interval_time(now, code);
 
+#ifdef _DEBUG
+                    // debug mode only
+                    auto const delay = std::chrono::minutes(10);
+#else
                     //
                     //  make sure that the interval is at least 2h long
                     //
                     auto const delay = (interval < std::chrono::minutes(2 * 60)) ? std::chrono::minutes(2 * 60) : interval;
+#endif
                     CYNG_LOG_INFO(
                         logger,
                         "start feed/adv report " << code << " (" << name << ") at " << cyng::as_string(now + delay, "%F %T%z"));

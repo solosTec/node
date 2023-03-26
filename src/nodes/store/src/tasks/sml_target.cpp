@@ -81,9 +81,11 @@ namespace smf {
     }
 
     void sml_target::open_response(std::string const &trx, cyng::tuple_t const &msg) {
-        auto const tpl = smf::sml::read_public_open_response(msg);
+        // std::string, cyng::buffer_t, cyng::buffer_t, std::string, cyng::object, std::uint8_t
+        // codepage, client ID (05+MAC), reqFileId, server ID, refTime, SML version
+        auto const [codepage, client, file, server, reftime, version] = smf::sml::read_public_open_response(msg);
 
-        CYNG_LOG_TRACE(logger_, "[sml] open response " << srv_id_to_str(std::get<1>(tpl), true) << "*" << std::get<3>(tpl));
+        CYNG_LOG_TRACE(logger_, "[sml] open response " << srv_id_to_str(client, true) << "*" << server);
         for (auto writer : writers_) {
             //  send client and server ID
             ctl_.get_registry().dispatch(
@@ -91,15 +93,14 @@ namespace smf {
                 "open.response",
                 //  handle dispatch errors
                 std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
-                std::get<1>(tpl),
-                std::get<3>(tpl));
+                client,
+                server);
         }
     }
     void sml_target::close_response(std::string const &trx, cyng::tuple_t const &msg) {
         auto const r = smf::sml::read_public_close_response(msg);
     }
     void sml_target::get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
-        // CYNG_LOG_DEBUG(logger_, "get_profile_list_response: " << msg);
         auto const [srv, path, act, reg, val, stat, list] = sml::read_get_profile_list_response(msg);
 
         BOOST_ASSERT(path.size() == 1);

@@ -8,6 +8,12 @@
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/profile.h>
+#include <smf/report/config/cfg_feed_report.h>
+#include <smf/report/config/cfg_lpex_report.h>
+#include <smf/report/config/gen_csv.h>
+#include <smf/report/config/gen_feed.h>
+#include <smf/report/config/gen_gap.h>
+#include <smf/report/config/gen_lpex.h>
 #include <smf/report/csv.h>
 #include <smf/report/feed.h>
 #include <smf/report/gap.h>
@@ -68,139 +74,19 @@ namespace smf {
                     cyng::make_param("readonly", true)                               // no write access required
                     )),
 
-            cyng::make_param(
-                "csv",
-                cyng::make_tuple(
-                    create_csv_spec(OBIS_PROFILE_1_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MINUTE)),
-                    create_csv_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
-                    create_csv_spec(OBIS_PROFILE_60_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
-                    create_csv_spec(OBIS_PROFILE_24_HOUR, cwd, true, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
-                    // create_csv_spec(OBIS_PROFILE_LAST_2_HOURS, cwd, false, sml::backtrack_time(OBIS_PROFILE_LAST_2_HOURS)),
-                    // create_csv_spec(OBIS_PROFILE_LAST_WEEK, cwd, false, sml::backtrack_time(OBIS_PROFILE_LAST_WEEK)),
-                    create_csv_spec(OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH)), // one month
-                    create_csv_spec(OBIS_PROFILE_1_YEAR, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_YEAR))    //  one year
-                    )                                                                                             // csv reports
-                ),
+            // gap reports
+            cyng::make_param("gap", cfg::gen_gap(cwd)),
 
-            cyng::make_param(
-                "lpex",
-                cyng::make_tuple(
-                    cyng::make_param("print.version", true), // if true first line contains the LPEx version
-                    cyng::make_param(
-                        "debug",
-#ifdef _DEBUG
-                        true
-#else
-                        false
-#endif
-                        ), // if true the generated LPex files contain debug data
-                    // 1-0:1.8.0*255    (01 00 01 08 00 FF)
-                    // 1-0:1.8.1*255    (01 00 01 08 01 FF)
-                    // 1-0:1.8.2*255    (01 00 01 08 02 FF)
-                    // 1-0:16.7.0*255   (01 00 10 07 00 FF)
-                    // 1-0:2.0.0*255    (01 00 02 00 00 FF)
-                    // 7-0:3.0.0*255    (07 00 03 00 00 FF) // Volume (meter), temperature converted (Vtc), forward, absolute,
-                    // current value 7-0:3.1.0*1      (07 00 03 01 00 01)
-                    // only this obis codes will be accepted
-                    cyng::make_param("filter", cyng::obis_path_t{OBIS_REG_POS_ACT_E, OBIS_REG_POS_ACT_E_T1, OBIS_REG_GAS_MC_0_0}),
-                    cyng::make_param(
-                        "profiles",
-                        cyng::make_tuple(
-                            create_lpex_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
-                            create_lpex_spec(OBIS_PROFILE_60_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
-                            create_lpex_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
-                            create_lpex_spec(
-                                OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH)) // one month
-                            )))                                                                              // LPEx reports
-                ),
+            // csv reports
+            cyng::make_param("csv", cfg::gen_csv(cwd)),
 
-            cyng::make_param(
-                "gap",
-                cyng::make_tuple(
-                    create_gap_spec(OBIS_PROFILE_1_MINUTE, cwd, std::chrono::hours(48), false),
-                    create_gap_spec(OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(48), true),
-                    create_gap_spec(OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(800), true),
-                    create_gap_spec(OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(800), true)) // gap reports
-                ),
+            // LPEx reports
+            cyng::make_param("lpex", cfg::gen_lpex(cwd)),
 
-            cyng::make_param(
-                "feed",
-                cyng::make_tuple(
-                    cyng::make_param("print.version", true), // if true first line contains the LPEx version
-                    cyng::make_param(
-                        "debug",
-#ifdef _DEBUG
-                        true
-#else
-                        false
-#endif
-                        ), // if true the generated LPex files contain debug data
-                    // 1-0:1.8.0*255    (01 00 01 08 00 FF)
-                    // 1-0:1.8.1*255    (01 00 01 08 01 FF)
-                    // 1-0:1.8.2*255    (01 00 01 08 02 FF)
-                    // 1-0:16.7.0*255   (01 00 10 07 00 FF)
-                    // 1-0:2.0.0*255    (01 00 02 00 00 FF)
-                    // 7-0:3.0.0*255    (07 00 03 00 00 FF) // Volume (meter), temperature converted (Vtc), forward, absolute,
-                    // current value 7-0:3.1.0*1      (07 00 03 01 00 01)
-                    // only this obis codes will be accepted
-                    cyng::make_param("filter", cyng::obis_path_t{OBIS_REG_POS_ACT_E, OBIS_REG_POS_ACT_E_T1, OBIS_REG_GAS_MC_0_0}),
-
-                    cyng::make_param(
-                        "profiles",
-                        cyng::make_tuple(
-                            create_feed_spec(OBIS_PROFILE_1_MINUTE, cwd, false, std::chrono::hours(48)),
-                            create_feed_spec(OBIS_PROFILE_15_MINUTE, cwd, true, std::chrono::hours(48)),
-                            create_feed_spec(OBIS_PROFILE_60_MINUTE, cwd, true, std::chrono::hours(800)),
-                            create_feed_spec(OBIS_PROFILE_24_HOUR, cwd, true, std::chrono::hours(800)) // feed reports
-                            )                                                                          // profiles
-                        ))),
+            // feed reports
+            cyng::make_param("feed", cfg::gen_feed(cwd)),
 
             create_cluster_spec())});
-    }
-
-    cyng::prop_t create_csv_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
-        return cyng::make_prop(
-            profile,
-            cyng::make_tuple(
-                cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "csv.reports" / sml::get_prefix(profile)).string()),
-                cyng::make_param("backtrack", backtrack),
-                cyng::make_param("prefix", ""),
-                cyng::make_param("enabled", enabled)));
-    }
-
-    cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
-        return cyng::make_prop(
-            profile,
-            cyng::make_tuple(
-                cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "lpex-reports" / sml::get_prefix(profile)).string()),
-                cyng::make_param("backtrack", backtrack),
-                cyng::make_param("prefix", "LPEx-"),
-                cyng::make_param("add.customer.data", false), // add/update customer data
-                cyng::make_param("enabled", enabled)));
-    }
-
-    cyng::prop_t create_feed_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
-        return cyng::make_prop(
-            profile,
-            cyng::make_tuple(
-                cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "feed-reports" / sml::get_prefix(profile)).string()),
-                cyng::make_param("backtrack", backtrack),
-                cyng::make_param("prefix", "LPEx2-"),
-                cyng::make_param("add.customer.data", false), // add/update customer data
-                cyng::make_param("enabled", enabled)));
-    }
-
-    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::chrono::hours hours, bool enabled) {
-        return cyng::make_prop(
-            profile,
-            cyng::make_tuple(
-                cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "gap-reports" / sml::get_prefix(profile)).string()),
-                cyng::make_param("max.age", hours),
-                cyng::make_param("enabled", enabled)));
     }
 
     void controller::run(
@@ -320,7 +206,10 @@ namespace smf {
         if (!vars["generate"].defaulted()) {
             //	generate all reports
             auto const type = vars["generate"].as<std::string>();
+            // auto const cfg = read_config_section(config_.json_path_, config_.config_index_);
+
             if (boost::algorithm::equals(type, "csv")) {
+                // cyng::container_cast<cyng::param_map_t>(reader.get("csv");
                 generate_csv_reports(read_config_section(config_.json_path_, config_.config_index_));
             } else if (boost::algorithm::equals(type, "lpex")) {
                 generate_lpex_reports(read_config_section(config_.json_path_, config_.config_index_));
@@ -411,64 +300,47 @@ namespace smf {
                 //          }
                 //      }
 
+                cfg::lpex_report cfg(cyng::container_cast<cyng::param_map_t>(reader.get("lpex")));
+
                 auto const cwd = std::filesystem::current_path();
                 auto const now = cyng::make_utc_date();
                 using cyng::operator<<;
-                std::cout << "***info: start reporting at " << now << " (UTC)" << std::endl;
+                std::cout << "***info: start LPEx reporting at " << now << " (UTC)" << std::endl;
 
                 //  lpex/print.version
-                auto const print_version = reader["lpex"].get("print.version", true);
+                auto const print_version = cfg.is_print_version();
 
                 //  lpex/debug
-                auto const debug_mode = reader["lpex"].get(
-                    "debug",
-#ifdef _DEBUG
-                    true
-#else
-                    false
-#endif
-                );
+                auto const debug_mode = cfg.is_debug_mode();
 
                 //  lpex/filter
-                auto const filter = cyng::to_obis_path(reader["lpex"].get("filter", ""));
+                auto const filter = cfg.get_filter();
 
                 //  lpex/profiles/...
-                auto reports = cyng::container_cast<cyng::param_map_t>(reader["lpex"].get("profiles"));
-                for (auto const &cfg_report : reports) {
-                    auto const reader_report = cyng::make_reader(cfg_report.second);
-                    auto const name = reader_report.get("name", "no-name");
+                auto const profiles = cfg.get_profiles();
+                for (auto const &code : profiles) {
+                    auto const name = cfg.get_name(code);
 
-                    if (reader_report.get("enabled", false)) {
-                        auto const profile = cyng::to_obis(cfg_report.first);
-                        std::cout << "***info: generate LPEx report " << name << " (" << profile << ")" << std::endl;
-                        auto const root = reader_report.get("path", cwd.string());
+                    if (cfg.is_enabled(code)) {
+                        std::cout << "***info: generate LPEx report " << name << " (" << code << ")" << std::endl;
 
-                        if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists"
-                                      << std::endl;
-                            std::error_code ec;
-                            if (!std::filesystem::create_directories(root, ec)) {
-                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message() << std::endl;
-                            } else {
-                                std::cout << "***info: path [" << root << "] created " << std::endl;
-                            }
+                        auto const path = cfg.get_path(code);
+                        if (sanitize_path(path)) {
+
+                            generate_lpex(
+                                s,
+                                code,
+                                filter,
+                                path,
+                                cfg.get_prefix(code),
+                                now,
+                                cfg.get_backtrack(code), //  backtrack hours
+                                print_version,
+                                debug_mode,
+                                cfg.add_customer_data(code));
+                        } else {
+                            std::cerr << "***error: [" << path << "] of report " << name << " does not exist";
                         }
-
-                        auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
-                        auto const customer = reader_report.get("add.customer.data", false);
-
-                        auto const prefix = reader_report.get("prefix", "");
-                        generate_lpex(
-                            s,
-                            profile,
-                            filter,
-                            root,
-                            prefix,
-                            now,
-                            backtrack, //  backtrack hours
-                            print_version,
-                            debug_mode,
-                            customer);
 
                     } else {
                         std::cout << "***info: report " << name << " is disabled" << std::endl;

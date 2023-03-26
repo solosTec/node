@@ -207,7 +207,7 @@ namespace smf {
                 bool ok = false;
                 std::tie(ok, this->name_, pwd) = ipt::ctrl_req_login_public(std::move(body));
                 if (ok) {
-                    CYNG_LOG_INFO(logger_, "[ipt] public login: " << name_ << ':' << pwd);
+                    CYNG_LOG_INFO(logger_, "[ipt] public login " << vm_.get_tag() << ": " << name_ << ':' << pwd);
                     bus_.pty_login(name_, pwd, vm_.get_tag(), config::get_name(config::protocol::SML), get_remote_endpoint());
                 } else {
                     CYNG_LOG_ERROR(logger_, "[ipt] invalid public login request");
@@ -231,7 +231,10 @@ namespace smf {
                 bool ok = false;
                 std::tie(ok, this->name_, pwd, sk) = ipt::ctrl_req_login_scrambled(std::move(body));
                 if (ok) {
-                    CYNG_LOG_INFO(logger_, "[ipt] scrambled login: " << name_ << ':' << pwd << ", sk = " << ipt::to_string(sk));
+                    CYNG_LOG_INFO(
+                        logger_,
+                        "[ipt] scrambled login " << vm_.get_tag() << ": " << name_ << ':' << pwd
+                                                 << ", sk = " << ipt::to_string(sk));
                     parser_.set_sk(sk);
                     serializer_.set_sk(sk);
                     bus_.pty_login(name_, pwd, vm_.get_tag(), config::get_name(config::protocol::SML), get_remote_endpoint());
@@ -495,7 +498,7 @@ namespace smf {
             cyng::io::hex_dump<8> hd;
             hd(ss, data.begin(), data.end());
             auto const dmp = ss.str();
-            CYNG_LOG_DEBUG(logger_, "received " << data.size() << " stream bytes from[" << get_remote_endpoint() << "]:\n" << dmp);
+            CYNG_LOG_DEBUG(logger_, "received " << data.size() << " stream bytes from [" << get_remote_endpoint() << "]:\n" << dmp);
             //
             //   debug sml data
             //
@@ -517,16 +520,6 @@ namespace smf {
         }
     }
 
-    // void ipt_session::send(std::function<cyng::buffer_t()> f) {
-    //     cyng::exec(vm_, [this, f]() {
-    //         bool const b = buffer_write_.empty();
-    //         buffer_write_.push_back(f());
-    //         if (b) {
-    //             do_write();
-    //         }
-    //     });
-    // }
-
     void ipt_session::pty_res_login(bool success, boost::uuids::uuid dev) {
 
         if (success) {
@@ -541,7 +534,7 @@ namespace smf {
             //
             dev_ = dev;
 
-            CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " login ok");
+            CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " login ok - dev: " << dev);
             send(std::bind(&ipt::serializer::res_login_public, &serializer_, ipt::ctrl_res_login_public_policy::SUCCESS, 0, ""));
 
             query();

@@ -325,20 +325,6 @@ namespace smf {
             //
             return prev != next;
         }
-
-        // std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours span) {
-        //     switch (profile.to_uint64()) {
-        //     case CODE_PROFILE_1_MINUTE: return (span.count() * 60u);
-        //     case CODE_PROFILE_15_MINUTE: return (span.count() * 60u) / 15u;
-        //     case CODE_PROFILE_60_MINUTE: return span.count();
-        //     case CODE_PROFILE_24_HOUR: return span.count() / 24u;
-        //     case CODE_PROFILE_1_MONTH:
-        //     case CODE_PROFILE_1_YEAR:
-        //     default: BOOST_ASSERT_MSG(false, "not implemented"); break;
-        //     }
-        //     return 0;
-        // }
-
     } // namespace sml
 
     std::chrono::minutes minutes_since_epoch(std::chrono::system_clock::time_point tp) {

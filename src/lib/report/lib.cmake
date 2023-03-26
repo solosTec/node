@@ -38,12 +38,25 @@ set(store_config
     src/lib/report/src/config/cfg_csv_report.cpp
 )
 
+set(store_gen
+    include/smf/report/config/gen_feed.h
+    include/smf/report/config/gen_lpex.h
+    include/smf/report/config/gen_csv.h
+    include/smf/report/config/gen_gap.h
+    src/lib/report/src/config/gen_feed.cpp
+    src/lib/report/src/config/gen_lpex.cpp
+    src/lib/report/src/config/gen_csv.cpp
+    src/lib/report/src/config/gen_gap.cpp
+)
+
 source_group("config" FILES ${store_config})
+source_group("generator" FILES ${store_gen})
 
 # define the report lib
 set (report_lib
   ${report_cpp}
   ${report_h}
   ${store_config}
+  ${store_gen}
 )
 

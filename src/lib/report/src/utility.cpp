@@ -194,38 +194,27 @@ namespace smf {
 
     std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t srv_id, cyng::date const &start) {
 
-        // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << sml::get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(start, "%Y-%m-%d") << ".csv";
+        ss << prefix << "-" << sml::get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(start, "%Y-%m-%d")
+           << ".csv";
         return ss.str();
     }
 
-    std::string get_filename(std::string prefix, cyng::obis profile, cyng::date const &start) {
+    std::string get_filename(std::string prefix, cyng::date const &start) {
 
-        // auto const d = cyng::date::make_date_from_local_time(start);
         std::stringstream ss;
-        ss << prefix << sml::get_prefix(profile) << "-" << cyng::as_string(start, "%Y-%m-%d") << ".csv";
+        ss << prefix << "-" << cyng::as_string(start, "%Y-%m-%d") << ".csv";
         return ss.str();
     }
 
-    // std::string get_prefix(cyng::obis profile) {
-    //     //
-    //     //  the prefox should be a valid file name
-    //     //
-    //     switch (profile.to_uint64()) {
-    //     case CODE_PROFILE_1_MINUTE: return "1min";
-    //     case CODE_PROFILE_15_MINUTE: return "15min";
-    //     case CODE_PROFILE_60_MINUTE: return "1h";
-    //     case CODE_PROFILE_24_HOUR: return "1d";
-    //     case CODE_PROFILE_LAST_2_HOURS: return "2h";
-    //     case CODE_PROFILE_LAST_WEEK: return "1w";
-    //     case CODE_PROFILE_1_MONTH: return "1mon";
-    //     case CODE_PROFILE_1_YEAR: return "1y";
-    //     case CODE_PROFILE_INITIAL: return "init";
-    //     default: break;
-    //     }
-    //     return to_string(profile);
-    // }
+    std::ofstream get_meta_file(std::filesystem::path root, cyng::obis profile) {
+        try {
+            auto const p = root / ("meta-" + sml::get_prefix(profile) + ".txt");
+            return std::ofstream(p.string(), std::ios::app);
+        } catch (...) {
+        }
+        return std::ofstream{};
+    }
 
     std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id) {
         std::string const sql = "SELECT TLPExMeter.id, TLPExMeter.gen, TLPExMeter.mc, TLPExCustomer.name, TLPExCustomer.uniqueName "
@@ -303,7 +292,9 @@ namespace smf {
                 auto const percent = static_cast<std::size_t>((static_cast<double>(counter) / tags.size()) * 100.0);
                 if (prev != percent) {
                     prev = percent;
+#ifdef _DEBUG
                     std::cout << percent << "% TSMLReadoutData complete" << std::endl;
+#endif
                 }
             }
         }
@@ -329,7 +320,9 @@ namespace smf {
                 auto const percent = static_cast<std::size_t>((static_cast<double>(counter) / tags.size()) * 100.0);
                 if (prev != percent) {
                     prev = percent;
+#ifdef _DEBUG
                     std::cout << percent << "% TSMLReadout complete" << std::endl;
+#endif
                 }
             }
         }
@@ -437,8 +430,31 @@ namespace smf {
 
         void clear(data_set_t &data_set) {
             for (auto &data : data_set) {
+#ifdef _DEBUG
                 std::cout << "> clear " << data.second.size() << " data records of meter " << to_string(data.first) << std::endl;
+#endif
                 data.second.clear();
+            }
+        }
+
+        void trim(data_set_t &data_set) {
+            //  loop over all server ids
+            for (auto &data : data_set) {
+                //  loop over all register
+                for (auto &ro : data.second) {
+                    //  remove all timeslot except the last
+                    if (ro.second.size() > 1) {
+                        auto pos = ro.second.begin();
+                        auto end = std::prev(ro.second.end());
+                        while (pos != end) {
+#ifdef _DEBUG
+                            std::cout << "> trim " << to_string(data.first) << ", " << ro.first << ", slot#" << pos->first
+                                      << std::endl;
+#endif
+                            pos = ro.second.erase(pos);
+                        }
+                    }
+                }
             }
         }
 

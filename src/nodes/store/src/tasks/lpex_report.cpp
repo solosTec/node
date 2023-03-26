@@ -48,7 +48,7 @@ namespace smf {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
-            CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
+            CYNG_LOG_INFO(logger_, "task LPEx [" << sp->get_name() << "] started");
         }
     }
 

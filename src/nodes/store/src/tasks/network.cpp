@@ -12,7 +12,6 @@
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/util.hpp>
-// #include <cyng/parse/string.h>
 #include <cyng/task/channel.h>
 #include <cyng/task/controller.h>
 
@@ -35,7 +34,6 @@ namespace smf {
         std::set<std::string> const &writer)
         : sigs_{
             std::bind(&network::connect, this),     // connect
-            //std::bind(&network::start, this, std::placeholders::_1), //  start
             std::bind(&network::stop, this, std::placeholders::_1) // stop
         }
         , channel_(wp)
@@ -58,13 +56,12 @@ namespace smf {
         , stash_(ctl_.get_ctx()) {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"connect", "start"});
+            sp->set_channel_names({"connect"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
         }
     }
 
     void network::stop(cyng::eod) {
-        // CYNG_LOG_WARNING(logger_, "stop network task(" << tag_ << ")");
         stash_.stop();
         bus_.stop();
     }
@@ -78,9 +75,9 @@ namespace smf {
     }
 
     void network::ipt_cmd(ipt::header const &h, cyng::buffer_t &&body) {
-
         CYNG_LOG_TRACE(logger_, "[ipt] cmd " << ipt::command_name(h.command_));
     }
+
     void network::ipt_stream(cyng::buffer_t &&data) { CYNG_LOG_TRACE(logger_, "[ipt] stream " << data.size() << " byte"); }
 
     void network::auth_state(bool auth, boost::asio::ip::tcp::endpoint lep, boost::asio::ip::tcp::endpoint rep) {
@@ -117,9 +114,9 @@ namespace smf {
             //
             for (auto const &task_name : writer_) {
                 if (boost::algorithm::starts_with(task_name, "SML:")) {
-                    //  handle dispatch errors
                     channel->dispatch(
                         "add",
+                        //  handle dispatch errors
                         std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                         task_name);
                 }

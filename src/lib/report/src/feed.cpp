@@ -42,11 +42,6 @@ namespace smf {
         auto start = feed::calculate_start_time(now, backtrack, profile);
         cyng::date next_stop = start + sml::reporting_period(profile, start);
 
-#ifdef _DEBUG
-        std::cout << "start at  : " << cyng::as_string(start) << std::endl;
-        std::cout << "1. stop at: " << cyng::as_string(next_stop) << std::endl;
-#endif
-
         //
         //  data set of specific time period
         //
@@ -56,6 +51,16 @@ namespace smf {
         //  reference date
         //
         cyng::date prev = start;
+
+        //
+        //  generate a manifest
+        //
+        auto meta_file = get_meta_file(root, profile);
+        if (meta_file.is_open()) {
+            meta_file << "[INFO] " << std::string(72, '-') << std::endl;
+            meta_file << "[INFO] start at  : " << cyng::as_string(start) << std::endl;
+            meta_file << "[INFO] 1. stop at: " << cyng::as_string(next_stop) << std::endl;
+        }
 
         //
         // Enter loop
@@ -99,10 +104,14 @@ namespace smf {
                     //
                     if (d > next_stop) {
 
-                        std::cout << "next stop at: " << cyng::as_string(next_stop) << std::endl;
+                        if (meta_file.is_open()) {
+                            meta_file << "[INFO] next stop at: " << cyng::as_string(next_stop) << std::endl;
+                        }
                         if (!data_set.empty()) {
-                            auto const file_name = get_filename(prefix, profile, prev);
-                            std::cout << ">> generate feed report " << root / file_name << std::endl;
+                            auto const file_name = get_filename(prefix, prev);
+                            if (meta_file.is_open()) {
+                                meta_file << "[INFO] generate report " << root / file_name << std::endl;
+                            }
                             auto ofs = feed::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
                                 feed::generate_report(db, ofs, profile, start, next_stop, data_set, debug_mode, customer);
@@ -110,9 +119,11 @@ namespace smf {
                             //
                             //  the meter list itself remains unchanged
                             //
-                            // data::clear(data_set);
+                            data::trim(data_set);
                         } else {
-                            std::cerr << "***warning: no data" << std::endl;
+                            if (meta_file.is_open()) {
+                                std::cerr << "[INFO] no data" << std::endl;
+                            }
                         }
 
                         //
@@ -127,18 +138,25 @@ namespace smf {
                     //
                     prev = d;
 
-                    std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
-                              << ", " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+                    if (meta_file.is_open()) {
+                        meta_file << "[INFO] " << tag << ": " << to_string(id) << ", "
+                                  << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", "
+                                  << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+                    }
                 }
 
                 //
                 //  update data set
                 //
                 if (has_passed(reg, filter)) {
-                    std::cout << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                    if (meta_file.is_open()) {
+                        meta_file << "[INFO] " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                    }
                     data::update(data_set, id, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
                 } else {
-                    // std::cout << "> skip " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                    if (meta_file.is_open()) {
+                        meta_file << "[WARN] skip " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                    }
                 }
                 return true;
             });
@@ -147,14 +165,24 @@ namespace smf {
         //  generate report for last data set
         //
         if (!data_set.empty()) {
-            auto const file_name = get_filename(prefix, profile, prev);
-            std::cout << ">> generate feed report " << root / file_name << std::endl;
+            auto const file_name = get_filename(prefix, prev);
+            if (meta_file.is_open()) {
+                meta_file << "[INFO] generate report " << root / file_name << std::endl;
+            }
             auto ofs = feed::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
                 feed::generate_report(db, ofs, profile, start, next_stop, data_set, debug_mode, customer);
                 ofs.close();
             }
             data::clear(data_set);
+        }
+
+        //
+        //  explicit
+        //
+        if (meta_file.is_open()) {
+            meta_file << "[INFO] report contains " << data_set.size() << " meter(s)" << std::endl;
+            meta_file.close();
         }
     }
 
@@ -177,9 +205,11 @@ namespace smf {
             //
             auto const idx_start = sml::to_index(start, profile).first;
             auto const idx_end = sml::to_index(end, profile).first;
+#ifdef _DEBUG
             std::cout << ">> generate feed report for " << data_set.size() << " meters from #" << idx_start << " = "
                       << cyng::as_string(start, "%Y-%m-%d %H:%M:%S") << " to #" << idx_end << " = "
                       << cyng::as_string(end, "%Y-%m-%d %H:%M:%S") << " = " << (idx_end - idx_start) << std::endl;
+#endif
 
             //
             //  meter -> register -> slot -> data
@@ -284,7 +314,9 @@ namespace smf {
                                 ofs << ";;";
                             }
                         }
+#ifdef _DEBUG
                         std::cout << std::endl;
+#endif
                         ofs << std::endl;
                     }
                 }

@@ -1,5 +1,10 @@
 #include <config/generator.h>
 
+#include <smf/report/config/gen_csv.h>
+#include <smf/report/config/gen_feed.h>
+#include <smf/report/config/gen_gap.h>
+#include <smf/report/config/gen_lpex.h>
+
 #include <smf.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
@@ -46,13 +51,8 @@ namespace smf {
                                 create_cleanup_spec(OBIS_PROFILE_24_HOUR, std::chrono::hours(800), true))), // cleanup
                         cyng::make_param(
                             "gap",
-                            cyng::make_tuple(
-                                create_gap_spec(OBIS_PROFILE_1_MINUTE, cwd, std::chrono::hours(48), false),
-                                create_gap_spec(OBIS_PROFILE_15_MINUTE, cwd, std::chrono::hours(48), true),
-                                create_gap_spec(OBIS_PROFILE_60_MINUTE, cwd, std::chrono::hours(800), true),
-                                create_gap_spec(OBIS_PROFILE_24_HOUR, cwd, std::chrono::hours(800), true))) // gap
-                        ))                                                                                  // default
-                ),
+                            cfg::gen_gap(cwd)) // gap
+                        ))),
 
             cyng::make_param("writer", cyng::make_vector({"ALL:BIN"})), //	options are XML, JSON, DB, BIN, ...
 
@@ -181,127 +181,14 @@ namespace smf {
                     cyng::make_param("IEC", cyng::make_vector({"LZQJ", "iec@store"})))),
             cyng::make_param(
                 "csv.reports",
-                cyng::make_tuple(
-                    cyng::make_param("db", "default"),
-                    cyng::make_param(
-                        "profiles",
-                        cyng::make_tuple(
-                            create_report_spec(OBIS_PROFILE_1_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MINUTE)),
-                            create_report_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
-                            create_report_spec(OBIS_PROFILE_60_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
-                            create_report_spec(OBIS_PROFILE_24_HOUR, cwd, true, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
-                            // create_report_spec(OBIS_PROFILE_LAST_2_HOURS, cwd, false,
-                            // sml::backtrack_time(OBIS_PROFILE_LAST_2_HOURS)), create_report_spec(OBIS_PROFILE_LAST_WEEK, cwd,
-                            // false, sml::backtrack_time(OBIS_PROFILE_LAST_WEEK)),
-                            create_report_spec(
-                                OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH)), // one month
-                            create_report_spec(
-                                OBIS_PROFILE_1_YEAR, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_YEAR)) //  one year
-                            )                                                                              // reports tuple
-                        ))),                                                                               // reports param
+                cfg::gen_csv(cwd)), // "csv.reports"
             cyng::make_param(
                 "lpex.reports",
-                cyng::make_tuple(
-                    cyng::make_param("db", "default"),
-                    cyng::make_param("print.version", true), // if true first line contains the LPEx version
-                    cyng::make_param(
-                        "debug",
-#ifdef _DEBUG
-                        true
-#else
-                        false
-#endif
-                        ), // if true the generated LPex files contain debug data
-                    // 1-0:1.8.0*255    (01 00 01 08 00 FF)
-                    // 1-0:1.8.1*255    (01 00 01 08 01 FF)
-                    // 1-0:1.8.2*255    (01 00 01 08 02 FF)
-                    // 1-0:16.7.0*255   (01 00 10 07 00 FF)
-                    // 1-0:2.0.0*255    (01 00 02 00 00 FF)
-                    // 7-0:3.0.0*255    (07 00 03 00 00 FF) // Volume (meter), temperature converted (Vtc), forward, absolute,
-                    // current value 7-0:3.1.0*1      (07 00 03 01 00 01)
-                    // only this obis codes will be accepted
-                    cyng::make_param("filter", cyng::obis_path_t{OBIS_REG_POS_ACT_E, OBIS_REG_POS_ACT_E_T1, OBIS_REG_GAS_MC_0_0}),
-                    cyng::make_param(
-                        "profiles",
-                        cyng::make_tuple(
-                            create_lpex_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
-                            create_lpex_spec(OBIS_PROFILE_60_MINUTE, cwd, false, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
-                            create_lpex_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
-                            create_lpex_spec(
-                                OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH))) // lpex tuple
-                        )                                                                                     // lpex param
-                    )),                                                                                       // "lpex.reports"
-            //
+                cfg::gen_lpex(cwd)), // "lpex.reports"
             cyng::make_param(
                 "feed.reports",
-                cyng::make_tuple(
-                    cyng::make_param("db", "default"),
-                    cyng::make_param("print.version", true), // if true first line contains the LPEx version
-                    cyng::make_param(
-                        "debug",
-#ifdef _DEBUG
-                        true
-#else
-                        false
-#endif
-                        ), // if true the generated LPex files contain debug data
-                    // only this obis codes will be accepted
-                    cyng::make_param(
-                        "filter",
-                        cyng::obis_path_t{
-                            OBIS_REG_POS_ACT_E,
-                            OBIS_REG_NEG_ACT_E,
-                            OBIS_REG_HEAT_CURRENT,
-                            OBIS_WATER_CURRENT,
-                            OBIS_REG_GAS_MC_0_0,
-                            OBIS_REG_GAS_MC_1_0}),
-                    cyng::make_param(
-                        "profiles",
-                        cyng::make_tuple(
-                            create_feed_spec(OBIS_PROFILE_15_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_15_MINUTE)),
-                            create_feed_spec(OBIS_PROFILE_60_MINUTE, cwd, true, sml::backtrack_time(OBIS_PROFILE_60_MINUTE)),
-                            create_feed_spec(OBIS_PROFILE_24_HOUR, cwd, false, sml::backtrack_time(OBIS_PROFILE_24_HOUR)),
-                            create_feed_spec(
-                                OBIS_PROFILE_1_MONTH, cwd, false, sml::backtrack_time(OBIS_PROFILE_1_MONTH))) // feed tuple
-                        )                                                                                     // feed param
-                    ))                                                                                        // "feed.reports"
-                                                                                                              //
+                cfg::gen_feed(cwd)) // "feed.reports"
             )});
-    }
-
-    cyng::prop_t create_report_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
-        return cyng::make_prop(
-            profile,
-            cyng::make_tuple(
-                cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "csv.reports" / sml::get_prefix(profile)).string()),
-                cyng::make_param("backtrack", backtrack),
-                cyng::make_param("prefix", ""),
-                cyng::make_param("enabled", enabled)));
-    }
-
-    cyng::prop_t create_lpex_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
-        return cyng::make_prop(
-            profile,
-            cyng::make_tuple(
-                cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "lpex.reports" / sml::get_prefix(profile)).string()),
-                cyng::make_param("backtrack", backtrack),
-                cyng::make_param("prefix", ""),
-                cyng::make_param("add.customer.data", false), // add/update customer data
-                cyng::make_param("enabled", enabled)));
-    }
-
-    cyng::prop_t create_feed_spec(cyng::obis profile, std::filesystem::path cwd, bool enabled, std::chrono::hours backtrack) {
-        return cyng::make_prop(
-            profile,
-            cyng::make_tuple(
-                cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "feed.reports" / sml::get_prefix(profile)).string()),
-                cyng::make_param("backtrack", backtrack),
-                cyng::make_param("prefix", ""),
-                cyng::make_param("add.customer.data", false), // add/update customer data
-                cyng::make_param("enabled", enabled)));
     }
 
     cyng::prop_t create_cleanup_spec(cyng::obis profile, std::chrono::hours hours, bool enabled) {
@@ -310,16 +197,6 @@ namespace smf {
             cyng::make_tuple(
                 cyng::make_param("name", obis::get_name(profile)),
                 cyng::make_param("max.age", hours),
-                cyng::make_param("enabled", enabled)));
-    }
-
-    cyng::prop_t create_gap_spec(cyng::obis profile, std::filesystem::path const &cwd, std::chrono::hours hours, bool enabled) {
-        return cyng::make_prop(
-            profile,
-            cyng::make_tuple(
-                cyng::make_param("name", obis::get_name(profile)),
-                cyng::make_param("path", (cwd / "gap-reports" / sml::get_prefix(profile)).string()),
-                cyng::make_param("backtrack", hours),
                 cyng::make_param("enabled", enabled)));
     }
 

@@ -35,7 +35,7 @@ namespace smf {
         //
         auto const start = (now - backtrack).get_start_of_day();
 #ifdef _DEBUG
-        std::cout << "start at: " << cyng::as_string(start) << std::endl;
+        // std::cout << "start at: " << cyng::as_string(start) << std::endl;
 #endif
 
         //
@@ -70,16 +70,22 @@ namespace smf {
                 auto const period_target = sml::reporting_period(profile, prev);
                 auto const period_actual = d.sub<std::chrono::hours>(prev);
                 auto const miss = (period_actual.count() / period_target.count());
+#ifdef _DEBUG
                 std::cout << ">> there are #" << miss << " missing report periods " << std::endl;
+#endif
                 for (int idx = 0; idx < miss; ++idx) {
                     auto const ts = prev + (period_target * idx);
-                    auto const file_name = get_filename("gap-", profile, ts);
-                    std::cout << ">> generate report " << root / file_name << std::endl;
+                    auto const file_name = get_filename("gap-", ts);
+#ifdef _DEBUG
+                    std::cout << ">> generate gap report " << root / file_name << std::endl;
+#endif
                 }
 
                 if (!data.empty()) {
-                    auto const file_name = get_filename("gap-", profile, prev);
-                    std::cout << ">> generate report " << root / file_name << std::endl;
+                    auto const file_name = get_filename("gap-", prev);
+#ifdef _DEBUG
+                    std::cout << ">> generate gap report " << root / file_name << std::endl;
+#endif
                     auto ofs = gap::open_report(root, file_name);
                     if (ofs.is_open()) {
                         gap::generate_report(ofs, profile, prev, data);
@@ -97,19 +103,25 @@ namespace smf {
             //
             auto pos = data.find(id);
             if (pos != data.end()) {
+#ifdef _DEBUG
                 std::cout << "> new slot #" << data.size() << ": " << sr.first << " of meter " << to_string(id) << std::endl;
+#endif
                 pos->second.insert(gap::make_slot(sr.first, d));
             } else {
+#ifdef _DEBUG
                 std::cout << "> new meter #" << data.size() << ": " << to_string(id) << std::endl;
                 std::cout << "> new slot #0: " << sr.first << " of meter " << to_string(id) << std::endl;
+#endif
                 data.insert(gap::make_readout(id, gap::make_slot(sr.first, d)));
             }
 
             return true;
         });
 
-        auto const file_name = get_filename("gap-", profile, prev);
-        std::cout << ">> generate report " << root / file_name << std::endl;
+        auto const file_name = get_filename("gap-", prev);
+#ifdef _DEBUG
+        std::cout << ">> generate gap report " << root / file_name << std::endl;
+#endif
         auto ofs = gap::open_report(root, file_name);
         if (ofs.is_open()) {
             gap::generate_report(ofs, profile, prev, data);
@@ -120,7 +132,9 @@ namespace smf {
     namespace gap {
         void clear_data(readout_t &data_set) {
             for (auto &data : data_set) {
+#ifdef _DEBUG
                 std::cout << "> clear " << data.second.size() << " data records of meter " << to_string(data.first) << std::endl;
+#endif
                 data.second.clear();
             }
         }
@@ -135,9 +149,11 @@ namespace smf {
             //
             auto const [start, end] = sml::to_index_range(d, profile);
             BOOST_ASSERT(start <= end);
-            std::cout << "> generate report for " << data.size() << " meters from " << start << " = "
+#ifdef _DEBUG
+            std::cout << "> generate gap report for " << data.size() << " meters from " << start << " = "
                       << cyng::as_string(sml::from_index_to_date(start, profile), "%Y-%m-%d %H:%M:%S") << " to " << end << " = "
                       << cyng::as_string(sml::from_index_to_date(end, profile), "%Y-%m-%d %H:%M:%S") << std::endl;
+#endif
 
             for (auto const &[id, slots] : data) {
                 ofs << cyng::as_string(d, "%Y-%m-%d;");
