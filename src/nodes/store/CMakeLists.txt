@@ -59,8 +59,8 @@ target_link_directories(store
 
 target_link_libraries(store 
     PRIVATE
-        smf::report
         smf::config
+        smf::report
         smf::ipt
         smf::ipt_bus
         smf::sml
