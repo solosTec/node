@@ -128,7 +128,8 @@ namespace smf {
                     //
                     //  reconnect
                     //
-                    tgl_.changeover();
+                    //tgl_.changeover();
+                    parser_.clear();
                     client_.connect(tgl_.get().host_, tgl_.get().service_);
                 },
                 [this](cyng::net::client_state state) -> void {
