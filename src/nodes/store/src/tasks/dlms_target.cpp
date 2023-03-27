@@ -32,7 +32,10 @@ namespace smf {
 
     void dlms_target::stop(cyng::eod) {}
 
-    void dlms_target::register_target(std::string name) { bus_.register_target(name, channel_); }
+    void dlms_target::register_target(std::string name) {
+        CYNG_LOG_TRACE(logger_, "[dlms] register target " << name);
+        bus_.register_target(name, channel_);
+    }
 
     void dlms_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data, std::string target) {
 

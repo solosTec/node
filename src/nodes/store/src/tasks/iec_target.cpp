@@ -36,7 +36,10 @@ namespace smf {
 
     void iec_target::stop(cyng::eod) {}
 
-    void iec_target::register_target(std::string name) { bus_.register_target(name, channel_); }
+    void iec_target::register_target(std::string name) {
+        CYNG_LOG_TRACE(logger_, "[iec] register target [" << name << "]");
+        bus_.register_target(name, channel_);
+    }
 
     void iec_target::receive(std::uint32_t channel, std::uint32_t source, cyng::buffer_t data, std::string target) {
 

@@ -55,7 +55,10 @@ namespace smf {
 
     void sml_target::stop(cyng::eod) {}
 
-    void sml_target::register_target(std::string name) { bus_.register_target(name, channel_); }
+    void sml_target::register_target(std::string name) {
+        CYNG_LOG_TRACE(logger_, "[sml] register target [" << name << "]");
+        bus_.register_target(name, channel_);
+    }
 
     void sml_target::add_writer(std::string name) { writers_.insert(name); }
 

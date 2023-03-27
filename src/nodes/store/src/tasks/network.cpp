@@ -97,8 +97,8 @@ namespace smf {
         //
         //  SML targets
         //
+        CYNG_LOG_INFO(logger_, "[ipt] register " << sml_targets_.size() << " sml targets");
         for (auto const &name : sml_targets_) {
-            CYNG_LOG_TRACE(logger_, "[ipt] register sml target " << name);
             auto channel = ctl_.create_named_channel_with_ref<sml_target>(name, ctl_, logger_, bus_).first;
             //  handle dispatch errors
             channel->dispatch(
@@ -112,6 +112,7 @@ namespace smf {
             //
             //  add data output
             //
+            std::size_t counter = 0;
             for (auto const &task_name : writer_) {
                 if (boost::algorithm::starts_with(task_name, "SML:")) {
                     channel->dispatch(
@@ -119,15 +120,17 @@ namespace smf {
                         //  handle dispatch errors
                         std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                         task_name);
+                    ++counter;
                 }
             }
+            CYNG_LOG_INFO(logger_, "[sml] " << counter << " data sinks added");
         }
 
         //
         //  IEC targets
         //
+        CYNG_LOG_INFO(logger_, "[ipt] register " << iec_targets_.size() << " iec targets");
         for (auto const &name : iec_targets_) {
-            CYNG_LOG_TRACE(logger_, "[ipt] register iec target " << name);
             auto channel = ctl_.create_named_channel_with_ref<iec_target>(name, ctl_, logger_, bus_).first;
             //  handle dispatch errors
             channel->dispatch(
@@ -141,6 +144,7 @@ namespace smf {
             //
             //  add data output
             //
+            std::size_t counter = 0;
             for (auto const &task_name : writer_) {
                 if (boost::algorithm::starts_with(task_name, "IEC:")) {
                     //  handle dispatch errors
@@ -148,15 +152,17 @@ namespace smf {
                         "add",
                         std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                         task_name);
+                    ++counter;
                 }
             }
+            CYNG_LOG_INFO(logger_, "[iec] " << counter << " data sinks added");
         }
 
         //
         //  DLMS targets
         //
+        CYNG_LOG_INFO(logger_, "[ipt] register " << dlms_targets_.size() << " dsml targets");
         for (auto const &name : dlms_targets_) {
-            CYNG_LOG_TRACE(logger_, "[ipt] register dlms target " << name);
             auto channel = ctl_.create_named_channel_with_ref<dlms_target>(name, ctl_, logger_, bus_).first;
             //  handle dispatch errors
             channel->dispatch(
@@ -170,6 +176,7 @@ namespace smf {
             //
             //  add data output
             //
+            std::size_t counter = 0;
             for (auto const &task_name : writer_) {
                 if (boost::algorithm::starts_with(task_name, "DLMS:")) {
                     //  handle dispatch errors
@@ -177,8 +184,10 @@ namespace smf {
                         "add",
                         std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
                         task_name);
+                    ++counter;
                 }
             }
+            CYNG_LOG_INFO(logger_, "[dlms] " << counter << " data sinks added");
         }
     }
 
