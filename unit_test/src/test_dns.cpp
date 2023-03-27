@@ -17,6 +17,15 @@
 BOOST_AUTO_TEST_SUITE(dns_suite)
 
 BOOST_AUTO_TEST_CASE(msg) {
+    //{
+    //    constexpr std::uint8_t mask{0b0000'0001};
+    //    std::cout << +mask << std::endl;  // 1
+    //}
+    //{
+    //    constexpr std::uint8_t mask{0b1000'0000};
+    //    std::cout << +mask << std::endl; // 128
+    //}
+
     // [0000]  f3 94 01 20 00 01 00 00  00 00 00 01 08 6e 6f 72  ... .... .....nor
     // [0010]  6d 61 6e 64 79 03 63 64  6e 07 6d 6f 7a 69 6c 6c  mandy.cd n.mozill
     // [0020]  61 03 6e 65 74 00 00 01  00 01 00 00 29 04 b0 00  a.net... ....)...

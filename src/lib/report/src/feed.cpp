@@ -55,11 +55,12 @@ namespace smf {
         //
         //  generate a manifest
         //
+        std::size_t counter = 0;
         auto meta_file = get_meta_file(root, profile);
         if (meta_file.is_open()) {
             meta_file << "[INFO] " << std::string(72, '-') << std::endl;
             meta_file << "[INFO] start at  : " << cyng::as_string(start) << std::endl;
-            meta_file << "[INFO] 1. stop at: " << cyng::as_string(next_stop) << std::endl;
+            // meta_file << "[INFO] stop #" << ++counter << " at: " << cyng::as_string(next_stop) << std::endl;
         }
 
         //
@@ -105,7 +106,7 @@ namespace smf {
                     if (d > next_stop) {
 
                         if (meta_file.is_open()) {
-                            meta_file << "[INFO] next stop at: " << cyng::as_string(next_stop) << std::endl;
+                            meta_file << "[INFO] stop #" << ++counter << " at: " << cyng::as_string(next_stop) << std::endl;
                         }
                         if (!data_set.empty()) {
                             auto const file_name = get_filename(prefix, prev);
@@ -122,7 +123,7 @@ namespace smf {
                             data::trim(data_set);
                         } else {
                             if (meta_file.is_open()) {
-                                std::cerr << "[INFO] no data" << std::endl;
+                                std::cerr << "[WARN] no data" << std::endl;
                             }
                         }
 
@@ -139,9 +140,9 @@ namespace smf {
                     prev = d;
 
                     if (meta_file.is_open()) {
-                        meta_file << "[INFO] " << tag << ": " << to_string(id) << ", "
-                                  << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", "
-                                  << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+                        meta_file << "[INFO] readout " << tag << ", meter: " << to_string(id)
+                                  << ", actTime: " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", slot #" << sr.first
+                                  << " = " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
                     }
                 }
 
@@ -150,12 +151,13 @@ namespace smf {
                 //
                 if (has_passed(reg, filter)) {
                     if (meta_file.is_open()) {
-                        meta_file << "[INFO] " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                        meta_file << "[INFO] value " << reg << ": " << value << " " << mbus::get_name(unit) << " ("
+                                  << obis::to_decimal(reg) << ", \"" << obis::get_description(reg) << "\")" << std::endl;
                     }
                     data::update(data_set, id, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
                 } else {
                     if (meta_file.is_open()) {
-                        meta_file << "[WARN] skip " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                        meta_file << "[WARN] skip  " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
                     }
                 }
                 return true;
