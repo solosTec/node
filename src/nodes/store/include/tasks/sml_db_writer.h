@@ -14,6 +14,8 @@
 #include <cyng/task/controller.h>
 #include <cyng/task/task_fwd.h>
 
+#include <set>
+
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 
@@ -30,7 +32,12 @@ namespace smf {
             std::function<void(cyng::eod)>>;
 
       public:
-        sml_db_writer(cyng::channel_weak, cyng::controller &ctl, cyng::logger logger, cyng::db::session);
+        sml_db_writer(
+            cyng::channel_weak,
+            cyng::controller &ctl,
+            cyng::logger logger,
+            cyng::db::session,
+            std::set<cyng::obis> const &);
         ~sml_db_writer() = default;
 
         static bool init_storage(cyng::db::session);
@@ -67,6 +74,11 @@ namespace smf {
         cyng::controller &ctl_;
         cyng::logger logger_;
         cyng::db::session db_;
+
+        /**
+         * excluded profiles
+         */
+        std::set<cyng::obis> const excluded_;
         boost::uuids::random_generator_mt19937 uidgen_;
     };
 

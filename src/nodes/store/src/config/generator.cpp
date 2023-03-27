@@ -62,25 +62,24 @@ namespace smf {
                     cyng::make_param("db", "default"),
                     cyng::make_param(
                         "exclude.profiles", cyng::obis_path_t{OBIS_PROFILE_1_MINUTE, OBIS_PROFILE_1_YEAR, OBIS_PROFILE_INITIAL}))),
-            cyng::make_param(
-                "IEC:DB",
-                cyng::tuple_factory(
-                    cyng::make_param("db", "default"),
-                    cyng::make_param(
-                        "exclude.profiles", cyng::obis_path_t{OBIS_PROFILE_1_MINUTE, OBIS_PROFILE_1_YEAR, OBIS_PROFILE_INITIAL}))),
+            cyng::make_param("IEC:DB", cyng::tuple_factory(cyng::make_param("db", "default"))),
             cyng::make_param(
                 "SML:XML",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "xml").string()),
                     cyng::make_param("root-name", "SML"),
-                    cyng::make_param("endcoding", "UTF-8"))),
+                    cyng::make_param("endcoding", "UTF-8"),
+                    cyng::make_param(
+                        "exclude.profiles", cyng::obis_path_t{OBIS_PROFILE_1_MINUTE, OBIS_PROFILE_1_YEAR, OBIS_PROFILE_INITIAL}))),
             cyng::make_param(
                 "SML:JSON",
                 cyng::tuple_factory(
                     cyng::make_param("root-dir", (cwd / "json").string()),
                     cyng::make_param("prefix", "sml-"),
                     cyng::make_param("suffix", "json"),
-                    cyng::make_param("version", SMF_VERSION_NAME))),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param(
+                        "exclude.profiles", cyng::obis_path_t{OBIS_PROFILE_1_MINUTE, OBIS_PROFILE_1_YEAR, OBIS_PROFILE_INITIAL}))),
             cyng::make_param(
                 "SML:ABL",
                 cyng::tuple_factory(
@@ -88,8 +87,9 @@ namespace smf {
                     cyng::make_param("prefix", "sml-"),
                     cyng::make_param("suffix", "abl"),
                     cyng::make_param("version", SMF_VERSION_NAME),
-                    cyng::make_param("line-ending", "DOS") //	DOS/UNIX, DOS = "\r\n", UNIX = "\n", native = std::endl
-                    )),
+                    cyng::make_param("line-ending", "DOS"), //	DOS/UNIX, DOS = "\r\n", UNIX = "\n", native = std::endl
+                    cyng::make_param(
+                        "exclude.profiles", cyng::obis_path_t{OBIS_PROFILE_1_MINUTE, OBIS_PROFILE_1_YEAR, OBIS_PROFILE_INITIAL}))),
             cyng::make_param(
                 "ALL:BIN",
                 cyng::tuple_factory(
@@ -103,7 +103,9 @@ namespace smf {
                     cyng::make_param("root-dir", (cwd / "log").string()),
                     cyng::make_param("prefix", "sml-protocol"),
                     cyng::make_param("suffix", "log"),
-                    cyng::make_param("version", SMF_VERSION_NAME))),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param(
+                        "exclude.profiles", cyng::obis_path_t{OBIS_PROFILE_1_MINUTE, OBIS_PROFILE_1_YEAR, OBIS_PROFILE_INITIAL}))),
             cyng::make_param(
                 "IEC:LOG",
                 cyng::tuple_factory(
@@ -118,7 +120,9 @@ namespace smf {
                     cyng::make_param("prefix", "sml-"),
                     cyng::make_param("suffix", "csv"),
                     cyng::make_param("header", true),
-                    cyng::make_param("version", SMF_VERSION_NAME))),
+                    cyng::make_param("version", SMF_VERSION_NAME),
+                    cyng::make_param(
+                        "exclude.profiles", cyng::obis_path_t{OBIS_PROFILE_1_MINUTE, OBIS_PROFILE_1_YEAR, OBIS_PROFILE_INITIAL}))),
             cyng::make_param(
                 "IEC:CSV",
                 cyng::tuple_factory(
@@ -135,7 +139,9 @@ namespace smf {
                     cyng::make_param("protocol", "http"), //	http, https, udp, unix
                     cyng::make_param("cert", (cwd / "cert.pem").string()),
                     cyng::make_param("db", "SMF"),
-                    cyng::make_param("series", "SML"))),
+                    cyng::make_param("series", "SML"),
+                    cyng::make_param(
+                        "exclude.profiles", cyng::obis_path_t{OBIS_PROFILE_1_MINUTE, OBIS_PROFILE_1_YEAR, OBIS_PROFILE_INITIAL}))),
             cyng::make_param(
                 "IEC:influxdb",
                 cyng::tuple_factory(

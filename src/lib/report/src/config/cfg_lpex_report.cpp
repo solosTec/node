@@ -21,15 +21,6 @@ namespace smf {
         lpex_report::lpex_report(cyng::param_map_t &&pm) noexcept
             : report(std::move(pm)) {}
 
-        // std::set<cyng::obis> lpex_report::get_profiles() const {
-        //     std::set<cyng::obis> r;
-        //     std::transform(pm_.begin(), pm_.end(), std::inserter(r, r.end()), [](cyng::param_map_t::value_type const &v) {
-        //         return cyng::to_obis(v.first);
-        //     });
-        //     BOOST_ASSERT(pm_.size() >= r.size());
-        //     return r;
-        // }
-
         bool lpex_report::is_debug_mode() const {
             auto const pos = pm_.find("debug");
             return (pos != pm_.end()) ? cyng::value_cast(pos->second, false) : false;

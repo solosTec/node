@@ -19,7 +19,7 @@
 
 namespace smf {
 
-    sml_db_writer::sml_db_writer(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cyng::db::session db)
+    sml_db_writer::sml_db_writer(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cyng::db::session db, std::set<cyng::obis> const& excluded)
         : sigs_{
         std::bind(&sml_db_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), // open_response
         std::bind(&sml_db_writer::close_response, this), // close_response
@@ -31,11 +31,15 @@ namespace smf {
         , ctl_(ctl)
         , logger_(logger)
         , db_(db)
+        , excluded_(excluded)
         , uidgen_() {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"open.response", "close.response", "get.profile.list.response", "get.proc.parameter.response"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] created");
+        }
+        for (auto const &profile : excluded_) {
+            CYNG_LOG_WARNING(logger, "profile " << obis::get_name(profile) << " is excluded from data collection");
         }
     }
 
@@ -81,8 +85,14 @@ namespace smf {
         if (path.size() == 1) {
             auto const &profile = path.front();
             if (sml::is_profile(profile)) {
-                CYNG_LOG_TRACE(logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << obis::get_name(profile));
-                store(trx, server_id, profile, act_time, status, values);
+                if (excluded_.contains(profile)) {
+                    CYNG_LOG_WARNING(
+                        logger_, "[sml.db] skip get_profile_list_response #" << values.size() << ": " << obis::get_name(profile));
+                } else {
+                    CYNG_LOG_TRACE(
+                        logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << obis::get_name(profile));
+                    store(trx, server_id, profile, act_time, status, values);
+                }
             } else {
                 CYNG_LOG_WARNING(
                     logger_,

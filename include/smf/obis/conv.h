@@ -9,7 +9,10 @@
 
 #include <smf/obis/defs.h>
 
+#include <cyng/obj/intrinsics/container.h>
+
 #include <iomanip>
+#include <set>
 #include <sstream>
 #include <vector>
 
@@ -20,6 +23,11 @@ namespace smf {
         std::string to_string(cyng::obis_path_t const &path, bool translate, char sep);
 
         cyng::obis_path_t to_obis_path(std::vector<std::string> const &vec);
+
+        /**
+         * Expects a vector of obis objects
+         */
+        std::set<cyng::obis> to_obis_set(cyng::vector_t vec);
 
         void to_decimal(std::ostream &os, cyng::obis const &o);
         std::string to_decimal(cyng::obis const &o);

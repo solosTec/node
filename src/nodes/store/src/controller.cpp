@@ -24,6 +24,7 @@
 #include <tasks/sml_log_writer.h>
 #include <tasks/sml_xml_writer.h>
 
+#include <smf/obis/conv.h>
 #include <smf/obis/profile.h>
 #include <smf/report/config/cfg_cleanup.h>
 #include <smf/report/config/cfg_csv_report.h>
@@ -129,8 +130,9 @@ namespace smf {
                     auto const db = reader[name].get("db", "default");
                     auto const pos = sm.find(db);
                     if (pos != sm.end()) {
-                        start_sml_db(
-                            ctl, channels, logger, pos->second, cyng::container_cast<cyng::param_map_t>(reader.get(name)), name);
+                        auto const vec = reader[name].get("exclude.profiles", cyng::vector_t{});
+                        auto const excludes = obis::to_obis_set(vec);
+                        start_sml_db(ctl, channels, logger, pos->second, name, excludes);
                     } else {
                         CYNG_LOG_FATAL(logger, "no database [" << db << "] for writer " << name << " configured");
                     }
@@ -932,15 +934,13 @@ namespace smf {
         cyng::stash &channels,
         cyng::logger logger,
         cyng::db::session db,
-        cyng::param_map_t &&pm,
-        std::string const &name) {
-        if (!pm.empty()) {
-            CYNG_LOG_INFO(logger, "start sml database writer");
-            auto const reader = cyng::make_reader(pm);
-            auto channel = ctl.create_named_channel_with_ref<sml_db_writer>(name, ctl, logger, db).first;
-            BOOST_ASSERT(channel->is_open());
-            channels.lock(channel);
-        }
+        std::string const &name,
+        std::set<cyng::obis> const &exclude) {
+
+        CYNG_LOG_INFO(logger, "start sml database writer");
+        auto channel = ctl.create_named_channel_with_ref<sml_db_writer>(name, ctl, logger, db, exclude).first;
+        BOOST_ASSERT(channel->is_open());
+        channels.lock(channel);
     }
     void controller::start_sml_xml(
         cyng::controller &ctl,

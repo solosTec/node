@@ -53,13 +53,21 @@ namespace smf {
             std::set<std::string> const &,
             std::set<std::string> const &writer);
 
+        /**
+         * @param ctl task controller
+         * @param channels stash to make tasks persistent
+         * @param logger logger
+         * @param db database session
+         * @param name task name
+         * @param a set of profiles to exclude from data collecting
+         */
         void start_sml_db(
-            cyng::controller &,
+            cyng::controller &ctl,
             cyng::stash &channels,
             cyng::logger,
-            cyng::db::session,
-            cyng::param_map_t &&,
-            std::string const &);
+            cyng::db::session db,
+            std::string const &name,
+            std::set<cyng::obis> const &exclude);
 
         void start_sml_xml(
             cyng::controller &,

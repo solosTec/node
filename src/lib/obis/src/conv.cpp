@@ -6,9 +6,11 @@
  */
 
 #include <smf/obis/conv.h>
+
 #include <smf/obis/db.h>
 
 #include <cyng/obj/util.hpp>
+#include <cyng/obj/value_cast.hpp>
 #include <cyng/parse/buffer.h>
 #include <cyng/parse/string.h>
 
@@ -53,6 +55,14 @@ namespace smf {
             return path;
         }
 
+        std::set<cyng::obis> to_obis_set(cyng::vector_t vec) {
+            std::set<cyng::obis> r;
+            std::transform(vec.begin(), vec.end(), std::inserter(r, r.end()), [](cyng::object const &obj) {
+                return cyng::value_cast(obj, cyng::obis{});
+            });
+            BOOST_ASSERT(vec.size() >= r.size());
+            return r;
+        }
         void to_decimal(std::ostream &os, cyng::obis const &o) {
             os << std::dec << +o.get_medium() << '-' << +o.get_channel() << ':' << +o.get_indicator() << '.' << +o.get_mode() << '.'
                << +o.get_quantity() << '*' << +o.get_storage();
