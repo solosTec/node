@@ -32,11 +32,6 @@ namespace smf {
             return (pos != pm_.end()) ? cyng::value_cast(pos->second, true) : true;
         }
 
-        cyng::obis_path_t feed_report::get_filter() const {
-            auto const pos = pm_.find("filter");
-            return (pos != pm_.end()) ? cyng::to_obis_path(cyng::value_cast(pos->second, "")) : cyng::obis_path_t{};
-        }
-
         bool feed_report::add_customer_data(cyng::obis code) const {
             auto const config = get_config(code);
             auto const pos = config.find("add.customer.data");

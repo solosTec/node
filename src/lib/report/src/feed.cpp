@@ -22,7 +22,6 @@ namespace smf {
     void generate_feed(
         cyng::db::session db,
         cyng::obis profile,
-        cyng::obis_path_t filter,
         std::filesystem::path root,
         std::string prefix,
         cyng::date now,
@@ -30,6 +29,17 @@ namespace smf {
         bool print_version,
         bool debug_mode,
         bool customer) {
+
+        //
+        //  see convert_obis()
+        //
+        cyng::obis_path_t filter{
+            OBIS_REG_POS_ACT_E,
+            OBIS_REG_NEG_ACT_E,
+            OBIS_REG_HEAT_CURRENT,
+            OBIS_WATER_CURRENT,
+            OBIS_REG_GAS_MC_0_0,
+            OBIS_REG_GAS_MC_1_0};
 
         //
         //	start transaction
@@ -500,7 +510,7 @@ namespace smf {
                 //  Water Volume (V), accumulated, total, current value
                 //  08 00 01 00 00 ff
                 return {OBIS_PROFILE_WATER_POS_OUTPUT, true};
-            } else if (code == OBIS_REG_GAS_MC_1_0) {
+            } else if (code == OBIS_REG_GAS_MC_0_0 || code == OBIS_REG_GAS_MC_1_0) {
                 //  Gas Volume (meter), temperature converted (Vtc), forward, absolute, current value
                 //  07 00 03 01 00 ff
                 return {OBIS_PROFILE_GAS_POS_OUTPUT, true};

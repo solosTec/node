@@ -755,9 +755,6 @@ namespace smf {
                 //  feed.reports/debug
                 auto const debug_mode = cfg.is_debug_mode();
 
-                //  feed.reports/filter
-                auto const filter = cfg.get_filter();
-
                 //
                 //  get set of all specified profiles
                 //
@@ -771,8 +768,7 @@ namespace smf {
                             auto const backtrack = cfg.get_backtrack(code);
                             auto const customer = cfg.add_customer_data(code);
                             auto const prefix = cfg.get_prefix(code);
-                            generate_lpex(
-                                pos->second, code, filter, path, prefix, now, backtrack, print_version, debug_mode, customer);
+                            generate_feed(pos->second, code, path, prefix, now, backtrack, print_version, debug_mode, customer);
 
                         } else {
                             std::cout << "***error: output path [" << path << "] of feed report " << name << " does not exists"
@@ -1324,7 +1320,6 @@ namespace smf {
         //	start feed reporting
         //
         auto const now = cyng::make_utc_date();
-        auto const filter = cfg.get_filter();
         auto const debug_mode = cfg.is_debug_mode();
         auto const print_version = cfg.is_print_version();
 
@@ -1342,10 +1337,9 @@ namespace smf {
 
                     CYNG_LOG_TRACE(logger, "feed/adv report " << name << " path is " << path << " - " << prefix);
 
-                    auto channel =
-                        ctl.create_named_channel_with_ref<feed_report>(
-                               name, ctl, logger, db, code, filter, path, backtrack, prefix, print_version, debug_mode, customer)
-                            .first;
+                    auto channel = ctl.create_named_channel_with_ref<feed_report>(
+                                          name, ctl, logger, db, code, path, backtrack, prefix, print_version, debug_mode, customer)
+                                       .first;
                     BOOST_ASSERT(channel->is_open());
                     channels.lock(channel);
 

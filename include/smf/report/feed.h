@@ -31,7 +31,7 @@ namespace smf {
     void generate_feed(
         cyng::db::session,
         cyng::obis profile,
-        cyng::obis_path_t filter,
+        // cyng::obis_path_t filter,
         std::filesystem::path root,
         std::string prefix,
         cyng::date now,

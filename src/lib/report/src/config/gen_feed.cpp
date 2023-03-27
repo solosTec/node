@@ -26,16 +26,6 @@ namespace smf {
                     false
 #endif
                     ), // if true the generated LPex files contain debug data
-                // only this obis codes will be accepted
-                cyng::make_param(
-                    "filter",
-                    cyng::obis_path_t{
-                        OBIS_REG_POS_ACT_E,
-                        OBIS_REG_NEG_ACT_E,
-                        OBIS_REG_HEAT_CURRENT,
-                        OBIS_WATER_CURRENT,
-                        OBIS_REG_GAS_MC_0_0,
-                        OBIS_REG_GAS_MC_1_0}),
                 cyng::make_param(
                     "profiles",
                     cyng::make_tuple(

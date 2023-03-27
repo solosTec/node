@@ -22,7 +22,6 @@ namespace smf {
         cyng::logger logger, 
         cyng::db::session db, 
         cyng::obis profile,
-        cyng::obis_path_t filter,
         std::string path,
         std::chrono::hours backtrack,
         std::string prefix,
@@ -38,7 +37,6 @@ namespace smf {
         , logger_(logger)
         , db_(db)
         , profile_(profile)
-        , filter_(filter)
         , root_(path)
         , backtrack_(backtrack)
         , prefix_(prefix)
@@ -95,7 +93,7 @@ namespace smf {
             //  generate report
             //
             CYNG_LOG_INFO(logger_, "[feed report] generate " << obis::get_name(profile_) << " report: " << root_);
-            smf::generate_feed(db_, profile_, filter_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_);
+            smf::generate_feed(db_, profile_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_);
         }
     }
 } // namespace smf

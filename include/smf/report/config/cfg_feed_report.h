@@ -26,11 +26,6 @@ namespace smf {
             bool is_print_version() const;
 
             /**
-             * "filter"
-             */
-            cyng::obis_path_t get_filter() const;
-
-            /**
              * "add.customer.data"
              */
             bool add_customer_data(cyng::obis code) const;

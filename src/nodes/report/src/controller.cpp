@@ -302,7 +302,7 @@ namespace smf {
 
                 cfg::lpex_report cfg(cyng::container_cast<cyng::param_map_t>(reader.get("lpex")));
 
-                auto const cwd = std::filesystem::current_path();
+                // auto const cwd = std::filesystem::current_path();
                 auto const now = cyng::make_utc_date();
                 using cyng::operator<<;
                 std::cout << "***info: start LPEx reporting at " << now << " (UTC)" << std::endl;
@@ -339,7 +339,7 @@ namespace smf {
                                 debug_mode,
                                 cfg.add_customer_data(code));
                         } else {
-                            std::cerr << "***error: [" << path << "] of report " << name << " does not exist";
+                            std::cerr << "***error: [" << path << "] of LPEx report " << name << " does not exist";
                         }
 
                     } else {
@@ -422,64 +422,39 @@ namespace smf {
                 //          }
                 //      }
 
-                auto const cwd = std::filesystem::current_path();
                 auto const now = cyng::make_utc_date();
                 using cyng::operator<<;
                 std::cout << "***info: start reporting at " << now << " (UTC)" << std::endl;
 
-                //  feed/print.version
-                auto const print_version = reader["feed"].get("print.version", true);
+                cfg::feed_report cfg(cyng::container_cast<cyng::param_map_t>(reader.get("feed")));
 
-                //  feed/debug
-                auto const debug_mode = reader["feed"].get(
-                    "debug",
-#ifdef _DEBUG
-                    true
-#else
-                    false
-#endif
-                );
-
-                //  feed/filter
-                auto const filter = cyng::to_obis_path(reader["feed"].get("filter", ""));
+                auto const print_version = cfg.is_print_version();
+                auto const debug_mode = cfg.is_debug_mode();
 
                 //  feed/profiles/...
-                auto reports = cyng::container_cast<cyng::param_map_t>(reader["feed"].get("profiles"));
-                for (auto const &cfg_report : reports) {
-                    auto const reader_report = cyng::make_reader(cfg_report.second);
-                    auto const name = reader_report.get("name", "no-name");
+                auto const profiles = cfg.get_profiles();
+                for (auto const &code : profiles) {
+                    auto const name = cfg.get_name(code);
 
-                    if (reader_report.get("enabled", false)) {
-                        auto const profile = cyng::to_obis(cfg_report.first);
-                        std::cout << "***info: generate feed report " << name << " (" << profile << ")" << std::endl;
-                        auto const root = reader_report.get("path", cwd.string());
+                    if (cfg.is_enabled(code)) {
+                        std::cout << "***info: generate feed report " << name << " (" << code << ")" << std::endl;
 
-                        if (!std::filesystem::exists(root)) {
-                            std::cout << "***warning: output path [" << root << "] of report " << name << " does not exists"
-                                      << std::endl;
-                            std::error_code ec;
-                            if (!std::filesystem::create_directories(root, ec)) {
-                                std::cerr << "***error: cannot create path [" << root << "]: " << ec.message() << std::endl;
-                            } else {
-                                std::cout << "***info: path [" << root << "] created " << std::endl;
-                            }
+                        auto const path = cfg.get_path(code);
+                        if (sanitize_path(path)) {
+
+                            generate_feed(
+                                s,
+                                code,
+                                path,
+                                cfg.get_prefix(code),
+                                now,
+                                cfg.get_backtrack(code), //  backtrack hours
+                                print_version,
+                                debug_mode,
+                                cfg.add_customer_data(code));
+                        } else {
+                            std::cerr << "***error: [" << path << "] of feed report " << name << " does not exist";
                         }
-
-                        auto const backtrack = cyng::to_hours(reader_report.get("backtrack", "40:00:00"));
-                        auto const customer = reader_report.get("add.customer.data", false);
-
-                        auto const prefix = reader_report.get("prefix", "");
-                        generate_feed(
-                            s,
-                            profile,
-                            filter,
-                            root,
-                            prefix,
-                            now,
-                            backtrack, //  backtrack hours
-                            print_version,
-                            debug_mode,
-                            customer);
                     }
                 }
                 return true;
