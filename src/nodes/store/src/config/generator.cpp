@@ -42,6 +42,7 @@ namespace smf {
                         cyng::make_param("pool.size", 1),                                //	no pooling for SQLite
                         cyng::make_param("db.schema", SMF_VERSION_NAME), //	use "v4.0" for compatibility to version 4.x
                         cyng::make_param("interval", 12),                //	seconds
+                        cyng::make_param("vacuum.at.startup", true),
                         cyng::make_param(
                             "cleanup",
                             cyng::make_tuple(

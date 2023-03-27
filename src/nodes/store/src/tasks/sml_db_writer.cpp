@@ -85,7 +85,9 @@ namespace smf {
         if (path.size() == 1) {
             auto const &profile = path.front();
             if (sml::is_profile(profile)) {
-                if (excluded_.contains(profile)) {
+                if (excluded_.count(profile) != 0) {
+                    //  contains requires C++20
+                    // if (excluded_.contains(profile)) {
                     CYNG_LOG_WARNING(
                         logger_, "[sml.db] skip get_profile_list_response #" << values.size() << ": " << obis::get_name(profile));
                 } else {

@@ -58,7 +58,12 @@ namespace smf {
         std::set<cyng::obis> to_obis_set(cyng::vector_t vec) {
             std::set<cyng::obis> r;
             std::transform(vec.begin(), vec.end(), std::inserter(r, r.end()), [](cyng::object const &obj) {
-                return cyng::value_cast(obj, cyng::obis{});
+                switch (obj.tag()) {
+                case cyng::TC_OBIS: return cyng::value_cast(obj, cyng::obis{});
+                case cyng::TC_STRING: return cyng::to_obis(cyng::value_cast(obj, "000000000000"));
+                default: break;
+                }
+                return cyng::obis{};
             });
             BOOST_ASSERT(vec.size() >= r.size());
             return r;
