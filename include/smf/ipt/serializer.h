@@ -45,6 +45,9 @@ namespace smf {
 
             [[nodiscard]] cyng::buffer_t req_watchdog(sequence_t seq);
 
+            /**
+             * @seq 0 is response without request
+             */
             [[nodiscard]] cyng::buffer_t res_watchdog(sequence_t seq);
 
             [[nodiscard]] std::pair<cyng::buffer_t, sequence_t> req_open_push_channel(

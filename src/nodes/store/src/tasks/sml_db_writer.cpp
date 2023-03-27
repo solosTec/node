@@ -19,8 +19,12 @@
 
 namespace smf {
 
-    sml_db_writer::sml_db_writer(cyng::channel_weak wp, cyng::controller &ctl, cyng::logger logger, cyng::db::session db, std::set<cyng::obis> const& excluded)
-        : sigs_{
+    sml_db_writer::sml_db_writer(cyng::channel_weak wp
+        , cyng::controller &ctl
+        , cyng::logger logger
+        , cyng::db::session db
+        , std::set<cyng::obis> const& excluded)
+    : sigs_{
         std::bind(&sml_db_writer::open_response, this, std::placeholders::_1, std::placeholders::_2), // open_response
         std::bind(&sml_db_writer::close_response, this), // close_response
         std::bind(&sml_db_writer::get_profile_list_response, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6), //
@@ -89,7 +93,9 @@ namespace smf {
                     //  contains requires C++20
                     // if (excluded_.contains(profile)) {
                     CYNG_LOG_WARNING(
-                        logger_, "[sml.db] skip get_profile_list_response #" << values.size() << ": " << obis::get_name(profile));
+                        logger_,
+                        "[sml.db] skip get_profile_list_response: " << obis::get_name(profile) << " from server "
+                                                                    << srv_id_to_str(server_id, true));
                 } else {
                     CYNG_LOG_TRACE(
                         logger_, "[sml.db] get_profile_list_response #" << values.size() << ": " << obis::get_name(profile));

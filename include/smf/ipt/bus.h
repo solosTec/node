@@ -102,6 +102,12 @@ namespace smf {
              */
             void transfer(cyng::buffer_t &&);
 
+            /**
+             * Send a watchdog reqponse (without a request)
+             * This function is threadsafe.
+             */
+            bool send_watchdog();
+
           private:
             void reset();
 
@@ -116,8 +122,6 @@ namespace smf {
 
             void open_connection(std::string, sequence_t);
             void close_connection(sequence_t);
-
-            void set_reconnect_timer(std::chrono::seconds);
 
             void res_open_push_channel(header const &, cyng::buffer_t &&);
             void res_close_push_channel(header const &, cyng::buffer_t &&);
@@ -151,6 +155,11 @@ namespace smf {
 
             boost::asio::ip::tcp::endpoint local_endpoint_;
             boost::asio::ip::tcp::endpoint remote_endpoint_;
+
+            /**
+             * watchdog task
+             */
+            cyng::channel_ptr wd_;
         };
 
         /**

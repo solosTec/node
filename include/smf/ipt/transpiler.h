@@ -87,19 +87,7 @@ namespace smf {
             auto const size = read_impl<upper_bound, std::decay_t<Args>...>::convert(data, r, 0);
             BOOST_ASSERT(size == data.size());
             return std::tuple_cat(std::make_tuple(size == data.size()), r);
-            // return r;
         }
-
-        // template <typename... Args> auto read_checked(cyng::buffer_t &&data) -> std::tuple<bool, std::decay_t<Args>...> {
-        //     std::tuple<std::decay_t<Args>...> r;
-
-        //    constexpr std::size_t upper_bound = sizeof...(Args) - 1;
-
-        //    auto const size = read_impl<upper_bound, std::decay_t<Args>...>::convert(data, r, 0);
-        //    BOOST_ASSERT(size == data.size());
-        //    return std::tuple_cat(std::make_tuple(size == data.size()), r);
-        //    // return r;
-        //}
 
         std::tuple<bool, response_t, std::uint16_t, std::string> ctrl_res_login(cyng::buffer_t &&data);
         std::tuple<bool, std::string, std::string> ctrl_req_login_public(cyng::buffer_t &&data);

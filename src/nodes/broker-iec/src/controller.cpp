@@ -6,6 +6,7 @@
  */
 
 #include <controller.h>
+
 #include <smf.h>
 #include <tasks/cluster.h>
 

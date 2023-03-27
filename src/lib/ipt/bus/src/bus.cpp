@@ -4,11 +4,13 @@
 #include <smf/ipt/codes.h>
 #include <smf/ipt/response.hpp>
 #include <smf/ipt/scramble_key_format.h>
+#include <smf/ipt/tasks/watchdog.h>
 #include <smf/ipt/transpiler.h>
 
 #include <cyng/log/record.h>
 #include <cyng/net/client_factory.hpp>
 #include <cyng/task/channel.h>
+#include <cyng/task/controller.h>
 #include <cyng/vm/mesh.h>
 #include <cyng/vm/vm.h>
 
@@ -50,7 +52,8 @@ namespace smf {
             , channels_()
             , closing_channels_()
             , local_endpoint_()
-            , remote_endpoint_() {
+            , remote_endpoint_()
+            , wd_() {
 
             cyng::net::client_factory cf(ctl);
             client_ = cf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
@@ -59,7 +62,7 @@ namespace smf {
                 [this](std::size_t, std::size_t counter, std::string &host, std::string &service)
                     -> std::pair<std::chrono::seconds, bool> {
                     //
-                    //  connect failed, reconnect after 20 seconds
+                    //  connect failed, reconnect after 20 * N seconds
                     //
                     state_ = state::INITIAL;
                     CYNG_LOG_WARNING(logger_, "[ipt] " << tgl_.get() << " connect failed for the " << counter << " time");
@@ -117,6 +120,11 @@ namespace smf {
                     auto const ep = boost::asio::ip::tcp::endpoint();
                     cb_auth_(false, local_endpoint_, remote_endpoint_);
 
+                    if (wd_) {
+                        CYNG_LOG_WARNING(logger_, "[ipt] stop watchdog");
+                        wd_->stop();
+                    }
+
                     //
                     //  reconnect
                     //
@@ -153,7 +161,9 @@ namespace smf {
         }
 
         void bus::stop() {
-            // CYNG_LOG_INFO(logger_, "ipt " << tgl_.get() << " stop");
+            if (wd_) {
+                wd_->stop();
+            }
             client_.stop();
         }
 
@@ -245,7 +255,7 @@ namespace smf {
         }
 
         void bus::res_login(cyng::buffer_t &&data) {
-            auto const [ok, res, watchdog, redirect] = ctrl_res_login(std::move(data));
+            auto const [ok, res, wd, redirect] = ctrl_res_login(std::move(data));
             auto r = make_login_response(res);
             if (r.is_success()) {
 
@@ -259,12 +269,24 @@ namespace smf {
                 //
                 //	set watchdog
                 //
-                if (watchdog != 0) {
-                    CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] set watchdog: " << watchdog << " minutes");
+                if (wd != 0) {
+                    CYNG_LOG_INFO(logger_, "[ipt/" << tgl_.get() << "] set watchdog: " << wd << " minutes");
 
                     //
-                    //	ToDo: start watchdog
+                    //  calculate timeout a little bit shorter than expected
                     //
+                    auto const period = std::chrono::seconds((wd * 60) - 2);
+
+                    //
+                    //	create and start watchdog
+                    //
+                    std::tie(wd_, std::ignore) = ctl_.create_named_channel_with_ref<watchdog>("wd", logger_, *this);
+                    BOOST_ASSERT(wd_->is_open());
+                    wd_->suspend(
+                        period,
+                        "timeout", //  handle dispatch errors
+                        std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2),
+                        period);
                 }
 
                 //
@@ -665,9 +687,17 @@ namespace smf {
             client_.send(serializer_.escape_data(std::move(data)), false);
         }
 
-        // bus::state::state(boost::asio::ip::tcp::resolver::results_type &&res)
-        //     : value_(state_value::START)
-        //     , endpoints_(std::move(res)) {}
+        bool bus::send_watchdog() {
+            //
+            //  check state
+            //
+            switch (state_) {
+            case state::AUTHORIZED:
+            case state::LINKED: client_.send(serializer_.res_watchdog(0), false); return true;
+            default: break;
+            }
+            return false;
+        }
 
         bool is_null(channel_id const &id) { return id == std::make_pair(0u, 0u); }
         void init(channel_id &id) { id = std::make_pair(0u, 0u); }
