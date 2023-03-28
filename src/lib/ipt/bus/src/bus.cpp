@@ -128,7 +128,7 @@ namespace smf {
                     //
                     //  reconnect
                     //
-                    //tgl_.changeover();
+                    // tgl_.changeover();
                     parser_.clear();
                     client_.connect(tgl_.get().host_, tgl_.get().service_);
                 },
@@ -276,7 +276,7 @@ namespace smf {
                     //
                     //  calculate timeout a little bit shorter than expected
                     //
-                    auto const period = std::chrono::seconds((wd * 60) - 2);
+                    std::chrono::seconds const period((wd * 60) - 2);
 
                     //
                     //	create and start watchdog

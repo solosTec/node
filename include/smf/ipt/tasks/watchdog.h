@@ -25,7 +25,7 @@ namespace smf {
             template <typename U> friend class cyng::task;
 
             using signatures_t = std::tuple<
-                std::function<void(std::chrono::minutes)>, // timeout
+                std::function<void(std::chrono::seconds)>, // timeout
                 std::function<void(cyng::eod)>             // stop
                 >;
 

@@ -22,10 +22,10 @@ namespace smf {
         void watchdog::timeout(std::chrono::seconds period) {
             if (auto sp = channel_.lock(); sp) {
 
-                if (period < std::chrono::seconds(60)) {
+                if (period < std::chrono::seconds(5 * 60)) {
                     CYNG_LOG_WARNING(logger_, "[watchdog] timeout: " << cyng::to_string(period));
                     //  at least 1 minute
-                    period = std::chrono::seconds(60);
+                    period = std::chrono::seconds(5 * 60);
                 } else {
                     CYNG_LOG_TRACE(logger_, "[watchdog] timeout: " << cyng::to_string(period));
                 }
