@@ -36,7 +36,7 @@ namespace smf {
             void stop(cyng::eod) { CYNG_LOG_INFO(logger_, "[watchdog] stop"); }
 
           private:
-            void timeout(std::chrono::minutes);
+            void timeout(std::chrono::seconds);
 
           private:
             signatures_t sigs_;
