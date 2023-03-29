@@ -200,10 +200,14 @@ namespace smf {
         return ss.str();
     }
 
-    std::string get_filename(std::string prefix, cyng::date const &start) {
+    std::string get_filename(std::string prefix, cyng::date const &start, bool debug_mode) {
 
         std::stringstream ss;
-        ss << prefix << "-" << cyng::as_string(start, "%Y-%m-%d") << ".csv";
+        ss << prefix << "-" << cyng::as_string(start, "%Y-%m-%d");
+        if (debug_mode) {
+            ss << "-D";
+        }
+        ss << ".csv";
         return ss.str();
     }
 

@@ -14,10 +14,10 @@
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/date.h>
 
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <ostream>
-#include <fstream>
 #include <set>
 #include <utility>
 
@@ -141,7 +141,7 @@ namespace smf {
      * Build a filename with an .csv prefix. Contains the prefix and the timestamp information
      * with a resolution of one day.
      */
-    std::string get_filename(std::string prefix, cyng::date const &);
+    std::string get_filename(std::string prefix, cyng::date const &, bool debug_mode);
 
     /**
      * Opens a file with an .txt prefix. Contains the profile name.

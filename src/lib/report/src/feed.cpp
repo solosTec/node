@@ -119,7 +119,7 @@ namespace smf {
                             meta_file << "[INFO] stop #" << ++counter << " at: " << cyng::as_string(next_stop) << std::endl;
                         }
                         if (!data_set.empty()) {
-                            auto const file_name = get_filename(prefix, prev);
+                            auto const file_name = get_filename(prefix, prev, debug_mode);
                             if (meta_file.is_open()) {
                                 meta_file << "[INFO] generate report " << root / file_name << std::endl;
                             }
@@ -177,7 +177,7 @@ namespace smf {
         //  generate report for last data set
         //
         if (!data_set.empty()) {
-            auto const file_name = get_filename(prefix, prev);
+            auto const file_name = get_filename(prefix, prev, debug_mode);
             if (meta_file.is_open()) {
                 meta_file << "[INFO] generate report " << root / file_name << std::endl;
             }

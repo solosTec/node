@@ -75,14 +75,14 @@ namespace smf {
 #endif
                 for (int idx = 0; idx < miss; ++idx) {
                     auto const ts = prev + (period_target * idx);
-                    auto const file_name = get_filename("gap-", ts);
+                    auto const file_name = get_filename("gap-", ts, false);
 #ifdef _DEBUG
                     std::cout << ">> generate gap report " << root / file_name << std::endl;
 #endif
                 }
 
                 if (!data.empty()) {
-                    auto const file_name = get_filename("gap-", prev);
+                    auto const file_name = get_filename("gap-", prev, false);
 #ifdef _DEBUG
                     std::cout << ">> generate gap report " << root / file_name << std::endl;
 #endif
@@ -118,7 +118,7 @@ namespace smf {
             return true;
         });
 
-        auto const file_name = get_filename("gap-", prev);
+        auto const file_name = get_filename("gap-", prev, false);
 #ifdef _DEBUG
         std::cout << ">> generate gap report " << root / file_name << std::endl;
 #endif

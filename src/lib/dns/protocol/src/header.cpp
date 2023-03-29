@@ -3,22 +3,29 @@
 namespace smf {
     namespace dns {
         msg::msg()
-            : data_{0} {}
+            : data_{0}
+            , qname_{} {}
 
         std::uint16_t msg::get_id() const noexcept {
             // net
             return data_[1] + (data_[0] << 8);
         }
 
-        bool msg::is_reponse_code() const noexcept {
+        bool msg::is_query() const noexcept {
             //  test last bit byte #2
             constexpr std::uint8_t mask{0b1000'0000}; // represents bit 0
-            return (data_[2] & mask) == mask;
+            return !((data_[2] & mask) == mask);
         }
 
         bool msg::is_recursion_desired() const noexcept {
             //  test last bit byte #2
             constexpr std::uint8_t mask{0b0000'0001};
+            return (data_[2] & mask) == mask;
+        }
+
+        bool msg::is_truncated() const noexcept {
+            //  test byte #2
+            constexpr std::uint8_t mask{0b0000'0010};
             return (data_[2] & mask) == mask;
         }
 

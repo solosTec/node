@@ -49,7 +49,7 @@ namespace smf {
             using value_type = std::uint8_t;
             using SIZE = std::integral_constant<std::size_t, 12>;
             //	internal data type
-            using data_type = std::array<value_type, SIZE::value>;
+            using header_type = std::array<value_type, SIZE::value>;
 
           public:
             msg();
@@ -71,7 +71,12 @@ namespace smf {
              */
             bool is_recursion_desired() const noexcept;
 
-            // std::uint8_t truncation : 1;        //  TC
+            /**
+             * std::uint8_t truncation : 1;
+             * TC
+             */
+            bool is_truncated() const noexcept;
+
             // std::uint8_t authoritative : 1;     //  AA
 
             /**
@@ -88,7 +93,7 @@ namespace smf {
              * std::uint8_t is_response_code : 1;
              * @return true if message contains a reponse, otherwise false.
              */
-            bool is_reponse_code() const noexcept;
+            bool is_query() const noexcept;
 
             /**
              * std::uint8_t responsecode : 4;
@@ -123,7 +128,8 @@ namespace smf {
             std::uint16_t get_ar_count() const noexcept;
 
           private:
-            data_type data_;
+            header_type data_;
+            std::vector<std::string> qname_;
         };
 
     } // namespace dns
@@ -131,8 +137,9 @@ namespace smf {
     template <typename ch, typename char_traits>
     std::basic_ostream<ch, char_traits> &operator<<(std::basic_ostream<ch, char_traits> &os, dns::msg const &m) {
         //  ToDo:
-        os << std::hex << std::setfill('0') << std::setw(2) << m.get_id() << (m.is_reponse_code() ? 'Q' : 'R') << std::dec << '-'
-           << m.get_opcode() << '-' << m.get_rcode();
+        os << std::hex << std::setfill('0') << std::setw(2) << m.get_id() << '-' << (m.is_query() ? 'Q' : 'R') << std::dec << '-'
+           << m.get_opcode() << '-' << m.get_rcode() << "-qd:" << m.get_qd_count() << "-an:" << m.get_an_count()
+           << "-ns:" << m.get_ns_count() << "-an:" << m.get_ar_count();
         return os;
     }
 

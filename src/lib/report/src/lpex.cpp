@@ -88,7 +88,7 @@ namespace smf {
                         //  new period (day) - generate report and clear data set
                         //
                         if (!data_set.empty()) {
-                            auto const file_name = get_filename(prefix, prev);
+                            auto const file_name = get_filename(prefix, prev, debug_mode);
 #ifdef _DEBUG
                             std::cout << ">> generate LPEx report " << root / file_name << std::endl;
 #endif
@@ -131,7 +131,7 @@ namespace smf {
         //  generate report for last data set
         //
         if (!data_set.empty()) {
-            auto const file_name = get_filename(prefix, prev);
+            auto const file_name = get_filename(prefix, prev, debug_mode);
 #ifdef _DEBUG
             std::cout << ">> generate LPex report " << root / file_name << std::endl;
 #endif
