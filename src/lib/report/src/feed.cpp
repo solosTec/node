@@ -152,7 +152,7 @@ namespace smf {
                     if (meta_file.is_open()) {
                         meta_file << "[INFO] readout " << tag << ", meter: " << to_string(id)
                                   << ", actTime: " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", slot #" << sr.first
-                                  << " = " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+                                  << " => " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
                     }
                 }
 
@@ -166,9 +166,14 @@ namespace smf {
                     }
                     data::update(data_set, id, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
                 } else {
-                    if (meta_file.is_open()) {
-                        meta_file << "[WARN] skip  " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
-                    }
+                //
+                //  this generates to much data
+                //
+#ifdef _DEBUG
+                // if (meta_file.is_open()) {
+                //     meta_file << "[WARN] skip  " << reg << ": " << value << " " << mbus::get_name(unit) << std::endl;
+                // }
+#endif
                 }
                 return true;
             });
@@ -229,6 +234,10 @@ namespace smf {
             for (auto const &data : data_set) {
 
                 if (is_null(data.first)) {
+                    //
+                    //  Ignore meter IDs that consists only of zeros.
+                    //  ToDo: Accept also server IDs other than of wireless M-Bus meters.
+                    //
 #ifdef _DEBUG
                     std::cerr << "skip \"null\" meter" << std::endl;
 #endif
@@ -266,7 +275,15 @@ namespace smf {
                         // report
                         // start with the timestamp of the first entry
                         //
-                        ofs << cyng::as_string(sml::from_index_to_date(idx_start + 2, profile), "%d.%m.%y;%H:%M:%S;");
+                        if (profile == OBIS_PROFILE_1_MINUTE) {
+                            //  up to one hour
+                            ofs << cyng::as_string(sml::from_index_to_date(idx_start + 61, profile), "%d.%m.%y;%H:%M:%S;");
+                        } else if (profile == OBIS_PROFILE_15_MINUTE) {
+                            //  up to one hour
+                            ofs << cyng::as_string(sml::from_index_to_date(idx_start + 5, profile), "%d.%m.%y;%H:%M:%S;");
+                        } else {
+                            ofs << cyng::as_string(sml::from_index_to_date(idx_start + 3, profile), "%d.%m.%y;%H:%M:%S;");
+                        }
 
                         //
                         //  [3..10] customer data
