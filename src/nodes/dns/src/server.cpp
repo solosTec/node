@@ -1,11 +1,7 @@
 #include <server.h>
 
 #include <cyng/log/record.h>
-// #include <cyng/obj/util.hpp>
-// #include <cyng/task/channel.h>
-//
-// #include <iostream>
-//
+
 #include <boost/bind/bind.hpp>
 
 #ifdef _DEBUG_DNS
@@ -52,6 +48,8 @@ namespace smf {
                 // [0030]  00 00 00 00 00                                    .....
             }
 #endif
+            parser_.read(recv_buffer_.data(), recv_buffer_.data() + bytes_transferred);
+
             //
             //  continue reading
             //

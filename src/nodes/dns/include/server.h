@@ -11,18 +11,7 @@
 
 #include <cyng/log/logger.h>
 #include <cyng/task/controller.h>
-// #include <cyng/net/server_proxy.h>
-// #include <cyng/obj/intrinsics/eod.h>
-// #include <cyng/task/task_fwd.h>
-// #include <cyng/vm/mesh.h>
-//
-// #include <array>
-// #include <functional>
-// #include <memory>
-// #include <string>
-// #include <tuple>
-//
-// #include <boost/uuid/uuid.hpp>
+
 #include <boost/asio.hpp>
 
 namespace smf {
@@ -49,7 +38,7 @@ namespace smf {
              */
             boost::asio::ip::udp::socket socket_;
             boost::asio::ip::udp::endpoint remote_endpoint_;
-            std::array<char, 1024> recv_buffer_;
+            std::array<std::uint8_t, 1024> recv_buffer_;
         };
 
     } // namespace dns

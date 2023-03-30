@@ -42,23 +42,16 @@ namespace smf {
          * |                    ARCOUNT                    |
          * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
          */
-        class msg {
-
-            friend class parser;
-
+        struct header {
             using value_type = std::uint8_t;
             using SIZE = std::integral_constant<std::size_t, 12>;
             //	internal data type
-            using header_type = std::array<value_type, SIZE::value>;
-
-          public:
-            msg();
-            msg(msg const &) = default;
-
+            using data_type = std::array<value_type, SIZE::value>;
             /**
              * size of internal data buffer
              */
             constexpr static std::size_t size() noexcept { return SIZE::value; }
+            header(data_type &);
 
             /**
              * Each message has a unique id
@@ -127,19 +120,41 @@ namespace smf {
              */
             std::uint16_t get_ar_count() const noexcept;
 
+            data_type &data_;
+        };
+        class msg {
+
+            friend class parser;
+
+          public:
+            msg();
+            msg(msg const &) = default;
+
+            /**
+             * readonly access to header data
+             */
+            header const &get_header() const;
+
           private:
-            header_type data_;
+            header::data_type data_;
+            header header_;
             std::vector<std::string> qname_;
         };
 
     } // namespace dns
 
     template <typename ch, typename char_traits>
+    std::basic_ostream<ch, char_traits> &operator<<(std::basic_ostream<ch, char_traits> &os, dns::header const &header) {
+        os << std::hex << std::setfill('0') << std::setw(2) << header.get_id() << '-' << (header.is_query() ? 'Q' : 'R') << std::dec
+           << '-' << header.get_opcode() << '-' << header.get_rcode() << "-qd:" << header.get_qd_count()
+           << "-an:" << header.get_an_count() << "-ns:" << header.get_ns_count() << "-an:" << header.get_ar_count();
+        return os;
+    }
+
+    template <typename ch, typename char_traits>
     std::basic_ostream<ch, char_traits> &operator<<(std::basic_ostream<ch, char_traits> &os, dns::msg const &m) {
         //  ToDo:
-        os << std::hex << std::setfill('0') << std::setw(2) << m.get_id() << '-' << (m.is_query() ? 'Q' : 'R') << std::dec << '-'
-           << m.get_opcode() << '-' << m.get_rcode() << "-qd:" << m.get_qd_count() << "-an:" << m.get_an_count()
-           << "-ns:" << m.get_ns_count() << "-an:" << m.get_ar_count();
+        os << m.get_header();
         return os;
     }
 

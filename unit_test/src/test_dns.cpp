@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(query) {
     //});
 
     //  https://mislove.org/teaching/cs4700/spring11/handouts/project1-primer.pdf
-    auto const inp = cyng::make_buffer({
+    auto const inp = std::vector<std::uint8_t>({
 
         //    01    02    03    04    05    06    07    08    09    10    11    12    13    14    15
         0xdb, 0x42, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77, //
@@ -70,20 +70,20 @@ BOOST_AUTO_TEST_CASE(query) {
     // std::cout << "id: " << p.get_msg().get_id() << std::endl;
     using smf::operator<<;
     std::cout << p.get_msg() << std::endl;
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_id(), 0xdb42);
-    BOOST_REQUIRE(p.get_msg().is_query());                               // QR
-    BOOST_REQUIRE(p.get_msg().get_opcode() == smf::dns::op_code::QUERY); // OPCODE
-    BOOST_REQUIRE(!p.get_msg().is_truncated());                          // TC
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_qd_count(), 1);                  // QD
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_an_count(), 0);                  // AN
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_ns_count(), 0);                  // NS
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_ar_count(), 0);                  // AR
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_id(), 0xdb42);
+    BOOST_REQUIRE(p.get_msg().get_header().is_query());                               // QR
+    BOOST_REQUIRE(p.get_msg().get_header().get_opcode() == smf::dns::op_code::QUERY); // OPCODE
+    BOOST_REQUIRE(!p.get_msg().get_header().is_truncated());                          // TC
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_qd_count(), 1);                  // QD
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_an_count(), 0);                  // AN
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_ns_count(), 0);                  // NS
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_ar_count(), 0);                  // AR
 }
 
 BOOST_AUTO_TEST_CASE(response) {
 
     //  https://mislove.org/teaching/cs4700/spring11/handouts/project1-primer.pdf
-    auto const inp = cyng::make_buffer({
+    auto const inp = std::vector<std::uint8_t>({
 
         //    01    02    03    04    05    06    07    08    09    10    11    12    13    14    15
         0xdb, 0x42, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77, //
@@ -116,14 +116,14 @@ BOOST_AUTO_TEST_CASE(response) {
     // std::cout << "id: " << p.get_msg().get_id() << std::endl;
     using smf::operator<<;
     std::cout << p.get_msg() << std::endl;
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_id(), 0xdb42);
-    BOOST_REQUIRE(!p.get_msg().is_query());                              // QR
-    BOOST_REQUIRE(p.get_msg().get_opcode() == smf::dns::op_code::QUERY); // OPCODE
-    BOOST_REQUIRE(!p.get_msg().is_truncated());                          // TC
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_qd_count(), 1);                  // QD
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_an_count(), 1);                  // AN
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_ns_count(), 0);                  // NS
-    BOOST_REQUIRE_EQUAL(p.get_msg().get_ar_count(), 0);                  // AR
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_id(), 0xdb42);
+    BOOST_REQUIRE(!p.get_msg().get_header().is_query());                              // QR
+    BOOST_REQUIRE(p.get_msg().get_header().get_opcode() == smf::dns::op_code::QUERY); // OPCODE
+    BOOST_REQUIRE(!p.get_msg().get_header().is_truncated());                          // TC
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_qd_count(), 1);                  // QD
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_an_count(), 1);                  // AN
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_ns_count(), 0);                  // NS
+    BOOST_REQUIRE_EQUAL(p.get_msg().get_header().get_ar_count(), 0);                  // AR
 }
 
 BOOST_AUTO_TEST_SUITE_END()
