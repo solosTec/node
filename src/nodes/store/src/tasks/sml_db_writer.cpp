@@ -118,7 +118,6 @@ namespace smf {
     void sml_db_writer::store(
         std::string trx,
         cyng::buffer_t srv,
-        // srv_id_t &&srv,
         cyng::obis profile,
         cyng::object act_time,
         std::uint32_t status,
@@ -128,6 +127,9 @@ namespace smf {
 
         //
         //  meter id
+        //  srv_id_to_str() works for 8 and 9 byte formats
+        //  size == 9 => 01-a815-54787404-01-02
+        //  size == 8 => 3034393137373235 => 04917725
         //
         auto const id = srv_id_to_str(srv, false);
 
@@ -274,6 +276,7 @@ namespace smf {
             CYNG_LOG_WARNING(logger_, "[sml.db] internal error: " << sql);
         }
     }
+
     void sml_db_writer::get_proc_parameter_response() {}
 
     std::vector<cyng::meta_store> sml_db_writer::get_store_meta_data() {

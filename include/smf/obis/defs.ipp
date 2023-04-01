@@ -284,7 +284,7 @@
 	OBIS_CODE_DEFINITION(01, 01, 00, 04, 02, ff, CURRENT_TRANSFORMER_RATIO);	// Current transformer ratio (L&G)
 	OBIS_CODE_DEFINITION(01, 01, 00, 04, 03, ff, VOLTAGE_TRANSFORMER_RATIO);	// Voltage transformer ratio (L&G)
 	OBIS_CODE_DEFINITION(01, 01, 01, 1d, 00, ff, PROFILE_POWER_POS_ACTIVE);	// d - Load profile (+A) Active energy import
-	OBIS_CODE_DEFINITION(01, 01, 02, 1d, 00, ff, PROFILE_POWER_NEG_ACTIVE);	// d - Load profile (-A) Active energy export
+	OBIS_CODE_DEFINITION(01, 01, 02, 1d, 00, ff, PROFILE_POWER_NEG_ACTIVE);
 	OBIS_CODE_DEFINITION(01, 01, 05, 1d, 00, ff, PROFILE_REACTIVE_Q1);	// d - Load profile Reactive Q1
 	OBIS_CODE_DEFINITION(01, 01, 06, 1d, 00, ff, PROFILE_REACTIVE_Q2);	// d - Load profile Reactive Q2
 	OBIS_CODE_DEFINITION(01, 01, 07, 1d, 00, ff, PROFILE_REACTIVE_Q3);	// d - Load profile Reactive Q3

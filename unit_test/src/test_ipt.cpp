@@ -4,6 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <smf/ipt/bus.h>
 #include <smf/ipt/parser.h>
 #include <smf/ipt/serializer.h>
 #include <smf/ipt/transpiler.h>
@@ -126,5 +127,7 @@ BOOST_AUTO_TEST_CASE(serializer) {
     // std::cout << cmp << std::endl;
     // BOOST_REQUIRE_EQUAL(cmp, "2a1b1b1b1b2021221b1b");
 }
+
+// BOOST_AUTO_TEST_CASE(client) {}
 
 BOOST_AUTO_TEST_SUITE_END()

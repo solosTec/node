@@ -94,7 +94,7 @@ namespace smf {
             //
             //	if tag is "nil" no meter configuration was found
             //
-            auto const id = get_id(address);
+            auto const id = get_meter_id(address);
             auto const [key, tag] = db_->lookup_meter(id);
             if (!tag.is_nil()) {
 
@@ -307,7 +307,7 @@ namespace smf {
         //
         //	get meter id
         //
-        auto const id = get_id(address);
+        auto const id = get_meter_id(address);
 
         //
         //	open CSV file

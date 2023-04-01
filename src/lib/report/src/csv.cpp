@@ -58,7 +58,7 @@ namespace smf {
             start,
             [&](bool next_record,
                 boost::uuids::uuid tag,
-                srv_id_t id,
+                std::string id,
                 cyng::date act_time,
                 std::uint32_t status,
                 cyng::obis reg,
@@ -91,8 +91,8 @@ namespace smf {
                     prev = d;
 
 #ifdef _DEBUG
-                    std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
-                              << ", " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+                    std::cout << "> " << tag << ": " << id << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", "
+                              << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
 #endif
                 }
 
@@ -148,8 +148,8 @@ namespace smf {
             //
             for (auto const &[id, values] : data_set) {
 #ifdef _DEBUG
-                std::cout << to_string(id) << " has " << values.size() << " entries" << std::endl;
-                std::cout << '#' << to_string(id) << std::endl;
+                std::cout << id << " has " << values.size() << " entries" << std::endl;
+                std::cout << '#' << id << std::endl;
 #endif
 
                 auto const file_name = get_filename(prefix, profile, id, d);
@@ -174,7 +174,7 @@ namespace smf {
 
                     for (auto idx = start; idx < end; ++idx) {
                         ofs << cyng::as_string(sml::from_index_to_date(idx, profile), "%Y-%m-%d;%H:%M;");
-                        ofs << to_string(id);
+                        ofs << id;
 
                         for (auto const &[reg, data] : values) {
                             ofs << ';';

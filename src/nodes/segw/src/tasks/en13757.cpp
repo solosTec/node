@@ -304,7 +304,7 @@ namespace smf {
 
         auto const flag_id = get_manufacturer_code(address);
         auto const manufacturer = mbus::decode(flag_id.first, flag_id.second);
-        auto const id = get_id(address); //  meter id as string
+        auto const id = get_meter_id(address); //  meter id as string
 
         CYNG_LOG_TRACE(
             logger_,

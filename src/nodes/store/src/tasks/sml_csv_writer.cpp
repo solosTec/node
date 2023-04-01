@@ -74,7 +74,7 @@ namespace smf {
             CYNG_LOG_TRACE(logger_, "[sml.csv.writer] get_profile_list_response #" << values.size() << ": " << file_path);
 
             auto const srv_id = to_srv_id(server_id);
-            auto const meter = get_id(srv_id);
+            auto const meter = get_meter_id(srv_id);
 
             of << "obis,value,scaler,unit,status,descr" << std::endl;
 

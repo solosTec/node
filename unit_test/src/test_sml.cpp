@@ -4,6 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <smf/mbus/server_id.h>
 #include <smf/obis/db.h>
 #include <smf/obis/defs.h>
 #include <smf/obis/list.h>
@@ -19,6 +20,7 @@
 #include <smf/sml/value.hpp>
 #include <smf/sml/writer.hpp>
 
+#include <cyng/io/io_buffer.h>
 #include <cyng/io/ostream.h>
 #include <cyng/io/serialize.h>
 #include <cyng/obj/container_factory.hpp>
@@ -26,6 +28,7 @@
 #include <cyng/parse/buffer.h>
 #include <cyng/parse/string.h>
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 
@@ -34,6 +37,8 @@
 #include <iostream>
 #include <sstream>
 #endif
+
+#include <boost/algorithm/string.hpp>
 
 BOOST_AUTO_TEST_SUITE(sml_suite)
 
@@ -435,7 +440,8 @@ BOOST_AUTO_TEST_CASE(value) {
 
 BOOST_AUTO_TEST_CASE(get_profile_list_response) {
     auto const inp = cyng::make_buffer({
-        /* [0000] */ 0x1b,
+        // [0000]
+        0x1b,
         0x1b,
         0x1b,
         0x1b,
@@ -451,7 +457,8 @@ BOOST_AUTO_TEST_CASE(get_profile_list_response) {
         0x38,
         0x35,
         0x38, // ........ v.436858
-        /* [0010] */ 0x62,
+        // [0010]
+        0x62,
         0x00,
         0x62,
         0x00,
@@ -1570,6 +1577,60 @@ BOOST_AUTO_TEST_CASE(scale) {
             auto const v = smf::scale_value_reverse(s, scaler);
             // std::cout << ", " << v << std::endl;
             BOOST_REQUIRE_EQUAL(value, v);
+        }
+    }
+}
+
+void read_and_test_push_data(std::filesystem::path p) {
+
+    std::ifstream ifs(p.string());
+    BOOST_CHECK(ifs.is_open());
+    if (ifs.is_open()) {
+        std::string line;
+        while (std::getline(ifs, line)) {
+            //
+            //  convert to binary data
+            //
+            auto const data = cyng::hex_to_buffer(line);
+            BOOST_REQUIRE(!data.empty());
+            BOOST_REQUIRE_EQUAL(data.size(), (line.size() / 2));
+
+            smf::sml::unpack p(
+                [](std::string trx, std::uint8_t, std::uint8_t, smf::sml::msg_type type, cyng::tuple_t msg, std::uint16_t crc) {
+                    // std::cout << "> " << smf::sml::get_name(type) << ": " << trx << std::endl;
+                    //  std::cout << "> " << smf::sml::get_name(type) << ": " << trx << ", " << msg << std::endl;
+                    if (type == smf::sml::msg_type::GET_PROFILE_LIST_RESPONSE) {
+                        //  server id, tree path, act time, register period, val time, M-Bus state, period list
+                        auto const [s, p, act, reg, val, stat, list] = smf::sml::read_get_profile_list_response(msg);
+                        std::cout << "> " << cyng::io::to_hex(s) << ", " << smf::srv_id_to_str(s, true) << std::endl;
+                        BOOST_WARN_EQUAL(s.size(), 9);
+                        // BOOST_CHECK_EQUAL(s.size(), 9);
+                        if (s.size() != 9) {
+                            for (auto const &ro : list) {
+                                std::cout << ">> " << ro.first << ": " << ro.second << std::endl;
+                            }
+                        }
+                    }
+                });
+            p.read(std::begin(data), std::end(data));
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(push) {
+    //
+    //  test with real IP-T/SML push data
+    //  Set working directory to $(SolutionDir) to find the input file
+    //
+    // unit_test\assets\push-data-d087bdb8-6212-4ccb-b49c-523909630161.log
+
+    std::size_t file_counter = 0;
+    for (auto const &dir_entry : std::filesystem::directory_iterator{"../unit_test/assets/"}) {
+        // std::cout << "entry: " << dir_entry.path().stem() << std::endl;
+        if (boost::algorithm::starts_with(dir_entry.path().filename().string(), "push-data-")) {
+            ++file_counter;
+            std::cout << file_counter << ">> " << dir_entry.path().stem() << std::endl;
+            read_and_test_push_data(dir_entry.path());
         }
     }
 }

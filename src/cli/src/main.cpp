@@ -5,7 +5,9 @@
 #include <string> // for to_string, allocator
 
 #include <analyze_log_v7.h>
+#include <analyze_log_v8.h>
 #include <send_tcp_ip.h>
+#include <transfer_to_db.h>
 
 #include <ftxui/component/captured_mouse.hpp>     // for ftxui
 #include <ftxui/component/component.hpp>          // for MenuEntryAnimated, Renderer, Vertical
@@ -69,10 +71,27 @@ int main(void) {
 
     // std::cout << "Selected element = " << selected << std::endl;
 
+    //
+    // elog system
+    //
     //  F:\backup\customer\sgsw\logs\2023-03-05
     // analyse_log_v7("F:\\backup\\customer\\sgsw\\logs\\2023-03-05");
 
-    send_tcp_ip("localhost", "5200", "F:\\backup\\customer\\sgsw\\logs\\cu_000eef47-0a50-429e-8c25-02b2c58ef229.bin");
+    //
+    // a.en system
+    //
+    //  F:\backup\customer\aen\implementation\ipt
+    // analyse_log_v8("F:\\backup\\customer\\aen\\implementation\\ipt");
+
+    //
+    // transfer data into databse
+    //
+    transfer_to_db("D:\\reboot\\node\\build\\tmp", "D:\\reboot\\node\\build\\store.database");
+
+    //
+    //  test iMega
+    //
+    // send_tcp_ip("localhost", "5200", "F:\\backup\\customer\\sgsw\\logs\\cu_000eef47-0a50-429e-8c25-02b2c58ef229.bin");
 
     return EXIT_SUCCESS;
 }

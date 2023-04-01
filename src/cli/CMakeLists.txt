@@ -61,9 +61,14 @@ target_link_directories(smfcli
 
 target_link_libraries(smfcli
     PRIVATE
-            cyng::cyng 
+        smf::config
+        smf::mbus
+        smf::sml
+        smf::obis
+        cyng::cyng 
+        "$<$<PLATFORM_ID:Windows>:odbc32;pugixml::pugixml>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
-      ftxui::screen
-      ftxui::dom
-      ftxui::component # Not needed for this example.
+        ftxui::screen
+        ftxui::dom
+        ftxui::component # Not needed for this example.
 )

@@ -4,8 +4,8 @@
  * Copyright (c) 2023 Sylko Olzscher
  *
  */
-#ifndef SMF_CLI_SEND_TCP_IP
-#define SMF_CLI_SEND_TCP_IP
+#ifndef SMF_CLI_SEND_TCP_IP_H
+#define SMF_CLI_SEND_TCP_IP_H
 
 #include <cyng/obj/intrinsics/buffer.h>
 

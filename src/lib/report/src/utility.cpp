@@ -112,9 +112,14 @@ namespace smf {
                 }
                 ++counter;
 
-                //  [2] meterID
-                auto const meter = cyng::to_buffer(res->get(2, cyng::TC_BUFFER, 0));
-                auto const id = to_srv_id(meter); //  different formats are possible
+                //  [2] meterID (8-9 bytes)
+                auto const meter = cyng::to_buffer(res->get(2, cyng::TC_BUFFER, 9));
+                //  ToDo: different formats are possible
+                //  size == 9 => 01-a815-54787404-01-02
+                //  size == 8 => 3034393137373235 => 04917725
+                // auto const id = to_srv_id(meter); //  different formats are possible
+                auto const id = srv_id_to_str(meter, true); //  formatted(!)
+                // BOOST_ASSERT(!boost::algorithm::equals(id, "00-0000-00000000-00-00"));
 
                 //  [3] actTime
                 auto const act_time = cyng::value_cast(res->get(3, cyng::TC_DATE, 0), start);
@@ -192,11 +197,10 @@ namespace smf {
         return regs;
     }
 
-    std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t srv_id, cyng::date const &start) {
+    std::string get_filename(std::string prefix, cyng::obis profile, std::string id, cyng::date const &start) {
 
         std::stringstream ss;
-        ss << prefix << "-" << sml::get_prefix(profile) << "-" << to_string(srv_id) << '_' << cyng::as_string(start, "%Y-%m-%d")
-           << ".csv";
+        ss << prefix << "-" << sml::get_prefix(profile) << "-" << id << '_' << cyng::as_string(start, "%Y-%m-%d") << ".csv";
         return ss.str();
     }
 
@@ -220,7 +224,7 @@ namespace smf {
         return std::ofstream{};
     }
 
-    std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id) {
+    std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, std::string id) {
         std::string const sql = "SELECT TLPExMeter.id, TLPExMeter.gen, TLPExMeter.mc, TLPExCustomer.name, TLPExCustomer.uniqueName "
                                 "FROM TLPExMeter JOIN TLPExCustomer ON TLPExMeter.id = TLPExCustomer.id "
                                 "WHERE TLPExMeter.meter = ?";
@@ -430,12 +434,13 @@ namespace smf {
         }
 
         typename values_t::value_type make_value(cyng::obis reg, readout_t::value_type value) { return {reg, {value}}; }
-        typename data_set_t::value_type make_set(smf::srv_id_t id, values_t::value_type value) { return {id, {value}}; }
+        // typename data_set_t::value_type make_set(smf::srv_id_t id, values_t::value_type value) { return {id, {value}}; }
+        typename data_set_t::value_type make_set(std::string id, values_t::value_type value) { return {id, {value}}; }
 
         void clear(data_set_t &data_set) {
             for (auto &data : data_set) {
 #ifdef _DEBUG
-                std::cout << "> clear " << data.second.size() << " data records of meter " << to_string(data.first) << std::endl;
+                std::cout << "> clear " << data.second.size() << " data records of meter " << data.first << std::endl;
 #endif
                 data.second.clear();
             }
@@ -452,8 +457,7 @@ namespace smf {
                         auto end = std::prev(ro.second.end());
                         while (pos != end) {
 #ifdef _DEBUG
-                            std::cout << "> trim " << to_string(data.first) << ", " << ro.first << ", slot#" << pos->first
-                                      << std::endl;
+                            std::cout << "> trim " << data.first << ", " << ro.first << ", slot#" << pos->first << std::endl;
 #endif
                             pos = ro.second.erase(pos);
                         }
@@ -464,7 +468,8 @@ namespace smf {
 
         void update(
             data_set_t &data_set, // to update
-            smf::srv_id_t id,
+            std::string id,
+            // smf::srv_id_t id,
             cyng::obis reg,
             std::uint64_t slot,
             std::uint16_t code,

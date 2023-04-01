@@ -70,7 +70,8 @@ namespace smf {
          */
         void update(
             data_set_t &,
-            smf::srv_id_t id,
+            std::string id,
+            // smf::srv_id_t id,
             cyng::obis reg,
             std::uint64_t slot,
             std::uint16_t code,
@@ -100,7 +101,8 @@ namespace smf {
     using cb_loop_readout = std::function<bool(
         bool,
         boost::uuids::uuid,
-        smf::srv_id_t,
+        std::string,
+        //        smf::srv_id_t,
         cyng::date,
         std::uint32_t,
         cyng::obis,
@@ -135,7 +137,7 @@ namespace smf {
      * Build a filename with an .csv prefix. Contains the prefix, the profile prefix, server id and the timestamp information
      * with a resolution of one day.
      */
-    std::string get_filename(std::string prefix, cyng::obis profile, srv_id_t, cyng::date const &);
+    std::string get_filename(std::string prefix, cyng::obis profile, std::string, cyng::date const &);
 
     /**
      * Build a filename with an .csv prefix. Contains the prefix and the timestamp information
@@ -150,8 +152,10 @@ namespace smf {
 
     /**
      * get customer data from database
+     * @param db database connection
+     * @param id meter id (8 bytes)
      */
-    std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, cyng::buffer_t id);
+    std::optional<lpex_customer> query_customer_data_by_meter(cyng::db::session db, std::string id);
 
     cyng::meta_store get_store_virtual_sml_readout();
     cyng::meta_sql get_table_virtual_sml_readout();

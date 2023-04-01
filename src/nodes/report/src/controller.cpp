@@ -307,6 +307,13 @@ namespace smf {
                 using cyng::operator<<;
                 std::cout << "***info: start LPEx reporting at " << now << " (UTC)" << std::endl;
 
+#ifdef _DEBUG
+                //  "2018-11-30 02:28:01"
+                auto const dfirst = cyng::make_date("2018-11-01 00:00:00", "%Y-%m-%d %H:%M:%S");
+                auto const backtrack = now.sub<std::chrono::hours>(dfirst);
+                std::cout << "***info: backtrack " << backtrack << std::endl;
+#endif
+
                 //  lpex/print.version
                 auto const print_version = cfg.is_print_version();
 
@@ -334,7 +341,12 @@ namespace smf {
                                 path,
                                 cfg.get_prefix(code),
                                 now,
+#ifdef _DEBUG
+                                //  "2018-11-30 02:28:01"
+                                backtrack,
+#else
                                 cfg.get_backtrack(code), //  backtrack hours
+#endif
                                 print_version,
                                 debug_mode,
                                 cfg.add_customer_data(code));

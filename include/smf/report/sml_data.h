@@ -51,7 +51,12 @@ namespace smf {
         //  data set of the full period
         //  meter -> register -> slot -> data
         //
-        using data_set_t = std::map<smf::srv_id_t, values_t>;
+        // The string contains the server/meter id
+        //  size == 9 => 01-a815-54787404-01-02
+        //  size == 8 => 3034393137373235 => 04917725
+        //
+        using data_set_t = std::map<std::string, values_t>;
+        // using data_set_t = std::map<smf::srv_id_t, values_t>;
     } // namespace data
 
     struct lpex_customer {

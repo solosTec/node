@@ -58,7 +58,16 @@ namespace smf {
     /**
      * @return meter id as string
      */
-    std::string get_id(srv_id_t);
+    std::string get_meter_id(srv_id_t);
+
+    /**
+     * Expect a string in the "tt-mmmm-nnnnnnnn-vv-uu" format, the "ttmmmmnnnnnnnnvvuu"
+     * or the "nnnnnnnn" format.
+     * If required the "nnnnnnnn" sequence will be reversed.
+     *
+     * @return meter id as string
+     */
+    std::string get_meter_id(std::string);
 
     /**
      * @return meter id as buffer with 6 bytes length

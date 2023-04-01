@@ -121,7 +121,6 @@ namespace smf {
             return cyng::hex_to_buffer(id);
         }
 
-        // return (s.size() == 8) ? to_meter_id(s) : cyng::hex_to_buffer(s);
         return cyng::hex_to_buffer(s);
     }
 
@@ -133,7 +132,7 @@ namespace smf {
             static_cast<char>(address.at(3))};
     }
 
-    std::string get_id(srv_id_t address) {
+    std::string get_meter_id(srv_id_t address) {
 
         std::uint32_t id{0};
 
@@ -152,9 +151,44 @@ namespace smf {
         return ss.str();
     }
 
+    std::string get_meter_id(std::string s) {
+        // "tt-mmmm-nnnnnnnn-vv-uu" - 22 bytes
+        // "ttmmmmnnnnnnnnvvuu" - 18 bytes
+        // "nnnnnnnn" 8 bytes
+        if (s.size() == 22 && s.at(0) == '0' && ((s.at(1) == '1') || (s.at(1) == '2')) && s.at(2) == '-' && s.at(7) == '-' &&
+            // "01-a815-54787404-01-02" => 04747854
+            s.at(16) == '-' && s.at(19) == '-') {
+            std::string id;
+            for (std::size_t idx = 14; idx >= 8; idx -= 2) {
+                id.push_back(s.at(idx));
+                id.push_back(s.at(idx + 1));
+            }
+            return id;
+        } else if (s.size() == 18) {
+            // auto id = s.substr(6, 8);
+            std::string id;
+            for (std::size_t idx = 12; idx >= 6; idx -= 2) {
+                id.push_back(s.at(idx));
+                id.push_back(s.at(idx + 1));
+            }
+            return id;
+        } else if (s.size() == 8) {
+            return s;
+        } else if (s.size() == 16 && std::all_of(s.begin(), s.end(), [](char c) { return c >= '0' && c <= '9'; })) {
+            //  "3034393137373235" => "04917725"
+            std::string id;
+            for (std::size_t idx = 0; idx < s.size(); idx += 2) {
+                id.push_back(cyng::hex_to_u8(s.at(idx), s.at(idx + 1)));
+            }
+            return id;
+        }
+        //  error
+        return s;
+    }
+
     std::uint32_t get_dev_id(srv_id_t address) {
         std::uint32_t id{0};
-        std::stringstream ss(get_id(address));
+        std::stringstream ss(get_meter_id(address));
         ss >> id;
         return id;
     }

@@ -46,9 +46,16 @@ BOOST_AUTO_TEST_CASE(id) {
     BOOST_REQUIRE_EQUAL(s1, "02-e61e-03197715-3c-07");
 
     auto const b1 = smf::to_srv_id(s1);
-    BOOST_REQUIRE_EQUAL(b1.size(), 18);
+    BOOST_REQUIRE_EQUAL(b1.size(), 9);
     BOOST_REQUIRE_EQUAL(b1.at(0) & 0xFF, 0x02);
     BOOST_REQUIRE_EQUAL(b1.at(8) & 0xFF, 0x07);
+
+    // size == 9 => 01-a815-54787404-01-02
+    //  size == 8 => 3034393137373235 => 04917725
+    BOOST_CHECK_EQUAL(smf::get_meter_id("01-a815-54787404-01-02"), "04747854");
+    BOOST_CHECK_EQUAL(smf::get_meter_id("01a815547874040102"), "04747854");
+    BOOST_CHECK_EQUAL(smf::get_meter_id("04917725"), "04917725");
+    BOOST_CHECK_EQUAL(smf::get_meter_id("3034393137373235"), "04917725");
 }
 
 BOOST_AUTO_TEST_CASE(parser) {

@@ -104,6 +104,9 @@ namespace smf {
         auto const r = smf::sml::read_public_close_response(msg);
     }
     void sml_target::get_profile_list_response(std::string const &trx, std::uint8_t group_no, cyng::tuple_t const &msg) {
+        //  srv can be in several formats:
+        //  size == 9 => 01-a815-54787404-01-02
+        //  size == 8 => 3034393137373235 => 04917725
         auto const [srv, path, act, reg, val, stat, list] = sml::read_get_profile_list_response(msg);
 
         BOOST_ASSERT(path.size() == 1);

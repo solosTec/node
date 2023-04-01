@@ -65,7 +65,7 @@ target_link_libraries(unit_test
         smf::obis
         smf::dns
         smfsec::smfsec
-        ${CYNG_LIBRARIES} 
+        cyng::cyng
         ${SMFSEC_LIBRARIES}
         OpenSSL::SSL
         "$<$<PLATFORM_ID:Windows>:odbc32;pugixml::pugixml>"

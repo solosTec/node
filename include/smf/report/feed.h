@@ -60,7 +60,7 @@ namespace smf {
 
         void emit_line(std::ostream &, std::vector<std::string> const);
 
-        void emit_customer_data(std::ostream &os, srv_id_t srv_id, std::optional<lpex_customer> const &customer_data);
+        void emit_customer_data(std::ostream &os, std::string srv_id, std::optional<lpex_customer> const &customer_data);
 
         /**
          * opens the report file

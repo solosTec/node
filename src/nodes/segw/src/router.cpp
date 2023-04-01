@@ -183,7 +183,8 @@ namespace smf {
 
     void router::register_targets() {
         //
-        //  check for targets to register
+        // Check for targets to register.
+        // Typically an SML gateway doesn't register any targets
         //
     }
 

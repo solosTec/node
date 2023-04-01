@@ -47,7 +47,7 @@ namespace smf {
 			CYNG_LOG_TRACE(logger_, "[filter] apply " 
                 << cfg_blocklist_.get_mode() 
                 << " filter to meter: " 
-                << get_id(h.get_server_id()) 
+                << get_meter_id(h.get_server_id()) 
                 << " (" << mbus::decode(flag_id.first, flag_id.second) 
                 << ")");
 #ifdef _DEBUG_SEGW
@@ -144,7 +144,7 @@ namespace smf {
 
     void filter::check(mbus::radio::header const &h, mbus::radio::tplayer const &t, cyng::buffer_t const &payload) {
 
-        auto const id = get_id(h.get_server_id());
+        auto const id = get_meter_id(h.get_server_id());
         if (cfg_blocklist_.is_listed(id)) {
             if (!cfg_blocklist_.is_drop_mode()) {
 

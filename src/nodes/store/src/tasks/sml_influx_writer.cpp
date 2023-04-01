@@ -92,7 +92,7 @@ namespace smf {
             //
             //  meter id
             //
-            auto const id = get_id(srv_id);
+            auto const id = get_meter_id(srv_id);
 
             //
             //  area

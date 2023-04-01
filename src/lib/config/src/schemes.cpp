@@ -621,7 +621,9 @@ namespace smf {
                 "SMLReadout",
                 {cyng::column("tag", cyng::TC_UUID),
                  //   -- body
-                 cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID
+                 //  size == 9 => 01-a815-54787404-01-02
+                 //  size == 8 => 3034393137373235 => 04917725
+                 cyng::column("meterID", cyng::TC_BUFFER), // server/meter/sensor ID (8-9 bytes)
                  cyng::column("profile", cyng::TC_OBIS),   // load profile
                  cyng::column("trx", cyng::TC_STRING),     // ipt transaction
                  cyng::column("status", cyng::TC_UINT32),
@@ -742,7 +744,7 @@ namespace smf {
             return cyng::meta_store(
                 "LPExMeter",
                 {
-                    cyng::column("meter", cyng::TC_BUFFER), //	[string] meter number (i.e. 16000913) 4 bytes
+                    cyng::column("meter", cyng::TC_STRING), //	[string] meter number (i.e. 16000913) 8 bytes
                     //   -- body
                     cyng::column("id", cyng::TC_STRING), //  customer id - Kundennummer: (example "11013951")
                     cyng::column("mc", cyng::TC_STRING), //  metering code: (example "CH1015201234500000000000000032418")

@@ -1,11 +1,11 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 Sylko Olzscher
+ * Copyright (c) 2023 Sylko Olzscher
  *
  */
-#ifndef SMF_CLI_ANALYZE_LOG_V7_H
-#define SMF_CLI_ANALYZE_LOG_V7_H
+#ifndef SMF_CLI_ANALYZE_LOG_V8_H
+#define SMF_CLI_ANALYZE_LOG_V8_H
 
 #include <filesystem>
 #include <fstream>
@@ -13,6 +13,9 @@
 #include <memory> // for shared_ptr, __shared_ptr_access
 #include <string> // for to_string, allocator
 
-void analyse_log_v7(std::string s);
+/**
+ * Extract push messages from IP-T log file
+ */
+void analyse_log_v8(std::string s);
 
 #endif

@@ -157,7 +157,7 @@ namespace smf {
            << manufacturer                                    //    manufacturer
            << eol                                             //	force windows format
            << "ZNR1 = "                                       //    example: 03685319
-           << get_id(srv_id)                                  //    meter id
+           << get_meter_id(srv_id)                            //    meter id
            << eol                                             //	force windows format
            << "DATE = "                                       //    18.12.18 UTC"
            << std::put_time(&tm, "%y.%m.%d") << " UTC" << eol //	force windows format
@@ -168,7 +168,7 @@ namespace smf {
            << "[DATA]" << eol                                 //	force windows format
            << manufacturer << eol                             //	force windows format
            << OBIS_SERIAL_NR                                  //    OBIS
-           << '(' << get_id(srv_id) << ")"                    //    meter id again
+           << '(' << get_meter_id(srv_id) << ")"              //    meter id again
            << eol                                             //	force windows format
             ;
     }

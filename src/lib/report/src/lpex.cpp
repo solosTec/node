@@ -63,7 +63,7 @@ namespace smf {
             start,
             [&](bool next_record,
                 boost::uuids::uuid tag,
-                srv_id_t id,
+                std::string id,
                 cyng::date act_time,
                 std::uint32_t status,
                 cyng::obis reg,
@@ -106,8 +106,8 @@ namespace smf {
                     prev = d;
 
 #ifdef _DEBUG
-                    std::cout << "> " << tag << ": " << to_string(id) << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S")
-                              << ", " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
+                    std::cout << "> " << tag << ": " << id << ", " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", "
+                              << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
 #endif
                 }
 
@@ -172,7 +172,7 @@ namespace smf {
                 //  This slows down the overall performance. Maybe caching is a good idea
                 //
                 auto customer_data =
-                    customer ? query_customer_data_by_meter(db, smf::to_buffer(data.first)) : std::optional<lpex_customer>();
+                    customer ? query_customer_data_by_meter(db, get_meter_id(data.first)) : std::optional<lpex_customer>();
 
                 for (auto const &[reg, values] : data.second) {
                     if (!values.empty()) {
@@ -181,12 +181,14 @@ namespace smf {
                         //
                         auto const first = values.begin()->first;
                         auto const unit = values.begin()->second.unit_;
-                        BOOST_ASSERT(start <= first);
 #ifdef _DEBUG
-                        std::cout << cyng::as_string(d, "%d.%m.%y;%H:%M:%S;") << get_id(data.first) << ';' << obis::to_decimal(reg)
-                                  << ';' << mbus::get_name(unit);
+                        std::cout << cyng::as_string(d, "%d.%m.%y;%H:%M:%S;") << get_meter_id(data.first) << ';'
+                                  << obis::to_decimal(reg) << ';' << mbus::get_name(unit);
                         std::cout << ';' << '[' << start << ']' << ';' << '[' << first << ']' << ';' << '[' << end << ']';
 #endif
+                        //  ToDo: sometimes asserts
+                        BOOST_ASSERT(start <= first);
+
                         //
                         // report
                         // start with the timestamp of the first entry
@@ -196,7 +198,7 @@ namespace smf {
                         //
                         //  [3..10] customer data
                         //
-                        emit_customer_data(ofs, data.first, customer_data);
+                        emit_customer_data(ofs, get_meter_id(data.first), customer_data);
 
                         //
                         //  [11] register (Kennzahl)
@@ -329,7 +331,7 @@ namespace smf {
             os << std::endl;
         }
 
-        void emit_customer_data(std::ostream &os, srv_id_t srv_id, std::optional<lpex_customer> const &customer_data) {
+        void emit_customer_data(std::ostream &os, std::string meter, std::optional<lpex_customer> const &customer_data) {
             //
             //  get customer and meter data from table "meterLPEx" -> "customer"
             //
@@ -338,7 +340,7 @@ namespace smf {
                 os << ";" << customer_data->id_          // [3] Kundennummer, example: 11026661
                    << ";" << customer_data->name_        // [4] Kundenname; example: Frey Sarah
                    << ";" << customer_data->unique_name_ // [5] eindeutigeKDNr, example: AZ Bornfeldstrasse 2
-                   << ";" << get_id(srv_id)              // [6] GEId (GeräteID), METERID
+                   << ";" << meter                       // [6] GEId (GeräteID), METERID
                    << ";"                                // [7] GEKANr
                    << ";"                                // [7] KALINr (Kanalnummer)
                    << ";"                                // [8] Linie (Liniennummer)
@@ -359,7 +361,7 @@ namespace smf {
                 //
                 // [6] meter id (GEId / GeräteID)
                 //
-                os << get_id(srv_id) << ";";
+                os << meter << ";";
 
                 //
                 // GEKANr; KALINr; Linie; eindeutigeLINr; ZPB)
