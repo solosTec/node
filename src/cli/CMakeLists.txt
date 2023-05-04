@@ -54,6 +54,8 @@ target_include_directories(smfcli
         ${Boost_INCLUDE_DIRS}
 )
 
+message(STATUS "Boost_LIBRARY_DIRS  : ${Boost_LIBRARY_DIRS}") 
+
 target_link_directories(smfcli
     PRIVATE
         ${Boost_LIBRARY_DIRS}

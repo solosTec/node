@@ -75,7 +75,8 @@ int main(void) {
     // elog system
     //
     //  F:\backup\customer\sgsw\logs\2023-03-05
-    // analyse_log_v7("F:\\backup\\customer\\sgsw\\logs\\2023-03-05");
+    // analyse_log_v7("F:\\backup\\customer\\sgsw\\logs\\2023-03-05");  // iMega
+    analyse_log_v7("F:\\backup\\customer\\sgsw\\logs\\2023-04-05"); // IP-T
 
     //
     // a.en system
@@ -86,7 +87,7 @@ int main(void) {
     //
     // transfer data into databse
     //
-    transfer_to_db("D:\\reboot\\node\\build\\tmp", "D:\\reboot\\node\\build\\store.database");
+    // transfer_to_db("D:\\reboot\\node\\build\\tmp", "D:\\reboot\\node\\build\\store.database");
 
     //
     //  test iMega
