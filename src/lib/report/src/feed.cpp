@@ -481,7 +481,11 @@ namespace smf {
 
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE:
-            case CODE_PROFILE_15_MINUTE:
+            case CODE_PROFILE_15_MINUTE: //  fix offset
+                // There are missing 2 * 15-minute readings
+                // return (now - backtrack).get_start_of_day() - (4 * sml::interval_time(now, profile));
+                // This is 1 hour + 2*readings
+                return (now - backtrack).get_start_of_day() - (6 * sml::interval_time(now, profile));
             case CODE_PROFILE_60_MINUTE:
             case CODE_PROFILE_24_HOUR: return (now - backtrack).get_start_of_day() - (2 * sml::interval_time(now, profile));
 
