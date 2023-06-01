@@ -88,7 +88,7 @@ namespace smf {
         if (cfg_http_post_.is_enabled()) {
             update_cache(h, tpl, data);
         } else {
-            CYNG_LOG_TRACE(logger_, "[emt] is diabled");
+            CYNG_LOG_TRACE(logger_, "[emt] is disabled");
         }
     }
 
@@ -264,7 +264,10 @@ namespace smf {
                 tbl->loop([=, this](cyng::record &&rec, std::size_t) -> bool {
                     auto const id = rec.value("meterID", cyng::make_buffer());
 
-                    CYNG_LOG_TRACE(logger_, "[emt] backup data of meter " << id);
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[emt] backup data of meter " << id << " in table " << tbl->meta().get_name() << " with " << tbl->size()
+                                                      << " entries");
                     config::persistent_insert(m, db_, rec.key(), rec.data(), 0u);
                     return true;
                 });

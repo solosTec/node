@@ -902,7 +902,7 @@ cxx_alignas
 #
 target_compile_definitions(smf_modem 
     PRIVATE 
-        $<$<CONFIG:Debug>:_DEBUG_IPT>
+        $<$<CONFIG:Debug>:_DEBUG_MODEM>
 )
 
 target_link_libraries(smf_modem 

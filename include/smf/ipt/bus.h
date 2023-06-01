@@ -69,7 +69,7 @@ namespace smf {
             /**
              * @return true if bus is authorized or in link state
              */
-            bool is_authorized() const;
+            bool is_authorized() const noexcept;
 
             /**
              * Initiate a sequence to register a push target.
@@ -100,7 +100,7 @@ namespace smf {
             /**
              * send data over an open connection
              */
-            void transfer(cyng::buffer_t &&);
+            void transfer(cyng::buffer_t);
 
             /**
              * Send a watchdog reqponse (without a request)
@@ -125,6 +125,24 @@ namespace smf {
 
             void res_open_push_channel(header const &, cyng::buffer_t &&);
             void res_close_push_channel(header const &, cyng::buffer_t &&);
+
+            /**
+             * Creates a buffer with the serialized IP-T command and updates
+             * the list of pending "open channel" requests.
+             */
+            cyng::buffer_t gen_open_push_channel(push_channel pc_cfg, cyng::channel_weak);
+
+            /**
+             * Creates a buffer with the serialized IP-T command and removes this entry from
+             * the list of pending "open channel" requests.
+             */
+            cyng::buffer_t gen_close_channel(std::uint32_t channel, cyng::channel_weak wp);
+
+            /**
+             * Creates a buffer with the serialized IP-T command and updates
+             * the list of pending "register target" requests.
+             */
+            cyng::buffer_t gen_register_target(std::string name, cyng::channel_weak wp);
 
           private:
             cyng::controller &ctl_;

@@ -76,7 +76,7 @@ namespace smf {
         BOOST_ASSERT(bus_.is_authorized());
         if (sp) {
             if (bus_.is_authorized()) {
-                CYNG_LOG_WARNING(logger_, "[iec.push] " << sp->get_name() << " opens push channel \"" << pcc_.target_ << "\"");
+                CYNG_LOG_WARNING(logger_, "[iec.push] " << sp->get_name() << " opens push channel \"" << pcc_ << "\"");
                 bus_.open_channel(pcc_, channel_);
             } else {
                 CYNG_LOG_WARNING(logger_, "[iec.push] " << sp->get_name() << " not authorized");
@@ -155,7 +155,7 @@ namespace smf {
             //  update channel list
             // protocol_type { SML, IEC, DLMS };
             //
-            if (boost::algorithm::equals(target, pcc_.target_)) {
+            if (boost::algorithm::equals(target, pcc_.get_target())) {
                 id_ = std::make_pair(channel, source);
             } else {
                 CYNG_LOG_WARNING(logger_, "[push] unknown push channel: " << target);

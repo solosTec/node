@@ -146,7 +146,7 @@ namespace smf {
                 });
         }
 
-        bool bus::is_authorized() const {
+        bool bus::is_authorized() const noexcept {
             //  at least authorized
             return state_ == state::AUTHORIZED || state_ == state::LINKED;
         }
@@ -297,30 +297,29 @@ namespace smf {
             }
         }
 
+        cyng::buffer_t bus::gen_register_target(std::string name, cyng::channel_weak wp) {
+            auto const [buffer, seq] = serializer_.req_register_push_target(
+                name,
+                std::numeric_limits<std::uint16_t>::max(), // max. packet size is 0xffff
+                1);                                        // window size is always 1
+
+            //
+            //	send register command to ip-t server
+            //
+            pending_targets_.emplace(seq, std::make_pair(name, wp));
+            CYNG_LOG_DEBUG(logger_, "[ipt] register target " << name << " with seq " << +seq);
+
+            //  buffer
+            return buffer;
+        }
         bool bus::register_target(std::string name, cyng::channel_weak wp) {
 
             if (!name.empty() && wp.lock()) {
 
-                //
-                //	send request
-                //
-                auto fn = [=, this]() -> cyng::buffer_t {
-                    //  std::pair<cyng::buffer_t, sequence_t>
-                    auto const [buffer, seq] = serializer_.req_register_push_target(
-                        name,
-                        std::numeric_limits<std::uint16_t>::max(), // max. packet size is 0xffff
-                        1);                                        // window size is always 1
-
-                    //
-                    //	send register command to ip-t server
-                    //
-                    pending_targets_.emplace(seq, std::make_pair(name, wp));
-                    CYNG_LOG_DEBUG(logger_, "[ipt] register target " << name << " with seq " << +seq);
-
-                    //  buffer
-                    return buffer;
-                };
-                client_.send(fn(), false);
+                client_.send([=, this]() -> cyng::buffer_t {
+                    // synchronization point required
+                    return gen_register_target(name, wp);
+                });
                 return true;
 
             } else {
@@ -329,30 +328,52 @@ namespace smf {
             return false;
         }
 
+        cyng::buffer_t bus::gen_open_push_channel(push_channel pc_cfg, cyng::channel_weak wp) {
+
+            //
+            //  generate the serialized command and the the sequence number
+            //
+            auto const [data, seq] = std::apply(
+                [this](
+                    std::string target, //	[0] push target
+                    std::string account,
+                    std::string number,
+                    std::string version,
+                    std::string id, //	device id
+                    std::uint16_t timeout) {
+                    //
+                    return serializer_.req_open_push_channel(target, account, number, version, id, timeout);
+                },
+                pc_cfg.as_tuple());
+
+            //
+            //  update list of pending channel openings
+            //
+            opening_channel_.emplace(seq, std::make_pair(pc_cfg, wp));
+
+            CYNG_LOG_INFO(
+                logger_,
+                "[ipt] open channel \"" << pc_cfg << "\" - #" << +seq << " with " << opening_channel_.size()
+                                        << " pending request(s)");
+
+#ifdef _DEBUG_IPT
+            {
+                std::stringstream ss;
+                cyng::io::hex_dump<8> hd;
+                hd(ss, std::begin(data), std::end(data));
+                auto const dmp = ss.str();
+                CYNG_LOG_DEBUG(logger_, "[ipt] open channel: " << pc_cfg << ":\n" << dmp);
+            }
+#endif
+            //  buffer
+            return data;
+        }
+
         bool bus::open_channel(push_channel pc_cfg, cyng::channel_weak wp) {
 
-            if (!wp.expired() && !pc_cfg.target_.empty()) {
-
-                //
-                //	send request
-                //
-                auto fn = [=, this]() -> cyng::buffer_t {
-                    auto const r = serializer_.req_open_push_channel(
-                        pc_cfg.target_, pc_cfg.account_, pc_cfg.number_, pc_cfg.version_, pc_cfg.id_, pc_cfg.timeout_);
-
-                    //
-                    //  update list of pending channel openings
-                    //
-                    opening_channel_.emplace(r.second, std::make_pair(pc_cfg, wp));
-
-                    CYNG_LOG_INFO(
-                        logger_,
-                        "[ipt] open channel \"" << pc_cfg.target_ << "\" - #" << opening_channel_.size() << " pending request(s)");
-
-                    //  buffer
-                    return r.first;
-                };
-                client_.send(fn(), false);
+            if (!wp.expired() && !pc_cfg.is_valid()) {
+                //  serializer requires a synchronization point
+                client_.send([=, this]() { return gen_open_push_channel(pc_cfg, wp); });
                 return true;
             } else {
                 CYNG_LOG_WARNING(logger_, "[ipt] cannot open push chanel: name or channel is empty");
@@ -360,27 +381,28 @@ namespace smf {
             return false;
         }
 
+        cyng::buffer_t bus::gen_close_channel(std::uint32_t channel, cyng::channel_weak wp) {
+            //
+            BOOST_ASSERT_MSG(state_ == state::AUTHORIZED || state_ == state::LINKED, "AUTHORIZED state expected");
+            auto const [data, seq] = serializer_.req_close_push_channel(channel);
+
+            //
+            //  update list of pending channel closings
+            //
+            closing_channels_.emplace(seq, std::make_pair(channel, wp));
+
+            //
+            //	send "close push channel" command to ip-t server
+            //
+            return data;
+        }
+
         bool bus::close_channel(std::uint32_t channel, cyng::channel_weak wp) {
             BOOST_ASSERT(!wp.expired());
 
             if (!wp.expired()) {
-                auto fn = [=, this]() -> cyng::buffer_t {
-                    CYNG_LOG_INFO(logger_, "[ipt] close channel: " << channel);
-
-                    BOOST_ASSERT_MSG(state_ == state::AUTHORIZED || state_ == state::LINKED, "AUTHORIZED state expected");
-                    auto const r = serializer_.req_close_push_channel(channel);
-
-                    //
-                    //  update list of pending channel closings
-                    //
-                    closing_channels_.emplace(r.second, std::make_pair(channel, wp));
-
-                    //
-                    //	send "close push channel" command to ip-t server
-                    //
-                    return r.first;
-                };
-                client_.send(fn(), false);
+                CYNG_LOG_INFO(logger_, "[ipt] close channel: " << channel);
+                client_.send([=, this]() { return gen_close_channel(channel, wp); });
                 return true;
             }
 
@@ -407,14 +429,14 @@ namespace smf {
                                 logger_,
                                 "[ipt] cmd " << ipt::command_name(h.command_) << ": "
                                              << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
-                                             << source << ":" << pos->second.first.target_);
+                                             << source << ":" << pos->second.first);
 
                         } else {
                             CYNG_LOG_WARNING(
                                 logger_,
                                 "[ipt] cmd " << ipt::command_name(h.command_) << ": "
                                              << tp_res_open_push_channel_policy::get_response_name(res) << ", " << channel << ":"
-                                             << source << ":" << pos->second.first.target_);
+                                             << source << ":" << pos->second.first);
                         }
 
                         //
@@ -430,7 +452,7 @@ namespace smf {
                             channel,
                             source,
                             count,
-                            pos->second.first.target_);
+                            pos->second.first.get_target());
                     }
 
                     //
@@ -677,15 +699,21 @@ namespace smf {
             }
 #endif
 
-            // send(state_holder_, std::bind(&serializer::req_transfer_push_data, &serializer_, id.first, id.second, 0xc1, 0,
-            // data));
-            client_.send(serializer_.req_transfer_push_data(id.first, id.second, 0xc1, 0, data), false);
+            client_.send([=, this]() {
+                // serializer needs a synchronization point
+                return serializer_.req_transfer_push_data(id.first, id.second, 0xc1, 0, data);
+            });
         }
 
-        void bus::transfer(cyng::buffer_t &&data) {
+        void bus::transfer(cyng::buffer_t data) {
             CYNG_LOG_TRACE(logger_, "[ipt] transfer " << data.size() << " bytes");
-            //  escape and scramble data
-            client_.send(serializer_.escape_data(std::move(data)), false);
+            //  Escape and scramble data.
+            //  Pass by Value, Capture by Move.
+            client_.send([this, data = std::move(data)]() {
+                // serializer needs a synchronization point
+                // FixMe: avoid this copy
+                return serializer_.escape_data(cyng::buffer_t(data.begin(), data.end()));
+            });
         }
 
         bool bus::send_watchdog() {

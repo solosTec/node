@@ -85,13 +85,13 @@ namespace smf {
             return srv_vec;
         }
 
-        push_channel::push_channel()
-            : target_()
-            , account_()
-            , number_()
-            , id_()
-            , version_()
-            , timeout_(20) {}
+        /*      push_channel::push_channel()
+                  : target_()
+                  , account_()
+                  , number_()
+                  , id_()
+                  , version_()
+                  , timeout_(20) {}*/
 
         push_channel::push_channel(
             std::string const &target,
@@ -112,6 +112,14 @@ namespace smf {
                << pc.timeout_;
             return os;
         }
+
+        auto push_channel::as_tuple() const
+            -> std::tuple<std::string, std::string, std::string, std::string, std::string, std::uint16_t> {
+            return {target_, account_, number_, id_, version_, timeout_};
+        }
+
+        bool push_channel::is_valid() const noexcept { return !target_.empty(); }
+        std::string const &push_channel::get_target() const noexcept { return target_; }
 
         push_channel read_push_channel_config(cyng::param_map_t const &pmap) {
 

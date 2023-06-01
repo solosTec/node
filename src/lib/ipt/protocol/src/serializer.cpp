@@ -488,7 +488,9 @@ namespace smf {
 
         cyng::buffer_t serializer::write(std::string const &str) {
             std::deque<cyng::buffer_t> deq;
-            deq.push_back(scramble(cyng::to_buffer(str)));
+            if (!str.empty()) {
+                deq.push_back(scramble(cyng::to_buffer(str)));
+            }
             deq.push_back(write_numeric<std::uint8_t>(0)); //	'\0'
             return merge(deq);
         }

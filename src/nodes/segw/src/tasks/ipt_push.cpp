@@ -11,6 +11,10 @@
 
 #include <iostream>
 
+#ifdef _DEBUG_SEGW
+#include <cyng/io/hex_dump.hpp>
+#endif
+
 namespace smf {
     ipt_push::ipt_push(cyng::channel_weak wp
 		, cyng::logger logger
@@ -154,15 +158,22 @@ namespace smf {
     void
     ipt_push::on_channel_open(bool success, std::uint32_t channel, std::uint32_t source, std::uint32_t count, std::string target) {
         if (success) {
-            CYNG_LOG_INFO(
-                logger_,
-                "[push] channel " << target << "#" << count << " is open - channel: " << channel << ", source: " << source);
+            // CYNG_LOG_INFO(
+            //     logger_,
+            //     "[push] channel " << target << "#" << count << " is open - channel: " << channel << ", source: " << source);
 
             //
-            //  ToDo: collect data
-            //  ToDo: send data
+            //  collect data
+            //  and send data
             //
-            collect_data(channel, source);
+            auto data = collect_data(channel, source);
+
+            CYNG_LOG_INFO(
+                logger_,
+                "[push] " << data.size() << " messages over channel " << target << "#" << count << " is open - channel: " << channel
+                          << ", source: " << source);
+
+            send_data(channel, source, data);
 
             //
             //  close channel
@@ -174,7 +185,7 @@ namespace smf {
         }
     }
 
-    void ipt_push::collect_data(std::uint32_t channel, std::uint32_t source) {
+    sml::messages_t ipt_push::collect_data(std::uint32_t channel, std::uint32_t source) {
 
         trx_.reset();
 
@@ -258,11 +269,26 @@ namespace smf {
             cyng::access::read("mirror"),
             cyng::access::read("mirrorData"));
 
+        return messages;
+    }
+
+    void ipt_push::send_data(std::uint32_t channel, std::uint32_t source, sml::messages_t const &messages) {
         //
         //  convert to SML
         //  and send payload
         //
         auto buffer = sml::to_sml(messages);
+
+#ifdef _DEBUG_SEGW
+        {
+            std::stringstream ss;
+            cyng::io::hex_dump<8> hd;
+            hd(ss, std::begin(buffer), std::end(buffer));
+            auto const dmp = ss.str();
+            CYNG_LOG_DEBUG(logger_, "[push] channel: " << channel << ", source: " << source << ":\n" << dmp);
+        }
+#endif
+
         bus_.transmit(std::make_pair(channel, source), buffer);
     }
 

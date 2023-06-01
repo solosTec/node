@@ -92,10 +92,10 @@ namespace smf {
                     auto const active = rec.value("active", false);
 
                     if (!active) {
-                        CYNG_LOG_WARNING(logger_, "[store] transfer " << obis::get_name(profile_) << " is deactivated");
-                    }
 
-                    if ((profile == profile_) && active) {
+                        CYNG_LOG_WARNING(logger_, "[store] transfer " << obis::get_name(profile_) << " is deactivated");
+
+                    } else if (profile == profile_) {
                         //
                         //  transfer from "readout" + "readoutData" => "mirror" + "mirrorData"
                         //

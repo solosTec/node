@@ -673,6 +673,18 @@ namespace smf {
                     auto const id = rec.value("meterID", cyng::make_buffer());
                     auto const payload = rec.value("payload", cyng::make_buffer());
                     CYNG_LOG_TRACE(logger_, "[roCache] send data of meter " << id);
+
+#ifdef _DEBUG_SEGW
+                    {
+                        auto const received = rec.value("received", cyng::make_epoch_date());
+                        std::stringstream ss;
+                        cyng::io::hex_dump<8> hd;
+                        hd(ss, std::begin(payload), std::end(payload));
+                        auto const dmp = ss.str();
+                        CYNG_LOG_DEBUG(logger_, "[roCache] payload of " << id << " received at " << received << ":\n" << dmp);
+                    }
+#endif
+
                     //  handle dispatch errors
                     cp->dispatch(
                         "send",
@@ -689,7 +701,7 @@ namespace smf {
 
         //
         // Remove records from database
-        // "DELETE FROM TMusCache;"
+        // "DELETE FROM TMBusCache;"
         //
         auto const m = get_table_mbus_cache();
         config::persistent_clear(m, db_);
@@ -703,20 +715,24 @@ namespace smf {
         cyng::db::transaction trx(db_);
 
         //
-        //  remove old data
+        //  remove old data from "TMBusCache"
         //
         auto const m = get_table_mbus_cache();
         config::persistent_clear(m, db_);
 
         //
-        //  transfer data from cache to database
+        //  transfer data from cache to database table "TMBusCache"
         //
         cfg_.get_cache().access(
             [&](cyng::table const *tbl) {
                 tbl->loop([=, this](cyng::record &&rec, std::size_t) -> bool {
                     auto const id = rec.value("meterID", cyng::make_buffer());
 
-                    CYNG_LOG_TRACE(logger_, "[roCache] backup data of meter " << id);
+                    // tbl->size()
+                    CYNG_LOG_TRACE(
+                        logger_,
+                        "[roCache] backup data of meter " << id << " in table " << tbl->meta().get_name() << " with " << tbl->size()
+                                                          << " entries");
                     config::persistent_insert(m, db_, rec.key(), rec.data(), 0u);
                     return true;
                 });

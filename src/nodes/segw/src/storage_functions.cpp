@@ -288,7 +288,7 @@ namespace smf {
 
     cyng::meta_sql get_table_mirror() {
         //
-        //  SELECT hex(meterID), profile, idx, datetime(received), secIdx FROM TMirror;
+        //  SELECT hex(meterID), printf('%012X', profile), idx, datetime(received), secIdx FROM TMirror;
         //
         return cyng::to_sql(get_store_mirror(), {9, 0, 0, 0, 0, 0, 0, 0});
     }
@@ -336,7 +336,10 @@ namespace smf {
             },
             1);
     }
-    cyng::meta_sql get_table_mbus_cache() { return cyng::to_sql(get_store_mbus_cache(), {9, 512, 0, 0, 0, 0, 0}); }
+    cyng::meta_sql get_table_mbus_cache() {
+        // SELECT hex(meterID), datetime(received), hex(payload) FROM TMBusCache;
+        return cyng::to_sql(get_store_mbus_cache(), {9, 512, 0, 0, 0, 0, 0});
+    }
 
     cyng::meta_store get_store_http_cache() {
         return cyng::meta_store(

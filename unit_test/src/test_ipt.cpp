@@ -126,6 +126,43 @@ BOOST_AUTO_TEST_CASE(serializer) {
     // auto const cmp = cyng::io::to_hex(r);
     // std::cout << cmp << std::endl;
     // BOOST_REQUIRE_EQUAL(cmp, "2a1b1b1b1b2021221b1b");
+
+    {
+        smf::ipt::serializer ser(smf::ipt::scramble_key::null_scramble_key_);
+        //  target, account, number, version, id, timeout
+        auto const cmd = ser.req_open_push_channel("target", "", "", "", "", 0x1234);
+        std::cout << cmd.first.size() << std::endl;
+        BOOST_CHECK_EQUAL(cmd.first.size(), 22);
+        BOOST_CHECK_EQUAL(cmd.first.at(0), 0x1b); // escape
+
+        auto const tpl = smf::ipt::tp_req_open_push_channel(cyng::buffer_t(cmd.first.begin() + 9, cmd.first.end()));
+        std::cout << std::get<1>(tpl) << std::endl;
+        std::cout << std::get<2>(tpl) << std::endl;
+        BOOST_CHECK_EQUAL(std::get<1>(tpl), "target");
+        BOOST_CHECK_EQUAL(std::get<2>(tpl), "");
+        BOOST_CHECK_EQUAL(std::get<6>(tpl), 0x1234);
+    }
+    {
+        smf::ipt::serializer ser(smf::ipt::scramble_key::default_scramble_key_);
+        ser.set_sk(smf::ipt::scramble_key::default_scramble_key_);
+        //  target, account, number, version, id, timeout
+        auto const cmd = ser.req_open_push_channel("target", "", "", "", "", 0x1234);
+        std::cout << cmd.first.size() << std::endl;
+        BOOST_CHECK_EQUAL(cmd.first.size(), 22);
+
+        smf::ipt::parser p(
+            smf::ipt::scramble_key::default_scramble_key_,
+            [](smf::ipt::header const &h, cyng::buffer_t &&body) {
+                //
+                std::cout << h.length_ << std::endl;
+            },
+            [](cyng::buffer_t &&data) {
+                //
+                std::cout << data.size() << std::endl;
+            });
+        p.set_sk(smf::ipt::scramble_key::default_scramble_key_);
+        p.read(cmd.first.begin(), cmd.first.end());
+    }
 }
 
 // BOOST_AUTO_TEST_CASE(client) {}

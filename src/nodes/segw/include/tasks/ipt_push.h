@@ -47,7 +47,8 @@ namespace smf {
         void on_channel_open(bool success, std::uint32_t, std::uint32_t, std::uint32_t, std::string);
         void on_channel_close(bool success, std::uint32_t);
 
-        void collect_data(std::uint32_t channel, std::uint32_t source);
+        sml::messages_t collect_data(std::uint32_t channel, std::uint32_t source);
+        void send_data(std::uint32_t channel, std::uint32_t source, sml::messages_t const &);
         cyng::obis_path_t get_registers(cyng::table const *tbl);
 
         cyng::tuple_t convert_to_payload(

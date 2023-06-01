@@ -293,11 +293,11 @@ namespace smf {
             //  update channel list
             // protocol_type { SML, IEC, DLMS };
             //
-            if (boost::algorithm::equals(target, pcc_sml_.target_)) {
+            if (boost::algorithm::equals(target, pcc_sml_.get_target())) {
                 channels_.emplace(config::protocol::SML, std::make_pair(channel, source));
-            } else if (boost::algorithm::equals(target, pcc_iec_.target_)) {
+            } else if (boost::algorithm::equals(target, pcc_iec_.get_target())) {
                 channels_.emplace(config::protocol::IEC, std::make_pair(channel, source));
-            } else if (boost::algorithm::equals(target, pcc_dlms_.target_)) {
+            } else if (boost::algorithm::equals(target, pcc_dlms_.get_target())) {
                 channels_.emplace(config::protocol::DLMS, std::make_pair(channel, source));
             } else {
                 CYNG_LOG_WARNING(logger_, "[wmbus.push] unknown push channel: " << target);

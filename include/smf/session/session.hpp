@@ -22,7 +22,7 @@
 
 #include <boost/uuid/nil_generator.hpp>
 
-#ifdef _DEBUG_SESSION
+#if defined(_DEBUG_SESSION) || defined(_DEBUG_IPT)
 #include <cyng/io/hex_dump.hpp>
 #include <iostream>
 #include <sstream>
@@ -116,22 +116,9 @@ namespace smf {
         }
 
         /**
-         * Send data to device
-         * This function is thrtead safe.
-         */
-        void send(cyng::buffer_t &&data) {
-            cyng::exec(vm_, [this, d = std::move(data)]() {
-                bool const b = write_buffer_.empty();
-                write_buffer_.push_back(std::move(d));
-                if (b) {
-                    do_write();
-                }
-            });
-        }
-
-        /**
          * Produce data that will be sent to device.
-         * This function is thrtead safe.
+         * This function is thread safe regarding the write buffer and
+         * the production of data.
          */
         void send(std::function<cyng::buffer_t()> f) {
             cyng::exec(vm_, [this, f]() {
@@ -156,7 +143,7 @@ namespace smf {
                             "[session] " << vm_.get_tag() << " received " << bytes_transferred << " bytes from ["
                                          << socket_.remote_endpoint() << "]");
 
-#ifdef _DEBUG_SESSION
+#if defined(_DEBUG_SESSION) || defined(_DEBUG_IPT)
                         {
                             std::stringstream ss;
                             cyng::io::hex_dump<8> hd;
@@ -201,17 +188,19 @@ namespace smf {
             boost::asio::async_write(
                 socket_,
                 boost::asio::buffer(write_buffer_.front().data(), write_buffer_.front().size()),
-                cyng::expose_dispatcher(vm_).wrap(std::bind(&session::handle_write, this, std::placeholders::_1)));
+                cyng::expose_dispatcher(vm_).wrap(
+                    std::bind(&session::handle_write, this, std::placeholders::_1, std::placeholders::_2)));
         }
 
-        void handle_write(const boost::system::error_code &ec) {
+        void handle_write(const boost::system::error_code &ec, std::size_t n) {
 
             if (!ec) {
 
                 //
                 //	update sx
                 //
-                sx_ += static_cast<std::uint64_t>(write_buffer_.front().size());
+                sx_ += static_cast<std::uint64_t>(n);
+                //                sx_ += static_cast<std::uint64_t>(write_buffer_.front().size());
                 if (!dev_.is_nil() && bus_.is_connected()) {
 
                     bus_.req_db_update("session", cyng::key_generator(dev_), cyng::param_map_factory()("sx", sx_));

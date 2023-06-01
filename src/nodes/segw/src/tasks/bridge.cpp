@@ -869,7 +869,7 @@ namespace smf {
             auto channel_emt = ctl_.create_named_channel_with_ref<emt>(emt_task_name, ctl_, logger_, db_, cfg_).first;
             stash_.lock(channel_emt);
             if (!http_post_cfg.is_enabled()) {
-                CYNG_LOG_WARNING(logger_, "task [" << emt_task_name << "] is diabled");
+                CYNG_LOG_WARNING(logger_, "task [" << emt_task_name << "] is disabled");
             }
 
             //

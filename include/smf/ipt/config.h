@@ -86,9 +86,10 @@ namespace smf {
         /**
          * convience class to hold all data required to manage an ip-t channel
          */
-        struct push_channel {
-            push_channel();
-            // push_channel(push_channel const &) = default;
+        class push_channel {
+          public:
+            push_channel() = default;
+            push_channel(push_channel const &) = default;
             push_channel(
                 std::string const &,
                 std::string const &,
@@ -99,12 +100,28 @@ namespace smf {
 
             friend std::ostream &operator<<(std::ostream &, push_channel const &);
 
-            std::string const target_;
-            std::string const account_;
-            std::string const number_;
-            std::string const id_;
-            std::string const version_;
-            std::uint16_t const timeout_;
+            /**
+             * @return push channel configuration as tuple
+             */
+            auto as_tuple() const -> std::tuple<std::string, std::string, std::string, std::string, std::string, std::uint16_t>;
+
+            /**
+             * @return true if the target name is not empty.
+             */
+            bool is_valid() const noexcept;
+
+            /*
+             * @return ipt target name
+             */
+            std::string const &get_target() const noexcept;
+
+          private:
+            std::string target_;
+            std::string account_;
+            std::string number_;
+            std::string id_;
+            std::string version_;
+            std::uint16_t timeout_;
         };
 
         push_channel read_push_channel_config(cyng::param_map_t const &pmap);

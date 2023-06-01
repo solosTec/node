@@ -54,7 +54,7 @@ namespace smf {
                           //    back to command mode
                           CYNG_LOG_INFO(logger_, "[" << parser_.get_mode() << "] back to command mode");
                           // parser_.set_cmd_mode();
-                          send(serializer_.ok());
+                          send([this]() -> cyng::buffer_t { return serializer_.ok(); });
                       } else if (boost::algorithm::equals(cmd, "ATH")) {
                           //    hang up
                           CYNG_LOG_INFO(logger_, "[" << parser_.get_mode() << "] hang up");
@@ -75,20 +75,20 @@ namespace smf {
                               switch (info) {
                               case 1:
                                   //    local IP address
-                                  send(serializer_.ep(get_local_endpoint()));
+                                  send([this]() -> cyng::buffer_t { return serializer_.ep(get_local_endpoint()); });
                                   break;
                               case 2:
                                   //    remote IP address
-                                  send(serializer_.ep(get_remote_endpoint()));
+                                  send([this]() -> cyng::buffer_t { return serializer_.ep(get_remote_endpoint()); });
                                   break;
                               default:
                                   // unknown info
-                                  send(serializer_.error());
+                                  send([this]() -> cyng::buffer_t { return serializer_.error(); });
                                   break;
                               }
                           } catch (std::exception const &ex) {
                               boost::ignore_unused(ex);
-                              send(serializer_.error());
+                              send([this]() -> cyng::buffer_t { return serializer_.error(); });
                           }
                       } else {
                           CYNG_LOG_WARNING(logger_, "[" << parser_.get_mode() << "] unknown AT command" << cmd << ": " << data);
@@ -183,10 +183,10 @@ namespace smf {
             dev_ = dev;
 
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " login ok");
-            send(serializer_.ok());
+            send([this]() -> cyng::buffer_t { return serializer_.ok(); });
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " login failed");
-            send(serializer_.error());
+            send([this]() -> cyng::buffer_t { return serializer_.error(); });
         }
     }
 
@@ -197,12 +197,12 @@ namespace smf {
 
         if (success) {
             CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " dialup ok: " << token);
-            send(serializer_.connect());
+            send([this]() -> cyng::buffer_t { return serializer_.connect(); });
             parser_.set_stream_mode();
 
         } else {
             CYNG_LOG_WARNING(logger_, "[pty] " << vm_.get_tag() << " dialup failed: " << token);
-            send(serializer_.no_answer());
+            send([this]() -> cyng::buffer_t { return serializer_.no_answer(); });
         }
     }
 
@@ -212,7 +212,7 @@ namespace smf {
 
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed (response)" << token);
 
-        send(success ? serializer_.no_carrier() : serializer_.error());
+        send([this, success]() -> cyng::buffer_t { return success ? serializer_.no_carrier() : serializer_.error(); });
     }
 
     void modem_session::pty_transfer_data(cyng::buffer_t data) {
@@ -227,7 +227,8 @@ namespace smf {
         }
 #endif
         //  print binary data
-        send(std::move(data));
+        // send(std::move(data));
+        send([data]() -> cyng::buffer_t { return data; });
     }
 
     void modem_session::pty_req_open_connection(std::string msisdn, bool local, cyng::param_map_t token) {
@@ -238,14 +239,14 @@ namespace smf {
             bus_.pty_res_open_connection(true, dev_, vm_.get_tag(), std::move(token));
             parser_.set_stream_mode();
         } else {
-            send(serializer_.ring());
+            send([this]() -> cyng::buffer_t { return serializer_.ring(); });
             //  store "token" and wait for ATA
         }
     }
 
     void modem_session::pty_req_close_connection() {
         CYNG_LOG_INFO(logger_, "[pty] " << vm_.get_tag() << " connection closed (request)");
-        send(serializer_.no_carrier());
+        send([this]() -> cyng::buffer_t { return serializer_.no_carrier(); });
     }
 
     void modem_session::pty_stop() { stop(); }
