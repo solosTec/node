@@ -1257,7 +1257,7 @@ if (WIN32)
     cmake_path(NATIVE_PATH modem_BINARY_DIR modem_BINARY_DIR)
     configure_file (
         "${CMAKE_SOURCE_DIR}/scripts/install_local.cmd.in"
-        "${PROJECT_BINARY_DIR}/install_local_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cmd")
+        "${PROJECT_BINARY_DIR}/config/install_local_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME}_VERSION_MINOR}.cmd")
 endif()
 
 #

@@ -7,6 +7,7 @@ REM	platform: @CMAKE_SYSTEM@
 REM cmake --install . --prefix C:/Program Files/solosTec/SMF
 REM
 ECHO copy executables to "$ENV{ProgramW6432}\solosTec\SMF\"
+sc stop ${lowercase_project_name}_main_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 COPY /B /V ${main_BINARY_DIR}\Release\main.exe "$ENV{ProgramW6432}\solosTec\SMF\"
 COPY /B /V ${setup_BINARY_DIR}\Release\setup.exe "$ENV{ProgramW6432}\solosTec\SMF\"
 COPY /B /V ${ipt_BINARY_DIR}\Release\ipt.exe "$ENV{ProgramW6432}\solosTec\SMF\"
@@ -16,5 +17,8 @@ COPY /B /V ${broker_iec_BINARY_DIR}\Release\broker-iec.exe "$ENV{ProgramW6432}\s
 COPY /B /V ${broker_wmbus_BINARY_DIR}\Release\broker-wmbus.exe "$ENV{ProgramW6432}\solosTec\SMF\"
 COPY /B /V ${modem_BINARY_DIR}\Release\modem.exe "$ENV{ProgramW6432}\solosTec\SMF\"
 COPY /B /V ${dns_BINARY_DIR}\Release\dns.exe "$ENV{ProgramW6432}\solosTec\SMF\"
+sc start ${lowercase_project_name}_main_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc start ${lowercase_project_name}_setup_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+sc start ${lowercase_project_name}_dash_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
 REM 
 @ECHO ON
