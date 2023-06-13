@@ -15,7 +15,6 @@
 
 namespace smf {
 
-    // cyng::channel_weak, cyng::controller &, cyng::logger
     feed_report::feed_report(
         cyng::channel_weak wp,
         cyng::controller &ctl,
@@ -27,7 +26,8 @@ namespace smf {
         std::string prefix,
         bool print_version,
         bool debug_mode,
-        bool customer)
+        bool customer,
+        std::size_t shift_factor)
         : sigs_{
             std::bind(&feed_report::run, this), // start
             std::bind(&feed_report::stop, this, std::placeholders::_1) // stop
@@ -42,7 +42,8 @@ namespace smf {
         , prefix_(prefix)
         , print_version_(print_version)
         , debug_mode_(debug_mode)
-        , customer_(customer) {
+        , customer_(customer)
+        , shift_factor_(shift_factor) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -93,7 +94,8 @@ namespace smf {
             //  generate report
             //
             CYNG_LOG_INFO(logger_, "[feed report] generate " << obis::get_name(profile_) << " report: " << root_);
-            smf::generate_feed(db_, profile_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_);
+            smf::generate_feed(
+                db_, profile_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_, shift_factor_);
         }
     }
 } // namespace smf

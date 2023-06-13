@@ -36,7 +36,8 @@ namespace smf {
             std::string prefix,
             bool print_version,
             bool debug_mode,
-            bool customer);
+            bool customer,
+            std::size_t shift_factor);
 
         ~feed_report() = default;
 
@@ -57,6 +58,7 @@ namespace smf {
         bool const print_version_;
         bool const debug_mode_;
         bool const customer_;
+        std::size_t const shift_factor_;
     };
 
 } // namespace smf

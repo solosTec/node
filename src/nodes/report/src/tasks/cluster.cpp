@@ -6,6 +6,7 @@
 #include <tasks/lpex_report.h>
 
 #include <smf/obis/profile.h>
+#include <smf/report/config/cfg_feed_report.h>
 
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
@@ -169,35 +170,27 @@ namespace smf {
 
     void cluster::start_feed(cyng::param_map_t reports) {
 
-        //
-        //	start reporting
-        //
-        for (auto const &cfg : reports) {
-            auto const reader = cyng::make_reader(cfg.second);
-            if (reader.get("enabled", false)) {
+        cfg::feed_report cfg(std::move(reports));
 
-                auto const profile = cyng::to_obis(cfg.first);
-                BOOST_ASSERT(sml::is_profile(profile));
-                auto const name = reader.get("name", "");
-                auto const path = reader.get("path", "");
-                auto const prefix = reader.get("prefix", "");
-                auto const backtrack = cyng::to_hours(reader.get("backtrack", "40:00:00"));
-                auto const customer = reader.get("add.customer.data", false);
-
+        auto const profiles = cfg.get_profiles();
+        for (auto const &code : profiles) {
+            auto const name = cfg.get_name(code);
+            if (cfg.is_enabled(code)) {
                 cyng::obis_path_t filter;
-                auto channel = ctl_.create_named_channel_with_ref<lpex_report>(
+                auto channel = ctl_.create_named_channel_with_ref<feed_report>(
                                        name,
                                        ctl_,
                                        logger_,
                                        db_,
-                                       profile,
-                                       filter, // filter
-                                       path,
-                                       backtrack,
-                                       prefix,
+                                       code,
+                                       //                                       filter, // filter
+                                       cfg.get_path(code),
+                                       cfg.get_backtrack(code),
+                                       cfg.get_prefix(code),
                                        true,  // print version
                                        false, // debug mode
-                                       customer)
+                                       cfg.add_customer_data(code),
+                                       cfg.get_shift_factor(code))
                                    .first;
                 BOOST_ASSERT(channel->is_open());
                 channels_.lock(channel);
@@ -206,17 +199,16 @@ namespace smf {
                 //  calculate start time
                 //
                 auto const now = cyng::make_utc_date();
-                auto const interval = sml::interval_time(now, profile);
-                CYNG_LOG_INFO(logger_, "start feed report " << profile << " (" << name << ") at " << interval);
+                auto const interval = sml::interval_time(now, code);
+                CYNG_LOG_INFO(logger_, "start feed report " << code << " (" << name << ") at " << interval);
 
-                bus_.sys_msg(
-                    cyng::severity::LEVEL_INFO, "start feed report ", profile, " (", name, ") at ", now + interval, " UTC");
+                bus_.sys_msg(cyng::severity::LEVEL_INFO, "start feed report ", code, " (", name, ") at ", now + interval, " UTC");
                 //  handle dispatch errors
                 channel->suspend(
                     interval, "run", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
             } else {
-                CYNG_LOG_TRACE(logger_, "feed report " << cfg.first << " is disabled");
+                CYNG_LOG_TRACE(logger_, "feed report " << name << " is disabled");
             }
         }
     }

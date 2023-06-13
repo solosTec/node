@@ -770,7 +770,9 @@ namespace smf {
                             auto const backtrack = cfg.get_backtrack(code);
                             auto const customer = cfg.add_customer_data(code);
                             auto const prefix = cfg.get_prefix(code);
-                            generate_feed(pos->second, code, path, prefix, now, backtrack, print_version, debug_mode, customer);
+                            auto const shift_factor = cfg.get_shift_factor(code);
+                            generate_feed(
+                                pos->second, code, path, prefix, now, backtrack, print_version, debug_mode, customer, shift_factor);
 
                         } else {
                             std::cout << "***error: output path [" << path << "] of feed report " << name << " does not exists"
@@ -1334,11 +1336,23 @@ namespace smf {
                     auto const backtrack = cfg.get_backtrack(code);
                     auto const prefix = cfg.get_prefix(code);
                     auto const customer = cfg.add_customer_data(code);
+                    auto const shift_factor = cfg.get_shift_factor(code);
 
                     CYNG_LOG_TRACE(logger, "feed/adv report " << name << " path is " << path << " - " << prefix);
 
                     auto channel = ctl.create_named_channel_with_ref<feed_report>(
-                                          name, ctl, logger, db, code, path, backtrack, prefix, print_version, debug_mode, customer)
+                                          name,
+                                          ctl,
+                                          logger,
+                                          db,
+                                          code,
+                                          path,
+                                          backtrack,
+                                          prefix,
+                                          print_version,
+                                          debug_mode,
+                                          customer,
+                                          shift_factor)
                                        .first;
                     BOOST_ASSERT(channel->is_open());
                     channels.lock(channel);

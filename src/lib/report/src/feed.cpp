@@ -28,7 +28,8 @@ namespace smf {
         std::chrono::hours backtrack,
         bool print_version,
         bool debug_mode,
-        bool customer) {
+        bool customer,
+        std::size_t shift_factor) {
 
         //
         //  see convert_obis()
@@ -49,7 +50,7 @@ namespace smf {
         //
         // We need two time units of lead.
         //
-        auto start = feed::calculate_start_time(now, backtrack, profile);
+        auto start = feed::calculate_start_time(now, backtrack, profile, shift_factor);
         cyng::date next_stop = start + sml::reporting_period(profile, start);
 
         //
@@ -477,27 +478,33 @@ namespace smf {
             // [13] Einheit
         }
 
-        cyng::date calculate_start_time(cyng::date const &now, std::chrono::hours const &backtrack, cyng::obis const &profile) {
+        cyng::date calculate_start_time(
+            cyng::date const &now,
+            std::chrono::hours const &backtrack,
+            cyng::obis const &profile,
+            std::size_t shift_factor) {
 
-            switch (profile.to_uint64()) {
-            case CODE_PROFILE_1_MINUTE:
-            case CODE_PROFILE_15_MINUTE: //  fix offset
-                // There are missing 2 * 15-minute readings
-                // return (now - backtrack).get_start_of_day() - (4 * sml::interval_time(now, profile));
-                // This is 1 hour + 2*readings
-                return (now - backtrack).get_start_of_day() - (6 * sml::interval_time(now, profile));
-            case CODE_PROFILE_60_MINUTE:
-            case CODE_PROFILE_24_HOUR: return (now - backtrack).get_start_of_day() - (2 * sml::interval_time(now, profile));
+            return (now - backtrack).get_start_of_day() - (shift_factor * sml::interval_time(now, profile));
 
-            case CODE_PROFILE_1_MONTH: break;
-            case CODE_PROFILE_1_YEAR: break;
-            default:
-                //  error
-                BOOST_ASSERT_MSG(false, "not implemented yet");
-                break;
-            }
+            // switch (profile.to_uint64()) {
+            // case CODE_PROFILE_1_MINUTE:
+            // case CODE_PROFILE_15_MINUTE: //  fix offset
+            //     // There are missing 2 * 15-minute readings
+            //     // return (now - backtrack).get_start_of_day() - (4 * sml::interval_time(now, profile));
+            //     // This is 1 hour + 2*readings
+            //     return (now - backtrack).get_start_of_day() - (6 * sml::interval_time(now, profile));
+            // case CODE_PROFILE_60_MINUTE:
+            // case CODE_PROFILE_24_HOUR: return (now - backtrack).get_start_of_day() - (2 * sml::interval_time(now, profile));
 
-            return (now - backtrack).get_start_of_day();
+            // case CODE_PROFILE_1_MONTH: break;
+            // case CODE_PROFILE_1_YEAR: break;
+            // default:
+            //     //  error
+            //     BOOST_ASSERT_MSG(false, "not implemented yet");
+            //     break;
+            // }
+
+            // return (now - backtrack).get_start_of_day();
         }
 
         std::string calculate_advance(sml_data const &first, sml_data const &second) {

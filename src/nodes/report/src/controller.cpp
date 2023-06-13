@@ -463,7 +463,8 @@ namespace smf {
                                 cfg.get_backtrack(code), //  backtrack hours
                                 print_version,
                                 debug_mode,
-                                cfg.add_customer_data(code));
+                                cfg.add_customer_data(code),
+                                cfg.get_shift_factor(code));
                         } else {
                             std::cerr << "***error: [" << path << "] of feed report " << name << " does not exist";
                         }

@@ -103,11 +103,10 @@ namespace smf {
         bool is_new_reporting_period(cyng::obis profile, cyng::date const &prev, cyng::date const &next);
 
         /**
-         * Each profile has a specific count of entries in a time span. e.g. a 15 minutes report has 96 entries
-         * a day.
-         * Doesn't work for profiles with a variable time span.
+         * To calculate the start time of an feed report and additional multiplication factor
+         * is needed to find the right start time
          */
-        // std::size_t calculate_entries_per_period(cyng::obis profile, std::chrono::hours);
+        std::size_t get_shift_factor(cyng::obis profile);
 
     } // namespace sml
 

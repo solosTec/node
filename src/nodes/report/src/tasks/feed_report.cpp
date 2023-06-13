@@ -26,7 +26,8 @@ namespace smf {
         std::string prefix,
         bool print_version,
         bool debug_mode,
-        bool customer)
+        bool customer,
+        std::size_t shift_factor)
         : sigs_{
             std::bind(&feed_report::run, this), // start
             std::bind(&feed_report::stop, this, std::placeholders::_1) // stop
@@ -41,7 +42,8 @@ namespace smf {
         , prefix_(prefix)
         , print_version_(print_version)
         , debug_mode_(debug_mode)
-        , customer_(customer) {
+        , customer_(customer)
+        , shift_factor_(shift_factor){
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"run"});
@@ -52,7 +54,6 @@ namespace smf {
     void feed_report::stop(cyng::eod) { CYNG_LOG_WARNING(logger_, "stop report task"); }
     void feed_report::run() {
 
-        // auto const now = std::chrono::system_clock::now();
         auto const now = cyng::make_utc_date();
         auto sp = channel_.lock();
         BOOST_ASSERT_MSG(sp, "report task already stopped");
@@ -72,7 +73,7 @@ namespace smf {
             //
             //  generate report
             //
-            generate_feed(db_, profile_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_);
+            generate_feed(db_, profile_, root_, prefix_, now, backtrack_, print_version_, debug_mode_, customer_, shift_factor_);
         }
     }
 } // namespace smf

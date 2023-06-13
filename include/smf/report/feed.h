@@ -38,7 +38,8 @@ namespace smf {
         std::chrono::hours backtrack,
         bool print_version,
         bool debug_mode,
-        bool customer);
+        bool customer,
+        std::size_t shift_factor);
 
     namespace feed {
 
@@ -83,7 +84,11 @@ namespace smf {
         /**
          * We need two time units of lead.
          */
-        cyng::date calculate_start_time(cyng::date const &now, std::chrono::hours const &backtrack, cyng::obis const &profile);
+        cyng::date calculate_start_time(
+            cyng::date const &now,
+            std::chrono::hours const &backtrack,
+            cyng::obis const &profile,
+            std::size_t shift_factor);
 
         /**
          * Calculate value feed/adcance

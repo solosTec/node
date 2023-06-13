@@ -29,6 +29,11 @@ namespace smf {
              * "add.customer.data"
              */
             bool add_customer_data(cyng::obis code) const;
+
+            /**
+             * "shift.factor"
+             */
+            std::size_t get_shift_factor(cyng::obis code) const;
         };
     } // namespace cfg
 } // namespace smf

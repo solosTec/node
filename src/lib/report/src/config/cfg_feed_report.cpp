@@ -8,6 +8,7 @@
 #include <cyng/obj/algorithm/reader.hpp>
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
+#include <cyng/obj/numeric_cast.hpp>
 #include <cyng/parse/duration.h>
 #include <cyng/parse/string.h>
 
@@ -36,6 +37,14 @@ namespace smf {
             auto const config = get_config(code);
             auto const pos = config.find("add.customer.data");
             return (pos != config.end()) ? cyng::value_cast(pos->second, false) : false;
+        }
+
+        std::size_t feed_report::get_shift_factor(cyng::obis code) const {
+            auto const config = get_config(code);
+            auto const pos = config.find("shift.factor");
+            //  calculate default value
+            auto const shift_factor = sml::get_shift_factor(code);
+            return (pos != config.end()) ? cyng::numeric_cast<std::size_t>(pos->second, shift_factor) : shift_factor;
         }
 
     } // namespace cfg

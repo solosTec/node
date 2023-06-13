@@ -46,7 +46,8 @@ namespace smf {
                     cyng::make_param("backtrack", backtrack),
                     cyng::make_param("prefix", sml::get_prefix(profile)),
                     cyng::make_param("add.customer.data", false), // add/update customer data
-                    cyng::make_param("enabled", enabled)));
+                    cyng::make_param("enabled", enabled),
+                    cyng::make_param("shift.factor", sml::get_shift_factor(profile))));
         }
 
     } // namespace cfg
