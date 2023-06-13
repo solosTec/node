@@ -4,7 +4,9 @@ REM	Install script for developer machine
 REM	This file is generated automatically. Do not edit.
 REM	created :  ${_NOW_UTC}
 REM	platform: @CMAKE_SYSTEM@
-REM cmake --install . --prefix C:/Program Files/solosTec/SMF
+REM cmake -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}
+REM cmake --build ${CMAKE_BINARY_DIR}
+REM cmake --install ${CMAKE_SOURCE_DIR} --prefix "$ENV{ProgramW6432}\solosTec\SMF\"
 REM
 ECHO copy executables to "$ENV{ProgramW6432}\solosTec\SMF\"
 sc stop ${lowercase_project_name}_main_v${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
