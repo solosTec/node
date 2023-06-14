@@ -28,7 +28,6 @@ int main(int argc, char **argv) {
     //	generic options
     //
     auto generic = smf::config::get_generic_options(config);
-    // generic.add_options()("generate,G", boost::program_options::bool_switch()->default_value(false), "generate reports and
     // exit");
     generic.add_options() // additional options
         ("generate,G",

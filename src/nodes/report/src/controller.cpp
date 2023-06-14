@@ -449,7 +449,10 @@ namespace smf {
                     auto const name = cfg.get_name(code);
 
                     if (cfg.is_enabled(code)) {
-                        std::cout << "***info: generate feed report " << name << " (" << code << ")" << std::endl;
+                        //  backtrack hours
+                        auto const backtrack_hours = cfg.get_backtrack(code);
+                        std::cout << "***info: generate feed report " << name << " (" << code << ") " << backtrack_hours.count()
+                                  << " backtrack hours => " << now - backtrack_hours << std::endl;
 
                         auto const path = cfg.get_path(code);
                         if (sanitize_path(path)) {
@@ -460,7 +463,7 @@ namespace smf {
                                 path,
                                 cfg.get_prefix(code),
                                 now,
-                                cfg.get_backtrack(code), //  backtrack hours
+                                backtrack_hours,
                                 print_version,
                                 debug_mode,
                                 cfg.add_customer_data(code),

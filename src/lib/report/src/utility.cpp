@@ -456,9 +456,10 @@ namespace smf {
                         auto pos = ro.second.begin();
                         auto end = std::prev(ro.second.end());
                         while (pos != end) {
-#ifdef _DEBUG
-                            std::cout << "> trim " << data.first << ", " << ro.first << ", slot#" << pos->first << std::endl;
-#endif
+                            // #ifdef _DEBUG
+                            //                             std::cout << "> trim " << data.first << ", " << ro.first << ", slot#" <<
+                            //                             pos->first << std::endl;
+                            // #endif
                             pos = ro.second.erase(pos);
                         }
                     }

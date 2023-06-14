@@ -8,6 +8,7 @@
 #include <smf.h>
 #include <smf/config.h>
 
+#include <cyng.h>
 #include <cyng/io/ostream.h>
 #include <cyng/log/conv.h>
 #include <cyng/log/logger.h>
@@ -266,7 +267,7 @@ namespace smf {
 #endif
                << "system         : " << SMF_SYSTEM_NAME << " v" << SMF_SYSTEM_VERSION << std::endl
 
-               << "based on cyng  : " << cyng::sys::get_build_time() << " UTC" << std::endl
+               << "cyng library   : " << cyng::CYNG_VERSION_NAME << std::endl
 
                << "Boost library  : v" << (cyng::sys::get_boost_version() / 100000) //	major version
                << '.' << (cyng::sys::get_boost_version() / 100 % 1000)              //	minor version

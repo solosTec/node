@@ -258,7 +258,7 @@ namespace smf {
                     customer ? query_customer_data_by_meter(db, get_meter_id(data.first)) : std::optional<lpex_customer>();
 
 #ifdef _DEBUG
-                std::cout << ">> meter: " << data.first << " has " << data.second.size() << " registers: ";
+                std::cout << ">> meter: " << data.first << " has " << data.second.size() << " register(s): ";
                 for (auto const &[reg, values] : data.second) {
                     obis::to_decimal(std::cout, reg);
                     std::cout << "#" << values.size() << " ";
@@ -349,9 +349,6 @@ namespace smf {
                                 ofs << ";;";
                             }
                         }
-#ifdef _DEBUG
-                        std::cout << std::endl;
-#endif
                         ofs << std::endl;
                     }
                 }
