@@ -73,6 +73,7 @@ target_link_libraries(store
         cyng::io
         cyng::log
         cyng::db
+        cyng::rnd
         cyng::store
         cyng::sql
         cyng::sys        
