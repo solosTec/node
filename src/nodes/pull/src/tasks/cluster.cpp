@@ -1,4 +1,5 @@
 #include <tasks/cluster.h>
+#include <tasks/storage_db.h>
 
 #include <cyng/log/record.h>
 #include <cyng/net/server_factory.hpp>
@@ -12,10 +13,10 @@ namespace smf {
     cluster::cluster(cyng::channel_weak wp
 		, cyng::controller& ctl
 		, boost::uuids::uuid tag
-		, std::uint32_t query
 		, std::string const& node_name
 		, cyng::logger logger
-		, toggle::server_vec_t&& tgl)
+		, toggle::server_vec_t&& tgl
+        , cyng::param_map_t &&cfg_db)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
@@ -25,7 +26,9 @@ namespace smf {
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl, logger, std::move(tgl), node_name, tag, CONFIG_PROVIDER, this)
-	{
+        , store_()
+        , storage_db_(start_data_store(ctl, logger, bus_, store_, std::move(cfg_db))) {
+
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "listen"});
             CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
@@ -90,4 +93,17 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[cluster] clear: " << table_name);
     }
 
+    cyng::channel_ptr
+    start_data_store(cyng::controller &ctl, cyng::logger logger, bus &cluster_bus, cyng::store &cache, cyng::param_map_t &&cfg) {
+        // storage_db(
+        //     cyng::channel_weak,
+        //     cyng::controller &,
+        //     bus &,
+        //     cyng::store & cache,
+        //     cyng::logger logger,
+        //     cyng::param_map_t && cfg,
+        //     std::set<std::string> &&);
+
+        return ctl.create_named_channel_with_ref<storage_db>("storage", ctl, cluster_bus, cache, logger, std::move(cfg)).first;
+    }
 } // namespace smf

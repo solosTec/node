@@ -35,12 +35,15 @@ namespace smf {
           public:
             controller_base(startup const &);
 
-            virtual bool run_options(boost::program_options::variables_map &);
-
             /**
              * Prepare a default environment and call the derived run() method
              */
             virtual int run();
+
+            /**
+             * Evaluate the transfer parameters
+             */
+            virtual bool run_options(boost::program_options::variables_map &);
 
 #if BOOST_OS_WINDOWS
             /**

@@ -12,6 +12,7 @@
 #include <smf.h>
 #include <smf/ipt/scramble_key_format.h>
 
+#include <cyng/db/session.h>
 #include <cyng/io/ostream.h>
 #include <cyng/log/record.h>
 #include <cyng/obj/algorithm/reader.hpp>
@@ -40,9 +41,6 @@ namespace smf {
         std::filesystem::path &&tmp,
         std::filesystem::path &&cwd) {
 
-        // std::locale loc(std::locale(), new std::ctype<char>);
-        //  std::cout << std::locale("").name().c_str() << std::endl;
-
         return cyng::make_vector({cyng::make_tuple(
             cyng::make_param("generated", now),
             cyng::make_param("version", SMF_VERSION_TAG),
@@ -59,7 +57,7 @@ namespace smf {
             "DB",
             cyng::make_tuple(
                 cyng::make_param("connection.type", "SQLite"),
-                cyng::make_param("file.name", (cwd / "setup.database").string()),
+                cyng::make_param("file.name", (cwd / "pull.database").string()),
                 cyng::make_param("busy.timeout", std::chrono::milliseconds(12)), //	seconds
                 cyng::make_param("watchdog", std::chrono::seconds(30)),          //	for database connection
                 cyng::make_param("pool.size", 1)                                 //	no pooling for SQLite
@@ -80,6 +78,23 @@ namespace smf {
             }));
     }
 
+    bool controller::run_options(boost::program_options::variables_map &vars) {
+
+        //
+        //
+        //
+        if (vars["init"].as<bool>()) {
+            //	initialize database
+            init_storage(read_config_section(config_.json_path_, config_.config_index_));
+            return true;
+        }
+
+        //
+        //	call base classe
+        //
+        return controller_base::run_options(vars);
+    }
+
     void controller::run(
         cyng::controller &ctl,
         cyng::stash &channels,
@@ -92,7 +107,6 @@ namespace smf {
 #endif
         auto const reader = cyng::make_reader(cfg);
         auto const tag = read_tag(reader["tag"].get());
-        auto const query = cyng::numeric_cast<std::uint32_t>(reader["query"].get(), 6u);
 
         auto tgl = read_config(cyng::container_cast<cyng::vector_t>(reader["cluster"].get()));
         BOOST_ASSERT(!tgl.empty());
@@ -100,10 +114,20 @@ namespace smf {
             CYNG_LOG_FATAL(logger, "no cluster data configured");
         } else {
 
+            // auto const storage_type = cyng::value_cast(reader["storage"].get(), "DB");
+            // CYNG_LOG_INFO(logger, "storage type is " << storage_type);
+
             //
             //	connect to cluster
             //
-            join_cluster(ctl, logger, tag, query, node_name, std::move(tgl));
+            join_cluster(
+                ctl,
+                logger,
+                tag,
+                node_name,
+                std::move(tgl),                                             // cluster configuration
+                cyng::container_cast<cyng::param_map_t>(reader["DB"].get()) // database configuration
+            );
         }
     }
 
@@ -121,19 +145,29 @@ namespace smf {
         cyng::controller &ctl,
         cyng::logger logger,
         boost::uuids::uuid tag,
-        std::uint32_t query,
         std::string const &node_name,
-        toggle::server_vec_t &&tgl) {
+        toggle::server_vec_t &&cfg_cluster,
+        cyng::param_map_t &&cfg_db) {
 
         cluster *tsk = nullptr;
-        std::tie(cluster_, tsk) =
-            ctl.create_named_channel_with_ref<cluster>("cluster", ctl, tag, query, node_name, logger, std::move(tgl));
+        std::tie(cluster_, tsk) = ctl.create_named_channel_with_ref<cluster>(
+            "cluster", ctl, tag, node_name, logger, std::move(cfg_cluster), std::move(cfg_db));
         BOOST_ASSERT(cluster_->is_open());
         BOOST_ASSERT(tsk != nullptr);
         if (tsk) {
             tsk->connect();
         } else {
             CYNG_LOG_FATAL(logger, "cannot create cluster channel");
+        }
+    }
+
+    void controller::init_storage(cyng::object &&cfg) {
+
+        auto const reader = cyng::make_reader(std::move(cfg));
+        auto s = cyng::db::create_db_session(reader.get("DB"));
+        if (s.is_alive()) {
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
+            // smf::init_storage(s); //	see task/storage_db.h
         }
     }
 

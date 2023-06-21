@@ -64,18 +64,15 @@ target_link_libraries(pull
         smf::config
         smf::cluster
         smf::cluster_bus
-        smf::ipt
-        smf::ipt_bus
-        smf::sml
-        smf::mbus
-        smf::obis
+        cyng::sqlite3
         cyng::obj
         cyng::parse
         cyng::io
         cyng::log
+        cyng::db
         cyng::store
-        cyng::sys
-        cyng::rnd
+        cyng::sql
+        cyng::sys        
         cyng::task
         cyng::vm
         cyng::net

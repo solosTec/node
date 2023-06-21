@@ -67,7 +67,18 @@ target_link_libraries(store
         smf::iec
         smf::mbus
         smf::obis
-        cyng::cyng 
+        cyng::sqlite3
+        cyng::obj
+        cyng::parse
+        cyng::io
+        cyng::log
+        cyng::db
+        cyng::store
+        cyng::sql
+        cyng::sys        
+        cyng::task
+        cyng::vm
+        cyng::net
         "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         "$<$<PLATFORM_ID:Linux>:${OPENSSL_LIBRARIES}>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        

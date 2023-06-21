@@ -14,7 +14,9 @@ set (pull_h
 
 set (pull_tasks
     include/tasks/cluster.h
+    include/tasks/storage_db.h
     src/tasks/cluster.cpp
+    src/tasks/storage_db.cpp
 )
 
 if(WIN32)

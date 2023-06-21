@@ -27,6 +27,13 @@ int main(int argc, char **argv) {
     boost::program_options::options_description generic = smf::config::get_generic_options(config);
 
     //
+    //	additional options
+    //
+    generic.add_options()                                                                                       //
+        ("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit") //	init DB
+        ;
+
+    //
     //	cmdline_options contains all generic and node specific options
     //	from command line
     //

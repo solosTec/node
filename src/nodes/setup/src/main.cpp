@@ -26,8 +26,12 @@ int main(int argc, char **argv) {
     //	generic options
     //
     auto generic = smf::config::get_generic_options(config);
-    generic.add_options()(
-        "init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit") //	init DB
+
+    //
+    //	additional options
+    //
+    generic.add_options()                                                                                       //
+        ("init,I", boost::program_options::bool_switch()->default_value(false), "initialize database and exit") //	init DB
         ("alter,A",
          boost::program_options::value<std::string>()->default_value(table_name),
          "drop and re-create table") //	alter DB

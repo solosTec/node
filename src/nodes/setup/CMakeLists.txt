@@ -65,7 +65,18 @@ target_link_libraries(setup
         smf::config
         smf::cluster
         smf::cluster_bus
-        cyng::cyng 
+        cyng::sqlite3
+        cyng::obj
+        cyng::parse
+        cyng::io
+        cyng::log
+        cyng::db
+        cyng::store
+        cyng::sql
+        cyng::sys        
+        cyng::task
+        cyng::vm
+        cyng::net
         "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         ${SMFSEC_LIBRARIES}
         OpenSSL::SSL

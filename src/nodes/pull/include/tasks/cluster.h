@@ -13,6 +13,7 @@
 
 #include <cyng/log/logger.h>
 #include <cyng/obj/intrinsics/eod.h>
+#include <cyng/store/db.h>
 #include <cyng/task/task_fwd.h>
 #include <cyng/vm/mesh.h>
 
@@ -39,10 +40,10 @@ namespace smf {
             cyng::channel_weak,
             cyng::controller &,
             boost::uuids::uuid tag,
-            std::uint32_t query,
             std::string const &node_name,
             cyng::logger,
-            toggle::server_vec_t &&);
+            toggle::server_vec_t &&,
+            cyng::param_map_t &&cfg_db);
         ~cluster();
 
         void connect();
@@ -79,7 +80,15 @@ namespace smf {
          * cluster bus
          */
         bus bus_;
+
+        /**
+         * data store
+         */
+        cyng::store store_;
+        cyng::channel_ptr storage_db_;
     };
+
+    cyng::channel_ptr start_data_store(cyng::controller &ctl, cyng::logger logger, bus &, cyng::store &cache, cyng::param_map_t &&);
 
 } // namespace smf
 

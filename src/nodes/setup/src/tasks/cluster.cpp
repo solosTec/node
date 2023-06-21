@@ -35,7 +35,7 @@ namespace smf {
         , fabric_(ctl)
         , bus_(ctl, logger, std::move(cfg), node_name, tag, CONFIG_MANAGER, this)
         , store_()
-        , storage_(start_data_store(ctl, logger, bus_, store_, storage_type, std::move(cfg_db))) {
+        , storage_db_(start_data_store(ctl, logger, bus_, store_, storage_type, std::move(cfg_db))) {
 
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect"});
@@ -46,7 +46,7 @@ namespace smf {
     void cluster::stop(cyng::eod) {
         CYNG_LOG_WARNING(logger_, "stop cluster task(" << tag_ << ")");
         bus_.stop();
-        storage_->stop();
+        storage_db_->stop();
     }
 
     void cluster::connect() {
@@ -55,7 +55,7 @@ namespace smf {
         //	load data into cache
         //
         //  handle dispatch errors
-        storage_->dispatch("open", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
+        storage_db_->dispatch("open", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         //
         //	join cluster
@@ -76,7 +76,7 @@ namespace smf {
             //	load data from database and synchronize data with main node
             //
             //  handle dispatch errors
-            storage_->dispatch("load", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
+            storage_db_->dispatch("load", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2));
 
         } else {
             CYNG_LOG_ERROR(logger_, "joining cluster failed");
@@ -110,7 +110,7 @@ namespace smf {
                     //	insert into database (persistence layer)
                     //
                     //  handle dispatch errors
-                    storage_->dispatch(
+                    storage_db_->dispatch(
                         "insert",
                         std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
                         table_name,
@@ -144,7 +144,7 @@ namespace smf {
                                 << " => " << attr.second);
 
         //  handle dispatch errors
-        storage_->dispatch(
+        storage_db_->dispatch(
             "update",
             std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             cyng::make_tuple(table_name, key, attr, gen, tag));
@@ -155,7 +155,7 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[cluster] remove " << table_name << ": " << key);
 
         //  handle dispatch errors
-        storage_->dispatch(
+        storage_db_->dispatch(
             "remove",
             std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2),
             table_name,
@@ -168,7 +168,7 @@ namespace smf {
         CYNG_LOG_TRACE(logger_, "[cluster] clear: " << table_name);
 
         //  handle dispatch errors
-        storage_->dispatch(
+        storage_db_->dispatch(
             "clear", std::bind(&bus::log_dispatch_error, &bus_, std::placeholders::_1, std::placeholders::_2), table_name, tag);
     }
 

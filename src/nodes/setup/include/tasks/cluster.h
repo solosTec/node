@@ -91,7 +91,7 @@ namespace smf {
         cyng::mesh fabric_;
         bus bus_;
         cyng::store store_;
-        cyng::channel_ptr storage_;
+        cyng::channel_ptr storage_db_;
     };
 
     cyng::channel_ptr start_data_store(
