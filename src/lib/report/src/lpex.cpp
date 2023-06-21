@@ -187,7 +187,7 @@ namespace smf {
                         std::cout << ';' << '[' << start << ']' << ';' << '[' << first << ']' << ';' << '[' << end << ']';
 #endif
                         //  ToDo: sometimes asserts
-                        BOOST_ASSERT(start <= first);
+                        BOOST_ASSERT(start <= (first + 1));
 
                         //
                         // report

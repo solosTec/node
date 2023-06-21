@@ -1,7 +1,5 @@
 #include <tasks/cluster.h>
 
-#include <session.h>
-
 #include <cyng/log/record.h>
 #include <cyng/net/server_factory.hpp>
 #include <cyng/obj/util.hpp>
@@ -17,15 +15,9 @@ namespace smf {
 		, std::uint32_t query
 		, std::string const& node_name
 		, cyng::logger logger
-		, toggle::server_vec_t&& tgl
-		, ipt::scramble_key const& sk
-		, std::chrono::minutes watchdog
-		, std::chrono::seconds timeout
-        , cyng::mac48 client_id)
+		, toggle::server_vec_t&& tgl)
 	: sigs_{ 
 		std::bind(&cluster::connect, this),
-		//std::bind(&ipt_server::listen, &server_, std::placeholders::_1),
-		std::bind(&cyng::net::server_proxy::listen<boost::asio::ip::tcp::endpoint>, &server_proxy_, std::placeholders::_1),
 		std::bind(&cluster::stop, this, std::placeholders::_1),
 	}
 		, channel_(wp)
@@ -33,61 +25,10 @@ namespace smf {
 		, logger_(logger)
 		, fabric_(ctl)
 		, bus_(ctl, logger, std::move(tgl), node_name, tag, CONFIG_PROVIDER, this)
-        , server_proxy_()
-        , session_counter_{0}
 	{
         if (auto sp = channel_.lock(); sp) {
             sp->set_channel_names({"connect", "listen"});
             CYNG_LOG_INFO(logger_, "cluster task " << tag << " started");
-            //
-            //  create the IP-T server
-            //
-            cyng::net::server_factory srvf(ctl);
-            server_proxy_ = srvf.create_proxy<boost::asio::ip::tcp::socket, 2048>(
-                [this](boost::system::error_code ec) {
-                    if (!ec) {
-                        CYNG_LOG_INFO(logger_, "listen callback " << ec.message());
-                    } else {
-                        CYNG_LOG_WARNING(logger_, "listen callback " << ec.message());
-                    }
-                },
-                [=, this](boost::asio::ip::tcp::socket socket) {
-                    CYNG_LOG_INFO(logger_, "new session #" << session_counter_ << ": " << socket.remote_endpoint());
-
-                    auto sp = std::shared_ptr<ipt_session>(
-                        new ipt_session(std::move(socket), logger_, bus_, fabric_, sk, query, client_id), [this](ipt_session *s) {
-                            //
-                            //	update cluster state
-                            //
-                            s->logout();
-                            s->stop();
-
-                            //
-                            //	update session counter
-                            //
-                            --session_counter_;
-                            CYNG_LOG_TRACE(logger_, "session(s) running: " << session_counter_);
-
-                            //
-                            //	remove session
-                            //
-                            delete s;
-                        });
-
-                    if (sp) {
-
-                        //
-                        //	start session
-                        //
-                        sp->start(timeout);
-
-                        //
-                        //	update session counter
-                        //
-                        ++session_counter_;
-                    }
-                });
-
         } else {
             CYNG_LOG_FATAL(logger_, "cluster task " << tag << " failed");
         }

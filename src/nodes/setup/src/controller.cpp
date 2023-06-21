@@ -90,19 +90,20 @@ namespace smf {
         BOOST_ASSERT(!tgl.empty());
         if (tgl.empty()) {
             CYNG_LOG_FATAL(logger, "no cluster data configured");
-        }
+        } else {
 
-        //
-        //	connect to cluster
-        //
-        join_cluster(
-            ctl,
-            logger,
-            tag,
-            node_name,
-            std::move(tgl),
-            storage_type,
-            cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
+            //
+            //	connect to cluster
+            //
+            join_cluster(
+                ctl,
+                logger,
+                tag,
+                node_name,
+                std::move(tgl),
+                storage_type,
+                cyng::container_cast<cyng::param_map_t>(reader[storage_type].get()));
+        }
     }
 
     void controller::shutdown(cyng::registry &reg, cyng::stash &channels, cyng::logger logger) {
@@ -130,7 +131,11 @@ namespace smf {
             "cluster", ctl, tag, node_name, logger, std::move(cfg_cluster), storage_type, std::move(cfg_db));
         BOOST_ASSERT(cluster_->is_open());
         BOOST_ASSERT(tsk != nullptr);
-        tsk->connect();
+        if (tsk) {
+            tsk->connect();
+        } else {
+            CYNG_LOG_FATAL(logger, "cannot create cluster channel");
+        }
     }
 
     cyng::param_t controller::create_cluster_spec() {
