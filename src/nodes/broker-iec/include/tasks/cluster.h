@@ -27,7 +27,7 @@
 
 namespace smf {
 
-    class cluster : private bus_client_interface {
+    class cluster : private bus_client_interface, cfg_db_interface {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::tuple<
@@ -56,18 +56,37 @@ namespace smf {
         //	bus interface
         //
         virtual cyng::mesh *get_fabric() override;
+        virtual cfg_db_interface *get_cfg_db_interface() override;
         virtual cfg_sink_interface *get_cfg_sink_interface() override;
         virtual cfg_data_interface *get_cfg_data_interface() override;
         virtual void on_login(bool) override;
         virtual void on_disconnect(std::string msg) override;
+
+        /**
+         * part of cfg_db_interface
+         */
         virtual void
         db_res_insert(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) override;
+
+        /**
+         * part of cfg_db_interface
+         */
         virtual void db_res_trx(std::string, bool) override;
+
+        /**
+         * part of cfg_db_interface
+         */
         virtual void
         db_res_update(std::string, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) override;
 
+        /**
+         * part of cfg_db_interface
+         */
         virtual void db_res_remove(std::string, cyng::key_t key, boost::uuids::uuid tag) override;
 
+        /**
+         * part of cfg_db_interface
+         */
         virtual void db_res_clear(std::string, boost::uuids::uuid tag) override;
 
         /**

@@ -109,6 +109,7 @@ namespace smf {
     //	bus interface
     //
     cyng::mesh *cluster::get_fabric() { return &fabric_; }
+    cfg_db_interface *cluster::get_cfg_db_interface() { return nullptr; };
     cfg_sink_interface *cluster::get_cfg_sink_interface() { return nullptr; }
     cfg_data_interface *cluster::get_cfg_data_interface() { return nullptr; }
 
@@ -121,31 +122,5 @@ namespace smf {
     }
 
     void cluster::on_disconnect(std::string msg) { CYNG_LOG_WARNING(logger_, "[cluster] disconnect: " << msg); }
-
-    void
-    cluster::db_res_insert(std::string table_name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) {
-
-        CYNG_LOG_TRACE(logger_, "[cluster] insert: " << table_name << " - " << data);
-    }
-
-    void cluster::db_res_trx(std::string table_name, bool trx) {
-        CYNG_LOG_TRACE(logger_, "[cluster] trx: " << table_name << (trx ? " start" : " commit"));
-    }
-
-    void
-    cluster::db_res_update(std::string table_name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) {
-
-        CYNG_LOG_TRACE(logger_, "[cluster] update: " << table_name << " - " << key);
-    }
-
-    void cluster::db_res_remove(std::string table_name, cyng::key_t key, boost::uuids::uuid tag) {
-
-        CYNG_LOG_TRACE(logger_, "[cluster] remove: " << table_name << " - " << key);
-    }
-
-    void cluster::db_res_clear(std::string table_name, boost::uuids::uuid tag) {
-
-        CYNG_LOG_TRACE(logger_, "[cluster] clear: " << table_name);
-    }
 
 } // namespace smf

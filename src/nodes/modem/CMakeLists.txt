@@ -62,7 +62,6 @@ target_link_libraries(modem
         smf::cluster
         smf::cluster_bus
         smf::modem
-#        cyng::cyng 
         cyng::obj
         cyng::parse
         cyng::io

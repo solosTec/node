@@ -26,7 +26,7 @@
 
 namespace smf {
 
-    class cluster : private bus_client_interface {
+    class cluster : private bus_client_interface, cfg_db_interface {
         template <typename T> friend class cyng::task;
 
         using signatures_t = std::
@@ -54,6 +54,7 @@ namespace smf {
         //	bus interface
         //
         virtual cyng::mesh *get_fabric() override;
+        virtual cfg_db_interface *get_cfg_db_interface() override;
         virtual cfg_sink_interface *get_cfg_sink_interface() override;
         virtual cfg_data_interface *get_cfg_data_interface() override;
         virtual void on_login(bool) override;

@@ -83,6 +83,7 @@ namespace smf {
         }
     }
 
+    cfg_db_interface *cluster::get_cfg_db_interface() { return this; };
     cfg_sink_interface *cluster::get_cfg_sink_interface() { return this; }
     cfg_data_interface *cluster::get_cfg_data_interface() { return nullptr; }
 

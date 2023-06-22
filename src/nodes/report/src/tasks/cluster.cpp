@@ -264,6 +264,7 @@ namespace smf {
     //	bus interface
     //
     cyng::mesh *cluster::get_fabric() { return &fabric_; }
+    cfg_db_interface *cluster::get_cfg_db_interface() { return nullptr; };
     cfg_sink_interface *cluster::get_cfg_sink_interface() {
         //  not a data sink
         return nullptr;

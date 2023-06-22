@@ -100,7 +100,7 @@ namespace smf {
         }
     }
 
-    void db::res_insert(std::string table_name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) {
+    void db::db_res_insert(std::string table_name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) {
 
         std::reverse(key.begin(), key.end());
         std::reverse(data.begin(), data.end());
@@ -110,7 +110,7 @@ namespace smf {
         cache_.insert(table_name, key, data, gen, tag);
     }
 
-    void db::res_update(std::string table_name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) {
+    void db::db_res_update(std::string table_name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) {
 
         CYNG_LOG_TRACE(logger_, "[cluster] db.res.update: " << table_name << " - " << attr.first << " => " << attr.second);
 
@@ -121,7 +121,7 @@ namespace smf {
         cache_.modify(table_name, key, std::move(attr), tag);
     }
 
-    void db::res_remove(std::string table_name, cyng::key_t key, boost::uuids::uuid tag) {
+    void db::db_res_remove(std::string table_name, cyng::key_t key, boost::uuids::uuid tag) {
 
         CYNG_LOG_TRACE(logger_, "[cluster] db.res.remove: " << table_name << " - " << key);
 
@@ -131,12 +131,24 @@ namespace smf {
         cache_.erase(table_name, key, tag);
     }
 
-    void db::res_clear(std::string table_name, boost::uuids::uuid tag) {
+    void db::db_res_clear(std::string table_name, boost::uuids::uuid tag) {
 
         //
         //	clear table
         //
         cache_.clear(table_name, tag);
+    }
+
+    void db::db_res_trx(std::string table_name, bool trx) {
+
+        CYNG_LOG_INFO(logger_, "cluster trx: " << table_name << (trx ? " start" : " commit"));
+
+        if (!trx) {
+            //
+            //	transfer complete
+            //
+            CYNG_LOG_INFO(logger_, "table size [" << table_name << "]: " << cache_.size(table_name));
+        }
     }
 
     void db::add_to_subscriptions(std::string const &channel, boost::uuids::uuid tag) { subscriptions_.emplace(channel, tag); }

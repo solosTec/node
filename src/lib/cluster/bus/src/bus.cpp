@@ -42,7 +42,8 @@ namespace smf {
             //  the cluster bus.
             // CYNG_LOG_DEBUG(logger_, "[cluster] parser: " << cyng::io::to_typed(obj));
             vm_.load(std::move(obj));
-        }) {
+        })
+        , db_(logger) {
 
         BOOST_ASSERT(bip != nullptr);
 
@@ -131,6 +132,92 @@ namespace smf {
 
     cyng::vm_proxy bus::init_vm(bus_client_interface *bip) {
 
+        if (bip->get_cfg_db_interface() != nullptr) {
+
+            //  expose database interface
+            cfg_db_interface *dbip = bip->get_cfg_db_interface();
+
+            return bip->get_fabric()->make_proxy(
+
+                //  handle dispatch errors
+                [this](std::string task, std::string slot) {
+                    CYNG_LOG_FATAL(logger_, "task " << task << " has no slot " << slot);
+                    log_dispatch_error(task, slot);
+                },
+
+                //	"cluster.res.login"
+                cyng::make_description(
+                    "cluster.res.login", cyng::vm_adaptor<bus_client_interface, void, bool>(bip, &bus_client_interface::on_login)),
+
+                //	"cluster.req.ping"
+                cyng::make_description(
+                    "cluster.req.ping", cyng::vm_adaptor<bus, void, std::chrono::system_clock::time_point>(this, &bus::on_ping)),
+
+                //	"cluster.test.msg"
+                cyng::make_description("cluster.test.msg", cyng::vm_adaptor<bus, void, std::string>(this, &bus::on_test_msg)),
+
+                //	"cluster.disconnect"
+                cyng::make_description(
+                    "cluster.disconnect",
+                    cyng::vm_adaptor<bus_client_interface, void, std::string>(bip, &bus_client_interface::on_disconnect)),
+
+                //	"db.res.insert"
+                cyng::make_description(
+                    "db.res.insert",
+                    cyng::vm_adaptor<
+                        cfg_db_interface,
+                        void,
+                        std::string,
+                        cyng::key_t,
+                        cyng::data_t,
+                        std::uint64_t,
+                        boost::uuids::uuid>(dbip, &cfg_db_interface::db_res_insert)),
+
+                //	"db.res.trx"
+                cyng::make_description(
+                    "db.res.trx", cyng::vm_adaptor<cfg_db_interface, void, std::string, bool>(dbip, &cfg_db_interface::db_res_trx)),
+
+                //	"db.res.update"
+                cyng::make_description(
+                    "db.res.update",
+                    cyng::vm_adaptor<
+                        cfg_db_interface,
+                        void,
+                        std::string,
+                        cyng::key_t,
+                        cyng::attr_t,
+                        std::uint64_t,
+                        boost::uuids::uuid>(dbip, &cfg_db_interface::db_res_update)),
+
+                //	"db.res.remove"
+                cyng::make_description(
+                    "db.res.remove",
+                    cyng::vm_adaptor<cfg_db_interface, void, std::string, cyng::key_t, boost::uuids::uuid>(
+                        dbip, &cfg_db_interface::db_res_remove)),
+
+                //	"db.res.clear"
+                cyng::make_description(
+                    "db.res.clear",
+                    cyng::vm_adaptor<cfg_db_interface, void, std::string, boost::uuids::uuid>(
+                        dbip, &cfg_db_interface::db_res_clear)),
+
+                // "cfg.backup.merge"
+                cyng::make_description(
+                    "cfg.backup.merge",
+                    cyng::
+                        vm_adaptor<bus, void, boost::uuids::uuid, cyng::buffer_t, cyng::buffer_t, cyng::obis_path_t, cyng::object>(
+                            this, &bus::cfg_backup_merge)),
+
+                //  "cfg.data.sml"
+                cyng::make_description(
+                    "cfg.data.sml",
+                    cyng::vm_adaptor<bus, void, boost::uuids::uuid, cyng::vector_t, std::string, cyng::obis, cyng::param_map_t>(
+                        this, &bus::cfg_data_sml)));
+        }
+
+        //
+        //  basic interface
+        //
         return bip->get_fabric()->make_proxy(
 
             //  handle dispatch errors
@@ -155,46 +242,32 @@ namespace smf {
                 "cluster.disconnect",
                 cyng::vm_adaptor<bus_client_interface, void, std::string>(bip, &bus_client_interface::on_disconnect)),
 
-            //	"db.res.insert"
+            //	"db.res.insert" - a substitute implementation is needed.
             cyng::make_description(
                 "db.res.insert",
-                cyng::vm_adaptor<
-                    bus_client_interface,
-                    void,
-                    std::string,
-                    cyng::key_t,
-                    cyng::data_t,
-                    std::uint64_t,
-                    boost::uuids::uuid>(bip, &bus_client_interface::db_res_insert)),
+                cyng::vm_adaptor<cfg_db_interface, void, std::string, cyng::key_t, cyng::data_t, std::uint64_t, boost::uuids::uuid>(
+                    &db_, &cfg_db_interface::db_res_insert)),
 
-            //	"db.res.trx"
+            //	"db.res.trx" - a substitute implementation is needed.
             cyng::make_description(
-                "db.res.trx",
-                cyng::vm_adaptor<bus_client_interface, void, std::string, bool>(bip, &bus_client_interface::db_res_trx)),
+                "db.res.trx", cyng::vm_adaptor<cfg_db_interface, void, std::string, bool>(&db_, &cfg_db_interface::db_res_trx)),
 
-            //	"db.res.update"
+            //	"db.res.update" - a substitute implementation is needed.
             cyng::make_description(
                 "db.res.update",
-                cyng::vm_adaptor<
-                    bus_client_interface,
-                    void,
-                    std::string,
-                    cyng::key_t,
-                    cyng::attr_t,
-                    std::uint64_t,
-                    boost::uuids::uuid>(bip, &bus_client_interface::db_res_update)),
+                cyng::vm_adaptor<cfg_db_interface, void, std::string, cyng::key_t, cyng::attr_t, std::uint64_t, boost::uuids::uuid>(
+                    &db_, &cfg_db_interface::db_res_update)),
 
-            //	"db.res.remove"
+            //	"db.res.remove" - a substitute implementation is needed.
             cyng::make_description(
                 "db.res.remove",
-                cyng::vm_adaptor<bus_client_interface, void, std::string, cyng::key_t, boost::uuids::uuid>(
-                    bip, &bus_client_interface::db_res_remove)),
+                cyng::vm_adaptor<cfg_db_interface, void, std::string, cyng::key_t, boost::uuids::uuid>(
+                    &db_, &cfg_db_interface::db_res_remove)),
 
-            //	"db.res.clear"
+            //	"db.res.clear" - a substitute implementation is needed.
             cyng::make_description(
                 "db.res.clear",
-                cyng::vm_adaptor<bus_client_interface, void, std::string, boost::uuids::uuid>(
-                    bip, &bus_client_interface::db_res_clear)),
+                cyng::vm_adaptor<cfg_db_interface, void, std::string, boost::uuids::uuid>(&db_, &cfg_db_interface::db_res_clear)),
 
             // "cfg.backup.merge"
             cyng::make_description(
@@ -447,5 +520,25 @@ namespace smf {
     }
 
     void bus::on_test_msg(std::string msg) { CYNG_LOG_INFO(logger_, "[cluster] test msg: \"" << msg << "\""); }
+
+    bus::db::db(cyng::logger logger)
+        : logger_(logger) {}
+    void bus::db::db_res_insert(std::string table, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) {
+        CYNG_LOG_DEBUG(logger_, "[cluster] db insert into table " << table);
+    }
+
+    void bus::db::db_res_trx(std::string table, bool) { CYNG_LOG_DEBUG(logger_, "[cluster] db transaction on " << table); }
+
+    void bus::db::db_res_update(std::string table, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) {
+        CYNG_LOG_DEBUG(logger_, "[cluster] db update table " << table);
+    }
+
+    void bus::db::db_res_remove(std::string table, cyng::key_t key, boost::uuids::uuid tag) {
+        CYNG_LOG_DEBUG(logger_, "[cluster] db remove from table " << table);
+    }
+
+    void bus::db::db_res_clear(std::string table, boost::uuids::uuid tag) {
+        CYNG_LOG_DEBUG(logger_, "[cluster] db clear table " << table);
+    }
 
 } // namespace smf

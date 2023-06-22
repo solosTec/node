@@ -24,6 +24,19 @@
 
 namespace smf {
 
+    class cfg_db_interface {
+      public:
+        virtual void db_res_insert(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) = 0;
+
+        virtual void db_res_trx(std::string, bool) = 0;
+
+        virtual void db_res_update(std::string, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) = 0;
+
+        virtual void db_res_remove(std::string, cyng::key_t key, boost::uuids::uuid tag) = 0;
+
+        virtual void db_res_clear(std::string, boost::uuids::uuid tag) = 0;
+    };
+
     class cfg_sink_interface {
       public:
         /** @brief configuration management:
@@ -69,17 +82,7 @@ namespace smf {
         /**
          * To return a null pointer is allowed.
          */
-        // virtual cfg_db_interface *get_cfg_db_interface() = 0;
-
-        virtual void db_res_insert(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) = 0;
-
-        virtual void db_res_trx(std::string, bool) = 0;
-
-        virtual void db_res_update(std::string, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) = 0;
-
-        virtual void db_res_remove(std::string, cyng::key_t key, boost::uuids::uuid tag) = 0;
-
-        virtual void db_res_clear(std::string, boost::uuids::uuid tag) = 0;
+        virtual cfg_db_interface *get_cfg_db_interface() = 0;
 
         /**
          * To return a null pointer is allowed.
@@ -98,6 +101,28 @@ namespace smf {
      * in the asio C++11 example folder (libs/asio/example/cpp11/timeouts/async_tcp_client.cpp)
      */
     class bus {
+
+        /**
+         * substitute implementation
+         */
+        class db : public cfg_db_interface {
+          public:
+            db(cyng::logger);
+            virtual void
+            db_res_insert(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) override;
+
+            virtual void db_res_trx(std::string, bool) override;
+
+            virtual void
+            db_res_update(std::string, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) override;
+
+            virtual void db_res_remove(std::string, cyng::key_t key, boost::uuids::uuid tag) override;
+
+            virtual void db_res_clear(std::string, boost::uuids::uuid tag) override;
+
+          private:
+            cyng::logger logger_;
+        };
 
       public:
         bus(cyng::controller &ctl,
@@ -307,6 +332,7 @@ namespace smf {
 
         cyng::vm_proxy vm_;
         cyng::io::parser parser_;
+        db db_;
     };
 } // namespace smf
 

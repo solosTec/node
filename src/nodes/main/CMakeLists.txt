@@ -58,7 +58,16 @@ target_link_directories(main
 target_link_libraries(main 
     PRIVATE
         smf::config
-        cyng::cyng 
+        cyng::obj
+        cyng::parse
+        cyng::io
+        cyng::log
+        cyng::rnd
+        cyng::store
+        cyng::sys        
+        cyng::task
+        cyng::vm
+        cyng::net
         "$<$<PLATFORM_ID:Windows>:pugixml::pugixml>"
         "$<$<PLATFORM_ID:Linux>:Boost::thread;Boost::system;Boost::program_options;Boost::random;Boost::locale;${CMAKE_DL_LIBS};atomic;pthread>"        
         $<$<AND:$<VERSION_LESS_EQUAL:${CMAKE_CXX_COMPILER_VERSION},9.1>,$<CXX_COMPILER_ID:GNU>>:stdc++fs>

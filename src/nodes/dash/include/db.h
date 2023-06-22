@@ -7,6 +7,7 @@
 #ifndef SMF_DASH_HTTP_DB_H
 #define SMF_DASH_HTTP_DB_H
 
+#include <smf/cluster/bus.h>
 #include <smf/config/kv_store.h>
 #include <smf/config/schemes.h>
 
@@ -19,7 +20,7 @@
 namespace smf {
 
     class notifier;
-    class db {
+    class db : public cfg_db_interface {
         friend class notifier;
 
       public:
@@ -49,13 +50,34 @@ namespace smf {
             std::string const &lang_code,
             cyng::slot_ptr);
 
-        void res_insert(std::string table_name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag);
+        /**
+         * part of cfg_db_interface
+         */
+        virtual void
+        db_res_insert(std::string table_name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag)
+            override;
 
-        void res_update(std::string table_name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag);
+        /**
+         * part of cfg_db_interface
+         */
+        virtual void
+        db_res_update(std::string table_name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag)
+            override;
 
-        void res_remove(std::string table_name, cyng::key_t key, boost::uuids::uuid tag);
+        /**
+         * part of cfg_db_interface
+         */
+        virtual void db_res_remove(std::string table_name, cyng::key_t key, boost::uuids::uuid tag) override;
 
-        void res_clear(std::string table_name, boost::uuids::uuid tag);
+        /**
+         * part of cfg_db_interface
+         */
+        virtual void db_res_clear(std::string table_name, boost::uuids::uuid tag) override;
+
+        /**
+         * part of cfg_db_interface
+         */
+        virtual void db_res_trx(std::string, bool) override;
 
         /**
          * search a relation record by table name
