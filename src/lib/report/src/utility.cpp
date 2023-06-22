@@ -525,7 +525,7 @@ namespace smf {
     void dump_readout(cyng::db::session db, cyng::date now, std::chrono::hours backlog, std::ostream &os) {
 
         os << "Now       : " << cyng::as_string(now) << std::endl;
-        os << "Backlog   : " << backlog << std::endl;
+        os << "Backlog   : " << backlog.count() << "h" << std::endl;
         os << "Start time: " << cyng::as_string(now - backlog) << std::endl;
 
         //  statistics
