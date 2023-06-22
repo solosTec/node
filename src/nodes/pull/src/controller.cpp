@@ -8,9 +8,9 @@
 #include <controller.h>
 
 #include <tasks/cluster.h>
+#include <tasks/storage_db.h>
 
 #include <smf.h>
-#include <smf/ipt/scramble_key_format.h>
 
 #include <cyng/db/session.h>
 #include <cyng/io/ostream.h>
@@ -19,12 +19,9 @@
 #include <cyng/obj/container_cast.hpp>
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/intrinsics/container.h>
-#include <cyng/obj/numeric_cast.hpp>
-#include <cyng/obj/object.h>
+// #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/obj/util.hpp>
-#include <cyng/parse/mac.h>
 #include <cyng/sys/locale.h>
-#include <cyng/sys/mac.h>
 #include <cyng/task/controller.h>
 
 #include <iostream>
@@ -47,7 +44,6 @@ namespace smf {
             cyng::make_param("tag", get_random_tag()),
             cyng::make_param("country.code", cyng::sys::get_system_locale().at(cyng::sys::info::COUNTRY)),
             cyng::make_param("language.code", cyng::sys::get_system_locale().at(cyng::sys::info::LANGUAGE)),
-            cyng::make_param("query", 6),
             create_db_spec(cwd),
             create_cluster_spec())});
     }
@@ -114,9 +110,6 @@ namespace smf {
             CYNG_LOG_FATAL(logger, "no cluster data configured");
         } else {
 
-            // auto const storage_type = cyng::value_cast(reader["storage"].get(), "DB");
-            // CYNG_LOG_INFO(logger, "storage type is " << storage_type);
-
             //
             //	connect to cluster
             //
@@ -167,7 +160,7 @@ namespace smf {
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
             std::cout << "file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
-            // smf::init_storage(s); //	see task/storage_db.h
+            smf::init_storage(s); //	see storage_db.h
         }
     }
 

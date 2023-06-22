@@ -524,11 +524,10 @@ namespace smf {
 
     void dump_readout(cyng::db::session db, cyng::date now, std::chrono::hours backlog, std::ostream &os) {
 
-#ifdef _DEBUG
-        std::cout << "Now       : " << cyng::as_string(now) << std::endl;
-        std::cout << "Backlog   : " << backlog << std::endl;
-        std::cout << "Start time: " << cyng::as_string(now - backlog) << std::endl;
-#endif
+        os << "Now       : " << cyng::as_string(now) << std::endl;
+        os << "Backlog   : " << backlog << std::endl;
+        os << "Start time: " << cyng::as_string(now - backlog) << std::endl;
+
         //  statistics
         std::set<srv_id_t> server;
         int day = 0;

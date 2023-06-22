@@ -285,8 +285,8 @@ namespace smf {
                             //  up to one hour
                             ofs << cyng::as_string(sml::from_index_to_date(idx_start + 61, profile), "%d.%m.%y;%H:%M:%S;");
                         } else if (profile == OBIS_PROFILE_15_MINUTE) {
-                            //  up to one hour
-                            ofs << cyng::as_string(sml::from_index_to_date(idx_start + 5, profile), "%d.%m.%y;%H:%M:%S;");
+                            //  up to two hours
+                            ofs << cyng::as_string(sml::from_index_to_date(idx_start + 7, profile), "%d.%m.%y;%H:%M:%S;");
                         } else {
                             ofs << cyng::as_string(sml::from_index_to_date(idx_start + 3, profile), "%d.%m.%y;%H:%M:%S;");
                         }

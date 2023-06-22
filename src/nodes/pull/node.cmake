@@ -6,10 +6,12 @@ set (pull_node)
 set (pull_cpp
     src/main.cpp
     src/controller.cpp
+#    src/db.cpp
 )
     
 set (pull_h
     include/controller.h
+#    include/db.h
 )
 
 set (pull_tasks

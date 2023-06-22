@@ -329,7 +329,7 @@ namespace smf {
         std::size_t get_shift_factor(cyng::obis profile) {
             switch (profile.to_uint64()) {
             case CODE_PROFILE_1_MINUTE:
-            case CODE_PROFILE_15_MINUTE: return 6;
+            case CODE_PROFILE_15_MINUTE: return 8;
             case CODE_PROFILE_60_MINUTE: return 2;
             case CODE_PROFILE_24_HOUR:
             case CODE_PROFILE_1_MONTH:

@@ -14,7 +14,6 @@
 
 namespace smf {
 
-    // cyng::channel_weak, cyng::controller &, cyng::logger
     feed_report::feed_report(
         cyng::channel_weak wp,
         cyng::controller &ctl,

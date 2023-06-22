@@ -33,6 +33,27 @@ namespace smf {
             std::function<void(cyng::eod)> //
             >;
 
+        class db_dispatcher : public cfg_db_interface {
+          public:
+            db_dispatcher(cluster *, cyng::channel_ptr);
+            virtual void
+            db_res_insert(std::string name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) override;
+
+            virtual void db_res_trx(std::string name, bool start) override;
+            virtual void
+            db_res_update(std::string name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) override;
+            virtual void db_res_remove(std::string name, cyng::key_t key, boost::uuids::uuid tag) override;
+            virtual void db_res_clear(std::string name, boost::uuids::uuid tag) override;
+
+            void subscribe();
+            void open();
+
+          private:
+            cluster *cluster_;
+            cyng::channel_ptr storage_db_;
+        };
+        friend db_dispatcher;
+
       public:
         cluster(
             cyng::channel_weak,
@@ -58,15 +79,6 @@ namespace smf {
         virtual cfg_data_interface *get_cfg_data_interface() override;
         virtual void on_login(bool) override;
         virtual void on_disconnect(std::string msg) override;
-        // virtual void
-        // db_res_insert(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) override;
-        // virtual void db_res_trx(std::string, bool) override;
-        // virtual void
-        // db_res_update(std::string, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) override;
-
-        // virtual void db_res_remove(std::string, cyng::key_t key, boost::uuids::uuid tag) override;
-
-        // virtual void db_res_clear(std::string, boost::uuids::uuid tag) override;
 
       private:
         signatures_t sigs_;
@@ -79,15 +91,10 @@ namespace smf {
          * cluster bus
          */
         bus bus_;
-
-        /**
-         * data store
-         */
-        cyng::store store_;
-        cyng::channel_ptr storage_db_;
+        db_dispatcher db_dispatcher_;
     };
 
-    cyng::channel_ptr start_data_store(cyng::controller &ctl, cyng::logger logger, bus &, cyng::store &cache, cyng::param_map_t &&);
+    cyng::channel_ptr start_data_store(cyng::controller &ctl, cyng::logger logger, bus &, cyng::param_map_t &&);
 
 } // namespace smf
 

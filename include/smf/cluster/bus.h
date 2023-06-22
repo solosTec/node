@@ -24,17 +24,54 @@
 
 namespace smf {
 
+    /** @brief data synchronisation
+     *
+     * Interface for all database related operations
+     */
     class cfg_db_interface {
       public:
-        virtual void db_res_insert(std::string, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) = 0;
+        /**
+         * insert operation
+         *
+         * @param name table name
+         * @param key primary table key
+         * @param data data record
+         * @param gen generation
+         * @param tag source tag
+         */
+        virtual void
+        db_res_insert(std::string name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) = 0;
 
-        virtual void db_res_trx(std::string, bool) = 0;
+        virtual void db_res_trx(std::string name, bool start) = 0;
 
-        virtual void db_res_update(std::string, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) = 0;
+        /**
+         * update operation
+         *
+         * @param name table name
+         * @param key primary table key
+         * @param attr modified column
+         * @param gen generation
+         * @param tag source tag
+         */
+        virtual void
+        db_res_update(std::string name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) = 0;
 
-        virtual void db_res_remove(std::string, cyng::key_t key, boost::uuids::uuid tag) = 0;
+        /**
+         * remove operation
+         *
+         * @param name table name
+         * @param key primary table key
+         * @param tag source tag
+         */
+        virtual void db_res_remove(std::string name, cyng::key_t key, boost::uuids::uuid tag) = 0;
 
-        virtual void db_res_clear(std::string, boost::uuids::uuid tag) = 0;
+        /**
+         * clear table
+         *
+         * @param name table name
+         * @param tag source tag
+         */
+        virtual void db_res_clear(std::string name, boost::uuids::uuid tag) = 0;
     };
 
     class cfg_sink_interface {

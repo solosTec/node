@@ -27,11 +27,10 @@ namespace smf {
         cyng::channel_weak wp,
         cyng::controller &ctl,
         bus &cluster_bus,
-        cyng::store &cache,
         cyng::logger logger,
         cyng::param_map_t &&cfg)
         : sigs_{std::bind(&storage_db::open, this), // open
-        std::bind(&storage_db::load_stores, this), // load
+        std::bind(&storage_db::subscribe, this), // subscribe
         std::bind(&storage_db::update, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), // update
         std::bind(&storage_db::insert, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), // insert
         std::bind(&storage_db::remove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), // remove
@@ -43,12 +42,10 @@ namespace smf {
         , cluster_bus_(cluster_bus)
         , logger_(logger)
         , db_(cyng::db::create_db_session(cfg))
-        , store_(cache)
-        , store_map_()
         , sql_map_() {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"open", "load", "update", "insert", "remove", "clear"});
+            sp->set_channel_names({"open", "subscribe", "update", "insert", "remove", "clear"});
             CYNG_LOG_INFO(logger_, "task [" << sp->get_name() << "] started");
         }
     }
@@ -57,127 +54,27 @@ namespace smf {
         if (!db_.is_alive()) {
             CYNG_LOG_ERROR(logger_, "cannot open database");
         } else {
-            //
-            //	database is open fill cache
-            //
             CYNG_LOG_INFO(logger_, "database is open");
-            init_stores();
+            //
+            //	database is open - init sql map
+            //
+            init_sql_map();
         }
     }
 
-    void storage_db::init_stores() {
+    void storage_db::init_sql_map() {
         auto const tbl_vec = get_sql_meta_data();
         for (auto const &ms : tbl_vec) {
             auto const m = cyng::to_mem(ms);
-            init_store(m);
 
             //
             //	initialize sql map with the name of the memory table
             //
+            CYNG_LOG_INFO(logger_, "init SQL table " << m.get_name());
             sql_map_.emplace(m.get_name(), ms);
         }
-
-        //
-        //  init config table (without sql db)
-        //
-        auto const m = config::get_config();
-        store_.create_table(m);
+        CYNG_LOG_INFO(logger_, "[persistence] " << sql_map_.size() << " tables initialized");
     }
-
-    void storage_db::init_store(cyng::meta_store m) {
-        store_map_.emplace(m.get_name(), m);
-        if (!store_.create_table(m)) {
-            CYNG_LOG_ERROR(logger_, "cannot create table: " << m.get_name());
-        } else {
-            CYNG_LOG_TRACE(logger_, "cache table [" << m.get_name() << "] created");
-        }
-    }
-
-    void storage_db::load_stores() {
-
-        //
-        //	load data from database and subscribe it
-        //
-        auto const tbl_vec = get_sql_meta_data();
-        for (auto const &ms : tbl_vec) {
-            load_store(ms);
-        }
-
-        //
-        //  load and subscribe special tables
-        //
-        load_config();
-
-        //
-        //  "main" node ready to start post processing
-        //
-        CYNG_LOG_INFO(logger_, "[storage] " << tbl_vec.size() << " tables read into the cache");
-    }
-
-    void storage_db::load_config() {
-
-        //
-        //  load config data
-        //
-        auto const ms = config::get_table_config();
-        store_.access(
-            [&](cyng::table *tbl) {
-                cyng::db::storage s(db_);
-                s.loop(ms, [&](cyng::record const &rec) -> bool {
-                    CYNG_LOG_TRACE(logger_, "[storage] load config " << rec.to_string());
-
-                    //
-                    //  convert and transfer into "config" table
-                    //
-                    auto const key = rec.value("path", "");
-                    auto const val = rec.value("value", "");
-                    auto const type = rec.value("type", static_cast<std::uint16_t>(0));
-                    auto const obj = cyng::restore(val, type);
-
-                    tbl->insert(cyng::key_generator(key), cyng::data_generator(obj), 1, cluster_bus_.get_tag());
-                    return true; //  continue
-                });
-            },
-            cyng::access::write("config"));
-
-        //
-        //  subscribe config data
-        //
-        cluster_bus_.req_subscribe("config");
-    }
-
-    void storage_db::load_store(cyng::meta_sql const &ms) {
-        //
-        //	get in-memory meta data
-        //
-        auto const m = cyng::to_mem(ms);
-        CYNG_LOG_INFO(logger_, "[storage] load table [" << ms.get_name() << "/" << m.get_name() << "]");
-
-        store_.access(
-            [&](cyng::table *tbl) {
-                cyng::db::storage s(db_);
-                s.loop(ms, [&](cyng::record const &rec) -> bool {
-                    CYNG_LOG_TRACE(logger_, "[storage] load " << rec.to_string());
-                    if (!tbl->insert(rec.key(), rec.data(), rec.get_generation(), cluster_bus_.get_tag())) {
-                        CYNG_LOG_WARNING(
-                            logger_,
-                            "[storage] load table [" << ms.get_name() << "/" << m.get_name() << "]: " << rec.to_string()
-                                                     << " failed");
-                    }
-
-                    return true;
-                });
-            },
-            cyng::access::write(m.get_name()));
-
-        CYNG_LOG_INFO(logger_, "subscribe table [" << m.get_name() << "] with " << store_.size(m.get_name()) << " entrie(s)");
-
-        //
-        //	start sync data by subscribing to this table
-        //
-        cluster_bus_.req_subscribe(m.get_name());
-    }
-
     void storage_db::stop(cyng::eod) {
         db_.close();
         CYNG_LOG_WARNING(logger_, "task [" << channel_.lock()->get_name() << "] stopped");
@@ -186,138 +83,36 @@ namespace smf {
     void storage_db::update(std::string table_name, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) {
 
         BOOST_ASSERT_MSG(!key.empty(), "update without key");
+        BOOST_ASSERT_MSG(!boost::algorithm::equals(table_name, "config"), "config table not supported");
 
-        if (boost::algorithm::equals(table_name, "config")) {
+        auto const pos = sql_map_.find(table_name);
+        if (pos != sql_map_.end()) {
+
+            auto const &meta = pos->second;
             //
-            //  update "Config"
+            //  use generic function from config library
             //
-            if (!key.empty()) {
-                auto const k = cyng::io::to_plain(key.at(0));
-
-                //  convert to string
-                auto const v = cyng::io::to_plain(attr.second);
-                CYNG_LOG_DEBUG(logger_, "[db] update config data " << key.at(0) << ": " << v);
-
-                auto const ms = config::get_table_config();
-                // auto const sql =
-                // cyng::sql::update(db_.get_dialect(), ms).set_placeholder(ms, attr.first).where(ms, cyng::sql::pk())();
-                auto const sql = "UPDATE TConfig SET value = ? WHERE path = ?";
-                auto stmt = db_.create_statement();
-                std::pair<int, bool> const r = stmt->prepare(sql);
-                if (r.second) {
-                    stmt->push(cyng::make_object(v), 256); //  value
-                    stmt->push(key.at(0), 128);            //  key
-                    if (stmt->execute()) {
-                        stmt->clear();
-                    } else {
-                        CYNG_LOG_WARNING(logger_, "[db] update error: " << sql);
-                    }
-                }
+            if (!config::persistent_update(meta, db_, key, attr, gen)) {
+                CYNG_LOG_ERROR(logger_, "[persistence] update " << table_name << ": " << key.at(0) << " failed");
             }
 
         } else {
-            auto const pos = sql_map_.find(table_name);
-            if (pos != sql_map_.end()) {
-
-                auto const &meta = pos->second;
-                //
-                //  use generic function from config library
-                //
-                if (!config::persistent_update(meta, db_, key, attr, gen)) {
-                    CYNG_LOG_ERROR(logger_, "[persistence] update " << table_name << ": " << key.at(0) << " failed");
-                }
-
-            } else {
-                CYNG_LOG_WARNING(logger_, "[db] update - unknown table: " << table_name);
-            }
+            CYNG_LOG_WARNING(logger_, "[db] update - unknown table: " << table_name);
         }
     }
 
-    void storage_db::insert(std::string table_name, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) {
+    void storage_db::insert(std::string table, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) {
 
         BOOST_ASSERT_MSG(!key.empty(), "insert without key");
+        BOOST_ASSERT_MSG(!boost::algorithm::equals(table, "config"), "config table not supported");
 
-        if (boost::algorithm::equals(table_name, "config")) {
-            //
-            // Convert data and store it in "TConfig" table.
-            // Since "TConfig" has no cache
-            //
-            BOOST_ASSERT_MSG(!data.empty(), "insert without data");
-            if (!key.empty() && !data.empty()) {
-
-                //  select blocked keys
-                auto const k = cyng::io::to_plain(key.at(0));
-
-                //  convert to string
-                auto const v = cyng::io::to_plain(data.at(0));
-                CYNG_LOG_DEBUG(logger_, "[db] merge config data " << key.at(0) << ": \"" << v << "\"");
-
-                auto const ms = config::get_table_config();
-                auto stmt = db_.create_statement();
-
-                //
-                //  Test if key already in use
-                //
-
-                auto const sql_query = cyng::sql::select(db_.get_dialect(), ms).all(ms, false).from().where(cyng::sql::pk())();
-                std::pair<int, bool> const r_query = stmt->prepare(sql_query);
-                if (r_query.second) {
-                    stmt->push(key.at(0), 128); //  key
-                    auto res = stmt->get_result();
-                    if (res) {
-                        //  update
-                        auto const val = cyng::value_cast(res->get(2, cyng::TC_STRING, 256), "");
-                        if (boost::algorithm::equals(v, val)) {
-                            CYNG_LOG_DEBUG(logger_, "[db] config entry \"" << key.at(0) << "\" is already up to date");
-                        } else {
-                            CYNG_LOG_INFO(logger_, "[db] update config entry " << key.at(0) << " from " << val << " ==> " << v);
-                            //  "TConfig" has no "gen" column
-                            auto const sql_update = "UPDATE TConfig SET value = ? WHERE path = ?";
-                            std::pair<int, bool> const r_update = stmt->prepare(sql_update);
-                            if (r_update.second) {
-                                stmt->push(cyng::make_object(v), 256); //  value
-                                stmt->push(key.at(0), 128);            //  key
-                                if (stmt->execute()) {
-                                    stmt->clear();
-                                } else {
-                                    CYNG_LOG_WARNING(logger_, "[db] update error: " << sql_update);
-                                }
-                            }
-                        }
-
-                    } else {
-                        //  insert
-                        auto const sql_insert = cyng::sql::insert(db_.get_dialect(), ms).bind_values(ms).to_string();
-                        stmt->clear();
-                        std::pair<int, bool> const r_insert = stmt->prepare(sql_insert);
-                        if (r_insert.second) {
-                            stmt->push(key.at(0), 128);                                         //  key
-                            stmt->push(cyng::make_object(v), 256);                              //  value
-                            stmt->push(cyng::make_object(cyng::io::to_typed(data.at(0))), 256); //  default
-                            stmt->push(cyng::make_object(data.at(0).tag()), 0);                 //  type
-                            stmt->push(key.at(0), 256);                                         //  description
-                            if (stmt->execute()) {
-                                stmt->clear();
-                            } else {
-                                CYNG_LOG_WARNING(logger_, "[db] insert error: " << sql_insert);
-                                CYNG_LOG_DEBUG(logger_, "[db] default: " << cyng::io::to_typed(data.at(0)));
-                                CYNG_LOG_DEBUG(logger_, "[db] type: " << data.at(0).tag());
-                                CYNG_LOG_DEBUG(logger_, "[db] description: " << key.at(0));
-                            }
-                        } else {
-                            CYNG_LOG_ERROR(logger_, "[db] insert error: " << sql_insert);
-                        }
-                    }
-                }
-            }
-
-        } else {
-            auto const pos = sql_map_.find(table_name);
-            if (pos != sql_map_.end()) {
-                auto const &meta = pos->second;
-                if (!config::persistent_insert(meta, db_, key, data, gen)) {
-                    CYNG_LOG_ERROR(logger_, "[persistence] insert " << table_name << ": " << key.at(0) << " failed");
-                }
+        auto const pos = sql_map_.find(table);
+        if (pos != sql_map_.end()) {
+            auto const &meta = pos->second;
+            if (!config::persistent_insert(meta, db_, key, data, gen)) {
+                CYNG_LOG_ERROR(logger_, "[persistence] insert " << table << ": " << key.at(0) << " failed");
+            } else {
+                CYNG_LOG_DEBUG(logger_, "[cluster] db insert into table \"" << table << "\"");
             }
         }
     }
@@ -350,6 +145,14 @@ namespace smf {
         }
     }
 
+    void storage_db::subscribe() {
+        CYNG_LOG_INFO(logger_, "[persistence] subscribe " << sql_map_.size() << " tables");
+        for (auto const &tbl : sql_map_) {
+            CYNG_LOG_INFO(logger_, "[persistence] subscribe table " << tbl.first);
+            cluster_bus_.req_subscribe(tbl.first);
+        }
+    }
+
     bool init_storage(cyng::db::session &db) {
         BOOST_ASSERT(db.is_alive());
 
@@ -372,28 +175,8 @@ namespace smf {
             //
             //  "TCfgSet" has no tabular in-memory table
             //
-            {
-                auto const m = config::get_table_cfg_set();
-                auto const sql = cyng::sql::create(db.get_dialect(), m).to_string();
-                if (!db.execute(sql)) {
-                    std::cerr << "**error: " << sql << std::endl;
-                } else {
-                    std::cout << "create: " << m.get_name() << " - " << sql << std::endl;
-                }
-            }
-
-            //
             //  "TConfig" is also a special table with no in-memory counter-part
             //
-            {
-                auto const m = config::get_table_config();
-                auto const sql = cyng::sql::create(db.get_dialect(), m).to_string();
-                if (!db.execute(sql)) {
-                    std::cerr << "**error: " << sql << std::endl;
-                } else {
-                    std::cout << "create: " << m.get_name() << " - " << sql << std::endl;
-                }
-            }
 
             return true;
         } catch (std::exception const &ex) {

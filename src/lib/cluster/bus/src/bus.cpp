@@ -524,21 +524,21 @@ namespace smf {
     bus::db::db(cyng::logger logger)
         : logger_(logger) {}
     void bus::db::db_res_insert(std::string table, cyng::key_t key, cyng::data_t data, std::uint64_t gen, boost::uuids::uuid tag) {
-        CYNG_LOG_DEBUG(logger_, "[cluster] db insert into table " << table);
+        CYNG_LOG_DEBUG(logger_, "[cluster] db insert into table \"" << table << "\"");
     }
 
     void bus::db::db_res_trx(std::string table, bool) { CYNG_LOG_DEBUG(logger_, "[cluster] db transaction on " << table); }
 
     void bus::db::db_res_update(std::string table, cyng::key_t key, cyng::attr_t attr, std::uint64_t gen, boost::uuids::uuid tag) {
-        CYNG_LOG_DEBUG(logger_, "[cluster] db update table " << table);
+        CYNG_LOG_DEBUG(logger_, "[cluster] db update table \"" << table << "\"");
     }
 
     void bus::db::db_res_remove(std::string table, cyng::key_t key, boost::uuids::uuid tag) {
-        CYNG_LOG_DEBUG(logger_, "[cluster] db remove from table " << table);
+        CYNG_LOG_DEBUG(logger_, "[cluster] db remove from table \"" << table << "\"");
     }
 
     void bus::db::db_res_clear(std::string table, boost::uuids::uuid tag) {
-        CYNG_LOG_DEBUG(logger_, "[cluster] db clear table " << table);
+        CYNG_LOG_DEBUG(logger_, "[cluster] db clear table \"" << table << "\"");
     }
 
 } // namespace smf

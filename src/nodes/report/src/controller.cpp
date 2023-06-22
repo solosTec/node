@@ -485,7 +485,7 @@ namespace smf {
         // BOOST_ASSERT(reader.get("db").tag() == cyng::TC_PARAM_MAP);
         auto s = cyng::db::create_db_session(reader.get("DB"));
         if (s.is_alive()) {
-            smf::dump_readout(s, now.get_end_of_day(), backlog);
+            smf::dump_readout(s, now.get_end_of_day(), backlog, std::cout);
         } else {
             std::cerr << "***error: database not found" << std::endl;
         }
