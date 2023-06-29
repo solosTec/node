@@ -127,7 +127,8 @@ namespace smf {
                             }
                             auto ofs = feed::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
-                                feed::generate_report(db, ofs, profile, start, next_stop, data_set, debug_mode, customer);
+                                feed::generate_report(
+                                    db, ofs, profile, start, next_stop, data_set, debug_mode, customer, shift_factor);
                             }
                             //
                             //  the meter list itself remains unchanged
@@ -190,7 +191,7 @@ namespace smf {
             }
             auto ofs = feed::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
-                feed::generate_report(db, ofs, profile, start, next_stop, data_set, debug_mode, customer);
+                feed::generate_report(db, ofs, profile, start, next_stop, data_set, debug_mode, customer, shift_factor);
                 ofs.close();
             }
             data::clear(data_set);
@@ -215,7 +216,8 @@ namespace smf {
             cyng::date const &end,
             data::data_set_t const &data_set,
             bool debug_mode,
-            bool customer) {
+            bool customer,
+            std::size_t shift_factor) {
 
             BOOST_ASSERT(start <= end);
 
@@ -239,7 +241,7 @@ namespace smf {
                     // if (is_null(data.first)) {
                     //
                     //  Ignore meter IDs that consists only of zeros.
-                    //  ToDo: Accept also server IDs other than of wireless M-Bus meters.
+                    //  Server IDs other than of wireless M-Bus meters are allowed.
                     //
 #ifdef _DEBUG
                     std::cerr << "skip \"null\" meter" << std::endl;
@@ -283,12 +285,17 @@ namespace smf {
                         //
                         if (profile == OBIS_PROFILE_1_MINUTE) {
                             //  up to one hour
-                            ofs << cyng::as_string(sml::from_index_to_date(idx_start + 61, profile), "%d.%m.%y;%H:%M:%S;");
+                            ofs << cyng::as_string(
+                                sml::from_index_to_date(idx_start + shift_factor + 1, profile), "%d.%m.%y;%H:%M:%S;");
                         } else if (profile == OBIS_PROFILE_15_MINUTE) {
                             //  up to two hours
-                            ofs << cyng::as_string(sml::from_index_to_date(idx_start + 7, profile), "%d.%m.%y;%H:%M:%S;");
+                            //  This is the shift factor + 1. Since the shiftfactor is negative it must be
+                            //  compensated here.
+                            ofs << cyng::as_string(
+                                sml::from_index_to_date(idx_start + shift_factor + 1, profile), "%d.%m.%y;%H:%M:%S;");
                         } else {
-                            ofs << cyng::as_string(sml::from_index_to_date(idx_start + 3, profile), "%d.%m.%y;%H:%M:%S;");
+                            ofs << cyng::as_string(
+                                sml::from_index_to_date(idx_start + shift_factor + 1, profile), "%d.%m.%y;%H:%M:%S;");
                         }
 
                         //
@@ -482,26 +489,6 @@ namespace smf {
             std::size_t shift_factor) {
 
             return (now - backtrack).get_start_of_day() - (shift_factor * sml::interval_time(now, profile));
-
-            // switch (profile.to_uint64()) {
-            // case CODE_PROFILE_1_MINUTE:
-            // case CODE_PROFILE_15_MINUTE: //  fix offset
-            //     // There are missing 2 * 15-minute readings
-            //     // return (now - backtrack).get_start_of_day() - (4 * sml::interval_time(now, profile));
-            //     // This is 1 hour + 2*readings
-            //     return (now - backtrack).get_start_of_day() - (6 * sml::interval_time(now, profile));
-            // case CODE_PROFILE_60_MINUTE:
-            // case CODE_PROFILE_24_HOUR: return (now - backtrack).get_start_of_day() - (2 * sml::interval_time(now, profile));
-
-            // case CODE_PROFILE_1_MONTH: break;
-            // case CODE_PROFILE_1_YEAR: break;
-            // default:
-            //     //  error
-            //     BOOST_ASSERT_MSG(false, "not implemented yet");
-            //     break;
-            // }
-
-            // return (now - backtrack).get_start_of_day();
         }
 
         std::string calculate_advance(sml_data const &first, sml_data const &second) {

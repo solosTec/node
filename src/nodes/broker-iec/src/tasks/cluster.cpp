@@ -69,13 +69,23 @@ namespace smf {
 
     std::size_t cluster::check_gateway(cyng::record const &rec) {
 
-        auto const host = rec.value("host", "");
-        auto const port = rec.value<std::uint16_t>("port", 0);
-        auto const interval = rec.value("interval", std::chrono::seconds(60 * 60));
+        // auto const host = rec.value("host", "");
+        // auto const port = rec.value<std::uint16_t>("port", 0);
+        // auto const interval = rec.value("interval", std::chrono::seconds(60 * 60));
 
-        auto const meter_counter = rec.value<std::uint32_t>("meterCounter", 0);
-        auto const connect_counter = rec.value<std::uint32_t>("connectCounter", 0);
-        auto const failure_counter = rec.value<std::uint32_t>("failureCounter", 0);
+        // auto const meter_counter = rec.value<std::uint32_t>("meterCounter", 0);
+        // auto const connect_counter = rec.value<std::uint32_t>("connectCounter", 0);
+        // auto const failure_counter = rec.value<std::uint32_t>("failureCounter", 0);
+
+        auto const [host, port, interval, meter_counter, connect_counter, failure_counter] =
+            rec.values<std::string, std::uint16_t, std::chrono::seconds, std::uint32_t, std::uint32_t, std::uint32_t>(
+                {"host", ""},
+                {"port", 0},                                 //
+                {"interval", std::chrono::seconds(60 * 60)}, //
+                {"meterCounter", 0},
+                {"connectCounter", 0},
+                {"failureCounter", 0} //
+            );
 
         //
         //	construct task name

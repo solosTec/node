@@ -68,10 +68,17 @@ namespace smf {
                 [&, this](cyng::table const *tbl) {
                     auto const rec = tbl->lookup(cyng::key_generator(meter_, nr_));
                     if (!rec.empty()) {
-                        auto const interval = rec.value("interval", std::chrono::seconds(0));
-                        auto const delay = rec.value("delay", std::chrono::seconds(0));
-                        auto const profile = rec.value("profile", OBIS_PROFILE);
-                        auto const target = rec.value("target", "");
+                        // auto const interval = rec.value("interval", std::chrono::seconds(0));
+                        // auto const delay = rec.value("delay", std::chrono::seconds(0));
+                        // auto const profile = rec.value("profile", OBIS_PROFILE);
+                        // auto const target = rec.value("target", "");
+
+                        auto const [interval, delay, profile, target] = rec.values<std::chrono::seconds, std::chrono::seconds, cyng::obis, std::string>(
+                            //
+                            {"interval", std::chrono::seconds(0)},
+                            {"delay", std::chrono::seconds(0)}, //
+                            {"profile", OBIS_PROFILE},          //
+                            {"target", ""});
 
                         //
                         //  Calculate initial start time dependent from profile type.
@@ -129,7 +136,10 @@ namespace smf {
                             std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
                         CYNG_LOG_TRACE(logger_, "[push] " << target << " - next: " << std::chrono::system_clock::now() + interval);
                     } else {
-                        CYNG_LOG_ERROR(logger_, "[push] no record for " << meter_ << "#" << +nr_ << " in table \"pushOps\"");
+                        CYNG_LOG_ERROR(
+                            logger_,
+                            "[push] no record for " << meter_ << "#" << +nr_ << " in table \"" << tbl->meta().get_name() << "\"");
+                        // sp->stop();
                     }
                 },
                 cyng::access::read("pushOps"));
@@ -150,6 +160,7 @@ namespace smf {
             }
         } else {
             //  already stopped
+            ;
         }
     }
 

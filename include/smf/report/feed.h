@@ -79,7 +79,8 @@ namespace smf {
             cyng::date const &end,
             data::data_set_t const &data,
             bool debug_mode,
-            bool customer);
+            bool customer,
+            std::size_t shift_factor);
 
         /**
          * We need two time units of lead.

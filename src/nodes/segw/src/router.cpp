@@ -30,7 +30,7 @@
 #include <cyng/io/hex_dump.hpp>
 #include <iostream>
 #include <sstream>
-#endif
+#endif // _DEBUG_SEGW
 
 #include <functional>
 
