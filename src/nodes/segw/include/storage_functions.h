@@ -66,6 +66,8 @@ namespace smf {
 
     bool alter_table(cyng::db::session &db, std::string const &table);
     bool recreate_table(cyng::db::session &db, cyng::meta_sql const &m);
+    bool dump_table(cyng::db::session &db, std::string const &table);
+    bool dump_table(cyng::db::session &db, cyng::meta_sql const &m);
 
     /**
      * split string by "/" and return the first section

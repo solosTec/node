@@ -602,20 +602,6 @@ namespace smf {
             return host + std::string(":") + std::to_string(port);
         }
 
-        bool is_known_store_name(std::string name) {
-            return boost::algorithm::equals(name, "cluster") || boost::algorithm::equals(name, "device") ||
-                   boost::algorithm::equals(name, "meter") || boost::algorithm::equals(name, "meterFull") ||
-                   boost::algorithm::equals(name, "meterIEC") || boost::algorithm::equals(name, "gwIEC") ||
-                   boost::algorithm::equals(name, "meterwMBus") || boost::algorithm::equals(name, "gwwMBus") ||
-                   boost::algorithm::equals(name, "gateway") || boost::algorithm::equals(name, "loRaDevice") ||
-                   boost::algorithm::equals(name, "guiUser") || boost::algorithm::equals(name, "location") ||
-                   boost::algorithm::equals(name, "session") || boost::algorithm::equals(name, "connection") ||
-                   boost::algorithm::equals(name, "target") || boost::algorithm::equals(name, "config") ||
-                   boost::algorithm::equals(name, "loRaUplink") || boost::algorithm::equals(name, "iecUplink") ||
-                   boost::algorithm::equals(name, "wMBusUplink") || boost::algorithm::equals(name, "cfgSetMeta") ||
-                   boost::algorithm::equals(name, "statistics") || boost::algorithm::equals(name, "history");
-        }
-
         cyng::meta_store get_store_sml_readout() {
             return cyng::meta_store(
                 "SMLReadout",
@@ -755,6 +741,75 @@ namespace smf {
         cyng::meta_sql get_table_meter_lpex() {
             // INSERT INTO TLPExMeter VALUES( X'21061457', 1, '16000913', 'CH1015201234500000000000000032418');
             return cyng::to_sql(get_store_meter_lpex(), {8, 8, 34});
+        }
+
+        bool is_known_store_name(std::string name) {
+            return boost::algorithm::equals(name, "cluster") || boost::algorithm::equals(name, "device") ||
+                   boost::algorithm::equals(name, "meter") || boost::algorithm::equals(name, "meterFull") ||
+                   boost::algorithm::equals(name, "meterIEC") || boost::algorithm::equals(name, "gwIEC") ||
+                   boost::algorithm::equals(name, "meterwMBus") || boost::algorithm::equals(name, "gwwMBus") ||
+                   boost::algorithm::equals(name, "gateway") || boost::algorithm::equals(name, "loRaDevice") ||
+                   boost::algorithm::equals(name, "guiUser") || boost::algorithm::equals(name, "location") ||
+                   boost::algorithm::equals(name, "session") || boost::algorithm::equals(name, "connection") ||
+                   boost::algorithm::equals(name, "target") || boost::algorithm::equals(name, "config") ||
+                   boost::algorithm::equals(name, "loRaUplink") || boost::algorithm::equals(name, "iecUplink") ||
+                   boost::algorithm::equals(name, "wMBusUplink") || boost::algorithm::equals(name, "cfgSetMeta") ||
+                   boost::algorithm::equals(name, "statistics") || boost::algorithm::equals(name, "history");
+        }
+
+        cyng::meta_sql get_sql_meta_data(std::string name) {
+            if (boost::algorithm::equals(name, "device")) {
+                return get_table_device();
+            } else if (boost::algorithm::equals(name, "meter")) {
+                return get_table_meter();
+            }
+            //  "meterFull" - only store
+            else if (boost::algorithm::equals(name, "meterIEC")) {
+                return get_table_meterIEC();
+            } else if (boost::algorithm::equals(name, "meterMBus")) {
+                return get_table_meterwMBus();
+            }
+            //"gwwMBus" - only store
+            else if (boost::algorithm::equals(name, "gateway")) {
+                return get_table_gateway();
+            } else if (boost::algorithm::equals(name, "loRaDevice")) {
+                return get_table_lora();
+            } else if (boost::algorithm::equals(name, "guiUser")) {
+                return get_table_gui_user();
+            } else if (boost::algorithm::equals(name, "location")) {
+                return get_table_location();
+            } else if (boost::algorithm::equals(name, "cfgSetMeta")) {
+                return get_table_cfg_set_meta();
+            } else if (boost::algorithm::equals(name, "statistics")) {
+                return get_table_statistics();
+            } else if (boost::algorithm::equals(name, "history")) {
+                return get_table_history();
+            }
+            // "session" - only store
+            // "connection" - only store
+            // "target" - only store
+            // "channel" - only store
+            // "config" has different table names
+            // "sysMsg"
+            // "loRaUplink"
+            // "iecUplink"
+            // "wMBusUplink"
+            // "
+            else if (boost::algorithm::equals(name, "SMLReadout")) {
+                return get_table_sml_readout();
+            } else if (boost::algorithm::equals(name, "SMLReadoutData")) {
+                return get_table_sml_readout_data();
+            } else if (boost::algorithm::equals(name, "IECReadout")) {
+                return get_table_iec_readout();
+            } else if (boost::algorithm::equals(name, "IECReadoutData")) {
+                return get_table_iec_readout_data();
+            } else if (boost::algorithm::equals(name, "LPExCustomer")) {
+                return get_table_customer_lpex();
+            } else if (boost::algorithm::equals(name, "LPExMeter")) {
+                return get_table_meter_lpex();
+            }
+            BOOST_ASSERT_MSG(false, "table not found");
+            return cyng::meta_sql(name, {}, 0);
         }
 
     } // namespace config

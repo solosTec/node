@@ -37,7 +37,7 @@ namespace smf {
         /**
          * read a configuration value from table "_Cfg"
          */
-        template <typename T> T get_value(std::string name, T def) {
+        template <typename T> auto get_value(std::string name, T def) -> T {
             if constexpr (std::is_arithmetic_v<T>) {
                 return cyng::numeric_cast<T>(get_obj(name), std::forward<T>(def));
             }
@@ -48,6 +48,14 @@ namespace smf {
          * The non-template function wins.
          */
         std::string get_value(std::string name, const char *def);
+
+        /**
+         * Produce a tuple with a multitude of specified values
+         */
+        template <typename... Args> auto get_values(std::pair<std::string, Args> &&...v) -> std::tuple<Args...> {
+            //  recursion call of get_value()
+            return {get_value<Args>(v.first, std::move(v.second))...};
+        }
 
         /**
          * set/insert a configuration value

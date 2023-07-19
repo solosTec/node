@@ -63,6 +63,9 @@ int main(int argc, char **argv) {
         ("alter,A",
          boost::program_options::value<std::string>()->default_value(table_name),
          "drop and re-create table") //	alter DB
+        ("dump",
+         boost::program_options::value<std::string>()->implicit_value("TMbusCache")->default_value(""),
+         "dump content of specified table") //	dump
         ("tty",
          boost::program_options::value<std::string>()->implicit_value(port_name)->default_value(""),
          "show configuration of specified port") //	tty

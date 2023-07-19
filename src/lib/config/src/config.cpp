@@ -137,7 +137,9 @@ namespace smf {
                 ("default,D",
                  boost::program_options::bool_switch()->default_value(false),
                  "generate a default configuration and exit") //  create a default configuration
-                ("show,s", boost::program_options::bool_switch()->default_value(false), "show configuration") // print on display
+                ("show,s",
+                 boost::program_options::bool_switch()->default_value(false),
+                 "show JSON configuration") // print on display
                 ("locale",
                  boost::program_options::bool_switch()->default_value(false),
                  "print system locale") //  cyng::sys::get_system_locale()

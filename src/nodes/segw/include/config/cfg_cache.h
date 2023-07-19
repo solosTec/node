@@ -11,6 +11,9 @@
 
 namespace smf {
 
+    /**
+     * The configuration data for the cache for reading data.
+     */
     class cfg_cache {
       public:
         cfg_cache(cfg &, lmn_type);
@@ -46,6 +49,9 @@ namespace smf {
          */
         std::chrono::minutes get_interval() const;
 
+        /**
+         * Enable/disable cache for reading data.
+         */
         bool set_enabled(bool b);
 
         /**

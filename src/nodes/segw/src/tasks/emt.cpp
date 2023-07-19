@@ -36,8 +36,8 @@ namespace smf {
 		, cfg& config)
 	: sigs_{
             std::bind(&emt::receive, this, std::placeholders::_1),	//	0
-            std::bind(&emt::reset_target_channels, this),	//	1 - "reset-data-sinks"
-            std::bind(&emt::add_target_channel, this, std::placeholders::_1),	//	2 - "add-data-sink"
+            //std::bind(&emt::reset_target_channels, this),	//	1 - "reset-data-sinks"
+            //std::bind(&emt::add_target_channel, this, std::placeholders::_1),	//	2 - "add-data-sink"
             std::bind(&emt::push, this),	//	3 - "push"
             std::bind(&emt::backup, this),	//	4 - "backup"
             std::bind(&emt::stop, this, std::placeholders::_1)		//	4
@@ -60,7 +60,7 @@ namespace smf {
     {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"receive", "reset-data-sinks", "add-data-sink", "push", "backup"});
+            sp->set_channel_names({"receive", "push", "backup"});
 
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -76,9 +76,9 @@ namespace smf {
         parser_.read(std::begin(data), std::end(data));
     }
 
-    void emt::reset_target_channels() { CYNG_LOG_TRACE(logger_, "[emt] clear target channels"); }
+    // void emt::reset_target_channels() { CYNG_LOG_TRACE(logger_, "[emt] clear target channels"); }
 
-    void emt::add_target_channel(std::string name) { CYNG_LOG_TRACE(logger_, "[emt] add target channel: " << name); }
+    // void emt::add_target_channel(std::string name) { CYNG_LOG_TRACE(logger_, "[emt] add target channel: " << name); }
 
     void emt::decode(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data) {
 

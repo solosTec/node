@@ -476,17 +476,15 @@ namespace smf {
 
         while (auto res = stmt->get_result()) {
             auto const rec = cyng::to_record(ms, res);
-            // std::cout << rec.to_tuple() << std::endl;
             auto const path = sanitize_key(rec.value("path", ""));
-            auto const val = rec.value("value", "");
-            auto const def = rec.value("def", "");
-            auto const type = rec.value("type", static_cast<std::uint16_t>(0));
-            auto const desc = rec.value("desc", "");
+            auto const [val, def, type, desc] = rec.values<std::string, std::string, std::uint16_t, std::string>(
+                {"value", ""}, //
+                {"def", ""},   //
+                {"type", 0},   //
+                {"desc", ""}   //
+            );
             try {
                 auto const obj = cyng::restore(val, type);
-
-                //	ToDo:
-                // auto const opath = sml::translate_obis_path(path);
 
                 //
                 //	insert split lines between sections
@@ -674,6 +672,59 @@ namespace smf {
             }
         }
         return false;
+    }
+
+    bool dump_table(cyng::db::session &db, std::string const &name) {
+        storage store(db);
+        try {
+            //
+            //	start transaction
+            //
+            cyng::db::transaction trx(db);
+
+            //
+            //	search specified table
+            //
+            auto const vec = get_sql_meta_data();
+            auto const pos = std::find_if(std::begin(vec), std::end(vec), [&](cyng::meta_sql const &m) {
+                return boost::algorithm::equals(m.get_name(), name);
+            });
+            if (pos != vec.end()) {
+                return dump_table(db, *pos);
+            } else {
+                //
+                //  ToDo: take credit of non-cached tables
+                //
+                std::cerr << "**error: " << name << " not found" << std::endl;
+            }
+
+        } catch (std::exception const &ex) {
+            boost::ignore_unused(ex);
+            std::cerr << "**error: " << ex.what() << std::endl;
+        }
+        return false;
+    }
+
+    bool dump_table(cyng::db::session &db, cyng::meta_sql const &ms) {
+
+        auto const sql = cyng::sql::select(db.get_dialect(), ms).all(ms, false).from()();
+        std::cout << "**info: " << sql << std::endl;
+        auto stmt = db.create_statement();
+        auto const r = stmt->prepare(sql);
+
+        if (r.second) {
+            //
+            //	dump all results
+            //
+            std::size_t counter = 0;
+            while (auto res = stmt->get_result()) {
+                auto const rec = cyng::to_record(ms, res);
+                std::cout << rec.to_string() << std::endl;
+                ++counter;
+            }
+            std::cout << "**info: " << counter << " records found" << std::endl;
+        }
+        return r.second;
     }
 
     bool set_nms_mode(cyng::db::session &db, std::string const &mode) {

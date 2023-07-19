@@ -28,18 +28,12 @@ namespace smf {
 
     constexpr const char *get_name(lmn_type type) {
         switch (type) {
-        case lmn_type::WIRELESS:
-            return "WIRELESS";
-        case lmn_type::WIRED:
-            return "WIRED";
-        case lmn_type::ETHERNET:
-            return "ETHERNET";
-        case lmn_type::MOBILE:
-            return "MOBILE";
-        case lmn_type::LORA:
-            return "LORA";
-        default:
-            break;
+        case lmn_type::WIRELESS: return "WIRELESS";
+        case lmn_type::WIRED: return "WIRED";
+        case lmn_type::ETHERNET: return "ETHERNET";
+        case lmn_type::MOBILE: return "MOBILE";
+        case lmn_type::LORA: return "LORA";
+        default: break;
         }
         return "OTHER";
     }
@@ -100,13 +94,6 @@ namespace smf {
         bool has_broker_login() const;
 
         /**
-         * @brief Timer to check connection state.
-         *
-         * Only usefull for "broker-on-start"
-         */
-        // std::chrono::seconds get_broker_timeout() const;
-
-        /**
          * configured type name
          * @return a textual description of this port type
          */
@@ -151,7 +138,7 @@ namespace smf {
         static std::string databits_path(std::uint8_t idx);
         static std::string broker_enabled_path(std::uint8_t idx);
         static std::string broker_login_path(std::uint8_t idx);
-        static std::string broker_timeout_path(std::uint8_t idx);
+        // static std::string broker_timeout_path(std::uint8_t idx);
         static std::string type_path(std::uint8_t idx);
         static std::string protocol_path(std::uint8_t idx);
         static std::string HCI_path(std::uint8_t idx);

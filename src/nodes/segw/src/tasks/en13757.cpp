@@ -35,11 +35,9 @@ namespace smf {
 		, cfg& config)
 	: sigs_{
             std::bind(&en13757::receive, this, std::placeholders::_1),	//	0
-            std::bind(&en13757::reset_target_channels, this),	//	1 - "reset-data-sinks"
-            std::bind(&en13757::add_target_channel, this, std::placeholders::_1),	//	2 - "add-data-sink"
-            std::bind(&en13757::push, this),	//	3 - "push"
-            std::bind(&en13757::backup, this),	//	4 - "backup"
-            std::bind(&en13757::stop, this, std::placeholders::_1)		//	4
+            std::bind(&en13757::push, this),	//	1 - "push"
+            std::bind(&en13757::backup, this),	//	2 - "backup"
+            std::bind(&en13757::stop, this, std::placeholders::_1)		//	3
     }
 		, channel_(wp)
 		, ctl_(ctl)
@@ -61,7 +59,7 @@ namespace smf {
     {
 
         if (auto sp = channel_.lock(); sp) {
-            sp->set_channel_names({"receive", "reset-data-sinks", "add-data-sink", "push", "backup"});
+            sp->set_channel_names({"receive", "push", "backup"});
 
             CYNG_LOG_TRACE(logger_, "task [" << sp->get_name() << "] created");
         }
@@ -77,20 +75,10 @@ namespace smf {
         parser_.read(std::begin(data), std::end(data));
     }
 
-    void en13757::reset_target_channels() {
-        // targets_.clear();
-        CYNG_LOG_TRACE(logger_, "[EN-13757] clear target channels");
-    }
-
-    void en13757::add_target_channel(std::string name) {
-        // targets_.insert(name);
-        CYNG_LOG_TRACE(logger_, "[EN-13757] add target channel: " << name);
-    }
-
     void en13757::decode(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data) {
 
         //
-        //  update cache
+        //  update "mbusCache"
         //
         if (cfg_cache_.is_enabled()) {
             update_cache(h, tpl, data);
@@ -128,10 +116,10 @@ namespace smf {
                             std::chrono::system_clock::now()),
                         1u,
                         cfg_.get_tag())) {
-                    CYNG_LOG_TRACE(logger_, "[roCache] data of meter " << to_string(srv_id) << " inserted");
+                    CYNG_LOG_TRACE(logger_, "[EN-13757/mbusCache] data of meter " << to_string(srv_id) << " inserted");
 
                 } else {
-                    CYNG_LOG_TRACE(logger_, "[roCache] data of meter " << to_string(srv_id) << " updated");
+                    CYNG_LOG_TRACE(logger_, "[EN-13757/mbusCache] data of meter " << to_string(srv_id) << " updated");
                 }
             },
             cyng::access::write("mbusCache"));
@@ -279,7 +267,6 @@ namespace smf {
                         auto_cfg && rec.empty(),
                         def_profile);
                 }
-                //}
             },
             cyng::access::write("meterMBus"),
             cyng::access::write("readout"),
@@ -637,9 +624,8 @@ namespace smf {
                     CYNG_LOG_TRACE(logger_, "[EN-13757]  successfully connected to " << rep);
 
                     //
-                    //  send data
+                    //  push data
                     //
-                    // cp->dispatch("send", cyng::make_buffer("hello"));
                     push_data(cp);
                 },
                 [this](cyng::buffer_t data) {
@@ -672,7 +658,7 @@ namespace smf {
                 tbl->loop([=, this](cyng::record &&rec, std::size_t) -> bool {
                     auto const id = rec.value("meterID", cyng::make_buffer());
                     auto const payload = rec.value("payload", cyng::make_buffer());
-                    CYNG_LOG_TRACE(logger_, "[roCache] send data of meter " << id);
+                    CYNG_LOG_TRACE(logger_, "[EN-13757] push data of meter " << id);
 
 #ifdef _DEBUG_SEGW
                     {
@@ -681,7 +667,7 @@ namespace smf {
                         cyng::io::hex_dump<8> hd;
                         hd(ss, std::begin(payload), std::end(payload));
                         auto const dmp = ss.str();
-                        CYNG_LOG_DEBUG(logger_, "[roCache] payload of " << id << " received at " << received << ":\n" << dmp);
+                        CYNG_LOG_DEBUG(logger_, "[EN-13757] payload of " << id << " received at " << received << ":\n" << dmp);
                     }
 #endif
 
@@ -715,24 +701,28 @@ namespace smf {
         cyng::db::transaction trx(db_);
 
         //
-        //  remove old data from "TMBusCache"
-        //
-        auto const m = get_table_mbus_cache();
-        config::persistent_clear(m, db_);
-
-        //
         //  transfer data from cache to database table "TMBusCache"
         //
         cfg_.get_cache().access(
             [&](cyng::table const *tbl) {
+                //
+                //  Remove existing data from "TMBusCache".
+                //  If we don't remove existing data, we are at risk of duplicate keys.
+                //  This would require some kind of merge strategy.
+                //
+                auto const m = get_table_mbus_cache();
+                config::persistent_clear(m, db_);
+
+                //
+                //  make all received data persistent
+                //
                 tbl->loop([=, this](cyng::record &&rec, std::size_t) -> bool {
                     auto const id = rec.value("meterID", cyng::make_buffer());
 
-                    // tbl->size()
                     CYNG_LOG_TRACE(
                         logger_,
-                        "[roCache] backup data of meter " << id << " in table " << tbl->meta().get_name() << " with " << tbl->size()
-                                                          << " entries");
+                        "[EN-13757/mbusCache] backup data of meter " << id << " in table " << tbl->meta().get_name() << " with "
+                                                                     << tbl->size() << " entries");
                     config::persistent_insert(m, db_, rec.key(), rec.data(), 0u);
                     return true;
                 });

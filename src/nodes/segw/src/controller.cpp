@@ -135,6 +135,13 @@ namespace smf {
             alter_table(read_config_section(config_.json_path_, config_.config_index_), table);
             return true;
         }
+        if (!vars["dump"].defaulted()) {
+            auto const table = vars["dump"].as<std::string>();
+            BOOST_ASSERT(!table.empty());
+            //	show options of serial port
+            dump_table(read_config_section(config_.json_path_, config_.config_index_), table);
+            return true;
+        }
         if (!vars["tty"].defaulted()) {
             auto const tty = vars["tty"].as<std::string>();
             BOOST_ASSERT(!tty.empty());
@@ -335,6 +342,16 @@ namespace smf {
         }
     }
 
+    void controller::dump_table(cyng::object &&cfg, std::string table) {
+        auto const reader = cyng::make_reader(std::move(cfg));
+        auto s = cyng::db::create_db_session(reader.get("DB"));
+        if (s.is_alive()) {
+            std::cout << "file-name: " << reader["DB"].get<std::string>("file.name", "") << std::endl;
+            smf::dump_table(s, table); //
+        } else {
+            std::cerr << "**error: no configuration found" << std::endl;
+        }
+    }
     void controller::set_nms_mode(cyng::object &&cfg, std::string mode) {
         auto const reader = cyng::make_reader(std::move(cfg));
 

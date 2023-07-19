@@ -196,6 +196,12 @@ namespace smf {
         bool is_known_store_name(std::string);
 
         /**
+         * @name name of store (in-memory table)
+         * @return description of SQL table
+         */
+        cyng::meta_sql get_sql_meta_data(std::string name);
+
+        /**
          * UUID namespace to derive a tag from a meter name
          */
         static constexpr boost::uuids::uuid device_name{

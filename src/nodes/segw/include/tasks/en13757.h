@@ -31,11 +31,9 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(cyng::buffer_t)>,
-            std::function<void(void)>,        // reset_target_channels
-            std::function<void(std::string)>, // add_target_channel
-            std::function<void()>,            // push
-            std::function<void()>,            // backup
-            std::function<void(cyng::eod)>    // stop()
+            std::function<void()>,         // push
+            std::function<void()>,         // backup
+            std::function<void(cyng::eod)> // stop()
             >;
 
       public:
@@ -50,18 +48,6 @@ namespace smf {
          * devices will be visible here.
          */
         void receive(cyng::buffer_t);
-
-        /** @"reset-data-sinks"
-         *
-         * Remove all data sinks
-         */
-        void reset_target_channels();
-
-        /** @"add-data-sink"
-         *
-         * Add a new listener task
-         */
-        void add_target_channel(std::string);
 
         /**
          * Check if an AES key is available and if that is the case, decode the data.

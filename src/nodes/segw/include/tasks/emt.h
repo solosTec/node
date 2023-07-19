@@ -32,11 +32,11 @@ namespace smf {
 
         using signatures_t = std::tuple<
             std::function<void(cyng::buffer_t)>,
-            std::function<void(void)>,        // reset_target_channels
-            std::function<void(std::string)>, // add_target_channel
-            std::function<void()>,            // push
-            std::function<void()>,            // backup
-            std::function<void(cyng::eod)>    // stop()
+            // std::function<void(void)>,        // reset_target_channels
+            // std::function<void(std::string)>, // add_target_channel
+            std::function<void()>,         // push
+            std::function<void()>,         // backup
+            std::function<void(cyng::eod)> // stop()
             >;
 
       public:
@@ -56,16 +56,16 @@ namespace smf {
          *
          * Remove all data sinks
          */
-        void reset_target_channels();
+        // void reset_target_channels();
 
         /** @"add-data-sink"
          *
          * Add a new listener task
          */
-        void add_target_channel(std::string);
+        // void add_target_channel(std::string);
 
         /**
-         * Merge incoming data 
+         * Merge incoming data
          */
         void update_cache(mbus::radio::header const &h, mbus::radio::tplayer const &tpl, cyng::buffer_t const &data);
 
@@ -81,7 +81,7 @@ namespace smf {
         void push_data(cyng::channel_ptr);
 
         /**
-         * Write cache to database.  
+         * Write cache to database.
          */
         void backup();
 
