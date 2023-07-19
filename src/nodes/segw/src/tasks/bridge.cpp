@@ -559,11 +559,8 @@ namespace smf {
 
         cache_.access(
             [&](cyng::table *tbl) {
-                CYNG_LOG_INFO(
-                    logger_,
-                    "[bridge] load table [" << ms.get_name() << "/" << m.get_name() << "] with " << tbl->size() << " records");
                 cyng::db::storage s(db_);
-                s.loop(ms, [&](cyng::record const &rec) -> bool {
+                auto const count = s.loop(ms, [&](cyng::record const &rec) -> bool {
                     CYNG_LOG_TRACE(logger_, "[storage] load " << rec.to_string());
                     if (!tbl->insert(rec.key(), rec.data(), rec.get_generation(), cfg_.get_tag())) {
                         CYNG_LOG_WARNING(
@@ -574,6 +571,12 @@ namespace smf {
 
                     return true;
                 });
+
+                BOOST_ASSERT(count == tbl->size());
+                CYNG_LOG_INFO(
+                    logger_,
+                    "[bridge] table [" << ms.get_name() << "/" << m.get_name() << "] loaded contains " << tbl->size()
+                                       << " records");
             },
             cyng::access::write(m.get_name()));
     }

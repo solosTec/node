@@ -31,7 +31,7 @@ namespace smf {
             std::function<void(cyng::table const *, cyng::key_t, boost::uuids::uuid)>,
             std::function<void(cyng::table const *, boost::uuids::uuid)>,
             std::function<void(cyng::table const *, bool)>,
-            std::function<void()>, //	power_return
+            std::function<void()>,     //	power_return
             std::function<void(bool)>, //	authorized
             std::function<void(cyng::eod)>>;
 
@@ -53,6 +53,10 @@ namespace smf {
          */
         void authorized(bool);
 
+        /**
+         * Needs an explicit table with all tables names since the "cyng::meta_sql" object cannot
+         * derived automatically from the "cyng::meta_store" data.
+         */
         void insert(cyng::table const *, cyng::key_t, cyng::data_t, std::uint64_t, boost::uuids::uuid);
 
         /**
@@ -71,7 +75,7 @@ namespace smf {
         void clear(cyng::table const *, boost::uuids::uuid);
 
         /**
-         * start/comit transaction
+         * start/commit transaction
          */
         void trx(cyng::table const *, bool);
 
