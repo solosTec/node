@@ -116,14 +116,17 @@ namespace smf {
         }
 
         void send(std::deque<cyng::buffer_t> msg) {
-            cyng::exec(vm_, [=, this, data = std::move(msg)]() {
-                bool const b = write_buffer_.empty();
-                CYNG_LOG_DEBUG(logger_, "send " << msg.size() << " bytes cluster message to peer " << vm_.get_tag());
-                cyng::add(write_buffer_, data);
-                if (b) {
-                    do_write();
-                }
-            });
+            BOOST_ASSERT(!msg.empty());
+            if (!msg.empty()) {
+                cyng::exec(vm_, [=, this, data = std::move(msg)]() {
+                    bool const b = write_buffer_.empty();
+                    CYNG_LOG_DEBUG(logger_, "send " << data.size() << " bytes cluster message to peer " << vm_.get_tag());
+                    cyng::add(write_buffer_, data);
+                    if (b) {
+                        do_write();
+                    }
+                });
+            }
         }
 
       private:
@@ -217,22 +220,6 @@ namespace smf {
          * parser for session data
          */
         parser_t parser_;
-
-        /**
-         * database listener
-         */
-        // cyng::slot_ptr slot_;
-
-        /**
-         * remote session tag
-         */
-        // boost::uuids::uuid peer_;
-        // std::string protocol_layer_;
-
-        /**
-         * Generate dependend keys for table "gwIEC"
-         */
-        // config::dependend_key dep_key_;
     };
 
     /**

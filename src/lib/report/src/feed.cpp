@@ -67,12 +67,13 @@ namespace smf {
         //  generate a manifest
         //
         std::size_t counter = 0;
+#ifdef _DEBUG
         auto meta_file = get_meta_file(root, profile);
         if (meta_file.is_open()) {
             meta_file << "[INFO] " << std::string(72, '-') << std::endl;
             meta_file << "[INFO] start at  : " << cyng::as_string(start) << std::endl;
-            // meta_file << "[INFO] stop #" << ++counter << " at: " << cyng::as_string(next_stop) << std::endl;
         }
+#endif
 
         //
         // Enter loop
@@ -117,14 +118,18 @@ namespace smf {
                     //
                     if (d > next_stop) {
 
+#ifdef _DEBUG
                         if (meta_file.is_open()) {
                             meta_file << "[INFO] stop #" << ++counter << " at: " << cyng::as_string(next_stop) << std::endl;
                         }
+#endif
                         if (!data_set.empty()) {
                             auto const file_name = get_filename(prefix, prev, debug_mode);
+#ifdef _DEBUG
                             if (meta_file.is_open()) {
                                 meta_file << "[INFO] generate report " << root / file_name << std::endl;
                             }
+#endif
                             auto ofs = feed::open_report(root, file_name, print_version);
                             if (ofs.is_open()) {
                                 feed::generate_report(
@@ -135,9 +140,11 @@ namespace smf {
                             //
                             data::trim(data_set);
                         } else {
+#ifdef _DEBUG
                             if (meta_file.is_open()) {
                                 std::cerr << "[WARN] no data" << std::endl;
                             }
+#endif
                         }
 
                         //
@@ -152,21 +159,25 @@ namespace smf {
                     //
                     prev = d;
 
+#ifdef _DEBUG
                     if (meta_file.is_open()) {
                         meta_file << "[INFO] readout " << tag << ", meter: " << id
                                   << ", actTime: " << cyng::as_string(act_time, "%Y-%m-%d %H:%M:%S") << ", slot #" << sr.first
                                   << " => " << cyng::as_string(d, "%Y-%m-%d %H:%M:%S") << std::endl;
                     }
+#endif
                 }
 
                 //
                 //  update data set
                 //
                 if (has_passed(reg, filter)) {
+#ifdef _DEBUG
                     if (meta_file.is_open()) {
                         meta_file << "[INFO] value " << reg << ": " << value << " " << mbus::get_name(unit) << " ("
                                   << obis::to_decimal(reg) << ", \"" << obis::get_description(reg) << "\")" << std::endl;
                     }
+#endif
                     data::update(data_set, id, reg, sr.first, code, scaler, mbus::to_u8(unit), value, status);
                 } else {
                 //
@@ -186,9 +197,11 @@ namespace smf {
         //
         if (!data_set.empty()) {
             auto const file_name = get_filename(prefix, prev, debug_mode);
+#ifdef _DEBUG
             if (meta_file.is_open()) {
                 meta_file << "[INFO] generate report " << root / file_name << std::endl;
             }
+#endif
             auto ofs = feed::open_report(root, file_name, print_version);
             if (ofs.is_open()) {
                 feed::generate_report(db, ofs, profile, start, next_stop, data_set, debug_mode, customer, shift_factor);
@@ -200,10 +213,12 @@ namespace smf {
         //
         //  explicit
         //
+#ifdef _DEBUG
         if (meta_file.is_open()) {
             meta_file << "[INFO] report contains " << data_set.size() << " meter(s)" << std::endl;
             meta_file.close();
         }
+#endif
     }
 
     namespace feed {

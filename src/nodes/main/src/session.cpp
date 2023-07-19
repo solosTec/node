@@ -10,7 +10,6 @@
 #include <cyng/obj/container_factory.hpp>
 #include <cyng/obj/numeric_cast.hpp>
 #include <cyng/parse/buffer.h>
-#include <cyng/parse/string.h>
 #include <cyng/vm/generator.hpp>
 #include <cyng/vm/linearize.hpp>
 #include <cyng/vm/vm.h>
@@ -1539,24 +1538,5 @@ namespace smf {
             // execute loaded program
             vm_.run();
         }
-    }
-
-    std::chrono::seconds smooth(std::chrono::seconds interval) {
-        auto const mod = interval.count() % 300;
-        return std::chrono::seconds(interval.count() + (300 - mod));
-    }
-
-    std::pair<std::string, bool> is_custom_gateway(std::string const &id) {
-        if (boost::algorithm::starts_with(id, "smf.gw:") || boost::algorithm::starts_with(id, "EMH-")) {
-            auto const vec = cyng::split(id, ":");
-            if (vec.size() == 3 && vec.at(2).size() == 14) {
-                return {vec.at(2), true};
-            }
-            return {"05000000000001", true};
-        } else if (id.size() == 15 && boost::algorithm::starts_with(id, "a") && boost::algorithm::ends_with(id, "en")) {
-            // example: a00153B01E5B7en
-            return {id.substr(1, 12), true};
-        }
-        return {"", false};
     }
 } // namespace smf
