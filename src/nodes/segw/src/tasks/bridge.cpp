@@ -556,10 +556,12 @@ namespace smf {
         //	get in-memory meta data
         //
         auto const m = cyng::to_mem(ms);
-        CYNG_LOG_INFO(logger_, "[bridge] load table [" << ms.get_name() << "/" << m.get_name() << "]");
 
         cache_.access(
             [&](cyng::table *tbl) {
+                CYNG_LOG_INFO(
+                    logger_,
+                    "[bridge] load table [" << ms.get_name() << "/" << m.get_name() << "] with " << tbl->size() << " records");
                 cyng::db::storage s(db_);
                 s.loop(ms, [&](cyng::record const &rec) -> bool {
                     CYNG_LOG_TRACE(logger_, "[storage] load " << rec.to_string());
@@ -846,10 +848,10 @@ namespace smf {
             //
             //	update statistics every second
             //
-            //  handle dispatch errors
             channel_filter->suspend(
                 std::chrono::seconds(1),
                 "update-statistics",
+                //  handle dispatch errors
                 std::bind(cyng::log_dispatch_error, logger_, std::placeholders::_1, std::placeholders::_2));
 
             //

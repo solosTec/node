@@ -707,8 +707,8 @@ namespace smf {
             [&](cyng::table const *tbl) {
                 //
                 //  Remove existing data from "TMBusCache".
-                //  If we don't remove existing data, we are at risk of duplicate keys.
-                //  This would require some kind of merge strategy.
+                //  All records will be removed since all data to be storeed
+                //  are already in the cache.
                 //
                 auto const m = get_table_mbus_cache();
                 config::persistent_clear(m, db_);

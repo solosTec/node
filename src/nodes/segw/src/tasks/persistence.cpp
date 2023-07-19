@@ -102,8 +102,6 @@ namespace smf {
             if (!storage_.cfg_insert(key.at(0), data.at(0))) {
                 CYNG_LOG_WARNING(logger_, "[persistence] insert " << tbl->meta().get_name() << " <" << key.at(0) << "> failed");
             }
-            //} else if (boost::algorithm::equals(tbl->meta().get_name(), "meter")) {
-            //    //  convert data
         } else {
             //
             // use default mechanism
